@@ -1,18 +1,7 @@
-# kaogong bundle: storage-domain + the Host learning suite.
+# kaogong bundle: the standard dsh-base/web-app profiles already provide the
+# shared storage stack. This patch only adds the kaogong host plugin, avoiding
+# duplicate storage rows when installed into those profiles.
 - insert:
-    - id: storage
-      name: '@deepseek-ai/dsh-storage'
-
-    - id: storage-json
-      name: '@deepseek-ai/dsh-storage-json'
-      config:
-        root: './.kaogong/storage'
-
-    - id: storage-domain
-      name: '@deepseek-ai/dsh-storage-domain'
-      config:
-        backend: 'json'
-
     - id: kaogong
       name: '@deepseek-ai/dsh-tool-kaogong'
       config:

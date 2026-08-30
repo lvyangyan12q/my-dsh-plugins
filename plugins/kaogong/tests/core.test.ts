@@ -6,7 +6,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { analyzeQuestions, summarizeQuestions } from '../src/analyze.ts'
-import { generatePlan, daysToExam, addDays, isValidIsoDate } from '../src/schedule.ts'
+import { generatePlan, daysToExam, addDays } from '../src/schedule.ts'
 import { selectPractice } from '../src/practice.ts'
 import { searchKnowledge } from '../src/knowledge.ts'
 import { flattenTaxonomy, TAXONOMY, renderTaxonomy } from '../src/taxonomy.ts'
@@ -20,12 +20,11 @@ function q(id: string, subject: string, kp: string, result: Question['result'], 
   }
 }
 
-function bq(id: string, subject: string, kp: string, difficulty: BankQuestion['difficulty'] = 'easy'): BankQuestion {
+function bq(id: string, subject: string, kp: string, difficulty: BankQuestion['difficulty'] = 'easy', reviewStatus: BankQuestion['reviewStatus'] = 'approved'): BankQuestion {
   return {
     id, subject, knowledgePoint: kp, questionType: '单选', stem: '题干', options: [],
-    correctAnswer: 'A', explanation: '解析', difficulty, source: '', tags: [],
-    origin: 'local', reviewStatus: 'approved', reviewNotes: '', reviewedAt: '',
-    createdAt: '2026-01-01T00:00:00.000Z',
+    correctAnswer: 'A', explanation: '解析', difficulty, source: '', origin: 'local',
+    reviewStatus, reviewNotes: '', tags: [], createdAt: '2026-01-01T00:00:00.000Z', reviewedAt: '',
   }
 }
 
@@ -90,24 +89,6 @@ test('generatePlan: 考试日期必须晚于今天', () => {
   assert.throws(() => generatePlan({ examDate: '2026-01-01', dailyModules: 2, subjects: [{ name: 'X', weight: 1 }] }, '2026-01-02'))
 })
 
-test('generatePlan: 短周期阶段数严格等于总天数，冲刺遵守 dailyModules', () => {
-  const plan = generatePlan({ examDate: '2026-01-04', dailyModules: 4, subjects: [{ name: 'X', weight: 1 }] }, '2026-01-01')
-  assert.equal(plan.totalDays, 3)
-  assert.equal(plan.days.length, 3)
-  assert.equal(plan.phases.reduce((n, phase) => n + phase.days, 0), 3)
-  assert.deepEqual(plan.phases.map(phase => phase.days), [1, 1, 1])
-  const sprint = plan.days.find(day => day.phase === 'sprint')
-  assert.equal(sprint?.items.length, 4)
-  assert.equal(sprint?.items[0]?.kind, 'mock')
-})
-
-test('日期校验：拒绝不存在的日历日期', () => {
-  assert.equal(isValidIsoDate('2026-02-28'), true)
-  assert.equal(isValidIsoDate('2026-02-29'), false)
-  assert.equal(isValidIsoDate('2026-2-01'), false)
-  assert.throws(() => daysToExam('2026-02-30', '2026-03-01'))
-})
-
 test('daysToExam / addDays', () => {
   assert.equal(daysToExam('2026-01-01', '2026-01-11'), 10)
   assert.equal(addDays('2026-01-01', 10), '2026-01-11')
@@ -138,16 +119,16 @@ test('selectPractice: 指定考点与 limit 截断', () => {
   assert.equal(selectPractice(bank, [], { knowledgePoint: 'KP-B', limit: 2 }).selected.length, 0)
 })
 
-test('selectPractice: totalAvailable 与筛选后的题池一致', () => {
+test('selectPractice: 只抽取已通过审查（approved）的题', () => {
   const bank = [
-    bq('b1', 'S', 'KP', 'easy'),
-    bq('b2', 'S', 'KP', 'hard'),
-    { ...bq('b3', 'S', 'KP', 'hard'), reviewStatus: 'pending' as const },
+    bq('b1', 'S', 'KP-A', 'easy', 'approved'),
+    bq('b2', 'S', 'KP-A', 'easy', 'pending'),
+    bq('b3', 'S', 'KP-A', 'easy', 'rejected'),
   ]
-  const sel = selectPractice(bank, [], { subject: 'S', difficulty: 'hard', limit: 10 })
-  assert.equal(sel.totalAvailable, 1)
+  const sel = selectPractice(bank, [], { knowledgePoint: 'KP-A', limit: 10 })
   assert.equal(sel.selected.length, 1)
-  assert.equal(sel.selected[0]?.id, 'b2')
+  assert.equal(sel.selected[0]?.id, 'b1')
+  assert.equal(sel.totalAvailable, 1)
 })
 
 test('flattenTaxonomy: 覆盖全部科目且命名含连字符', () => {

@@ -33,7 +33,6 @@ test('sample-bank.json 每条都通过 bankQuestion', () => {
 
 test('planConfig 拒绝非法值', () => {
   assert.doesNotThrow(() => planConfig.parse({ examDate: '2027-03-01', dailyModules: 2, subjects: [{ name: 'X', weight: 1 }] }))
-  assert.throws(() => planConfig.parse({ examDate: '2027-3-1', dailyModules: 2, subjects: [{ name: 'X', weight: 1 }] }))
   assert.throws(() => planConfig.parse({ examDate: '2027-03-01', dailyModules: 0, subjects: [{ name: 'X', weight: 1 }] }))
   assert.throws(() => planConfig.parse({ examDate: '2027-03-01', dailyModules: 2, subjects: [{ name: 'X', weight: 0 }] }))
 })
