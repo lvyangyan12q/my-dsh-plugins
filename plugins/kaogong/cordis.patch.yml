@@ -1,0 +1,19 @@
+# kaogong bundle: storage-domain + the Host learning suite.
+- insert:
+    - id: storage
+      name: '@deepseek-ai/dsh-storage'
+
+    - id: storage-json
+      name: '@deepseek-ai/dsh-storage-json'
+      config:
+        root: './.kaogong/storage'
+
+    - id: storage-domain
+      name: '@deepseek-ai/dsh-storage-domain'
+      config:
+        backend: 'json'
+
+    - id: kaogong
+      name: '@deepseek-ai/dsh-tool-kaogong'
+      config:
+        topN: 8

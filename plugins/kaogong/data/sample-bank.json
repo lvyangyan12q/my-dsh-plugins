@@ -1,0 +1,142 @@
+{
+  "questions": [
+    {
+      "id": "b_1",
+      "subject": "行测-判断推理",
+      "knowledgePoint": "图形推理-数量规律",
+      "questionType": "单选",
+      "stem": "从所给四个选项中，选择最合适的一个填入问号处，使图形呈现规律性：题干图形的交点数量依次为 1、2、3、4，问号处应为交点数量为 5 的图形。",
+      "options": [
+        "A. 交点 3 个",
+        "B. 交点 5 个",
+        "C. 交点 4 个",
+        "D. 交点 6 个"
+      ],
+      "correctAnswer": "B",
+      "explanation": "交点数量呈 1、2、3、4 递增，问号处应为 5 个交点，故选 B。",
+      "difficulty": "easy",
+      "source": "模拟卷",
+      "tags": [],
+      "createdAt": "2026-01-10T09:00:00.000Z",
+      "origin": "local",
+      "reviewStatus": "approved",
+      "reviewNotes": "",
+      "reviewedAt": "2026-01-10T09:00:00.000Z"
+    },
+    {
+      "id": "b_2",
+      "subject": "行测-判断推理",
+      "knowledgePoint": "图形推理-数量规律",
+      "questionType": "单选",
+      "stem": "一组图形中封闭区域数量依次为 2、4、6、8，问号处应为封闭区域数量为 10 的图形。",
+      "options": [
+        "A. 封闭区域 8 个",
+        "B. 封闭区域 10 个",
+        "C. 封闭区域 6 个",
+        "D. 封闭区域 12 个"
+      ],
+      "correctAnswer": "B",
+      "explanation": "封闭区域数量等差递增，公差为 2，故问号处为 10，选 B。",
+      "difficulty": "medium",
+      "source": "真题",
+      "tags": [],
+      "createdAt": "2026-01-10T09:00:00.000Z",
+      "origin": "local",
+      "reviewStatus": "approved",
+      "reviewNotes": "",
+      "reviewedAt": "2026-01-10T09:00:00.000Z"
+    },
+    {
+      "id": "b_3",
+      "subject": "行测-资料分析",
+      "knowledgePoint": "增长-增长率",
+      "questionType": "单选",
+      "stem": "2023 年某县 GDP 为 2200 亿元，2022 年为 2000 亿元，则 2023 年同比增长率约为：",
+      "options": [
+        "A. 8%",
+        "B. 9%",
+        "C. 10%",
+        "D. 11%"
+      ],
+      "correctAnswer": "C",
+      "explanation": "(2200-2000)÷2000 = 200÷2000 = 10%，选 C。",
+      "difficulty": "easy",
+      "source": "真题",
+      "tags": [],
+      "createdAt": "2026-01-11T09:00:00.000Z",
+      "origin": "local",
+      "reviewStatus": "approved",
+      "reviewNotes": "",
+      "reviewedAt": "2026-01-11T09:00:00.000Z"
+    },
+    {
+      "id": "b_4",
+      "subject": "行测-资料分析",
+      "knowledgePoint": "增长-增长率",
+      "questionType": "单选",
+      "stem": "2022 年某省财政收入 500 亿元，同比增长 20%，则 2021 年财政收入约为：",
+      "options": [
+        "A. 400 亿元",
+        "B. 416.7 亿元",
+        "C. 450 亿元",
+        "D. 480 亿元"
+      ],
+      "correctAnswer": "B",
+      "explanation": "基期量 = 现期量÷(1+增长率) = 500÷1.2 ≈ 416.7 亿元，选 B。",
+      "difficulty": "medium",
+      "source": "模拟卷",
+      "tags": [],
+      "createdAt": "2026-01-11T09:00:00.000Z",
+      "origin": "local",
+      "reviewStatus": "approved",
+      "reviewNotes": "",
+      "reviewedAt": "2026-01-11T09:00:00.000Z"
+    },
+    {
+      "id": "b_5",
+      "subject": "行测-判断推理",
+      "knowledgePoint": "逻辑判断-翻译推理",
+      "questionType": "单选",
+      "stem": "只有年满 18 周岁，才有选举权。小张有选举权，则可以推出：",
+      "options": [
+        "A. 小张年满 18 周岁",
+        "B. 小张可能未满 18 周岁",
+        "C. 小张一定未满 18 周岁",
+        "D. 无法确定"
+      ],
+      "correctAnswer": "A",
+      "explanation": "只有……才……表示必要条件，后推前：有选举权 → 年满 18 周岁，选 A。",
+      "difficulty": "easy",
+      "source": "真题",
+      "tags": [],
+      "createdAt": "2026-01-12T09:00:00.000Z",
+      "origin": "local",
+      "reviewStatus": "approved",
+      "reviewNotes": "",
+      "reviewedAt": "2026-01-12T09:00:00.000Z"
+    },
+    {
+      "id": "b_6",
+      "subject": "行测-言语理解与表达",
+      "knowledgePoint": "片段阅读-主旨概括",
+      "questionType": "单选",
+      "stem": "研究表明，睡眠不足会影响人的注意力与记忆力，进而降低学习与工作效率。这段文字意在强调：",
+      "options": [
+        "A. 睡眠不足的危害",
+        "B. 如何改善睡眠",
+        "C. 注意力与记忆力的关系",
+        "D. 学习与工作效率的重要性"
+      ],
+      "correctAnswer": "A",
+      "explanation": "文段围绕睡眠不足的负面影响展开，主旨是强调其危害，选 A。",
+      "difficulty": "easy",
+      "source": "模拟卷",
+      "tags": [],
+      "createdAt": "2026-01-12T09:00:00.000Z",
+      "origin": "local",
+      "reviewStatus": "approved",
+      "reviewNotes": "",
+      "reviewedAt": "2026-01-12T09:00:00.000Z"
+    }
+  ]
+}

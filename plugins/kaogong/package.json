@@ -1,0 +1,60 @@
+{
+  "name": "@deepseek-ai/dsh-tool-kaogong",
+  "description": "武汉公务员考试学习套件：错题本（归纳问题点/总结）+ 倒排学习计划与进度",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "lib/**/*.map",
+    "cordis.patch.yml",
+    "src",
+    "roles",
+    "data",
+    "scripts",
+    "tests",
+    "README.md",
+    "tsconfig.json",
+    "tsdown.config.ts",
+    "tsdown.host.config.ts",
+    "package.json"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": ["@deepseek-ai/dsh-client-ui-sidebar"]
+    }
+  },
+  "scripts": {
+    "build": "pnpm run build:host && pnpm run build:client",
+    "build:host": "tsdown -c tsdown.host.config.ts",
+    "build:client": "tsdown -c tsdown.config.ts",
+    "prepare": "pnpm run build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "tsdown": "^0.22.2"
+  }
+}
