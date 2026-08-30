@@ -64,7 +64,18 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
   })
-  const value = await response.json() as T & { error?: string }
+  const raw = await response.text()
+  let value: (T & { error?: string }) | undefined
+  try {
+    value = JSON.parse(raw) as T & { error?: string }
+  } catch {
+    if (!response.ok) {
+      throw new Error(response.status === 404
+        ? '练习服务尚未加载，请关闭旧的 dsh web 后重新启动。'
+        : raw || `请求失败 (${response.status})`)
+    }
+    throw new Error('服务返回了无法识别的数据')
+  }
   if (!response.ok) throw new Error(value.error || `请求失败 (${response.status})`)
   return value
 }
