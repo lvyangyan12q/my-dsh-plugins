@@ -130,6 +130,61 @@ function allKnowledgeEntries(entries: KvTable<string, KnowledgeEntryRecord>): Kn
   return out
 }
 
+type PracticeSubmission = { id: string; answer: string }
+
+/** Grade one practice set and persist its results to the wrong-answer notebook. */
+async function gradePractice(
+  bankQuestions: KvTable<string, BankQuestionRecord>,
+  notebookQuestions: KvTable<string, QuestionRecord>,
+  answers: readonly PracticeSubmission[],
+) {
+  const submittedIds = new Set<string>()
+  for (const submission of answers) {
+    if (!submission.id || submittedIds.has(submission.id)) throw new Error(`invalid or duplicate question id: ${submission.id}`)
+    submittedIds.add(submission.id)
+    if (bankQuestions.get(submission.id) === undefined) throw new Error(`question not found: ${submission.id}`)
+  }
+
+  const results: { id: string; subject: string; knowledgePoint: string; correct: boolean; correctAnswer: string; explanation: string }[] = []
+  let correctCount = 0
+  const now = new Date().toISOString()
+  for (const submission of answers) {
+    const bank = bankQuestions.get(submission.id)
+    if (bank === undefined) throw new Error(`question not found: ${submission.id}`)
+    const answer = submission.answer.trim()
+    const correct = answer === bank.correctAnswer.trim()
+    if (correct) correctCount++
+
+    const existing = notebookQuestions.get(submission.id)
+    await notebookQuestions.put(submission.id, {
+      subject: bank.subject,
+      knowledgePoint: bank.knowledgePoint,
+      questionType: bank.questionType,
+      stem: bank.stem,
+      options: bank.options,
+      correctAnswer: bank.correctAnswer,
+      userAnswer: answer,
+      result: correct ? 'correct' : 'wrong',
+      errorReason: '',
+      notes: '',
+      source: bank.source,
+      tags: bank.tags,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    })
+    results.push({
+      id: submission.id,
+      subject: bank.subject,
+      knowledgePoint: bank.knowledgePoint,
+      correct,
+      correctAnswer: bank.correctAnswer,
+      explanation: bank.explanation,
+    })
+  }
+  const totalCount = results.length
+  return { totalCount, correctCount, accuracyRate: totalCount === 0 ? 0 : correctCount / totalCount, results }
+}
+
 /**
  * Open the notebook + progress domains and register every tool.
  * @param ctx - registrant context carrying the tool registry.
@@ -235,6 +290,77 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       }
     },
   }), 'kaogong.planDoneRoute')
+
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: '/api/kaogong/practice/start',
+    handler: async (req, res) => {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'method not allowed' })
+        return
+      }
+      try {
+        const body = await readJson(req)
+        const subject = typeof body.subject === 'string' ? body.subject.trim() : ''
+        const knowledgePoint = typeof body.knowledgePoint === 'string' ? body.knowledgePoint.trim() : ''
+        const requestedLimit = typeof body.limit === 'number' ? body.limit : 5
+        const limit = Math.min(10, Math.max(1, Math.floor(requestedLimit)))
+        const bank = allBankQuestions(bankQuestions)
+        const notebook = allQuestions(questions)
+        const requested = selectPractice(bank, notebook, {
+          limit,
+          ...(subject ? { subject } : {}),
+          ...(knowledgePoint ? { knowledgePoint } : {}),
+        })
+        const fallback = requested.selected.length === 0
+          ? selectPractice(bank, notebook, { limit, ...(subject ? { subject } : {}) })
+          : requested
+        const selection = fallback.selected.length === 0
+          ? selectPractice(bank, notebook, { limit })
+          : fallback
+        sendJson(res, 200, {
+          reason: selection.reason,
+          totalAvailable: selection.totalAvailable,
+          returned: selection.selected.length,
+          targets: selection.targets,
+          questions: selection.selected.map(question => ({
+            id: question.id,
+            subject: question.subject,
+            knowledgePoint: question.knowledgePoint,
+            stem: question.stem,
+            options: question.options,
+            difficulty: question.difficulty,
+          })),
+        })
+      } catch (error) {
+        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
+      }
+    },
+  }), 'kaogong.practiceStartRoute')
+
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: '/api/kaogong/practice/submit',
+    handler: async (req, res) => {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'method not allowed' })
+        return
+      }
+      try {
+        const body = await readJson(req)
+        if (!Array.isArray(body.answers)) throw new Error('answers must be an array')
+        const answers = body.answers.map((value): PracticeSubmission => {
+          if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid answer')
+          const item = value as Record<string, unknown>
+          if (typeof item.id !== 'string' || typeof item.answer !== 'string') throw new Error('invalid answer')
+          return { id: item.id, answer: item.answer }
+        })
+        sendJson(res, 200, await gradePractice(bankQuestions, questions, answers))
+      } catch (error) {
+        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
+      }
+    },
+  }), 'kaogong.practiceSubmitRoute')
 
   registerNotebookTools(ctx, questions, topN)
   registerProgressTools(ctx, planConfig, days, questions, topN)
