@@ -24,6 +24,7 @@
     "lib/**/*.map",
     "cordis.patch.yml",
     "src",
+    "题目_images/verified",
     "roles",
     "data",
     "scripts",
