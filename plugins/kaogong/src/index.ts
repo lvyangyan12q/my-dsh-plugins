@@ -125,6 +125,31 @@ async function readQuestionImage(asset: string): Promise<{ body: Buffer; content
   }
 }
 
+async function serveQuestionImage(
+  req: import('node:http').IncomingMessage,
+  res: import('node:http').ServerResponse,
+  asset: string,
+): Promise<void> {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    sendJson(res, 405, { error: 'method not allowed' })
+    return
+  }
+  try {
+    const image = await readQuestionImage(asset)
+    if (image === undefined) {
+      sendJson(res, 404, { error: 'material image not found' })
+      return
+    }
+    res.writeHead(200, {
+      'content-type': image.contentType,
+      'cache-control': 'private, max-age=86400',
+    })
+    res.end(req.method === 'HEAD' ? undefined : image.body)
+  } catch (error) {
+    sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
+  }
+}
+
 /** Replace guessed page references only when a material image has been manually verified. */
 async function applyVerifiedMaterialImages(bankQuestions: KvTable<string, BankQuestionRecord>): Promise<number> {
   let updated = 0
@@ -286,27 +311,21 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     kind: 'exact',
     path: '/api/kaogong/material-image',
     handler: async (req, res) => {
-      if (req.method !== 'GET' && req.method !== 'HEAD') {
-        sendJson(res, 405, { error: 'method not allowed' })
-        return
-      }
-      try {
-        const asset = new URL(req.url ?? '', 'http://localhost').searchParams.get('asset') ?? ''
-        const image = await readQuestionImage(asset)
-        if (image === undefined) {
-          sendJson(res, 404, { error: 'material image not found' })
-          return
-        }
-        res.writeHead(200, {
-          'content-type': image.contentType,
-          'cache-control': 'private, max-age=86400',
-        })
-        res.end(req.method === 'HEAD' ? undefined : image.body)
-      } catch (error) {
-        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
-      }
+      const asset = new URL(req.url ?? '', 'http://localhost').searchParams.get('asset') ?? ''
+      await serveQuestionImage(req, res, asset)
     },
   }), 'kaogong.materialImageRoute')
+
+  // Older cached clients use the raw relative Markdown image URL instead of the API route.
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'prefix',
+    path: '/%E9%A2%98%E7%9B%AE_images/verified',
+    handler: async (req, res) => {
+      const pathname = decodeURIComponent(new URL(req.url ?? '', 'http://localhost').pathname)
+      const asset = pathname.slice('/题目_images/'.length)
+      await serveQuestionImage(req, res, asset)
+    },
+  }), 'kaogong.verifiedMaterialCompatibilityRoute')
 
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
