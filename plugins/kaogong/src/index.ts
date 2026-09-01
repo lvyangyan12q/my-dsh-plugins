@@ -61,6 +61,10 @@ const VERIFIED_MATERIAL_IMAGES = [{
   marker: '表 2022~2023年上半年某地区社会经济发展主要指标',
   asset: 'verified/资料600-2024-jiangsu-17.png',
   compact: true,
+}, {
+  marker: '2023年4月份，我国社会消费品零售总额34910亿元',
+  asset: 'verified/资料600-2023-hebei-retail-growth.png',
+  compact: false,
 }] as const
 
 /** Map an attempt result to its Chinese label. */
