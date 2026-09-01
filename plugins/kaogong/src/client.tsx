@@ -58,6 +58,15 @@ const errorReasons = ['知识点不会', '概念混淆', '审题不清', '计算
 
 function pct(value: number): string { return `${Math.round(value * 100)}%` }
 
+function materialImageUrl(source: string): string {
+  const normalized = source.replaceAll('\\', '/')
+  const marker = '题目_images/'
+  const index = normalized.indexOf(marker)
+  if (index < 0) return source
+  const asset = normalized.slice(index + marker.length)
+  return `/api/kaogong/material-image?asset=${encodeURIComponent(asset)}`
+}
+
 // 解析 stem 中的 Markdown 图片语法，返回 React 元素数组
 function renderStem(stem: string) {
   const parts: React.ReactNode[] = []
@@ -67,25 +76,31 @@ function renderStem(stem: string) {
   while ((match = regex.exec(stem)) !== null) {
     // 添加图片前的文本
     if (match.index > lastIndex) {
-      parts.push(<span key={`text-${lastIndex}`}>{stem.slice(lastIndex, match.index)}</span>)
+      parts.push(<span key={`text-${lastIndex}`} style={{ whiteSpace: 'pre-wrap' }}>{stem.slice(lastIndex, match.index)}</span>)
     }
     // 添加图片
     const alt = match[1]
-    const src = match[2]
+    const src = materialImageUrl(match[2])
     parts.push(
-      <img
-        key={`img-${match.index}`}
-        src={src}
-        alt={alt}
-        style={{ maxWidth: '100%', height: 'auto', margin: '8px 0', border: '1px solid #e5e7eb', borderRadius: 4 }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-      />
+      <figure key={`img-${match.index}`} style={{ margin: '12px 0' }}>
+        <img
+          src={src}
+          alt={alt}
+          style={{ display: 'block', maxWidth: '100%', height: 'auto', border: '1px solid #e5e7eb', borderRadius: 4 }}
+          onError={(e) => {
+            e.currentTarget.style.display = 'none'
+            const caption = e.currentTarget.nextElementSibling as HTMLElement | null
+            if (caption) caption.style.display = 'block'
+          }}
+        />
+        <figcaption style={{ display: 'none', color: colors.red, fontSize: 12 }}>材料图表加载失败</figcaption>
+      </figure>
     )
     lastIndex = regex.lastIndex
   }
   // 添加剩余文本
   if (lastIndex < stem.length) {
-    parts.push(<span key={`text-${lastIndex}`}>{stem.slice(lastIndex)}</span>)
+    parts.push(<span key={`text-${lastIndex}`} style={{ whiteSpace: 'pre-wrap' }}>{stem.slice(lastIndex)}</span>)
   }
   return parts
 }
@@ -322,7 +337,7 @@ function KaogongDashboard({ wide, ctx }: FooterProps & { ctx: ClientContext }) {
                   {practice.questions.length === 0 && <button type="button" onClick={() => { void openTeacher(practiceItem) }} style={buttonStyle(true)}>让老师出题</button>}
                   {practice.questions.map((question, index) => <article key={question.id} style={{ padding: '14px 0', borderBottom: `1px solid ${colors.line}` }}>
                     <div style={{ color: colors.muted, fontSize: 12 }}>第 {index + 1} 题 · {question.knowledgePoint} · {question.difficulty}</div>
-                    <div style={{ margin: '8px 0', lineHeight: 1.65 }}>{renderStem(question.stem)}</div>
+                    <div style={{ margin: '8px 0', lineHeight: 1.65, overflowWrap: 'anywhere' }}>{renderStem(question.stem)}</div>
                     <div style={{ display: 'grid', gap: 6 }}>{question.options.map(option => <label key={option} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', border: `1px solid ${answers[question.id] === optionValue(option) ? '#93c5fd' : colors.line}`, borderRadius: 6, cursor: 'pointer', background: answers[question.id] === optionValue(option) ? colors.blueSoft : '#fff' }}><input type="radio" name={question.id} checked={answers[question.id] === optionValue(option)} onChange={() => setAnswers(previous => ({ ...previous, [question.id]: optionValue(option) }))} /><span>{option}</span></label>)}</div>
                   </article>)}
                   {practice.questions.length > 0 && <button type="button" onClick={() => { void submitPractice() }} style={{ ...buttonStyle(true), marginTop: 16 }}>提交判分</button>}

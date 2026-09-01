@@ -18,6 +18,9 @@ import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { KvTable, DomainGlobal } from '@deepseek-ai/dsh-storage-domain'
 import { randomUUID } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+import { extname, isAbsolute, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { analyzeQuestions, summarizeQuestions } from './analyze.ts'
 import type { AnalysisResult } from './analyze.ts'
 import { generatePlan, daysToExam, isValidIsoDate } from './schedule.ts'
@@ -46,6 +49,14 @@ export const Config: z<Config> = z.object({
 
 const DEFAULT_TOP_N = 8
 const LIST_LIMIT_DEFAULT = 50
+const QUESTION_IMAGE_ROOT = fileURLToPath(new URL('../题目_images/', import.meta.url))
+const IMAGE_CONTENT_TYPES: Record<string, string> = {
+  '.gif': 'image/gif',
+  '.jpeg': 'image/jpeg',
+  '.jpg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+}
 
 /** Map an attempt result to its Chinese label. */
 function labelResult(result: AttemptResult): string {
@@ -77,6 +88,64 @@ function sendJson(res: import('node:http').ServerResponse, status: number, value
     'cache-control': 'no-store',
   })
   res.end(body)
+}
+
+function isWithinQuestionImageRoot(path: string): boolean {
+  const pathFromRoot = relative(QUESTION_IMAGE_ROOT, path)
+  return pathFromRoot !== '' && !pathFromRoot.startsWith('..') && !isAbsolute(pathFromRoot)
+}
+
+/** Resolve an image asset while accepting both historical flat and current folder paths. */
+function resolveQuestionImage(asset: string): string | undefined {
+  const normalized = asset.replaceAll('\\', '/').replace(/^\/+/, '')
+  if (!normalized || normalized.includes('\0')) return undefined
+
+  const direct = resolve(QUESTION_IMAGE_ROOT, normalized)
+  if (isWithinQuestionImageRoot(direct)) return direct
+  return undefined
+}
+
+async function readQuestionImage(asset: string): Promise<{ body: Buffer; contentType: string } | undefined> {
+  const direct = resolveQuestionImage(asset)
+  const candidates = direct === undefined ? [] : [direct]
+  const legacyMatch = /^([^/]+)_p(\d+)(\.[A-Za-z0-9]+)$/.exec(asset.replaceAll('\\', '/'))
+  if (legacyMatch) {
+    const legacy = resolve(QUESTION_IMAGE_ROOT, legacyMatch[1]!, `p${legacyMatch[2]}${legacyMatch[3]}`)
+    if (isWithinQuestionImageRoot(legacy)) candidates.push(legacy)
+  }
+
+  for (const path of candidates) {
+    try {
+      return { body: await readFile(path), contentType: IMAGE_CONTENT_TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream' }
+    } catch (error) {
+      if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') throw error
+    }
+  }
+  return undefined
+}
+
+function materialStemKey(stem: string): string {
+  return stem.replace(/!\[[^\]]*\]\([^)]+\)\s*/g, '').replace(/\r\n?/g, '\n').trim()
+}
+
+/** Upgrade duplicate material questions that were imported before figure references were added. */
+async function repairMaterialImageReferences(bankQuestions: KvTable<string, BankQuestionRecord>): Promise<number> {
+  const richerStems = new Map<string, string>()
+  for (const [, question] of bankQuestions.entries()) {
+    if (question.subject === '行测-资料分析' && question.stem.includes('![')) {
+      richerStems.set(materialStemKey(question.stem), question.stem)
+    }
+  }
+
+  let repaired = 0
+  for (const [id, question] of bankQuestions.entries()) {
+    if (question.subject !== '行测-资料分析' || question.stem.includes('![')) continue
+    const richerStem = richerStems.get(materialStemKey(question.stem))
+    if (richerStem === undefined || richerStem === question.stem) continue
+    await bankQuestions.put(id, { ...question, stem: richerStem })
+    repaired++
+  }
+  return repaired
 }
 
 /** Read a JSON request body with a conservative size limit. */
@@ -211,6 +280,34 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const days = progress.table('days')
   const bankQuestions = bank.table('questions')
   const knowledgeEntries = knowledge.table('entries')
+
+  await repairMaterialImageReferences(bankQuestions)
+
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: '/api/kaogong/material-image',
+    handler: async (req, res) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        sendJson(res, 405, { error: 'method not allowed' })
+        return
+      }
+      try {
+        const asset = new URL(req.url ?? '', 'http://localhost').searchParams.get('asset') ?? ''
+        const image = await readQuestionImage(asset)
+        if (image === undefined) {
+          sendJson(res, 404, { error: 'material image not found' })
+          return
+        }
+        res.writeHead(200, {
+          'content-type': image.contentType,
+          'cache-control': 'private, max-age=86400',
+        })
+        res.end(req.method === 'HEAD' ? undefined : image.body)
+      } catch (error) {
+        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
+      }
+    },
+  }), 'kaogong.materialImageRoute')
 
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
