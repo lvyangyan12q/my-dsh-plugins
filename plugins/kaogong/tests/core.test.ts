@@ -119,6 +119,13 @@ test('selectPractice: 指定考点与 limit 截断', () => {
   assert.equal(selectPractice(bank, [], { knowledgePoint: 'KP-B', limit: 2 }).selected.length, 0)
 })
 
+test('selectPractice: 连续练习优先排除已见题目', () => {
+  const bank = [bq('b1', 'S', 'KP-A'), bq('b2', 'S', 'KP-A'), bq('b3', 'S', 'KP-A')]
+  const selection = selectPractice(bank, [], { subject: 'S', limit: 10, excludeIds: ['b1', 'b2'] })
+  assert.deepEqual(selection.selected.map(question => question.id), ['b3'])
+  assert.equal(selection.totalAvailable, 1)
+})
+
 test('selectPractice: 只抽取已通过审查（approved）的题', () => {
   const bank = [
     bq('b1', 'S', 'KP-A', 'easy', 'approved'),

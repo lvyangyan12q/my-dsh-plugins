@@ -185,6 +185,14 @@ async function gradePractice(
   return { totalCount, correctCount, accuracyRate: totalCount === 0 ? 0 : correctCount / totalCount, results }
 }
 
+/** Build a module-scoped wrong-answer summary for the dashboard. */
+function summarizeModule(notebookQuestions: KvTable<string, QuestionRecord>, subject: string, topN: number) {
+  return summarizeQuestions(
+    allQuestions(notebookQuestions).filter(question => question.subject === subject),
+    { topN },
+  )
+}
+
 /**
  * Open the notebook + progress domains and register every tool.
  * @param ctx - registrant context carrying the tool registry.
@@ -241,6 +249,17 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
           content: entry.content.slice(0, 180),
           updatedAt: entry.updatedAt,
         }))
+      const bySubject = new Map(analysis.bySubject.map(stat => [stat.subject, stat]))
+      const modules = TAXONOMY.map(entry => {
+        const stat = bySubject.get(entry.subject)
+        return {
+          subject: entry.subject,
+          availableCount: allBankQuestions(bankQuestions).filter(question => question.subject === entry.subject && question.reviewStatus === 'approved').length,
+          practicedCount: stat?.totalCount ?? 0,
+          wrongCount: stat?.wrongCount ?? 0,
+          accuracyRate: stat === undefined || stat.totalCount === 0 ? 0 : 1 - stat.errorRate,
+        }
+      })
       const todayPlan = days.get(today)
       sendJson(res, 200, {
         today,
@@ -261,6 +280,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
           items: todayPlan?.items ?? [],
         },
         weakPoints,
+        modules,
         recentKnowledge,
       })
     },
@@ -303,25 +323,36 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
         const body = await readJson(req)
         const subject = typeof body.subject === 'string' ? body.subject.trim() : ''
         const knowledgePoint = typeof body.knowledgePoint === 'string' ? body.knowledgePoint.trim() : ''
-        const requestedLimit = typeof body.limit === 'number' ? body.limit : 5
-        const limit = Math.min(10, Math.max(1, Math.floor(requestedLimit)))
+        const excludeIds = Array.isArray(body.excludeIds)
+          ? body.excludeIds.map(value => {
+            if (typeof value !== 'string' || !value.trim()) throw new Error('invalid excludeIds')
+            return value
+          })
+          : []
+        if (excludeIds.length > 500) throw new Error('too many excluded questions')
+        const requestedLimit = typeof body.limit === 'number' ? body.limit : 10
+        const limit = Math.min(20, Math.max(1, Math.floor(requestedLimit)))
         const bank = allBankQuestions(bankQuestions)
         const notebook = allQuestions(questions)
-        const requested = selectPractice(bank, notebook, {
-          limit,
-          ...(subject ? { subject } : {}),
-          ...(knowledgePoint ? { knowledgePoint } : {}),
-        })
-        const fallback = requested.selected.length === 0
-          ? selectPractice(bank, notebook, { limit, ...(subject ? { subject } : {}) })
-          : requested
-        const selection = fallback.selected.length === 0
-          ? selectPractice(bank, notebook, { limit })
-          : fallback
+        const optionSets = knowledgePoint
+          ? [{ limit, ...(subject ? { subject } : {}), knowledgePoint, excludeIds }, { limit, ...(subject ? { subject } : {}), excludeIds }]
+          : [{ limit, ...(subject ? { subject } : {}), excludeIds }]
+        const selections = optionSets.map(options => selectPractice(bank, notebook, options))
+        let selection = selections.find(candidate => candidate.selected.length > 0) ?? selections[0]!
+        let cycled = false
+        if (selection.selected.length === 0 && excludeIds.length > 0) {
+          const retrySets = knowledgePoint
+            ? [{ limit, ...(subject ? { subject } : {}), knowledgePoint }, { limit, ...(subject ? { subject } : {}) }]
+            : [{ limit, ...(subject ? { subject } : {}) }]
+          const retried = retrySets.map(options => selectPractice(bank, notebook, options))
+          selection = retried.find(candidate => candidate.selected.length > 0) ?? retried[0]!
+          cycled = selection.selected.length > 0
+        }
         sendJson(res, 200, {
           reason: selection.reason,
           totalAvailable: selection.totalAvailable,
           returned: selection.selected.length,
+          cycled,
           targets: selection.targets,
           questions: selection.selected.map(question => ({
             id: question.id,
@@ -361,6 +392,43 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       }
     },
   }), 'kaogong.practiceSubmitRoute')
+
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: '/api/kaogong/practice/reflection',
+    handler: async (req, res) => {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'method not allowed' })
+        return
+      }
+      try {
+        const body = await readJson(req)
+        const subject = typeof body.subject === 'string' ? body.subject.trim() : ''
+        if (!subject || !Array.isArray(body.entries)) throw new Error('invalid reflection')
+        const updatedIds = new Set<string>()
+        for (const value of body.entries) {
+          if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid reflection entry')
+          const entry = value as Record<string, unknown>
+          if (typeof entry.id !== 'string' || typeof entry.errorReason !== 'string') throw new Error('invalid reflection entry')
+          const errorReason = entry.errorReason.trim()
+          if (!ERROR_REASONS.includes(errorReason as typeof ERROR_REASONS[number])) throw new Error('invalid error reason')
+          if (updatedIds.has(entry.id)) throw new Error('duplicate reflection question')
+          updatedIds.add(entry.id)
+          const existing = questions.get(entry.id)
+          if (existing === undefined || existing.subject !== subject || existing.result !== 'wrong') throw new Error('wrong question not found')
+          await questions.put(entry.id, {
+            ...existing,
+            errorReason,
+            notes: typeof entry.notes === 'string' ? entry.notes.trim() : existing.notes,
+            updatedAt: new Date().toISOString(),
+          })
+        }
+        sendJson(res, 200, { subject, summary: summarizeModule(questions, subject, topN) })
+      } catch (error) {
+        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
+      }
+    },
+  }), 'kaogong.practiceReflectionRoute')
 
   registerNotebookTools(ctx, questions, topN)
   registerProgressTools(ctx, planConfig, days, questions, topN)
@@ -1305,7 +1373,7 @@ function registerBankTools(
       knowledgePoint: { type: 'string', description: '限定考点（专项训练）。' },
       weak: { type: 'boolean', description: 'true 时按错题本薄弱考点抽题（错题巩固）。' },
       difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'], description: '难度过滤。' },
-      limit: { type: 'integer', description: '题目数量，默认 5。' },
+      limit: { type: 'integer', description: '题目数量，默认 10。' },
     },
     output: {
       schema: {
@@ -1352,7 +1420,7 @@ function registerBankTools(
       const bank = allBankQuestions(bankQuestions)
       const notebook = allQuestions(notebookQuestions)
       const selection = selectPractice(bank, notebook, {
-        limit: args.limit && args.limit > 0 ? args.limit : 5,
+        limit: args.limit && args.limit > 0 ? args.limit : 10,
         ...(args.subject ? { subject: args.subject } : {}),
         ...(args.knowledgePoint ? { knowledgePoint: args.knowledgePoint } : {}),
         ...(args.weak ? { weak: true } : {}),

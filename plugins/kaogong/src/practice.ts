@@ -19,6 +19,8 @@ export interface PracticeOptions {
   weak?: boolean
   /** 难度过滤. */
   difficulty?: Difficulty
+  /** 本轮优先排除的题目，用于连续练习避免重复。 */
+  excludeIds?: readonly string[]
   /** 题目数量上限. */
   limit: number
 }
@@ -73,6 +75,11 @@ export function selectPractice(bank: BankQuestion[], notebook: Question[], opts:
 
   if (opts.difficulty) {
     pool = pool.filter(q => q.difficulty === opts.difficulty)
+  }
+
+  if (opts.excludeIds && opts.excludeIds.length > 0) {
+    const excluded = new Set(opts.excludeIds)
+    pool = pool.filter(question => !excluded.has(question.id))
   }
 
   const shuffled = pool.slice()
