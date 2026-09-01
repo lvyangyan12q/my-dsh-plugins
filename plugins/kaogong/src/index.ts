@@ -57,6 +57,10 @@ const IMAGE_CONTENT_TYPES: Record<string, string> = {
   '.png': 'image/png',
   '.webp': 'image/webp',
 }
+const VERIFIED_MATERIAL_IMAGES = [{
+  marker: '表 2022~2023年上半年某地区社会经济发展主要指标',
+  asset: 'verified/资料600-2024-jiangsu-17.png',
+}] as const
 
 /** Map an attempt result to its Chinese label. */
 function labelResult(result: AttemptResult): string {
@@ -98,7 +102,7 @@ function isWithinQuestionImageRoot(path: string): boolean {
 /** Resolve an image asset while accepting both historical flat and current folder paths. */
 function resolveQuestionImage(asset: string): string | undefined {
   const normalized = asset.replaceAll('\\', '/').replace(/^\/+/, '')
-  if (!normalized || normalized.includes('\0')) return undefined
+  if (!normalized.startsWith('verified/') || normalized.includes('\0')) return undefined
 
   const direct = resolve(QUESTION_IMAGE_ROOT, normalized)
   if (isWithinQuestionImageRoot(direct)) return direct
@@ -107,45 +111,32 @@ function resolveQuestionImage(asset: string): string | undefined {
 
 async function readQuestionImage(asset: string): Promise<{ body: Buffer; contentType: string } | undefined> {
   const direct = resolveQuestionImage(asset)
-  const candidates = direct === undefined ? [] : [direct]
-  const legacyMatch = /^([^/]+)_p(\d+)(\.[A-Za-z0-9]+)$/.exec(asset.replaceAll('\\', '/'))
-  if (legacyMatch) {
-    const legacy = resolve(QUESTION_IMAGE_ROOT, legacyMatch[1]!, `p${legacyMatch[2]}${legacyMatch[3]}`)
-    if (isWithinQuestionImageRoot(legacy)) candidates.push(legacy)
+  if (direct === undefined) return undefined
+  try {
+    return { body: await readFile(direct), contentType: IMAGE_CONTENT_TYPES[extname(direct).toLowerCase()] ?? 'application/octet-stream' }
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return undefined
+    throw error
   }
-
-  for (const path of candidates) {
-    try {
-      return { body: await readFile(path), contentType: IMAGE_CONTENT_TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream' }
-    } catch (error) {
-      if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') throw error
-    }
-  }
-  return undefined
 }
 
-function materialStemKey(stem: string): string {
-  return stem.replace(/!\[[^\]]*\]\([^)]+\)\s*/g, '').replace(/\r\n?/g, '\n').trim()
-}
-
-/** Upgrade duplicate material questions that were imported before figure references were added. */
-async function repairMaterialImageReferences(bankQuestions: KvTable<string, BankQuestionRecord>): Promise<number> {
-  const richerStems = new Map<string, string>()
-  for (const [, question] of bankQuestions.entries()) {
-    if (question.subject === '行测-资料分析' && question.stem.includes('![')) {
-      richerStems.set(materialStemKey(question.stem), question.stem)
-    }
-  }
-
-  let repaired = 0
+/** Replace guessed page references only when a material image has been manually verified. */
+async function applyVerifiedMaterialImages(bankQuestions: KvTable<string, BankQuestionRecord>): Promise<number> {
+  let updated = 0
   for (const [id, question] of bankQuestions.entries()) {
-    if (question.subject !== '行测-资料分析' || question.stem.includes('![')) continue
-    const richerStem = richerStems.get(materialStemKey(question.stem))
-    if (richerStem === undefined || richerStem === question.stem) continue
-    await bankQuestions.put(id, { ...question, stem: richerStem })
-    repaired++
+    if (question.subject !== '行测-资料分析') continue
+    const rule = VERIFIED_MATERIAL_IMAGES.find(candidate => question.stem.includes(candidate.marker))
+    if (rule === undefined) continue
+    const reference = `![材料图表](题目_images/${rule.asset})`
+    const imageBlock = /\n!\[材料图表\]\([^)]+\)(?:\n!\[材料图表\]\([^)]+\))*/
+    const stem = imageBlock.test(question.stem)
+      ? question.stem.replace(imageBlock, `\n${reference}`)
+      : question.stem
+    if (stem === question.stem) continue
+    await bankQuestions.put(id, { ...question, stem })
+    updated++
   }
-  return repaired
+  return updated
 }
 
 /** Read a JSON request body with a conservative size limit. */
@@ -281,7 +272,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const bankQuestions = bank.table('questions')
   const knowledgeEntries = knowledge.table('entries')
 
-  await repairMaterialImageReferences(bankQuestions)
+  await applyVerifiedMaterialImages(bankQuestions)
 
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',

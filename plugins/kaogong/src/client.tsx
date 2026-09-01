@@ -58,12 +58,13 @@ const errorReasons = ['知识点不会', '概念混淆', '审题不清', '计算
 
 function pct(value: number): string { return `${Math.round(value * 100)}%` }
 
-function materialImageUrl(source: string): string {
+function materialImageUrl(source: string): string | undefined {
   const normalized = source.replaceAll('\\', '/')
   const marker = '题目_images/'
   const index = normalized.indexOf(marker)
-  if (index < 0) return source
+  if (index < 0) return undefined
   const asset = normalized.slice(index + marker.length)
+  if (!asset.startsWith('verified/')) return undefined
   return `/api/kaogong/material-image?asset=${encodeURIComponent(asset)}`
 }
 
@@ -81,21 +82,23 @@ function renderStem(stem: string) {
     // 添加图片
     const alt = match[1]
     const src = materialImageUrl(match[2])
-    parts.push(
-      <figure key={`img-${match.index}`} style={{ margin: '12px 0' }}>
-        <img
-          src={src}
-          alt={alt}
-          style={{ display: 'block', maxWidth: '100%', height: 'auto', border: '1px solid #e5e7eb', borderRadius: 4 }}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-            const caption = e.currentTarget.nextElementSibling as HTMLElement | null
-            if (caption) caption.style.display = 'block'
-          }}
-        />
-        <figcaption style={{ display: 'none', color: colors.red, fontSize: 12 }}>材料图表加载失败</figcaption>
-      </figure>
-    )
+    if (src) {
+      parts.push(
+        <figure key={`img-${match.index}`} style={{ margin: '12px 0' }}>
+          <img
+            src={src}
+            alt={alt}
+            style={{ display: 'block', maxWidth: '100%', height: 'auto', border: '1px solid #e5e7eb', borderRadius: 4 }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+              const caption = e.currentTarget.nextElementSibling as HTMLElement | null
+              if (caption) caption.style.display = 'block'
+            }}
+          />
+          <figcaption style={{ display: 'none', color: colors.red, fontSize: 12 }}>核验材料图加载失败</figcaption>
+        </figure>
+      )
+    }
     lastIndex = regex.lastIndex
   }
   // 添加剩余文本
