@@ -60,6 +60,7 @@ const IMAGE_CONTENT_TYPES: Record<string, string> = {
 const VERIFIED_MATERIAL_IMAGES = [{
   marker: '表 2022~2023年上半年某地区社会经济发展主要指标',
   asset: 'verified/资料600-2024-jiangsu-17.png',
+  compact: true,
 }] as const
 
 /** Map an attempt result to its Chinese label. */
@@ -129,9 +130,12 @@ async function applyVerifiedMaterialImages(bankQuestions: KvTable<string, BankQu
     if (rule === undefined) continue
     const reference = `![材料图表](题目_images/${rule.asset})`
     const imageBlock = /\n!\[材料图表\]\([^)]+\)(?:\n!\[材料图表\]\([^)]+\))*/
-    const stem = imageBlock.test(question.stem)
-      ? question.stem.replace(imageBlock, `\n${reference}`)
-      : question.stem
+    const questionText = question.stem.slice(question.stem.lastIndexOf('\n') + 1).trim()
+    const stem = rule.compact && questionText
+      ? `【材料】\n${reference}\n${questionText}`
+      : imageBlock.test(question.stem)
+        ? question.stem.replace(imageBlock, `\n${reference}`)
+        : question.stem
     if (stem === question.stem) continue
     await bankQuestions.put(id, { ...question, stem })
     updated++
