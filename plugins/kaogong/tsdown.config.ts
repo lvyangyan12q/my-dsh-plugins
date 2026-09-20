@@ -9,6 +9,7 @@ export default defineConfig({
   sourcemap: true,
   clean: false,
   external: ['react', 'react/jsx-runtime'],
+  noExternal: ['marked', 'dompurify'],
   outputOptions: {
     entryFileNames: 'client.js',
     banner: 'window.__ModuleLoader__.load({ id: "@deepseek-ai/dsh-tool-kaogong", factory: (require) => {',

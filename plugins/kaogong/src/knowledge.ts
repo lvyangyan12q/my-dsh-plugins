@@ -7,6 +7,12 @@
 
 import type { KnowledgeEntry, KnowledgeKind } from './types.ts'
 
+export function knowledgeExcerpt(content: string, keyword = '', limit = 1600): string {
+  const match = keyword ? content.toLowerCase().indexOf(keyword.toLowerCase()) : 0
+  const start = Math.max(0, match - 200)
+  return content.slice(start, start + limit)
+}
+
 /** Retrieval query. */
 export interface KnowledgeQuery {
   /** 科目（精确）. */

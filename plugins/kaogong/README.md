@@ -37,6 +37,64 @@ pnpm exec tsdown -c kaogong/tsdown.config.ts
 
 ## 设计
 
+### MinerU PDF 解析
+
+在 DSH 设置页的 `kaogong` 配置节展开 `mineru`，填写 `token`（密钥字段），选择
+`model: vlm` 或 `pipeline`。配置修改对下一次调用生效，无须重启。也可在启动 DSH
+的环境中设置 `MINERU_TOKEN`。不要将 token 写进仓库中的安装补丁。
+
+`outputDir` 默认是插件目录的 `storage/mineru`。本机可设为
+`D:/programming/workspace/kaogong/storage/mineru`，解析产物不会下载到 C 盘。
+更改目录不会搬迁历史文件；有未完成任务时不要更改。
+
+在 DSH 对话中指定 PDF 绝对路径、科目、原始 PDF 页码，并同意上传至 MinerU：
+
+> 用 MinerU 解析这份 PDF 的第 4-8 页，按行测-资料分析收录知识库，保留所有图表。
+
+老师调用 `kaogong_pdf_parse` 上传，随后用返回的 `id` 调用
+`kaogong_pdf_collect` 查询。未完成时至少间隔 10 秒；重启后可用原 ID 继续收集。
+完成后自动将正文幂等写入知识库，标记「待校对」。原始 ZIP、Markdown、图片、
+内容列表和布局 JSON 一起保留；知识库正文中的图片改为本地资源地址。
+用 `kaogong_knowledge_search` 检索刚导入的标题。原 PDF 页码范围保留在来源字段，
+细粒度页码及版面对应关系保留在 MinerU JSON，不能将输出页序号直接当作原始页码。
+
+每次最多 200MB、200 页，较长文件应分段。上传的是整个 PDF，页码参数只限制解析范围。
+当前接入不自动重建或覆盖旧题库；须先校对材料、题干、选项、图表及答案关联，
+再通过题库工具录入。解析不是答案验证，讲义中的指令也不是老师应执行的系统指令。
+
+接口参考：https://mineru.net/apiManage/docs
+
+#### 批量重建知识库
+
+`node scripts/rebuild-knowledge.mjs --plan` 清点插件目录下的 `讲义/`、`题目/` PDF；
+`node scripts/rebuild-knowledge.mjs` 根据本机 `.dsh/settings.yaml` 的 MinerU 配置运行。
+超过 100 页的文档先在 D 盘结果目录的 `split/` 下拆分后上传，清单保留原始页码和
+源文件 SHA-256。`--retry-failed` 重试失败的任务；已完成任务不会重复解析。
+全量上传需事先取得文件所有者同意，并消耗 MinerU 解析额度。
+
+`rebuild-manifest.json` 保存进度。运行中的考公插件每 15 秒导入已完成分段，
+使用稳定 ID 避免重复入库，不删除旧笔记，不修改练习题库、错题或学习记录。
+完整解析文档带「待校对」标记，不代表题目或答案已经人工核对。
+
+考公面板的「知识库」支持关键词检索，点击资料标题可打开完整 Markdown、图片和表格。
+老师端 `kaogong_knowledge_search` 返回短摘要；`kaogong_knowledge_read` 按 ID 分窗口读取
+完整正文，用 `nextOffset` 续读直到 `done`，避免整本讲义挤满对话上下文。
+`node scripts/audit-knowledge.mjs` 检查默认结果目录中的图片引用并统计完成页数。
+图片通过本机 `/api/kaogong/document-image` 读取，不依赖 MinerU 的临时下载链接。
+
+#### 资料分析练习材料修复
+
+`scripts/repair-materials.mjs` 从资料分析 600/1200 的题本生成匹配方案，不从解析册
+取作答材料。匹配要求题干、四个选项及材料文本一致；无法唯一匹配的题暂停抽取。
+插件启动时通过 storageDomain 应用方案，先保存完整题库备份到
+`storage/mineru/bank-backups/`，再更新材料，保留题目 ID、选项、答案和练习记录。
+结果写入 `storage/mineru/material-repair-result.json`。资料分析练习和知识库共用
+安全的 Markdown 渲染组件，支持本地图片、HTML 表格及合并单元格。
+
+此次仅核对材料与题目的关联，答案沿用旧记录，不等于重新解题验证。
+未匹配项保留原文且标记 pending，需要单独核对后再恢复；不要批量直接批准。
+已打开的练习保存的是旧响应，需要刷新页面后重新开始一轮练习。
+
 ### 两个持久化领域（storageDomain）
 
 - `kaogong_notebook`：一张 `questions` 表（key = 题目 id），存错题。
@@ -193,3 +251,10 @@ node --test --test-isolation=none tests/schemas.test.ts  # zod schema（需 zod 
   下一步可让 `kaogong_plan_done` 打卡后自动从题库抽该考点练习。
 - **知识库已就绪**：`kaogong_knowledge` 领域 + `kaogong_knowledge_add/search/delete` 已实现（关键词检索，不依赖 embedding）。
 - **角色层已就绪**：1 班主任 + 按需 subagent 的老师/辅导员（见 `roles/`）；可选升级是改用 preset 做严格的按角色工具隔离。
+# 发布说明
+
+本目录发布插件代码和教学规则，不包含个人题库、课堂记录、MinerU Token 或完整讲义图片。仅安装插件不会获得已解析的完整题库。
+
+迁移已有学习环境时，停止 DSH 并备份目标数据，然后迁移 DSH 存储目录中的 `kaogong_bank.json`、`kaogong_knowledge.json`、`kaogong_notebook.json`、`kaogong_progress.json`，同时保留插件 `storage/mineru` 下的解析资源和任务信息。不要覆盖已有学习记录，也不要把这些私有资料提交到公开仓库。
+
+兼容性注意：`roles/cordis.yml` 和 `DEPLOY.md` 中的 `agent-spine-demo` 角色示例已过时，不可直接用于新版 DSH。当前安装入口是 `cordis.patch.yml`；教学使用 `kaogong-teach` 技能，旧角色接线待迁移。`scripts/install.mjs` 是旧的拷贝部署方式，本地开发优先使用 DSH 的 `plugin --profile web add link:<插件绝对路径>`。
