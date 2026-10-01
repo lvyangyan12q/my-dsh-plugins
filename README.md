@@ -5,6 +5,7 @@
 ## 当前插件
 
 - [`plugins/kaogong`](plugins/kaogong/)：武汉公务员考试学习套件，包含错题本、倒排学习计划、题库、知识库，以及 Web 学习看板。
+- [`plugins/personal-workbench`](plugins/personal-workbench/)：指定老师会话的原生 Web 渲染验证；真实宿主验收尚未完成，见 [验证记录](docs/teacher-session-proof.md)。
 
 ## 安装 kaogong
 
