@@ -32,9 +32,12 @@ import type { AnalysisResult } from './analyze.ts'
 import { generatePlan, daysToExam, isValidIsoDate } from './schedule.ts'
 import type { DayPlan } from './schedule.ts'
 import { TAXONOMY, ERROR_REASONS, renderTaxonomy } from './taxonomy.ts'
-import { notebookDomainSpec, progressDomainSpec, bankDomainSpec, knowledgeDomainSpec, practiceDomainSpec } from './domain.ts'
+import { notebookDomainSpec, progressDomainSpec, bankDomainSpec, knowledgeDomainSpec, practiceDomainSpec, lessonDomainSpec } from './domain.ts'
 import type { QuestionRecord, PlanConfig, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './domain.ts'
 import { PracticeRounds, PracticeError } from './practice-rounds.ts'
+import { Lessons } from './lessons.ts'
+import { lessonCreate, lessonCommand, lessonLink, lessonSummaryInput, lessonConfirm } from './lesson-schema.ts'
+import type { Lesson } from './lesson-schema.ts'
 import { z as wire } from 'zod'
 import { searchKnowledge, knowledgeExcerpt } from './knowledge.ts'
 import type { Question, AttemptResult, BankQuestion, KnowledgeEntry, BankReviewStatus } from './types.ts'
@@ -281,6 +284,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const bank = await ctx.storageDomain.open(bankDomainSpec)
   const knowledge = await ctx.storageDomain.open(knowledgeDomainSpec)
   const practiceDomain = await ctx.storageDomain.open(practiceDomainSpec)
+  const lessonDomain = await ctx.storageDomain.open(lessonDomainSpec)
 
   const questions = notebook.table('questions')
   const planConfig = progress.global
@@ -288,9 +292,20 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const bankQuestions = bank.table('questions')
   const knowledgeEntries = knowledge.table('entries')
   const practice = new PracticeRounds(practiceDomain.table('rounds'), bankQuestions, questions)
+  let readBinding: (key: Lesson['roleKey']) => ReturnType<import('@deepseek-ai/dsh-personal-workbench').PersonalWorkbenchBindings['read']> = async () => {
+    throw new PracticeError('课堂角色服务不可用；任务和练习仍可使用', 503)
+  }
+  ctx.inject(['personalWorkbenchBindings'], child => {
+    child.effect(() => {
+      readBinding = key => child.personalWorkbenchBindings.read(key)
+      return () => { readBinding = async () => { throw new PracticeError('课堂角色服务不可用', 503) } }
+    }, 'kaogong.lessonBindings')
+  })
+  const lessons = new Lessons(lessonDomain.table('lessons'), knowledgeEntries, practice, key => readBinding(key), lessonDomain.global)
   ctx.effect(() => async () => {
+    await lessons.close()
     await practice.drain()
-    await Promise.all([notebook.close(), progress.close(), bank.close(), knowledge.close(), practiceDomain.close()])
+    await Promise.all([notebook.close(), progress.close(), bank.close(), knowledge.close(), practiceDomain.close(), lessonDomain.close()])
   }, 'kaogong.domainClose')
   await practice.recover()
 
@@ -503,6 +518,37 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   })
 
   registerNotebookTools(ctx, questions, topN, practice)
+  const lessonRoute = (action: string, command: (input: unknown) => Promise<unknown>) => {
+    ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/kaogong/lesson/' + action,
+      handler: async (req, res) => {
+        const rejection = ctx.connection.requestRejection(req)
+        if (rejection !== undefined) { sendJson(res, rejection, { error: 'Authenticated same-origin request required' }); return }
+        if (req.method !== 'POST') { sendJson(res, 405, { error: 'method not allowed' }); return }
+        if (!req.headers['content-type']?.startsWith('application/json')) { sendJson(res, 415, { error: 'JSON required' }); return }
+        try { sendJson(res, 200, await command(await readJson(req))) }
+        catch (error) { sendJson(res, error instanceof PracticeError ? error.status : 400, { error: error instanceof PracticeError ? error.message : '课堂请求无效或保存失败' }) }
+      },
+    }), 'kaogong.lesson.' + action)
+  }
+  lessonRoute('create', input => lessons.create(lessonCreate.parse(input)))
+  lessonRoute('list', input => { wire.object({}).strict().parse(input); return lessons.list() })
+  lessonRoute('read', input => lessons.read(lessonCommand.parse(input).lessonId))
+  lessonRoute('current', input => { wire.object({}).strict().parse(input); return lessons.current() })
+  lessonRoute('select', input => lessons.select(lessonCommand.parse(input).lessonId))
+  lessonRoute('prepare', input => lessons.prepare(lessonCommand.parse(input).lessonId))
+  lessonRoute('link', input => { const args = lessonLink.parse(input); return lessons.link(args.lessonId, args.roundId) })
+  lessonRoute('summary', input => { const args = lessonSummaryInput.parse(input); return lessons.saveSummary(args.lessonId, args.notes) })
+  lessonRoute('confirm', input => { const args = lessonConfirm.parse(input); return lessons.confirm(args.lessonId, args.confirmed) })
+  ctx.tools.register(defineTool({
+    name: 'kaogong_lesson_read', description: '读取持久课堂与最小摘要；不复制会话历史、不修改完成状态。省略 lessonId 返回课堂列表。',
+    parameters: { lessonId: { type: 'string', description: '真实课堂 ID；省略则列出课堂。' } },
+    output: { schema: { type: 'object', additionalProperties: false, properties: { summary: { type: 'string', required: true } } },
+      render: (_args, value) => [{ type: 'text', text: value.summary }] },
+    async execute(args) {
+      return { summary: args.lessonId ? (await lessons.read(wire.string().uuid().parse(args.lessonId))).summary : JSON.stringify(await lessons.list()) }
+    },
+    presentCall: args => ({ card: 'generic', title: '读取课堂记录', kind: 'other', rawInput: args }),
+  }))
   registerProgressTools(ctx, planConfig, days, questions, topN)
   registerBankTools(ctx, bankQuestions, questions, practice)
   registerKnowledgeTools(ctx, knowledgeEntries)
