@@ -8,6 +8,8 @@ Status: implementation candidate; real-host acceptance pending. **Do not check t
 
 Closing withdraws the UI target before committed unmount releases its reference. Pending acquisitions release immediately on close. The generation guard prevents a late metadata/history response from reopening a closed or superseded window. Duplicate opens acquire once. Plugin disposal releases references idempotently. Unavailable associations/history stay explicit errors with Retry; no create/adopt/fork fallback exists. The fixed association is sufficient for this ticket's explicit-session proof, but is not the later general application/role storage model or teacher provisioning workflow.
 
+Archive status is checked separately from existence/history access through the public `ctx.workspaces.list` source. Only `phase: ready` with `state: idle` authorizes acquisition; an initial empty pending set is not trusted. The archive check runs again after history opens. While visible, archive/feed and Session lifecycle subscriptions withdraw the native controls on archive, stale ready/loading, terminal error, removal or history failure. All subscriptions are removed on failure/close/teardown. Initial pending/loading waits are abortable. Explicit Retry preserves the selected Session ID and reacquires it through public `retain`; it cannot reread/adopt a changed association or surrounding Session. Both the owner error and scoped history error expose Retry. Explicit close ends that identity lifetime.
+
 ## Official API Evidence
 
 Inspected checkout: `D:/programming/workspace/deepseek-harness`, commit `639ed015397290b3745d163aafe02ffee4aa3f84`, package version `0.2.0-rc.2`. No tracked files in that checkout were edited.
@@ -17,6 +19,10 @@ Inspected checkout: `D:/programming/workspace/deepseek-harness`, commit `639ed01
 | `docs/subsystems/slots.md:75` | An explicit Provider reference overrides only its subtree; omission inherits surrounding selection. |
 | `packages/client/ui-renderer/src/client/scoped-slots.tsx:503` | The supplied reference resolves through the Session adapter and is installed as subtree binding. |
 | `packages/api/session-controller/src/client/contract/sessions.ts:25` | A reference owns a Client generation without Host Agent ownership; `retain`/`ready`/`release` are public. |
+| `packages/api/workspace-controller/src/client/service.ts:35` | Public `WorkspaceSource.getSnapshot/subscribe` and `IWorkspaces.list` provide the archive feed, with an unsubscribe function. No refresh method is assumed. |
+| `packages/api/workspace-controller/src/client/model.ts:32` | `archivedSessionIds` is registry-global; phase and state are separate. Baseline replacement is ready/idle; reconnect can leave ready/loading stale state. |
+| `packages/api/workspace-controller/src/client/feed.ts:72` | Follow lifecycle invalidates the baseline on carrier loss and exposes terminal failures through the model. |
+| `packages/api/session-controller/src/archived-session-gate.ts` | Host rejects model steps for archived Sessions independently of history opening; `openState: open` alone is not archive authorization. |
 | `packages/client/ui-conversation/src/client/apply.ts:309` | Registers the native `conversation.content` factory and its transcript, composer chain, resident input and input dock children. |
 | `packages/client/ui-conversation/src/client/skeleton/ConversationContent.tsx:21` | Embedded factory contains native Views, input, queued/dock content and pending-interaction composer routing. `hero: false` avoids a blank-session Workspace picker/navigation path. |
 | `packages/client/ui-conversation/src/client/apply.ts:232` | Native Stop resolves the conversation service using the injected Session ID and calls its cancel operation. |
@@ -31,15 +37,41 @@ The same release label can cover source builds with different pre-stable APIs. M
 
 ## Checks
 
-- Plugin ownership suite: 10 tests passed. Covers explicit ID acquisition, duplicate open, committed unmount release, StrictMode effect replay, pending metadata/history close, unavailable history, soft open failure, same-ID reopen and teardown. These tests use controlled lifecycle interfaces and render no substitute chat.
+- Plugin ownership suite: 19 tests passed. Covers explicit ID acquisition, duplicate open, committed unmount release, StrictMode effect replay, pending metadata/history close, unavailable history, soft open failure, same-ID reopen and teardown; plus initial pending/error archive feeds, already archived/history-opening archive races, archive/feed loss while open, post-opening failure/removal, same-ID Retry and observer cleanup. Five regressions failed against the original owner before the fixes. These tests use controlled lifecycle interfaces and render no substitute chat.
 - Plugin public declaration check: passed against the already-built official checkout with `DSH_SOURCE` and `scripts/check-source.mjs`.
 - Host/browser build: passed with tsdown 0.22.2; expected `lib/index.js` and module-loader `lib/client.js` emitted. Expected warnings concern the legacy external option and required browser CJS wrapper.
-- Built client assembly test: passed. Executes the module-loader artifact with real React modules, verifies effect-owned registrations and no implicit acquisition, opens only the configured synthetic teacher, and verifies the full native embedded factory call. It does not execute a Host/model conversation.
+- Built client assembly test: passed. Executes the module-loader artifact with real React modules, verifies effect-owned registrations and no implicit acquisition, opens only the configured synthetic teacher, and verifies the full native embedded factory call. A scoped failed-history render exposes Retry, which reacquires the same ID without another association request. It does not execute a Host/model conversation.
 - Focused upstream checks: 4 files / 76 tests passed: SessionProvider, Stop sequencing, approvals, and user-question composer. The Provider negative cases deliberately log missing-adapter errors while the suite passes. A first sandboxed attempt failed when Vite needed a temporary config file; the narrowly escalated retry passed.
-- npm pack: emitted a five-file archive containing `package.json`, `cordis.patch.yml`, `README.md`, `lib/index.js` and `lib/client.js`. No session fixtures, credentials, Kaogong data or source maps are in the archive. Installation was not performed.
+- npm pack: emitted a five-file archive containing `package.json`, `cordis.patch.yml`, `README.md`, `lib/index.js` and `lib/client.js`. No session fixtures, credentials, Kaogong data or source maps are in the archive. Limited installation results follow.
 
 The upstream tests establish existing framework behavior; they are not an integrated test of this plugin in an installed profile. The plugin assembly test establishes delegation and package loading, not live model behavior.
 
+## Disposable CLI Smoke: 2026-10-01
+
+Read the actual launcher/plugin flags in `apps/cli/src/args.ts`, `plugin.ts`, `profile-boot.ts`, the CLI reference, and Web startup before running the built official `apps/cli/lib/bin.js`. All commands used a fresh working directory and explicit environment with `DSH_HOME`, user/config/cache/temp/state locations under:
+
+`C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/personal-workbench/runtime-verification/ticket02-20261001`
+
+No inherited provider credentials were supplied. Synthetic configuration used `teacherSessionId: synthetic-teacher-ticket02`, disabled telemetry entries, and set Agent Loop agents to an empty list. A Node preload rejected outbound HTTP/fetch and non-loopback socket connections. No prompts or provider calls were sent. Daily profiles, canonical Kaogong and official source were not changed.
+
+The commands below are arguments to the official CLI. `<root>` is the disposable directory above; `<plugin>` is this worktree's `plugins/personal-workbench`. No authenticated browser session was attempted.
+
+| Check | Exact result |
+| --- | --- |
+| `--version` | Exit 0, `0.2.0-rc.2`. |
+| `--profile teacher-proof --from-default-profile web --dump-config` | Exit 0; created only the disposable Web profile. |
+| First installer attempt with `--state-dir` | Exit 1; pnpm rejected the unsupported option. Corrected by using `XDG_STATE_HOME` in the isolated environment, not another CLI flag. |
+| `plugin --profile teacher-proof add <plugin>/deepseek-ai-dsh-personal-workbench-0.1.0.tgz --offline --ignore-scripts --config.auto-install-peers=false --store-dir <root>/store --cache-dir <root>/cache` | Exit 1, `ERR_PNPM_NO_OFFLINE_META`: isolated cache lacked `@deepseek-ai/schemastery` 3.18.4 metadata. No online fallback. Tarball installation did not pass. |
+| Same installer arguments with `<plugin>` instead of the tarball | Exit 0, pnpm 11.7.0; official installer added a local `link:` dependency and personal-workbench bundle to the disposable profile. Local linking passed, not archive installation. |
+| `--profile teacher-proof --patch <root>/smoke.patch.yml --dump-config` | Exit 0; selected rows confirmed the synthetic association and telemetry disables. |
+| `--profile teacher-proof --patch <root>/smoke.patch.yml --no-open --host 127.0.0.1 --port 0` | Host bound loopback port 13680 but warned `1 entry did not activate` and `personal-workbench (@deepseek-ai/dsh-personal-workbench): failed to import`. Import cause was not established. Plugin activation failed; server binding is not acceptance. |
+| Unauthenticated Host-only HTTP probe of the association route | HTTP 401; no authenticated retry. This does not establish route registration or successful plugin activation. |
+| Teardown | Stopped the recorded test child PID. Wrapper reported forced exit code 4294967295; wrapper completed. Verified owned PID absent and loopback port 13680 closed. No owned test service remains. |
+
+Startup emitted an ephemeral authenticated bootstrap URL; it is omitted here and raw startup stdout was discarded rather than retained as evidence. No credentials or private conversation data are committed. The smoke check used the initial implementation artifact; subsequent archive/retry fixes were verified by focused tests, public types and rebuilt artifacts, not by another Host launch.
+
+Browser localhost access previously returned `ERR_BLOCKED_BY_CLIENT`. That UI boundary was not circumvented. Full live UI/model acceptance remains pending, and the Host import failure is an additional unresolved install/runtime gate. No broad CLI/registry changes or network configuration attempts were made.
+
 ## Remaining Acceptance
 
-Run the checklist in the plugin README against a disposable Web profile and the packaged archive. Verify actual teacher history, streamed responses, tool results, approval/question replies, simultaneous main/teacher work with teacher-only Stop, close while running, reopen, browser refresh, Host restart and continuation, missing/archived recovery, hot reload/disable and desktop/narrow Web screenshots. Use synthetic prompts and no private transcripts. Record exact installed revisions. Keep the original ticket unchecked until these tests pass. No runtime profile, canonical Kaogong data or PR was changed by this implementation.
+Resolve packaged installation and Host import in an appropriately isolated environment, then run the checklist in the plugin README. Verify actual teacher history, streamed responses, tool results, approval/question replies, simultaneous main/teacher work with teacher-only Stop, close while running, reopen, browser refresh, Host restart and continuation, missing/archived recovery, hot reload/disable and desktop/narrow Web screenshots. Use synthetic prompts and no private transcripts. Record exact installed revisions. Keep the original ticket unchecked until these tests pass. Only the disposable scratch profile changed; no daily profile, canonical Kaogong data, publishing branch or PR was changed.

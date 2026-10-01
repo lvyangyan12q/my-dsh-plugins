@@ -1,5 +1,6 @@
 import type { ISessions, SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { WorkspaceSource } from '@deepseek-ai/dsh-api-workspace-controller/client'
 
 declare module '@deepseek-ai/dsh-api-session-controller/client' {
   interface SessionReferenceSourceMap { personalWorkbenchTeacher: unknown }
@@ -30,10 +31,13 @@ export class TeacherWindow {
   private generation = 0
   private disposed = false
   private request: AbortController | undefined
+  private selectedId: SessionId | undefined
+  private observers: (() => void)[] = []
 
   constructor(
     private readonly sessions: Pick<ISessions, 'retain'>,
     private readonly association: (signal: AbortSignal) => Promise<SessionId>,
+    private readonly workspaces: WorkspaceSource,
   ) {}
 
   readonly getSnapshot = (): WindowSnapshot => this.snapshot
@@ -52,9 +56,13 @@ export class TeacherWindow {
     let reference: SessionReference | undefined
     let reason: 'association' | 'session' = 'association'
     try {
-      const id = await this.association(request.signal)
+      const id = this.selectedId ?? await this.association(request.signal)
       if (this.disposed || generation !== this.generation) return
+      this.selectedId = id
       reason = 'session'
+      if (!this.archiveReady()) await this.waitForArchive(request.signal)
+      if (this.disposed || generation !== this.generation) return
+      this.checkArchive(id)
       reference = this.sessions.retain(id, { source: 'personalWorkbenchTeacher' })
       this.references.set(reference, 0)
       await reference.ready
@@ -62,9 +70,20 @@ export class TeacherWindow {
         this.release(reference)
         return
       }
-      // An archived/missing Session must never become a writable fake blank conversation.
-      if (reference.binding.session.getSnapshot().openState !== 'open') throw new Error('Session not open')
+      this.checkArchive(id)
+      this.checkSession(reference)
       this.publish({ phase: 'open', reference })
+      const published = this.getSnapshot()
+      if (published.phase === 'open' && published.reference === reference) {
+        const current = reference
+        const invalidated = () => {
+          if (this.snapshot.phase !== 'open' || this.snapshot.reference !== current) return
+          try { this.checkArchive(id); this.checkSession(current) }
+          catch { this.failOpen(current) }
+        }
+        this.observers.push(this.workspaces.subscribe(invalidated), current.binding.session.subscribe(invalidated))
+        invalidated()
+      }
     } catch (_error: unknown) {
       if (reference !== undefined) this.release(reference)
       if (!this.disposed && generation === this.generation) this.publish({ phase: 'error', reason })
@@ -73,11 +92,20 @@ export class TeacherWindow {
     }
   }
 
+  /** Scoped recovery cannot adopt a newly configured or surrounding Session. */
+  readonly retry = async (id: SessionId): Promise<void> => {
+    if (this.disposed || id !== this.selectedId) return
+    if (this.snapshot.phase === 'open') this.failOpen(this.snapshot.reference)
+    if (this.snapshot.phase === 'error') await this.open()
+  }
+
   /** Withdraw the render target first; release after the committed subtree unmounts. */
   readonly close = (): void => {
     ++this.generation
     this.request?.abort()
     this.request = undefined
+    this.selectedId = undefined
+    this.stopObserving()
     this.publish({ phase: 'closed' })
     for (const [reference, mounts] of this.references) {
       if (mounts === 0) this.release(reference)
@@ -109,6 +137,52 @@ export class TeacherWindow {
 
   private release(reference: SessionReference): void {
     if (this.references.delete(reference)) reference.release()
+  }
+
+  private archiveReady(): boolean {
+    const snapshot = this.workspaces.getSnapshot()
+    return snapshot.phase === 'ready' && snapshot.state === 'idle'
+  }
+
+  private checkArchive(id: SessionId): void {
+    if (!this.archiveReady() || this.workspaces.getSnapshot().archivedSessionIds.includes(id)) {
+      throw new Error('Archive baseline unavailable or Session archived')
+    }
+  }
+
+  private checkSession(reference: SessionReference): void {
+    const snapshot = reference.binding.session.getSnapshot()
+    if (snapshot.removed || snapshot.openState !== 'open') throw new Error('Session not accessible')
+  }
+
+  private waitForArchive(signal: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let unsubscribe = () => {}
+      const finish = (error?: Error) => {
+        unsubscribe()
+        signal.removeEventListener('abort', aborted)
+        if (error) reject(error); else resolve()
+      }
+      const aborted = () => finish(new Error('Opening abandoned'))
+      const changed = () => {
+        if (signal.aborted) aborted()
+        else if (this.workspaces.getSnapshot().state === 'error') finish(new Error('Archive baseline failed'))
+        else if (this.archiveReady()) finish()
+      }
+      unsubscribe = this.workspaces.subscribe(changed)
+      signal.addEventListener('abort', aborted, { once: true })
+      changed()
+    })
+  }
+
+  private stopObserving(): void {
+    for (const unsubscribe of this.observers.splice(0)) unsubscribe()
+  }
+
+  private failOpen(reference: SessionReference): void {
+    this.stopObserving()
+    this.publish({ phase: 'error', reason: 'session' })
+    if (this.references.get(reference) === 0) this.release(reference)
   }
 
   private publish(snapshot: WindowSnapshot): void {

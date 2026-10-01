@@ -31,12 +31,16 @@ test('built client registers one explicit provider seat and delegates the entire
   let releases = 0
   const reference = {
     sessionId: 'synthetic-teacher',
-    binding: { session: { getSnapshot: () => ({ openState: 'open' }) } },
+    binding: { session: { getSnapshot: () => ({ openState: 'open', removed: false }), subscribe: () => () => {} } },
     ready: Promise.resolve(), release: () => { releases++ },
   }
   const ctx = {
     effect: execute => { const cleanup = execute(); if (typeof cleanup === 'function') cleanups.push(cleanup); return cleanup },
     sessions: { retain: (id, options) => { retained.push({ id, source: options.source }); return reference } },
+    workspaces: { list: {
+      getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }),
+      subscribe: () => () => {},
+    } },
     locale: { register: () => () => {} },
     slots: {
       inject: (_name, execute) => { const cleanup = execute(); if (typeof cleanup === 'function') cleanups.push(cleanup) },
@@ -63,9 +67,22 @@ test('built client registers one explicit provider seat and delegates the entire
   assert.equal(factory.name, 'conversation.content')
   assert.equal(factory.props.variant, 'embedded')
   assert.equal(factory.props.hero, false)
+  const scoped = native.options.inject('synthetic-teacher')
+  const failure = native.component({
+    useSession: selector => selector({ openState: 'error', removed: false }), t: key => key,
+    renderFactorySlot: () => { assert.fail('failed history must not render writable controls') },
+    ...scoped,
+  })
+  const button = failure.props.children.find(child => child.type === 'button')
+  assert.equal(button.props.children, 'retry')
+  button.props.onClick()
+  await scoped.retry()
+  assert.equal(injected.hooks.teacherWindow.getSnapshot().phase, 'open')
+  assert.equal(fetches, 1, 'retry must not reread or adopt a different association')
+  assert.deepEqual(retained.map(row => row.id), ['synthetic-teacher', 'synthetic-teacher'])
   injected.close()
-  assert.equal(releases, 1)
+  assert.equal(releases, 2)
   for (const cleanup of cleanups.reverse()) cleanup()
-  assert.equal(releases, 1)
+  assert.equal(releases, 2)
   assert.equal(declarations.length, 3)
 })
