@@ -36,3 +36,9 @@ const consumerConfig = resolve(root, 'lib/typecheck/consumer.json')
 writeFileSync(consumerConfig, JSON.stringify({ extends: './tsconfig.json', compilerOptions: { rootDir: '../..', noEmit: true, emitDeclarationOnly: false, paths }, include: ['../../tests/public-client-consumer.ts'] }, null, 2) + '\n')
 const consumer = spawnSync(process.execPath, [resolve(source, 'node_modules/typescript/bin/tsc'), '-p', consumerConfig], { stdio: 'inherit' })
 process.exitCode = consumer.status ?? 1
+if (consumer.status === 0) {
+  const roleConfig = resolve(root, 'lib/typecheck/roles.json')
+  writeFileSync(roleConfig, JSON.stringify({ extends: './tsconfig.json', compilerOptions: { noEmit: true, emitDeclarationOnly: false, types: ['node'], paths }, include: ['../../src/role-definitions.ts'] }, null, 2) + '\n')
+  const roles = spawnSync(process.execPath, [resolve(source, 'node_modules/typescript/bin/tsc'), '-p', roleConfig], { stdio: 'inherit' })
+  process.exitCode = roles.status ?? 1
+}

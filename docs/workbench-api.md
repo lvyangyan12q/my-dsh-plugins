@@ -1,5 +1,7 @@
 # Workbench Client API
 
+Ticket 07 stabilizes generic per-key role declarations and retained native views. See [role contract and evidence](ticket07-roles-evidence.md) for app-owned presets, subject keys, explicit creation cwd and the native header durability barrier. `personalWorkbenchBindings.registerRole` and Client `personalWorkbenchRoles.ensure` are additive; the registry contract below is unchanged.
+
 Ticket 06 adds the separate optional Host/Client binding typeface in `plugins/personal-workbench/src/role-binding-api.ts`. See [fixed teacher contract and evidence](ticket06-classroom-evidence.md) for `personalWorkbenchBindings`, `personalWorkbenchRoles` and the native `personal-workbench.role-conversation` factory. The base application registry contract below is unchanged.
 
 Ticket 03 code-first implementation, not live accepted. The public type entry is `@deepseek-ai/dsh-personal-workbench/client`; declarations originate in `plugins/personal-workbench/src/workbench-api.ts`. Ticket 04/05 can consume these names without a runtime import.

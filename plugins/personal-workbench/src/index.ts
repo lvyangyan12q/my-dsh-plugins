@@ -3,7 +3,7 @@ import type {} from '@deepseek-ai/dsh-host-webserver'
 import z from '@deepseek-ai/schemastery'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-export type { RoleBindingKey, RoleBinding, PersonalWorkbenchBindings, TeachingEvidence } from './role-binding-api.ts'
+export type { RoleDefinition, RoleBindingKey, RoleBinding, PersonalWorkbenchBindings, TeachingEvidence } from './role-binding-api.ts'
 
 export const name = 'personal-workbench'
 export const inject = ['webServer']
@@ -20,7 +20,7 @@ export function apply(ctx: Context, config: Config): void {
     res.writeHead(503, { 'content-type': 'application/json', 'cache-control': 'no-store' })
     res.end(JSON.stringify({ error: 'Teacher role services unavailable' }))
   } }), 'personal-workbench: optional role route')
-  ctx.inject(['storageDomain', 'sessionController', 'agentPresets', 'skills', 'connection'], child => {
+  ctx.inject(['storageDomain', 'sessionController', 'sessionPersistence', 'agentPresets', 'skills', 'connection'], child => {
     child.effect(async function* () {
       try {
         const { installRoles } = await import('./role-host.ts')

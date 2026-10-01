@@ -1,7 +1,17 @@
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
+import type { WindowSnapshot } from './teacher-window.ts'
 
-/** Structural identity. Ticket 06 supports only kaogong/default/teacher without subject. */
+/** Complete structural identity; absence of subject is a distinct legacy/default key. */
 export interface RoleBindingKey { readonly appId: string; readonly instanceId: string; readonly roleId: string; readonly subject?: string }
+/** App-owned declaration. Registration has no native Session or model side effects. */
+export interface RoleDefinition {
+  readonly key: RoleBindingKey
+  readonly presetId: string
+  readonly creation?: { readonly cwd: string }
+  readonly teaching?: { readonly skillName: string; readonly provider: string }
+}
 /** Durable creation intent survives failures before and after native Session creation. */
 export interface RoleBinding {
   readonly version: 1
@@ -10,9 +20,12 @@ export interface RoleBinding {
   readonly presetId: string
   readonly phase: 'intent' | 'ready'
   readonly previousSessionIds: readonly SessionId[]
+  readonly creation?: { readonly cwd: string }
 }
 /** Host-owned identity operations; none cancel, archive or delete a Session. */
 export interface PersonalWorkbenchBindings {
+  /** Register exactly one key. Duplicate registrations reject; dispose withdraws only its declaration. */
+  registerRole(definition: RoleDefinition): () => void
   /** Read only, never create. @param key - supported binding key. @returns current intent/record or null. */
   read(key: RoleBindingKey): Promise<RoleBinding | null>
   /** User-authorized create/resume. @param key - supported key. @returns persisted ready binding. */
@@ -32,9 +45,18 @@ export interface TeachingEvidence {
 /** Optional Client service; open only reacquires, teaching is an explicit user command. */
 export interface PersonalWorkbenchRoles {
   open(key: RoleBindingKey): Promise<void>
+  /** Explicit user action creates/resumes, never sends a prompt. */
+  ensure(key: RoleBindingKey): Promise<void>
   retry(key: RoleBindingKey, expectedSessionId: SessionId): Promise<void>
   replace(key: RoleBindingKey, expectedSessionId: SessionId): Promise<void>
   teach(key: RoleBindingKey, evidence: TeachingEvidence): Promise<void>
+}
+/** Read-only Client view facts; native drafts remain owned by the native composer. */
+export interface RoleViewState { readonly binding: RoleBinding | null; readonly error: string | null; readonly busy: boolean; readonly window: WindowSnapshot }
+export interface RoleViewInjected {
+  readonly hooks: { readonly roles: HostObservable<ReadonlyMap<string, RoleViewState>> }
+  readonly commands: PersonalWorkbenchRoles
+  readonly mountRole: (key: RoleBindingKey, reference: SessionReference) => () => void
 }
 declare module '@deepseek-ai/cordis' {
   interface Context { personalWorkbenchBindings: PersonalWorkbenchBindings; personalWorkbenchRoles: PersonalWorkbenchRoles }
@@ -42,6 +64,6 @@ declare module '@deepseek-ai/cordis' {
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } }
   interface SlotFactoryMap {
-    'personal-workbench.role-conversation': { scope: 'root'; props: { readonly bindingKey: RoleBindingKey; readonly active: boolean }; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
+    'personal-workbench.role-conversation': { scope: 'root'; props: { readonly bindingKey: RoleBindingKey; readonly active: boolean; readonly label?: string }; inject: RoleViewInjected; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
   }
 }

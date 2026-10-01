@@ -43,6 +43,8 @@ export const inject = ['tools', 'storageDomain', 'webServer']
 
 /** Plugin configuration, validated by the schemastery schema below. */
 export interface Config {
+  /** Explicit absolute location for new role Sessions; persisted before creation. */
+  roleCwd?: string
   /** Number of weak knowledge points to surface in summaries. */
   topN?: number
   mineru?: MineruConfig
@@ -50,6 +52,7 @@ export interface Config {
 
 /** Schemastery schema for {@link Config}. */
 export const Config: z<Config> = z.object({
+  roleCwd: z.string().description('角色课堂新会话的绝对工作目录；留空不创建新会话，已有课堂仍可恢复'),
   topN: z.natural().min(1).default(8),
   mineru: z.object({
     token: z.string().role('secret').description('MinerU API token；仅服务端使用，留空读取 MINERU_TOKEN'),
@@ -304,6 +307,15 @@ function summarizeModule(notebookQuestions: KvTable<string, QuestionRecord>, sub
  * @param config - deployment configuration.
  */
 export async function apply(ctx: Context, config: Config): Promise<void> {
+  ctx.inject(['personalWorkbenchBindings', 'agentPresets'], child => {
+    child.effect(async function* () {
+      try {
+        const { installKaogongRoles } = await import('./role-definitions.ts')
+        const dispose = await installKaogongRoles(child, config.roleCwd)
+        yield dispose
+      } catch (error) { child.logger('kaogong.roles').warn('Role registration unavailable: %s', error) }
+    }, 'kaogong: optional role declarations')
+  })
   let current = () => config
   ctx.inject(['settings'], settingsCtx => {
     settingsCtx.settings.installSection(ctx, 'kaogong', Config, config, {

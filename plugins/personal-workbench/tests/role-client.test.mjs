@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { RoleClient, parseRoleBinding } from '../src/role-client.ts'
+import { RoleClient, RoleClients, parseRoleBinding } from '../src/role-client.ts'
 
 const key = { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }
 const record = id => ({ version: 1, key, sessionId: id, presetId: 'teacher', phase: 'ready', previousSessionIds: [] })
@@ -115,4 +115,26 @@ test('missing route, login response, offline services and malformed JSON never e
     assert.equal(owner.getSnapshot().binding, null)
     owner.dispose(); f.owner.dispose()
   }
+})
+
+test('per-key owners are stable across role/subject switches; read/ensure never send and disposal releases each exact UI hold', async () => {
+  const retained = [], released = [], requests = []
+  const ctx = { workspaces: { list: { getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }), subscribe: () => () => {} } }, sessions: {
+    retain(id) { retained.push(id); return { sessionId: id, ready: Promise.resolve(), binding: { session: { getSnapshot: () => ({ openState: 'open', removed: false }), subscribe: () => () => {} } }, release: () => released.push(id) } },
+    using() { assert.fail('Read/ensure cannot send a native command') },
+  } }
+  const owners = new RoleClients(ctx, async (_url, options) => { const input = JSON.parse(options.body); requests.push(input); return { ok: true, json: async () => ({ binding: { ...record(`${input.key.roleId}-${input.key.subject ?? 'legacy'}`), key: input.key } }) } })
+  const keys = [key, { ...key, subject: 'math' }, { ...key, subject: 'language' }, { ...key, roleId: 'class-advisor' }, { ...key, roleId: 'counselor' }]
+  assert.deepEqual(retained, [])
+  await Promise.all(keys.map(key => owners.open(key)))
+  const original = owners.owner(keys[1])
+  await owners.ensure(keys[1])
+  assert.equal(owners.owner(keys[1]), original)
+  assert.equal(new Set(retained).size, 5)
+  assert.equal(retained.length, 5, 'Switching does not reacquire or release the existing UI reference')
+  assert.deepEqual(released, [])
+  assert.deepEqual(requests.map(value => value.action), ['read', 'read', 'read', 'read', 'read', 'ensure'])
+  owners.dispose()
+  assert.equal(new Set(released).size, 5)
+  assert.equal(released.length, 5)
 })

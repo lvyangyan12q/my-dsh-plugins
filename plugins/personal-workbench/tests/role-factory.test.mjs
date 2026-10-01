@@ -42,7 +42,7 @@ test('actual Cordis/SlotRegistry optional role factory delegates native content 
     const rows = ctx.slots.entries('personal-workbench.role-native')
     assert.equal(rows.length, 1)
     let factory
-    const result = rows[0].component({ renderFactorySlot: (name, props) => { factory = { name, props }; return 'native-boundary' } })
+    const result = rows[0].component({ useSession: selector => selector({}), renderFactorySlot: (name, props) => { factory = { name, props }; return 'native-boundary' } })
     assert.equal(result, 'native-boundary')
     assert.equal(factory.name, 'conversation.content')
     assert.equal(factory.props.variant, 'embedded')

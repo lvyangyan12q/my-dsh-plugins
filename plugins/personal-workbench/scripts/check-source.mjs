@@ -58,6 +58,8 @@ const roles: PersonalWorkbenchRoles = ctx.personalWorkbenchRoles
 const teacher: RoleBindingKey = { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }
 void bindings.read(teacher)
 void bindings.ensure(teacher)
+const withdraw: () => void = bindings.registerRole({ key: { ...teacher, subject: 'math' }, presetId: 'app.teacher.math.v1', creation: { cwd: 'C:/learning' }, teaching: { skillName: 'kaogong-teach', provider: 'app' } })
+void roles.ensure(teacher)
 void roles.open(teacher)
 void roles.teach(teacher, { kind: 'lesson', context: { subject: 'math', title: 'target', limit: 5 } })
 declare const renderer: PropsRenderFactories
@@ -77,7 +79,7 @@ view.close()
 api.cancel()
 // @ts-expect-error Definitions never accept React components.
 definition.component = () => null
-void [dispose, active]
+void [dispose, active, withdraw]
 `)
   await writeFile(resolve(plugin, '.checks/tsconfig.consumer.json'), JSON.stringify({
     extends: './tsconfig.json', include: ['./consumer.ts'],
