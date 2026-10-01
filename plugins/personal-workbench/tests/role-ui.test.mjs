@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { readFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import { runInNewContext } from 'node:vm'
+import { JSDOM } from 'jsdom'
+
+const require = createRequire(import.meta.url)
+const React = require('react')
+
+test('built generic role view reads per-ID official status facts without a fake conversation or implicit command', async () => {
+  const dom = new JSDOM('<div id="root"></div>', { url: 'http://localhost' })
+  const previous = new Map()
+  for (const [name, value] of Object.entries({ window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true })) {
+    previous.set(name, Object.getOwnPropertyDescriptor(globalThis, name))
+    Object.defineProperty(globalThis, name, { configurable: true, writable: true, value })
+  }
+  const entries = [], cleanup = []
+  let exports
+  const fail = () => assert.fail('No native command authorized by status rendering')
+  const ctx = { inject: (services, callback) => { if (services.includes('conversation')) callback(ctx) }, effect: action => { const result = action(); if (typeof result === 'function') cleanup.push(result); return result },
+    reflect: { provide: () => () => {} }, locale: { register: () => () => {} }, sessions: { retain: fail, using: fail }, workspaces: { list: {} },
+    slots: { inject: (_name, callback) => callback(), register: () => () => {}, registerFactory: (options, component) => { entries.push({ options, component }); return () => {} } },
+  }
+  runInNewContext(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'), { console, AbortController, fetch: fail,
+    window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }) })
+  exports.apply(ctx)
+  const entry = entries.find(row => row.options.name === 'personal-workbench.role-conversation')
+  assert.ok(entry.options.inject().hooks.roles, 'Observables travel through the documented inject hooks compartment')
+  const bindingKey = { appId: 'application', instanceId: 'default', roleId: 'teacher', subject: 'math' }
+  const state = { binding: { version: 1, key: bindingKey, sessionId: 'math-id', presetId: 'math', phase: 'ready', previousSessionIds: [] }, busy: false, error: null, window: { phase: 'closed' } }
+  const statuses = new Map([['other-id', { running: true, pendingInteraction: { kind: 'approval' }, completionUnread: true }]])
+  const props = { ...entry.options.inject(), bindingKey, label: 'Math teacher', active: false, useRoles: selector => selector(new Map([[JSON.stringify(['application', 'default', 'teacher', 'math']), state]])), useSessionStatus: selector => selector(statuses), renderSlot: fail }
+  const { createRoot } = require('react-dom/client')
+  const root = createRoot(dom.window.document.getElementById('root'))
+  try {
+    await React.act(async () => root.render(React.createElement(entry.component, props)))
+    assert.doesNotMatch(dom.window.document.body.textContent, /运行中|待处理|未读完成/)
+    statuses.set('math-id', { running: true, pendingInteraction: { kind: 'approval' }, completionUnread: true })
+    await React.act(async () => root.render(React.createElement(entry.component, { ...props })))
+    assert.match(dom.window.document.body.textContent, /运行中/)
+    assert.match(dom.window.document.body.textContent, /待处理：approval/)
+    assert.match(dom.window.document.body.textContent, /未读完成/)
+    assert.match(dom.window.document.body.textContent, /Math teacher/)
+  } finally {
+    await React.act(async () => root.unmount())
+    for (const dispose of cleanup.reverse()) await dispose()
+    dom.window.close()
+    for (const [name, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name] }
+  }
+})

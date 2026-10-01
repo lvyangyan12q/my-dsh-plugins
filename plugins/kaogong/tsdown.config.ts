@@ -9,6 +9,7 @@ export default defineConfig({
   sourcemap: true,
   clean: false,
   external: ['react', 'react/jsx-runtime'],
+  alias: { 'lucide-react': 'lucide-react/dist/esm/lucide-react.js' },
   noExternal: ['marked', 'dompurify'],
   outputOptions: {
     entryFileNames: 'client.js',

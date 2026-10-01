@@ -1,17 +1,13 @@
 import { randomUUID } from 'node:crypto'
+import { isAbsolute } from 'node:path'
 import type { KvTable } from '@deepseek-ai/dsh-storage-domain'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { PersonalWorkbenchBindings, RoleBinding, RoleBindingKey } from './role-binding-api.ts'
+import type { PersonalWorkbenchBindings, RoleBinding, RoleBindingKey, RoleDefinition } from './role-binding-api.ts'
 
 /** One complete structural key, including the absence of a subject. */
 export function bindingKey(key: RoleBindingKey): string { return JSON.stringify([key.appId, key.instanceId, key.roleId, key.subject ?? null]) }
-/** Ticket-local support policy; the stored tuple is extensible for ticket 07. */
-export function assertTeacherKey(key: RoleBindingKey): void {
-  if (key.appId !== 'kaogong' || key.instanceId !== 'default' || key.roleId !== 'teacher' || key.subject !== undefined) throw new Error('Unsupported role binding')
-}
-interface Authority {
-  presetId: string
-  validate(): Promise<void>
+export interface Authority {
+  validate(definition: RoleDefinition): Promise<void>
   validateExisting?(record: RoleBinding): Promise<void>
   create(record: RoleBinding): Promise<SessionId>
 }
@@ -20,10 +16,25 @@ export class RoleBindings implements PersonalWorkbenchBindings {
   private readonly pending = new Map<string, Promise<unknown>>()
   private disposed = false
   private closed = false
+  private readonly definitions = new Map<string, RoleDefinition>()
   constructor(private readonly table: Pick<KvTable<string, RoleBinding>, 'get' | 'put'>, private readonly authority: Authority,
     private readonly allocate: () => SessionId = () => randomUUID() as SessionId) {}
+  registerRole(definition: RoleDefinition): () => void {
+    if (this.disposed) throw new Error('Role bindings unavailable')
+    const key = bindingKey(definition.key)
+    if (!definition.key.appId || !definition.key.instanceId || !definition.key.roleId || !definition.presetId || definition.key.subject === '') throw new Error('Invalid role declaration')
+    if (definition.creation && !isAbsolute(definition.creation.cwd)) throw new Error('Role creation cwd must be absolute')
+    if (this.definitions.has(key)) throw new Error('Role already registered')
+    const owned = Object.freeze({ ...definition, key: Object.freeze({ ...definition.key }), ...(definition.creation ? { creation: Object.freeze({ ...definition.creation }) } : {}), ...(definition.teaching ? { teaching: Object.freeze({ ...definition.teaching }) } : {}) })
+    this.definitions.set(key, owned)
+    return () => { if (this.definitions.get(key) === owned) this.definitions.delete(key) }
+  }
+  definition(key: RoleBindingKey): RoleDefinition {
+    const definition = this.definitions.get(bindingKey(key))
+    if (!definition) throw new Error('Role declaration unavailable')
+    return definition
+  }
   async read(key: RoleBindingKey): Promise<RoleBinding | null> {
-    assertTeacherKey(key)
     if (this.disposed) throw new Error('Role bindings unavailable')
     const row = this.table.get(bindingKey(key))
     if (row && bindingKey(row.key) !== bindingKey(key)) throw new Error('Stored role key mismatch')
@@ -36,8 +47,9 @@ export class RoleBindings implements PersonalWorkbenchBindings {
   replace(key: RoleBindingKey, expectedSessionId: SessionId): Promise<RoleBinding> {
     return this.serial(key, async () => {
       const old = await this.expected(key, expectedSessionId)
-      await this.authority.validate()
-      const next = this.intent(key, [...old.previousSessionIds, old.sessionId])
+      const definition = this.definition(key)
+      await this.authority.validate(definition)
+      const next = this.intent(definition, [...old.previousSessionIds, old.sessionId])
       await this.table.put(bindingKey(key), next)
       return this.finish(key)
     })
@@ -49,16 +61,17 @@ export class RoleBindings implements PersonalWorkbenchBindings {
     if (!row || row.sessionId !== id) throw new Error('Role binding changed; refresh before retry or replacement')
     return row
   }
-  private intent(key: RoleBindingKey, previousSessionIds: readonly SessionId[]): RoleBinding {
-    return { version: 1, key: { ...key }, sessionId: this.allocate(), presetId: this.authority.presetId, phase: 'intent', previousSessionIds }
+  private intent(definition: RoleDefinition, previousSessionIds: readonly SessionId[]): RoleBinding {
+    if (!definition.creation) throw new Error('Explicit role creation cwd required')
+    return { version: 1, key: { ...definition.key }, sessionId: this.allocate(), presetId: definition.presetId, phase: 'intent', previousSessionIds, creation: { ...definition.creation } }
   }
   private async finish(key: RoleBindingKey): Promise<RoleBinding> {
     let record = this.current(key)
-    if (record && record.presetId !== this.authority.presetId) throw new Error('Recorded teacher preset unavailable')
-    await this.authority.validate()
+    const definition = this.definition(key)
+    if (record && record.presetId !== definition.presetId) throw new Error('Recorded role preset unavailable')
+    await this.authority.validate(definition)
     if (record?.phase === 'ready') { await this.authority.validateExisting?.(record); return record }
-    if (!record) { record = this.intent(key, []); await this.table.put(bindingKey(key), record) }
-    if (record.presetId !== this.authority.presetId) throw new Error('Recorded teacher preset unavailable')
+    if (!record) { record = this.intent(definition, []); await this.table.put(bindingKey(key), record) }
     const id = await this.authority.create(record)
     if (id !== record.sessionId) throw new Error('Native Session identity mismatch')
     const ready: RoleBinding = { ...record, phase: 'ready' }
@@ -66,7 +79,7 @@ export class RoleBindings implements PersonalWorkbenchBindings {
     return ready
   }
   private serial(key: RoleBindingKey, operation: () => Promise<RoleBinding>): Promise<RoleBinding> {
-    assertTeacherKey(key)
+    this.definition(key)
     if (this.disposed) return Promise.reject(new Error('Role bindings unavailable'))
     const name = bindingKey(key)
     const prior = this.pending.get(name) ?? Promise.resolve()

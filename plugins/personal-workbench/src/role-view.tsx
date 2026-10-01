@@ -1,50 +1,56 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect } from 'react'
 import { RefreshCw, UserPlus } from 'lucide-react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { PropsRuntime, FactoryComponentPropsOf, PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
-import type { RoleBindingKey } from './role-binding-api.ts'
-import { RoleClient } from './role-client.ts'
+import type { RoleBindingKey, RoleViewState } from './role-binding-api.ts'
+import { RoleClients, roleKey } from './role-client.ts'
 
-function Mounted({ reference, owner, children }: { reference: SessionReference; owner: RoleClient; children: React.ReactNode }) {
-  useEffect(() => owner.teacher.mount(reference), [owner, reference])
+const EMPTY: RoleViewState = { binding: null, error: null, busy: false, window: { phase: 'closed' } }
+function Mounted({ reference, bindingKey, mountRole, children }: { reference: SessionReference; bindingKey: RoleBindingKey; mountRole: FactoryComponentPropsOf<'personal-workbench.role-conversation'>['mountRole']; children: React.ReactNode }) {
+  useEffect(() => mountRole(bindingKey, reference), [mountRole, bindingKey, reference])
   return children
 }
-type RoleViewProps = FactoryComponentPropsOf<'personal-workbench.role-conversation'> & { owner: RoleClient }
-export function RoleConversation({ owner, bindingKey, active, SessionProvider, renderSlot }: RoleViewProps) {
-  const state = useSyncExternalStore(owner.subscribe, owner.getSnapshot)
-  const window = useSyncExternalStore(owner.teacher.subscribe, owner.teacher.getSnapshot)
-  const supported = bindingKey.appId === 'kaogong' && bindingKey.instanceId === 'default' && bindingKey.roleId === 'teacher' && bindingKey.subject === undefined
-  useEffect(() => { if (supported && active && !state.binding && !state.error && !state.busy) void owner.open(bindingKey).catch(() => {}) }, [active, bindingKey, owner, supported])
-  if (!supported) return <p role="alert">当前角色课堂不可用。</p>
-  const retry = () => { const binding = owner.getSnapshot().binding; void (binding ? owner.retry(bindingKey, binding.sessionId) : owner.open(bindingKey)).catch(() => {}) }
-  const replace = () => { const binding = owner.getSnapshot().binding; if (binding && globalThis.confirm('保留原会话并新建老师？')) void owner.replace(bindingKey, binding.sessionId).catch(() => {}) }
-  return <section aria-label="固定老师" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
+
+type RoleViewProps = FactoryComponentPropsOf<'personal-workbench.role-conversation'>
+export function RoleConversation({ bindingKey, active, label, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole }: RoleViewProps) {
+  const state = useRoles(value => value.get(roleKey(bindingKey))) ?? EMPTY
+  const window = state.window
+  const status = useSessionStatus(value => state.binding ? value.get(state.binding.sessionId) : undefined)
+  useEffect(() => { if (active && !state.binding && !state.error && !state.busy) void commands.open(bindingKey).catch(() => {}) }, [active, bindingKey, commands])
+  const retry = () => { const binding = state.binding; void (binding ? commands.retry(bindingKey, binding.sessionId) : commands.open(bindingKey)).catch(() => {}) }
+  const replace = () => { const binding = state.binding; if (binding && globalThis.confirm('保留原会话并新建角色会话？')) void commands.replace(bindingKey, binding.sessionId).catch(() => {}) }
+  return <section aria-label="持续角色会话" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: '1px solid #ddd', fontSize: 12 }}>
-      <strong>固定老师</strong><span style={{ overflowWrap: 'anywhere', flex: 1 }}>{state.binding?.sessionId ?? '尚未创建'}</span>
+      <strong>{label ?? bindingKey.subject ?? bindingKey.roleId}</strong><span style={{ overflowWrap: 'anywhere', flex: 1 }}>{state.binding?.sessionId ?? '尚未创建'}</span>
+      {status?.running && <span role="status">运行中</span>}{status?.pendingInteraction && <span role="status">待处理：{status.pendingInteraction.kind}</span>}{status?.completionUnread && <span role="status">未读完成</span>}
+      {!state.binding && <button title="创建角色会话" aria-label="创建角色会话" disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}><UserPlus size={16} /></button>}
       <button title="同 ID 重试" aria-label="同 ID 重试" disabled={state.busy} onClick={retry}><RefreshCw size={16} /></button>
-      <button title="显式新建老师" aria-label="显式新建老师" disabled={!state.binding || state.busy} onClick={replace}><UserPlus size={16} /></button>
+      <button title="显式新建角色会话" aria-label="显式新建角色会话" disabled={!state.binding || state.busy} onClick={replace}><UserPlus size={16} /></button>
     </header>
-    {state.busy && <p role="status">正在连接老师…</p>}
+    {state.busy && <p role="status">正在连接角色会话…</p>}
     {state.error && <p role="alert">{state.error}</p>}
-    {window.phase === 'error' && <p role="alert">老师会话不可访问。请同 ID 重试或显式新建。</p>}
-    {window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '老师创建尚未完成，请同 ID 重试。' : '选择课堂目标后开始教学。'}</p>}
-    {window.phase === 'open' && <div style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}><Mounted reference={window.reference} owner={owner}><SessionProvider session={window.reference} empty={() => <p role="alert">老师会话不可访问。请同 ID 重试。</p>}>
+    {window.phase === 'error' && <p role="alert">角色会话不可访问。请同 ID 重试或显式新建。</p>}
+    {window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '角色创建尚未完成，请同 ID 重试。' : '尚未创建角色会话。'}</p>}
+    {window.phase === 'open' && <div style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}><Mounted reference={window.reference} bindingKey={bindingKey} mountRole={mountRole}><SessionProvider session={window.reference} empty={() => <p role="alert">角色会话不可访问。请同 ID 重试。</p>}>
       {renderSlot('personal-workbench.role-native', {})}
     </SessionProvider></Mounted></div>}
   </section>
 }
-function RoleNative({ renderFactorySlot }: PropsRuntime<'personal-workbench.role-native'> & PropsRenderFactories) {
-  return renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, { fallback: <p role="alert">原生会话组件不可用。</p> })
+function RoleNative({ renderFactorySlot, useSession }: PropsRuntime<'personal-workbench.role-native'> & PropsRenderFactories) {
+  const failure = useSession(value => value.lastAgentError ?? value.openError?.message ?? value.promptError?.error.message)
+  const content = renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, { fallback: <p role="alert">原生会话组件不可用。</p> })
+  return failure ? <><p role="alert">{failure}</p>{content}</> : content
 }
 /** Optional native surface. Registration does not read metadata or acquire a Session. */
 export function installRoleClient(ctx: Context) {
   ctx.inject(['conversation'], child => {
-    const owner = new RoleClient(child)
+    const owner = new RoleClients(child)
     child.effect(() => () => owner.dispose(), 'personal-workbench: teacher owner')
     child.effect(() => child.reflect.provide('personalWorkbenchRoles', owner), 'personal-workbench: roles service')
-    const View = (props: FactoryComponentPropsOf<'personal-workbench.role-conversation'>) => <RoleConversation {...props} owner={owner} />
-    child.slots.registerFactory({ name: 'personal-workbench.role-conversation', scope: 'root', children: { 'personal-workbench.role-native': { kind: 'single', scope: 'session' } } }, View)
+    child.slots.registerFactory({ name: 'personal-workbench.role-conversation', scope: 'root', children: { 'personal-workbench.role-native': { kind: 'single', scope: 'session' } },
+      inject: () => ({ hooks: { roles: owner }, commands: owner, mountRole: (key, reference) => owner.owner(key).teacher.mount(reference) }),
+    }, RoleConversation)
     child.slots.inject('personal-workbench.role-native', () => child.slots.register({ name: 'personal-workbench.role-native' }, RoleNative))
   })
 }

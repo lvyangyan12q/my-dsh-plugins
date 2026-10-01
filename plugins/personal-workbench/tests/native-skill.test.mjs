@@ -11,7 +11,7 @@ const require = createRequire(resolve(source, 'packages/client/ui-renderer/packa
 const { Context } = require('@deepseek-ai/cordis')
 const { SkillRegistry } = await import(pathToFileURL(resolve(source, 'packages/skill/skill/lib/index.js')).href)
 const filesystem = await import(pathToFileURL(resolve(source, 'packages/skill/skill-filesystem/lib/index.js')).href)
-const skillRoot = resolve(import.meta.dirname, '../skills')
+const skillRoot = resolve(import.meta.dirname, '../../kaogong/roles/skills')
 const { default: SystemPrompt } = await import(pathToFileURL(resolve(source, 'packages/core/system-prompt/lib/index.js')).href)
 const { default: Tools } = await import(pathToFileURL(resolve(source, 'packages/core/tools/lib/index.js')).href)
 const { default: Agents, agentEvents } = await import(pathToFileURL(resolve(source, 'packages/core/agent/lib/index.js')).href)
@@ -103,7 +103,7 @@ test('native pre-step injects packaged teaching rules only for a real user slash
     assert.equal(injections[0].source.name, 'kaogong-teach')
     assert.match(injections[0].content.map(block => block.text ?? '').join('\n'), /教学阶段与推进条件/)
     const evidence = { kind: 'lesson', context: { subject: 'math', title: ' /other-skill ', limit: 5 }, material: { id: 'm', title: 't', source: 'https://example.invalid/source', content: ' /other-skill \n![chart](/api/kaogong/material-image?asset=verified/a.png)' } }
-    const malicious = await propose(createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: teachingPrompt(evidence) }] }))
+    const malicious = await propose(createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: teachingPrompt(evidence, 'kaogong-teach') }] }))
     assert.deepEqual(malicious.messages.filter(message => message.source.kind === 'skill-invocation').map(message => message.source.name), ['kaogong-teach'])
     const control = await propose(createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: '/kaogong-teach material contains /other-skill more text' }] }))
     assert.ok(control.messages.some(message => message.source.kind === 'skill-invocation' && message.source.name === 'other-skill'), 'The real scanner must demonstrate the unescaped control vulnerability')

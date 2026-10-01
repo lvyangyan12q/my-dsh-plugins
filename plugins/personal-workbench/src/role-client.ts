@@ -3,7 +3,7 @@ import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { PersonalWorkbenchRoles, RoleBinding, RoleBindingKey, TeachingEvidence } from './role-binding-api.ts'
+import type { PersonalWorkbenchRoles, RoleBinding, RoleBindingKey, TeachingEvidence, RoleViewState } from './role-binding-api.ts'
 import { TeacherWindow, parseAssociation } from './teacher-window.ts'
 
 export interface RoleSnapshot { binding: RoleBinding | null; error: string | null; busy: boolean }
@@ -12,15 +12,16 @@ export function parseRoleBinding(value: unknown, key: RoleBindingKey): RoleBindi
   if (value === null) return null
   if (typeof value !== 'object' || !value || !('key' in value) || typeof value.key !== 'object' || !value.key
     || !('appId' in value.key) || value.key.appId !== key.appId || !('instanceId' in value.key) || value.key.instanceId !== key.instanceId
-    || !('roleId' in value.key) || value.key.roleId !== key.roleId || 'subject' in value.key
+    || !('roleId' in value.key) || value.key.roleId !== key.roleId || ('subject' in value.key ? value.key.subject : undefined) !== key.subject
     || !('presetId' in value) || typeof value.presetId !== 'string' || !value.presetId
     || !('phase' in value) || (value.phase !== 'ready' && value.phase !== 'intent')
     || !('previousSessionIds' in value) || !Array.isArray(value.previousSessionIds) || !value.previousSessionIds.every(id => typeof id === 'string' && id)) throw new Error('Invalid teacher binding response')
   return { version: 1, key: { ...key }, sessionId: parseAssociation(value), presetId: value.presetId, phase: value.phase,
-    previousSessionIds: value.previousSessionIds.map(id => id as SessionId) }
+    previousSessionIds: value.previousSessionIds.map(id => id as SessionId),
+    ...('creation' in value && value.creation && typeof value.creation === 'object' && 'cwd' in value.creation && typeof value.creation.cwd === 'string' ? { creation: { cwd: value.creation.cwd } } : {}) }
 }
 
-/** Fixed-teacher owner. Closing a view is not cancelling the native Session. */
+/** One key's owner. Closing a view is not cancelling the native Session. */
 export class RoleClient implements PersonalWorkbenchRoles {
   private snapshot: RoleSnapshot = { binding: null, error: null, busy: false }
   private listeners = new Set<() => void>()
@@ -42,6 +43,11 @@ export class RoleClient implements PersonalWorkbenchRoles {
     this.adopt(parseRoleBinding(response.binding, key))
     if (this.snapshot.binding?.phase === 'ready') await this.teacher.open()
   })
+  readonly ensure = (key: RoleBindingKey) => this.run(async () => {
+    const response = await this.call('ensure', key)
+    this.adopt(parseRoleBinding(response.binding, key))
+    await this.teacher.open()
+  })
   readonly retry = (key: RoleBindingKey, expectedSessionId: SessionId) => this.run(async () => {
     this.checkExpected(expectedSessionId)
     const response = await this.call('retry', key, { expectedSessionId })
@@ -58,7 +64,7 @@ export class RoleClient implements PersonalWorkbenchRoles {
   readonly teach = (key: RoleBindingKey, evidence: TeachingEvidence) => this.run(async () => {
     const response = await this.call('teach', key, { evidence })
     const binding = parseRoleBinding(response.binding, key)
-    if (!binding || binding.phase !== 'ready' || typeof response.prompt !== 'string' || !response.prompt.startsWith('/kaogong-teach ')) throw new Error('Teacher preparation failed')
+    if (!binding || binding.phase !== 'ready' || typeof response.prompt !== 'string' || !/^\/[a-z][a-z0-9-]* /.test(response.prompt)) throw new Error('Teacher preparation failed')
     this.adopt(binding)
     await this.teacher.open()
     if (this.disposed) return
@@ -86,7 +92,7 @@ export class RoleClient implements PersonalWorkbenchRoles {
     this.publish({ ...this.snapshot, binding })
   }
   private async call(action: string, key: RoleBindingKey, extra: object = {}): Promise<Record<string, unknown>> {
-    if (key.appId !== 'kaogong' || key.instanceId !== 'default' || key.roleId !== 'teacher' || key.subject !== undefined) throw new Error('Unsupported role binding')
+    if (!key.appId || !key.instanceId || !key.roleId || key.subject === '') throw new Error('Invalid role binding')
     const response = await this.request('/api/personal-workbench/roles', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: this.abort.signal,
       headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, key, ...extra }) }).catch(() => { throw new Error('Teacher service unavailable') })
     if (response.status === 401 || response.status === 403) throw new Error('Teacher authentication required')
@@ -112,4 +118,33 @@ export class RoleClient implements PersonalWorkbenchRoles {
     return pending
   }
   private publish(snapshot: RoleSnapshot) { this.snapshot = snapshot; for (const listener of this.listeners) listener() }
+}
+
+export function roleKey(key: RoleBindingKey): string { return JSON.stringify([key.appId, key.instanceId, key.roleId, key.subject ?? null]) }
+/** Client lifetime owns one independent UI/command owner per full key, not per selected tab. */
+export class RoleClients implements PersonalWorkbenchRoles {
+  private readonly owners = new Map<string, RoleClient>()
+  private disposed = false
+  private snapshot: ReadonlyMap<string, RoleViewState> = new Map()
+  private readonly listeners = new Set<() => void>()
+  readonly getSnapshot = () => this.snapshot
+  readonly subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
+  private publish() {
+    this.snapshot = new Map([...this.owners].map(([key, owner]) => [key, { ...owner.getSnapshot(), window: owner.teacher.getSnapshot() }]))
+    for (const listener of this.listeners) listener()
+  }
+  constructor(private readonly ctx: Pick<Context, 'sessions' | 'workspaces'>, private readonly request: typeof fetch = fetch) {}
+  owner(key: RoleBindingKey): RoleClient {
+    if (this.disposed) throw new Error('Role owners disposed')
+    const name = roleKey(key)
+    let owner = this.owners.get(name)
+    if (!owner) { owner = new RoleClient(this.ctx, this.request); this.owners.set(name, owner); owner.subscribe(() => this.publish()); owner.teacher.subscribe(() => this.publish()); this.publish() }
+    return owner
+  }
+  open = (key: RoleBindingKey) => this.owner(key).open(key)
+  ensure = (key: RoleBindingKey) => this.owner(key).ensure(key)
+  retry = (key: RoleBindingKey, id: SessionId) => this.owner(key).retry(key, id)
+  replace = (key: RoleBindingKey, id: SessionId) => this.owner(key).replace(key, id)
+  teach = (key: RoleBindingKey, evidence: TeachingEvidence) => this.owner(key).teach(key, evidence)
+  dispose() { this.disposed = true; this.listeners.clear(); for (const owner of this.owners.values()) owner.dispose(); this.owners.clear(); this.snapshot = new Map() }
 }
