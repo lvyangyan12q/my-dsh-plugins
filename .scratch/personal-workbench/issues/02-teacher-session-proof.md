@@ -12,3 +12,5 @@
 - [ ] 若缺少公开接口，记录具体证据并阻止依赖任务宣称完成。
 
 Evidence: `docs/teacher-session-proof.md`, commit `1295af1`. Ownership and built-artifact tests, public API checks and builds passed. These do not substitute for actual messages, approvals, scoped Stop and restart recovery. The current browser cannot access the local host (`ERR_BLOCKED_BY_CLIENT`); do not bypass that boundary or mark live checks complete. Tickets 03 onward stay blocked by this gate.
+
+Follow-up: `b263d6b` fixed authoritative archive gating and same-session Retry; 19 ownership tests and the artifact test passed, followed by focused re-review. `538bba1` and `573b149` reproduced the native Host import failure as absent Schemastery at the local link target. With the existing built dependency temporarily provisioned, unchanged-artifact import and built Host startup passed; all test children stopped and the temporary junction was removed. Offline archive installation and source/tsx startup (`FiberState` export mismatch before plugin evaluation) remain pending, independently of the live UI gate. No daily profile or Host/core code was changed.
