@@ -70,7 +70,7 @@ The commands below are arguments to the official CLI. `<root>` is the disposable
 
 Startup emitted an ephemeral authenticated bootstrap URL; it is omitted here and raw startup stdout was discarded rather than retained as evidence. No credentials or private conversation data are committed. The smoke check used the initial implementation artifact; subsequent archive/retry fixes were verified by focused tests, public types and rebuilt artifacts, not by another Host launch.
 
-Browser localhost access previously returned `ERR_BLOCKED_BY_CLIENT`. That UI boundary was not circumvented. Full live UI/model acceptance remains pending. The initial Host import failure was subsequently diagnosed below; archive installation remains unverified. No broad CLI/registry changes or network configuration attempts were made.
+The earlier `ERR_BLOCKED_BY_CLIENT` and authentication observations concerned the in-app browser, not the user's Chrome. The user-selected Chrome tab is `745168888`; correct Chrome tab binding, full browser/open-tabs access and reset/rebinding attempts failed at the control transport with `nodeRepl.fetch request failed`. The user's screenshot shows authenticated DSH. Do not infer a Chrome localhost block or recommend reauthentication or Chrome permission changes. No current live UI gate has passed. The initial Host import failure was subsequently diagnosed below; the original archive attempt remained unverified until the packaged check below.
 
 ## Narrow Import Diagnosis: 2026-10-01
 
@@ -106,4 +106,43 @@ Command from the parent workspace: `node --require ./.scratch/personal-workbench
 
 ## Remaining Acceptance
 
-Verify packaged installation with complete dependencies in an appropriately isolated environment, then run the checklist in the plugin README. The linked Host import cause is established; its provisioned built-CLI startup passed, but source/tsx startup requires an upstream source/build-compatible environment. Verify actual teacher history, streamed responses, tool results, approval/question replies, simultaneous main/teacher work with teacher-only Stop, close while running, reopen, browser refresh, Host restart and continuation, missing/archived recovery, hot reload/disable and desktop/narrow Web screenshots. Use synthetic prompts and no private transcripts. Record exact installed revisions. Keep the original ticket unchecked until these tests pass. Only the disposable scratch profile changed; no daily profile, canonical Kaogong data, publishing branch or PR was changed.
+Packaged installation with complete production dependencies, installed-artifact import and bounded built Host startup now pass as recorded below. Source/tsx startup still requires an upstream source/build-compatible environment. Verify actual teacher history, streamed responses, tool results, approval/question replies, simultaneous main/teacher work with teacher-only Stop, close while running, reopen, browser refresh, Host restart and continuation, missing/archived recovery, hot reload/disable and desktop/narrow Web screenshots. Use synthetic prompts and no private transcripts. Record exact installed revisions. Keep the original ticket unchecked until these tests pass. Only disposable scratch profiles changed; no daily profile, canonical Kaogong data, publishing branch or PR was changed. No Task03 implementation was started.
+
+## Official Packaged Installation: 2026-10-01
+
+Reused clean proof branch `codex/teacher-session-proof` at `573b1493efc93a74632779b990c346a427af7633`. Publishing branch `codex/personal-workbench` was at `f4cc4c7c34146771dc77327d1ede04af054d5bb0`; the parent's disjoint ticket edit was present and was not changed. Actual DSH remained at `639ed015397290b3745d163aafe02ffee4aa3f84`, with its pre-existing untracked local files untouched. Used Node v25.2.0 and official built `D:/programming/workspace/deepseek-harness/apps/cli/lib/bin.js`, never the source launcher.
+
+The reusable check is `plugins/personal-workbench/scripts/check-package-install.mjs`. From the proof worktree, its command is:
+
+```powershell
+node plugins/personal-workbench/scripts/check-package-install.mjs <stage> <root> D:/programming/workspace/deepseek-harness/apps/cli/lib/bin.js D:/programming/nodejs/node_modules/npm/bin/npm-cli.js
+```
+
+Stages are `setup`, `install`, `offline`, `verify`, in that order. Every user/config/cache/temp/state location and the pnpm store is under the explicit new root. Only PATH, SystemRoot and ComSpec are inherited. npm user/global configuration files are distinct empty scratch files. No credential file was read, no provider environment was inherited, and no prompt or model call was made. Registry access uses the public `https://registry.npmjs.org/` with scripts and automatic peer installation disabled, zero fetch retries and a 20-second fetch timeout; installer subprocesses have a 90-second deadline. Registry access succeeded under the normal sandbox, so no network escalation was needed. The offline install and Host run use an outbound-network-denying preload.
+
+The installer arguments after `plugin --profile <profile> add <root>/archives/deepseek-ai-dsh-personal-workbench-0.1.0.tgz` are:
+
+```text
+--ignore-scripts --config.auto-install-peers=false --registry=https://registry.npmjs.org/ --fetch-retries=0 --fetch-timeout=20000 --store-dir <root>/store --cache-dir <root>/cache
+```
+
+The second profile adds `--offline`. Both profile manifests record a `file:...tgz` dependency and the personal-workbench bundle, never `link:`. Production resolution is Schemastery 3.18.4, Cosmokit 1.8.5 and `@standard-schema/spec` 1.1.0. Their actual files resolve inside the disposable profile; no manual junction, vendor path injection or type mapping satisfies this check. pnpm 11.7.0 reports profile-level missing peer warnings with auto-install disabled: Cordis 4.0.4 and Web server 0.2.0-rc.2 are supplied by the inspected official DSH installation anchor for Host boot. This establishes the pinned built-CLI environment, not arbitrary profile/Host compatibility.
+
+Preparation history: root `ticket02-package-20261001-01` stopped at npm configuration initialization because using the same file for user and global npm configuration caused a double-loading error; no install or service ran there. Distinct empty files fixed it. Root `ticket02-package-20261001-02` passed online installation (four downloads), second-profile offline installation (four reused, zero downloads), real import, and built startup. Its first Host teardown exposed a wrapper defect: Windows `taskkill` did not stop the owned child, leaving the wrapper waiting. A narrowly escalated read of only process IDs 3124 and 18200 confirmed 18200 was the verification wrapper's child; `Stop-Process -Id 18200 -Force` completed cleanup, and port 5917 closed. No command lines or credentials were inspected. The corrected wrapper uses direct owned-child termination for Host teardown and reports the PID before observation. Its rerun completed in 3.6 seconds: PID 37040, port 14139, listening true, no inactive/import warning, no denied outbound operation, child exited, port closed. This first teardown defect is not represented as a correctly bounded success.
+
+Final root: `C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/personal-workbench/runtime-verification/ticket02-package-20261001-03`. This fresh home verifies the final README-inclusive candidate archive. The five files are `package.json`, `cordis.patch.yml`, `README.md`, `lib/index.js`, `lib/client.js`; no verification scripts, credentials, fixtures, source maps or Kaogong data are packaged. Size: 8,530 bytes; unpacked: 24,738 bytes. Archive SHA-256: `4c510c6de737657a2ec9791f78132bbf5346584c02bf0c76a3f4113a374f7e30`; npm SHA-1: `edc49ddb6e561fa760acdff3e3be46e2b2eaad59`. npm integrity: `sha512-W4p3zkuDelymhmZnmRH0pQMFqia85leh4JyHOqXXBIjoD1EbC+I9dQ0XxT1thhtwOXcJUEAbTP3ma7GPLQqKjA==`.
+
+| Final candidate check | Exact result |
+| --- | --- |
+| `setup`: npm pack, scripts disabled | Exit 0; five-file archive above. |
+| `install`: official CLI installer, profile `packaged-online` | Exit 0; four packages downloaded/added, pnpm install reported 3 seconds. No timeout or network denial. |
+| `offline`: official CLI installer, independent profile `packaged-offline` | Exit 0; four packages reused/added, zero downloaded, 388 ms reported. Outbound networking denied by preload. |
+| Installed manifest/resolution | `file:...tgz` and bundle registered. Actual installed Host artifact and Schemastery manifest resolve within this new home. Schemastery version 3.18.4. |
+| Installed Host/client bytes | Equal to this candidate's built files. Host SHA-256 `2d16ae209daa5758bbcab71ab95557359b657a76c2e89edc688000f6951e58ce`; client SHA-256 `8264cae890ad34542a66ea384cad79e1559195740dec02efd80da64d496e5b7c`. |
+| `verify`: real installed Host import test | Exit 0; 1 passed, 0 failed; no Host/model boot by that import test. |
+| `verify`: bounded built Host startup | Wrapper exit 0, completed in 3.66 seconds. PID 15816, loopback port 5197, `listening: true`, `inactiveEntryWarning: false`, `personalWorkbenchImportFailure: false`, `deniedOfflineOperation: false`, `childExited: true`, `exitCode: null` after deliberate termination, `portClosed: true`. |
+| Cleanup | Confirmed owned PIDs 18200, 37040 and 15816 absent. No owned test service remains. |
+| Existing ownership regression suite | 19 passed, 0 failed, using the official installed tsx ESM loader. |
+| Existing built client assembly test | 1 passed, 0 failed with its existing `DSH_SOURCE=D:/programming/workspace/deepseek-harness` selector. Initial invocation without that selector failed because this dependency-free proof checkout has no React; no junction or dependency modification was used for the corrected run. |
+
+A deliberately stopped Host is reported as a startup observation, not a natural successful service exit. No authenticated route or teacher conversation was exercised, and no raw Host output/auth URL was saved. The independent Chrome transport failure and source `FiberState` mismatch remain pending; neither was worked around or changed. At final repository recheck, publishing HEAD had advanced through the parent's disjoint browser-evidence correction to `35425954a13deb6c169b4e08d904e27398bbefc9` and was clean; official DSH HEAD and its pre-existing untracked files were unchanged. This evidence does not check Task02 complete, unblock dependent tickets or claim full spec acceptance. Nothing was pushed.
