@@ -48,8 +48,20 @@ if (emitTypes) await writeFile(resolve(plugin, '.checks/tsconfig.types.json'), J
 if (checkConsumer) {
   await writeFile(resolve(plugin, '.checks/consumer.ts'), `import type { Context } from '@deepseek-ai/cordis'
 import type { PersonalWorkbench, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppDefinition, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { RoleBindingKey, PersonalWorkbenchRoles } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { PersonalWorkbenchBindings } from '@deepseek-ai/dsh-personal-workbench'
+import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
 declare const ctx: Context
 const api: PersonalWorkbench = ctx.personalWorkbench
+const bindings: PersonalWorkbenchBindings = ctx.personalWorkbenchBindings
+const roles: PersonalWorkbenchRoles = ctx.personalWorkbenchRoles
+const teacher: RoleBindingKey = { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }
+void bindings.read(teacher)
+void bindings.ensure(teacher)
+void roles.open(teacher)
+void roles.teach(teacher, { kind: 'lesson', context: { subject: 'math', title: 'target', limit: 5 } })
+declare const renderer: PropsRenderFactories
+renderer.renderFactorySlot('personal-workbench.role-conversation', { bindingKey: teacher, active: true })
 const id = 'kaogong' as WorkbenchAppId
 const instance = 'default' as WorkbenchInstanceId
 const definition: WorkbenchAppDefinition = { id, name: 'Kaogong', version: '1', source: 'plugin', icon: 'graduation-cap', pages: [{ id: 'classroom', label: 'Classroom' }], defaultLayout: { width: 800, height: 600, pageId: 'classroom' }, roles: [{ id: 'teacher', name: 'Teacher' }], dependencies: [{ id: 'native-session', available: true }] }

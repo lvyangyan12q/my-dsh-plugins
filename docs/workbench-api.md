@@ -1,5 +1,7 @@
 # Workbench Client API
 
+Ticket 06 adds the separate optional Host/Client binding typeface in `plugins/personal-workbench/src/role-binding-api.ts`. See [fixed teacher contract and evidence](ticket06-classroom-evidence.md) for `personalWorkbenchBindings`, `personalWorkbenchRoles` and the native `personal-workbench.role-conversation` factory. The base application registry contract below is unchanged.
+
 Ticket 03 code-first implementation, not live accepted. The public type entry is `@deepseek-ai/dsh-personal-workbench/client`; declarations originate in `plugins/personal-workbench/src/workbench-api.ts`. Ticket 04/05 can consume these names without a runtime import.
 
 `ctx.personalWorkbench` exposes `registerApp(definition): () => void`, `openApp(appId, instanceId?)`, and `openWorkspace()`. Types: `PersonalWorkbench`, `WorkbenchAppDefinition`, `WorkbenchAppPage`, `WorkbenchAppProps`, `WorkbenchAppOwner`, `WorkbenchAppId`, `WorkbenchInstanceId`, and `WorkbenchIcon`. IDs are branded strings; applications choose stable namespaced app IDs and their own instance IDs. The omitted instance ID is `default`.

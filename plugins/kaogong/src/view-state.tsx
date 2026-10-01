@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type { PersonalWorkbench } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { PersonalWorkbench, PersonalWorkbenchRoles } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { DashboardData, PracticeData, PracticeContext, PracticeResult, ModuleSummary } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'
 
@@ -14,6 +14,7 @@ type ViewValues = {
   'reader.error': string; 'reader.loading': boolean
   integration: { service: PersonalWorkbench } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
+  roles: PersonalWorkbenchRoles | null
 }
 type Cell<T> = { value: T; listeners: Set<() => void>; set: Dispatch<SetStateAction<T>> }
 

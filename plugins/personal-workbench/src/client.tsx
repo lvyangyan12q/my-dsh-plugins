@@ -18,6 +18,8 @@ import { Workbench } from './workbench.ts'
 import { installOptionalBetterSidebar } from './better-sidebar.tsx'
 import { Workspace, WorkspaceLauncher } from './workbench-view.tsx'
 import type { WorkspaceInjected } from './workbench-view.tsx'
+import { installRoleClient } from './role-view.tsx'
+export type { RoleBindingKey, RoleBinding, PersonalWorkbenchRoles, TeachingEvidence } from './role-binding-api.ts'
 
 export type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppPage, WorkbenchAppProps,
   WorkbenchAppOwner, WorkbenchAppId, WorkbenchInstanceId, WorkbenchIcon } from './workbench-api.ts'
@@ -139,4 +141,5 @@ export function apply(ctx: Context): void {
     inject: () => ({ openWorkspace: workbench.openWorkspace }),
   }, WorkspaceLauncher))
   installOptionalBetterSidebar(ctx, workbench)
+  installRoleClient(ctx)
 }

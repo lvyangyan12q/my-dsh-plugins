@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { SidebarFooterActionOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar/client'
+import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
-import { KaogongView } from './kaogong-view.tsx'
+import { KaogongClassroom } from './classroom.tsx'
 import type { KaogongViewProps } from './kaogong-view.tsx'
 import { KaogongStateContext, KaogongViewState, useBusinessState } from './view-state.tsx'
 
@@ -13,7 +14,7 @@ export { KaogongView } from './kaogong-view.tsx'
 export type { KaogongViewProps, KaogongTeachingRequest, PracticeContext, PracticeResult } from './kaogong-view.tsx'
 export { KaogongStateContext, KaogongViewState, useBusinessState } from './view-state.tsx'
 
-type FooterProps = SidebarFooterActionOwnerProps
+type FooterProps = SidebarFooterActionOwnerProps & Partial<PropsRenderFactories>
 
 /** Installed Kaogong pages reuse the existing Host data without migration. */
 export const kaogongApp: WorkbenchAppDefinition = {
@@ -30,21 +31,9 @@ export function KaogongDashboard(props: FooterProps & { ctx: ClientContext; stat
   return <KaogongStateContext.Provider value={props.state ?? local}><DashboardContent {...props} /></KaogongStateContext.Provider>
 }
 
-function DashboardContent({ wide, ctx }: FooterProps & { ctx: ClientContext }) {
+function DashboardContent({ wide, renderFactorySlot }: FooterProps & { ctx: ClientContext }) {
   const [integration] = useBusinessState('integration', null)
   const [open, setOpen] = useBusinessState('open', false)
-  const [teacherHandoff, setTeacherHandoff] = useBusinessState('teacherHandoff', null)
-  const openTeacher = async (prompt: string) => {
-    ctx.uiWorkspace.startSession()
-    setOpen(false)
-    setTeacherHandoff({ prompt, copied: false })
-    try {
-      await navigator.clipboard.writeText(prompt)
-      setTeacherHandoff(current => current?.prompt === prompt ? { prompt, copied: true } : current)
-    } catch {
-      // Keep the prompt available even when clipboard permission is denied.
-    }
-  }
 
   return (
     <>
@@ -62,26 +51,22 @@ function DashboardContent({ wide, ctx }: FooterProps & { ctx: ClientContext }) {
         <span aria-hidden="true" style={{ display: 'grid', placeItems: 'center', width: 20, height: 20, borderRadius: 6, background: colors.blueSoft, color: colors.blue, fontSize: 12, fontWeight: 700 }}>考</span>
         {wide && <span>考公学习</span>}
       </button>
-      {(!open || integration) && teacherHandoff && (
-        <div role="status" style={{ padding: 10, maxWidth: '100%', overflowWrap: 'anywhere', fontSize: 12, color: colors.ink }}>
-          <div>{teacherHandoff.copied ? '教学提示已复制，请在新对话粘贴发送。' : '未能自动复制，请选取下方教学提示。'}</div>
-          {!teacherHandoff.copied && <textarea aria-label="教学提示" readOnly value={teacherHandoff.prompt} onFocus={event => event.currentTarget.select()} rows={4} style={{ width: '100%', boxSizing: 'border-box', marginTop: 8 }} />}
-          <button type="button" onClick={() => { setTeacherHandoff(null) }} style={smallButton}>关闭提示</button>
-        </div>
-      )}
       {!integration && <div hidden={!open} role={open ? 'dialog' : undefined} aria-modal={open ? true : undefined} aria-label="考公学习看板" style={{ position: 'fixed', inset: 0, zIndex: 1000, overflow: 'auto', background: '#f8fafc', color: colors.ink, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <KaogongView active={open} onClose={() => setOpen(false)} onOpenTeacher={openTeacher} />
+        <KaogongClassroom active={open} onClose={() => setOpen(false)} renderFactorySlot={renderFactorySlot} />
       </div>}
     </>
   )
 }
 
 const colors = { ink: '#202124', blue: '#2563eb', blueSoft: '#eff6ff' }
-const smallButton = { height: 28, padding: '0 8px', border: '1px solid #bfdbfe', borderRadius: 6, background: colors.blueSoft, color: colors.blue, cursor: 'pointer', fontSize: 12 }
 export const inject = ['slots', 'uiWorkspace']
 
 export function apply(ctx: ClientContext): void {
   const state = new KaogongViewState()
+  ctx.inject(['personalWorkbenchRoles'], child => {
+    const roles = state.cell('roles', null)
+    child.effect(() => { roles.set(child.personalWorkbenchRoles); return () => roles.set(null) }, 'kaogong: optional teacher service')
+  })
   const Dashboard = (props: FooterProps) => <KaogongDashboard {...props} ctx={ctx} state={state} />
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action',
@@ -91,7 +76,7 @@ export function apply(ctx: ClientContext): void {
   }, Dashboard))
   ctx.inject(['personalWorkbench', 'slots'], child => {
     child.slots.inject('personal-workbench.app', () => {
-      const View = (props: WorkbenchAppProps) => <KaogongStateContext.Provider value={state}><KaogongWorkbenchContent {...props} ctx={ctx} /></KaogongStateContext.Provider>
+      const View = (props: WorkbenchAppProps & PropsRenderFactories) => <KaogongStateContext.Provider value={state}><KaogongWorkbenchContent {...props} ctx={ctx} /></KaogongStateContext.Provider>
       const removeView = child.slots.register({ name: 'personal-workbench.app', key: kaogongApp.id }, View)
       let removeApp: () => void
       try { removeApp = child.personalWorkbench.registerApp(kaogongApp) }
@@ -115,18 +100,9 @@ export function apply(ctx: ClientContext): void {
 }
 
 /** Page adapter under the existing state provider; an explicit teaching callback owns any role acquisition. */
-export function KaogongWorkbenchContent({ instanceId, pageId, active, selectPage, close, ctx, onOpenTeacher }: WorkbenchAppProps & { ctx: ClientContext; onOpenTeacher?: KaogongViewProps['onOpenTeacher'] }) {
+export function KaogongWorkbenchContent({ instanceId, pageId, active, selectPage, close, onOpenTeacher, renderFactorySlot }: WorkbenchAppProps & Partial<PropsRenderFactories> & { ctx: ClientContext; onOpenTeacher?: KaogongViewProps['onOpenTeacher'] }) {
   const [, setOpen] = useBusinessState('open', false)
-  const [, setTeacherHandoff] = useBusinessState('teacherHandoff', null)
   useEffect(() => { if (instanceId === defaultInstance) setOpen(active) }, [active, instanceId, setOpen])
   if (instanceId !== defaultInstance) return <p role="alert">考公当前仅支持默认学习实例。</p>
-  const openTeacher = async (prompt: string) => {
-    ctx.uiWorkspace.startSession()
-    close()
-    setOpen(false)
-    setTeacherHandoff({ prompt, copied: false })
-    try { await navigator.clipboard.writeText(prompt); setTeacherHandoff(current => current?.prompt === prompt ? { prompt, copied: true } : current) }
-    catch (error) { /* The official entry keeps the prompt available when clipboard access fails. */ }
-  }
-  return <KaogongView active={active} pageId={pageId} onSelectPage={selectPage} onClose={close} onOpenTeacher={onOpenTeacher ?? openTeacher} />
+  return <KaogongClassroom active={active} pageId={pageId} onSelectPage={selectPage} onClose={close} onOpenTeacher={onOpenTeacher} renderFactorySlot={renderFactorySlot} />
 }

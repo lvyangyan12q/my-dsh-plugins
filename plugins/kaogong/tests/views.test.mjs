@@ -110,25 +110,25 @@ test('standalone entry stays idle until opened and retains practice and reader a
   assert.equal(calls.filter(call => call.url.includes('knowledge?id=')).length, 1)
 })
 
-test('teaching handoff closes the standalone panel and exposes prompt when clipboard fails', async () => {
+test('missing optional teacher keeps standalone usable with zero main-session or clipboard calls', async () => {
   mockApi()
   let sessions = 0
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw Error('denied') } } })
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { assert.fail('No clipboard handoff') } } })
   render(React.createElement(client.KaogongDashboard, { wide: false, ctx: { uiWorkspace: { startSession() { sessions++ } } } }))
   fireEvent.click(screen.getByRole('button', { name: '打开考公学习看板' }))
   fireEvent.click(await screen.findByRole('button', { name: '讲解' }))
-  await screen.findByRole('textbox', { name: '教学提示' })
-  assert.equal(sessions, 1)
-  assert.equal(screen.queryByRole('dialog'), null)
-  assert.match(screen.getByRole('textbox', { name: '教学提示' }).value, /增长率/)
+  await screen.findByText('固定老师服务不可用；练习和讲义仍可使用。', { selector: 'div' })
+  assert.equal(sessions, 0)
+  assert.ok(screen.getByRole('dialog'))
+  assert.equal(screen.queryByRole('textbox', { name: '教学提示' }), null)
 })
 
-test('failed teaching handoff keeps the standalone panel open with an error', async () => {
+test('missing optional roles does not use the main-session fallback', async () => {
   mockApi()
   render(React.createElement(client.KaogongDashboard, { wide: true, ctx: { uiWorkspace: { startSession() { throw Error('session unavailable') } } } }))
   fireEvent.click(screen.getByRole('button', { name: '打开考公学习看板' }))
   fireEvent.click(await screen.findByRole('button', { name: '讲解' }))
-  await screen.findByText('session unavailable')
+  await screen.findByText('固定老师服务不可用；练习和讲义仍可使用。', { selector: 'div' })
   assert.ok(screen.getByRole('dialog'))
 })
 
@@ -322,6 +322,38 @@ test('ticket 06 teaching callback receives a structured lesson and bypasses main
   await waitFor(() => assert.equal(requests.length, 1))
   assert.deepEqual(requests[0], { kind: 'lesson', context: { subject, title: '增长率', limit: 10, planIndex: 0 } })
   assert.equal('result' in requests[0], false)
+})
+test('fixed teacher adapter shares selected material evidence, excludes draft answers and retains its factory boundary across pages', async () => {
+  mockApi()
+  const state = new client.KaogongViewState()
+  const teaching = [], factories = []
+  let mounts = 0, unmounts = 0
+  function Boundary() { React.useEffect(() => { mounts++; return () => { unmounts++ } }, []); return null }
+  state.cell('roles', null).set({ teach: async (key, evidence) => { teaching.push({ key, evidence }) } })
+  state.cell('reader.entry', null).set({ id: 'actual-material', title: '图文讲义', subject, kind: '讲义', source: '真实来源', content: '![图](/api/kaogong/material-image?asset=verified/chart.png)\n<table><tr><td>20</td></tr></table>' })
+  state.cell('reader.selected', '').set('actual-material')
+  state.cell('answers', {}).set({ 'draft-only': 'A' })
+  const props = { appId: 'kaogong', instanceId: 'default', pageId: 'classroom', active: true, selectPage() {}, close() {}, ctx: {},
+    renderFactorySlot: (name, input) => { factories.push({ name, input }); return React.createElement(Boundary) } }
+  const view = current => React.createElement(client.KaogongStateContext.Provider, { value: state }, React.createElement(client.KaogongWorkbenchContent, current))
+  const mounted = render(view(props))
+  assert.equal(teaching.length, 0, 'Mount must not teach')
+  fireEvent.click(await screen.findByRole('button', { name: '讲解' }))
+  await waitFor(() => assert.equal(teaching.length, 1))
+  assert.deepEqual(teaching[0].key, { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' })
+  assert.equal(teaching[0].evidence.material.source, '真实来源')
+  assert.match(teaching[0].evidence.material.content, /verified\/chart.png/)
+  assert.equal('result' in teaching[0].evidence, false)
+  assert.equal('answers' in teaching[0].evidence, false)
+  mounted.rerender(view({ ...props, pageId: 'practice' }))
+  mounted.rerender(view({ ...props, active: false }))
+  mounted.rerender(view(props))
+  assert.equal(mounts, 1)
+  assert.equal(unmounts, 0)
+  assert.equal(state.cell('answers', {}).value['draft-only'], 'A')
+  assert.ok(factories.every(row => row.name === 'personal-workbench.role-conversation'))
+  mounted.unmount()
+  assert.equal(unmounts, 1)
 })
 
 test('late dashboard and practice responses from retired views cannot overwrite newer shared results', async () => {

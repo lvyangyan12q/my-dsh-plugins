@@ -1,6 +1,9 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import z from '@deepseek-ai/schemastery'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+
+export type { RoleBindingKey, RoleBinding, PersonalWorkbenchBindings, TeachingEvidence } from './role-binding-api.ts'
 
 export const name = 'personal-workbench'
 export const inject = ['webServer']
@@ -11,6 +14,24 @@ export const Config: z<Config> = z.object({ teacherSessionId: z.string().default
 
 /** Register read-only association metadata. Installation makes no session or model calls. */
 export function apply(ctx: Context, config: Config): void {
+  let roleHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/personal-workbench/roles', handler: (req, res) => {
+    if (roleHandler) { void roleHandler(req, res); return }
+    res.writeHead(503, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+    res.end(JSON.stringify({ error: 'Teacher role services unavailable' }))
+  } }), 'personal-workbench: optional role route')
+  ctx.inject(['storageDomain', 'sessionController', 'agentPresets', 'skills', 'connection'], child => {
+    child.effect(async function* () {
+      try {
+        const { installRoles } = await import('./role-host.ts')
+        const owner = await installRoles(child)
+        roleHandler = owner.handle
+        yield async () => { roleHandler = undefined; await owner.dispose() }
+      } catch (error) {
+        child.logger.warn('Teacher role integration unavailable: %s', error instanceof Error ? error.message : 'activation failed')
+      }
+    }, 'personal-workbench: optional role owner')
+  })
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact', path: '/api/personal-workbench/teacher',
     handler: (req, res) => {
