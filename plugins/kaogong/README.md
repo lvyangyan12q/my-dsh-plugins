@@ -37,6 +37,68 @@ pnpm exec tsdown -c kaogong/tsdown.config.ts
 
 ## 设计
 
+### Optional Workbench Integration
+
+Target compatibility is DSH `0.2.0-rc.2` with personal-workbench `0.1.0`. Workbench imports are type-only development dependencies, not runtime peers or required client injections. Genuine Host peer requirements remain pinned to the supported DSH version; installation needs no compatibility exemption. Cordis waits for `personalWorkbench` and the official root keyed `personal-workbench.app` slot, registers the `kaogong` metadata and view together, and disposes both when either dependency disappears. The official `kaogong-dashboard` sidebar action opens the common workbench owner when available and the standalone panel otherwise.
+
+The `default` instance uses the existing Host notebook, progress, bank and knowledge domains and `/api/kaogong/*` endpoints directly. There is no data migration, domain reopening or separate bank. Other instance IDs show an explicit unsupported-instance message. Classroom exposes the existing overview, lesson plan and material reader; practice exposes module exercises; errors exposes weak points and the current scored reflection; materials and plan expose the existing reader and checklist. Teaching remains the explicit main-chat/clipboard handoff; embedded classroom role conversations and Host associations belong to tickets 06/07.
+
+One plugin-owned typed state map retains answers, current questions, seen IDs, results, reflection, search and selected reader content across window/page changes and optional-service disappearance/reappearance. Only one presentation owns the default instance at a time. Active visibility gates dashboard and reader work; hiding a page does not erase its state. New dashboard/practice reads supersede older responses, aborted reader responses cannot update state, and a pending submission keeps its shared guard and result during view transfer. The transient map lasts for the Kaogong plugin lifetime, not a browser refresh or Kaogong hot reload; submitted business records remain Host-owned. Durable draft/reader recovery across refresh is not claimed.
+
+Build with `npm run build`; client declarations are included in the package. For verification against a built official checkout, set `KAOGONG_TEST_RUNTIME` to that checkout and `KAOGONG_WORKBENCH_TYPES` to the built workbench package directory, then run `node scripts/check-client-types.mjs` and `npm run test:artifact`. The script checks strict client declarations and a consumer of both public `/client` type entries without modifying either target package. See [ticket 04 evidence](../../docs/ticket04-kaogong-evidence.md) for verification results and outstanding runtime acceptance.
+
+### Reusable content view (ticket 01)
+
+The client module exports `KaogongView` and its published type `KaogongViewProps`. `onOpenTeacher(prompt, request)` supplies a structured lesson/review action; the workbench page adapter accepts an override that owns role acquisition and navigation. Shared state/provider and final adapter props are documented in [ticket 04 evidence](../../docs/ticket04-kaogong-evidence.md#ticket-06-consumption).
+The view contains the existing dashboard, plan, practice, reflection and knowledge
+reader. It does not register a sidebar entry, open a session or create a fixed
+overlay. The existing `apply()` entry still registers `kaogong-dashboard`; its
+standalone shell owns the fullscreen dialog and teaching clipboard handoff.
+Business endpoints, scoring, storage and visual styles are unchanged.
+
+```tsx
+import { KaogongView } from '@deepseek-ai/dsh-tool-kaogong/client'
+
+<KaogongView
+  active={visible}
+  onClose={closeWindow}
+  onOpenTeacher={openTeachingSession}
+/>
+```
+
+`active` defaults to `true`. Set it to `false` while hiding a mounted view to retain
+answers, round history, results and the selected knowledge document. Dashboard
+refreshes occur on activation; knowledge list polling pauses while inactive.
+Unmounting discards these transient UI values, never persisted learning data.
+`onClose` is optional; omitting it removes the content's close button.
+`onOpenTeacher(prompt)` is required and may return a promise. The shell owns
+session navigation and any prompt delivery. A rejected callback displays the
+existing error and leaves the view available. The standalone shell closes after
+successful session creation, including when clipboard access fails.
+
+Mount one view per default application instance. Reuse that mounted view when
+switching containers; rendering both standalone and embedded copies would create
+two independent React states and subscriptions. Workbench registration, ownership
+coordination and embedded role conversations belong to later tickets. Ticket 01
+adds no workbench dependency, theme change or data migration.
+
+Focused verification from this plugin directory, using the existing shared
+dependency runtime (which must provide `jsdom` and `@testing-library/react`):
+
+```powershell
+node node_modules/tsdown/dist/run.mjs -c tsdown.host.config.ts
+node node_modules/tsdown/dist/run.mjs -c tsdown.config.ts
+$env:KAOGONG_TEST_RUNTIME = 'D:/programming/workspace/deepseek-harness'
+node --test tests/views.test.mjs
+node --test tests/core.test.ts tests/schemas.test.ts tests/mineru.test.ts tests/material-repair.test.ts tests/knowledge-import.test.ts
+```
+
+The view tests execute the built DSH client module against synthetic HTTP fixtures,
+covering embedded practice, answer concealment, material images/tables, scores,
+reflection, cycling, plan updates, close/reopen state, teaching failures and the
+original sidebar entry. They do not copy personal data or claim live DSH session
+integration or browser screenshot verification.
+
 ### MinerU PDF 解析
 
 在 DSH 设置页的 `kaogong` 配置节展开 `mineru`，填写 `token`（密钥字段），选择
@@ -258,3 +320,10 @@ node --test --test-isolation=none tests/schemas.test.ts  # zod schema（需 zod 
 迁移已有学习环境时，停止 DSH 并备份目标数据，然后迁移 DSH 存储目录中的 `kaogong_bank.json`、`kaogong_knowledge.json`、`kaogong_notebook.json`、`kaogong_progress.json`，同时保留插件 `storage/mineru` 下的解析资源和任务信息。不要覆盖已有学习记录，也不要把这些私有资料提交到公开仓库。
 
 兼容性注意：`roles/cordis.yml` 和 `DEPLOY.md` 中的 `agent-spine-demo` 角色示例已过时，不可直接用于新版 DSH。当前安装入口是 `cordis.patch.yml`；教学使用 `kaogong-teach` 技能，旧角色接线待迁移。`scripts/install.mjs` 是旧的拷贝部署方式，本地开发优先使用 DSH 的 `plugin --profile web add link:<插件绝对路径>`。
+## Ticket 08 Practice
+
+Module practice now issues durable rounds, scores their original snapshots on the Host, recovers interrupted notebook projection and restores current learner drafts across browser refresh. Counselor review uses the submitted round and the existing native counselor association. See [ticket 08 evidence](../../docs/ticket08-practice-evidence.md) for endpoints, storage/retry semantics, checks and the outstanding Chrome/native-turn gates. `test:practice` and `test:runtime` run the focused checks with the documented built-runtime environment.
+
+## Ticket 10 Classroom Continuation
+
+The classroom now saves a confirmed objective, material references, a single practice homework task, linked submitted rounds and a learner summary in the additive `kaogong_lessons` domain. Completion requires Host-verified attempts, the requested wrong-question reflections and explicit learner confirmation. It does not change plan checkboxes or infer mastery from accuracy or teacher prose. The selected classroom survives Host restart; optional role absence leaves lessons and practice usable. `kaogong_lesson_read` exposes only the bounded shared evidence summary, not native conversation history. Existing classroom notes can be explicitly referenced without rewriting them or importing their completion claims. See [ticket 10 evidence](../../docs/ticket10-homework-evidence.md) for lifecycle, requests, migration and outstanding release gates.

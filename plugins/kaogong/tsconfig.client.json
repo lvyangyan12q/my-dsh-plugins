@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext",
+    "jsx": "react-jsx", "strict": true, "skipLibCheck": true,
+    "allowImportingTsExtensions": true, "declaration": true, "emitDeclarationOnly": true,
+    "rootDir": "src", "outDir": "lib/types",
+    "lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Disposable"]
+  },
+  "include": ["src/client.tsx"]
+}
