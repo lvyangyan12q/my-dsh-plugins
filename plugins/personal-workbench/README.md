@@ -19,12 +19,15 @@ npm run build
 npm test
 npm run typecheck
 npm run test:artifact
+npm run test:host
 npm pack --ignore-scripts
 ```
 
 `prepare` builds both faces from a source checkout. The npm tarball includes the ready-to-load Host ESM entry, browser module-loader entry, bundle patch and README. It excludes source maps, sessions, fixtures, credentials and Kaogong data. Install the built archive through the official plugin installer; it needs no source build.
 
 Against an already-built official checkout, `DSH_SOURCE=/path/to/deepseek-harness node scripts/check-source.mjs` checks this plugin's types against that checkout's public declarations. Generated check configuration stays in ignored `.checks/`. It never launches or mutates a profile.
+
+`test:host` imports the real built Host entry in a subprocess with no inherited provider environment; it does not boot a Host. Unlike public declaration checks, it requires actual installed runtime dependencies. `HOST_ARTIFACT_URL` can select an installed artifact's file URL. An installer `link:` to a source directory does not supply that directory's dependencies: install them at the link target before expecting a native Node import to work. A profile-level dependency elsewhere or typecheck path mapping cannot satisfy that import.
 
 ## Isolated Runtime Acceptance
 
@@ -39,4 +42,4 @@ Use a disposable Web profile, synthetic prompts and a harmless test workspace. I
 7. Disable/re-enable or hot reload the plugin. Confirm one launcher/window, no stale reference, no implicit prompt, and no changed main selection. Verify desktop/narrow browser layouts and native content with screenshots.
 8. Repeat using the packaged artifact through the standard installer. Record exact Host/client revisions and results before checking ticket 02 or unblocking dependent tickets.
 
-Only a disposable scratch profile was installed for a limited CLI smoke check. Local linking passed; offline tarball installation lacked cached dependency metadata, and Host startup reported that this plugin failed to import. The test service was stopped. Real model streaming, runtime tools/interactions, close-during-run continuation, refresh/restart continuation and visual acceptance are still outstanding; build and isolated tests do not satisfy that acceptance gate. See [proof evidence](../../docs/teacher-session-proof.md).
+Only a disposable scratch profile was installed for a limited CLI smoke check. Local linking passed; offline tarball installation lacked cached dependency metadata. The initial Host import failure was traced to absent Schemastery at the source link target. Providing the existing built dependency as a temporary scratch-local junction made the unchanged artifact import and the built CLI start without inactive-entry warnings. The source/tsx CLI separately fails on Cordis's erased `FiberState` const enum before plugin activation. No plugin logic or DSH source fix was needed for these environment boundaries. All test services were stopped and the temporary junction removed. Real model streaming, runtime tools/interactions, close-during-run continuation, refresh/restart continuation and visual acceptance are still outstanding; these checks do not satisfy that acceptance gate. See [proof evidence](../../docs/teacher-session-proof.md).

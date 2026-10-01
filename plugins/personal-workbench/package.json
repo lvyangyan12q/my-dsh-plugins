@@ -33,6 +33,7 @@
     "prepare": "npm run build",
     "test": "tsx --test tests/*.test.ts",
     "test:artifact": "node --test tests/artifact.test.mjs",
+    "test:host": "node --test tests/host-import.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check:source": "node scripts/check-source.mjs"
   },
