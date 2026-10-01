@@ -15,6 +15,7 @@ import { TeacherWindow, parseAssociation } from './teacher-window.ts'
 import { en, zh } from './locale.ts'
 import type {} from './workbench-api.ts'
 import { Workbench } from './workbench.ts'
+import { installOptionalBetterSidebar } from './better-sidebar.tsx'
 import { Workspace, WorkspaceLauncher } from './workbench-view.tsx'
 import type { WorkspaceInjected } from './workbench-view.tsx'
 
@@ -137,4 +138,5 @@ export function apply(ctx: Context): void {
     name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',
     inject: () => ({ openWorkspace: workbench.openWorkspace }),
   }, WorkspaceLauncher))
+  installOptionalBetterSidebar(ctx, workbench)
 }

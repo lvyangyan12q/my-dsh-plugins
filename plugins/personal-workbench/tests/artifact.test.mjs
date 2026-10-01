@@ -5,6 +5,17 @@ import { runInNewContext } from 'node:vm'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 
+test('public client and package keep Better Sidebar optional at runtime and for API consumers', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+  for (const section of ['dependencies', 'peerDependencies']) assert.equal(manifest[section]?.['dsh-better-sidebar'], undefined)
+  assert.equal(manifest.dsh.client.inject.includes('dsh-better-sidebar'), false)
+  const client = await readFile(new URL('../lib/client.js', import.meta.url), 'utf8')
+  assert.equal(/require\(["']dsh-better-sidebar/.test(client), false)
+  const types = await readFile(new URL('../lib/types/client.d.ts', import.meta.url), 'utf8')
+  assert.equal(types.includes('dsh-better-sidebar'), false)
+  assert.equal(types.includes('better-sidebar.tsx'), false)
+})
+
 test('built client registers one explicit provider seat and delegates the entire native conversation', async () => {
   const declarations = []
   const cleanups = []
@@ -35,6 +46,7 @@ test('built client registers one explicit provider seat and delegates the entire
     ready: Promise.resolve(), release: () => { releases++ },
   }
   const ctx = {
+    inject: () => {}, // Optional Better Sidebar is absent in this artifact fixture.
     reflect: { provide: () => () => {} },
     effect: execute => { const cleanup = execute(); if (typeof cleanup === 'function') cleanups.push(cleanup); return cleanup },
     sessions: { retain: (id, options) => { retained.push({ id, source: options.source }); return reference } },
@@ -85,5 +97,5 @@ test('built client registers one explicit provider seat and delegates the entire
   assert.equal(releases, 2)
   for (const cleanup of cleanups.reverse()) cleanup()
   assert.equal(releases, 2)
-  assert.equal(declarations.length, 5)
+  assert.equal(declarations.length, 6)
 })
