@@ -4,6 +4,13 @@ export const en = {
   association: 'Teacher session is not configured or its association is unavailable.',
   session: 'Teacher session cannot be opened. Restore access or unarchive it in DSH, then retry.',
   unavailable: 'Native conversation rendering is unavailable in this host.',
+  workspace: 'Workbench', closeWorkspace: 'Close workbench', applications: 'Applications',
+  teacherProof: 'Teacher session test',
+  searchApps: 'Search applications', showHidden: 'Show hidden', noApps: 'No registered applications.', noMatches: 'No matching applications.',
+  favorite: 'Favorite', showApp: 'Show application', hideApp: 'Hide application', moveUp: 'Move up', moveDown: 'Move down',
+  dependencyUnavailable: 'Unavailable', appViewUnavailable: 'Application view is unavailable.', openWindows: 'Open windows', pages: 'Pages',
+  minimize: 'Minimize', minimized: 'Minimized', maximize: 'Maximize', restore: 'Restore', moveWindow: 'Move window',
+  windowWidth: 'Width', windowHeight: 'Height', storageFailed: 'Layout preferences could not be restored or saved.',
 }
 export const zh: typeof en = {
   title: '\u8001\u5e08\u4f1a\u8bdd', open: '\u6253\u5f00\u8001\u5e08', close: '\u5173\u95ed', retry: '\u91cd\u8bd5',
@@ -11,4 +18,11 @@ export const zh: typeof en = {
   association: '\u8001\u5e08\u4f1a\u8bdd\u672a\u914d\u7f6e\u6216\u5173\u8054\u4e0d\u53ef\u7528\u3002',
   session: '\u65e0\u6cd5\u6253\u5f00\u8001\u5e08\u4f1a\u8bdd\u3002\u8bf7\u5728 DSH \u6062\u590d\u8bbf\u95ee\u6216\u53d6\u6d88\u5f52\u6863\u540e\u91cd\u8bd5\u3002',
   unavailable: '\u5f53\u524d\u5bbf\u4e3b\u4e0d\u652f\u6301\u539f\u751f\u4f1a\u8bdd\u6e32\u67d3\u3002',
+  workspace: '\u5de5\u4f5c\u53f0', closeWorkspace: '\u5173\u95ed\u5de5\u4f5c\u53f0', applications: '\u5e94\u7528',
+  teacherProof: '\u8001\u5e08\u9a8c\u8bc1',
+  searchApps: '\u641c\u7d22\u5e94\u7528', showHidden: '\u663e\u793a\u5df2\u9690\u85cf', noApps: '\u6682\u65e0\u5df2\u6ce8\u518c\u5e94\u7528\u3002', noMatches: '\u6ca1\u6709\u5339\u914d\u7684\u5e94\u7528\u3002',
+  favorite: '\u6536\u85cf', showApp: '\u663e\u793a\u5e94\u7528', hideApp: '\u9690\u85cf\u5e94\u7528', moveUp: '\u4e0a\u79fb', moveDown: '\u4e0b\u79fb',
+  dependencyUnavailable: '\u4e0d\u53ef\u7528', appViewUnavailable: '\u5e94\u7528\u89c6\u56fe\u4e0d\u53ef\u7528\u3002', openWindows: '\u5df2\u6253\u5f00\u7a97\u53e3', pages: '\u9875\u9762',
+  minimize: '\u6700\u5c0f\u5316', minimized: '\u5df2\u6700\u5c0f\u5316', maximize: '\u6700\u5927\u5316', restore: '\u8fd8\u539f', moveWindow: '\u79fb\u52a8\u7a97\u53e3',
+  windowWidth: '\u5bbd\u5ea6', windowHeight: '\u9ad8\u5ea6', storageFailed: '\u65e0\u6cd5\u6062\u590d\u6216\u4fdd\u5b58\u5e03\u5c40\u504f\u597d\u3002',
 }

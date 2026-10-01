@@ -35,6 +35,7 @@ test('built client registers one explicit provider seat and delegates the entire
     ready: Promise.resolve(), release: () => { releases++ },
   }
   const ctx = {
+    reflect: { provide: () => () => {} },
     effect: execute => { const cleanup = execute(); if (typeof cleanup === 'function') cleanups.push(cleanup); return cleanup },
     sessions: { retain: (id, options) => { retained.push({ id, source: options.source }); return reference } },
     workspaces: { list: {
@@ -50,7 +51,7 @@ test('built client registers one explicit provider seat and delegates the entire
   exports.apply(ctx)
   assert.equal(fetches, 0, 'registration must not read sessions or call the model')
   assert.equal(retained.length, 0)
-  const overlay = declarations.find(row => row.options.name === 'shell.overlay')
+  const overlay = declarations.find(row => row.options.name === 'shell.overlay' && row.options.id === 'personal-workbench')
   assert.equal(overlay.options.id, 'personal-workbench')
   assert.equal(overlay.options.children['personal-workbench.teacher'].scope, 'session')
   const injected = overlay.options.inject()
@@ -84,5 +85,5 @@ test('built client registers one explicit provider seat and delegates the entire
   assert.equal(releases, 2)
   for (const cleanup of cleanups.reverse()) cleanup()
   assert.equal(releases, 2)
-  assert.equal(declarations.length, 3)
+  assert.equal(declarations.length, 5)
 })
