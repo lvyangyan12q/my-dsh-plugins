@@ -46,7 +46,7 @@ if (consumer.status === 0) {
   process.exitCode = roles.status ?? 1
   if (roles.status === 0) {
     const practiceConfig = resolve(root, 'lib/typecheck/practice.json')
-    writeFileSync(practiceConfig, JSON.stringify({ extends: './roles.json', compilerOptions: { noEmit: true, declaration: false, emitDeclarationOnly: false }, include: ['../../src/practice-rounds.ts', '../../src/domain.ts'] }, null, 2) + '\n')
+    writeFileSync(practiceConfig, JSON.stringify({ extends: './roles.json', compilerOptions: { noEmit: true, declaration: false, emitDeclarationOnly: false }, include: ['../../src/practice-rounds.ts', '../../src/lessons.ts', '../../src/domain.ts'] }, null, 2) + '\n')
     const practice = spawnSync(process.execPath, [resolve(source, 'node_modules/typescript/bin/tsc'), '-p', practiceConfig], { stdio: 'inherit' })
     process.exitCode = practice.status ?? 1
   }

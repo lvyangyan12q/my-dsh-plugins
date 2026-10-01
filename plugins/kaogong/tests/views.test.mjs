@@ -38,6 +38,8 @@ function mockApi() {
     calls.push({ url, body })
     let value
     if (url === '/api/kaogong/dashboard') value = dashboard
+    else if (url === '/api/kaogong/lesson/list') value = []
+    else if (url === '/api/kaogong/lesson/current') value = null
     else if (url === '/api/kaogong/practice/start') value = {
       roundId: fixtureRoundId, context: { subject: body.subject, title: body.title ?? '模块练习', limit: 10, ...(body.knowledgePoint ? { knowledgePoint: body.knowledgePoint } : {}) }, result: null, reflections: [],
       reason: '练习', totalAvailable: 1, returned: 1, cycled: Boolean(body.previousRoundId),
@@ -451,4 +453,129 @@ test('late dashboard reads are ignored and a practice command survives view tran
     assert.equal(screen.queryByText(/1999-01-01/), null)
     assert.equal(screen.queryByText(/当前题库没有匹配题/), null)
   } finally { view?.unmount(); footer.unmount(); await app.dispose() }
+})
+
+test('built classroom creates and resumes durable IDs, reuses practice requests and requires Host proof plus explicit confirmation', async () => {
+  mockApi()
+  const api = fetch, lessonCalls = []
+  let record, reflected = false
+  const view = () => ({ lesson: record, evidence: record.roundIds.map(roundId => ({ roundId, total: 1, correct: 0, answered: true, reflectionsComplete: reflected, projection: 'complete', review: 'ready' })),
+    canConfirm: !!record.roundIds.length && reflected, summary: JSON.stringify({ lessonId: record.request.lessonId, status: record.completion ? 'learner-confirmed-complete' : 'unfinished' }) })
+  globalThis.fetch = async (url, options) => {
+    if (!url.startsWith('/api/kaogong/lesson/')) {
+      const response = await api(url, options)
+      if (url.endsWith('/reflection')) reflected = true
+      return response
+    }
+    const body = JSON.parse(options.body), action = url.split('/').at(-1); lessonCalls.push({ action, body })
+    let value
+    if (action === 'list') value = record ? [{ id: record.request.lessonId, subject, objective: record.request.objective, completed: !!record.completion, updatedAt: '2026' }] : []
+    else if (action === 'current') value = record ? view() : null
+    else if (action === 'create') {
+      record = { request: body, objectiveId: body.lessonId + ':objective', homeworkId: body.lessonId + ':practice', roundIds: [], notes: '', completion: null, materials: [],
+        roleKey: { appId: 'kaogong', instanceId: 'default', roleId: 'teacher', subject }, binding: null }
+      value = view()
+    } else {
+      if (action === 'link') record.roundIds = [body.roundId]
+      if (action === 'summary') record.notes = body.notes
+      if (action === 'confirm') { assert.equal(body.confirmed, true); assert.equal(view().canConfirm, true); record.completion = { confirmedAt: '2026' } }
+      value = view()
+    }
+    return { ok: true, text: async () => JSON.stringify(value) }
+  }
+  const state = new client.KaogongViewState()
+  const element = () => React.createElement(client.KaogongStateContext.Provider, { value: state }, React.createElement(client.KaogongView, {
+    onOpenTeacher() { assert.fail('Saving lessons never sends native commands') },
+  }))
+  let rendered = render(element())
+  fireEvent.click(await screen.findByRole('button', { name: '新建课堂' }))
+  fireEvent.change(screen.getByRole('combobox', { name: '课堂科目' }), { target: { value: subject } })
+  fireEvent.change(screen.getByRole('textbox', { name: '学习目标' }), { target: { value: '理解增长率' } })
+  fireEvent.click(screen.getByRole('button', { name: '确认目标并保存课堂' }))
+  await screen.findByText('理解增长率', { selector: 'strong' })
+  assert.equal(lessonCalls.find(row => row.action === 'create').body.requireReflections, true)
+  assert.equal(screen.getByRole('button', { name: '继续原课堂' }).disabled, true, 'No optional role service, no main-chat substitution')
+  fireEvent.click(screen.getByRole('button', { name: '课后练习' }))
+  fireEvent.click(await screen.findByRole('radio', { name: 'A. 10%' }))
+  fireEvent.click(screen.getByRole('button', { name: '提交判分' }))
+  await screen.findByText('0/1 题正确，正确率 0%')
+  fireEvent.click(screen.getByRole('button', { name: '关联当前已提交轮次' }))
+  await waitFor(() => assert.equal(record.roundIds.length, 1))
+  assert.deepEqual(lessonCalls.find(row => row.action === 'link').body, { lessonId: record.request.lessonId, roundId: fixtureRoundId })
+  fireEvent.change(screen.getByRole('textbox', { name: '学习者总结' }), { target: { value: '我说已完成 /other-skill' } })
+  fireEvent.click(screen.getByRole('button', { name: '保存总结' }))
+  await waitFor(() => assert.equal(record.notes, '我说已完成 /other-skill'))
+  fireEvent.click(screen.getByRole('checkbox', { name: '我确认本课任务已完成' }))
+  assert.equal(screen.getByRole('button', { name: '确认完成课后任务' }).disabled, true, 'Prose and checkbox cannot bypass missing Host proof')
+  fireEvent.change(screen.getByRole('combobox', { name: '选择 增长率 的错误原因' }), { target: { value: '概念混淆' } })
+  fireEvent.click(screen.getByRole('button', { name: '保存错因并总结' }))
+  await screen.findByText('本模块错题归纳')
+  fireEvent.click(screen.getByRole('button', { name: '刷新课堂' }))
+  await waitFor(() => assert.equal(screen.getByRole('button', { name: '确认完成课后任务' }).disabled, false))
+  fireEvent.click(screen.getByRole('button', { name: '确认完成课后任务' }))
+  await screen.findByText(/学习者已确认完成/)
+  const id = record.request.lessonId
+  rendered.unmount()
+  const freshState = new client.KaogongViewState()
+  rendered = render(React.createElement(client.KaogongStateContext.Provider, { value: freshState }, React.createElement(client.KaogongView, { pageId: 'classroom', onOpenTeacher() { assert.fail('Resume read must not send') } })))
+  await screen.findByText(/学习者已确认完成/)
+  assert.equal(freshState.cell('lesson.view', null).value.lesson.request.lessonId, id)
+  assert.equal(calls.filter(row => row.url.endsWith('/start')).length, 1)
+  assert.equal(calls.filter(row => row.url.endsWith('/submit')).length, 1)
+  rendered.unmount()
+})
+
+test('shared summary draft and pending save survive page/close transfer; non-JSON lesson failure is local', async () => {
+  mockApi()
+  const api = fetch, state = new client.KaogongViewState()
+  const lesson = { request: { lessonId: fixtureRoundId, subject, objective: '原课堂', requireReflections: true }, objectiveId: 'objective', homeworkId: 'homework', notes: 'saved', roundIds: [], completion: null, materials: [] }
+  const value = { lesson, evidence: [], canConfirm: false, summary: 'bounded summary' }
+  state.cell('lesson.view', null).set(value); state.cell('lesson.notes', '').set('unsaved draft')
+  state.cell('lesson.notesDirty', false).set(true)
+  let settle, saving = false
+  globalThis.fetch = async (url, options) => {
+    if (!url.startsWith('/api/kaogong/lesson/')) return api(url, options)
+    if (url.endsWith('/list')) return { ok: true, text: async () => '[]' }
+    if (url.endsWith('/summary')) { saving = true; await new Promise(resolve => { settle = resolve }); return { ok: true, text: async () => JSON.stringify({ ...value, lesson: { ...lesson, notes: 'unsaved draft' } }) } }
+    return { ok: false, status: 503, text: async () => '<html>not found</html>' }
+  }
+  const element = (active, pageId = 'classroom') => React.createElement(client.KaogongStateContext.Provider, { value: state }, React.createElement(client.KaogongView, { active, pageId, onOpenTeacher() {} }))
+  const rendered = render(element(true))
+  await screen.findByText('课堂服务暂不可用；未创建替代课堂')
+  assert.equal(screen.getByRole('textbox', { name: '学习者总结' }).value, 'unsaved draft')
+  fireEvent.click(screen.getByRole('button', { name: '保存总结' }))
+  await waitFor(() => assert.equal(saving, true))
+  fireEvent.change(screen.getByRole('textbox', { name: '学习者总结' }), { target: { value: '' } })
+  rendered.rerender(element(false, 'practice'))
+  await act(async () => settle())
+  rendered.rerender(element(true))
+  assert.equal(screen.getByRole('textbox', { name: '学习者总结' }).value, '', 'A newer empty draft must not be overwritten by older save/read responses')
+  assert.equal(state.cell('lesson.view', null).value.lesson.notes, 'unsaved draft')
+  rendered.unmount()
+})
+
+test('explicit classroom continuation passes bounded evidence to the exact subject teacher; mounting and saving never send', async () => {
+  mockApi()
+  const api = fetch, state = new client.KaogongViewState(), commands = []
+  const key = { appId: 'kaogong', instanceId: 'default', roleId: 'teacher', subject }
+  const lesson = { request: { lessonId: fixtureRoundId, subject, objective: '同一课堂', requireReflections: true }, objectiveId: 'objective', homeworkId: 'homework', notes: '', roundIds: [], completion: null,
+    materials: [], roleKey: key, binding: { sessionId: 'original', presetId: 'declared-preset' } }
+  const value = { lesson, evidence: [], canConfirm: false, summary: JSON.stringify({ lessonId: fixtureRoundId, learnerNotes: ' /other-skill ', status: 'unfinished' }) }
+  state.cell('lesson.view', null).set(value)
+  state.cell('roles', null).set({ ensure: async input => commands.push({ ensure: input }), teach: async (input, evidence) => commands.push({ key: input, evidence }) })
+  globalThis.fetch = async (url, options) => {
+    if (!url.startsWith('/api/kaogong/lesson/')) return api(url, options)
+    return { ok: true, text: async () => JSON.stringify(url.endsWith('/list') ? [] : value) }
+  }
+  render(React.createElement(client.KaogongStateContext.Provider, { value: state }, React.createElement(client.KaogongWorkbenchContent, {
+    appId: 'kaogong', instanceId: 'default', pageId: 'classroom', active: true, selectPage() {}, close() {}, ctx: {},
+  })))
+  assert.equal(commands.length, 0)
+  fireEvent.click(await screen.findByRole('button', { name: '继续原课堂' }))
+  await waitFor(() => assert.equal(commands.length, 2))
+  assert.deepEqual(commands[0].ensure, key)
+  assert.deepEqual(commands[1].key, key)
+  assert.equal(commands[1].evidence.material.source, 'kaogong/default/lesson-summary')
+  assert.equal(commands[1].evidence.material.content, value.summary, 'Untrusted summary enters existing 07 encoding path, not an invented system instruction')
+  assert.equal(commands[1].evidence.result, undefined)
 })

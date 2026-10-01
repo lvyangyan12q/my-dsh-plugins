@@ -27,5 +27,6 @@ test('package includes emitted client declarations and keeps workbench runtime o
   assert.ok(files.includes(`lib/${chunk}`))
   assert.doesNotMatch(host, /from ["']@deepseek-ai\/dsh-persona/)
   for (const file of ['lib/client.js', 'lib/index.js', 'lib/types/client.d.ts', 'lib/types/view-state.d.ts', 'cordis.patch.yml']) assert.ok(files.includes(file), file)
+  for (const file of ['src/lessons.ts', 'src/lesson-schema.ts', 'src/lesson-panel.tsx', 'lib/types/lesson-schema.d.ts']) assert.ok(files.includes(file), file)
   assert.match(readFileSync(new URL('../lib/types/client.d.ts', import.meta.url), 'utf8'), /KaogongViewProps/)
 })

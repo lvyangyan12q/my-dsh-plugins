@@ -13,6 +13,7 @@ export function buildTeachingEvidence(request: KaogongTeachingRequest, material:
   return { kind: request.kind, context: { ...request.context },
     ...(request.kind === 'review' ? { material: { id: request.result.roundId, title: request.context.title, source: 'kaogong/default/committed-practice',
       content: JSON.stringify({ roundId: request.result.roundId, subject: request.context.subject, results: request.result.results.filter(row => !row.correct) }) } }
+      : request.lessonEvidence ? { material: request.lessonEvidence }
       : material ? { material: { id: material.id, title: material.title, source: material.source, content: material.content } } : {}),
     ...(request.kind === 'review' ? { result: { total: request.result.totalCount, correct: request.result.correctCount, accuracy: request.result.accuracyRate,
       results: request.result.results.map(row => ({ id: row.id, knowledgePoint: row.knowledgePoint, correct: row.correct, correctAnswer: row.correctAnswer, explanation: row.explanation })) } } : {}),

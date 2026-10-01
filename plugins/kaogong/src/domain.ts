@@ -7,6 +7,8 @@
 
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
 import { TAXONOMY } from './taxonomy.ts'
+import { lessonRecord, lessonSelection } from './lesson-schema.ts'
+import type { Lesson } from './lesson-schema.ts'
 import { questionRecord, planConfig, dayPlan, bankQuestion, knowledgeEntry, practiceRound } from './schemas.ts'
 import type { PracticeRound } from './schemas.ts'
 import type { QuestionRecord, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './schemas.ts'
@@ -55,4 +57,11 @@ export const knowledgeDomainSpec = defineDomain({
 export const practiceDomainSpec = defineDomain({
   name: 'kaogong_practice', version: 1,
   tables: { rounds: domainTable<string, PracticeRound>(practiceRound) },
+})
+
+/** Additive classroom aggregates for the existing default instance; legacy domains are untouched. */
+export const lessonDomainSpec = defineDomain({
+  name: 'kaogong_lessons', version: 1,
+  global: { schema: lessonSelection, initial: { instanceId: 'default' as const, activeLessonId: null } },
+  tables: { lessons: domainTable<string, Lesson>(lessonRecord) },
 })

@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { PersonalWorkbench, PersonalWorkbenchRoles, RoleBindingKey } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { DashboardData, PracticeData, PracticeContext, PracticeResult, ModuleSummary } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'
+import type { LessonView } from './lesson-schema.ts'
 
 /** Fixed types and namespaces for the default instance's transient values. */
 type ViewValues = {
@@ -19,6 +20,10 @@ type ViewValues = {
   roles: PersonalWorkbenchRoles | null
   'roles.selected': RoleBindingKey
   'roles.opened': RoleBindingKey[]
+  'lesson.view': LessonView | null
+  'lesson.list': { id: string; subject: string; objective: string; completed: boolean; updatedAt: string }[]
+  'lesson.draft': { id: string; subject: string; objective: string; knowledgePoint: string; reflections: boolean; material: boolean; legacyNoteId: string }
+  'lesson.form': boolean; 'lesson.notes': string; 'lesson.notesDirty': boolean; 'lesson.error': string; 'lesson.busy': boolean; 'lesson.confirmed': boolean
 }
 type Cell<T> = { value: T; listeners: Set<() => void>; set: Dispatch<SetStateAction<T>> }
 
@@ -35,7 +40,7 @@ export class KaogongViewState {
   }
 
   /** Supersede earlier reads while allowing a pending practice command to survive view transfer. */
-  request(key: 'dashboard' | 'practice') {
+  request(key: 'dashboard' | 'practice' | 'lesson') {
     const generation = (this.requests.get(key) ?? 0) + 1
     this.requests.set(key, generation)
     return () => this.requests.get(key) === generation

@@ -3,6 +3,7 @@ import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { KnowledgeLibrary } from './knowledge-reader.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
 import { practiceRequest, readPracticeDraft, savePracticeDraft } from './practice-client.ts'
+import { LessonPanel } from './lesson-panel.tsx'
 
 export type DashboardData = {
   today: string
@@ -48,7 +49,7 @@ export type PracticeResult = {
 export type PracticeContext = { subject: string; title: string; knowledgePoint?: string; limit: number; planIndex?: number }
 /** Ticket 06 can resolve a role binding from this evidence without parsing the legacy prompt. */
 export type KaogongTeachingRequest =
-  | { kind: 'lesson'; context: Readonly<PracticeContext> }
+  | { kind: 'lesson'; context: Readonly<PracticeContext>; lessonEvidence?: { id: string; title: string; source: string; content: string } }
   | { kind: 'review'; context: Readonly<PracticeContext>; result: Readonly<PracticeResult> }
 export type ModuleSummary = {
   totalQuestions: number
@@ -365,6 +366,10 @@ export function KaogongView({ active = true, pageId, onSelectPage, onClose, onOp
             </header>
             {notice && <div style={{ ...sectionStyle, marginBottom: 14, color: colors.blue, borderColor: '#bfdbfe', background: '#f8fbff' }}>{notice}</div>}
             {error && <div style={{ ...sectionStyle, color: colors.red, borderColor: '#fecaca', background: '#fff1f2' }}>{error}</div>}
+            <div hidden={!shown('classroom')}><LessonPanel active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {
+              await loadPractice(context, [], true)
+              onSelectPage?.('practice')
+            }} /></div>
             {data !== null && <>
               <section hidden={!shown('classroom')} style={{ display: shown('classroom') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
                 <Metric label="距离考试" value={`${data.daysToExam}`} suffix="天" accent={colors.blue} />

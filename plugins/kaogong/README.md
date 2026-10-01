@@ -323,3 +323,7 @@ node --test --test-isolation=none tests/schemas.test.ts  # zod schema（需 zod 
 ## Ticket 08 Practice
 
 Module practice now issues durable rounds, scores their original snapshots on the Host, recovers interrupted notebook projection and restores current learner drafts across browser refresh. Counselor review uses the submitted round and the existing native counselor association. See [ticket 08 evidence](../../docs/ticket08-practice-evidence.md) for endpoints, storage/retry semantics, checks and the outstanding Chrome/native-turn gates. `test:practice` and `test:runtime` run the focused checks with the documented built-runtime environment.
+
+## Ticket 10 Classroom Continuation
+
+The classroom now saves a confirmed objective, material references, a single practice homework task, linked submitted rounds and a learner summary in the additive `kaogong_lessons` domain. Completion requires Host-verified attempts, the requested wrong-question reflections and explicit learner confirmation. It does not change plan checkboxes or infer mastery from accuracy or teacher prose. The selected classroom survives Host restart; optional role absence leaves lessons and practice usable. `kaogong_lesson_read` exposes only the bounded shared evidence summary, not native conversation history. Existing classroom notes can be explicitly referenced without rewriting them or importing their completion claims. See [ticket 10 evidence](../../docs/ticket10-homework-evidence.md) for lifecycle, requests, migration and outstanding release gates.
