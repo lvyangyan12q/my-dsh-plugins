@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url'
 test('package includes emitted client declarations and keeps workbench runtime optional', () => {
   const root = fileURLToPath(new URL('..', import.meta.url))
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-  assert.equal(manifest.peerDependenciesMeta['@deepseek-ai/dsh-personal-workbench'].optional, true)
+  assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
+  assert.equal(manifest.devDependencies['@deepseek-ai/dsh-personal-workbench'], 'file:../personal-workbench')
   assert.equal(manifest.dependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
   assert.equal(manifest.dsh.client.inject.includes('@deepseek-ai/dsh-personal-workbench'), false)
   const bundle = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
