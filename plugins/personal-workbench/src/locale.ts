@@ -1,4 +1,9 @@
 export const en = {
+  searchCatalog: 'Search catalog',
+  agents: 'Agents', skills: 'Skills', catalogTabs: 'Catalog', refreshCatalog: 'Refresh catalog', nativeConfiguration: 'Native configuration', navigationUnavailable: 'Native configuration navigation unavailable.',
+  catalogLoading: 'Loading catalog...', catalogAvailable: 'Available', catalogUnavailable: 'Unavailable', nativePresets: 'Native presets', nativeRegistry: 'Native registry; origin not declared', catalogEmpty: 'No entries discovered.',
+  roleScope: 'Role scope', globalScope: 'Global catalog', ownershipUnknown: 'Application ownership not declared', preset: 'Preset', sessionIdentity: 'Session', sessionNotCreated: 'Not created', modelUsed: 'Last used model', modelNext: 'Next model', nativeDefault: 'No saved selection; native default',
+  notObserved: 'Not observed', nativePermission: 'Native permissions', sandboxMode: 'Sandbox', approvalPolicy: 'Approval policy', workspaceRoot: 'Workspace boundary', visibleTools: 'Visible tools (execution guards apply)', missingAssigned: 'Unavailable assigned Skills', assignedSkills: 'Assigned Skills', invocationDisabled: 'User invocation disabled', saveAssignment: 'Save assignment', nextTurnAssignment: 'Assigned for the next role user turn. Earlier instructions remain in history.', nativeLoadEvidence: 'Native instruction history',
   title: 'Teacher session', open: 'Open teacher', close: 'Close', retry: 'Retry',
   loading: 'Opening teacher session...',
   association: 'Teacher session is not configured or its association is unavailable.',
@@ -14,6 +19,11 @@ export const en = {
   windowWidth: 'Width', windowHeight: 'Height', storageFailed: 'Layout preferences could not be restored or saved.',
 }
 export const zh: typeof en = {
+  searchCatalog: '\u641c\u7d22\u76ee\u5f55',
+  agents: 'Agent', skills: 'Skill', catalogTabs: '\u76ee\u5f55', refreshCatalog: '\u5237\u65b0\u76ee\u5f55', nativeConfiguration: '\u539f\u751f\u914d\u7f6e', navigationUnavailable: '\u539f\u751f\u914d\u7f6e\u5bfc\u822a\u4e0d\u53ef\u7528',
+  catalogLoading: '\u6b63\u5728\u52a0\u8f7d\u76ee\u5f55...', catalogAvailable: '\u53ef\u7528', catalogUnavailable: '\u4e0d\u53ef\u7528', nativePresets: '\u539f\u751f\u9884\u8bbe', nativeRegistry: '\u539f\u751f\u6ce8\u518c\u8868\uff1b\u6765\u6e90\u672a\u58f0\u660e', catalogEmpty: '\u672a\u53d1\u73b0\u6761\u76ee',
+  roleScope: '\u89d2\u8272\u4f5c\u7528\u57df', globalScope: '\u5168\u5c40\u76ee\u5f55', ownershipUnknown: '\u6240\u5c5e\u5e94\u7528\u672a\u58f0\u660e', preset: '\u9884\u8bbe', sessionIdentity: '\u4f1a\u8bdd', sessionNotCreated: '\u672a\u521b\u5efa', modelUsed: '\u4e0a\u6b21\u4f7f\u7528\u6a21\u578b', modelNext: '\u4e0b\u6b21\u6a21\u578b', nativeDefault: '\u65e0\u5df2\u4fdd\u5b58\u9009\u62e9\uff1b\u539f\u751f\u9ed8\u8ba4',
+  notObserved: '\u672a\u89c2\u6d4b\u5230', nativePermission: '\u539f\u751f\u6743\u9650', sandboxMode: '\u6c99\u7bb1', approvalPolicy: '\u5ba1\u6279\u7b56\u7565', workspaceRoot: '\u5de5\u4f5c\u533a\u8fb9\u754c', visibleTools: '\u53ef\u89c1\u5de5\u5177\uff08\u6267\u884c\u4ecd\u53d7\u539f\u751f\u7b56\u7565\u7ea6\u675f\uff09', missingAssigned: '\u4e0d\u53ef\u7528\u7684\u5df2\u5206\u914d Skill', assignedSkills: '\u5df2\u5206\u914d Skill', invocationDisabled: '\u7528\u6237\u8c03\u7528\u5df2\u7981\u7528', saveAssignment: '\u4fdd\u5b58\u5206\u914d', nextTurnAssignment: '\u7528\u4e8e\u89d2\u8272\u4e0b\u4e00\u4e2a\u7528\u6237\u56de\u5408\u3002\u5386\u53f2\u6307\u4ee4\u4ecd\u4fdd\u7559\u3002', nativeLoadEvidence: '\u539f\u751f\u6307\u4ee4\u5386\u53f2',
   title: '\u8001\u5e08\u4f1a\u8bdd', open: '\u6253\u5f00\u8001\u5e08', close: '\u5173\u95ed', retry: '\u91cd\u8bd5',
   loading: '\u6b63\u5728\u6253\u5f00\u8001\u5e08\u4f1a\u8bdd...',
   association: '\u8001\u5e08\u4f1a\u8bdd\u672a\u914d\u7f6e\u6216\u5173\u8054\u4e0d\u53ef\u7528\u3002',

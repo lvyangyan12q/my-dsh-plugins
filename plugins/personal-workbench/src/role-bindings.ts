@@ -25,7 +25,7 @@ export class RoleBindings implements PersonalWorkbenchBindings {
     if (!definition.key.appId || !definition.key.instanceId || !definition.key.roleId || !definition.presetId || definition.key.subject === '') throw new Error('Invalid role declaration')
     if (definition.creation && !isAbsolute(definition.creation.cwd)) throw new Error('Role creation cwd must be absolute')
     if (this.definitions.has(key)) throw new Error('Role already registered')
-    const owned = Object.freeze({ ...definition, key: Object.freeze({ ...definition.key }), ...(definition.creation ? { creation: Object.freeze({ ...definition.creation }) } : {}), ...(definition.teaching ? { teaching: Object.freeze({ ...definition.teaching }) } : {}) })
+    const owned = Object.freeze({ ...definition, key: Object.freeze({ ...definition.key }), ...(definition.creation ? { creation: Object.freeze({ ...definition.creation }) } : {}), ...(definition.teaching ? { teaching: Object.freeze({ ...definition.teaching }) } : {}), ...(definition.display ? { display: Object.freeze({ ...definition.display }) } : {}) })
     this.definitions.set(key, owned)
     return () => { if (this.definitions.get(key) === owned) this.definitions.delete(key) }
   }
@@ -34,6 +34,7 @@ export class RoleBindings implements PersonalWorkbenchBindings {
     if (!definition) throw new Error('Role declaration unavailable')
     return definition
   }
+  listRoles(): readonly RoleDefinition[] { return [...this.definitions.values()] }
   async read(key: RoleBindingKey): Promise<RoleBinding | null> {
     if (this.disposed) throw new Error('Role bindings unavailable')
     const row = this.table.get(bindingKey(key))
