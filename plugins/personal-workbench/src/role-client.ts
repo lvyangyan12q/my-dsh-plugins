@@ -1,0 +1,115 @@
+import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
+import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { PersonalWorkbenchRoles, RoleBinding, RoleBindingKey, TeachingEvidence } from './role-binding-api.ts'
+import { TeacherWindow, parseAssociation } from './teacher-window.ts'
+
+export interface RoleSnapshot { binding: RoleBinding | null; error: string | null; busy: boolean }
+/** Parse network metadata, retaining the exact durable ID rather than inferring one. */
+export function parseRoleBinding(value: unknown, key: RoleBindingKey): RoleBinding | null {
+  if (value === null) return null
+  if (typeof value !== 'object' || !value || !('key' in value) || typeof value.key !== 'object' || !value.key
+    || !('appId' in value.key) || value.key.appId !== key.appId || !('instanceId' in value.key) || value.key.instanceId !== key.instanceId
+    || !('roleId' in value.key) || value.key.roleId !== key.roleId || 'subject' in value.key
+    || !('presetId' in value) || typeof value.presetId !== 'string' || !value.presetId
+    || !('phase' in value) || (value.phase !== 'ready' && value.phase !== 'intent')
+    || !('previousSessionIds' in value) || !Array.isArray(value.previousSessionIds) || !value.previousSessionIds.every(id => typeof id === 'string' && id)) throw new Error('Invalid teacher binding response')
+  return { version: 1, key: { ...key }, sessionId: parseAssociation(value), presetId: value.presetId, phase: value.phase,
+    previousSessionIds: value.previousSessionIds.map(id => id as SessionId) }
+}
+
+/** Fixed-teacher owner. Closing a view is not cancelling the native Session. */
+export class RoleClient implements PersonalWorkbenchRoles {
+  private snapshot: RoleSnapshot = { binding: null, error: null, busy: false }
+  private listeners = new Set<() => void>()
+  private disposed = false
+  private abort = new AbortController()
+  private pending: Promise<void> | undefined
+  readonly teacher: TeacherWindow
+  constructor(private readonly ctx: Pick<Context, 'sessions' | 'workspaces'>,
+    private readonly request: typeof fetch = fetch) {
+    this.teacher = new TeacherWindow(ctx.sessions, async () => {
+      if (!this.snapshot.binding || this.snapshot.binding.phase !== 'ready') throw new Error('Teacher binding unavailable')
+      return this.snapshot.binding.sessionId
+    }, ctx.workspaces.list)
+  }
+  readonly getSnapshot = () => this.snapshot
+  readonly subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
+  readonly open = (key: RoleBindingKey) => this.run(async () => {
+    const response = await this.call('read', key)
+    this.adopt(parseRoleBinding(response.binding, key))
+    if (this.snapshot.binding?.phase === 'ready') await this.teacher.open()
+  })
+  readonly retry = (key: RoleBindingKey, expectedSessionId: SessionId) => this.run(async () => {
+    this.checkExpected(expectedSessionId)
+    const response = await this.call('retry', key, { expectedSessionId })
+    this.adopt(parseRoleBinding(response.binding, key))
+    await this.teacher.retry(expectedSessionId)
+    await this.teacher.open()
+  })
+  readonly replace = (key: RoleBindingKey, expectedSessionId: SessionId) => this.run(async () => {
+    this.checkExpected(expectedSessionId)
+    const response = await this.call('replace', key, { expectedSessionId })
+    this.adopt(parseRoleBinding(response.binding, key))
+    await this.teacher.open()
+  })
+  readonly teach = (key: RoleBindingKey, evidence: TeachingEvidence) => this.run(async () => {
+    const response = await this.call('teach', key, { evidence })
+    const binding = parseRoleBinding(response.binding, key)
+    if (!binding || binding.phase !== 'ready' || typeof response.prompt !== 'string' || !response.prompt.startsWith('/kaogong-teach ')) throw new Error('Teacher preparation failed')
+    this.adopt(binding)
+    await this.teacher.open()
+    if (this.disposed) return
+    const current = this.teacher.getSnapshot()
+    if (current.phase !== 'open' || current.reference.sessionId !== binding.sessionId) throw new Error('Teacher Session unavailable; retry the same ID or explicitly create a new teacher')
+    const prompt = response.prompt
+    // A command owns its own exact hold through settlement, independent of the UI subtree.
+    await this.ctx.sessions.using(binding.sessionId, { source: 'personalWorkbenchTeacher' }, async reference => {
+      if (this.disposed) return
+      this.checkExpected(binding.sessionId)
+      const archive = this.ctx.workspaces.list.getSnapshot()
+      const session = reference.binding.session.getSnapshot()
+      if (reference.sessionId !== binding.sessionId || archive.phase !== 'ready' || archive.state !== 'idle'
+        || archive.archivedSessionIds.includes(binding.sessionId) || session.removed || session.openState !== 'open') throw new Error('Teacher Session unavailable')
+      const scoped = reference.binding.ctx.conversation
+      if (!scoped) throw new Error('Native teacher conversation service unavailable')
+      await scoped.send(prompt)
+    })
+  })
+  dispose() { this.disposed = true; this.abort.abort(); this.teacher.dispose(); this.listeners.clear() }
+  private checkExpected(id: SessionId) { if (this.snapshot.binding?.sessionId !== id) throw new Error('Teacher binding changed; refresh before retry or replacement') }
+  private adopt(binding: RoleBinding | null) {
+    if (this.disposed) return
+    if (this.snapshot.binding?.sessionId !== binding?.sessionId) this.teacher.close()
+    this.publish({ ...this.snapshot, binding })
+  }
+  private async call(action: string, key: RoleBindingKey, extra: object = {}): Promise<Record<string, unknown>> {
+    if (key.appId !== 'kaogong' || key.instanceId !== 'default' || key.roleId !== 'teacher' || key.subject !== undefined) throw new Error('Unsupported role binding')
+    const response = await this.request('/api/personal-workbench/roles', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: this.abort.signal,
+      headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, key, ...extra }) }).catch(() => { throw new Error('Teacher service unavailable') })
+    if (response.status === 401 || response.status === 403) throw new Error('Teacher authentication required')
+    if (response.status === 404 || response.status === 503) throw new Error('Teacher service unavailable')
+    let value: unknown
+    try { value = await response.json() } catch { throw new Error('Teacher service unavailable: invalid response') }
+    if (typeof value !== 'object' || !value) throw new Error('Teacher service unavailable')
+    if (!response.ok) {
+      if ('binding' in value && value.binding !== null) this.adopt(parseRoleBinding(value.binding, key))
+      throw new Error('error' in value && typeof value.error === 'string' ? value.error : 'Teacher service unavailable')
+    }
+    return value as Record<string, unknown>
+  }
+  private run(operation: () => Promise<void>): Promise<void> {
+    if (this.disposed) return Promise.reject(new Error('Teacher owner disposed'))
+    if (this.pending) return Promise.reject(new Error('Teacher operation already in progress'))
+    this.publish({ ...this.snapshot, busy: true, error: null })
+    const pending = operation().catch(error => {
+      if (!this.disposed) this.publish({ ...this.snapshot, error: error instanceof Error ? error.message : 'Teacher operation failed' })
+      throw error
+    }).finally(() => { this.pending = undefined; if (!this.disposed) this.publish({ ...this.snapshot, busy: false }) })
+    this.pending = pending
+    return pending
+  }
+  private publish(snapshot: RoleSnapshot) { this.snapshot = snapshot; for (const listener of this.listeners) listener() }
+}

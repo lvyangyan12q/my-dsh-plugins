@@ -1,5 +1,7 @@
 # Personal Workbench
 
+Ticket 06 adds a fixed native teacher classroom with a versioned Host binding and optional Client role service. See [contract, ownership, dependency evidence and pending gates](../../docs/ticket06-classroom-evidence.md). This candidate is not runtime accepted; prior package installation evidence below does not accept ticket 06's new optional runtime dependency graph.
+
 Ticket 03 adds a compact application catalog, official sidebar launcher, additive overlay workspace, and a type-only public application API. It remains **not runtime accepted**. See [client integration and state ownership](../../docs/workbench-api.md). The catalog contains only currently registered plugins; no demo app or synthetic chat is installed. Browser storage owns UI layout preferences only. Closed/minimized windows and the hidden workspace retain application views until registration disposal; refresh, plugin replacement and business-data persistence remain application-owned.
 
 Ticket 02 implementation candidate, **not runtime accepted**. This package contributes an official sidebar footer launcher and an additive `shell.overlay` window. It retains one configured Session and renders the official `conversation.content` factory beneath an explicit `SessionProvider`. It does not implement chat, submit prompts itself, move DOM, change main selection, or modify Kaogong.

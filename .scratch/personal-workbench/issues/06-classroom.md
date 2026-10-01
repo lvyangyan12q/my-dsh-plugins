@@ -4,7 +4,9 @@
 
 **Blocked by:** 04 考公注册与默认实例接入。
 
-**Status:** ready-for-agent
+**Status:** code implemented; automated verification passed; installed runtime/UI acceptance pending. Not runtime accepted, PR ready, or release approved.
+
+Evidence: [ticket06-classroom-evidence](../../../docs/ticket06-classroom-evidence.md). Agent-reported checks: 99 passed (59 workbench, 40 Kaogong). Fresh tarball dependency/preset activation, Host restart binding restoration, native streaming/tools/approval/Stop and close-during-run continuation, actual-turn Skill injection, authenticated Chrome, material image pixels, desktop/narrow layout and installed sidebar comparisons remain pending. Automated checks do not complete the acceptance items below.
 
 - [ ] 老师会话关联持久保存，关闭重开和宿主重启后可续聊。
 - [ ] 保留图表和来源，材料作为数据传入，不当作系统指令。
