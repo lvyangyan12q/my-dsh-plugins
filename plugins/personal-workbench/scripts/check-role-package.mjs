@@ -19,6 +19,11 @@ const host = await readFile(resolve(root, 'lib/index.js'), 'utf8')
 const chunk = host.match(/import\("\.\/(role-host-[^"]+\.mjs)"\)/)?.[1]
 assert.ok(chunk, 'Optional role module must remain a lazy chunk')
 assert.ok(files.includes(`lib/${chunk}`), 'Lazy chunk must be in the archive')
+const managementChunk = host.match(/import\("\.\/(management-host-[^"]+\.mjs)"\)/)?.[1]
+assert.ok(managementChunk, 'Management stays optional and lazy')
+assert.ok(files.includes(`lib/${managementChunk}`), 'Management lazy chunk must ship')
+for (const file of ['management-api', 'management-domain', 'management-host', 'management-runtime']) assert.ok(files.includes(`lib/types/${file}.d.ts`))
+assert.ok(!files.some(file => file.startsWith('tests/fixtures/')), 'Synthetic catalog fixtures must never ship')
 assert.ok(!host.includes('from "@deepseek-ai/dsh-storage-domain"'), 'Base Host must not eagerly import optional helpers')
 const require = createRequire(resolve(root, 'package.json'))
 const resolutions = runtime.map(name => ({ name, resolved: require.resolve(name), declared: manifest.optionalDependencies[name] }))

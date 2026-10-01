@@ -49,6 +49,14 @@ Against an already-built official checkout, `DSH_SOURCE=/path/to/deepseek-harnes
 
 `node scripts/check-package-install.mjs <stage> <new-disposable-root> <absolute-built-cli> <absolute-npm-cli>` provides the narrow package check. Run stages `setup`, `install`, `offline`, then `verify` against the same root. The root must be a new child of this proof workspace's `runtime-verification` directory. Setup refuses an existing home and packs with scripts disabled. Install allows public npm registry downloads with empty isolated npm configuration; offline installs the archive into a second profile using the warmed cache. Verify checks installed artifact bytes and Schemastery resolution inside that home, imports the real Host artifact, and observes then stops an offline loopback-only built Host. Installer execution has a 90-second deadline; Host readiness has a 12-second deadline. No raw Host startup text is retained. These checks do not send prompts or authenticate a browser.
 
+## Agent And Skill Management
+
+The shared Workbench catalog includes Applications, Agents and Skills. App-owned roles appear under their app; their presets are excluded from the unowned native preset list. Catalogs use actual scoped native metadata, saved model selections, visible tools and native permission provenance. Unknown ownership and unavailable dependencies remain explicit.
+
+Assignments persist existing user-invocable Skill names by the complete role/subject key with revision checks. They affect the first claimed user step of later role turns through the native tool-skill loader, including ordinary native composer questions. They do not switch a launched preset, grant tools, erase previous instructions or imply permanent activation. Historical instruction evidence is read from the exact native Session, separately from discovery and assignment. This adapter is verified against DSH 0.2.0-rc.2; live completed-turn/browser acceptance remains pending.
+
+Configuration navigation uses the optional official plugin manager. Model selection continues to use native DSH controls; this catalog reads saved selections without provider lookup or credential access. `test:management` runs the focused tests with `DSH_SOURCE` set to the built checkout. `scripts/check-management-install.mjs` provides the offline owned-home tarball/Host/native-pre-step proof. See [ticket09 contracts and evidence](../../docs/ticket09-management-evidence.md).
+
 ## Isolated Runtime Acceptance
 
 Use a disposable Web profile, synthetic prompts and a harmless test workspace. Install with the official command `dsh plugin --profile <disposable-profile> add <path-to-this-built-package-or-tgz>`. Configure the inserted `personal-workbench` Host row's `teacherSessionId` to the synthetic teacher Session ID using official profile configuration. Leave the running profile and canonical Kaogong untouched. Do not commit this local ID or test conversation.

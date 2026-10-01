@@ -39,6 +39,7 @@ async function fixture({ width = 960, height = 640 } = {}) {
     fetch: () => { fetches++; throw new Error('No Session acquisition authorized by this test') },
   })
   const ctx = {
+    get: () => undefined, // Optional official plugin configuration navigation is absent.
     inject: () => {}, // Optional Better Sidebar is absent in this UI fixture.
     effect: execute => { const dispose = execute(); if (typeof dispose === 'function') cleanups.push(dispose); return dispose },
     reflect: { provide: (name, value) => { assert.equal(name, 'personalWorkbench'); service = value; return () => { service = undefined } } },

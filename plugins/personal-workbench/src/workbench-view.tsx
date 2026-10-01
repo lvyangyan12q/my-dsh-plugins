@@ -5,6 +5,8 @@ import type { WorkbenchAppDefinition, WorkbenchIcon } from './workbench-api.ts'
 import type { Workbench } from './workbench.ts'
 import { constrainGeometry, windowKey } from './workbench.ts'
 import { workspaceStyles } from './workbench-styles.ts'
+import { ManagementCatalogView } from './management-view.tsx'
+import type { ManagementCommands } from './management-view.tsx'
 
 export interface WorkspaceInjected {
   hooks: { workbench: Workbench }
@@ -16,6 +18,7 @@ export interface WorkspaceInjected {
   selectPage: Workbench['selectPage']
   setGeometry: Workbench['setGeometry']
   setPreference: Workbench['setPreference']
+  management?: ManagementCommands
 }
 type WorkspaceProps = PropsRuntime<'shell.overlay'> & PropsRenderSlots<'personal-workbench.app'>
   & PropsLocale<'personal-workbench'> & InjectFace<WorkspaceInjected>
@@ -33,8 +36,9 @@ export function WorkspaceLauncher({ openWorkspace, t, wide }: PropsRuntime<'side
 
 /** Workspace view; all live registry data comes through the renderer-made hook. */
 export function Workspace(props: WorkspaceProps) {
-  const { useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setGeometry, setPreference, renderSlot, t } = props
+  const { useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setGeometry, setPreference, renderSlot, t, management } = props
   const state = useWorkbench(value => value)
+  const [catalogTab, setCatalogTab] = useState<'applications' | 'agents' | 'skills'>('applications')
   const [query, setQuery] = useState('')
   const [showHidden, setShowHidden] = useState(false)
   const [bounds, setBounds] = useState({ width: 800, height: 600 })
@@ -93,11 +97,14 @@ export function Workspace(props: WorkspaceProps) {
       <button type="button" title={t('closeWorkspace')} aria-label={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
     {state.storageFailed && <p className="pwb-notice" role="status">{t('storageFailed')}</p>}
-    <div className="pwb-body">
+    <div className="pwb-body" data-catalog={catalogTab}>
       <aside className="pwb-catalog" aria-label={t('applications')}>
-        <label className="pwb-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={event => setQuery(event.target.value)} /></label>
-        <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={event => setShowHidden(event.target.checked)} />{t('showHidden')}</label>
-        <div className="pwb-list">
+        <nav className="pwb-catalog-tabs" aria-label={t('catalogTabs')}>
+          {(['applications', 'agents', 'skills'] as const).map(tab => <button key={tab} type="button" aria-pressed={catalogTab === tab} onClick={() => setCatalogTab(tab)}>{t(tab)}</button>)}
+        </nav>
+        <label className="pwb-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label={t(catalogTab === 'applications' ? 'searchApps' : 'searchCatalog')} placeholder={t(catalogTab === 'applications' ? 'searchApps' : 'searchCatalog')} value={query} onChange={event => setQuery(event.target.value)} /></label>
+        {catalogTab === 'applications' && <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={event => setShowHidden(event.target.checked)} />{t('showHidden')}</label>}
+        <div className="pwb-list" hidden={catalogTab !== 'applications'}>
           {apps.map(app => {
             const preference = state.apps[app.id]
             const unavailable = app.dependencies?.filter(row => !row.available)
@@ -116,8 +123,9 @@ export function Workspace(props: WorkspaceProps) {
           })}
           {!apps.length && <p className="pwb-empty" role="status">{t(state.definitions.length ? 'noMatches' : 'noApps')}</p>}
         </div>
+        {catalogTab !== 'applications' && <ManagementCatalogView tab={catalogTab} active={state.visible} apps={state.definitions} query={query} commands={management ?? {}} t={t} />}
       </aside>
-      <main className="pwb-workarea">
+      <main className="pwb-workarea" hidden={catalogTab !== 'applications'}>
         <nav className="pwb-taskbar" aria-label={t('openWindows')}>
           {windows.map(row => {
             const app = state.definitions.find(value => value.id === row.appId)!

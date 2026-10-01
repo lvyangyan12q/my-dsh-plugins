@@ -11,6 +11,7 @@ export interface RoleDefinition {
   readonly presetId: string
   readonly creation?: { readonly cwd: string }
   readonly teaching?: { readonly skillName: string; readonly provider: string }
+  readonly display?: { readonly name?: string; readonly source?: string; readonly bundleName?: string }
 }
 /** Durable creation intent survives failures before and after native Session creation. */
 export interface RoleBinding {
@@ -26,6 +27,8 @@ export interface RoleBinding {
 export interface PersonalWorkbenchBindings {
   /** Register exactly one key. Duplicate registrations reject; dispose withdraws only its declaration. */
   registerRole(definition: RoleDefinition): () => void
+  /** Current app-owned declarations only; withdrawal does not erase durable bindings. */
+  listRoles(): readonly RoleDefinition[]
   /** Read only, never create. @param key - supported binding key. @returns current intent/record or null. */
   read(key: RoleBindingKey): Promise<RoleBinding | null>
   /** User-authorized create/resume. @param key - supported key. @returns persisted ready binding. */

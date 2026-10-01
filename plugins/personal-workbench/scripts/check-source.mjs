@@ -46,16 +46,24 @@ if (emitTypes) await writeFile(resolve(plugin, '.checks/tsconfig.types.json'), J
   include: ['../src'],
 }, null, 2) + '\n')
 if (checkConsumer) {
+  paths['@deepseek-ai/dsh-personal-workbench'] = [resolve(plugin, 'lib/types/index.d.ts')]
+  paths['@deepseek-ai/dsh-personal-workbench/client'] = [resolve(plugin, 'lib/types/client.d.ts')]
   await writeFile(resolve(plugin, '.checks/consumer.ts'), `import type { Context } from '@deepseek-ai/cordis'
 import type { PersonalWorkbench, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppDefinition, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { RoleBindingKey, PersonalWorkbenchRoles } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { PersonalWorkbenchBindings } from '@deepseek-ai/dsh-personal-workbench'
+import type { SkillAssignment, ManagementRequest, ManagementCatalog } from '@deepseek-ai/dsh-personal-workbench'
 import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
 declare const ctx: Context
 const api: PersonalWorkbench = ctx.personalWorkbench
 const bindings: PersonalWorkbenchBindings = ctx.personalWorkbenchBindings
 const roles: PersonalWorkbenchRoles = ctx.personalWorkbenchRoles
 const teacher: RoleBindingKey = { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }
+const declaredRoles = bindings.listRoles()
+const assignment: SkillAssignment = { version: 1, key: teacher, revision: 0, names: ['existing-skill'] }
+const request: ManagementRequest = { action: 'assign', key: teacher, expectedRevision: assignment.revision, names: assignment.names }
+declare const catalog: ManagementCatalog
+void [declaredRoles, request, catalog.roles, catalog.skills]
 void bindings.read(teacher)
 void bindings.ensure(teacher)
 const withdraw: () => void = bindings.registerRole({ key: { ...teacher, subject: 'math' }, presetId: 'app.teacher.math.v1', creation: { cwd: 'C:/learning' }, teaching: { skillName: 'kaogong-teach', provider: 'app' } })

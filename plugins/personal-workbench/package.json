@@ -38,6 +38,7 @@
     "test:host": "node --test tests/host-import.test.mjs",
     "test:lifecycle": "node --test tests/workbench-lifecycle.test.mjs",
     "test:roles": "tsx --test tests/role-bindings.test.ts tests/role-client.test.mjs tests/role-storage.test.mjs tests/role-host.test.mjs tests/role-factory.test.mjs tests/role-ui.test.mjs tests/native-skill.test.mjs",
+    "test:management": "tsx --test tests/management-host.test.mjs tests/management-runtime.test.mjs tests/management-ui.test.mjs",
     "check:role-package": "node scripts/check-role-package.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check:source": "node scripts/check-source.mjs"
@@ -52,6 +53,14 @@
     "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2"
   },
   "devDependencies": {
+    "@deepseek-ai/dsh-agent": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-workspace": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-scope": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-sandbox-policy": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-user-approval": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-permission-presets": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-plugin-manager": "0.2.0-rc.2",
     "@deepseek-ai/dsh-agent-preset-registry": "0.2.0-rc.2",
     "@deepseek-ai/dsh-skill": "0.2.0-rc.2",
     "@deepseek-ai/dsh-client-connection": "0.2.0-rc.2",

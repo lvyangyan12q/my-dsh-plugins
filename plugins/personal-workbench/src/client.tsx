@@ -11,6 +11,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
+import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import { TeacherWindow, parseAssociation } from './teacher-window.ts'
 import { en, zh } from './locale.ts'
 import type {} from './workbench-api.ts'
@@ -20,6 +21,7 @@ import { Workspace, WorkspaceLauncher } from './workbench-view.tsx'
 import type { WorkspaceInjected } from './workbench-view.tsx'
 import { installRoleClient } from './role-view.tsx'
 export type { RoleBindingKey, RoleBinding, PersonalWorkbenchRoles, TeachingEvidence } from './role-binding-api.ts'
+export type { ManagementCatalog, ManagedRole, ManagedSkill, SkillAssignment, ManagementRequest } from './management-api.ts'
 
 export type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppPage, WorkbenchAppProps,
   WorkbenchAppOwner, WorkbenchAppId, WorkbenchInstanceId, WorkbenchIcon } from './workbench-api.ts'
@@ -134,7 +136,7 @@ export function apply(ctx: Context): void {
     inject: (): WorkspaceInjected => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace,
       closeWorkspace: workbench.closeWorkspace, openApp: workbench.openApp, focusWindow: workbench.focus,
       setMode: workbench.setMode, selectPage: workbench.selectPage, setGeometry: workbench.setGeometry,
-      setPreference: workbench.setPreference }),
+      setPreference: workbench.setPreference, management: { openBundle: ctx.get('pluginNavigation')?.openBundle } }),
   }, Workspace))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',
