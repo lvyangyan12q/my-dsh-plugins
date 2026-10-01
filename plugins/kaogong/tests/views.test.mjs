@@ -13,7 +13,7 @@ for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'HTMLImageE
 }
 const testingRequire = createRequire(runtime.resolve('@testing-library/react'))
 const React = testingRequire('react')
-const { render, fireEvent, screen, waitFor, cleanup } = runtime('@testing-library/react')
+const { render, fireEvent, screen, waitFor, cleanup, act } = runtime('@testing-library/react')
 let client
 window.__ModuleLoader__ = { load({ factory }) { client = factory(testingRequire) } }
 vm.runInThisContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'))
@@ -61,7 +61,8 @@ function mockApi() {
 test('embedded content uses one practice flow, real request payloads and safe materials', async () => {
   mockApi()
   const prompts = []
-  render(React.createElement(client.KaogongView, { onOpenTeacher: prompt => prompts.push(prompt) }))
+  const teachingRequests = []
+  render(React.createElement(client.KaogongView, { onOpenTeacher: (prompt, request) => { prompts.push(prompt); teachingRequests.push(request) } }))
   assert.equal(screen.queryByRole('dialog'), null)
   assert.equal(screen.queryByRole('button', { name: '关闭看板' }), null)
   fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
@@ -79,6 +80,10 @@ test('embedded content uses one practice flow, real request payloads and safe ma
   assert.deepEqual(calls.find(call => call.url.endsWith('/reflection')).body.entries, [{ id: 'fixture-1', errorReason: '概念混淆' }])
   fireEvent.click(screen.getByRole('button', { name: '老师讲评' }))
   await waitFor(() => assert.match(prompts[0], /0\/1题正确/))
+  assert.equal(teachingRequests[0].kind, 'review')
+  assert.equal(teachingRequests[0].context.subject, subject)
+  assert.equal(teachingRequests[0].result.correctCount, 0)
+  assert.equal(teachingRequests[0].result.results[0].id, 'fixture-1')
   fireEvent.click(screen.getByRole('button', { name: '再来 10 题' }))
   await screen.findByRole('radio', { name: 'A. 10%' })
   assert.deepEqual(calls.filter(call => call.url.endsWith('/start')).map(call => call.body.excludeIds), [[], ['fixture-1']])
@@ -131,6 +136,7 @@ test('original sidebar registration opens the same view without requiring a work
   mockApi()
   const registrations = []
   const ctx = {
+    inject() {},
     slots: {
       inject(name, callback) { assert.equal(name, 'sidebar.footer.action'); callback() },
       register(options, component) { registrations.push({ options, component }) },
@@ -144,4 +150,214 @@ test('original sidebar registration opens the same view without requiring a work
   fireEvent.click(screen.getByRole('button', { name: '打开考公学习看板' }))
   await screen.findByRole('button', { name: '开始 10 题练习' })
   assert.equal(calls.filter(call => call.url === '/api/kaogong/dashboard').length, 1)
+})
+
+async function lifecycle() {
+  const official = createRequire(`${process.env.KAOGONG_TEST_RUNTIME}/packages/client/ui-renderer/package.json`)
+  const { Context } = official('@deepseek-ai/cordis')
+  let renderer
+  const loader = window.__ModuleLoader__
+  window.__ModuleLoader__ = { load({ factory }) { renderer = factory(official) } }
+  vm.runInThisContext(readFileSync(`${process.env.KAOGONG_TEST_RUNTIME}/packages/client/ui-renderer/lib/client.js`, 'utf8'))
+  window.__ModuleLoader__ = loader
+  const ctx = new Context()
+  const registry = ctx.plugin(renderer.SlotRegistry)
+  await registry
+  const seed = ctx.plugin({ inject: ['slots'], apply: child => {
+    child.slots.register({ name: 'root', children: { 'sidebar.footer.action': { kind: 'list', scope: 'root' }, 'test.workbench': { kind: 'list', scope: 'root' } } }, () => null)
+    child.effect(() => child.reflect.provide('uiWorkspace', { startSession() { assert.fail('No implicit Session') } }))
+  } })
+  await seed
+  let consumer = ctx.plugin(client)
+  await consumer
+  const definitions = new Map(), opens = []
+  let provider
+  const enable = async () => {
+    provider = ctx.plugin({ inject: ['slots'], apply: child => {
+      child.slots.register({ name: 'test.workbench', id: 'provider', children: { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } } }, () => null)
+      child.effect(() => child.reflect.provide('personalWorkbench', {
+        registerApp(definition) {
+          assert.equal(definitions.has(definition.id), false)
+          definitions.set(definition.id, definition)
+          return () => definitions.delete(definition.id)
+        },
+        openApp(...args) { opens.push(args) }, openWorkspace() {},
+      }))
+    } })
+    await provider
+    await consumer
+  }
+  return { ctx, definitions, opens, enable,
+    disable: () => provider.dispose(),
+    reload: async () => { await consumer.dispose(); consumer = ctx.plugin(client); await consumer },
+    dispose: async () => { await consumer.dispose(); await provider?.dispose(); await seed.dispose(); await registry.dispose(); await ctx.fiber.dispose() },
+  }
+}
+
+test('real Cordis optional provider and official keyed slots dispose, reappear and hot reload without duplicates', async () => {
+  const app = await lifecycle()
+  try {
+    assert.equal(app.ctx.slots.entries('sidebar.footer.action').length, 1)
+    assert.equal(app.ctx.slots.entries('personal-workbench.app').length, 0)
+    await app.enable()
+    assert.deepEqual(app.definitions.get('kaogong').pages.map(page => page.id), ['classroom', 'practice', 'errors', 'materials', 'plan'])
+    assert.equal(app.ctx.slots.entries('personal-workbench.app')[0].options.key, 'kaogong')
+    await app.disable()
+    assert.equal(app.definitions.size, 0)
+    assert.equal(app.ctx.slots.entries('personal-workbench.app').length, 0)
+    assert.equal(app.ctx.slots.entries('sidebar.footer.action').length, 1)
+    await app.enable()
+    await app.reload()
+    assert.equal(app.definitions.size, 1)
+    assert.equal(app.ctx.slots.entries('personal-workbench.app').length, 1)
+    assert.equal(app.ctx.slots.entries('sidebar.footer.action').length, 1)
+    assert.equal(app.opens.length, 0)
+  } finally { await app.dispose() }
+})
+
+test('default instance preserves draft, reader, results and reflection through pages, close and service replacement', async () => {
+  mockApi()
+  const app = await lifecycle()
+  const Footer = app.ctx.slots.entries('sidebar.footer.action')[0].component
+  const footer = render(React.createElement(Footer, { wide: true }))
+  let view
+  try {
+    fireEvent.click(screen.getByRole('button', { name: '打开考公学习看板' }))
+    fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
+    fireEvent.click(await screen.findByRole('radio', { name: 'A. 10%' }))
+    fireEvent.click(await screen.findByRole('button', { name: '测试讲义' }))
+    await screen.findByText('合成测试资料', { exact: false })
+    await act(() => app.enable())
+    assert.equal(screen.queryByRole('dialog'), null)
+    assert.deepEqual(app.opens.at(-1), ['kaogong', 'default'])
+    const View = app.ctx.slots.entries('personal-workbench.app')[0].component
+    const props = { appId: 'kaogong', instanceId: 'default', pageId: 'practice', active: true, selectPage() {}, close() {} }
+    view = render(React.createElement(View, props))
+    assert.equal(screen.getByRole('radio', { name: 'A. 10%' }).checked, true)
+    view.rerender(React.createElement(View, { ...props, pageId: 'materials' }))
+    assert.ok(screen.getByRole('button', { name: '返回资料列表' }))
+    view.rerender(React.createElement(View, { ...props, pageId: 'plan' }))
+    assert.ok(screen.getByRole('checkbox', { name: '完成 学习：增长率' }))
+    view.rerender(React.createElement(View, { ...props, pageId: 'classroom' }))
+    assert.ok(screen.getByText('距离考试'))
+    assert.ok(screen.getByRole('button', { name: '讲解' }))
+    view.rerender(React.createElement(View, { ...props, active: false }))
+    assert.equal(screen.queryByRole('radio'), null)
+    view.rerender(React.createElement(View, props))
+    let release
+    const api = fetch
+    globalThis.fetch = async (url, options) => {
+      const response = await api(url, options)
+      if (url.endsWith('/submit')) await new Promise(resolve => { release = resolve })
+      return response
+    }
+    fireEvent.click(screen.getByRole('button', { name: '提交判分' }))
+    await waitFor(() => assert.ok(release))
+    fireEvent.click(screen.getByRole('button', { name: '提交判分' }))
+    await act(async () => { view.unmount(); await app.disable(); release() })
+    await screen.findByText('0/1 题正确，正确率 0%')
+    assert.equal(calls.filter(call => call.url.endsWith('/submit')).length, 1)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: '概念混淆' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存错因并总结' }))
+    await screen.findByText('本模块错题归纳')
+    await act(() => app.enable())
+    const Replacement = app.ctx.slots.entries('personal-workbench.app')[0].component
+    view = render(React.createElement(Replacement, { ...props, pageId: 'errors' }))
+    assert.ok(screen.getByText('本模块错题归纳'))
+    assert.equal(screen.getByRole('combobox').value, '概念混淆')
+    assert.equal(calls.filter(call => call.url.endsWith('/start')).length, 1)
+    assert.equal(calls.filter(call => call.url.includes('knowledge?id=')).length, 1)
+    fireEvent.click(screen.getByRole('button', { name: '再来 10 题' }))
+    view.rerender(React.createElement(Replacement, props))
+    await screen.findByRole('radio', { name: 'A. 10%' })
+    assert.deepEqual(calls.filter(call => call.url.endsWith('/start')).at(-1).body.excludeIds, ['fixture-1'])
+  } finally { view?.unmount(); footer.unmount(); await app.dispose() }
+})
+
+test('reader search draft survives transfer and an aborted old fetch cannot replace the new list', async () => {
+  mockApi()
+  const api = fetch
+  let release
+  let reads = 0
+  globalThis.fetch = async (url, options) => {
+    const response = await api(url, options)
+    if (url.includes('knowledge?q=') && ++reads === 1) {
+      await new Promise(resolve => { release = resolve })
+      return { ...response, json: async () => ({ entries: [{ id: 'stale', title: '过期讲义', subject, kind: '讲义' }] }) }
+    }
+    return response
+  }
+  const app = await lifecycle()
+  const Footer = app.ctx.slots.entries('sidebar.footer.action')[0].component
+  const footer = render(React.createElement(Footer, { wide: true }))
+  let view
+  try {
+    fireEvent.click(screen.getByRole('button', { name: '打开考公学习看板' }))
+    const search = await screen.findByRole('textbox', { name: '搜索知识库' })
+    fireEvent.change(search, { target: { value: '增长率' } })
+    await waitFor(() => assert.ok(release))
+    await act(() => app.enable())
+    const View = app.ctx.slots.entries('personal-workbench.app')[0].component
+    view = render(React.createElement(View, { appId: 'kaogong', instanceId: 'default', pageId: 'materials', active: true, selectPage() {}, close() {} }))
+    assert.equal(screen.getByRole('textbox', { name: '搜索知识库' }).value, '增长率')
+    await screen.findByRole('button', { name: '测试讲义' })
+    await act(async () => { release() })
+    assert.equal(screen.queryByRole('button', { name: '过期讲义' }), null)
+    assert.ok(screen.getByRole('button', { name: '测试讲义' }))
+  } finally { view?.unmount(); footer.unmount(); await app.dispose() }
+})
+
+test('ticket 06 teaching callback receives a structured lesson and bypasses main-session handoff', async () => {
+  mockApi()
+  const requests = []
+  const state = new client.KaogongViewState()
+  render(React.createElement(client.KaogongStateContext.Provider, { value: state },
+    React.createElement(client.KaogongWorkbenchContent, {
+      appId: 'kaogong', instanceId: 'default', pageId: 'classroom', active: true,
+      selectPage() {}, close() { assert.fail('Custom role handler owns navigation') },
+      ctx: { uiWorkspace: { startSession() { assert.fail('No main Session') } } },
+      onOpenTeacher(prompt, request) { requests.push(request) },
+    })))
+  fireEvent.click(await screen.findByRole('button', { name: '讲解' }))
+  await waitFor(() => assert.equal(requests.length, 1))
+  assert.deepEqual(requests[0], { kind: 'lesson', context: { subject, title: '增长率', limit: 10, planIndex: 0 } })
+  assert.equal('result' in requests[0], false)
+})
+
+test('late dashboard and practice responses from retired views cannot overwrite newer shared results', async () => {
+  mockApi()
+  const api = fetch
+  let releaseDashboard, releasePractice
+  let dashboardReads = 0, practiceReads = 0
+  globalThis.fetch = async (url, options) => {
+    const response = await api(url, options)
+    if (url.endsWith('/dashboard') && ++dashboardReads === 2) {
+      await new Promise(resolve => { releaseDashboard = resolve })
+      return { ...response, json: async () => ({ ...dashboard, today: '1999-01-01' }) }
+    }
+    if (url.endsWith('/start') && ++practiceReads === 1) {
+      await new Promise(resolve => { releasePractice = resolve })
+      return { ...response, text: async () => JSON.stringify({ reason: 'stale', questions: [], returned: 0, totalAvailable: 0 }) }
+    }
+    return response
+  }
+  const app = await lifecycle()
+  const Footer = app.ctx.slots.entries('sidebar.footer.action')[0].component
+  const footer = render(React.createElement(Footer, { wide: true }))
+  let view
+  try {
+    fireEvent.click(screen.getByRole('button', { name: '打开考公学习看板' }))
+    fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
+    fireEvent.click(screen.getByRole('button', { name: '刷新' }))
+    await waitFor(() => assert.ok(releaseDashboard && releasePractice))
+    await act(() => app.enable())
+    const View = app.ctx.slots.entries('personal-workbench.app')[0].component
+    view = render(React.createElement(View, { appId: 'kaogong', instanceId: 'default', pageId: 'practice', active: true, selectPage() {}, close() {} }))
+    fireEvent.click(screen.getByRole('button', { name: '开始 10 题练习' }))
+    await screen.findByRole('radio', { name: 'A. 10%' })
+    await act(async () => { releaseDashboard(); releasePractice() })
+    assert.ok(screen.getByRole('radio', { name: 'A. 10%' }))
+    assert.equal(screen.queryByText(/1999-01-01/), null)
+    assert.equal(screen.queryByText(/当前题库没有匹配题/), null)
+  } finally { view?.unmount(); footer.unmount(); await app.dispose() }
 })

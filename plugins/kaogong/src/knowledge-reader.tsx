@@ -1,15 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useBusinessState } from './view-state.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
 
-type Entry = { id: string; title: string; subject: string; kind: string; source: string; content: string }
+export type Entry = { id: string; title: string; subject: string; kind: string; source: string; content: string }
 
 export function KnowledgeLibrary({ active = true }: { active?: boolean }) {
-  const [query, setQuery] = useState('')
-  const [entries, setEntries] = useState<Entry[]>([])
-  const [selected, setSelected] = useState('')
-  const [entry, setEntry] = useState<Entry | null>(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [query, setQuery] = useBusinessState('reader.query', '')
+  const [entries, setEntries] = useBusinessState('reader.entries', [])
+  const [selected, setSelected] = useBusinessState('reader.selected', '')
+  const [entry, setEntry] = useBusinessState('reader.entry', null)
+  const [error, setError] = useBusinessState('reader.error', '')
+  const [loading, setLoading] = useBusinessState('reader.loading', false)
   useEffect(() => {
     if (!active) return
     const abort = new AbortController()
@@ -17,7 +18,7 @@ export function KnowledgeLibrary({ active = true }: { active?: boolean }) {
       setError('')
       fetch('/api/kaogong/knowledge?q=' + encodeURIComponent(query), { signal: abort.signal })
         .then(async r => { if (!r.ok) throw new Error('知识库加载失败'); return r.json() })
-        .then(data => setEntries(data.entries))
+        .then(data => { if (!abort.signal.aborted) setEntries(data.entries) })
         .catch(e => { if (!abort.signal.aborted) setError(e.message) })
     }
     const timer = setTimeout(refresh, 250)
@@ -25,18 +26,20 @@ export function KnowledgeLibrary({ active = true }: { active?: boolean }) {
     return () => { clearTimeout(timer); clearInterval(interval); abort.abort() }
   }, [query, active])
   useEffect(() => {
+    if (!active) return
     if (!selected) { setEntry(null); return }
+    if (entry?.id === selected) return
     const abort = new AbortController()
     setLoading(true)
     setEntry(null)
     setError('')
     fetch('/api/kaogong/knowledge?id=' + encodeURIComponent(selected), { signal: abort.signal })
       .then(async r => { if (!r.ok) throw new Error('资料正文加载失败'); return r.json() })
-      .then(setEntry)
+      .then(value => { if (!abort.signal.aborted) setEntry({ ...value, id: selected }) })
       .catch(e => { if (!abort.signal.aborted) setError(e.message) })
       .finally(() => { if (!abort.signal.aborted) setLoading(false) })
     return () => abort.abort()
-  }, [selected])
+  }, [selected, active])
   return <div>
     {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
     {selected ? <>
