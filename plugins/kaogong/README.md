@@ -37,6 +37,58 @@ pnpm exec tsdown -c kaogong/tsdown.config.ts
 
 ## 设计
 
+### Reusable content view (ticket 01)
+
+The client module exports `KaogongView` and its source type `KaogongViewProps`.
+The view contains the existing dashboard, plan, practice, reflection and knowledge
+reader. It does not register a sidebar entry, open a session or create a fixed
+overlay. The existing `apply()` entry still registers `kaogong-dashboard`; its
+standalone shell owns the fullscreen dialog and teaching clipboard handoff.
+Business endpoints, scoring, storage and visual styles are unchanged.
+
+```tsx
+import { KaogongView } from '@deepseek-ai/dsh-tool-kaogong/client'
+
+<KaogongView
+  active={visible}
+  onClose={closeWindow}
+  onOpenTeacher={openTeachingSession}
+/>
+```
+
+`active` defaults to `true`. Set it to `false` while hiding a mounted view to retain
+answers, round history, results and the selected knowledge document. Dashboard
+refreshes occur on activation; knowledge list polling pauses while inactive.
+Unmounting discards these transient UI values, never persisted learning data.
+`onClose` is optional; omitting it removes the content's close button.
+`onOpenTeacher(prompt)` is required and may return a promise. The shell owns
+session navigation and any prompt delivery. A rejected callback displays the
+existing error and leaves the view available. The standalone shell closes after
+successful session creation, including when clipboard access fails.
+
+Mount one view per default application instance. Reuse that mounted view when
+switching containers; rendering both standalone and embedded copies would create
+two independent React states and subscriptions. Workbench registration, ownership
+coordination and embedded role conversations belong to later tickets. Ticket 01
+adds no workbench dependency, theme change or data migration.
+
+Focused verification from this plugin directory, using the existing shared
+dependency runtime (which must provide `jsdom` and `@testing-library/react`):
+
+```powershell
+node node_modules/tsdown/dist/run.mjs -c tsdown.host.config.ts
+node node_modules/tsdown/dist/run.mjs -c tsdown.config.ts
+$env:KAOGONG_TEST_RUNTIME = 'D:/programming/workspace/deepseek-harness'
+node --test tests/views.test.mjs
+node --test tests/core.test.ts tests/schemas.test.ts tests/mineru.test.ts tests/material-repair.test.ts tests/knowledge-import.test.ts
+```
+
+The view tests execute the built DSH client module against synthetic HTTP fixtures,
+covering embedded practice, answer concealment, material images/tables, scores,
+reflection, cycling, plan updates, close/reopen state, teaching failures and the
+original sidebar entry. They do not copy personal data or claim live DSH session
+integration or browser screenshot verification.
+
 ### MinerU PDF 解析
 
 在 DSH 设置页的 `kaogong` 配置节展开 `mineru`，填写 `token`（密钥字段），选择

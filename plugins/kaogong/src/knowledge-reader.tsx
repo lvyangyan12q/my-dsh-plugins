@@ -3,7 +3,7 @@ import { DocumentMarkdown } from './document-markdown.tsx'
 
 type Entry = { id: string; title: string; subject: string; kind: string; source: string; content: string }
 
-export function KnowledgeLibrary() {
+export function KnowledgeLibrary({ active = true }: { active?: boolean }) {
   const [query, setQuery] = useState('')
   const [entries, setEntries] = useState<Entry[]>([])
   const [selected, setSelected] = useState('')
@@ -11,6 +11,7 @@ export function KnowledgeLibrary() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   useEffect(() => {
+    if (!active) return
     const abort = new AbortController()
     const refresh = () => {
       setError('')
@@ -22,7 +23,7 @@ export function KnowledgeLibrary() {
     const timer = setTimeout(refresh, 250)
     const interval = setInterval(refresh, 15000)
     return () => { clearTimeout(timer); clearInterval(interval); abort.abort() }
-  }, [query])
+  }, [query, active])
   useEffect(() => {
     if (!selected) { setEntry(null); return }
     const abort = new AbortController()
