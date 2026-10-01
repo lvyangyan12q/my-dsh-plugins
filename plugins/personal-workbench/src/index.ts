@@ -1,0 +1,26 @@
+import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-host-webserver'
+import z from '@deepseek-ai/schemastery'
+
+export const name = 'personal-workbench'
+export const inject = ['webServer']
+
+/** Persisted by the official profile configuration; no transcript is copied. */
+export interface Config { teacherSessionId: string }
+export const Config: z<Config> = z.object({ teacherSessionId: z.string().default('') })
+
+/** Register read-only association metadata. Installation makes no session or model calls. */
+export function apply(ctx: Context, config: Config): void {
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact', path: '/api/personal-workbench/teacher',
+    handler: (req, res) => {
+      if (req.method !== 'GET') {
+        res.writeHead(405, { allow: 'GET' })
+        res.end()
+        return
+      }
+      res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+      res.end(JSON.stringify({ version: 1, sessionId: config.teacherSessionId }))
+    },
+  }), 'personal-workbench: teacher association')
+}
