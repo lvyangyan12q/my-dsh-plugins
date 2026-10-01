@@ -38,6 +38,40 @@ await writeFile(resolve(plugin, '.checks/tsconfig.json'), JSON.stringify({
   compilerOptions: { paths, types: ['node'], typeRoots: [dirname(dirname(require.resolve('@types/node/package.json'))), dirname(reactTypes)] },
   include: ['../src', '../tests'],
 }, null, 2) + '\n')
-const result = spawnSync(process.execPath, [require.resolve('typescript/bin/tsc'), '--noEmit', '-p', resolve(plugin, '.checks/tsconfig.json')], { stdio: 'inherit', cwd: plugin })
+const emitTypes = process.argv.includes('--emit-types')
+const checkConsumer = process.argv.includes('--check-consumer')
+if (emitTypes && checkConsumer) throw new Error('Choose declaration emission or consumer checking')
+if (emitTypes) await writeFile(resolve(plugin, '.checks/tsconfig.types.json'), JSON.stringify({
+  extends: '../tsconfig.types.json', compilerOptions: { paths, types: ['node'], typeRoots: [dirname(dirname(require.resolve('@types/node/package.json'))), dirname(reactTypes)] },
+  include: ['../src'],
+}, null, 2) + '\n')
+if (checkConsumer) {
+  await writeFile(resolve(plugin, '.checks/consumer.ts'), `import type { Context } from '@deepseek-ai/cordis'
+import type { PersonalWorkbench, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppDefinition, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
+declare const ctx: Context
+const api: PersonalWorkbench = ctx.personalWorkbench
+const id = 'kaogong' as WorkbenchAppId
+const instance = 'default' as WorkbenchInstanceId
+const definition: WorkbenchAppDefinition = { id, name: 'Kaogong', version: '1', source: 'plugin', icon: 'graduation-cap', pages: [{ id: 'classroom', label: 'Classroom' }], defaultLayout: { width: 800, height: 600, pageId: 'classroom' }, roles: [{ id: 'teacher', name: 'Teacher' }], dependencies: [{ id: 'native-session', available: true }] }
+const dispose: () => void = api.registerApp(definition)
+api.openApp(id, instance)
+api.openWorkspace()
+declare const view: WorkbenchAppProps
+const page: string = view.pageId
+const active: boolean = view.active
+view.selectPage(page)
+view.close()
+// @ts-expect-error Window presentation has no Session cancellation API.
+api.cancel()
+// @ts-expect-error Definitions never accept React components.
+definition.component = () => null
+void [dispose, active]
+`)
+  await writeFile(resolve(plugin, '.checks/tsconfig.consumer.json'), JSON.stringify({
+    extends: './tsconfig.json', include: ['./consumer.ts'],
+  }, null, 2) + '\n')
+}
+const config = emitTypes ? 'tsconfig.types.json' : checkConsumer ? 'tsconfig.consumer.json' : 'tsconfig.json'
+const result = spawnSync(process.execPath, [require.resolve('typescript/bin/tsc'), ...(emitTypes ? [] : ['--noEmit']), '-p', resolve(plugin, '.checks', config)], { stdio: 'inherit', cwd: plugin })
 if (result.error) throw result.error
 process.exitCode = result.status ?? 1

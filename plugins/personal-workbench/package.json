@@ -1,16 +1,16 @@
 {
   "name": "@deepseek-ai/dsh-personal-workbench",
   "version": "0.1.0",
-  "description": "Explicit-session native teacher conversation proof",
+  "description": "Registered application workspace and native teacher conversation proof",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
-    "./client": "./lib/client.js",
+    "./client": { "types": "./lib/types/client.d.ts", "default": "./lib/client.js" },
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": ["lib/index.js", "lib/client.js", "cordis.patch.yml", "README.md"],
+  "files": ["lib/index.js", "lib/client.js", "lib/types/**/*.d.ts", "cordis.patch.yml", "README.md", "THIRD_PARTY_NOTICES.md"],
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },
     "client": {
@@ -24,16 +24,19 @@
         "@deepseek-ai/dsh-client-ui-chat",
         "@deepseek-ai/dsh-client-ui-approval",
         "@deepseek-ai/dsh-client-ui-user-questions",
-        "@deepseek-ai/dsh-client-ui-sidebar"
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-locale"
       ]
     }
   },
   "scripts": {
-    "build": "tsdown -c tsdown.config.ts",
+    "build": "tsdown -c tsdown.config.ts && tsc -p tsconfig.types.json",
     "prepare": "npm run build",
     "test": "tsx --test tests/*.test.ts",
-    "test:artifact": "node --test tests/artifact.test.mjs",
+    "test:artifact": "node --test tests/artifact.test.mjs tests/workbench-ui.test.mjs",
     "test:host": "node --test tests/host-import.test.mjs",
+    "test:lifecycle": "node --test tests/workbench-lifecycle.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check:source": "node scripts/check-source.mjs"
   },
@@ -59,6 +62,9 @@
     "@types/node": "^24.0.0",
     "@types/react": "~18.3.1",
     "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "0.468.0",
+    "jsdom": "29.1.1",
     "tsdown": "^0.22.2",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"

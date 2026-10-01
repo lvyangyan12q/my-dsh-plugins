@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { FlaskConical } from 'lucide-react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { InjectFace, PropsLocale, PropsRenderFactories, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
@@ -12,6 +13,13 @@ import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import { TeacherWindow, parseAssociation } from './teacher-window.ts'
 import { en, zh } from './locale.ts'
+import type {} from './workbench-api.ts'
+import { Workbench } from './workbench.ts'
+import { Workspace, WorkspaceLauncher } from './workbench-view.tsx'
+import type { WorkspaceInjected } from './workbench-view.tsx'
+
+export type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppPage, WorkbenchAppProps,
+  WorkbenchAppOwner, WorkbenchAppId, WorkbenchInstanceId, WorkbenchIcon } from './workbench-api.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap { 'personal-workbench.teacher': { kind: 'single'; scope: 'session' } }
@@ -78,14 +86,25 @@ function NativeTeacher({ useSession, renderFactorySlot, t, retry }: PropsRuntime
   })
 }
 
-function Launcher({ open, t }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'personal-workbench'> & { open: TeacherWindow['open'] }) {
-  return <button type="button" onClick={() => { void open() }} title={t('open')} aria-label={t('open')}>T</button>
+function Launcher({ open, t, wide }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'personal-workbench'> & { open: TeacherWindow['open'] }) {
+  return <button type="button" onClick={() => { void open() }} title={t('teacherProof')} aria-label={t('teacherProof')}
+    style={{ display: 'flex', alignItems: 'center', gap: 6, border: 0, background: 'transparent', color: 'inherit', fontSize: 13, padding: 6, minHeight: 32 }}>
+    <FlaskConical size={18} aria-hidden="true" />{wide && <span>{t('teacherProof')}</span>}
+  </button>
 }
 
 export const inject = ['slots', 'sessions', 'workspaces', 'uiSession', 'uiConversation', 'locale']
 
-/** Add one launcher and one explicit-session overlay through native slots. */
+/** Register the shared application workspace and the independent native teacher proof.
+ * @param ctx - client plugin context; all registrations unwind with its fiber.
+ */
 export function apply(ctx: Context): void {
+  const workbench = new Workbench({
+    getItem: key => window.localStorage.getItem(key),
+    setItem: (key, value) => window.localStorage.setItem(key, value),
+  })
+  ctx.effect(() => () => { workbench.dispose() }, 'personal-workbench: registry lifetime')
+  ctx.effect(() => ctx.reflect.provide('personalWorkbench', workbench), 'personal-workbench: public service')
   const teacher = new TeacherWindow(ctx.sessions, async signal => {
     const response = await fetch('/api/personal-workbench/teacher', { signal, credentials: 'same-origin', cache: 'no-store' })
     if (!response.ok) throw new Error('Teacher association unavailable')
@@ -106,4 +125,16 @@ export function apply(ctx: Context): void {
     name: 'sidebar.footer.action', id: 'personal-workbench', locale: 'personal-workbench',
     inject: () => ({ open: teacher.open }),
   }, Launcher))
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay', id: 'personal-workbench.workspace', locale: 'personal-workbench',
+    children: { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } },
+    inject: (): WorkspaceInjected => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace,
+      closeWorkspace: workbench.closeWorkspace, openApp: workbench.openApp, focusWindow: workbench.focus,
+      setMode: workbench.setMode, selectPage: workbench.selectPage, setGeometry: workbench.setGeometry,
+      setPreference: workbench.setPreference }),
+  }, Workspace))
+  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+    name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',
+    inject: () => ({ openWorkspace: workbench.openWorkspace }),
+  }, WorkspaceLauncher))
 }
