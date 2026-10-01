@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { InjectFace, PropsLocale, PropsRenderFactories, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -21,6 +23,7 @@ interface WindowInjected {
   open: TeacherWindow['open']
   close: TeacherWindow['close']
   mount: TeacherWindow['mount']
+  retry: TeacherWindow['retry']
 }
 type WindowProps = PropsRuntime<'shell.overlay'> & PropsRenderSlots<'personal-workbench.teacher'>
   & PropsLocale<'personal-workbench'> & InjectFace<WindowInjected>
@@ -33,7 +36,7 @@ function MountedTeacher({ reference, mount, children }: {
 }
 
 function Window(props: WindowProps) {
-  const { useTeacherWindow, SessionProvider, renderSlot, close, open, mount, t } = props
+  const { useTeacherWindow, SessionProvider, renderSlot, close, open, mount, retry, t } = props
   const state = useTeacherWindow(value => value)
   const dialog = useRef<HTMLDialogElement>(null)
   const visible = state.phase !== 'closed'
@@ -58,7 +61,7 @@ function Window(props: WindowProps) {
       {state.phase === 'error' && <div role="alert"><p>{t(state.reason)}</p><button type="button" onClick={() => { void open() }}>{t('retry')}</button></div>}
       {state.phase === 'open' && (
         <MountedTeacher reference={state.reference} mount={mount}>
-          <SessionProvider session={state.reference} empty={() => <p role="alert">{t('session')}</p>}>
+          <SessionProvider session={state.reference} empty={() => <div role="alert"><p>{t('session')}</p><button type="button" onClick={() => { void retry(state.reference.sessionId) }}>{t('retry')}</button></div>}>
             {renderSlot('personal-workbench.teacher', {})}
           </SessionProvider>
         </MountedTeacher>
@@ -67,9 +70,9 @@ function Window(props: WindowProps) {
   )
 }
 
-function NativeTeacher({ useSession, renderFactorySlot, t }: PropsRuntime<'personal-workbench.teacher'> & PropsRenderFactories & PropsLocale<'personal-workbench'>) {
+function NativeTeacher({ useSession, renderFactorySlot, t, retry }: PropsRuntime<'personal-workbench.teacher'> & PropsRenderFactories & PropsLocale<'personal-workbench'> & { retry: () => Promise<void> }) {
   const session = useSession(s => s)
-  if (session.openState !== 'open') return <p role="alert">{t('session')}</p>
+  if (session.removed || session.openState !== 'open') return <div role="alert"><p>{t('session')}</p><button type="button" onClick={() => { void retry() }}>{t('retry')}</button></div>
   return renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, {
     fallback: <p role="alert">{t('unavailable')}</p>,
   })
@@ -79,7 +82,7 @@ function Launcher({ open, t }: PropsRuntime<'sidebar.footer.action'> & PropsLoca
   return <button type="button" onClick={() => { void open() }} title={t('open')} aria-label={t('open')}>T</button>
 }
 
-export const inject = ['slots', 'sessions', 'uiSession', 'uiConversation', 'locale']
+export const inject = ['slots', 'sessions', 'workspaces', 'uiSession', 'uiConversation', 'locale']
 
 /** Add one launcher and one explicit-session overlay through native slots. */
 export function apply(ctx: Context): void {
@@ -87,16 +90,17 @@ export function apply(ctx: Context): void {
     const response = await fetch('/api/personal-workbench/teacher', { signal, credentials: 'same-origin', cache: 'no-store' })
     if (!response.ok) throw new Error('Teacher association unavailable')
     return parseAssociation(await response.json())
-  })
+  }, ctx.workspaces.list)
   ctx.effect(() => () => { teacher.dispose() }, 'personal-workbench: local teacher reference')
   ctx.effect(() => ctx.locale.register('personal-workbench', { en, zh }), 'personal-workbench: locale')
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay', id: 'personal-workbench', locale: 'personal-workbench',
     children: { 'personal-workbench.teacher': { kind: 'single', scope: 'session' } },
-    inject: (): WindowInjected => ({ hooks: { teacherWindow: teacher }, open: teacher.open, close: teacher.close, mount: teacher.mount }),
+    inject: (): WindowInjected => ({ hooks: { teacherWindow: teacher }, open: teacher.open, close: teacher.close, mount: teacher.mount, retry: teacher.retry }),
   }, Window))
   ctx.slots.inject('personal-workbench.teacher', () => ctx.slots.register({
     name: 'personal-workbench.teacher', locale: 'personal-workbench',
+    inject: (sessionId: SessionId) => ({ retry: () => teacher.retry(sessionId) }),
   }, NativeTeacher))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench', locale: 'personal-workbench',
