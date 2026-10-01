@@ -37,9 +37,19 @@ pnpm exec tsdown -c kaogong/tsdown.config.ts
 
 ## 设计
 
+### Optional Workbench Integration
+
+Target compatibility is DSH `0.2.0-rc.2` with personal-workbench `0.1.0`. The client consumes only types from `@deepseek-ai/dsh-personal-workbench/client`; the optional peer is absent from the required client injection list and browser runtime imports. Cordis waits for `personalWorkbench` and the official root keyed `personal-workbench.app` slot, registers the `kaogong` metadata and view together, and disposes both when either dependency disappears. The official `kaogong-dashboard` sidebar action opens the common workbench owner when available and the standalone panel otherwise.
+
+The `default` instance uses the existing Host notebook, progress, bank and knowledge domains and `/api/kaogong/*` endpoints directly. There is no data migration, domain reopening or separate bank. Other instance IDs show an explicit unsupported-instance message. Classroom exposes the existing overview, lesson plan and material reader; practice exposes module exercises; errors exposes weak points and the current scored reflection; materials and plan expose the existing reader and checklist. Teaching remains the explicit main-chat/clipboard handoff; embedded classroom role conversations and Host associations belong to tickets 06/07.
+
+One plugin-owned typed state map retains answers, current questions, seen IDs, results, reflection, search and selected reader content across window/page changes and optional-service disappearance/reappearance. Only one presentation owns the default instance at a time. Active visibility gates dashboard and reader work; hiding a page does not erase its state. New dashboard/practice reads supersede older responses, aborted reader responses cannot update state, and a pending submission keeps its shared guard and result during view transfer. The transient map lasts for the Kaogong plugin lifetime, not a browser refresh or Kaogong hot reload; submitted business records remain Host-owned. Durable draft/reader recovery across refresh is not claimed.
+
+Build with `npm run build`; client declarations are included in the package. For verification against a built official checkout, set `KAOGONG_TEST_RUNTIME` to that checkout and `KAOGONG_WORKBENCH_TYPES` to the built workbench package directory, then run `node scripts/check-client-types.mjs` and `npm run test:artifact`. The script checks strict client declarations and a consumer of both public `/client` type entries without modifying either target package. See [ticket 04 evidence](../../docs/ticket04-kaogong-evidence.md) for verification results and outstanding runtime acceptance.
+
 ### Reusable content view (ticket 01)
 
-The client module exports `KaogongView` and its source type `KaogongViewProps`.
+The client module exports `KaogongView` and its published type `KaogongViewProps`. `onOpenTeacher(prompt, request)` supplies a structured lesson/review action; the workbench page adapter accepts an override that owns role acquisition and navigation. Shared state/provider and final adapter props are documented in [ticket 04 evidence](../../docs/ticket04-kaogong-evidence.md#ticket-06-consumption).
 The view contains the existing dashboard, plan, practice, reflection and knowledge
 reader. It does not register a sidebar entry, open a session or create a fixed
 overlay. The existing `apply()` entry still registers `kaogong-dashboard`; its

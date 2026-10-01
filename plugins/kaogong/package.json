@@ -22,6 +22,7 @@
     "lib/index.js",
     "lib/client.js",
     "lib/**/*.map",
+    "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "src",
     "题目_images/verified",
@@ -31,6 +32,7 @@
     "tests",
     "README.md",
     "tsconfig.json",
+    "tsconfig.client.json",
     "tsdown.config.ts",
     "tsdown.host.config.ts",
     "package.json"
@@ -50,7 +52,9 @@
   "scripts": {
     "build": "pnpm run build:host && pnpm run build:client",
     "build:host": "tsdown -c tsdown.host.config.ts",
-    "build:client": "tsdown -c tsdown.config.ts",
+    "build:client": "tsdown -c tsdown.config.ts && tsc -p tsconfig.client.json",
+    "test:artifact": "node --test tests/views.test.mjs tests/package.test.mjs",
+    "typecheck:client": "tsc -p tsconfig.client.json --noEmit --emitDeclarationOnly false",
     "prepare": "pnpm run build"
   },
   "license": "MIT",
@@ -62,7 +66,23 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.4",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-sidebar": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-workspace": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-personal-workbench": "file:../personal-workbench",
+    "@types/react": "~18.3.1",
     "react": "^18.2.0",
-    "tsdown": "^0.22.2"
+    "tsdown": "^0.22.2",
+    "typescript": "^5.9.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "4.0.4",
+    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-personal-workbench": "0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-personal-workbench": { "optional": true }
   }
 }
