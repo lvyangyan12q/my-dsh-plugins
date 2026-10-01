@@ -11,7 +11,9 @@ export const classroomTeacherKey: RoleBindingKey = { appId: 'kaogong', instanceI
 /** Only explicit submitted review results contain answers; drafts never enter this evidence. */
 export function buildTeachingEvidence(request: KaogongTeachingRequest, material: Entry | null): TeachingEvidence {
   return { kind: request.kind, context: { ...request.context },
-    ...(material ? { material: { id: material.id, title: material.title, source: material.source, content: material.content } } : {}),
+    ...(request.kind === 'review' ? { material: { id: request.result.roundId, title: request.context.title, source: 'kaogong/default/committed-practice',
+      content: JSON.stringify({ roundId: request.result.roundId, subject: request.context.subject, results: request.result.results.filter(row => !row.correct) }) } }
+      : material ? { material: { id: material.id, title: material.title, source: material.source, content: material.content } } : {}),
     ...(request.kind === 'review' ? { result: { total: request.result.totalCount, correct: request.result.correctCount, accuracy: request.result.accuracyRate,
       results: request.result.results.map(row => ({ id: row.id, knowledgePoint: row.knowledgePoint, correct: row.correct, correctAnswer: row.correctAnswer, explanation: row.explanation })) } } : {}),
   }
@@ -29,7 +31,9 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
   const teach: KaogongViewProps['onOpenTeacher'] = props.onOpenTeacher ?? (async (_prompt, request) => {
     if (!roles) throw new Error('固定老师服务不可用；练习和讲义仍可使用。')
     props.onSelectPage?.('classroom')
-    const key: RoleBindingKey = { ...classroomTeacherKey, ...(request.context.subject ? { subject: request.context.subject } : {}) }
+    const key: RoleBindingKey = request.kind === 'review'
+      ? { appId: 'kaogong', instanceId: 'default', roleId: 'counselor' }
+      : { ...classroomTeacherKey, ...(request.context.subject ? { subject: request.context.subject } : {}) }
     select(key)
     await roles.teach(key, buildTeachingEvidence(request, state.cell('reader.entry', null).value))
   })

@@ -22,7 +22,8 @@
     "lib/index.js",
     "lib/client.js",
     "lib/*.mjs",
-    "lib/**/*.map",
+    "lib/*.map",
+    "!lib/typecheck/**",
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
     "src",
@@ -55,6 +56,8 @@
     "build:host": "tsdown -c tsdown.host.config.ts",
     "build:client": "tsdown -c tsdown.config.ts && tsc -p tsconfig.client.json",
     "test:artifact": "node --test tests/views.test.mjs tests/package.test.mjs",
+    "test:practice": "node --experimental-transform-types --test tests/practice-rounds.test.mjs tests/views.test.mjs",
+    "test:runtime": "node --experimental-transform-types scripts/check-practice-runtime.mjs",
     "typecheck:client": "tsc -p tsconfig.client.json --noEmit --emitDeclarationOnly false",
     "prepare": "pnpm run build"
   },

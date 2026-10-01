@@ -320,3 +320,6 @@ node --test --test-isolation=none tests/schemas.test.ts  # zod schema（需 zod 
 迁移已有学习环境时，停止 DSH 并备份目标数据，然后迁移 DSH 存储目录中的 `kaogong_bank.json`、`kaogong_knowledge.json`、`kaogong_notebook.json`、`kaogong_progress.json`，同时保留插件 `storage/mineru` 下的解析资源和任务信息。不要覆盖已有学习记录，也不要把这些私有资料提交到公开仓库。
 
 兼容性注意：`roles/cordis.yml` 和 `DEPLOY.md` 中的 `agent-spine-demo` 角色示例已过时，不可直接用于新版 DSH。当前安装入口是 `cordis.patch.yml`；教学使用 `kaogong-teach` 技能，旧角色接线待迁移。`scripts/install.mjs` 是旧的拷贝部署方式，本地开发优先使用 DSH 的 `plugin --profile web add link:<插件绝对路径>`。
+## Ticket 08 Practice
+
+Module practice now issues durable rounds, scores their original snapshots on the Host, recovers interrupted notebook projection and restores current learner drafts across browser refresh. Counselor review uses the submitted round and the existing native counselor association. See [ticket 08 evidence](../../docs/ticket08-practice-evidence.md) for endpoints, storage/retry semantics, checks and the outstanding Chrome/native-turn gates. `test:practice` and `test:runtime` run the focused checks with the documented built-runtime environment.

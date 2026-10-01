@@ -17,7 +17,7 @@ const { render, fireEvent, screen, waitFor, cleanup, act } = runtime('@testing-l
 let client
 window.__ModuleLoader__ = { load({ factory }) { client = factory(testingRequire) } }
 vm.runInThisContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'))
-afterEach(cleanup)
+afterEach(() => { cleanup(); window.localStorage.clear() })
 
 const subject = '行测-资料分析'
 const dashboard = {
@@ -27,25 +27,31 @@ const dashboard = {
   modules: [{ subject, availableCount: 1, practicedCount: 0, accuracyRate: 0 }], weakPoints: [],
 }
 let calls
+const fixtureRoundId = '00000000-0000-4000-8000-000000000001'
 function mockApi() {
   calls = []
+  let round
+  const score = { roundId: fixtureRoundId, projection: 'complete', review: 'ready', totalCount: 1, correctCount: 0, accuracyRate: 0,
+    results: [{ id: 'fixture-1', subject, stem: '原题材料', options: ['A. 10%', 'B. 20%'], source: '原题来源', userAnswer: 'A', knowledgePoint: '增长率', correct: false, correctAnswer: 'B', explanation: '测试解析' }] }
   globalThis.fetch = async (url, options = {}) => {
     const body = options.body ? JSON.parse(options.body) : undefined
     calls.push({ url, body })
     let value
     if (url === '/api/kaogong/dashboard') value = dashboard
     else if (url === '/api/kaogong/practice/start') value = {
-      reason: '练习', totalAvailable: 1, returned: 1, cycled: Boolean(body.excludeIds.length),
+      roundId: fixtureRoundId, context: { subject: body.subject, title: body.title ?? '模块练习', limit: 10, ...(body.knowledgePoint ? { knowledgePoint: body.knowledgePoint } : {}) }, result: null, reflections: [],
+      reason: '练习', totalAvailable: 1, returned: 1, cycled: Boolean(body.previousRoundId),
       questions: [{ id: 'fixture-1', subject, knowledgePoint: '增长率', difficulty: 'easy',
         stem: '<table><tr><td>材料表格</td></tr></table>\n\n![材料](/api/kaogong/material-image?asset=verified%2Ffixture.png)', options: ['A. 10%', 'B. 20%'] }],
     }
-    else if (url === '/api/kaogong/practice/submit') value = {
-      totalCount: 1, correctCount: 0, accuracyRate: 0,
-      results: [{ id: 'fixture-1', knowledgePoint: '增长率', correct: false, correctAnswer: 'B', explanation: '测试解析' }],
-    }
+    else if (url === '/api/kaogong/practice/submit') { value = { ...score }; round.result = value }
     else if (url === '/api/kaogong/practice/reflection') value = {
+      result: round.result,
       summary: { totalQuestions: 1, totalWrong: 1, accuracyRate: 0, weakPoints: [] },
     }
+    else if (url === '/api/kaogong/practice/read') value = round
+    else if (url === '/api/kaogong/practice/review') { round.result = { ...score, review: body.action === 'claim' ? 'sending' : 'sent' }; value = round }
+    else if (url === '/api/kaogong/practice/history') value = { rounds: [] }
     else if (url === '/api/kaogong/plan/done') value = {}
     else if (url.startsWith('/api/kaogong/knowledge?id=')) value = {
       title: '测试讲义', subject, kind: '讲义', source: '合成测试资料', content: '| 项目 | 数值 |\n| --- | --- |\n| 增长 | 20 |',
@@ -54,6 +60,7 @@ function mockApi() {
       entries: [{ id: 'fixture-note', title: '测试讲义', subject, kind: '讲义' }],
     }
     else throw new Error(`Unexpected request: ${url}`)
+    if (url === '/api/kaogong/practice/start') round = value
     return { ok: true, json: async () => value, text: async () => JSON.stringify(value) }
   }
 }
@@ -73,22 +80,68 @@ test('embedded content uses one practice flow, real request payloads and safe ma
   fireEvent.click(answer)
   fireEvent.click(screen.getByRole('button', { name: '提交判分' }))
   await screen.findByText('0/1 题正确，正确率 0%')
-  assert.deepEqual(calls.find(call => call.url.endsWith('/submit')).body, { answers: [{ id: 'fixture-1', answer: 'A' }] })
+  assert.deepEqual(calls.find(call => call.url.endsWith('/submit')).body, { roundId: fixtureRoundId, answers: [{ id: 'fixture-1', answer: 'A' }] })
   fireEvent.change(screen.getByRole('combobox'), { target: { value: '概念混淆' } })
   fireEvent.click(screen.getByRole('button', { name: '保存错因并总结' }))
   await screen.findByText('本模块错题归纳')
   assert.deepEqual(calls.find(call => call.url.endsWith('/reflection')).body.entries, [{ id: 'fixture-1', errorReason: '概念混淆' }])
-  fireEvent.click(screen.getByRole('button', { name: '老师讲评' }))
+  fireEvent.click(screen.getByRole('button', { name: '辅导员讲评' }))
   await waitFor(() => assert.match(prompts[0], /0\/1题正确/))
   assert.equal(teachingRequests[0].kind, 'review')
   assert.equal(teachingRequests[0].context.subject, subject)
   assert.equal(teachingRequests[0].result.correctCount, 0)
   assert.equal(teachingRequests[0].result.results[0].id, 'fixture-1')
+  await screen.findByRole('button', { name: '已交辅导员' })
   fireEvent.click(screen.getByRole('button', { name: '再来 10 题' }))
   await screen.findByRole('radio', { name: 'A. 10%' })
-  assert.deepEqual(calls.filter(call => call.url.endsWith('/start')).map(call => call.body.excludeIds), [[], ['fixture-1']])
+  assert.deepEqual(calls.filter(call => call.url.endsWith('/start')).map(call => call.body.previousRoundId), [undefined, fixtureRoundId])
   fireEvent.click(screen.getByRole('checkbox'))
   await waitFor(() => assert.deepEqual(calls.find(call => call.url.endsWith('/done')).body, { date: dashboard.today, index: 0, done: true }))
+})
+
+test('new view owner restores an issued round and learner draft from refresh without trusting cached scores', async () => {
+  mockApi()
+  let mounted = render(React.createElement(client.KaogongView, { onOpenTeacher() {} }))
+  fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
+  fireEvent.click(await screen.findByRole('radio', { name: 'A. 10%' }))
+  await waitFor(() => assert.equal(JSON.parse(window.localStorage.getItem('kaogong/default/practice-draft/v1')).answers['fixture-1'], 'A'))
+  const draft = JSON.parse(window.localStorage.getItem('kaogong/default/practice-draft/v1'))
+  window.localStorage.setItem('kaogong/default/practice-draft/v1', JSON.stringify({ ...draft, result: { correctCount: 999 } }))
+  mounted.unmount()
+  mounted = render(React.createElement(client.KaogongView, { onOpenTeacher() {} }))
+  const radio = await screen.findByRole('radio', { name: 'A. 10%' })
+  assert.equal(radio.checked, true)
+  assert.equal(screen.queryByText(/999/), null)
+  assert.equal(screen.queryByText(/正确答案/), null)
+  assert.equal(calls.filter(call => call.url.endsWith('/start')).length, 1)
+  assert.equal(calls.filter(call => call.url.endsWith('/read')).length, 1)
+})
+
+test('counselor receives committed Host facts with a subjectless key and preserves the native factory', async () => {
+  mockApi()
+  const state = new client.KaogongViewState(), teaching = []
+  state.cell('roles', null).set({ teach: async (key, evidence) => teaching.push({ key, evidence }) })
+  render(React.createElement(client.KaogongStateContext.Provider, { value: state }, React.createElement(client.KaogongWorkbenchContent, {
+    appId: 'kaogong', instanceId: 'default', pageId: 'practice', active: true, selectPage() {}, close() {}, ctx: {}, renderFactorySlot: () => null,
+  })))
+  fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
+  fireEvent.click(await screen.findByRole('radio', { name: 'A. 10%' }))
+  fireEvent.click(screen.getByRole('button', { name: '提交判分' }))
+  await screen.findByText('0/1 题正确，正确率 0%')
+  act(() => state.cell('result', null).set(old => ({ ...old, correctCount: 999 })))
+  fireEvent.click(screen.getByRole('button', { name: '辅导员讲评' }))
+  await screen.findByRole('button', { name: '已交辅导员' })
+  assert.deepEqual(teaching[0].key, { appId: 'kaogong', instanceId: 'default', roleId: 'counselor' })
+  assert.equal(teaching[0].evidence.context.subject, subject)
+  assert.equal(teaching[0].evidence.result.correct, 0)
+  const material = JSON.parse(teaching[0].evidence.material.content)
+  assert.equal(material.roundId, fixtureRoundId)
+  assert.equal(material.results[0].userAnswer, 'A')
+  assert.equal(material.results[0].stem, '原题材料')
+  assert.equal(material.results[0].source, '原题来源')
+  assert.equal(state.cell('roles.selected', null).value.roleId, 'counselor')
+  assert.equal(calls.filter(call => call.url.endsWith('/submit')).length, 1)
+  assert.equal(calls.filter(call => call.url.endsWith('/reflection')).length, 0)
 })
 
 test('standalone entry stays idle until opened and retains practice and reader across close', async () => {
@@ -270,7 +323,7 @@ test('default instance preserves draft, reader, results and reflection through p
     fireEvent.click(screen.getByRole('button', { name: '再来 10 题' }))
     view.rerender(React.createElement(Replacement, props))
     await screen.findByRole('radio', { name: 'A. 10%' })
-    assert.deepEqual(calls.filter(call => call.url.endsWith('/start')).at(-1).body.excludeIds, ['fixture-1'])
+    assert.equal(calls.filter(call => call.url.endsWith('/start')).at(-1).body.previousRoundId, fixtureRoundId)
   } finally { view?.unmount(); footer.unmount(); await app.dispose() }
 })
 
@@ -361,7 +414,7 @@ test('fixed teacher adapter shares selected material evidence, excludes draft an
   assert.equal(unmounts, 4)
 })
 
-test('late dashboard and practice responses from retired views cannot overwrite newer shared results', async () => {
+test('late dashboard reads are ignored and a practice command survives view transfer without issuing twice', async () => {
   mockApi()
   const api = fetch
   let releaseDashboard, releasePractice
@@ -374,7 +427,7 @@ test('late dashboard and practice responses from retired views cannot overwrite 
     }
     if (url.endsWith('/start') && ++practiceReads === 1) {
       await new Promise(resolve => { releasePractice = resolve })
-      return { ...response, text: async () => JSON.stringify({ reason: 'stale', questions: [], returned: 0, totalAvailable: 0 }) }
+      return response
     }
     return response
   }
@@ -391,8 +444,9 @@ test('late dashboard and practice responses from retired views cannot overwrite 
     const View = app.ctx.slots.entries('personal-workbench.app')[0].component
     view = render(React.createElement(View, { appId: 'kaogong', instanceId: 'default', pageId: 'practice', active: true, selectPage() {}, close() {} }))
     fireEvent.click(screen.getByRole('button', { name: '开始 10 题练习' }))
-    await screen.findByRole('radio', { name: 'A. 10%' })
     await act(async () => { releaseDashboard(); releasePractice() })
+    await screen.findByRole('radio', { name: 'A. 10%' })
+    assert.equal(calls.filter(call => call.url.endsWith('/start')).length, 1)
     assert.ok(screen.getByRole('radio', { name: 'A. 10%' }))
     assert.equal(screen.queryByText(/1999-01-01/), null)
     assert.equal(screen.queryByText(/当前题库没有匹配题/), null)

@@ -10,6 +10,8 @@ type ViewValues = {
   practice: PracticeData | null; practiceItem: PracticeContext | null; answers: Record<string, string>
   result: PracticeResult | null; seenQuestionIds: string[]; errorReasons: Record<string, string>
   moduleSummary: ModuleSummary | null; submitting: boolean
+  practiceRestored: boolean; practiceBusy: boolean; reflectionNotes: Record<string, string>
+  practiceHistory: { roundId: string; context: PracticeContext; createdAt: string; submitted: boolean }[]
   'reader.query': string; 'reader.entries': Entry[]; 'reader.selected': string; 'reader.entry': Entry | null
   'reader.error': string; 'reader.loading': boolean
   integration: { service: PersonalWorkbench } | null; open: boolean
@@ -24,6 +26,13 @@ type Cell<T> = { value: T; listeners: Set<() => void>; set: Dispatch<SetStateAct
 export class KaogongViewState {
   private cells = new Map<string, unknown>()
   private requests = new Map<string, number>()
+  private practiceCommand = false
+  /** Acquire the shared practice command owner synchronously before React rerenders. */
+  beginPracticeCommand(): (() => void) | null {
+    if (this.practiceCommand) return null
+    this.practiceCommand = true
+    return () => { this.practiceCommand = false }
+  }
 
   /** Supersede earlier reads while allowing a pending practice command to survive view transfer. */
   request(key: 'dashboard' | 'practice') {
