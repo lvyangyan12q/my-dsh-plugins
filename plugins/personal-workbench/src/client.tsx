@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { FlaskConical } from 'lucide-react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { InjectFace, PropsLocale, PropsRenderFactories, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
@@ -91,13 +90,6 @@ function NativeTeacher({ useSession, renderFactorySlot, t, retry }: PropsRuntime
   })
 }
 
-function Launcher({ open, t, wide }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'personal-workbench'> & { open: TeacherWindow['open'] }) {
-  return <button type="button" onClick={() => { void open() }} title={t('teacherProof')} aria-label={t('teacherProof')}
-    style={{ display: 'flex', alignItems: 'center', gap: 6, border: 0, background: 'transparent', color: 'inherit', fontSize: 13, padding: 6, minHeight: 32 }}>
-    <FlaskConical size={18} aria-hidden="true" />{wide && <span>{t('teacherProof')}</span>}
-  </button>
-}
-
 export const inject = ['slots', 'sessions', 'workspaces', 'uiSession', 'uiConversation', 'locale']
 
 /** Register the shared application workspace and the independent native teacher proof.
@@ -126,10 +118,7 @@ export function apply(ctx: Context): void {
     name: 'personal-workbench.teacher', locale: 'personal-workbench',
     inject: (sessionId: SessionId) => ({ retry: () => teacher.retry(sessionId) }),
   }, NativeTeacher))
-  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
-    name: 'sidebar.footer.action', id: 'personal-workbench', locale: 'personal-workbench',
-    inject: () => ({ open: teacher.open }),
-  }, Launcher))
+
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay', id: 'personal-workbench.workspace', locale: 'personal-workbench',
     children: { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } },
@@ -140,7 +129,7 @@ export function apply(ctx: Context): void {
   }, Workspace))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',
-    inject: () => ({ openWorkspace: workbench.openWorkspace }),
+    inject: () => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace, openApp: workbench.openApp }),
   }, WorkspaceLauncher))
   installOptionalBetterSidebar(ctx, workbench)
   installRoleClient(ctx)

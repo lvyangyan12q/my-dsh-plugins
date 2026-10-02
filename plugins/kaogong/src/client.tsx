@@ -34,6 +34,7 @@ export function KaogongDashboard(props: FooterProps & { ctx: ClientContext; stat
 function DashboardContent({ wide, renderFactorySlot }: FooterProps & { ctx: ClientContext }) {
   const [integration] = useBusinessState('integration', null)
   const [open, setOpen] = useBusinessState('open', false)
+  if (integration) return null
 
   return (
     <>
@@ -41,7 +42,7 @@ function DashboardContent({ wide, renderFactorySlot }: FooterProps & { ctx: Clie
         type="button"
         title="打开考公学习看板"
         aria-label="打开考公学习看板"
-        onClick={() => { if (integration) integration.service.openApp(kaogongApp.id, defaultInstance); else setOpen(true) }}
+        onClick={() => setOpen(true)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: wide ? 'flex-start' : 'center', gap: 8,
           width: '100%', minHeight: 36, padding: wide ? '7px 10px' : 0, border: 0, borderRadius: 9,

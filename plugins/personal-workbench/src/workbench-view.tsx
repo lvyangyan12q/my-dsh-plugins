@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search } from 'lucide-react'
+import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, ChevronDown, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search } from 'lucide-react'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { WorkbenchAppDefinition, WorkbenchIcon } from './workbench-api.ts'
 import type { Workbench } from './workbench.ts'
@@ -25,20 +25,48 @@ type WorkspaceProps = PropsRuntime<'shell.overlay'> & PropsRenderSlots<'personal
 const icons = { 'book-open': BookOpen, 'graduation-cap': GraduationCap, briefcase: Briefcase, notebook: Notebook, 'layout-grid': LayoutGrid }
 function AppIcon({ icon }: { icon: WorkbenchIcon }) { const Icon = icons[icon]; return <Icon size={18} aria-hidden="true" /> }
 
-/** Compact catalog launcher on the official sidebar footer seat. */
-export function WorkspaceLauncher({ openWorkspace, t, wide }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'personal-workbench'>
-  & { openWorkspace: Workbench['openWorkspace'] }) {
-  return <button type="button" title={t('workspace')} aria-label={t('workspace')} onClick={openWorkspace}
-    style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 32, padding: 6, border: 0, background: 'transparent', color: 'inherit', fontSize: 13 }}>
-    <LayoutGrid size={18} aria-hidden="true" />{wide && <span>{t('workspace')}</span>}
-  </button>
+/** Full-width navigation follows the native Workspace browser in the sidebar. */
+export function WorkspaceLauncher({ openWorkspace, openApp, useWorkbench, t, wide }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'personal-workbench'>
+  & InjectFace<{ hooks: { workbench: Workbench } }> & { openWorkspace: Workbench['openWorkspace']; openApp: Workbench['openApp'] }) {
+  const state = useWorkbench(value => value)
+  const [expanded, setExpanded] = useState(true)
+  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden).sort((a, b) =>
+    Number(state.apps[b.id]?.favorite ?? false) - Number(state.apps[a.id]?.favorite ?? false)
+    || (state.apps[a.id]?.order ?? 0) - (state.apps[b.id]?.order ?? 0) || a.name.localeCompare(b.name))
+  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0,
+    minHeight: 40, padding: wide ? '8px 10px' : '8px 0', justifyContent: wide ? 'flex-start' : 'center',
+    border: 0, borderRadius: 8, background: 'transparent', color: 'inherit', fontSize: 14, textAlign: 'left', cursor: 'pointer' }
+  const label: React.CSSProperties = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+  return <nav aria-label={t('catalogTabs')} style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0,
+    gap: 3, paddingTop: 8, paddingBottom: 8, borderTop: '1px solid var(--dsw-alias-border-default)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+      <button type="button" title={t('workspace')} aria-label={t('workspace')} onClick={() => openWorkspace('applications')} style={row}>
+        <LayoutGrid size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('workspace')}</span>}
+      </button>
+      {wide && <button type="button" aria-label={t('applications')} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}
+        style={{ flexShrink: 0, border: 0, background: 'transparent', color: 'inherit', padding: 8, cursor: 'pointer' }}>
+        <ChevronDown size={16} style={{ transform: expanded ? undefined : 'rotate(-90deg)' }} aria-hidden="true" />
+      </button>}
+    </div>
+    {wide && expanded && <ul aria-label={t('applications')} style={{ listStyle: 'none', padding: '0 0 4px 19px', margin: 0,
+      borderLeft: '1px solid var(--dsw-alias-border-default)', marginLeft: 18 }}>
+      {apps.map(app => <li key={app.id}><button type="button" title={app.name} aria-label={app.name} onClick={() => openApp(app.id)}
+        style={{ ...row, minHeight: 36, fontSize: 13 }}><AppIcon icon={app.icon} /><span style={label}>{app.name}</span></button></li>)}
+    </ul>}
+    <button type="button" title={t('agents')} aria-label={t('agents')} onClick={() => openWorkspace('agents')} style={row}>
+      <Bot size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('agents')}</span>}
+    </button>
+    <button type="button" title={t('skills')} aria-label={t('skills')} onClick={() => openWorkspace('skills')} style={row}>
+      <Sparkles size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('skills')}</span>}
+    </button>
+  </nav>
 }
 
 /** Workspace view; all live registry data comes through the renderer-made hook. */
 export function Workspace(props: WorkspaceProps) {
-  const { useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setGeometry, setPreference, renderSlot, t, management } = props
+  const { useWorkbench, openWorkspace, openApp, closeWorkspace, focusWindow, setMode, selectPage, setGeometry, setPreference, renderSlot, t, management } = props
   const state = useWorkbench(value => value)
-  const [catalogTab, setCatalogTab] = useState<'applications' | 'agents' | 'skills'>('applications')
+  const catalogTab = state.catalogTab
   const [query, setQuery] = useState('')
   const [showHidden, setShowHidden] = useState(false)
   const [bounds, setBounds] = useState({ width: 800, height: 600 })
@@ -100,7 +128,7 @@ export function Workspace(props: WorkspaceProps) {
     <div className="pwb-body" data-catalog={catalogTab}>
       <aside className="pwb-catalog" aria-label={t('applications')}>
         <nav className="pwb-catalog-tabs" aria-label={t('catalogTabs')}>
-          {(['applications', 'agents', 'skills'] as const).map(tab => <button key={tab} type="button" aria-pressed={catalogTab === tab} onClick={() => setCatalogTab(tab)}>{t(tab)}</button>)}
+          {(['applications', 'agents', 'skills'] as const).map(tab => <button key={tab} type="button" aria-pressed={catalogTab === tab} onClick={() => openWorkspace(tab)}>{t(tab)}</button>)}
         </nav>
         <label className="pwb-search"><Search size={16} aria-hidden="true" /><input type="search" aria-label={t(catalogTab === 'applications' ? 'searchApps' : 'searchCatalog')} placeholder={t(catalogTab === 'applications' ? 'searchApps' : 'searchCatalog')} value={query} onChange={event => setQuery(event.target.value)} /></label>
         {catalogTab === 'applications' && <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={event => setShowHidden(event.target.checked)} />{t('showHidden')}</label>}

@@ -6,3 +6,6 @@
 .scratch/
 .env
 .env.*
+
+# Original study materials, historical outputs and legacy helper environments
+materials/

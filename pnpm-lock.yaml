@@ -1008,6 +1008,9 @@ importers:
       dsh-better-sidebar:
         specifier: link:C:/Users/pc-zzy/.dsh/profiles/web/node_modules/dsh-better-sidebar
         version: link:C:/Users/pc-zzy/.dsh/profiles/web/node_modules/dsh-better-sidebar
+      jsdom:
+        specifier: link:D:/programming/workspace/deepseek-harness/node_modules/jsdom
+        version: link:../deepseek-harness/node_modules/jsdom
       lucide-react:
         specifier: 0.468.0
         version: 0.468.0(react@18.3.1)

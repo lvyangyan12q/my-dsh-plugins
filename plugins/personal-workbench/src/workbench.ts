@@ -9,6 +9,7 @@ interface WindowPreference extends Geometry {
 interface AppPreference { favorite: boolean; hidden: boolean; order: number }
 interface Preferences { version: 1; visible: boolean; windows: WindowPreference[]; apps: Record<string, AppPreference> }
 export interface WorkbenchSnapshot extends Preferences {
+  readonly catalogTab: 'applications' | 'agents' | 'skills'
   readonly definitions: readonly WorkbenchAppDefinition[]
   readonly focused: string | null
   readonly focusRevision: number
@@ -79,7 +80,7 @@ export class Workbench implements PersonalWorkbench {
     let storageFailed = false
     try { preferences = readPreferences(storage) }
     catch (_error) { preferences = { version: 1, visible: false, windows: [], apps: Object.create(null) }; storageFailed = true }
-    this.snapshot = { ...preferences, definitions: [], focused: null, focusRevision: 0, storageFailed }
+    this.snapshot = { ...preferences, catalogTab: 'applications', definitions: [], focused: null, focusRevision: 0, storageFailed }
   }
   readonly getSnapshot = (): WorkbenchSnapshot => this.snapshot
   readonly subscribe = (listener: () => void): (() => void) => {
@@ -113,7 +114,7 @@ export class Workbench implements PersonalWorkbench {
         focused: retired.includes(this.snapshot.focused ?? '') ? null : this.snapshot.focused })
     }
   }
-  readonly openWorkspace = (): void => { this.publish({ visible: true, focusRevision: this.snapshot.focusRevision + 1 }) }
+  readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }) }
   readonly closeWorkspace = (): void => { this.publish({ visible: false }) }
   readonly openApp = (appId: WorkbenchAppId, instanceId = defaultInstance): void => {
     const definition = this.definitions.get(appId)
@@ -123,7 +124,7 @@ export class Workbench implements PersonalWorkbench {
     const row: WindowPreference = found ? { ...found, mode: found.restoreMaximized ? 'maximized' : 'normal' } : {
       appId, instanceId, pageId: definition.defaultLayout.pageId, x: 40, y: 40,
       width: definition.defaultLayout.width, height: definition.defaultLayout.height, mode: 'normal', restoreMaximized: false }
-    this.publish({ visible: true, windows: [...this.snapshot.windows.filter(value => windowKey(value.appId, value.instanceId) !== key), row],
+    this.publish({ visible: true, catalogTab: 'applications', windows: [...this.snapshot.windows.filter(value => windowKey(value.appId, value.instanceId) !== key), row],
       focused: key, focusRevision: this.snapshot.focusRevision + 1 })
   }
   readonly focus = (key: string): void => {

@@ -78,7 +78,7 @@ async function fixture({ width = 960, height = 640 } = {}) {
     const injected = overlay.options.inject()
     const { hooks, ...callbacks } = injected
     return h(React.Fragment, null,
-      h(launcher.component, { wide: true, t: key => key, ...launcher.options.inject() }),
+      h(launcher.component, { wide: true, t: key => key, ...launcher.options.inject(), useWorkbench: boundHook(hooks.workbench) }),
       h(overlay.component, { ...callbacks, useWorkbench: boundHook(hooks.workbench), t: key => key,
         renderSlot: (name, owner, options) => {
           assert.equal(name, 'personal-workbench.app')
@@ -219,5 +219,26 @@ test('narrow UI constrains the registered window and catalog controls expose per
       input.dispatchEvent(new f.dom.window.Event('input', { bubbles: true }))
     })
     assert.equal(f.dom.window.document.querySelector('.pwb-list [role="status"]').textContent, 'noMatches')
+  } finally { await f.dispose() }
+})
+
+test('sidebar nests applications and routes Agent and Skills to their own catalogs', async () => {
+  const f = await fixture()
+  try {
+    const nav = f.dom.window.document.querySelector('nav[aria-label="catalogTabs"]')
+    assert.ok(nav.querySelector('ul[aria-label="applications"] button[aria-label="Exercise"]'))
+    await f.click('agents')
+    assert.equal(f.service.getSnapshot().catalogTab, 'agents')
+    assert.equal(f.dom.window.document.querySelector('.pwb-body').dataset.catalog, 'agents')
+    await f.click('skills')
+    assert.equal(f.service.getSnapshot().catalogTab, 'skills')
+    await f.click('closeWorkspace')
+    await f.click('applications')
+    assert.equal(nav.querySelector('ul'), null)
+    await f.click('applications')
+    await f.click('Exercise')
+    assert.equal(f.service.getSnapshot().catalogTab, 'applications')
+    assert.equal(f.dom.window.document.querySelector('[role="region"]').hidden, false)
+    assert.equal(f.counts().retained, 0)
   } finally { await f.dispose() }
 })

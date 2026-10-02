@@ -18,14 +18,17 @@ pnpm start
 
 地址：http://127.0.0.1:3082/ 。3081 为原合成测试实例，与真实学习数据分开。
 
+## 菜单
+
+原生工作区保留；工作台、Agent、Skills 为独立纵向入口。考公学习是工作台下面的子菜单，教师验证不再占用一级菜单。Agent 和 Skills 直接打开对应目录。
+
 ## 数据和资料
 
-代码已归入本仓库；既有学习数据仍使用 `C:/Users/pc-zzy/.dsh/storages`。旧考公目录保留为资料工作目录，原始 PDF、讲义、题目及历史解析结果不搬动、不提交到 Git。
+- 当前插件代码：`plugins/personal-workbench`、`plugins/kaogong`。
+- 实际资料工作目录：`D:/programming/workspace/my-dsh/materials/kaogong`。
+- 历史图片：上述目录下的 `题目_images`。
+- MinerU 结果：上述目录下的 `storage/mineru`。
+- 学习数据继续使用 `C:/Users/pc-zzy/.dsh/storages`。
+- 旧 `D:/programming/workspace/kaogong` 已成为指向资料目录的 Windows Junction。保留该链接，因为历史会话头记录的工作目录不可修改。
 
-- 教师工作目录：`D:/programming/workspace/kaogong`
-- 历史图片：`D:/programming/workspace/kaogong/题目_images`
-- MinerU 结果：`D:/programming/workspace/kaogong/storage/mineru`
-- 凭据继续由原 DSH profile 管理，不放入仓库。
-- `.local/backups` 保存切换前的 profile 和学习数据备份；本机路径记录见 `.local/paths.json`，均已忽略。
-
-旧目录中的插件代码作为回退副本保留；正式 profile 只启用本仓库的考公插件。菜单层级调整与真实教师对话验收尚需继续。
+原始 PDF、讲义、题目、历史解析结果和旧辅助环境已完整搬入资料目录。资料、凭据与 `.local` 备份不提交到 Git。正式 profile 只引用 `plugins` 中的新插件代码。迁移记录在 `.local/paths.json`，接口和数据校验在 `.local/startup-verification.json`。

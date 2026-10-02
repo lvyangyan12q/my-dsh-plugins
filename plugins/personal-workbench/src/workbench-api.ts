@@ -48,7 +48,7 @@ export interface PersonalWorkbench {
    */
   openApp(appId: WorkbenchAppId, instanceId?: WorkbenchInstanceId): void
   /** Open the shared catalog without changing DSH's main Session selection. */
-  openWorkspace(): void
+  openWorkspace(catalog?: 'applications' | 'agents' | 'skills'): void
 }
 
 declare module '@deepseek-ai/cordis' {
