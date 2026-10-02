@@ -52,7 +52,7 @@ test('built plugin and optional consumer clean up and reactivate through real Co
     await consumer
     assert.equal(activations, 1)
     assert.equal(ctx.slots.entries('personal-workbench.app').length, 1)
-    assert.equal(ctx.slots.entries('shell.overlay').length, 2)
+    assert.equal(ctx.slots.entries('shell.overlay').length, 3, 'launcher, workspace and independent management overlays')
     const old = ctx.personalWorkbench
     assert.equal(old.getSnapshot().definitions.length, 1)
     old.openApp('test.lifecycle')

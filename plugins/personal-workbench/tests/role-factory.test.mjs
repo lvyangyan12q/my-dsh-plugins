@@ -50,7 +50,7 @@ test('actual Cordis/SlotRegistry optional role factory delegates native content 
     await native.dispose()
     assert.equal(ctx.get('personalWorkbenchRoles'), undefined)
     assert.equal(ctx.slots.entries('personal-workbench.app').length, 0)
-    assert.equal(ctx.slots.entries('shell.overlay').length, 2)
+    assert.equal(ctx.slots.entries('shell.overlay').length, 3, 'launcher, workspace and independent management overlays')
     assert.deepEqual(ctx.slots.snapshot('factory:personal-workbench.role-conversation'), [])
     await enable()
     assert.equal(ctx.slots.entries('personal-workbench.role-native').length, 1)

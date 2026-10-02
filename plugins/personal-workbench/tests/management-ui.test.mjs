@@ -1,86 +1,57 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
-import { runInNewContext } from 'node:vm'
+import React, { act } from 'react'
 import { JSDOM } from 'jsdom'
+import { ManagementCatalogView } from '../src/management-view.tsx'
 
-const require = createRequire(import.meta.url)
-const React = require('react'), { act } = React
-const h = React.createElement
-const key = { appId: 'example', instanceId: 'default', roleId: 'teacher', subject: 'math' }
-const skill = { name: 'existing-skill', description: 'Actual registry fixture', source: 'bundled', provider: 'example', userInvocable: true, modelInvocable: false, appIds: ['example'] }
-const role = { key, presetId: 'example.teacher', name: 'Teacher', source: 'app-declaration', available: true, binding: null,
-  assignment: { version: 1, key, names: [], revision: 0 }, skills: [skill], missingNames: [], tools: [{ name: 'read_file', description: 'Read' }], scope: 'preset', model: null,
-  permissions: { currentValue: null, sandboxMode: null, approvalPolicy: null, workspaceRoot: null, provenance: 'unavailable' }, loaded: [] }
-
-test('built shared catalog displays app-owned roles once, saves existing names by revision, and keeps discovered/assigned/native history distinct', async () => {
+test('independent libraries save invocation policy and preserve native session identity on binding', async () => {
   const dom = new JSDOM('<div id="mount"></div>', { url: 'http://localhost' })
-  const globals = new Map()
+  const original = new Map()
   for (const [name, value] of Object.entries({ window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true })) {
-    globals.set(name, Object.getOwnPropertyDescriptor(globalThis, name)); Object.defineProperty(globalThis, name, { configurable: true, writable: true, value })
+    original.set(name, Object.getOwnPropertyDescriptor(globalThis, name)); Object.defineProperty(globalThis, name, { configurable: true, writable: true, value })
   }
-  const declarations = [], cleanups = [], calls = [], navigations = []
-  let exported, workbench, current = structuredClone(role)
-  class ResizeObserver { constructor(callback) { this.callback = callback } observe() { this.callback() } disconnect() {} }
-  runInNewContext(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'), {
-    console, AbortController, ResizeObserver, document: dom.window.document, HTMLElement: dom.window.HTMLElement,
-    window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exported = factory(require) } } }),
-    fetch: async (path, options) => {
-      assert.equal(path, '/api/personal-workbench/management'); assert.equal(options.credentials, 'same-origin')
-      const request = JSON.parse(options.body); calls.push(request)
-      if (request.action === 'catalog') return { ok: true, json: async () => ({ version: 1, roles: [current], presets: [], skills: [skill], models: null, runtimeAvailable: true }) }
-      assert.equal(request.action, 'assign'); assert.deepEqual(request.key, key); assert.equal(request.expectedRevision, current.assignment.revision)
-      current = { ...current, assignment: { ...current.assignment, names: request.names, revision: current.assignment.revision + 1 } }
-      return { ok: true, json: async () => ({ assignment: current.assignment }) }
-    },
-  })
-  const ctx = {
-    inject: () => {}, get: name => name === 'pluginNavigation' ? { openBundle: name => navigations.push(name) } : undefined,
-    effect: execute => { const dispose = execute(); if (typeof dispose === 'function') cleanups.push(dispose); return dispose },
-    reflect: { provide: (name, value) => { if (name === 'personalWorkbench') workbench = value; return () => {} } },
-    sessions: { retain: () => assert.fail('Management must not acquire chat') }, workspaces: { list: { getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }), subscribe: () => () => {} } },
-    locale: { register: () => () => {} },
-    slots: { inject: (_name, execute) => cleanups.push(execute()), register: (options, component) => { declarations.push({ options, component }); return () => {} } },
+  const oldFetch = globalThis.fetch
+  const calls = []
+  let agent = { id: 'writer', name: '写作助手', description: '多个应用复用', persona: 'Assist', skillNames: ['outline'], modelInvocable: true, userInvocable: true, revision: 2, managed: true, appIds: ['example'] }
+  const key = { appId: 'example', instanceId: 'default', roleId: 'advisor' }
+  const catalog = () => ({ version: 1, agents: [agent], roles: [{ key, name: '班主任', presetId: 'writer', binding: { sessionId: 'existing-session' }, assignment: { names: ['outline'] } }], presets: [], skills: [{ name: 'outline', description: '整理提纲', source: 'managed', provider: 'test', userInvocable: true, modelInvocable: true, managed: true, revision: 1, appIds: ['example'] }], executions: [{ id: 'run-1', kind: 'agent', capabilityId: 'writer', sessionId: 's', startedAt: '2026-10-02', status: 'completed' }] })
+  globalThis.fetch = async (_url, options) => {
+    const request = JSON.parse(options.body); calls.push(request)
+    if (request.action === 'catalog') return { ok: true, json: async () => catalog() }
+    if (request.action === 'agent-save') { assert.equal(request.expectedRevision, 2); agent = { ...agent, ...request.agent, revision: 3 }; return { ok: true, json: async () => ({ agent }) } }
+    if (request.action === 'agent-bind') return { ok: true, json: async () => ({ sessionId: 'new-session' }) }
+    if (request.action === 'skill-save') { assert.equal(request.expectedRevision, 1); assert.equal(request.skill.content, 'Actual saved instructions'); return { ok: true, json: async () => ({ skill: { ...request.skill, revision: 2 } }) } }
+    if (request.action === 'skill-read') return { ok: true, json: async () => ({ content: 'Actual saved instructions' }) }
+    assert.fail(`Unexpected request ${request.action}`)
   }
-  exported.apply(ctx)
-  assert.equal(calls.length, 0)
-  const withdraw = workbench.registerApp({ id: 'example', name: 'Example App', version: '1', source: 'test registration', icon: 'book-open', pages: [{ id: 'page', label: 'Page' }], defaultLayout: { width: 800, height: 600, pageId: 'page' }, roles: [{ id: 'teacher', name: 'Teacher' }] })
-  workbench.openWorkspace()
-  const entry = declarations.find(row => row.options.id === 'personal-workbench.workspace')
-  const injected = entry.options.inject(), { hooks, ...commands } = injected
-  const { createRoot } = require('react-dom/client'), root = createRoot(dom.window.document.getElementById('mount'))
-  const click = async label => {
-    const button = [...dom.window.document.querySelectorAll('button')].find(row => !row.closest('[hidden]') && (row.getAttribute('aria-label') === label || row.textContent === label))
-    assert.ok(button, `Missing button ${label}`); await act(async () => button.click())
-  }
+  const { createRoot } = await import('react-dom/client')
+  const root = createRoot(dom.window.document.getElementById('mount'))
+  const render = tab => root.render(React.createElement(ManagementCatalogView, { tab, active: true, apps: [{ id: 'example', name: '考公学习' }], query: '', commands: {}, t: key => key }))
+  const click = async text => { const button = [...document.querySelectorAll('button')].find(button => button.textContent === text); assert.ok(button, text); await act(async () => button.click()) }
   try {
-    await act(async () => root.render(h(entry.component, { ...commands, t: value => value,
-      useWorkbench: selector => selector(React.useSyncExternalStore(hooks.workbench.subscribe, hooks.workbench.getSnapshot)), renderSlot: () => null })))
-    await click('agents')
-    assert.equal(calls.length, 1)
-    assert.equal(dom.window.document.querySelectorAll('.pwb-role-row').length, 1)
-    assert.match(dom.window.document.body.textContent, /Example App/)
-    await act(async () => dom.window.document.querySelector('.pwb-role-row').click())
-    assert.match(dom.window.document.body.textContent, /nativeDefault/)
-    assert.match(dom.window.document.body.textContent, /nativeLoadEvidence/)
-    assert.equal(dom.window.document.querySelector('.pwb-role-detail ul'), null)
-    await act(async () => dom.window.document.querySelector('.pwb-skill-row input').click())
-    await click('saveAssignment')
-    assert.deepEqual(current.assignment.names, ['existing-skill'])
-    assert.equal(current.assignment.revision, 1)
-    assert.equal(dom.window.document.querySelector('.pwb-role-detail ul'), null, 'Saving assignment must not claim native body load')
-    await click('nativeConfiguration')
-    assert.deepEqual(navigations, ['@deepseek-ai/dsh-personal-workbench'])
-    await click('skills')
-    assert.match(dom.window.document.body.textContent, /roleScope/)
-    await click('applications')
-    assert.equal(dom.window.document.querySelector('.pwb-workarea').hidden, false)
-    assert.equal(calls.some(row => ['ensure', 'teach', 'send'].includes(row.action)), false)
+    await act(async () => render('agents'))
+    assert.equal(document.querySelectorAll('.pim-card').length, 1)
+    assert.equal(document.querySelectorAll('.pwb-role-row').length, 0, 'app roles are usage rather than independent Agent identities')
+    await act(async () => document.querySelector('.pim-card').click())
+    assert.match(document.body.textContent, /考公学习 · 班主任/)
+    assert.match(document.body.textContent, /completed/)
+    const modelToggle = [...document.querySelectorAll('label')].find(label => label.textContent.includes('允许模型调用')).querySelector('input')
+    await act(async () => modelToggle.click()); await click('保存')
+    assert.equal(agent.modelInvocable, false)
+    const select = document.querySelector('select[aria-label="绑定应用角色"]')
+    await act(async () => { select.value = JSON.stringify(key); select.dispatchEvent(new dom.window.Event('change', { bubbles: true })) })
+    await click('绑定')
+    assert.equal(calls.find(row => row.action === 'agent-bind').expectedSessionId, 'existing-session')
+    await act(async () => render('skills'))
+    await act(async () => document.querySelector('.pim-card').click())
+    assert.equal(document.querySelector('textarea[aria-label="Skill 内容"]').value, 'Actual saved instructions')
+    assert.match(document.body.textContent, /Agent · 写作助手/)
+    const manualToggle = [...document.querySelectorAll('label')].find(label => label.textContent.includes('允许手动调用')).querySelector('input')
+    await act(async () => manualToggle.click()); await click('保存')
+    assert.equal(calls.find(row => row.action === 'skill-save').skill.userInvocable, false)
+    assert.equal(calls.some(row => row.action === 'agent-open'), false, 'catalog navigation must never create a chat')
   } finally {
-    await act(async () => root.unmount()); withdraw()
-    for (const dispose of cleanups.reverse()) if (typeof dispose === 'function') await dispose()
-    dom.window.close()
-    for (const [name, descriptor] of globals) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name] }
+    await act(async () => root.unmount()); dom.window.close(); globalThis.fetch = oldFetch
+    for (const [name, descriptor] of original) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name] }
   }
 })

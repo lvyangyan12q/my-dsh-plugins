@@ -19,6 +19,7 @@ export interface RoleBinding {
   readonly key: RoleBindingKey
   readonly sessionId: SessionId
   readonly presetId: string
+  readonly selectedPreset?: boolean
   readonly phase: 'intent' | 'ready'
   readonly previousSessionIds: readonly SessionId[]
   readonly creation?: { readonly cwd: string }
@@ -27,6 +28,7 @@ export interface RoleBinding {
 export interface PersonalWorkbenchBindings {
   /** Register exactly one key. Duplicate registrations reject; dispose withdraws only its declaration. */
   registerRole(definition: RoleDefinition): () => void
+  setPreset?(key: RoleBindingKey, presetId: string, expectedSessionId: SessionId | null): Promise<RoleBinding>
   /** Current app-owned declarations only; withdrawal does not erase durable bindings. */
   listRoles(): readonly RoleDefinition[]
   /** Read only, never create. @param key - supported binding key. @returns current intent/record or null. */

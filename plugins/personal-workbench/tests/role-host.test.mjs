@@ -9,7 +9,7 @@ import { apply } from '../src/index.ts'
 const key = { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }
 test('base Host without optional role authorities preserves the read-only proof and returns a local 503', () => {
   const routes = []
-  const ctx = { effect: action => action(), inject: () => {}, webServer: { register: route => { routes.push(route); return () => {} } } }
+  const ctx = { on: () => () => {}, effect: action => action(), inject: () => {}, webServer: { register: route => { routes.push(route); return () => {} } } }
   apply(ctx, { teacherSessionId: 'configured-proof' })
   const call = (path, method) => {
     let status, value
@@ -24,6 +24,7 @@ async function fixture() {
   const rows = new Map(), created = [], events = []
   let rejection, broken = false, skillMissing = false, sessionMissing = false, presetChanged = false, flushFailure = false
   const ctx = {
+    on: () => () => {},
     storageDomain: { open: async spec => { events.push(spec.name); return { table: name => { assert.equal(name, 'bindings'); return { get: key => rows.get(key), put: async (key, row) => { rows.set(key, row); events.push('persist') } } }, close: async () => events.push('close-domain') } } },
     agentPresets: { register: async definition => { assert.equal(definition, teacherPreset); events.push('register-preset'); return async () => events.push('remove-preset') }, resolve: async id => { assert.equal(id, teacherPresetId); return { id, broken: broken ? 'missing' : undefined } }, acquireScope: async () => ({ key: {}, [Symbol.asyncDispose]: async () => events.push('release-scope') }) },
     skills: { list: async () => skillMissing ? [] : [{ name: 'kaogong-teach', provider: teacherSkillProvider }], get: async () => ({ name: 'kaogong-teach', provider: teacherSkillProvider, content: 'packaged body', invocation: { userInvocable: true } }) },

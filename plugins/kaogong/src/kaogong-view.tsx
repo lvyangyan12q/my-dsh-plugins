@@ -27,6 +27,7 @@ export type DashboardData = {
 
 export type KaogongViewProps = {
   /** Hide without unmounting to retain the current practice and reader state. */
+  embedded?: boolean
   active?: boolean
   pageId?: string
   onSelectPage?: (pageId: string) => void
@@ -138,7 +139,7 @@ function optionValue(option: string): string {
 }
 
 
-export function KaogongView({ active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
+export function KaogongView({ embedded = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
   const [data, setData] = useBusinessState('dashboard', null)
   const [loading, setLoading] = useBusinessState('loading', false)
   const [error, setError] = useBusinessState('error', null)
@@ -352,8 +353,8 @@ export function KaogongView({ active = true, pageId, onSelectPage, onClose, onOp
 
   return (
     <div hidden={!active} style={{ color: colors.ink, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '28px clamp(18px, 4vw, 52px) 48px' }}>
-            <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
+          <div style={{ maxWidth: 1180, margin: '0 auto', padding: embedded ? '18px 22px 32px' : '28px clamp(18px, 4vw, 52px) 48px' }}>
+            {!embedded && <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
               <div>
                 <div style={{ color: colors.blue, fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>KAOGONG STUDY</div>
                 <h1 style={{ margin: '6px 0 4px', fontSize: 30, lineHeight: 1.2 }}>考公学习看板</h1>
@@ -363,7 +364,7 @@ export function KaogongView({ active = true, pageId, onSelectPage, onClose, onOp
                 <button type="button" onClick={() => { void refresh() }} disabled={loading} style={buttonStyle(false)}>{loading ? '刷新中' : '刷新'}</button>
                 {onClose && <button type="button" onClick={onClose} aria-label="关闭看板" style={buttonStyle(true)}>关闭</button>}
               </div>
-            </header>
+            </header>}
             {notice && <div style={{ ...sectionStyle, marginBottom: 14, color: colors.blue, borderColor: '#bfdbfe', background: '#f8fbff' }}>{notice}</div>}
             {error && <div style={{ ...sectionStyle, color: colors.red, borderColor: '#fecaca', background: '#fff1f2' }}>{error}</div>}
             <div hidden={!shown('classroom')}><LessonPanel active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {

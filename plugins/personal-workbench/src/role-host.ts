@@ -5,6 +5,8 @@ import type {} from '@deepseek-ai/dsh-session-persistence'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
 import type {} from '@deepseek-ai/dsh-skill'
 import type {} from '@deepseek-ai/dsh-client-connection'
+import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { SkillDefinition } from '@deepseek-ai/dsh-skill'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RoleBinding, RoleBindingKey, RoleDefinition } from './role-binding-api.ts'
 import { roleBindingsDomain } from './role-domain.ts'
@@ -16,20 +18,28 @@ import { roleRequest, teachingPrompt } from './role-request.ts'
 export async function installRoles(ctx: Context) {
   const domain = await ctx.storageDomain.open(roleBindingsDomain)
   try {
-    const loadSkill = async (definition: RoleDefinition) => {
-      const preset = await ctx.agentPresets.resolve(definition.presetId)
+    const readTeachingSkill = async (definition: RoleDefinition, presetId = definition.presetId): Promise<SkillDefinition | undefined> => {
+      const preset = await ctx.agentPresets.resolve(presetId)
       if (preset.broken) throw new Error('Role preset is unavailable')
       if (!definition.teaching) return
       const { skillName, provider } = definition.teaching
-      const lease = await ctx.agentPresets.acquireScope(definition.presetId)
+      const lease = await ctx.agentPresets.acquireScope(presetId)
       try {
-        const options = { scope: lease.key }
-        const catalog = await ctx.skills.list(options)
-        if (!catalog.some(skill => skill.name === skillName && skill.provider === provider)) throw new Error('Packaged role Skill not discovered')
-        const skill = await ctx.skills.get(skillName, options)
+        const catalog = await ctx.skills.list({scope:lease.key})
+        if (!catalog.some(skill=>skill.name===skillName&&skill.provider===provider)) throw new Error('Packaged role Skill not discovered')
+        const skill = await ctx.skills.get(skillName, {scope: lease.key})
         if (!skill || skill.provider !== provider || !skill.content.trim() || !skill.invocation.userInvocable) throw new Error('Packaged role Skill body unavailable for user invocation')
-        return skill.content
+        return skill
       } finally { await lease[Symbol.asyncDispose]() }
+    }
+    const loadSkill = async (definition: RoleDefinition) => {
+      await ctx.agentPresets.resolve(definition.presetId).then(row => { if(row.broken)throw new Error('Role preset is unavailable') })
+      try { return (await readTeachingSkill(definition))?.content } catch(error) {
+        const declared = bindings.declaredDefinition(definition.key)
+        if (declared.presetId === definition.presetId) throw error
+        // The application owns teaching rules; changing the reusable Agent does not erase them.
+        return (await readTeachingSkill(definition,declared.presetId))?.content
+      }
     }
     const validateExisting = async (record: RoleBinding) => {
       if (record.presetId !== bindings.definition(record.key).presetId) throw new Error('Recorded role preset unavailable')
@@ -58,6 +68,23 @@ export async function installRoles(ctx: Context) {
         return value.sessionId
       },
     })
+    const attached = new WeakMap<Agent,Promise<void>>()
+    const attachTeaching = (agent: Agent) => {
+      const previous = attached.get(agent); if(previous)return previous
+      const task = (async()=>{
+        const definitions = bindings.listRoles()
+        for(const definition of definitions){
+          const binding = await bindings.read(definition.key)
+          if(binding?.sessionId!==agent.id || !binding.selectedPreset || !definition.teaching)continue
+          const source = bindings.declaredDefinition(definition.key)
+          const skill = await readTeachingSkill(definition,source.presetId)
+          if(!skill)continue
+          // Scope this vetted, packaged contribution to the application's role Session only.
+          await agent.ctx.plugin({inject:['skills'],apply:child=>{child.skills.register(skill)}})
+        }
+      })(); attached.set(agent,task);return task
+    }
+    const removeAttach = ctx.on('agent/created',async({agent})=>{await attachTeaching(agent)})
     const removeService = ctx.reflect.provide('personalWorkbenchBindings', bindings)
     const requests = new Set<Promise<void>>()
     let closing = false
@@ -108,6 +135,6 @@ export async function installRoles(ctx: Context) {
       void task.finally(() => requests.delete(task)).catch(() => {})
       return task
     }
-    return { handle, dispose: async () => { closing = true; removeService(); await Promise.allSettled([...requests]); await bindings.dispose(); await domain.close() } }
+    return { handle, dispose: async () => { closing = true; removeAttach(); removeService(); await Promise.allSettled([...requests]); await bindings.dispose(); await domain.close() } }
   } catch (error) { await domain.close(); throw error }
 }

@@ -99,7 +99,7 @@ test('authenticated bounded management route rejects malformed requests and inva
     assert.equal((await f.call({}, 'GET')).status, 405)
     assert.equal((await f.call({}, 'POST', 'text/plain')).status, 415)
     assert.equal((await f.call('bad')).status, 400)
-    assert.equal((await f.call('x'.repeat(16385))).status, 413)
+    assert.equal((await f.call('x'.repeat(131073))).status, 413)
     for (const names of [['missing'], ['registered-skill', 'registered-skill'], ['/registered-skill']]) {
       assert.notEqual((await f.call({ action: 'assign', key, expectedRevision: 0, names })).status, 200)
     }

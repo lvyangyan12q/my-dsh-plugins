@@ -24,7 +24,7 @@ const root = resolve(import.meta.dirname, '../../kaogong/roles/skills')
 const key = { appId: 'app', instanceId: 'default', roleId: 'teacher', subject: 'math' }
 const loads = decision => decision.messages.filter(message => message.source.kind === 'skill-invocation')
 
-async function fixture({ loader = true } = {}) {
+async function fixture({ loader = true, reusable = false } = {}) {
   const ctx = new Context()
   await ctx.plugin(SystemPrompt); await ctx.plugin(Tools); await ctx.plugin(Agents); await ctx.plugin(SkillRegistry)
   if (loader) await ctx.plugin(toolSkill)
@@ -43,10 +43,10 @@ async function fixture({ loader = true } = {}) {
   const services = ctx.plugin({ apply: child => {
     child.effect(() => child.reflect.provide('personalWorkbenchBindings', bindings))
     child.effect(() => child.reflect.provide('sessionController', { projections: async () => ({ values: { agentPreset: selected } }) }))
-    child.effect(() => child.reflect.provide('agentPresets', { serviceFor: () => undefined }))
+    child.effect(() => child.reflect.provide('agentPresets', { serviceFor: () => undefined, composedPreset: () => reusable ? 'my-dsh.reusable' : undefined }))
   } })
   await services
-  const dispose = installAssignmentRuntime(ctx, id => assignments.get(id))
+  const dispose = installAssignmentRuntime(ctx, id => assignments.get(id), presetId => presetId === 'my-dsh.reusable' ? ['kaogong-teach'] : [])
   const initialSeq = session.seq
   const assigned = (names, revision = 1) => assignments.set(bindingKey(key), { version: 1, key, revision, names })
   const propose = (text, { target = agent, turn = 1, step = 1, reject = false, signal = new AbortController().signal, kind = 'user' } = {}) => {
@@ -117,4 +117,9 @@ test('registry/body readability without the actual native loader fails explicitl
     f.assigned(['kaogong-teach'])
     await assert.rejects(f.propose('Ordinary input'), /Native Skill loader did not admit/)
   } finally { await f.close() }
+})
+
+test('reusable independent Agent assignment uses actual native Skill loader outside every application binding', async()=>{
+ const f=await fixture({reusable:true})
+ try { f.withdraw();const decision=await f.propose('Teach without an application binding');assert.equal(loads(decision).length,1);assert.equal(loads(decision)[0].source.name,'kaogong-teach');assert.match(loads(decision)[0].content[0].text,/教学阶段/); }finally{await f.close()}
 })

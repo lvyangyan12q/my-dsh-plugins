@@ -16,6 +16,8 @@ export interface ManagedSkill {
   readonly userInvocable: boolean
   readonly modelInvocable: boolean
   readonly appIds: readonly string[]
+  readonly managed?: boolean
+  readonly revision?: number
 }
 export interface ManagedRole {
   readonly key: RoleBindingKey
@@ -53,6 +55,22 @@ export interface ManagementCatalog {
   readonly models: ModelCatalog | null
   readonly modelError?: string
   readonly runtimeAvailable: boolean
+  readonly agents?: readonly ManagedAgent[]
+  readonly executions?: readonly CapabilityExecution[]
 }
-export type ManagementRequest = { readonly action: 'catalog' }
+export type ManagementRequest = CapabilityRequest | { readonly action: 'catalog' }
   | { readonly action: 'assign'; readonly key: RoleBindingKey; readonly expectedRevision: number; readonly names: readonly string[] }
+
+export interface AgentInput { readonly id: string; readonly name: string; readonly description: string; readonly persona: string; readonly skillNames: readonly string[]; readonly modelInvocable: boolean; readonly userInvocable: boolean }
+export interface ManagedAgent extends AgentInput { readonly revision: number; readonly managed: boolean; readonly presetId?: string; readonly appIds: readonly string[]; readonly broken?: string }
+export interface SkillInput { readonly name: string; readonly description: string; readonly content: string; readonly modelInvocable: boolean; readonly userInvocable: boolean }
+export interface CapabilityExecution { readonly id: string; readonly kind: 'agent' | 'skill'; readonly capabilityId: string; readonly sessionId: string; readonly childSessionId?: string; readonly startedAt: string; readonly finishedAt?: string; readonly status: 'running' | 'completed' | 'failed' | 'cancelled'; readonly error?: string }
+export type CapabilityRequest =
+ | { readonly action: 'agent-save'; readonly agent: AgentInput; readonly expectedRevision: number }
+ | { readonly action: 'agent-remove'; readonly id: string; readonly expectedRevision: number }
+ | { readonly action: 'agent-open'; readonly id: string; readonly cwd?: string }
+ | { readonly action: 'agent-bind'; readonly key: RoleBindingKey; readonly agentId: string; readonly expectedSessionId: string | null }
+ | { readonly action: 'skill-save'; readonly skill: SkillInput; readonly expectedRevision: number }
+ | { readonly action: 'skill-remove'; readonly name: string; readonly expectedRevision: number }
+ | { readonly action: 'skill-read'; readonly name: string }
+ | { readonly action: 'executions'; readonly sessionId?: string }

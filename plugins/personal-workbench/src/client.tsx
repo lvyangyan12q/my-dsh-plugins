@@ -1,3 +1,4 @@
+import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { useEffect, useRef } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { InjectFace, PropsLocale, PropsRenderFactories, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
@@ -16,8 +17,9 @@ import { en, zh } from './locale.ts'
 import type {} from './workbench-api.ts'
 import { Workbench } from './workbench.ts'
 import { installOptionalBetterSidebar } from './better-sidebar.tsx'
-import { Workspace, WorkspaceLauncher } from './workbench-view.tsx'
+import { Workspace, WorkspaceLauncher, ManagementPanel } from './workbench-view.tsx'
 import type { WorkspaceInjected } from './workbench-view.tsx'
+import { PanelNavigation, bridgeNativeNavigation } from './panel-navigation.ts'
 import { installRoleClient } from './role-view.tsx'
 export type { RoleBindingKey, RoleBinding, PersonalWorkbenchRoles, TeachingEvidence } from './role-binding-api.ts'
 export type { ManagementCatalog, ManagedRole, ManagedSkill, SkillAssignment, ManagementRequest } from './management-api.ts'
@@ -100,6 +102,11 @@ export function apply(ctx: Context): void {
     getItem: key => window.localStorage.getItem(key),
     setItem: (key, value) => window.localStorage.setItem(key, value),
   })
+  const navigation = new PanelNavigation()
+  ctx.effect(() => () => navigation.dispose(), 'independent management navigation')
+  ctx.inject(['layout'], child => child.effect(() => bridgeNativeNavigation(child.layout, workbench, navigation), 'native menu navigation priority'))
+  ctx.effect(() => workbench.subscribe(() => { if (workbench.getSnapshot().visible) navigation.close() }), 'root panel exclusivity')
+  const openManagement = (panel: 'agents' | 'skills') => { workbench.closeWorkspace(); navigation.open(panel) }
   ctx.effect(() => () => { workbench.dispose() }, 'personal-workbench: registry lifetime')
   ctx.effect(() => ctx.reflect.provide('personalWorkbench', workbench), 'personal-workbench: public service')
   const teacher = new TeacherWindow(ctx.sessions, async signal => {
@@ -125,12 +132,16 @@ export function apply(ctx: Context): void {
     inject: (): WorkspaceInjected => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace,
       closeWorkspace: workbench.closeWorkspace, openApp: workbench.openApp, focusWindow: workbench.focus,
       setMode: workbench.setMode, selectPage: workbench.selectPage, setGeometry: workbench.setGeometry,
-      setPreference: workbench.setPreference, management: { openBundle: ctx.get('pluginNavigation')?.openBundle } }),
+      setPreference: workbench.setPreference, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
   }, Workspace))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',
-    inject: () => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace, openApp: workbench.openApp }),
+    inject: () => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace, openApp: workbench.openApp, openAgents: () => openManagement('agents'), openSkills: () => openManagement('skills') }),
   }, WorkspaceLauncher))
+  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+    name: 'shell.overlay', id: 'personal-workbench.management', locale: 'personal-workbench',
+    inject: () => ({ hooks: { navigation, workbench }, close: navigation.close, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
+  }, ManagementPanel))
   installOptionalBetterSidebar(ctx, workbench)
   installRoleClient(ctx)
 }

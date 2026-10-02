@@ -57,6 +57,7 @@ async function fixture({ width = 960, height = 640 } = {}) {
   }
   exports.apply(ctx)
   const overlay = declarations.find(row => row.options.name === 'shell.overlay' && row.options.id === 'personal-workbench.workspace')
+  const management = declarations.find(row => row.options.id === 'personal-workbench.management')
   const launcher = declarations.find(row => row.options.name === 'sidebar.footer.action' && row.options.id === 'personal-workbench.workspace')
   assert.deepEqual(JSON.parse(JSON.stringify(overlay.options.children)), { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } })
   function Exercise({ active, pageId }) {
@@ -79,6 +80,7 @@ async function fixture({ width = 960, height = 640 } = {}) {
     const { hooks, ...callbacks } = injected
     return h(React.Fragment, null,
       h(launcher.component, { wide: true, t: key => key, ...launcher.options.inject(), useWorkbench: boundHook(hooks.workbench) }),
+      h(management.component, { ...management.options.inject(), useNavigation: boundHook(management.options.inject().hooks.navigation), useWorkbench: boundHook(hooks.workbench), t: key => key }),
       h(overlay.component, { ...callbacks, useWorkbench: boundHook(hooks.workbench), t: key => key,
         renderSlot: (name, owner, options) => {
           assert.equal(name, 'personal-workbench.app')
@@ -104,141 +106,65 @@ async function fixture({ width = 960, height = 640 } = {}) {
     } }
 }
 
-test('packaged UI retains actual registered exercise state through pages, hide, minimize and close/reopen', async () => {
-  const f = await fixture()
-  try {
-    await f.click('workspace')
-    await f.click('Exercise')
-    await f.click('Enter answer')
-    await f.click('Practice')
-    const input = f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
-    assert.equal(input.value, 'retained answer')
-    await f.click('Submit exercise')
-    await f.click('minimize: Exercise')
-    assert.equal(input.isConnected, true)
-    await f.click('Exercise')
-    assert.equal(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'), input)
-    await f.click('maximize: Exercise')
-    const frame = f.dom.window.document.querySelector('[role="region"]')
-    assert.equal(frame.style.width, '960px')
-    await f.click('closeWorkspace')
-    assert.equal(input.isConnected, true)
-    assert.equal(f.dom.window.document.querySelector('output[aria-label="Activity"]').textContent, 'false')
-    await f.click('workspace')
-    await f.click('restore: Exercise')
-    await f.click('close: Exercise')
-    assert.equal(input.isConnected, true)
-    assert.equal(f.dom.window.document.querySelector('output[aria-label="Activity"]').textContent, 'false')
-    await f.click('Exercise')
-    assert.equal(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'), input)
-    assert.equal(input.value, 'retained answer')
-    assert.equal(f.dom.window.document.querySelector('output[aria-label="Result"]').textContent, 'Submitted')
-    assert.deepEqual(f.counts(), { fetches: 0, retained: 0, mounts: 1, unmounts: 0 })
-  } finally { await f.dispose() }
-})
 
-test('packaged registry disposal removes the app UI, focus returns, and native proof stays independently registered', async () => {
+test('direct project fills the main surface and retains draft through page, exit and reopen', async () => {
   const f = await fixture()
   try {
-    const origin = f.dom.window.document.getElementById('origin')
-    origin.focus()
-    await f.click('workspace')
     await f.click('Exercise')
-    assert.equal(f.dom.window.document.activeElement.getAttribute('role'), 'region')
-    const revision = f.service.getSnapshot().focusRevision
-    await act(async () => f.service.openApp('test.exercise'))
-    assert.ok(f.service.getSnapshot().focusRevision > revision)
-    assert.equal(f.dom.window.document.querySelectorAll('[role="region"]').length, 1)
-    await f.click('close: Exercise')
-    assert.equal(f.dom.window.document.activeElement.textContent, 'Exercise')
-    await f.click('Exercise')
-    await act(async () => { f.removeView(); f.removeApp(); f.removeApp() })
-    assert.equal(f.dom.window.document.querySelectorAll('[role="region"]').length, 0)
-    assert.equal(f.counts().unmounts, 1)
-    assert.ok(f.declarations.some(row => row.options.name === 'personal-workbench.teacher'))
-    await f.click('closeWorkspace')
-    assert.equal(f.dom.window.document.activeElement, origin)
-    assert.equal(f.counts().fetches, 0)
-    assert.equal(f.counts().retained, 0)
-  } finally { await f.dispose() }
-})
-
-test('keyboard focus cycling and title movement preserve each registered app draft and delegate application Escape', async () => {
-  const f = await fixture()
-  try {
-    const second = { id: 'test.notes', version: '1', name: 'Notes', source: 'UI test registration', icon: 'notebook',
-      pages: [{ id: 'note', label: 'Note' }], defaultLayout: { width: 500, height: 400, pageId: 'note' } }
-    function Notes() { return h('textarea', { 'aria-label': 'Note draft', defaultValue: 'note in progress' }) }
-    await act(async () => { f.service.registerApp(second); f.ctx.slots.register({ name: 'personal-workbench.app', key: second.id }, Notes) })
-    await f.click('workspace')
-    await f.click('Exercise')
+    assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden, true)
+    assert.equal(f.dom.window.document.querySelector('.pwb-catalog'), null)
+    assert.equal(f.dom.window.document.querySelector('.pwb-window-header'), null)
+    assert.equal(f.dom.window.document.querySelector('input[type="range"]'), null)
     await f.click('Enter answer')
     const draft = f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
-    await f.click('Notes')
-    const note = f.dom.window.document.querySelector('textarea')
-    note.value = 'unsent note'
-    await act(async () => note.dispatchEvent(new f.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
-    assert.equal(f.dom.window.document.querySelector('[role="dialog"]').hidden, false)
-    await act(async () => note.dispatchEvent(new f.dom.window.KeyboardEvent('keydown', { key: 'F6', ctrlKey: true, bubbles: true })))
-    assert.equal(f.dom.window.document.activeElement.getAttribute('aria-label'), 'Exercise · default')
+    await f.click('Practice')
     assert.equal(draft.value, 'retained answer')
-    const handle = f.button('moveWindow: Exercise')
-    const before = Number.parseFloat(handle.closest('[role="region"]').style.left)
-    await act(async () => handle.dispatchEvent(new f.dom.window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })))
-    assert.equal(Number.parseFloat(handle.closest('[role="region"]').style.left), before - 16)
-    await f.click('Notes')
-    assert.equal(note.value, 'unsent note')
-    const dialog = f.dom.window.document.querySelector('[role="dialog"]')
-    await act(async () => dialog.dispatchEvent(new f.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
-    assert.equal(dialog.hidden, true)
-  } finally { await f.dispose() }
-})
-
-test('narrow UI constrains the registered window and catalog controls expose persisted display preferences', async () => {
-  const f = await fixture({ width: 390, height: 540 })
-  try {
-    await f.click('workspace')
+    await f.click('Submit exercise')
+    await f.click('closeWorkspace')
+    assert.equal(draft.isConnected, true)
+    assert.equal(f.dom.window.document.querySelector('output[aria-label="Activity"]').textContent, 'false')
     await f.click('Exercise')
-    const region = f.dom.window.document.querySelector('[role="region"]')
-    assert.equal(region.style.width, '390px')
-    assert.equal(region.style.height, '540px')
-    assert.equal(region.style.left, '0px')
-    assert.equal(f.dom.window.document.querySelector('input[type="range"]'), null)
-    await f.click('favorite: Exercise')
-    assert.equal(f.button('favorite: Exercise').getAttribute('aria-pressed'), 'true')
-    await f.click('hideApp: Exercise')
-    assert.equal(f.button('hideApp: Exercise'), undefined)
-    const showHidden = f.dom.window.document.querySelector('input[type="checkbox"]')
-    await act(async () => showHidden.click())
-    await f.click('showApp: Exercise')
-    assert.equal(f.service.getSnapshot().apps['test.exercise'].hidden, false)
-    assert.equal(f.service.getSnapshot().apps['test.exercise'].favorite, true)
-    const input = f.dom.window.document.querySelector('input[type="search"]')
-    await act(async () => {
-      Object.getOwnPropertyDescriptor(f.dom.window.HTMLInputElement.prototype, 'value').set.call(input, 'missing app')
-      input.dispatchEvent(new f.dom.window.Event('input', { bubbles: true }))
-    })
-    assert.equal(f.dom.window.document.querySelector('.pwb-list [role="status"]').textContent, 'noMatches')
+    assert.equal(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'), draft)
+    assert.equal(f.dom.window.document.querySelector('output[aria-label="Result"]').textContent, 'Submitted')
+    assert.deepEqual(f.counts(), {fetches:0,retained:0,mounts:1,unmounts:0})
   } finally { await f.dispose() }
 })
 
-test('sidebar nests applications and routes Agent and Skills to their own catalogs', async () => {
+test('Agent and Skills open independent root panels and project drafts remain mounted', async () => {
   const f = await fixture()
   try {
-    const nav = f.dom.window.document.querySelector('nav[aria-label="catalogTabs"]')
-    assert.ok(nav.querySelector('ul[aria-label="applications"] button[aria-label="Exercise"]'))
+    await f.click('Exercise'); await f.click('Enter answer')
+    const draft = f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
     await f.click('agents')
-    assert.equal(f.service.getSnapshot().catalogTab, 'agents')
-    assert.equal(f.dom.window.document.querySelector('.pwb-body').dataset.catalog, 'agents')
+    assert.equal(f.dom.window.document.querySelector('.pwb-project-shell:not(.pwb-independent-management)').hidden, true)
+    assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').hidden, false)
+    assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').getAttribute('aria-label'), 'agents')
+    assert.equal(draft.isConnected, true)
     await f.click('skills')
-    assert.equal(f.service.getSnapshot().catalogTab, 'skills')
-    await f.click('closeWorkspace')
-    await f.click('applications')
-    assert.equal(nav.querySelector('ul'), null)
-    await f.click('applications')
+    assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').getAttribute('aria-label'), 'skills')
     await f.click('Exercise')
-    assert.equal(f.service.getSnapshot().catalogTab, 'applications')
-    assert.equal(f.dom.window.document.querySelector('[role="region"]').hidden, false)
+    assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').hidden, true)
+    assert.equal(draft.value, 'retained answer')
     assert.equal(f.counts().retained, 0)
   } finally { await f.dispose() }
+})
+
+test('workbench home and sidebar application hierarchy share registration without duplicate app mounting', async () => {
+ const f = await fixture()
+ try {
+   const nav = f.dom.window.document.querySelector('nav[aria-label="catalogTabs"]')
+   assert.ok(nav.querySelector('ul button[aria-label="Exercise"]'))
+   await f.click('workspace')
+   assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden, false)
+   await f.click('hideApp: Exercise')
+   assert.equal(nav.querySelector('ul button[aria-label="Exercise"]'), null)
+   const checkbox = f.dom.window.document.querySelector('input[type="checkbox"]')
+   await act(async () => checkbox.click())
+   await f.click('showApp: Exercise')
+   assert.ok(nav.querySelector('ul button[aria-label="Exercise"]'))
+   await f.click('Exercise')
+   await act(async () => { f.removeView(); f.removeApp() })
+   assert.equal(f.dom.window.document.querySelector('.pwb-project'), null)
+   assert.equal(f.counts().unmounts, 1)
+ } finally { await f.dispose() }
 })

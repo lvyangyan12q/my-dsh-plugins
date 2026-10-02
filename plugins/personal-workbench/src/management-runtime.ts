@@ -4,7 +4,7 @@ import type { SkillAssignment } from './management-api.ts'
 import { bindingKey } from './role-bindings.ts'
 
 /** Only the native tool-skill loader produces instruction bodies. This adapter supplies gestures. */
-export function installAssignmentRuntime(ctx: Context, read: (key: string) => SkillAssignment | undefined): () => Promise<void> {
+export function installAssignmentRuntime(ctx: Context, read: (key: string) => SkillAssignment | undefined, agentSkills: (presetId: string) => readonly string[] = () => []): () => Promise<void> {
   const admitted = new WeakMap<Agent, number>()
   const tasks = new Set<Promise<PreStepDecision>>()
   const run = async ({ agent, messages, turn, step, signal }: Parameters<Events['agent/pre-step']>[0], next: () => Promise<PreStepDecision>): Promise<PreStepDecision> => {
@@ -12,13 +12,17 @@ export function installAssignmentRuntime(ctx: Context, read: (key: string) => Sk
     const definitions = ctx.personalWorkbenchBindings.listRoles()
     const candidates = await Promise.all(definitions.map(async definition => ({ definition, binding: await ctx.personalWorkbenchBindings.read(definition.key) })))
     const matches = candidates.filter(row => row.binding?.phase === 'ready' && row.binding.sessionId === agent.id)
-    if (!matches.length) return next()
-    if (matches.length !== 1) throw new Error('Ambiguous role Session assignment')
-    const { definition, binding } = matches[0]!
-    if (binding!.presetId !== definition.presetId) throw new Error('Assigned role preset changed')
-    const baseline = await ctx.sessionController.projections({ sessionId: agent.id }, signal)
-    if (!baseline || baseline.values.agentPreset !== definition.presetId) throw new Error('Assigned role Session preset unavailable')
-    const names = read(bindingKey(definition.key))?.names ?? []
+    const presetId = ctx.agentPresets.composedPreset?.(agent.ctx)
+    const reusableNames = presetId ? agentSkills(presetId) : []
+    if (!matches.length && !reusableNames.length) return next()
+    if (matches.length > 1) throw new Error('Ambiguous role Session assignment')
+    const match = matches[0]
+    if (match) {
+      if (match.binding!.presetId !== match.definition.presetId) throw new Error('Assigned role preset changed')
+      const baseline = await ctx.sessionController.projections({ sessionId: agent.id }, signal)
+      if (!baseline || baseline.values.agentPreset !== match.definition.presetId) throw new Error('Assigned role Session preset unavailable')
+    }
+    const names = [...new Set([...reusableNames, ...(match ? read(bindingKey(match.definition.key))?.names ?? [] : [])])]
     if (!names.length) { admitted.set(agent, turn); return next() }
     const registry = ctx.agentPresets.serviceFor(agent, 'skills') ?? ctx.skills
     const snapshot = await registry.snapshot({ cwd: agent.session.header.cwd, scope: agent, signal })

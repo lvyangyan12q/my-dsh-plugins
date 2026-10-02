@@ -23,3 +23,13 @@ The root combined release checks pack actual archives, install using the officia
 Live native composer/streaming, tools, approval, questions, Stop, close-during-run and continued turns are pending. Desktop/narrow screenshots, image pixels, focus/overlap and no/with-sidebar acceptance remain blocked by Chrome transport. Ready Sessions and pre-step proposals do not satisfy those gates.
 
 The generic role implementation, native Session ownership, model controls and permissions are unchanged by the release packaging work.
+
+## Independent reusable capabilities
+
+Agent and Skills libraries are independent of application catalogs. Managed Agent identity is stable (`id`), with native preset identity `my-dsh.<id>` exposed as `presetId`. Application role bindings are usage relations. Explicitly selecting a different Agent creates a new native Session, preserves the former Session IDs and rejects a stale selection. Other app-specific role preconditions, including required teaching Skills, remain enforced.
+
+Managed Skills use the native Skill registry and `tool-skill` loader. Managed Agent assigned Skills are admitted through the native pre-step waterfall on user turns. Model delegation checks both Agent model-invocation permission and every assigned Skill's model-invocation permission. Native Skill calls reject names outside the managed Agent's assignment. Unbinding a role preserves the underlying Agent and historical native conversation; deleting a Skill used by an Agent or application assignment is rejected.
+
+Models discover capabilities through `list_capabilities` and delegate one task through `run_agent`. The native Agent factory composes the requested preset before publication, inherits the native parent's model route and delegated sandbox policy, pins delegated approval to `never` using native helpers, enforces a maximum delegation depth of 1, and owns cancellation and quiescent disposal. Output remains in the native Session. Invocation metadata persists separately in `my_dsh_capabilities`; a restart marks previously running invocations failed rather than claiming completion. Native Skill tool outcomes are included in execution history.
+
+`test:capabilities` uses the official built runtime with a deterministic model adapter. It verifies real preset composition, native tool discovery and dispatch, assigned Skill instructions, permission inheritance, disabled Agent invocation, a live model cancellation, child disposal, durable history replay, independent CRUD/reopen, stale revisions and role rebinding. Set `DSH_SOURCE` to the built official checkout before running it. These tests do not make external model requests.

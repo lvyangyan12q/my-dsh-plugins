@@ -22,16 +22,19 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
   const replace = () => { const binding = state.binding; if (binding && globalThis.confirm('保留原会话并新建角色会话？')) void commands.replace(bindingKey, binding.sessionId).catch(() => {}) }
   return <section aria-label="持续角色会话" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: '1px solid #ddd', fontSize: 12 }}>
-      <strong>{label ?? bindingKey.subject ?? bindingKey.roleId}</strong><span style={{ overflowWrap: 'anywhere', flex: 1 }}>{state.binding?.sessionId ?? '尚未创建'}</span>
+      <strong>{label ?? bindingKey.subject ?? bindingKey.roleId}</strong><span style={{ flex: 1 }} />
       {status?.running && <span role="status">运行中</span>}{status?.pendingInteraction && <span role="status">待处理：{status.pendingInteraction.kind}</span>}{status?.completionUnread && <span role="status">未读完成</span>}
-      {!state.binding && <button title="创建角色会话" aria-label="创建角色会话" disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}><UserPlus size={16} /></button>}
-      <button title="同 ID 重试" aria-label="同 ID 重试" disabled={state.busy} onClick={retry}><RefreshCw size={16} /></button>
-      <button title="显式新建角色会话" aria-label="显式新建角色会话" disabled={!state.binding || state.busy} onClick={replace}><UserPlus size={16} /></button>
+      {!state.binding && !state.error && window.phase !== 'error' && <button disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}>创建{label ?? '角色会话'}</button>}
+      {(state.error || window.phase === 'error' || state.binding?.phase === 'intent') && <button disabled={state.busy} onClick={retry}><RefreshCw size={14} /> 重试</button>}
+      {state.binding && <details style={{ position: 'relative' }}><summary aria-label="角色会话更多操作" style={{ cursor: 'pointer' }}>更多</summary><div style={{ position: 'absolute', right: 0, top: 24, zIndex: 2, minWidth: 180, padding: 10, background: 'var(--dsw-alias-bg-base, #fff)', border: '1px solid #ddd', borderRadius: 6 }}>
+        <p style={{ overflowWrap: 'anywhere', margin: '0 0 8px' }}>会话：{state.binding.sessionId}</p>
+        <button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
+      </div></details>}
     </header>
     {state.busy && <p role="status">正在连接角色会话…</p>}
     {state.error && <p role="alert">{state.error}</p>}
     {window.phase === 'error' && <p role="alert">角色会话不可访问。请同 ID 重试或显式新建。</p>}
-    {window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '角色创建尚未完成，请同 ID 重试。' : '尚未创建角色会话。'}</p>}
+    {window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '角色创建尚未完成，请同 ID 重试。' : '点击创建，开始与角色对话。'}</p>}
     {window.phase === 'open' && <div style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}><Mounted reference={window.reference} bindingKey={bindingKey} mountRole={mountRole}><SessionProvider session={window.reference} empty={() => <p role="alert">角色会话不可访问。请同 ID 重试。</p>}>
       {renderSlot('personal-workbench.role-native', {})}
     </SessionProvider></Mounted></div>}

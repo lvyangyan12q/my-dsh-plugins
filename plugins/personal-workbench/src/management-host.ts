@@ -12,12 +12,15 @@ import type { RoleBindingKey, RoleDefinition } from './role-binding-api.ts'
 import type { ManagedRole, ManagedSkill, ManagementCatalog, SkillAssignment } from './management-api.ts'
 import { bindingKey } from './role-bindings.ts'
 import { managementDomain, managementRequest } from './management-domain.ts'
+import { capabilityRequest } from './capability-domain.ts'
+import { installCapabilities } from './capability-host.ts'
 import { installAssignmentRuntime } from './management-runtime.ts'
 
 /** Allowlisted projections only: never export arbitrary preset/provider configuration. */
 export async function installManagement(ctx: Context) {
   const domain = await ctx.storageDomain.open(managementDomain)
   const assignments = domain.table('assignments')
+  const capabilities = await installCapabilities(ctx, name => [...assignments.entries()].some(([,row]) => row.names.includes(name)))
   const pending = new Map<string, Promise<unknown>>()
   const requests = new Set<Promise<void>>()
   let closing = false
@@ -34,8 +37,7 @@ export async function installManagement(ctx: Context) {
   const projectSkill = (skill: SkillSummary): ManagedSkill => ({ name: skill.name, description: skill.description,
     source: skill.source, provider: skill.provider, userInvocable: skill.invocation.userInvocable,
     modelInvocable: skill.invocation.modelInvocable,
-    appIds: [...new Set(ctx.personalWorkbenchBindings.listRoles().filter(row => row.teaching?.provider === skill.provider
-      && row.teaching.skillName === skill.name).map(row => row.key.appId))] })
+    appIds: [...new Set(ctx.personalWorkbenchBindings.listRoles().filter(row => (row.teaching?.provider === skill.provider && row.teaching.skillName === skill.name) || read(row.key).names.includes(skill.name)).map(row => row.key.appId))], ...capabilities.projectSkills().find(row => row.name === skill.name) })
   const scoped = async <T>(definition: RoleDefinition, visit: (scope: ScopeKey, cwd: string | undefined) => Promise<T>) => {
     const preset = await ctx.agentPresets.resolve(definition.presetId)
     if (preset.broken) throw new Error('Role preset unavailable')
@@ -106,7 +108,7 @@ export async function installManagement(ctx: Context) {
     const global = await ctx.skills.snapshot()
     const skills = global.complete ? global.skills.map(projectSkill) : []
     // modelCatalog may perform provider IO. Expose saved Session selections here; native bundle navigation owns configuration.
-    return { version: 1, roles, presets, skills, ...(global.complete ? {} : { globalSkillError: 'Global Skill catalog is incomplete' }), models: null, modelError: 'Model catalog requires native provider lookup; use native configuration.', runtimeAvailable: true }
+    return { version: 1, roles, presets, skills, ...(global.complete ? {} : { globalSkillError: 'Global Skill catalog is incomplete' }), models: null, modelError: 'Model catalog requires native provider lookup; use native configuration.', runtimeAvailable: true, agents: await capabilities.catalog(), executions: capabilities.history() }
   }
   const assign = (key: RoleBindingKey, expectedRevision: number, names: readonly string[]) => {
     const id = bindingKey(key)
@@ -123,7 +125,7 @@ export async function installManagement(ctx: Context) {
         if (!snapshot.complete) throw new Error('Role Skill catalog is incomplete')
         for (const name of names) if (!snapshot.skills.some(skill => skill.name === name && skill.invocation.userInvocable)) throw new Error(`Skill unavailable for this role: ${name}`)
       })
-      if (declared(key) !== definition) throw new Error('Role declaration changed during save')
+      if (declared(key).presetId !== definition.presetId) throw new Error('Role declaration changed during save')
       const value: SkillAssignment = { version: 1, key: { ...key }, revision: current.revision + 1, names: [...names] }
       await assignments.put(id, value)
       return value
@@ -132,7 +134,7 @@ export async function installManagement(ctx: Context) {
     void task.finally(() => { if (pending.get(id) === task) pending.delete(id) }).catch(() => {})
     return task
   }
-  const removeRuntime = installAssignmentRuntime(ctx, id => assignments.get(id))
+  const removeRuntime = installAssignmentRuntime(ctx, id => assignments.get(id), presetId => capabilities.agentSkills(presetId))
   const dispatch = async (req: IncomingMessage, res: ServerResponse) => {
     const respond = (status: number, value: unknown) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(value)) }
     try {
@@ -145,11 +147,13 @@ export async function installManagement(ctx: Context) {
       for await (const chunk of req) {
         const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
         size += bytes.length
-        if (size > 16384) { respond(413, { error: 'Management request too large' }); return }
+        if (size > 131072) { respond(413, { error: 'Management request too large' }); return }
         chunks.push(bytes)
       }
       let body: unknown
       try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')) } catch { respond(400, { error: 'Invalid JSON' }); return }
+      const capability = capabilityRequest.safeParse(body)
+      if (capability.success) { respond(200, await capabilities.dispatch(capability.data)); return }
       const parsed = managementRequest.safeParse(body)
       if (!parsed.success) { respond(400, { error: 'Invalid management request' }); return }
       const data = parsed.data
@@ -165,6 +169,6 @@ export async function installManagement(ctx: Context) {
       void task.finally(() => requests.delete(task)).catch(() => {})
       return task
     },
-    dispose: async () => { closing = true; await removeRuntime(); await Promise.allSettled([...requests, ...pending.values()]); await domain.close() },
+    dispose: async () => { closing = true; await removeRuntime(); await capabilities.dispose(); await Promise.allSettled([...requests, ...pending.values()]); await domain.close() },
   }
 }

@@ -105,5 +105,5 @@ export function KaogongWorkbenchContent({ instanceId, pageId, active, selectPage
   const [, setOpen] = useBusinessState('open', false)
   useEffect(() => { if (instanceId === defaultInstance) setOpen(active) }, [active, instanceId, setOpen])
   if (instanceId !== defaultInstance) return <p role="alert">考公当前仅支持默认学习实例。</p>
-  return <KaogongClassroom active={active} pageId={pageId} onSelectPage={selectPage} onClose={close} onOpenTeacher={onOpenTeacher} renderFactorySlot={renderFactorySlot} />
+  return <KaogongClassroom embedded active={active} pageId={pageId} onSelectPage={selectPage} onClose={close} onOpenTeacher={onOpenTeacher} renderFactorySlot={renderFactorySlot} />
 }

@@ -114,7 +114,7 @@ export class Workbench implements PersonalWorkbench {
         focused: retired.includes(this.snapshot.focused ?? '') ? null : this.snapshot.focused })
     }
   }
-  readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }) }
+  readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, focused: null, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }) }
   readonly closeWorkspace = (): void => { this.publish({ visible: false }) }
   readonly openApp = (appId: WorkbenchAppId, instanceId = defaultInstance): void => {
     const definition = this.definitions.get(appId)

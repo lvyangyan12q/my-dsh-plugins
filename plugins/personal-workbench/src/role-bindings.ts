@@ -29,17 +29,34 @@ export class RoleBindings implements PersonalWorkbenchBindings {
     this.definitions.set(key, owned)
     return () => { if (this.definitions.get(key) === owned) this.definitions.delete(key) }
   }
-  definition(key: RoleBindingKey): RoleDefinition {
+  declaredDefinition(key: RoleBindingKey): RoleDefinition {
     const definition = this.definitions.get(bindingKey(key))
     if (!definition) throw new Error('Role declaration unavailable')
     return definition
   }
-  listRoles(): readonly RoleDefinition[] { return [...this.definitions.values()] }
+  definition(key: RoleBindingKey): RoleDefinition {
+    const definition = this.definitions.get(bindingKey(key))
+    if (!definition) throw new Error('Role declaration unavailable')
+    const saved = this.table.get(bindingKey(key))
+    return saved?.selectedPreset ? { ...definition, presetId: saved.presetId } : definition
+  }
+  listRoles(): readonly RoleDefinition[] { return [...this.definitions.values()].map(row => this.definition(row.key)) }
   async read(key: RoleBindingKey): Promise<RoleBinding | null> {
     if (this.disposed) throw new Error('Role bindings unavailable')
     const row = this.table.get(bindingKey(key))
     if (row && bindingKey(row.key) !== bindingKey(key)) throw new Error('Stored role key mismatch')
     return row ?? null
+  }
+  setPreset(key: RoleBindingKey, presetId: string, expectedSessionId: SessionId | null): Promise<RoleBinding> {
+    return this.serial(key, async () => {
+      const old = this.current(key)
+      if ((old?.sessionId ?? null) !== expectedSessionId) throw new Error('Role binding changed; refresh before selecting Agent')
+      const definition = { ...this.definition(key), presetId }
+      await this.authority.validate(definition)
+      const next = this.intent(definition, old ? [...old.previousSessionIds, old.sessionId] : [])
+      await this.table.put(bindingKey(key), next)
+      return this.finish(key)
+    })
   }
   ensure(key: RoleBindingKey): Promise<RoleBinding> { return this.serial(key, () => this.finish(key)) }
   retry(key: RoleBindingKey, expectedSessionId: SessionId): Promise<RoleBinding> {
@@ -64,7 +81,7 @@ export class RoleBindings implements PersonalWorkbenchBindings {
   }
   private intent(definition: RoleDefinition, previousSessionIds: readonly SessionId[]): RoleBinding {
     if (!definition.creation) throw new Error('Explicit role creation cwd required')
-    return { version: 1, key: { ...definition.key }, sessionId: this.allocate(), presetId: definition.presetId, phase: 'intent', previousSessionIds, creation: { ...definition.creation } }
+    return { version: 1, key: { ...definition.key }, sessionId: this.allocate(), presetId: definition.presetId, ...(this.definitions.get(bindingKey(definition.key))?.presetId !== definition.presetId ? { selectedPreset: true } : {}), phase: 'intent', previousSessionIds, creation: { ...definition.creation } }
   }
   private async finish(key: RoleBindingKey): Promise<RoleBinding> {
     let record = this.current(key)
