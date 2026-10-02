@@ -138,3 +138,15 @@ test('per-key owners are stable across role/subject switches; read/ensure never 
   assert.equal(new Set(released).size, 5)
   assert.equal(released.length, 5)
 })
+
+test('browser fetch is called without the RoleClient receiver', async () => {
+  const f = fixture()
+  const request = async function (_url, options) {
+    assert.equal(this, undefined, 'native browser fetch must not receive a RoleClient as this')
+    assert.equal(JSON.parse(options.body).action, 'read')
+    return { ok: true, status: 200, json: async () => ({ binding: null }) }
+  }
+  const owner = new RoleClient({ sessions: {}, workspaces: { list: { getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }), subscribe: () => () => {} } } }, request)
+  try { await owner.open(key); assert.equal(owner.getSnapshot().error, null) }
+  finally { owner.dispose(); f.owner.dispose() }
+})

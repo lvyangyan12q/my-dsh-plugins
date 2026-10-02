@@ -93,7 +93,9 @@ export class RoleClient implements PersonalWorkbenchRoles {
   }
   private async call(action: string, key: RoleBindingKey, extra: object = {}): Promise<Record<string, unknown>> {
     if (!key.appId || !key.instanceId || !key.roleId || key.subject === '') throw new Error('Invalid role binding')
-    const response = await this.request('/api/personal-workbench/roles', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: this.abort.signal,
+    // Native browser fetch cannot be invoked with this RoleClient as its receiver.
+    const request = this.request
+    const response = await request('/api/personal-workbench/roles', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: this.abort.signal,
       headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, key, ...extra }) }).catch(() => { throw new Error('Teacher service unavailable') })
     if (response.status === 401 || response.status === 403) throw new Error('Teacher authentication required')
     if (response.status === 404 || response.status === 503) throw new Error('Teacher service unavailable')
