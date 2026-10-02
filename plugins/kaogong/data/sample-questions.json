@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "questions": [
+    {
+      "id": "q_1",
+      "subject": "行测-言语理解与表达",
+      "knowledgePoint": "片段阅读-主旨概括",
+      "questionType": "单选",
+      "stem": "近年来，人工智能技术在医疗、教育、金融等领域广泛应用，但也带来数据隐私、算法偏见等新问题。这段文字意在强调，监管应当：",
+      "options": [
+        "A. 完全放开，由市场自行调节",
+        "B. 在鼓励创新的同时加强规范引导",
+        "C. 全面禁止人工智能应用",
+        "D. 仅依靠企业自律"
+      ],
+      "correctAnswer": "B",
+      "userAnswer": "C",
+      "result": "wrong",
+      "errorReason": "知识点不会",
+      "source": "模拟卷",
+      "createdAt": "2026-01-10T09:00:00.000Z",
+      "updatedAt": "2026-01-10T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    },
+    {
+      "id": "q_2",
+      "subject": "行测-判断推理",
+      "knowledgePoint": "图形推理-数量规律",
+      "questionType": "单选",
+      "stem": "从所给四个选项中，选择最合适的一个填入问号处，使之呈现一定规律性：○△□○△□？",
+      "options": [
+        "A. ○",
+        "B. △",
+        "C. □",
+        "D. ◇"
+      ],
+      "correctAnswer": "B",
+      "userAnswer": "D",
+      "result": "wrong",
+      "errorReason": "概念混淆",
+      "source": "真题",
+      "createdAt": "2026-01-10T09:00:00.000Z",
+      "updatedAt": "2026-01-10T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    },
+    {
+      "id": "q_3",
+      "subject": "行测-数量关系",
+      "knowledgePoint": "数学运算-工程问题",
+      "questionType": "单选",
+      "stem": "一项工程，甲单独做需要 10 天完成，乙单独做需要 15 天完成。两人合作 4 天后，剩余工程由乙单独完成，还需要几天？",
+      "options": [
+        "A. 3 天",
+        "B. 4 天",
+        "C. 5 天",
+        "D. 6 天"
+      ],
+      "correctAnswer": "C",
+      "userAnswer": "B",
+      "result": "wrong",
+      "errorReason": "计算/分析失误",
+      "source": "真题",
+      "createdAt": "2026-01-11T09:00:00.000Z",
+      "updatedAt": "2026-01-11T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    },
+    {
+      "id": "q_4",
+      "subject": "行测-资料分析",
+      "knowledgePoint": "增长-增长率",
+      "questionType": "单选",
+      "stem": "2023 年某市 GDP 为 5400 亿元，2022 年为 5000 亿元，则 2023 年同比增长率约为：",
+      "options": [
+        "A. 6%",
+        "B. 7%",
+        "C. 8%",
+        "D. 9%"
+      ],
+      "correctAnswer": "C",
+      "userAnswer": "D",
+      "result": "wrong",
+      "errorReason": "方法不当/技巧缺失",
+      "source": "真题",
+      "createdAt": "2026-01-11T09:00:00.000Z",
+      "updatedAt": "2026-01-11T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    },
+    {
+      "id": "q_5",
+      "subject": "行测-常识判断",
+      "knowledgePoint": "法律",
+      "questionType": "单选",
+      "stem": "根据我国宪法，下列哪一项属于公民的基本义务？",
+      "options": [
+        "A. 受教育",
+        "B. 选举权",
+        "C. 言论自由",
+        "D. 人身自由"
+      ],
+      "correctAnswer": "A",
+      "userAnswer": "A",
+      "result": "correct",
+      "source": "真题",
+      "createdAt": "2026-01-12T09:00:00.000Z",
+      "updatedAt": "2026-01-12T09:00:00.000Z",
+      "tags": [],
+      "errorReason": "",
+      "notes": ""
+    },
+    {
+      "id": "q_6",
+      "subject": "行测-判断推理",
+      "knowledgePoint": "逻辑判断-翻译推理",
+      "questionType": "单选",
+      "stem": "只有通过笔试，才能进入面试。小王进入了面试，则可以推出：",
+      "options": [
+        "A. 小王一定通过了笔试",
+        "B. 小王可能没通过笔试",
+        "C. 小王一定没通过笔试",
+        "D. 无法确定"
+      ],
+      "correctAnswer": "A",
+      "userAnswer": "D",
+      "result": "wrong",
+      "errorReason": "审题不清",
+      "source": "模拟卷",
+      "createdAt": "2026-01-12T09:00:00.000Z",
+      "updatedAt": "2026-01-12T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    },
+    {
+      "id": "q_7",
+      "subject": "行测-言语理解与表达",
+      "knowledgePoint": "逻辑填空",
+      "questionType": "单选",
+      "stem": "这项改革举措____了基层负担，受到干部群众一致好评。",
+      "options": [
+        "A. 减轻",
+        "B. 加剧",
+        "C. 增加",
+        "D. 忽略"
+      ],
+      "correctAnswer": "A",
+      "userAnswer": "A",
+      "result": "correct",
+      "source": "模拟卷",
+      "createdAt": "2026-01-13T09:00:00.000Z",
+      "updatedAt": "2026-01-13T09:00:00.000Z",
+      "tags": [],
+      "errorReason": "",
+      "notes": ""
+    },
+    {
+      "id": "q_8",
+      "subject": "行测-资料分析",
+      "knowledgePoint": "比重-比重变化",
+      "questionType": "单选",
+      "stem": "某地区 2023 年出口总额中，机电产品占比由 2022 年的 45% 上升到 48%，则机电产品出口额增长率与出口总额增长率相比：",
+      "options": [
+        "A. 高于",
+        "B. 低于",
+        "C. 相等",
+        "D. 无法比较"
+      ],
+      "correctAnswer": "A",
+      "userAnswer": "C",
+      "result": "wrong",
+      "errorReason": "时间不够",
+      "source": "真题",
+      "createdAt": "2026-01-13T09:00:00.000Z",
+      "updatedAt": "2026-01-13T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    },
+    {
+      "id": "q_9",
+      "subject": "行测-资料分析",
+      "knowledgePoint": "增长-增长率",
+      "questionType": "单选",
+      "stem": "2022 年某省粮食产量 3000 万吨，2021 年为 2800 万吨，则 2022 年同比增长率约为：",
+      "options": [
+        "A. 5.7%",
+        "B. 6.7%",
+        "C. 7.1%",
+        "D. 8.3%"
+      ],
+      "correctAnswer": "C",
+      "userAnswer": "A",
+      "result": "wrong",
+      "errorReason": "计算/分析失误",
+      "source": "模拟卷",
+      "createdAt": "2026-01-14T09:00:00.000Z",
+      "updatedAt": "2026-01-14T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    },
+    {
+      "id": "q_10",
+      "subject": "行测-判断推理",
+      "knowledgePoint": "图形推理-数量规律",
+      "questionType": "单选",
+      "stem": "所给图形中封闭区域的数量依次为 1、2、3、4，问号处应填入封闭区域数量为 5 的图形。",
+      "options": [
+        "A. 封闭区域 3 个",
+        "B. 封闭区域 5 个",
+        "C. 封闭区域 4 个",
+        "D. 封闭区域 6 个"
+      ],
+      "correctAnswer": "B",
+      "userAnswer": "C",
+      "result": "wrong",
+      "errorReason": "粗心大意",
+      "source": "模拟卷",
+      "createdAt": "2026-01-14T09:00:00.000Z",
+      "updatedAt": "2026-01-14T09:00:00.000Z",
+      "tags": [],
+      "notes": ""
+    }
+  ]
+}

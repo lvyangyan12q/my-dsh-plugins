@@ -1,0 +1,27 @@
+# 把本插件接入现有 DeepSeek Harness 组合（在现有 cordis.yml 中追加以下条目即可）。
+# 假设已把本插件目录拷贝到 DSH 仓库根目录下的 kaogong/ 目录，
+# 且用 pnpm dsh（源码启动，走 tsx）运行，则 name 指向源码入口。
+
+# —— 存储栈（走规范的 storageDomain，错题本/计划共用）——
+- id: storage
+  name: '@deepseek-ai/dsh-storage'
+
+- id: storage-json
+  name: '@deepseek-ai/dsh-storage-json'
+  config:
+    root: './.kaogong/storage'
+
+- id: storage-domain
+  name: '@deepseek-ai/dsh-storage-domain'
+  config:
+    backend: 'json'
+
+# —— 考公学习套件（错题本 + 倒排计划/进度）——
+- id: kaogong
+  name: './kaogong/src/index.ts'
+  config:
+    # 总结时返回的薄弱考点数量
+    topN: 8
+
+# 若已构建成 npm 包并加入 workspace，可把上面 kaogong 条目的 name 改为：
+#   name: '@deepseek-ai/dsh-tool-kaogong'

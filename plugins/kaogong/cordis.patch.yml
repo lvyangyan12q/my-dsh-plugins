@@ -1,0 +1,8 @@
+# kaogong bundle: the standard dsh-base/web-app profiles already provide the
+# shared storage stack. This patch only adds the kaogong host plugin, avoiding
+# duplicate storage rows when installed into those profiles.
+- insert:
+    - id: kaogong
+      name: '@deepseek-ai/dsh-tool-kaogong'
+      config:
+        topN: 8

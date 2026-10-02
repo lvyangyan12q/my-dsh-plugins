@@ -1,0 +1,1464 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: false
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@deepseek-ai/cordis':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/cordis
+        version: link:../deepseek-harness/vendor/cordis
+      '@deepseek-ai/cordis-plugin-group':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/group
+        version: link:../deepseek-harness/vendor/group
+      '@deepseek-ai/cordis-plugin-hmr':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/hmr
+        version: link:../deepseek-harness/vendor/hmr
+      '@deepseek-ai/cordis-plugin-include':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/include
+        version: link:../deepseek-harness/vendor/include
+      '@deepseek-ai/cordis-plugin-loader':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/loader
+        version: link:../deepseek-harness/vendor/loader
+      '@deepseek-ai/cordis-plugin-logger-console':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/logger-console
+        version: link:../deepseek-harness/vendor/logger-console
+      '@deepseek-ai/cordis-plugin-timer':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/timer
+        version: link:../deepseek-harness/vendor/timer
+      '@deepseek-ai/cosmokit':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/cosmokit
+        version: link:../deepseek-harness/vendor/cosmokit
+      '@deepseek-ai/dsh-acp':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/acp/acp
+        version: link:../deepseek-harness/packages/acp/acp
+      '@deepseek-ai/dsh-acp-app':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/bundle/acp-app
+        version: link:../deepseek-harness/packages/bundle/acp-app
+      '@deepseek-ai/dsh-agent':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/agent
+        version: link:../deepseek-harness/packages/core/agent
+      '@deepseek-ai/dsh-agent-default-model':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/agent-default-model
+        version: link:../deepseek-harness/packages/core/agent-default-model
+      '@deepseek-ai/dsh-agent-instructions':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/context/agent-instructions
+        version: link:../deepseek-harness/packages/context/agent-instructions
+      '@deepseek-ai/dsh-agent-loop':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/agent-loop
+        version: link:../deepseek-harness/packages/core/agent-loop
+      '@deepseek-ai/dsh-agent-loop-testkit':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/test-support/agent-loop-testkit
+        version: link:../deepseek-harness/packages/test-support/agent-loop-testkit
+      '@deepseek-ai/dsh-agent-preset':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/preset/agent-preset
+        version: link:../deepseek-harness/packages/preset/agent-preset
+      '@deepseek-ai/dsh-agent-preset-registry':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/preset/agent-preset-registry
+        version: link:../deepseek-harness/packages/preset/agent-preset-registry
+      '@deepseek-ai/dsh-agent-tool-presentation':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/agent-tool-presentation
+        version: link:../deepseek-harness/packages/core/agent-tool-presentation
+      '@deepseek-ai/dsh-anonymous-user-id':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/identity/anonymous-user-id
+        version: link:../deepseek-harness/packages/identity/anonymous-user-id
+      '@deepseek-ai/dsh-api-account-controller':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/account-controller
+        version: link:../deepseek-harness/packages/api/account-controller
+      '@deepseek-ai/dsh-api-gateway':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/gateway
+        version: link:../deepseek-harness/packages/api/gateway
+      '@deepseek-ai/dsh-api-job-controller':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/job-controller
+        version: link:../deepseek-harness/packages/api/job-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/remotes
+        version: link:../deepseek-harness/packages/api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/session-controller
+        version: link:../deepseek-harness/packages/api/session-controller
+      '@deepseek-ai/dsh-api-settings-controller':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/settings-controller
+        version: link:../deepseek-harness/packages/api/settings-controller
+      '@deepseek-ai/dsh-api-terminal-controller':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/terminal-controller
+        version: link:../deepseek-harness/packages/api/terminal-controller
+      '@deepseek-ai/dsh-api-workspace-controller':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/workspace-controller
+        version: link:../deepseek-harness/packages/api/workspace-controller
+      '@deepseek-ai/dsh-api-workspace-files':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/api/workspace-files
+        version: link:../deepseek-harness/packages/api/workspace-files
+      '@deepseek-ai/dsh-app-boot':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/boot/app-boot
+        version: link:../deepseek-harness/packages/boot/app-boot
+      '@deepseek-ai/dsh-atomic-write':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/atomic-write
+        version: link:../deepseek-harness/packages/util/atomic-write
+      '@deepseek-ai/dsh-attachment':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/attachment/attachment
+        version: link:../deepseek-harness/packages/attachment/attachment
+      '@deepseek-ai/dsh-attachment-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/attachment/attachment-local
+        version: link:../deepseek-harness/packages/attachment/attachment-local
+      '@deepseek-ai/dsh-authorization':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/credentials/authorization
+        version: link:../deepseek-harness/packages/credentials/authorization
+      '@deepseek-ai/dsh-base':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/bundle/base
+        version: link:../deepseek-harness/packages/bundle/base
+      '@deepseek-ai/dsh-bash-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/bash-local
+        version: link:../deepseek-harness/packages/shell/bash-local
+      '@deepseek-ai/dsh-bash-sandbox':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/bash-sandbox
+        version: link:../deepseek-harness/packages/shell/bash-sandbox
+      '@deepseek-ai/dsh-brand':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/brand
+        version: link:../deepseek-harness/packages/util/brand
+      '@deepseek-ai/dsh-browser-use':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/browser-use/browser-use
+        version: link:../deepseek-harness/packages/browser-use/browser-use
+      '@deepseek-ai/dsh-chunked-list':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/chunked-list
+        version: link:../deepseek-harness/packages/util/chunked-list
+      '@deepseek-ai/dsh-client-connection':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/connection
+        version: link:../deepseek-harness/packages/client/connection
+      '@deepseek-ai/dsh-client-file-upload':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/file-upload
+        version: link:../deepseek-harness/packages/client/file-upload
+      '@deepseek-ai/dsh-client-hmr':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/hmr
+        version: link:../deepseek-harness/packages/client/hmr
+      '@deepseek-ai/dsh-client-locale':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/locale
+        version: link:../deepseek-harness/packages/client/locale
+      '@deepseek-ai/dsh-client-modules':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/modules
+        version: link:../deepseek-harness/packages/client/modules
+      '@deepseek-ai/dsh-client-product-analytics':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/product-analytics
+        version: link:../deepseek-harness/packages/client/product-analytics
+      '@deepseek-ai/dsh-client-resources':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/resources
+        version: link:../deepseek-harness/packages/client/resources
+      '@deepseek-ai/dsh-client-shortcuts':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/shortcuts
+        version: link:../deepseek-harness/packages/client/shortcuts
+      '@deepseek-ai/dsh-client-store':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/store
+        version: link:../deepseek-harness/packages/client/store
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/test-support/client-runtime
+        version: link:../deepseek-harness/packages/test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-agent-preset':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-agent-preset
+        version: link:../deepseek-harness/packages/client/ui-agent-preset
+      '@deepseek-ai/dsh-client-ui-approval':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-approval
+        version: link:../deepseek-harness/packages/client/ui-approval
+      '@deepseek-ai/dsh-client-ui-attachment':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-attachment
+        version: link:../deepseek-harness/packages/client/ui-attachment
+      '@deepseek-ai/dsh-client-ui-brand-official':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-brand-official
+        version: link:../deepseek-harness/packages/client/ui-brand-official
+      '@deepseek-ai/dsh-client-ui-chat':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-chat
+        version: link:../deepseek-harness/packages/client/ui-chat
+      '@deepseek-ai/dsh-client-ui-commands':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-commands
+        version: link:../deepseek-harness/packages/client/ui-commands
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-conversation
+        version: link:../deepseek-harness/packages/client/ui-conversation
+      '@deepseek-ai/dsh-client-ui-cordis':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/extensions/ui-cordis
+        version: link:../deepseek-harness/packages/extensions/ui-cordis
+      '@deepseek-ai/dsh-client-ui-deliverables':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-deliverables
+        version: link:../deepseek-harness/packages/client/ui-deliverables
+      '@deepseek-ai/dsh-client-ui-directory-picker-browse':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-directory-picker-browse
+        version: link:../deepseek-harness/packages/client/ui-directory-picker-browse
+      '@deepseek-ai/dsh-client-ui-directory-picker-native':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-directory-picker-native
+        version: link:../deepseek-harness/packages/client/ui-directory-picker-native
+      '@deepseek-ai/dsh-client-ui-dockkit':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-dockkit
+        version: link:../deepseek-harness/packages/client/ui-dockkit
+      '@deepseek-ai/dsh-client-ui-goal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-goal
+        version: link:../deepseek-harness/packages/client/ui-goal
+      '@deepseek-ai/dsh-client-ui-input-trigger':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-input-trigger
+        version: link:../deepseek-harness/packages/client/ui-input-trigger
+      '@deepseek-ai/dsh-client-ui-jobs':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-jobs
+        version: link:../deepseek-harness/packages/client/ui-jobs
+      '@deepseek-ai/dsh-client-ui-layout':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-layout
+        version: link:../deepseek-harness/packages/client/ui-layout
+      '@deepseek-ai/dsh-client-ui-message-feedback':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-message-feedback
+        version: link:../deepseek-harness/packages/client/ui-message-feedback
+      '@deepseek-ai/dsh-client-ui-model-selection':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-model-selection
+        version: link:../deepseek-harness/packages/client/ui-model-selection
+      '@deepseek-ai/dsh-client-ui-open-in-app':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-open-in-app
+        version: link:../deepseek-harness/packages/client/ui-open-in-app
+      '@deepseek-ai/dsh-client-ui-permission-presets':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-permission-presets
+        version: link:../deepseek-harness/packages/client/ui-permission-presets
+      '@deepseek-ai/dsh-client-ui-plan':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-plan
+        version: link:../deepseek-harness/packages/client/ui-plan
+      '@deepseek-ai/dsh-client-ui-plugin-manager':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-plugin-manager
+        version: link:../deepseek-harness/packages/client/ui-plugin-manager
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-primitives
+        version: link:../deepseek-harness/packages/client/ui-primitives
+      '@deepseek-ai/dsh-client-ui-reference':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-reference
+        version: link:../deepseek-harness/packages/client/ui-reference
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-renderer
+        version: link:../deepseek-harness/packages/client/ui-renderer
+      '@deepseek-ai/dsh-client-ui-schedule':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-schedule
+        version: link:../deepseek-harness/packages/client/ui-schedule
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-session
+        version: link:../deepseek-harness/packages/client/ui-session
+      '@deepseek-ai/dsh-client-ui-settings':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings
+        version: link:../deepseek-harness/packages/client/ui-settings
+      '@deepseek-ai/dsh-client-ui-settings-account':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-account
+        version: link:../deepseek-harness/packages/client/ui-settings-account
+      '@deepseek-ai/dsh-client-ui-settings-agent-loop':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-agent-loop
+        version: link:../deepseek-harness/packages/client/ui-settings-agent-loop
+      '@deepseek-ai/dsh-client-ui-settings-general':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-general
+        version: link:../deepseek-harness/packages/client/ui-settings-general
+      '@deepseek-ai/dsh-client-ui-settings-models':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-models
+        version: link:../deepseek-harness/packages/client/ui-settings-models
+      '@deepseek-ai/dsh-client-ui-settings-plugin-inventory':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-plugin-inventory
+        version: link:../deepseek-harness/packages/client/ui-settings-plugin-inventory
+      '@deepseek-ai/dsh-client-ui-settings-plugins':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-plugins
+        version: link:../deepseek-harness/packages/client/ui-settings-plugins
+      '@deepseek-ai/dsh-client-ui-settings-session-log':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-session-log
+        version: link:../deepseek-harness/packages/client/ui-settings-session-log
+      '@deepseek-ai/dsh-client-ui-settings-shell':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-shell
+        version: link:../deepseek-harness/packages/client/ui-settings-shell
+      '@deepseek-ai/dsh-client-ui-settings-subagent':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-subagent
+        version: link:../deepseek-harness/packages/client/ui-settings-subagent
+      '@deepseek-ai/dsh-client-ui-settings-web-search':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-settings-web-search
+        version: link:../deepseek-harness/packages/client/ui-settings-web-search
+      '@deepseek-ai/dsh-client-ui-shortcuts':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-shortcuts
+        version: link:../deepseek-harness/packages/client/ui-shortcuts
+      '@deepseek-ai/dsh-client-ui-sidebar':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-sidebar
+        version: link:../deepseek-harness/packages/client/ui-sidebar
+      '@deepseek-ai/dsh-client-ui-sidebar-browser':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-sidebar-browser
+        version: link:../deepseek-harness/packages/client/ui-sidebar-browser
+      '@deepseek-ai/dsh-client-ui-sidebar-documentpreview':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-sidebar-documentpreview
+        version: link:../deepseek-harness/packages/client/ui-sidebar-documentpreview
+      '@deepseek-ai/dsh-client-ui-sidebar-files':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-sidebar-files
+        version: link:../deepseek-harness/packages/client/ui-sidebar-files
+      '@deepseek-ai/dsh-client-ui-sidebar-right':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-sidebar-right
+        version: link:../deepseek-harness/packages/client/ui-sidebar-right
+      '@deepseek-ai/dsh-client-ui-sidebar-terminal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-sidebar-terminal
+        version: link:../deepseek-harness/packages/client/ui-sidebar-terminal
+      '@deepseek-ai/dsh-client-ui-skill':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-skill
+        version: link:../deepseek-harness/packages/client/ui-skill
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-slots
+        version: link:../deepseek-harness/packages/client/ui-slots
+      '@deepseek-ai/dsh-client-ui-subagent':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-subagent
+        version: link:../deepseek-harness/packages/client/ui-subagent
+      '@deepseek-ai/dsh-client-ui-theme':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-theme
+        version: link:../deepseek-harness/packages/client/ui-theme
+      '@deepseek-ai/dsh-client-ui-tool':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-tool
+        version: link:../deepseek-harness/packages/client/ui-tool
+      '@deepseek-ai/dsh-client-ui-trajectory':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-trajectory
+        version: link:../deepseek-harness/packages/client/ui-trajectory
+      '@deepseek-ai/dsh-client-ui-user-questions':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-user-questions
+        version: link:../deepseek-harness/packages/client/ui-user-questions
+      '@deepseek-ai/dsh-client-ui-workflow-run':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-workflow-run
+        version: link:../deepseek-harness/packages/client/ui-workflow-run
+      '@deepseek-ai/dsh-client-ui-workspace':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/ui-workspace
+        version: link:../deepseek-harness/packages/client/ui-workspace
+      '@deepseek-ai/dsh-client-web':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/client/web
+        version: link:../deepseek-harness/packages/client/web
+      '@deepseek-ai/dsh-cmdline':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/boot/cmdline
+        version: link:../deepseek-harness/packages/boot/cmdline
+      '@deepseek-ai/dsh-command-compact':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/compaction/command-compact
+        version: link:../deepseek-harness/packages/compaction/command-compact
+      '@deepseek-ai/dsh-command-feedback':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/feedback/command-feedback
+        version: link:../deepseek-harness/packages/feedback/command-feedback
+      '@deepseek-ai/dsh-command-goal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/goal/command-goal
+        version: link:../deepseek-harness/packages/goal/command-goal
+      '@deepseek-ai/dsh-commands':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/interaction/commands
+        version: link:../deepseek-harness/packages/interaction/commands
+      '@deepseek-ai/dsh-compaction':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/compaction/compaction
+        version: link:../deepseek-harness/packages/compaction/compaction
+      '@deepseek-ai/dsh-compaction-basic':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/compaction/compaction-basic
+        version: link:../deepseek-harness/packages/compaction/compaction-basic
+      '@deepseek-ai/dsh-compaction-image-offload':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/compaction/compaction-image-offload
+        version: link:../deepseek-harness/packages/compaction/compaction-image-offload
+      '@deepseek-ai/dsh-compaction-tool-result-pruner':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/compaction/compaction-tool-result-pruner
+        version: link:../deepseek-harness/packages/compaction/compaction-tool-result-pruner
+      '@deepseek-ai/dsh-computer-use':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/computer-use/computer-use
+        version: link:../deepseek-harness/packages/computer-use/computer-use
+      '@deepseek-ai/dsh-config-editor':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/boot/config-editor
+        version: link:../deepseek-harness/packages/boot/config-editor
+      '@deepseek-ai/dsh-cordis-client-runner':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/extensions/cordis-client-runner
+        version: link:../deepseek-harness/packages/extensions/cordis-client-runner
+      '@deepseek-ai/dsh-cordis-host-runner':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/extensions/cordis-host-runner
+        version: link:../deepseek-harness/packages/extensions/cordis-host-runner
+      '@deepseek-ai/dsh-credentials':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/credentials/credentials
+        version: link:../deepseek-harness/packages/credentials/credentials
+      '@deepseek-ai/dsh-credentials-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/credentials/credentials-local
+        version: link:../deepseek-harness/packages/credentials/credentials-local
+      '@deepseek-ai/dsh-deepseek-account':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/credentials/deepseek-account
+        version: link:../deepseek-harness/packages/credentials/deepseek-account
+      '@deepseek-ai/dsh-deepseek-account-platform':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/credentials/deepseek-account-platform
+        version: link:../deepseek-harness/packages/credentials/deepseek-account-platform
+      '@deepseek-ai/dsh-deepseek-llm-api-extensions':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/deepseek-llm-api-extensions
+        version: link:../deepseek-harness/packages/llm/deepseek-llm-api-extensions
+      '@deepseek-ai/dsh-deque':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/deque
+        version: link:../deepseek-harness/packages/util/deque
+      '@deepseek-ai/dsh-experimental-agent-team':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/agent-team
+        version: link:../deepseek-harness/packages/experimental/agent-team
+      '@deepseek-ai/dsh-experimental-agent-team-profile':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/agent-team-profile
+        version: link:../deepseek-harness/packages/experimental/agent-team-profile
+      '@deepseek-ai/dsh-experimental-api-speech-to-text':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/api-speech-to-text
+        version: link:../deepseek-harness/packages/experimental/api-speech-to-text
+      '@deepseek-ai/dsh-experimental-auto-review':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/auto-review
+        version: link:../deepseek-harness/packages/experimental/auto-review
+      '@deepseek-ai/dsh-experimental-browser-use-chrome-devtools-mcp':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/browser-use-chrome-devtools-mcp
+        version: link:../deepseek-harness/packages/experimental/browser-use-chrome-devtools-mcp
+      '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/browser-use-playwright-mcp
+        version: link:../deepseek-harness/packages/experimental/browser-use-playwright-mcp
+      '@deepseek-ai/dsh-experimental-browser-use-runtime':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/browser-use-runtime
+        version: link:../deepseek-harness/packages/experimental/browser-use-runtime
+      '@deepseek-ai/dsh-experimental-browser-use-stagehand-native':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/browser-use-stagehand-native
+        version: link:../deepseek-harness/packages/experimental/browser-use-stagehand-native
+      '@deepseek-ai/dsh-experimental-client-ui-agent-team':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/client-ui-agent-team
+        version: link:../deepseek-harness/packages/experimental/client-ui-agent-team
+      '@deepseek-ai/dsh-experimental-client-ui-voice-input':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/client-ui-voice-input
+        version: link:../deepseek-harness/packages/experimental/client-ui-voice-input
+      '@deepseek-ai/dsh-experimental-computer-use-cua-driver-mcp':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/computer-use-cua-driver-mcp
+        version: link:../deepseek-harness/packages/experimental/computer-use-cua-driver-mcp
+      '@deepseek-ai/dsh-experimental-computer-use-cua-driver-native':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/computer-use-cua-driver-native
+        version: link:../deepseek-harness/packages/experimental/computer-use-cua-driver-native
+      '@deepseek-ai/dsh-experimental-inspector':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/inspector
+        version: link:../deepseek-harness/packages/experimental/inspector
+      '@deepseek-ai/dsh-experimental-ptc-runtime-python':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/ptc-runtime-python
+        version: link:../deepseek-harness/packages/experimental/ptc-runtime-python
+      '@deepseek-ai/dsh-experimental-schedule-bundle':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/schedule-bundle
+        version: link:../deepseek-harness/packages/experimental/schedule-bundle
+      '@deepseek-ai/dsh-experimental-speech-to-text':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/speech-to-text
+        version: link:../deepseek-harness/packages/experimental/speech-to-text
+      '@deepseek-ai/dsh-experimental-speech-to-text-sensevoice':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/speech-to-text-sensevoice
+        version: link:../deepseek-harness/packages/experimental/speech-to-text-sensevoice
+      '@deepseek-ai/dsh-experimental-tool-agent-team':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/tool-agent-team
+        version: link:../deepseek-harness/packages/experimental/tool-agent-team
+      '@deepseek-ai/dsh-experimental-voice-input-bundle':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/voice-input-bundle
+        version: link:../deepseek-harness/packages/experimental/voice-input-bundle
+      '@deepseek-ai/dsh-experimental-webworker-packer':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/webworker-packer
+        version: link:../deepseek-harness/packages/experimental/webworker-packer
+      '@deepseek-ai/dsh-experimental-webworker-runtime':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/experimental/webworker-runtime
+        version: link:../deepseek-harness/packages/experimental/webworker-runtime
+      '@deepseek-ai/dsh-file-reference':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/context/file-reference
+        version: link:../deepseek-harness/packages/context/file-reference
+      '@deepseek-ai/dsh-file-reference-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/context/file-reference-local
+        version: link:../deepseek-harness/packages/context/file-reference-local
+      '@deepseek-ai/dsh-fs':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/fs/fs
+        version: link:../deepseek-harness/packages/fs/fs
+      '@deepseek-ai/dsh-fs-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/fs/fs-local
+        version: link:../deepseek-harness/packages/fs/fs-local
+      '@deepseek-ai/dsh-fs-observation-policy':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/fs/fs-observation-policy
+        version: link:../deepseek-harness/packages/fs/fs-observation-policy
+      '@deepseek-ai/dsh-fs-sandbox':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/fs/fs-sandbox
+        version: link:../deepseek-harness/packages/fs/fs-sandbox
+      '@deepseek-ai/dsh-fs-ssh':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/ssh/fs-ssh
+        version: link:../deepseek-harness/packages/ssh/fs-ssh
+      '@deepseek-ai/dsh-goal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/goal/goal
+        version: link:../deepseek-harness/packages/goal/goal
+      '@deepseek-ai/dsh-goal-round-driver':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/goal/goal-round-driver
+        version: link:../deepseek-harness/packages/goal/goal-round-driver
+      '@deepseek-ai/dsh-headless':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/bundle/headless
+        version: link:../deepseek-harness/packages/bundle/headless
+      '@deepseek-ai/dsh-hmr':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/boot/hmr
+        version: link:../deepseek-harness/packages/boot/hmr
+      '@deepseek-ai/dsh-home-paths':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/home-paths
+        version: link:../deepseek-harness/packages/util/home-paths
+      '@deepseek-ai/dsh-hook-protocol':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/hooks/hook-protocol
+        version: link:../deepseek-harness/packages/hooks/hook-protocol
+      '@deepseek-ai/dsh-hooks-claude-code':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/hooks/hooks-claude-code
+        version: link:../deepseek-harness/packages/hooks/hooks-claude-code
+      '@deepseek-ai/dsh-hooks-codex':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/hooks/hooks-codex
+        version: link:../deepseek-harness/packages/hooks/hooks-codex
+      '@deepseek-ai/dsh-host-directory-picker':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/directory-picker
+        version: link:../deepseek-harness/packages/host/directory-picker
+      '@deepseek-ai/dsh-host-directory-picker-auto':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/directory-picker-auto
+        version: link:../deepseek-harness/packages/host/directory-picker-auto
+      '@deepseek-ai/dsh-host-directory-picker-browse':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/directory-picker-browse
+        version: link:../deepseek-harness/packages/host/directory-picker-browse
+      '@deepseek-ai/dsh-host-directory-picker-native':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/directory-picker-native
+        version: link:../deepseek-harness/packages/host/directory-picker-native
+      '@deepseek-ai/dsh-host-frontend-static':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/frontend-static
+        version: link:../deepseek-harness/packages/host/frontend-static
+      '@deepseek-ai/dsh-host-open-in-app':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/open-in-app
+        version: link:../deepseek-harness/packages/host/open-in-app
+      '@deepseek-ai/dsh-host-plugin-inventory':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/plugin-inventory
+        version: link:../deepseek-harness/packages/host/plugin-inventory
+      '@deepseek-ai/dsh-host-product-telemetry-otel':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/product-telemetry-otel
+        version: link:../deepseek-harness/packages/host/product-telemetry-otel
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/host/webserver
+        version: link:../deepseek-harness/packages/host/webserver
+      '@deepseek-ai/dsh-http-proxy':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/http-proxy
+        version: link:../deepseek-harness/packages/util/http-proxy
+      '@deepseek-ai/dsh-invariants':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/runtime-diagnostics/invariants
+        version: link:../deepseek-harness/packages/runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-jobs':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/jobs/jobs
+        version: link:../deepseek-harness/packages/jobs/jobs
+      '@deepseek-ai/dsh-jobs-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/jobs/jobs-local
+        version: link:../deepseek-harness/packages/jobs/jobs-local
+      '@deepseek-ai/dsh-launch-environment':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/launch-environment
+        version: link:../deepseek-harness/packages/util/launch-environment
+      '@deepseek-ai/dsh-lazy-require':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/lazy-require
+        version: link:../deepseek-harness/packages/util/lazy-require
+      '@deepseek-ai/dsh-llm':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/llm
+        version: link:../deepseek-harness/packages/llm/llm
+      '@deepseek-ai/dsh-llm-deepseek':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/llm-deepseek
+        version: link:../deepseek-harness/packages/llm/llm-deepseek
+      '@deepseek-ai/dsh-llm-deepseek-account':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/llm-deepseek-account
+        version: link:../deepseek-harness/packages/llm/llm-deepseek-account
+      '@deepseek-ai/dsh-llm-deepseek-api-key':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/llm-deepseek-api-key
+        version: link:../deepseek-harness/packages/llm/llm-deepseek-api-key
+      '@deepseek-ai/dsh-llm-mock-server':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/test-support/llm-mock-server
+        version: link:../deepseek-harness/packages/test-support/llm-mock-server
+      '@deepseek-ai/dsh-llm-pi-ai':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/llm-pi-ai
+        version: link:../deepseek-harness/packages/llm/llm-pi-ai
+      '@deepseek-ai/dsh-llm-replay':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/test-support/llm-replay
+        version: link:../deepseek-harness/packages/test-support/llm-replay
+      '@deepseek-ai/dsh-llm-retry':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/llm-retry
+        version: link:../deepseek-harness/packages/llm/llm-retry
+      '@deepseek-ai/dsh-loader-smoke':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/test-support/loader-smoke
+        version: link:../deepseek-harness/packages/test-support/loader-smoke
+      '@deepseek-ai/dsh-lsp':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/lsp/lsp
+        version: link:../deepseek-harness/packages/lsp/lsp
+      '@deepseek-ai/dsh-lsp-stdio':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/lsp/lsp-stdio
+        version: link:../deepseek-harness/packages/lsp/lsp-stdio
+      '@deepseek-ai/dsh-mcp-client':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/mcp/mcp-client
+        version: link:../deepseek-harness/packages/mcp/mcp-client
+      '@deepseek-ai/dsh-mcp-resources':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/mcp/mcp-resources
+        version: link:../deepseek-harness/packages/mcp/mcp-resources
+      '@deepseek-ai/dsh-message-feedback':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/feedback/message-feedback
+        version: link:../deepseek-harness/packages/feedback/message-feedback
+      '@deepseek-ai/dsh-native-command':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/native-command
+        version: link:../deepseek-harness/packages/util/native-command
+      '@deepseek-ai/dsh-office-to-pdf':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/document/office-to-pdf
+        version: link:../deepseek-harness/packages/document/office-to-pdf
+      '@deepseek-ai/dsh-otel':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/telemetry/otel
+        version: link:../deepseek-harness/packages/telemetry/otel
+      '@deepseek-ai/dsh-output-retention':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/output-retention
+        version: link:../deepseek-harness/packages/util/output-retention
+      '@deepseek-ai/dsh-package-manifest':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/package-manifest
+        version: link:../deepseek-harness/packages/util/package-manifest
+      '@deepseek-ai/dsh-permission-presets':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/interaction/permission-presets
+        version: link:../deepseek-harness/packages/interaction/permission-presets
+      '@deepseek-ai/dsh-persona':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/preset/persona
+        version: link:../deepseek-harness/packages/preset/persona
+      '@deepseek-ai/dsh-plan-mode':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/plan/plan-mode
+        version: link:../deepseek-harness/packages/plan/plan-mode
+      '@deepseek-ai/dsh-plugin-manager':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/boot/plugin-manager
+        version: link:../deepseek-harness/packages/boot/plugin-manager
+      '@deepseek-ai/dsh-plugin-package-inventory-deepseek':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/plugin-package-inventory-deepseek
+        version: link:../deepseek-harness/packages/llm/plugin-package-inventory-deepseek
+      '@deepseek-ai/dsh-ptc-runtime':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/ptc-runtime/ptc-runtime
+        version: link:../deepseek-harness/packages/ptc-runtime/ptc-runtime
+      '@deepseek-ai/dsh-ptc-runtime-node':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/ptc-runtime/ptc-runtime-node
+        version: link:../deepseek-harness/packages/ptc-runtime/ptc-runtime-node
+      '@deepseek-ai/dsh-pwsh-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/pwsh-local
+        version: link:../deepseek-harness/packages/shell/pwsh-local
+      '@deepseek-ai/dsh-pwsh-sandbox':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/pwsh-sandbox
+        version: link:../deepseek-harness/packages/shell/pwsh-sandbox
+      '@deepseek-ai/dsh-remote-mock':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/test-support/remote-mock
+        version: link:../deepseek-harness/packages/test-support/remote-mock
+      '@deepseek-ai/dsh-repeat-tool-reminder':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/guard/repeat-tool-reminder
+        version: link:../deepseek-harness/packages/guard/repeat-tool-reminder
+      '@deepseek-ai/dsh-sandbox':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/sandbox/sandbox
+        version: link:../deepseek-harness/packages/sandbox/sandbox
+      '@deepseek-ai/dsh-sandbox-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/sandbox/sandbox-local
+        version: link:../deepseek-harness/packages/sandbox/sandbox-local
+      '@deepseek-ai/dsh-sandbox-policy':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/sandbox/sandbox-policy
+        version: link:../deepseek-harness/packages/sandbox/sandbox-policy
+      '@deepseek-ai/dsh-sandbox-ssh':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/ssh/sandbox-ssh
+        version: link:../deepseek-harness/packages/ssh/sandbox-ssh
+      '@deepseek-ai/dsh-sandbox-windows-acl':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/sandbox/sandbox-windows-acl
+        version: link:../deepseek-harness/packages/sandbox/sandbox-windows-acl
+      '@deepseek-ai/dsh-schedule':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/schedule/schedule
+        version: link:../deepseek-harness/packages/schedule/schedule
+      '@deepseek-ai/dsh-scope':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/scope
+        version: link:../deepseek-harness/packages/core/scope
+      '@deepseek-ai/dsh-sdk-app':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/bundle/sdk-app
+        version: link:../deepseek-harness/packages/bundle/sdk-app
+      '@deepseek-ai/dsh-sdk-client':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/sdk/client
+        version: link:../deepseek-harness/packages/sdk/client
+      '@deepseek-ai/dsh-sdk-jsonrpc-server':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/sdk/server
+        version: link:../deepseek-harness/packages/sdk/server
+      '@deepseek-ai/dsh-sdk-minimal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/bundle/sdk-minimal
+        version: link:../deepseek-harness/packages/bundle/sdk-minimal
+      '@deepseek-ai/dsh-sdk-protocol':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/sdk/protocol
+        version: link:../deepseek-harness/packages/sdk/protocol
+      '@deepseek-ai/dsh-session':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/session
+        version: link:../deepseek-harness/packages/core/session
+      '@deepseek-ai/dsh-session-checkpoint-policy':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-checkpoint-policy
+        version: link:../deepseek-harness/packages/session/session-checkpoint-policy
+      '@deepseek-ai/dsh-session-format':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-format
+        version: link:../deepseek-harness/packages/session/session-format
+      '@deepseek-ai/dsh-session-format-catalog':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-format-catalog
+        version: link:../deepseek-harness/packages/session/session-format-catalog
+      '@deepseek-ai/dsh-session-format-v0-to-v1':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-format-v0-to-v1
+        version: link:../deepseek-harness/packages/session/session-format-v0-to-v1
+      '@deepseek-ai/dsh-session-format-v1-to-v2':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-format-v1-to-v2
+        version: link:../deepseek-harness/packages/session/session-format-v1-to-v2
+      '@deepseek-ai/dsh-session-format-v2-to-v3':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-format-v2-to-v3
+        version: link:../deepseek-harness/packages/session/session-format-v2-to-v3
+      '@deepseek-ai/dsh-session-format-v3-to-v4':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-format-v3-to-v4
+        version: link:../deepseek-harness/packages/session/session-format-v3-to-v4
+      '@deepseek-ai/dsh-session-log-deepseek':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-log-deepseek
+        version: link:../deepseek-harness/packages/session/session-log-deepseek
+      '@deepseek-ai/dsh-session-log-export':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session-query/session-log-export
+        version: link:../deepseek-harness/packages/session-query/session-log-export
+      '@deepseek-ai/dsh-session-persistence':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-persistence
+        version: link:../deepseek-harness/packages/session/session-persistence
+      '@deepseek-ai/dsh-session-persistence-jsonl':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-persistence-jsonl
+        version: link:../deepseek-harness/packages/session/session-persistence-jsonl
+      '@deepseek-ai/dsh-session-projection':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-projection
+        version: link:../deepseek-harness/packages/session/session-projection
+      '@deepseek-ai/dsh-session-projection-cache':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-projection-cache
+        version: link:../deepseek-harness/packages/session/session-projection-cache
+      '@deepseek-ai/dsh-session-query':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session-query/session-query
+        version: link:../deepseek-harness/packages/session-query/session-query
+      '@deepseek-ai/dsh-session-query-sqlite':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session-query/session-query-sqlite
+        version: link:../deepseek-harness/packages/session-query/session-query-sqlite
+      '@deepseek-ai/dsh-session-reference':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/context/session-reference
+        version: link:../deepseek-harness/packages/context/session-reference
+      '@deepseek-ai/dsh-session-snapshot':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/test-support/session-snapshot
+        version: link:../deepseek-harness/packages/test-support/session-snapshot
+      '@deepseek-ai/dsh-session-stats':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-stats
+        version: link:../deepseek-harness/packages/session/session-stats
+      '@deepseek-ai/dsh-session-telemetry':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-telemetry
+        version: link:../deepseek-harness/packages/session/session-telemetry
+      '@deepseek-ai/dsh-session-telemetry-otel':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-telemetry-otel
+        version: link:../deepseek-harness/packages/session/session-telemetry-otel
+      '@deepseek-ai/dsh-session-title':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-title
+        version: link:../deepseek-harness/packages/session/session-title
+      '@deepseek-ai/dsh-session-title-all-prompts-llm':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-title-all-prompts-llm
+        version: link:../deepseek-harness/packages/session/session-title-all-prompts-llm
+      '@deepseek-ai/dsh-session-title-first-prompt-llm':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-title-first-prompt-llm
+        version: link:../deepseek-harness/packages/session/session-title-first-prompt-llm
+      '@deepseek-ai/dsh-session-title-llm':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-title-llm
+        version: link:../deepseek-harness/packages/session/session-title-llm
+      '@deepseek-ai/dsh-session-turn-outline':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session/session-turn-outline
+        version: link:../deepseek-harness/packages/session/session-turn-outline
+      '@deepseek-ai/dsh-settings':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/settings/settings
+        version: link:../deepseek-harness/packages/settings/settings
+      '@deepseek-ai/dsh-shell':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/shell
+        version: link:../deepseek-harness/packages/shell/shell
+      '@deepseek-ai/dsh-shell-env':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/shell-env
+        version: link:../deepseek-harness/packages/shell/shell-env
+      '@deepseek-ai/dsh-skill':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/skill/skill
+        version: link:../deepseek-harness/packages/skill/skill
+      '@deepseek-ai/dsh-skill-badge':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/skill/skill-badge
+        version: link:../deepseek-harness/packages/skill/skill-badge
+      '@deepseek-ai/dsh-skill-filesystem':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/skill/skill-filesystem
+        version: link:../deepseek-harness/packages/skill/skill-filesystem
+      '@deepseek-ai/dsh-skill-office':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/skill/skill-office
+        version: link:../deepseek-harness/packages/skill/skill-office
+      '@deepseek-ai/dsh-spill':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/spill/spill
+        version: link:../deepseek-harness/packages/spill/spill
+      '@deepseek-ai/dsh-spill-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/spill/spill-local
+        version: link:../deepseek-harness/packages/spill/spill-local
+      '@deepseek-ai/dsh-spill-policy':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/spill/spill-policy
+        version: link:../deepseek-harness/packages/spill/spill-policy
+      '@deepseek-ai/dsh-ssh':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/ssh/ssh
+        version: link:../deepseek-harness/packages/ssh/ssh
+      '@deepseek-ai/dsh-storage':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/storage/storage
+        version: link:../deepseek-harness/packages/storage/storage
+      '@deepseek-ai/dsh-storage-domain':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/storage/storage-domain
+        version: link:../deepseek-harness/packages/storage/storage-domain
+      '@deepseek-ai/dsh-storage-json':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/storage/storage-json
+        version: link:../deepseek-harness/packages/storage/storage-json
+      '@deepseek-ai/dsh-storage-sqlite':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/storage/storage-sqlite
+        version: link:../deepseek-harness/packages/storage/storage-sqlite
+      '@deepseek-ai/dsh-subagent':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent
+        version: link:../deepseek-harness/packages/subagent/subagent
+      '@deepseek-ai/dsh-subagent-acp':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent-acp
+        version: link:../deepseek-harness/packages/subagent/subagent-acp
+      '@deepseek-ai/dsh-subagent-claude-code':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent-claude-code
+        version: link:../deepseek-harness/packages/subagent/subagent-claude-code
+      '@deepseek-ai/dsh-subagent-codex':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent-codex
+        version: link:../deepseek-harness/packages/subagent/subagent-codex
+      '@deepseek-ai/dsh-subagent-dsh-sdk':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent-dsh-sdk
+        version: link:../deepseek-harness/packages/subagent/subagent-dsh-sdk
+      '@deepseek-ai/dsh-subagent-fork-in-process':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent-fork-in-process
+        version: link:../deepseek-harness/packages/subagent/subagent-fork-in-process
+      '@deepseek-ai/dsh-subagent-in-process-driver':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent-in-process-driver
+        version: link:../deepseek-harness/packages/subagent/subagent-in-process-driver
+      '@deepseek-ai/dsh-subagent-spawn-in-process':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/subagent-spawn-in-process
+        version: link:../deepseek-harness/packages/subagent/subagent-spawn-in-process
+      '@deepseek-ai/dsh-subprocess':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subprocess/subprocess
+        version: link:../deepseek-harness/packages/subprocess/subprocess
+      '@deepseek-ai/dsh-subprocess-local':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subprocess/subprocess-local
+        version: link:../deepseek-harness/packages/subprocess/subprocess-local
+      '@deepseek-ai/dsh-subprocess-ssh':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/ssh/subprocess-ssh
+        version: link:../deepseek-harness/packages/ssh/subprocess-ssh
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/system-prompt
+        version: link:../deepseek-harness/packages/core/system-prompt
+      '@deepseek-ai/dsh-terminal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/terminal/terminal
+        version: link:../deepseek-harness/packages/terminal/terminal
+      '@deepseek-ai/dsh-terminal-bash':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/terminal/terminal-bash
+        version: link:../deepseek-harness/packages/terminal/terminal-bash
+      '@deepseek-ai/dsh-time-context':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/context/time-context
+        version: link:../deepseek-harness/packages/context/time-context
+      '@deepseek-ai/dsh-timeout':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/timeout
+        version: link:../deepseek-harness/packages/util/timeout
+      '@deepseek-ai/dsh-tmux-context':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/context/tmux-context
+        version: link:../deepseek-harness/packages/context/tmux-context
+      '@deepseek-ai/dsh-token-meter':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/llm/token-meter
+        version: link:../deepseek-harness/packages/llm/token-meter
+      '@deepseek-ai/dsh-tool-ask-user':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/interaction/tool-ask-user
+        version: link:../deepseek-harness/packages/interaction/tool-ask-user
+      '@deepseek-ai/dsh-tool-bash':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/tool-bash
+        version: link:../deepseek-harness/packages/shell/tool-bash
+      '@deepseek-ai/dsh-tool-bash-persistent':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/tool-bash-persistent
+        version: link:../deepseek-harness/packages/shell/tool-bash-persistent
+      '@deepseek-ai/dsh-tool-call-timeout-policy':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/guard/timeout-policy
+        version: link:../deepseek-harness/packages/guard/timeout-policy
+      '@deepseek-ai/dsh-tool-cordis':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/extensions/tool-cordis
+        version: link:../deepseek-harness/packages/extensions/tool-cordis
+      '@deepseek-ai/dsh-tool-fs':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/fs/tool-fs
+        version: link:../deepseek-harness/packages/fs/tool-fs
+      '@deepseek-ai/dsh-tool-fs-search':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/fs/tool-fs-search
+        version: link:../deepseek-harness/packages/fs/tool-fs-search
+      '@deepseek-ai/dsh-tool-goal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/goal/tool-goal
+        version: link:../deepseek-harness/packages/goal/tool-goal
+      '@deepseek-ai/dsh-tool-jobs':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/jobs/tool-jobs
+        version: link:../deepseek-harness/packages/jobs/tool-jobs
+      '@deepseek-ai/dsh-tool-lsp':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/lsp/tool-lsp
+        version: link:../deepseek-harness/packages/lsp/tool-lsp
+      '@deepseek-ai/dsh-tool-present':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/deliverables/tool-present
+        version: link:../deepseek-harness/packages/deliverables/tool-present
+      '@deepseek-ai/dsh-tool-pwsh':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/tool-pwsh
+        version: link:../deepseek-harness/packages/shell/tool-pwsh
+      '@deepseek-ai/dsh-tool-pwsh-persistent':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/shell/tool-pwsh-persistent
+        version: link:../deepseek-harness/packages/shell/tool-pwsh-persistent
+      '@deepseek-ai/dsh-tool-ralph':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/workflow/tool-ralph
+        version: link:../deepseek-harness/packages/workflow/tool-ralph
+      '@deepseek-ai/dsh-tool-session-query':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/session-query/tool-session-query
+        version: link:../deepseek-harness/packages/session-query/tool-session-query
+      '@deepseek-ai/dsh-tool-skill':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/skill/tool-skill
+        version: link:../deepseek-harness/packages/skill/tool-skill
+      '@deepseek-ai/dsh-tool-str-replace-editor':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/fs/tool-str-replace-editor
+        version: link:../deepseek-harness/packages/fs/tool-str-replace-editor
+      '@deepseek-ai/dsh-tool-subagent':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/tool-subagent
+        version: link:../deepseek-harness/packages/subagent/tool-subagent
+      '@deepseek-ai/dsh-tool-subagent-control':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subagent/tool-subagent-control
+        version: link:../deepseek-harness/packages/subagent/tool-subagent-control
+      '@deepseek-ai/dsh-tool-terminal':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/terminal/tool-terminal
+        version: link:../deepseek-harness/packages/terminal/tool-terminal
+      '@deepseek-ai/dsh-tool-todo':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/todo/tool-todo
+        version: link:../deepseek-harness/packages/todo/tool-todo
+      '@deepseek-ai/dsh-tool-web':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/web/tool-web
+        version: link:../deepseek-harness/packages/web/tool-web
+      '@deepseek-ai/dsh-tool-workflow':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/workflow/tool-workflow
+        version: link:../deepseek-harness/packages/workflow/tool-workflow
+      '@deepseek-ai/dsh-tool-workspace-dependencies':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/skill/tool-workspace-dependencies
+        version: link:../deepseek-harness/packages/skill/tool-workspace-dependencies
+      '@deepseek-ai/dsh-tools':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/core/tools
+        version: link:../deepseek-harness/packages/core/tools
+      '@deepseek-ai/dsh-typert-generator':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/typert/generator
+        version: link:../deepseek-harness/packages/typert/generator
+      '@deepseek-ai/dsh-typert-loader':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/typert/loader
+        version: link:../deepseek-harness/packages/typert/loader
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/typert/protocol
+        version: link:../deepseek-harness/packages/typert/protocol
+      '@deepseek-ai/dsh-typert-registry':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/typert/registry
+        version: link:../deepseek-harness/packages/typert/registry
+      '@deepseek-ai/dsh-user-approval':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/interaction/user-approval
+        version: link:../deepseek-harness/packages/interaction/user-approval
+      '@deepseek-ai/dsh-user-questions':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/interaction/user-questions
+        version: link:../deepseek-harness/packages/interaction/user-questions
+      '@deepseek-ai/dsh-util-code-language':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/code-language
+        version: link:../deepseek-harness/packages/util/code-language
+      '@deepseek-ai/dsh-util-crypto':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/crypto
+        version: link:../deepseek-harness/packages/util/crypto
+      '@deepseek-ai/dsh-util-time':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/time
+        version: link:../deepseek-harness/packages/util/time
+      '@deepseek-ai/dsh-util-values':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/values
+        version: link:../deepseek-harness/packages/util/values
+      '@deepseek-ai/dsh-util-workspace-path':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/util/workspace-path
+        version: link:../deepseek-harness/packages/util/workspace-path
+      '@deepseek-ai/dsh-web':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/web/web
+        version: link:../deepseek-harness/packages/web/web
+      '@deepseek-ai/dsh-web-app':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/bundle/web-app
+        version: link:../deepseek-harness/packages/bundle/web-app
+      '@deepseek-ai/dsh-web-fetch-http':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/web/web-fetch-http
+        version: link:../deepseek-harness/packages/web/web-fetch-http
+      '@deepseek-ai/dsh-web-search-deepseek':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/web/web-search-deepseek
+        version: link:../deepseek-harness/packages/web/web-search-deepseek
+      '@deepseek-ai/dsh-web-search-exa':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/web/web-search-exa
+        version: link:../deepseek-harness/packages/web/web-search-exa
+      '@deepseek-ai/dsh-web-search-perplexity':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/web/web-search-perplexity
+        version: link:../deepseek-harness/packages/web/web-search-perplexity
+      '@deepseek-ai/dsh-webhook':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/webhook/webhook
+        version: link:../deepseek-harness/packages/webhook/webhook
+      '@deepseek-ai/dsh-webhook-github':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/webhook/webhook-github
+        version: link:../deepseek-harness/packages/webhook/webhook-github
+      '@deepseek-ai/dsh-win32-process':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/subprocess/win32-process
+        version: link:../deepseek-harness/packages/subprocess/win32-process
+      '@deepseek-ai/dsh-workflow':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/workflow/workflow
+        version: link:../deepseek-harness/packages/workflow/workflow
+      '@deepseek-ai/dsh-workflow-ptc':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/workflow/workflow-ptc
+        version: link:../deepseek-harness/packages/workflow/workflow-ptc
+      '@deepseek-ai/dsh-workspace':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/workspace/workspace
+        version: link:../deepseek-harness/packages/workspace/workspace
+      '@deepseek-ai/dsh-workspace-changes':
+        specifier: link:D:/programming/workspace/deepseek-harness/packages/deliverables/workspace-changes
+        version: link:../deepseek-harness/packages/deliverables/workspace-changes
+      '@deepseek-ai/schemastery':
+        specifier: link:D:/programming/workspace/deepseek-harness/vendor/schemastery
+        version: link:../deepseek-harness/vendor/schemastery
+      adm-zip:
+        specifier: ^0.6.0
+        version: 0.6.1
+      dompurify:
+        specifier: ^3.4.14
+        version: 3.4.16
+      marked:
+        specifier: ^18.0.11
+        version: 18.0.14
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
+      zod:
+        specifier: link:D:/programming/workspace/deepseek-harness/node_modules/.pnpm/zod@4.4.3/node_modules/zod
+        version: link:../deepseek-harness/node_modules/.pnpm/zod@4.4.3/node_modules/zod
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.0
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      dsh-better-sidebar:
+        specifier: link:C:/Users/pc-zzy/.dsh/profiles/web/node_modules/dsh-better-sidebar
+        version: link:C:/Users/pc-zzy/.dsh/profiles/web/node_modules/dsh-better-sidebar
+      lucide-react:
+        specifier: 0.468.0
+        version: 0.468.0(react@18.3.1)
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      tsdown:
+        specifier: link:D:/programming/workspace/deepseek-harness/node_modules/tsdown
+        version: link:../deepseek-harness/node_modules/tsdown
+      tsx:
+        specifier: ^4.20.0
+        version: 4.23.15
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+packages:
+
+  '@esbuild/aix-ppc64@0.28.2':
+    resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
+    engines: {node: '>=18'}
+    cpu: [ppc64]
+    os: [aix]
+
+  '@esbuild/android-arm64@0.28.2':
+    resolution: {integrity: sha512-5YfKeeI8qWfBZIX+u2xZC3Zlb3Os/gLS2sbEKM+I4ZOcsWmHS2WLysCcQZDAFRslDUU5Oiq44gf6PYN1vGwG5A==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [android]
+
+  '@esbuild/android-arm@0.28.2':
+    resolution: {integrity: sha512-kXXoiPVVGQcnIYGOeaovwOURpniDBpSq4A03qkQ+BMQqtGG6HYap3xne9C1O1yo4TR3qxlCX5IqqmX6fFo2Lqg==}
+    engines: {node: '>=18'}
+    cpu: [arm]
+    os: [android]
+
+  '@esbuild/android-x64@0.28.2':
+    resolution: {integrity: sha512-O387ite7SzUyCcy3JQX4P4bLtEA7bLLkx+esve5JHnyYfNTxcVpXZo9jhdB0lTKN44gztELTdU7nS8Nr16Fs1Q==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [android]
+
+  '@esbuild/darwin-arm64@0.28.2':
+    resolution: {integrity: sha512-n4KqkOQrraxHJcgjM1RvwbigfQKIKJVpM7xp+KsxiyUSrRdIXnt73VhrPAx0fV44hgfmIVKjxMN9J1t5jySVkw==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@esbuild/darwin-x64@0.28.2':
+    resolution: {integrity: sha512-uq6suIWYP37qzGddBKPw5QEQPi6HiLGsO7UmkpfyaYNQ3D+rN6w6WfwH+nuqcGXWvawGwxOEroO4YGnFh95azw==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@esbuild/freebsd-arm64@0.28.2':
+    resolution: {integrity: sha512-n+I0BTSRIoy+d6RPKnEVwql5UwBJolytvY4mAOIEJorKlqgPII8ix6slVVrfZ5Tnj7glIZvloylbB/EJPMWEXw==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [freebsd]
+
+  '@esbuild/freebsd-x64@0.28.2':
+    resolution: {integrity: sha512-78XJTJkvPs0kz2w61301PJjXl4g7q3JqiYMZ/M/yVI73EHBrCRTgkhu9oqG7vPqq+a/yadEW8aD+agKlk5xrmg==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@esbuild/linux-arm64@0.28.2':
+    resolution: {integrity: sha512-pW4AC0P3it8c7do9MVM4p51FzHzdM/TZrerurgRcHJ2WTa1VQ1CIq18xncfpBJw4ojkiZZrKW2yIBWBP92j6Ug==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@esbuild/linux-arm@0.28.2':
+    resolution: {integrity: sha512-XlDnu2q5yoqems+xay6wSAcg9DDD7K9RLKZEBOMZm3ckNpJBvOX20tSfby8KfrrhINDyv9V2YVZKY/SpoGJI8w==}
+    engines: {node: '>=18'}
+    cpu: [arm]
+    os: [linux]
+
+  '@esbuild/linux-ia32@0.28.2':
+    resolution: {integrity: sha512-CYbnj78HsIeA+DhgUKgFCfvNsTHFhMMrinUrMZpDXJXKN8T3XViTZ/+wtHeVxEWY8ewSzTFN+nRmSwO2tZaLUQ==}
+    engines: {node: '>=18'}
+    cpu: [ia32]
+    os: [linux]
+
+  '@esbuild/linux-loong64@0.28.2':
+    resolution: {integrity: sha512-buwkd8nsph4R+ajRvw0qM5Hja/TXQow3ptzWO2EbG/cqcIkHloRrdlBtQlshyYGTNFvfkfJ5tpPLVkY4DtsPfQ==}
+    engines: {node: '>=18'}
+    cpu: [loong64]
+    os: [linux]
+
+  '@esbuild/linux-mips64el@0.28.2':
+    resolution: {integrity: sha512-ZVykbDyk7519VwiNb9Lcj9m8XM6v5V9uKPvrEMkkEedVewf+0itkhahp4HDpgERXhwLRpWFypsGbG/J8s0QjJA==}
+    engines: {node: '>=18'}
+    cpu: [mips64el]
+    os: [linux]
+
+  '@esbuild/linux-ppc64@0.28.2':
+    resolution: {integrity: sha512-CAXl+Dtd9UUuJd8pKKdwh6MLm3MUMiqMPmhZ3tTSXPqfyQ3vDl6R5hZdZ/kYojK4ofXtdfSv1tFq8XzWx3heNQ==}
+    engines: {node: '>=18'}
+    cpu: [ppc64]
+    os: [linux]
+
+  '@esbuild/linux-riscv64@0.28.2':
+    resolution: {integrity: sha512-GeXCej4IQtU1B+QlDV8W/RRvbzI3O/Stss+/bCXv4lZls5WGRtu2a+3JkA3i4qIUlMXpcHebWpF8AkJhATowuA==}
+    engines: {node: '>=18'}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@esbuild/linux-s390x@0.28.2':
+    resolution: {integrity: sha512-3H1weTYZPxt/WOhByszQZybS9w5lKzUn1FDMsgEChbHWQwHYQQRfBxgCcZvPhjHfKyJjIievvMmEUawJrdY9Dg==}
+    engines: {node: '>=18'}
+    cpu: [s390x]
+    os: [linux]
+
+  '@esbuild/linux-x64@0.28.2':
+    resolution: {integrity: sha512-4xTZr1FUmSoQW4XIWmit3tzQrUTZM+N3P0XV8xROKYF50XfI7xeO90+1bZvNwxIufQ9hDQVRJH5YhgPVF8A/HQ==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [linux]
+
+  '@esbuild/netbsd-arm64@0.28.2':
+    resolution: {integrity: sha512-sSATRjPeDBg3pdgHoQfoYBob11Kk1FGa9lui5RIHZCoCkJa9QKlvl3/vKz2usCmYYjs7ymJR/2Nnsqe+Hjt5nw==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [netbsd]
+
+  '@esbuild/netbsd-x64@0.28.2':
+    resolution: {integrity: sha512-lqnzCV+mM0gIADaKihiCg6ifgfU2L3h5E33rNQBN1Y4MaVGnzryzmvvf7UHxprpQdE8hpqLolJ9Rl+SkIRDpyw==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [netbsd]
+
+  '@esbuild/openbsd-arm64@0.28.2':
+    resolution: {integrity: sha512-AL2qJILH7lNjrDmCQDvdxMfAUIv8KMNZOvrwAQ8i8//ntL9FflhOyMJ8OZSMBb8/AWXe3/5v5S20y3zCoZWKoQ==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [openbsd]
+
+  '@esbuild/openbsd-x64@0.28.2':
+    resolution: {integrity: sha512-QtiuPytchRyC4rwUKhexJdQKvDuZ6hWloi3igqPQNUJCS1/v9EiO3UTOXR6A3FoMo4fnAKbWJdqaIwhOzh8qEw==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [openbsd]
+
+  '@esbuild/openharmony-arm64@0.28.2':
+    resolution: {integrity: sha512-WkhYDmpTjLvGlScA1rwjRUmhl4k8oXR3cIbtqWmELgU/dFeHHlEllxDvdWcNJV9rbzCexB5vz8gtNewWLgCT7Q==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [openharmony]
+
+  '@esbuild/sunos-x64@0.28.2':
+    resolution: {integrity: sha512-GPMSkTOtMnv2U2F8gxe4Io6qmVs+YKyp832Etqqxr0hFngmXQ3rzwytelm3GIn7T4VviRUlf3sOgBOiTdvaf7g==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [sunos]
+
+  '@esbuild/win32-arm64@0.28.2':
+    resolution: {integrity: sha512-PIhhEkE9uPBleRBrQEJpUn7MBnibZzbGzYWPmY3x+YoVg/95zbjB4CxPPOQ8l5tYYM4mMaCthF8/1DIfBQQyWQ==}
+    engines: {node: '>=18'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@esbuild/win32-ia32@0.28.2':
+    resolution: {integrity: sha512-YmJbfTlvU7Sdn9BB+4PRES4oB6pxgS37MAONj+hBr/cpXS1aBPKXxNnDbu+QCWPj0o9dgyxeq79g6c5P8KeuYA==}
+    engines: {node: '>=18'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@esbuild/win32-x64@0.28.2':
+    resolution: {integrity: sha512-5ebpxr3nWMzrL/rnUI755Jkuee0bHL/Gq0WTF9lvcpv73wAp5eu8MfBUgWK9bhWvZjj7yX8etf/8tI8Ney695g==}
+    engines: {node: '>=18'}
+    cpu: [x64]
+    os: [win32]
+
+  '@pdf-lib/standard-fonts@1.0.0':
+    resolution: {integrity: sha512-hU30BK9IUN/su0Mn9VdlVKsWBS6GyhVfqjwl1FjZN4TxP6cCw0jP2w7V3Hf5uX7M0AZJ16vey9yE0ny7Sa59ZA==}
+
+  '@pdf-lib/upng@1.0.1':
+    resolution: {integrity: sha512-dQK2FUMQtowVP00mtIksrlZhdFXQZPC+taih1q4CvPZ5vqdxR/LKBaFg0oAfzd1GlHZXXSPdQfzQnt+ViGvEIQ==}
+
+  '@types/node@24.19.0':
+    resolution: {integrity: sha512-zY+5tKxXdhGh1PYI0ac+7juvEu4OI6vWtVVoj5i2m42jxAY1U+zHGt6QCyOFwykdP62sM3MJ9stoYYUw5aCWew==}
+
+  '@types/prop-types@15.7.15':
+    resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
+
+  '@types/react@18.3.31':
+    resolution: {integrity: sha512-vfEqpXTvwT91yhmwdfouStN2hSKwTvyRs8qpLfADyrq/kxDw0hZM7Wk9Ug1FELj8hIby+S/+kQCSRFF32nv2Qw==}
+
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
+  adm-zip@0.6.1:
+    resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
+    engines: {node: '>=14.0'}
+
+  csstype@3.2.3:
+    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  dompurify@3.4.16:
+    resolution: {integrity: sha512-sqo+pNp3qRhCIpbgRi1y8Tgk27Bo2Ry7w0dC1NBeNTdZChWjz9Xb/KOoZbRP/R6pQZ80Qw8YhXw13hWWBbMRnQ==}
+
+  esbuild@0.28.2:
+    resolution: {integrity: sha512-HKVLS8dvII+xoKW9kmqxbRKrnWEXfJJr/FZhhJmiqIB0e053QNYFqOBouTMO/k5sID4MvCiUCvv8b9M4h32wIA==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  fsevents@2.3.3:
+    resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
+  js-tokens@4.0.0:
+    resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
+
+  loose-envify@1.4.0:
+    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
+    hasBin: true
+
+  lucide-react@0.468.0:
+    resolution: {integrity: sha512-6koYRhnM2N0GGZIdXzSeiNwguv1gt/FAjZOiPl76roBi3xKEXa4WmfpxgQwTTL4KipXjefrnf3oV4IsYhi4JFA==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc
+
+  marked@18.0.14:
+    resolution: {integrity: sha512-mBHK6FBHuBAlhgRe88w9F0O1AbwwXJUcQibUbC/QcdTbVGAD7aWza+xt3N6oT/jCZx3/OMeS+8rnuiHZcQ9s7A==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
+  pako@1.0.11:
+    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
+
+  pdf-lib@1.17.1:
+    resolution: {integrity: sha512-V/mpyJAoTsN4cnP31vc0wfNA1+p20evqqnap0KLoRUN0Yk/p3wN52DOEsL4oBFcLdb76hlpKPtzJIgo67j/XLw==}
+
+  react-dom@18.3.1:
+    resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
+    peerDependencies:
+      react: ^18.3.1
+
+  react@18.3.1:
+    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
+    engines: {node: '>=0.10.0'}
+
+  scheduler@0.23.2:
+    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
+
+  tslib@1.14.1:
+    resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
+
+  tsx@4.23.15:
+    resolution: {integrity: sha512-Yiex1Ovn8z2xPpOWckIiysV1SSyRMY9BkLF++q0yKiDxCqRhosKfMg3janKkiLBwZ5c/YryloKwGZcrEmtwxKw==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@7.24.6:
+    resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
+
+snapshots:
+
+  '@esbuild/aix-ppc64@0.28.2':
+    optional: true
+
+  '@esbuild/android-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/android-arm@0.28.2':
+    optional: true
+
+  '@esbuild/android-x64@0.28.2':
+    optional: true
+
+  '@esbuild/darwin-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/darwin-x64@0.28.2':
+    optional: true
+
+  '@esbuild/freebsd-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/freebsd-x64@0.28.2':
+    optional: true
+
+  '@esbuild/linux-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/linux-arm@0.28.2':
+    optional: true
+
+  '@esbuild/linux-ia32@0.28.2':
+    optional: true
+
+  '@esbuild/linux-loong64@0.28.2':
+    optional: true
+
+  '@esbuild/linux-mips64el@0.28.2':
+    optional: true
+
+  '@esbuild/linux-ppc64@0.28.2':
+    optional: true
+
+  '@esbuild/linux-riscv64@0.28.2':
+    optional: true
+
+  '@esbuild/linux-s390x@0.28.2':
+    optional: true
+
+  '@esbuild/linux-x64@0.28.2':
+    optional: true
+
+  '@esbuild/netbsd-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/netbsd-x64@0.28.2':
+    optional: true
+
+  '@esbuild/openbsd-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/openbsd-x64@0.28.2':
+    optional: true
+
+  '@esbuild/openharmony-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/sunos-x64@0.28.2':
+    optional: true
+
+  '@esbuild/win32-arm64@0.28.2':
+    optional: true
+
+  '@esbuild/win32-ia32@0.28.2':
+    optional: true
+
+  '@esbuild/win32-x64@0.28.2':
+    optional: true
+
+  '@pdf-lib/standard-fonts@1.0.0':
+    dependencies:
+      pako: 1.0.11
+
+  '@pdf-lib/upng@1.0.1':
+    dependencies:
+      pako: 1.0.11
+
+  '@types/node@24.19.0':
+    dependencies:
+      undici-types: 7.24.6
+
+  '@types/prop-types@15.7.15': {}
+
+  '@types/react@18.3.31':
+    dependencies:
+      '@types/prop-types': 15.7.15
+      csstype: 3.2.3
+
+  '@types/trusted-types@2.0.7':
+    optional: true
+
+  adm-zip@0.6.1: {}
+
+  csstype@3.2.3: {}
+
+  dompurify@3.4.16:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
+
+  esbuild@0.28.2:
+    optionalDependencies:
+      '@esbuild/aix-ppc64': 0.28.2
+      '@esbuild/android-arm': 0.28.2
+      '@esbuild/android-arm64': 0.28.2
+      '@esbuild/android-x64': 0.28.2
+      '@esbuild/darwin-arm64': 0.28.2
+      '@esbuild/darwin-x64': 0.28.2
+      '@esbuild/freebsd-arm64': 0.28.2
+      '@esbuild/freebsd-x64': 0.28.2
+      '@esbuild/linux-arm': 0.28.2
+      '@esbuild/linux-arm64': 0.28.2
+      '@esbuild/linux-ia32': 0.28.2
+      '@esbuild/linux-loong64': 0.28.2
+      '@esbuild/linux-mips64el': 0.28.2
+      '@esbuild/linux-ppc64': 0.28.2
+      '@esbuild/linux-riscv64': 0.28.2
+      '@esbuild/linux-s390x': 0.28.2
+      '@esbuild/linux-x64': 0.28.2
+      '@esbuild/netbsd-arm64': 0.28.2
+      '@esbuild/netbsd-x64': 0.28.2
+      '@esbuild/openbsd-arm64': 0.28.2
+      '@esbuild/openbsd-x64': 0.28.2
+      '@esbuild/openharmony-arm64': 0.28.2
+      '@esbuild/sunos-x64': 0.28.2
+      '@esbuild/win32-arm64': 0.28.2
+      '@esbuild/win32-ia32': 0.28.2
+      '@esbuild/win32-x64': 0.28.2
+
+  fsevents@2.3.3:
+    optional: true
+
+  js-tokens@4.0.0: {}
+
+  loose-envify@1.4.0:
+    dependencies:
+      js-tokens: 4.0.0
+
+  lucide-react@0.468.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+
+  marked@18.0.14: {}
+
+  pako@1.0.11: {}
+
+  pdf-lib@1.17.1:
+    dependencies:
+      '@pdf-lib/standard-fonts': 1.0.0
+      '@pdf-lib/upng': 1.0.1
+      pako: 1.0.11
+      tslib: 1.14.1
+
+  react-dom@18.3.1(react@18.3.1):
+    dependencies:
+      loose-envify: 1.4.0
+      react: 18.3.1
+      scheduler: 0.23.2
+
+  react@18.3.1:
+    dependencies:
+      loose-envify: 1.4.0
+
+  scheduler@0.23.2:
+    dependencies:
+      loose-envify: 1.4.0
+
+  tslib@1.14.1: {}
+
+  tsx@4.23.15:
+    dependencies:
+      esbuild: 0.28.2
+    optionalDependencies:
+      fsevents: 2.3.3
+
+  typescript@5.9.3: {}
+
+  undici-types@7.24.6: {}

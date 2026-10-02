@@ -1,0 +1,8 @@
+**/node_modules/
+**/lib/
+**/.checks/
+**/*.tsbuildinfo
+.local/
+.scratch/
+.env
+.env.*
