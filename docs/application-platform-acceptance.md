@@ -45,4 +45,3 @@ The previously listed functional interactions are verified. Creation now has fou
 ## Limits
 
 This release delivers installed registered modules and scalar recipes; it does not generate arbitrary plugin code, grant arbitrary cross-app data access, or provide maps/credential management. Preview is read-only for application data. Model generation creates editable drafts and never automatically activates them. Existing native history is preserved when a role's Agent changes. Broader historical ticket11 gates for live BetterSidebar visuals, same-session concurrent native turns and full sensitive parser acceptance remain documented partial in `ticket11-release-evidence.md`.
-
