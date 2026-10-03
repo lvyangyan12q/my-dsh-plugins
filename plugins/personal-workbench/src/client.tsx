@@ -1,3 +1,4 @@
+import { installRecipeClient } from './recipe-client.tsx'
 import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { useEffect, useRef } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
@@ -115,6 +116,7 @@ export function apply(ctx: Context): void {
     if(!response.ok || !data.state) throw new Error(data.error??'Application availability update failed')
     workbench.applyLifecycle([...Object.values(workbench.getSnapshot().lifecycle).filter(row=>row.appId!==appId),data.state])
   }
+  const refreshRecipes = installRecipeClient(ctx, workbench)
   const navigation = new PanelNavigation()
   ctx.effect(() => () => navigation.dispose(), 'independent management navigation')
   ctx.inject(['layout'], child => child.effect(() => bridgeNativeNavigation(child.layout, workbench, navigation), 'native menu navigation priority'))
@@ -145,7 +147,7 @@ export function apply(ctx: Context): void {
     inject: (): WorkspaceInjected => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace,
       closeWorkspace: workbench.closeWorkspace, openApp: workbench.openApp, focusWindow: workbench.focus,
       setMode: workbench.setMode, selectPage: workbench.selectPage, setGeometry: workbench.setGeometry,
-      setPreference: workbench.setPreference, setAppEnabled, refreshApps: workbench.loadLifecycle, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
+      setPreference: workbench.setPreference, setAppEnabled, refreshRecipes, refreshApps: workbench.loadLifecycle, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
   }, Workspace))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',
@@ -158,3 +160,7 @@ export function apply(ctx: Context): void {
   installOptionalBetterSidebar(ctx, workbench)
   installRoleClient(ctx)
 }
+
+export { registerRecipeModuleRenderer, RecipePage } from './recipe-view.tsx'
+export type { RecipeModuleProps } from './recipe-view.tsx'
+export type { AppRecipe, RecipeRecord, RecipeModule } from './recipe-api.ts'

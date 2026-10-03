@@ -35,8 +35,9 @@ async function fixture({ width = 960, height = 640 } = {}) {
   let service, exports, fetches = 0, retained = 0, mounts = 0, unmounts = 0
   runInNewContext(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'), {
     window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }),
-    document: dom.window.document, HTMLElement: dom.window.HTMLElement, ResizeObserver, AbortController, console,
+    document: dom.window.document, HTMLElement: dom.window.HTMLElement, ResizeObserver, AbortController, console, crypto: globalThis.crypto, structuredClone,
     fetch: async (url, options) => {
+      if(url === '/api/personal-workbench/recipes') return {ok:true,json:async()=>({version:1,recipes:[]})}
       if(url !== '/api/personal-workbench/apps') { fetches++; throw new Error('No Session acquisition authorized by this test') }
       const data=JSON.parse(options.body)
       if(data.action==='catalog') return {ok:true,json:async()=>({version:1,states:[]})}
@@ -202,4 +203,14 @@ test('a second application enters the platform without app-specific platform con
   await act(async()=>remove());assert.equal(f.dom.window.document.querySelector('nav ul button[aria-label="Reading"]'),null)
   assert.equal(f.counts().retained,0)
  } finally {await f.dispose()}
+})
+
+test('manual recipe form creates stable draft identity and allows layout/modules without JSON editing',async()=>{
+ const f=await fixture();try{await act(async()=>f.service.openWorkspace());await f.click('recipeCreate');const document=f.dom.window.document;
+ const name=document.querySelector('input[aria-label="recipeName"]');assert.ok(name);assert.equal(name.value,'recipeNewName')
+ const textarea=document.querySelector('textarea[aria-label="recipeConfiguration"]');const original=JSON.parse(textarea.value);assert.match(original.appId,/^app\./)
+ const layout=document.querySelector('select[aria-label="recipeLayout: home"]');await act(async()=>{layout.value='stack';layout.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))});assert.equal(JSON.parse(textarea.value).pages[0].layout,'stack')
+ const details=document.querySelector('input[aria-label="recipeModuledetail: home"]');await act(async()=>details.click());assert.ok(JSON.parse(textarea.value).pages[0].modules.some(module=>module.type==='detail'))
+ await f.click('recipeAddPage');const current=JSON.parse(textarea.value);assert.equal(current.pages.length,2);assert.equal(current.appId,original.appId);assert.equal(f.button('recipePreview').disabled,true);assert.equal(f.button('recipeActivate').disabled,true)
+ }finally{await f.dispose()}
 })

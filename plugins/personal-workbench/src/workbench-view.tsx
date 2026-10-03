@@ -1,3 +1,4 @@
+import { RecipeEditor } from './recipe-editor.tsx'
 import { useEffect, useRef, useState } from 'react'
 import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, ChevronDown, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search } from 'lucide-react'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
@@ -20,6 +21,7 @@ export interface WorkspaceInjected {
   setGeometry: Workbench['setGeometry']
   setPreference: Workbench['setPreference']
   setAppEnabled?: (appId: string, enabled: boolean) => Promise<void>
+  refreshRecipes?: () => Promise<void>
   refreshApps?: () => Promise<void>
   management?: ManagementCommands
 }
@@ -87,9 +89,9 @@ function useCenterColumn(ref: React.RefObject<HTMLDivElement>) {
 }
 
 /** Project workspace: direct content, one title and page navigation; owners stay mounted. */
-export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, setAppEnabled, refreshApps, renderSlot, t }: WorkspaceProps) {
+export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, setAppEnabled, refreshApps, refreshRecipes, renderSlot, t }: WorkspaceProps) {
   const state = useWorkbench(value => value)
-  useEffect(() => { void refreshApps?.() }, [refreshApps])
+  useEffect(() => { void refreshApps?.(); void refreshRecipes?.() }, [refreshApps, refreshRecipes])
   const [query, setQuery] = useState('')
   const [pendingApp,setPendingApp]=useState<string|null>(null)
   const [availabilityError,setAvailabilityError]=useState<string|null>(null)
@@ -130,6 +132,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     {state.storageFailed && <p role="status" className="pwb-notice">{t('storageFailed')}</p>}
     <section className="pwb-app-home" hidden={!!focused} aria-label={t('applications')}>
       {refreshApps && <button type="button" onClick={()=>{void refreshApps()}}>{t('refreshApps')}</button>}
+      {refreshRecipes && <RecipeEditor t={t} refresh={refreshRecipes} />}
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />{t('showHidden')}</label>
       <div className="pwb-app-grid">{apps.map(row => <section key={row.id} className="pwb-app">

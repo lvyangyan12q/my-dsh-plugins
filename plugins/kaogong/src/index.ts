@@ -1,3 +1,4 @@
+import type {} from '@deepseek-ai/dsh-personal-workbench'
 /**
  * DeepSeek Harness plugin: the kaogong (考公) learning suite for the
  * 武汉市公务员考试. Durable state lives in storage-domain domains
@@ -264,6 +265,7 @@ function summarizeModule(notebookQuestions: KvTable<string, QuestionRecord>, sub
  * @param config - deployment configuration.
  */
 export async function apply(ctx: Context, config: Config): Promise<void> {
+  ctx.inject(['personalWorkbenchRecipes'], child => child.effect(() => child.personalWorkbenchRecipes.reserveAppId('kaogong'), 'code-owned application identity'))
   ctx.inject(['personalWorkbenchBindings', 'agentPresets'], child => {
     child.effect(async function* () {
       try {

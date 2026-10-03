@@ -16,6 +16,9 @@ export const Config: z<Config> = z.object({ teacherSessionId: z.string().default
 
 /** Register read-only association metadata. Installation makes no session or model calls. */
 export function apply(ctx: Context, config: Config): void {
+  let recipeHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
+  ctx.effect(() => ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/recipes',handler:(req,res)=>{if(recipeHandler){void recipeHandler(req,res);return};res.writeHead(503,{'content-type':'application/json'});res.end(JSON.stringify({error:'Recipe services unavailable'}))}}),'recipe route')
+  ctx.inject(['storageDomain','connection'],child=>child.effect(async function*(){const {installRecipes}=await import('./recipe-host.ts');const owner=await installRecipes(child);recipeHandler=owner.handle;yield async()=>{recipeHandler=undefined;await owner.dispose()}},'durable recipes'))
   let appHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/personal-workbench/apps', handler: (req,res) => {
     if(appHandler) {void appHandler(req,res);return}
@@ -70,3 +73,5 @@ export function apply(ctx: Context, config: Config): void {
     },
   }), 'personal-workbench: teacher association')
 }
+
+export type { AppRecipe, RecipeRecord, RecipeModule, PersonalWorkbenchRecipes, RecipeModuleDefinition } from './recipe-api.ts'
