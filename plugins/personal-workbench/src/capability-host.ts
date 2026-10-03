@@ -1,3 +1,4 @@
+import type {} from './capability-catalog.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
@@ -72,6 +73,7 @@ export async function installCapabilities(ctx: Context, usedSkill: (name:string)
    finally {signal.removeEventListener('abort',abort);controllers.delete(controller);try{await handle?.dispose()}catch(cleanup){await finish(row,'failed','Native Agent cleanup failed');throw cleanup}}
  }
  const removes:(()=>void)[]=[]
+ const removeCatalog=ctx.reflect?.provide?.('personalWorkbenchCapabilities',{agents:()=>[...agents.entries()].map(([,row])=>structuredClone(row)),skill:(name:string)=>{const row=skills.get(name);return row?structuredClone(row):undefined}});if(removeCatalog)removes.push(removeCatalog)
  try {
    for(const [,row]of skills.entries())installSkill(row)
    for(const [,row]of agents.entries())await installAgent(row)
@@ -86,13 +88,14 @@ export async function installCapabilities(ctx: Context, usedSkill: (name:string)
        const preset=ctx.agentPresets.composedPreset(exec.agent.ctx)
        const assigned=[...agents.entries()].find(([,row])=>nativeId(row.id)===preset)?.[1]
        if(assigned&&!assigned.skillNames.includes(String((exec.arguments as {name?:unknown}).name))){
-         let applicationTeaching=false
+         let applicationSkill=false
          for(const definition of ctx.personalWorkbenchBindings.listRoles()){
-           if(definition.teaching?.skillName!==String((exec.arguments as {name?:unknown}).name))continue
+           const name=String((exec.arguments as {name?:unknown}).name)
+           if(definition.teaching?.skillName!==name&&!definition.skillNames?.includes(name))continue
            const binding=await ctx.personalWorkbenchBindings.read(definition.key)
-           if(binding?.sessionId===exec.agent.id){applicationTeaching=true;break}
+           if(binding?.sessionId===exec.agent.id){applicationSkill=true;break}
          }
-         if(!applicationTeaching)return {kind:'deny',reason:'Skill is not assigned to this Agent'}
+         if(!applicationSkill)return {kind:'deny',reason:'Skill is not assigned to this Agent'}
        }
      }
      return next()

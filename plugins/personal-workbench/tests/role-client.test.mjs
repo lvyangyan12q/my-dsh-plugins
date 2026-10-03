@@ -150,3 +150,9 @@ test('browser fetch is called without the RoleClient receiver', async () => {
   try { await owner.open(key); assert.equal(owner.getSnapshot().error, null) }
   finally { owner.dispose(); f.owner.dispose() }
 })
+
+test('prepared teaching reaches the exact scoped native role only after Host trusted preflight',async()=>{
+ const retained=[],sent=[],requests=[];const ctx={workspaces:{list:{getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:[]}),subscribe:()=>()=>{}}},conversation:{send:()=>assert.fail('Ambient context')},sessions:{retain:id=>{retained.push(id);return{sessionId:id,binding:{session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}},ctx:{conversation:{send:async text=>sent.push({id,text})}}},ready:Promise.resolve(),release:()=>{}}},async using(id,_options,run){return run(this.retain(id))}}}
+ const roles=new RoleClients(ctx,async(_url,options)=>{const request=JSON.parse(options.body);requests.push(request);return{ok:true,json:async()=>({binding:record('trusted-role'),prompt:'/kaogong-teach '})}})
+ assert.deepEqual(requests,[]);await roles.sendTeaching(key,'Edited user task');assert.deepEqual(requests.map(r=>r.action),['prepare-teaching']);assert.deepEqual(sent,[{id:'trusted-role',text:'/kaogong-teach Edited user task'}]);assert.deepEqual(retained,['trusted-role','trusted-role']);roles.dispose()
+})

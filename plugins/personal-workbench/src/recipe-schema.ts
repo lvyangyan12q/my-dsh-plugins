@@ -9,6 +9,6 @@ export function structuralErrors(recipe:AppRecipe):string[]{
  const errors:string[]=[]
  const unique=(ids:string[],label:string)=>{if(new Set(ids).size!==ids.length)errors.push(`Duplicate ${label} identity`)}
  unique(recipe.pages.map(p=>p.id),'page');unique(recipe.pages.flatMap(p=>p.modules.map(m=>m.id)),'module');unique(recipe.roles.map(r=>r.id),'role');unique(recipe.connections.map(c=>c.id),'connection')
- for(const page of recipe.pages)for(const module of page.modules){if(module.connectionId&&!recipe.connections.some(c=>c.id===module.connectionId))errors.push(`Missing connection: ${module.connectionId}`);if(module.roleId&&!recipe.roles.some(r=>r.id===module.roleId))errors.push(`Missing role: ${module.roleId}`)}
+ for(const page of recipe.pages)for(const module of page.modules){if(module.type==='role-chat'&&!module.roleId)errors.push(`Missing role for conversation module: ${module.id}`);if(module.connectionId&&!recipe.connections.some(c=>c.id===module.connectionId))errors.push(`Missing connection: ${module.connectionId}`);if(module.roleId&&!recipe.roles.some(r=>r.id===module.roleId))errors.push(`Missing role: ${module.roleId}`)}
  return errors
 }

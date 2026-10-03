@@ -1,4 +1,5 @@
 import { installDisplayModules } from './display-view.tsx'
+import { installTasks } from './task-view.tsx'
 import { installRecipeClient } from './recipe-client.tsx'
 import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { useEffect, useRef } from 'react'
@@ -161,6 +162,7 @@ export function apply(ctx: Context): void {
   }, ManagementPanel))
   installOptionalBetterSidebar(ctx, workbench)
   installRoleClient(ctx)
+  installTasks(ctx)
 }
 
 export { registerRecipeModuleRenderer, RecipePage } from './recipe-view.tsx'
@@ -172,3 +174,5 @@ export type { DisplayData, DisplayRecord, DisplaySource, DisplayScope, RecipeTem
 export { DisplayStore } from './display-store.ts'
 export { DisplayModule, DisplayModules } from './display-view.tsx'
 export { RecipeEditor } from './recipe-editor.tsx'
+export { PreparedTaskEditor } from './task-view.tsx'
+export type { PersonalWorkbenchTasks, PreparedTask, TaskContext, TaskState } from './task-api.ts'

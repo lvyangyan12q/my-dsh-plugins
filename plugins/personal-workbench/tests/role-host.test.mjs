@@ -127,3 +127,7 @@ test('native blank header durability precedes ready; failed flush leaves a same-
     assert.ok(f.created.every(row => row.cwd === 'C:/learning'))
   } finally { await f.owner.dispose() }
 })
+
+test('explicit prepared teaching driver keeps trusted provider/body preflight without hidden business evidence',async()=>{
+ const f=await fixture();try{assert.equal(f.created.length,0);const response=await f.call({action:'prepare-teaching',key});assert.equal(response.status,200);assert.equal(response.value.prompt,'/kaogong-teach ');assert.equal(response.value.binding.phase,'ready');assert.equal(f.created.length,1);assert.equal('evidence' in response.value,false);f.missingSkill();const denied=await f.call({action:'prepare-teaching',key});assert.equal(denied.status,409);assert.equal(f.created.length,1)}finally{await f.owner.dispose()}
+})

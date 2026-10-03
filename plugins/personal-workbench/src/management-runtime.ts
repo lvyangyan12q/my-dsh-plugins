@@ -22,7 +22,7 @@ export function installAssignmentRuntime(ctx: Context, read: (key: string) => Sk
       const baseline = await ctx.sessionController.projections({ sessionId: agent.id }, signal)
       if (!baseline || baseline.values.agentPreset !== match.definition.presetId) throw new Error('Assigned role Session preset unavailable')
     }
-    const names = [...new Set([...reusableNames, ...(match ? read(bindingKey(match.definition.key))?.names ?? [] : [])])]
+    const names = [...new Set([...reusableNames, ...(match ? [...(match.definition.skillNames ?? []), ...(read(bindingKey(match.definition.key))?.names ?? [])] : [])])]
     if (!names.length) { admitted.set(agent, turn); return next() }
     const registry = ctx.agentPresets.serviceFor(agent, 'skills') ?? ctx.skills
     const snapshot = await registry.snapshot({ cwd: agent.session.header.cwd, scope: agent, signal })

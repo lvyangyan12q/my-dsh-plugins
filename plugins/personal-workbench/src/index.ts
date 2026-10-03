@@ -19,6 +19,7 @@ export function apply(ctx: Context, config: Config): void {
   let recipeHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/recipes',handler:(req,res)=>{if(recipeHandler){void recipeHandler(req,res);return};res.writeHead(503,{'content-type':'application/json'});res.end(JSON.stringify({error:'Recipe services unavailable'}))}}),'recipe route')
   ctx.inject(['storageDomain','connection'],child=>child.effect(async function*(){const {installRecipes}=await import('./recipe-host.ts');const owner=await installRecipes(child);recipeHandler=owner.handle;yield async()=>{recipeHandler=undefined;await owner.dispose()}},'durable recipes'))
+  ctx.inject(['storageDomain','personalWorkbenchRecipes','personalWorkbenchBindings','personalWorkbenchApps','agentPresets','skills','workspaceRegistry'],child=>child.effect(async function*(){const {installRecipeRoles}=await import('./recipe-role-host.ts');const owner=await installRecipeRoles(child);yield async()=>{await owner.dispose()}},'durable recipe role instances'))
   let appHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/personal-workbench/apps', handler: (req,res) => {
     if(appHandler) {void appHandler(req,res);return}
@@ -75,3 +76,6 @@ export function apply(ctx: Context, config: Config): void {
 }
 
 export type { AppRecipe, RecipeRecord, RecipeModule, PersonalWorkbenchRecipes, RecipeModuleDefinition } from './recipe-api.ts'
+
+export type { CapabilityCatalog } from './capability-catalog.ts'
+export { withCapabilityCatalog } from './capability-catalog.ts'

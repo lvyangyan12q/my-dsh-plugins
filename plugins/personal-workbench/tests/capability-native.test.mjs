@@ -89,3 +89,20 @@ test('application teacher reuses independent Agent while preserving original nat
   reused.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:payload.prompt}]}));await reused.whenIdle();assert.equal(adapter.requests.length,2);assert.match(JSON.stringify(adapter.requests[1].messages),/App teaching proof: wait for the learner response/);assert.match(JSON.stringify(adapter.requests[1].messages),/independently managed teacher/);assert.equal(JSON.stringify(originalAgent.session.snapshotEvents()),originalEvents)
  }finally{await removeRuntime?.();await capabilities?.dispose();await roles?.dispose();await Promise.allSettled(handles.map(handle=>handle.dispose()));await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}
 })
+
+test('recipe-declared Skill is loaded by the official native role Agent even when it is not assigned globally to that reusable Agent',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-native-skill-')),ctx=new Context();let owner,removeRuntime,handle
+ try{
+  ctx.baseUrl=pathToFileURL(resolve(import.meta.dirname,'../../../package.json')).href;await ctx.plugin(Loader);ctx.loader.builtins.group=Group
+  await ctx.plugin(LLM);await ctx.plugin(Sessions);await ctx.plugin(Projection);await ctx.plugin(Prompt,{personaPrefix:''});await ctx.plugin(Tools);await ctx.plugin(Agents);await ctx.plugin(Loop,{agents:[]});await ctx.plugin(SkillRegistry);await ctx.plugin(Presets,{default:'recipe-native'})
+  await ctx.plugin(Storage);ctx.storage.backend.register('json',new JsonStorageBackend(root));const facility=new DomainFacility(ctx,{backend:'json',routes:{}});ctx.storage.mount('domain',facility)
+  const id=SessionId('recipe-native-role'),key={appId:'reading',instanceId:'first',roleId:'analyst'},definition={key,presetId:'my-dsh.recipe-reader',skillNames:['recipe-summary'],creation:{cwd:root}}
+  const services=ctx.plugin({apply:child=>{child.effect(()=>child.reflect.provide('storageDomain',facility));child.effect(()=>child.reflect.provide('personalWorkbenchBindings',{listRoles:()=>[definition],read:async target=>JSON.stringify(target)===JSON.stringify(key)?{phase:'ready',sessionId:id,presetId:definition.presetId}:null}));child.effect(()=>child.reflect.provide('sessionController',{projections:async({sessionId})=>sessionId===id?{values:{agentPreset:definition.presetId}}:null}))}});await services
+  owner=await installCapabilities(ctx);removeRuntime=installAssignmentRuntime(ctx,()=>undefined,preset=>owner.agentSkills(preset))
+  await owner.dispatch({action:'skill-save',expectedRevision:0,skill:{name:'recipe-summary',description:'Summarize role context',content:'Recipe summary instructions: describe the selected books.',userInvocable:true,modelInvocable:true}})
+  await owner.dispatch({action:'agent-save',expectedRevision:0,agent:{id:'recipe-reader',name:'Reader',description:'Reusable',persona:'Analyze readings.',skillNames:[],userInvocable:true,modelInvocable:true}})
+  const adapter=new MockAdapter([textResponse('Books summarized')]);ctx.llm.registerAdapter(['mock'],adapter)
+  assert.equal(adapter.requests.length,0);handle=await ctx.agents.create({sessionId:id,meta:{cwd:root,agentPreset:definition.presetId},agentOptions:{provider:'mock',model:'mock'},setup:async childCtx=>{await ctx.agentPresets.mount(childCtx,definition.presetId)}});assert.equal(adapter.requests.length,0,'Creating native role must not call model')
+  handle.agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:'Analyze selected books'}]}));await handle.agent.whenIdle();assert.equal(adapter.requests.length,1);assert.match(JSON.stringify(adapter.requests[0].messages),/Recipe summary instructions/);assert.match(JSON.stringify(adapter.requests[0].messages),/Analyze readings/);assert.equal(ctx.agentPresets.composedPreset(handle.agent.ctx),definition.presetId)
+ }finally{await handle?.dispose();await removeRuntime?.();await owner?.dispose();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}
+})

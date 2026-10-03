@@ -24,7 +24,7 @@ const root = resolve(import.meta.dirname, '../../kaogong/roles/skills')
 const key = { appId: 'app', instanceId: 'default', roleId: 'teacher', subject: 'math' }
 const loads = decision => decision.messages.filter(message => message.source.kind === 'skill-invocation')
 
-async function fixture({ loader = true, reusable = false } = {}) {
+async function fixture({ loader = true, reusable = false, declaredSkills = [] } = {}) {
   const ctx = new Context()
   await ctx.plugin(SystemPrompt); await ctx.plugin(Tools); await ctx.plugin(Agents); await ctx.plugin(SkillRegistry)
   if (loader) await ctx.plugin(toolSkill)
@@ -37,7 +37,7 @@ async function fixture({ loader = true, reusable = false } = {}) {
   const rows = new Map(), assignments = new Map()
   const bindings = new RoleBindings({ get: key => rows.get(key), put: async (key, row) => rows.set(key, row) },
     { validate: async () => {}, create: async row => row.sessionId }, () => id)
-  const withdraw = bindings.registerRole({ key, presetId: 'role-preset', creation: { cwd: root } })
+  const withdraw = bindings.registerRole({ key, presetId: 'role-preset', skillNames: declaredSkills, creation: { cwd: root } })
   await bindings.ensure(key)
   let selected = 'role-preset'
   const services = ctx.plugin({ apply: child => {
@@ -122,4 +122,8 @@ test('registry/body readability without the actual native loader fails explicitl
 test('reusable independent Agent assignment uses actual native Skill loader outside every application binding', async()=>{
  const f=await fixture({reusable:true})
  try { f.withdraw();const decision=await f.propose('Teach without an application binding');assert.equal(loads(decision).length,1);assert.equal(loads(decision)[0].source.name,'kaogong-teach');assert.match(loads(decision)[0].content[0].text,/教学阶段/); }finally{await f.close()}
+})
+
+test('recipe role Skill references reach the actual native loader without copying or management assignments',async()=>{
+ const f=await fixture({declaredSkills:['kaogong-teach']});try{const decision=await f.propose('Explain the selected material');assert.equal(loads(decision).length,1);assert.equal(loads(decision)[0].source.name,'kaogong-teach');assert.match(loads(decision)[0].content[0].text,/教学阶段/);assert.equal(f.agent.session.seq,f.initialSeq)}finally{await f.close()}
 })

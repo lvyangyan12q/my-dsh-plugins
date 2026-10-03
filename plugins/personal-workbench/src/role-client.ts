@@ -71,9 +71,26 @@ export class RoleClient implements PersonalWorkbenchRoles {
     const current = this.teacher.getSnapshot()
     if (current.phase !== 'open' || current.reference.sessionId !== binding.sessionId) throw new Error('Teacher Session unavailable; retry the same ID or explicitly create a new teacher')
     const prompt = response.prompt
+    await this.sendBound(binding, prompt)
+  })
+  readonly send = (key: RoleBindingKey, text: string) => this.sendPrepared(key,text,false)
+  readonly sendTeaching = (key: RoleBindingKey, text: string) => this.sendPrepared(key,text,true)
+  private sendPrepared(key: RoleBindingKey,text:string,teaching:boolean) { return this.run(async () => {
+    if (!text.trim() || text.length > 100000) throw new Error('Invalid prepared task')
+    // This Host preparation includes ensure and is authorized only by an explicit send.
+    const response = await this.call(teaching?'prepare-teaching':'ensure', key)
+    const binding = parseRoleBinding(response.binding, key)
+    if (!binding || binding.phase !== 'ready') throw new Error('Role binding unavailable')
+    this.adopt(binding)
+    await this.teacher.open()
+    if (this.disposed) throw new Error('Role owner disposed')
+    if(teaching&&(typeof response.prompt!=='string'||!/^\/[a-z][a-z0-9-]* $/.test(response.prompt)))throw new Error('Trusted teaching preparation unavailable')
+    await this.sendBound(binding, teaching?String(response.prompt)+text:text)
+  }) }
+  private async sendBound(binding: RoleBinding, prompt: string) {
     // A command owns its own exact hold through settlement, independent of the UI subtree.
     await this.ctx.sessions.using(binding.sessionId, { source: 'personalWorkbenchTeacher' }, async reference => {
-      if (this.disposed) return
+      if (this.disposed) throw new Error('Role owner disposed')
       this.checkExpected(binding.sessionId)
       const archive = this.ctx.workspaces.list.getSnapshot()
       const session = reference.binding.session.getSnapshot()
@@ -83,7 +100,7 @@ export class RoleClient implements PersonalWorkbenchRoles {
       if (!scoped) throw new Error('Native teacher conversation service unavailable')
       await scoped.send(prompt)
     })
-  })
+  }
   dispose() { this.disposed = true; this.abort.abort(); this.teacher.dispose(); this.listeners.clear() }
   private checkExpected(id: SessionId) { if (this.snapshot.binding?.sessionId !== id) throw new Error('Teacher binding changed; refresh before retry or replacement') }
   private adopt(binding: RoleBinding | null) {
@@ -131,6 +148,7 @@ export class RoleClients implements PersonalWorkbenchRoles {
   private readonly listeners = new Set<() => void>()
   readonly getSnapshot = () => this.snapshot
   readonly subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
+  readonly view = { getSnapshot: this.getSnapshot, subscribe: this.subscribe }
   private publish() {
     this.snapshot = new Map([...this.owners].map(([key, owner]) => [key, { ...owner.getSnapshot(), window: owner.teacher.getSnapshot() }]))
     for (const listener of this.listeners) listener()
@@ -147,6 +165,8 @@ export class RoleClients implements PersonalWorkbenchRoles {
   ensure = (key: RoleBindingKey) => this.owner(key).ensure(key)
   retry = (key: RoleBindingKey, id: SessionId) => this.owner(key).retry(key, id)
   replace = (key: RoleBindingKey, id: SessionId) => this.owner(key).replace(key, id)
+  sendTeaching = (key: RoleBindingKey, text: string) => this.owner(key).sendTeaching(key, text)
+  send = (key: RoleBindingKey, text: string) => this.owner(key).send(key, text)
   teach = (key: RoleBindingKey, evidence: TeachingEvidence) => this.owner(key).teach(key, evidence)
   dispose() { this.disposed = true; this.listeners.clear(); for (const owner of this.owners.values()) owner.dispose(); this.owners.clear(); this.snapshot = new Map() }
 }

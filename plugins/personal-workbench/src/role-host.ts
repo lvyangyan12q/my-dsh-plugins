@@ -1,3 +1,4 @@
+import type {} from './recipe-role-host.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
@@ -33,6 +34,7 @@ export async function installRoles(ctx: Context) {
       } finally { await lease[Symbol.asyncDispose]() }
     }
     const loadSkill = async (definition: RoleDefinition) => {
+      await ctx.get?.('personalWorkbenchRecipeRoles')?.validate(definition)
       await ctx.agentPresets.resolve(definition.presetId).then(row => { if(row.broken)throw new Error('Role preset is unavailable') })
       try { return (await readTeachingSkill(definition))?.content } catch(error) {
         const declared = bindings.declaredDefinition(definition.key)
@@ -110,15 +112,23 @@ export async function installRoles(ctx: Context) {
         if (!parsed.success) { respond(400, { error: 'Invalid role request' }); return }
         const data = parsed.data
         failedKey = data.key
+        await ctx.get?.('personalWorkbenchRecipeRoles')?.register(data.key,(data.action==='ensure'||data.action==='prepare-teaching'))
         if (data.action === 'read') {
+          await loadSkill(bindings.definition(data.key))
           const binding = await bindings.read(data.key)
-          if (binding?.phase === 'ready') { await loadSkill(bindings.definition(data.key)); await validateExisting(binding) }
+          if (binding?.phase === 'ready') { await validateExisting(binding) }
           respond(200, { binding }); return
         }
         if (data.action === 'retry' || data.action === 'replace') { respond(200, { binding: await bindings[data.action](data.key, data.expectedSessionId as SessionId) }); return }
         if (data.action === 'ensure') { respond(200, { binding: await bindings.ensure(data.key) }); return }
         const definition = bindings.definition(data.key)
         if (!definition.teaching) throw new Error('Teaching is not declared for this role')
+        if (data.action === 'prepare-teaching') {
+          await loadSkill(definition)
+          const skillName=definition.teaching.skillName
+          if (!/^[a-z][a-z0-9-]*$/.test(skillName)) throw new Error('Invalid declared teaching Skill')
+          respond(200,{binding:await bindings.ensure(data.key),prompt:`/${skillName} `});return
+        }
         if (data.key.subject !== undefined && data.key.subject !== data.evidence.context.subject) throw new Error('Teaching subject does not match binding')
         await loadSkill(definition)
         const binding = await bindings.ensure(data.key)

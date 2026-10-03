@@ -99,3 +99,14 @@ adapter and template, with package/profile setup documented in its README. The
 ordinary recipe connection form lists only sources installed for that recipe's
 own app identity. Templates prepare drafts; saving, previewing and explicitly
 activating remain separate actions.
+
+
+## Prepared module tasks and recipe roles
+
+`ctx.personalWorkbenchTasks.prepare({ key, task, source, context, teaching? }, { afterSend? })` stores a pending task under the complete application instance and role key. Source contains `pageId`, `moduleId` and `label`; context chunks contain `id`, `label`, `source` and `text`. Preparation, editing, removal and page selection do not ensure a Session or send a model request. `PreparedTaskEditor` exposes the pending task; explicit `send(key)` uses the edited text and remaining context in that role's exact native conversation scope. Context is serialized as user evidence with escaped slash gestures.
+
+For trusted application teaching, use `teaching: true`. The Host action named `prepare-teaching` includes native binding ensure and is **only called by the explicit send driver**, never by `personalWorkbenchTasks.prepare`. It validates the application-declared teaching Skill's provider and readable body using the existing teaching contract, then supplies its controlled Skill gesture. All business material and submitted exercise results belong in visible context chunks; no original evidence is secretly appended after editing or removal. `afterSend` runs only after native sending succeeds. A completion callback failure does not restore the already sent task, preventing accidental duplicate submission.
+
+Recipe role declarations and trusted Host workspace locations are restored from the instance domain. Registration and read-only capability preflight do not create a native Session. The existing role-binding domain retains current and prior Session IDs. Editing a recipe's Agent declaration creates its replacement only on explicit ensure/send; management-selected Agents retain their independent binding selection. Role Skills are loaded through the native Skill loader in the matched role Session. Disabled applications, missing or non-user-invocable Agents/Skills fail explicitly.
+
+Storage domains have a single owner. Capability readers use `withCapabilityCatalog(ctx, visit)` and the owner-provided `ctx.personalWorkbenchCapabilities` (`agents()` and `skill(name)`) instead of reopening the management capability domain. `test:handoff` covers task behavior, built Client interaction, real Host restart and invalid editable configuration; native loader/Agent-loop regression tests remain in the management and capability suites.

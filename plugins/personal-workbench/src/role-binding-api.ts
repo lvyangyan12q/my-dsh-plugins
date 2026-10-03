@@ -9,6 +9,7 @@ export interface RoleBindingKey { readonly appId: string; readonly instanceId: s
 export interface RoleDefinition {
   readonly key: RoleBindingKey
   readonly presetId: string
+  readonly skillNames?: readonly string[]
   readonly creation?: { readonly cwd: string }
   readonly teaching?: { readonly skillName: string; readonly provider: string }
   readonly display?: { readonly name?: string; readonly source?: string; readonly bundleName?: string }
@@ -49,11 +50,15 @@ export interface TeachingEvidence {
 }
 /** Optional Client service; open only reacquires, teaching is an explicit user command. */
 export interface PersonalWorkbenchRoles {
+  readonly view?: HostObservable<ReadonlyMap<string, RoleViewState>>
   open(key: RoleBindingKey): Promise<void>
   /** Explicit user action creates/resumes, never sends a prompt. */
   ensure(key: RoleBindingKey): Promise<void>
   retry(key: RoleBindingKey, expectedSessionId: SessionId): Promise<void>
   replace(key: RoleBindingKey, expectedSessionId: SessionId): Promise<void>
+  send(key: RoleBindingKey, text: string): Promise<void>
+  /** Explicit prepared teaching command; Host validates the declared trusted teaching Skill. */
+  sendTeaching(key: RoleBindingKey, text: string): Promise<void>
   teach(key: RoleBindingKey, evidence: TeachingEvidence): Promise<void>
 }
 /** Read-only Client view facts; native drafts remain owned by the native composer. */

@@ -12,6 +12,7 @@ const evidence = z.object({
 export const roleRequest = z.discriminatedUnion('action', [
   z.object({ action: z.literal('read'), key }).strict(),
   z.object({ action: z.literal('ensure'), key }).strict(),
+  z.object({ action: z.literal('prepare-teaching'), key }).strict(),
   z.object({ action: z.literal('retry'), key, expectedSessionId: z.string().min(1).max(200) }).strict(),
   z.object({ action: z.literal('replace'), key, expectedSessionId: z.string().min(1).max(200) }).strict(),
   z.object({ action: z.literal('teach'), key, evidence }).strict(),
