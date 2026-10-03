@@ -24,7 +24,11 @@ test('fixed learning split retains role draft across pages and remembers keyboar
     await act(async () => root.render(render('practice')))
     assert.equal(document.querySelector('input[aria-label="角色草稿"]'), input)
     assert.equal(input.value, '未发送的老师问题'); assert.equal(mounts, 1)
+    assert.equal(document.querySelector('aside')!.hidden, true, 'Statistics view hides teacher pane')
+    await act(async () => owner.cell('study.open', false).set(true))
     assert.equal(document.querySelector('aside')!.hidden, false)
+    assert.equal(document.querySelector('input[aria-label="角色草稿"]'), input)
+    assert.equal(input.value, '未发送的老师问题')
     assert.doesNotMatch(document.body.textContent!, /考公学习看板/)
     const divider = document.querySelector('[role="separator"]')!
     await act(async () => divider.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })))

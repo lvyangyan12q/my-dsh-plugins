@@ -19,6 +19,7 @@ type ViewValues = {
   integration: { service: PersonalWorkbench } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: PersonalWorkbenchRoles | null; tasks: PersonalWorkbenchTasks | null
+  'study.open': boolean; 'study.page': string
   'roles.selected': RoleBindingKey
   'roles.opened': RoleBindingKey[]
   'lesson.view': LessonView | null

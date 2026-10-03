@@ -28,6 +28,8 @@ export type DashboardData = {
 export type KaogongViewProps = {
   /** Hide without unmounting to retain the current practice and reader state. */
   embedded?: boolean
+  /** Dedicated learning window excludes dashboard statistics and planning. */
+  focusedStudy?: boolean
   active?: boolean
   pageId?: string
   onSelectPage?: (pageId: string) => void
@@ -141,7 +143,7 @@ function optionValue(option: string): string {
 }
 
 
-export function KaogongView({ embedded = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
+export function KaogongView({ embedded = false, focusedStudy = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
   const [data, setData] = useBusinessState('dashboard', null)
   const [loading, setLoading] = useBusinessState('loading', false)
   const [error, setError] = useBusinessState('error', null)
@@ -399,7 +401,7 @@ export function KaogongView({ embedded = false, active = true, pageId, onSelectP
               onSelectPage?.('practice')
             }} /></div>
             {data !== null && <>
-              <section hidden={!shown('classroom')} style={{ display: shown('classroom') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
+              <section hidden={focusedStudy || !shown('classroom')} style={{ display: !focusedStudy && shown('classroom') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
                 <Metric label="距离考试" value={`${data.daysToExam}`} suffix="天" accent={colors.blue} />
                 <Metric label="计划完成" value={pct(data.pastDonePct)} suffix={`${data.pastDone}/${data.pastDays} 天`} accent={colors.green} />
                 <Metric label="做题正确率" value={pct(data.accuracyRate)} suffix={`${data.totalQuestions} 题`} accent={colors.red} />
@@ -417,7 +419,7 @@ export function KaogongView({ embedded = false, active = true, pageId, onSelectP
                 </div>
               </section>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 18, alignItems: 'start' }}>
-                <section hidden={!(shown('plan') || shown('classroom'))} style={sectionStyle}>
+                <section hidden={focusedStudy || !(shown('plan') || shown('classroom'))} style={sectionStyle}>
                   <SectionTitle title="今日计划" extra={`${phaseLabel(data.todayPlan.phase)} · ${data.today}`} />
                   {data.todayPlan.items.length === 0 && <Empty text="今天暂无计划，请在对话中说“帮我生成学习计划”。" />}
                   {data.todayPlan.items.map((item, index) => <div key={`${item.subject}-${item.title}-${index}`} style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 10, padding: '13px 0', borderBottom: index === data.todayPlan.items.length - 1 ? 0 : `1px solid ${colors.line}` }}>
@@ -457,9 +459,9 @@ export function KaogongView({ embedded = false, active = true, pageId, onSelectP
                   {moduleSummary && <div style={{ marginTop: 16, padding: 14, border: `1px solid #bfdbfe`, borderRadius: 7, background: '#f8fbff' }}><strong>本模块错题归纳</strong><div style={{ marginTop: 7, color: colors.muted, fontSize: 13 }}>累计 {moduleSummary.totalQuestions} 题，做错 {moduleSummary.totalWrong} 题，正确率 {pct(moduleSummary.accuracyRate)}</div>{moduleSummary.weakPoints.length > 0 && <div style={{ marginTop: 10 }}>{moduleSummary.weakPoints.map(point => <div key={point.knowledgePoint} style={{ marginTop: 7, fontSize: 13 }}><strong>{point.knowledgePoint}</strong>：错 {point.wrongCount}/{point.totalCount}，主要错因 {point.topReasons.join('、')}。{point.suggestion}</div>)}</div>}</div>}
                 </div>}
               </section>}
-              <section hidden={!(shown('materials') || shown('classroom'))} style={{ ...sectionStyle, marginTop: 18 }}>
+              <section hidden={!(shown('materials') || (!focusedStudy && shown('classroom')))} style={{ ...sectionStyle, marginTop: 18 }}>
                 <SectionTitle title="知识库" extra={`${data.knowledgeTotal} 条资料`} />
-                <KnowledgeLibrary active={active && (shown('materials') || shown('classroom'))} />
+                <KnowledgeLibrary active={active && (shown('materials') || (!focusedStudy && shown('classroom')))} />
               </section>
             </>}
             {data === null && !error && <div style={sectionStyle}>正在读取学习数据…</div>}

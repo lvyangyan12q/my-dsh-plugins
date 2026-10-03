@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
 import { PreparedTaskEditor } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
@@ -8,7 +8,8 @@ import type { KaogongViewProps, KaogongTeachingRequest } from './kaogong-view.ts
 import type { Entry } from './knowledge-reader.tsx'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { TAXONOMY } from './taxonomy.ts'
-import { GraduationCap, BookOpen, HeartHandshake } from 'lucide-react'
+import { GraduationCap, BookOpen, HeartHandshake, Maximize2, X } from 'lucide-react'
+import { learningStyles } from './learning-styles.ts'
 
 export const classroomTeacherKey: RoleBindingKey = { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }
 /** All business evidence stays visible and removable; the Host supplies only the trusted teaching driver. */
@@ -27,6 +28,17 @@ const taskTranslate = (key: string) => taskLabels[key] ?? key
 
 /** Both surfaces share the existing owner. The native pane stays mounted across page changes. */
 export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> & Partial<PropsRenderFactories> & { onOpenTeacher?: KaogongViewProps['onOpenTeacher']; ctx?: ClientContext }) {
+  const [studyOpen, setStudyOpen] = useBusinessState('study.open', false)
+  const [studyPage, setStudyPage] = useBusinessState('study.page', 'classroom')
+  const studyRoot = useRef<HTMLElement>(null)
+  const studyLauncher = useRef<HTMLButtonElement>(null)
+  const wasStudyOpen = useRef(studyOpen)
+  useEffect(() => {
+    if (studyOpen && (props.active ?? true)) studyRoot.current?.focus()
+    else if (wasStudyOpen.current && (props.active ?? true)) studyLauncher.current?.focus()
+    wasStudyOpen.current = studyOpen
+  }, [studyOpen, props.active])
+  const closeStudy = () => setStudyOpen(false)
   const [roles] = useBusinessState('roles', null)
   const [tasks] = useBusinessState('tasks', null)
   const [selected, setSelected] = useBusinessState('roles.selected', classroomTeacherKey)
@@ -48,16 +60,25 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
     const task = buildTeachingTask(request, state.cell('reader.entry', null).value)
     tasks.prepare(task, options)
     select(task.key)
+    setStudyPage(request.kind === 'review' ? 'errors' : 'classroom')
+    setStudyOpen(true)
   })
-  return <div ref={root} className="kg-classroom" style={{ gridTemplateColumns: `minmax(0, ${leftWidth}fr) 7px minmax(0, ${100 - leftWidth}fr)`, minWidth: 0, minHeight: 0, height: '100%', width: '100%', flex: 1 }}>
+  return <section ref={studyRoot} className="kg-study-shell" data-study={studyOpen} hidden={!(props.active ?? true)} role={studyOpen ? 'dialog' : 'region'} aria-label={studyOpen ? '独立学习窗口' : '考公学习内容'} tabIndex={-1} onKeyDown={event => { if (studyOpen && !event.defaultPrevented && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeStudy() } }}>
+    <style>{learningStyles}</style>
+    <header className="kg-study-toolbar">
+      <div><strong>{studyOpen ? '学习窗口' : '考公学习'}</strong><span>{studyOpen ? '专注课堂、资料与老师对话' : '查看进度，进入独立窗口学习'}</span></div>
+      {studyOpen ? <button type="button" onClick={closeStudy} aria-label="关闭学习窗口"><X size={16} />返回统计面板</button> : <button ref={studyLauncher} type="button" className="kg-study-launch" onClick={() => { if (['practice', 'materials', 'errors'].includes(props.pageId ?? '')) setStudyPage(props.pageId!); setStudyOpen(true) }}><Maximize2 size={16} />打开学习窗口</button>}
+    </header>
+    {studyOpen && <nav className="kg-study-pages" aria-label="学习窗口页面">{[{ id: 'classroom', label: '课堂' }, { id: 'materials', label: '讲义' }, { id: 'practice', label: '练习' }, { id: 'errors', label: '错题' }].map(page => <button type="button" key={page.id} aria-pressed={studyPage === page.id} onClick={() => setStudyPage(page.id)}>{page.label}</button>)}</nav>}
+    <div ref={root} className="kg-classroom" style={{ gridTemplateColumns: studyOpen ? `minmax(0, ${leftWidth}fr) 7px minmax(0, ${100 - leftWidth}fr)` : 'minmax(0, 1fr)', minWidth: 0, minHeight: 0, height: '100%', width: '100%', flex: 1 }}>
     <style>{`.kg-classroom{display:grid;letter-spacing:0}.kg-classroom>div,.kg-classroom>aside{min-width:0;min-height:0;overflow:auto}.kg-classroom>aside{border-left:1px solid #ddd}.kg-classroom h1{font-size:18px!important;overflow-wrap:anywhere}.kg-classroom header{flex-wrap:wrap}.kg-classroom button{max-width:100%;white-space:normal;overflow-wrap:anywhere}.kg-divider{cursor:col-resize;background:#eef0f3;touch-action:none}.kg-divider:hover,.kg-divider:focus-visible{background:#93b4f5;outline:none}`}</style>
-    <div><KaogongView {...props} onOpenTeacher={teach} /></div>
-    <div role="separator" aria-label="调整学习内容与角色对话宽度" aria-orientation="vertical" aria-valuemin={35} aria-valuemax={70} aria-valuenow={leftWidth} tabIndex={0} className="kg-divider"
+    <div className="kg-study-content"><KaogongView {...props} focusedStudy={studyOpen} pageId={studyOpen ? studyPage : props.pageId} onSelectPage={studyOpen ? setStudyPage : props.onSelectPage} onOpenTeacher={teach} /></div>
+    <div hidden={!studyOpen} style={{ display: studyOpen ? 'block' : 'none' }} role="separator" aria-label="调整学习内容与角色对话宽度" aria-orientation="vertical" aria-valuemin={35} aria-valuemax={70} aria-valuenow={leftWidth} tabIndex={0} className="kg-divider"
       onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId) }}
       onPointerMove={event => { if (!event.currentTarget.hasPointerCapture(event.pointerId)) return; const rect = root.current?.getBoundingClientRect(); if (rect?.width) resize((event.clientX - rect.left) / rect.width * 100) }}
       onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId) }}
       onKeyDown={event => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); resize(leftWidth + (event.key === 'ArrowLeft' ? -2 : 2)) } }} />
-    <aside aria-label="角色对话" style={{ display: 'flex', flexDirection: 'column' }}>
+    <aside hidden={!studyOpen} aria-label="角色对话" style={{ display: studyOpen ? 'flex' : 'none', flexDirection: 'column' }}>
       {roles && <nav aria-label="学习角色" style={{ display: 'flex', flexWrap: 'wrap', flexShrink: 0, gap: 4, padding: 6 }}>
         {([{ id: 'class-advisor', label: '班主任', Icon: GraduationCap }, { id: 'teacher', label: '任课老师', Icon: BookOpen }, { id: 'counselor', label: '辅导员', Icon: HeartHandshake }]).map(role => <button key={role.id} title={role.label} aria-pressed={selected.roleId === role.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 30 }} onClick={() => select({ ...classroomTeacherKey, roleId: role.id, ...(role.id === 'teacher' && selected.subject ? { subject: selected.subject } : {}) })}><role.Icon size={15} />{role.label}</button>)}
         {selected.roleId === 'teacher' && <select aria-label="教师科目" value={selected.subject ?? ''} onChange={event => select({ ...classroomTeacherKey, ...(event.target.value ? { subject: event.target.value } : {}) })}><option value="">默认老师</option>{TAXONOMY.map(row => <option key={row.subject}>{row.subject}</option>)}</select>}
@@ -65,8 +86,9 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
       {!props.renderFactorySlot && props.ctx && tasks && <PreparedTaskEditor ctx={props.ctx} bindingKey={selected} t={taskTranslate} />}
       {roles && props.renderFactorySlot ? opened.map(key => <div key={JSON.stringify(key)} hidden={!same(key, selected)} style={{ flex: 1, minHeight: 0, minWidth: 0, display: same(key, selected) ? 'flex' : 'none', flexDirection: 'column' }}>
         {props.ctx && tasks && <PreparedTaskEditor ctx={props.ctx} bindingKey={key} t={taskTranslate} />}
-        {props.renderFactorySlot!('personal-workbench.role-conversation', { bindingKey: key, label: key.subject ?? (key.roleId === 'teacher' ? '默认老师' : key.roleId === 'class-advisor' ? '班主任' : '辅导员'), active: (props.active ?? true) && same(key, selected) }, { fallback: <p role="alert">角色原生组件不可用。</p> })}
+        {props.renderFactorySlot!('personal-workbench.role-conversation', { bindingKey: key, label: key.subject ?? (key.roleId === 'teacher' ? '默认老师' : key.roleId === 'class-advisor' ? '班主任' : '辅导员'), active: studyOpen && (props.active ?? true) && same(key, selected) }, { fallback: <p role="alert">角色原生组件不可用。</p> })}
       </div>) : <p role="status">角色服务不可用；练习和讲义仍可使用。</p>}
     </aside>
   </div>
+  </section>
 }

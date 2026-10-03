@@ -45,3 +45,11 @@ The previously listed functional interactions are verified. Creation now has fou
 ## Limits
 
 This release delivers installed registered modules and scalar recipes; it does not generate arbitrary plugin code, grant arbitrary cross-app data access, or provide maps/credential management. Preview is read-only for application data. Model generation creates editable drafts and never automatically activates them. Existing native history is preserved when a role's Agent changes. Broader historical ticket11 gates for live BetterSidebar visuals, same-session concurrent native turns and full sensitive parser acceptance remain documented partial in `ticket11-release-evidence.md`.
+
+## 2026-10-03：考公独立学习窗口与控件优化
+
+- 统计面板全宽显示，角色对话仅在应用内独立学习窗口显示；学习窗口排除统计卡片和今日计划。手动打开、课堂/讲义/练习/错题切换、关闭返回与再次打开已在正式 3082 浏览器验证。
+- 窗口复用同一学习视图与角色挂载；资料搜索和科目/类型筛选、未提交答案及角色草稿保留。教学准备自动进入窗口，仍需显式发送，窗口导航不会调用模型或提交成绩。
+- 搜索框、科目、资料类型及教师科目控件在 1280×720 下均为 38px 高度；筛选双列对齐，资料列表独立滚动，原生长会话输入区保持在窗口内。DSH 原生左侧菜单保留。
+- 三插件构建、类型及消费检查通过；平台回归测试 212/212，通过无跳过。新增窗口导航/筛选/草稿保留与零隐式提交测试；旧分栏测试调整为显式进入学习窗口后验证角色和宽度保留。
+- 页面原有的 active write handle 会话占用提示仍存在；本次仅优化显示与学习窗口，没有宣称修复该连接错误。
