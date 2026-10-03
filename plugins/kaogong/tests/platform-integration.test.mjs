@@ -1,3 +1,4 @@
+import {scopedConversation} from '../../personal-workbench/tests/scoped-conversation-fixture.mjs'
 import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
@@ -63,7 +64,7 @@ function nativeFixture({ failAdmission = false } = {}) {
   let fail = failAdmission
   const ctx = { conversation: { send: () => assert.fail('Never send through ambient Session') }, workspaces: { list: { getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }), subscribe: () => () => {} } }, sessions: {
     retain(id) {
-      return { sessionId: id, ready: Promise.resolve(), binding: { session: { getSnapshot: () => ({ openState: 'open', removed: false }), subscribe: () => () => {} }, ctx: { conversation: { send: async text => { attempts.push({ id, text }); if (fail) throw new Error('Native admission refused'); admitted.push({ id, text }) } } } }, release: () => released.push(id) }
+      return { sessionId: id, ready: Promise.resolve(), binding: { session: { getSnapshot: () => ({ openState: 'open', removed: false }), subscribe: () => () => {} }, ctx: scopedConversation(async text => { attempts.push({ id, text }); if (fail) throw new Error('Native admission refused'); admitted.push({ id, text }) }) }, release: () => released.push(id) }
     },
     async using(id, options, run) { held.push({ id, options }); const reference = this.retain(id); try { return await run(reference) } finally { reference.release() } },
   } }

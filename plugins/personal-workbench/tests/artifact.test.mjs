@@ -34,6 +34,9 @@ test('built client registers one explicit provider seat and delegates the entire
       })
     } } },
     fetch: async (_path, options) => {
+      // Recipe discovery is independent of the teacher association request.
+      if (_path.endsWith('/recipes')) return { ok: true, json: async () => ({ version: 1, recipes: [] }) }
+      assert.equal(_path, '/api/personal-workbench/teacher')
       fetches++
       assert.equal(options.credentials, 'same-origin')
       return { ok: true, json: async () => ({ version: 1, sessionId: 'synthetic-teacher' }) }

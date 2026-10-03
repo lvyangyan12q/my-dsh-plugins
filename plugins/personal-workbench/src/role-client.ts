@@ -96,9 +96,22 @@ export class RoleClient implements PersonalWorkbenchRoles {
       const session = reference.binding.session.getSnapshot()
       if (reference.sessionId !== binding.sessionId || archive.phase !== 'ready' || archive.state !== 'idle'
         || archive.archivedSessionIds.includes(binding.sessionId) || session.removed || session.openState !== 'open') throw new Error('Teacher Session unavailable')
-      const scoped = reference.binding.ctx.conversation
-      if (!scoped) throw new Error('Native teacher conversation service unavailable')
-      await scoped.send(prompt)
+      // The native binding inherits the Session controller's dependency API,
+      // not this owner's inject declarations. Declare conversation on a child
+      // of that exact scope; the Service tracker keeps its Session address.
+      let send: Promise<void> | undefined
+      const lease = reference.binding.ctx.inject(['conversation'], child => {
+        // Service re-admission must not replay an already started command.
+        if (send) return
+        send = Promise.resolve().then(() => child.conversation.send(prompt))
+        // Observe early rejection while Cordis finishes plugin admission.
+        void send.catch(() => {})
+      })
+      try {
+        await lease
+        if (!send) throw new Error('Native teacher conversation service unavailable')
+        await send
+      } finally { await lease.dispose() }
     })
   }
   dispose() { this.disposed = true; this.abort.abort(); this.teacher.dispose(); this.listeners.clear() }

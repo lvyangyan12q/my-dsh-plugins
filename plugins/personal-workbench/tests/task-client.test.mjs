@@ -1,3 +1,4 @@
+import {scopedConversation} from './scoped-conversation-fixture.mjs'
 import assert from 'node:assert/strict'
 import {test} from 'node:test'
 import {PreparedTasks,preparedText} from '../src/task-client.ts'
@@ -7,7 +8,7 @@ const task=(target=key)=>({key:target,task:'Summarize',source:{pageId:'list',mod
 function fixture({archived=false,hold,fail=false}={}){
  const requests=[],sent=[],released=[],bindings=new Map()
  const ctx={conversation:{send:()=>assert.fail('Ambient conversation cannot send')},workspaces:{list:{getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:archived?['reading-first-analyst']:[]}),subscribe:()=>()=>{}}},sessions:{
- retain(id){return{sessionId:id,binding:{session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}},ctx:{conversation:{send:async text=>{sent.push({id,text});if(fail)throw new Error('native failure');await hold}}}},ready:Promise.resolve(),release:()=>released.push(id)}},
+ retain(id){return{sessionId:id,binding:{session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}},ctx:scopedConversation(async text=>{sent.push({id,text});if(fail)throw new Error('native failure');await hold})},ready:Promise.resolve(),release:()=>released.push(id)}},
  async using(id,options,run){const ref=this.retain(id);try{return await run(ref)}finally{ref.release()}}
  }}
  const roles=new RoleClients(ctx,async(_url,options)=>{const data=JSON.parse(options.body);requests.push(data);const name=roleKey(data.key);if(data.action==='ensure'&&!bindings.has(name))bindings.set(name,{version:1,key:data.key,sessionId:[data.key.appId,data.key.instanceId,data.key.roleId].join('-'),presetId:'analyst',phase:'ready',previousSessionIds:[]});return{ok:true,json:async()=>({binding:bindings.get(name)??null})}})
