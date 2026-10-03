@@ -1,0 +1,8 @@
+import type {} from '@deepseek-ai/cordis'
+export interface RecipeModule { id: string; type: string; title: string; connectionId?: string; roleId?: string; config: Record<string, unknown> }
+export interface AppRecipe { schemaVersion: 1; appId: string; version: number; name: string; description: string; pages: { id: string; label: string; layout: 'stack' | 'grid' | 'split'; modules: RecipeModule[] }[]; connections: { id: string; sourceAppId: string; resource: string }[]; roles: { id: string; name: string; presetId: string; skillNames: string[] }[] }
+export interface RecipeRecord { appId: string; revision: number; draft: AppRecipe; running?: AppRecipe }
+export type RecipeRequest = { action: 'catalog' } | { action: 'save'; expectedRevision: number; recipe: AppRecipe } | { action: 'preview' | 'activate'; appId: string; expectedRevision: number }
+export interface RecipeModuleDefinition { id: string; validate?: (module: RecipeModule, recipe: AppRecipe) => string[] }
+export interface PersonalWorkbenchRecipes { list(): RecipeRecord[]; save(recipe: AppRecipe, expectedRevision: number): Promise<RecipeRecord>; preview(appId: string, expectedRevision: number): Promise<AppRecipe>; activate(appId: string, expectedRevision: number): Promise<RecipeRecord>; registerModule(definition: RecipeModuleDefinition): () => void }
+declare module '@deepseek-ai/cordis' { interface Context { personalWorkbenchRecipes: PersonalWorkbenchRecipes } }
