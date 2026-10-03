@@ -1,5 +1,11 @@
 **/node_modules/
 **/lib/
+**/.checks/
 **/*.tsbuildinfo
-.pnpm-store/
-pnpm-lock.yaml
+.local/
+.scratch/
+.env
+.env.*
+
+# Original study materials, historical outputs and legacy helper environments
+materials/
