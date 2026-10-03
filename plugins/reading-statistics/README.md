@@ -9,6 +9,10 @@ already-built official runtime. Register/install `@deepseek-ai/dsh-personal-work
 before this package, add this package to the profile and apply its `cordis.patch.yml`.
 The Client manifest injects the Workbench package; Host storage and authenticated
 connection services are required. Installation creates no Session or model request.
+Workbench is an independent optional package dependency (`0.1.0`), with a local
+development reference matching Kaogong. It is installed explicitly before this
+package; the Client injection and Host service requirement still require it.
+Only native DSH runtime packages belong in the runtime peer compatibility check.
 
 In the application center open the recipe editor, choose **阅读统计应用 / Reading statistics app**.
 This explicitly initializes public-domain example reading records for the default
