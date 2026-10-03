@@ -124,22 +124,22 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     <header className="pwb-top"><LayoutGrid size={18} aria-hidden="true" /><strong>{app?.name ?? t('workspace')}</strong>
       <button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
-    {state.lifecycleError && <div role="alert">{state.lifecycleError}<button type="button" onClick={()=>{void refreshApps?.()}}>Refresh application availability</button></div>}
-    {!state.lifecycleReady && !state.lifecycleError && <p role="status">Loading application availability…</p>}
-    {availabilityError && <p role="alert">{availabilityError}</p>}
+    {state.lifecycleError && <div role="alert">{t(state.lifecycleError.includes('Application disabled') ? 'appDisabledNotice' : 'appAvailabilityUnavailable')}<button type="button" onClick={()=>{void refreshApps?.()}}>{t('refreshApps')}</button></div>}
+    {!state.lifecycleReady && !state.lifecycleError && <p role="status">{t('appsLoading')}</p>}
+    {availabilityError && <p role="alert">{t(availabilityError.includes('changed; refresh') ? 'appAvailabilityConflict' : 'appUpdateFailed')}</p>}
     {state.storageFailed && <p role="status" className="pwb-notice">{t('storageFailed')}</p>}
     <section className="pwb-app-home" hidden={!!focused} aria-label={t('applications')}>
-      {refreshApps && <button type="button" onClick={()=>{void refreshApps()}}>Refresh application availability</button>}
+      {refreshApps && <button type="button" onClick={()=>{void refreshApps()}}>{t('refreshApps')}</button>}
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />{t('showHidden')}</label>
       <div className="pwb-app-grid">{apps.map(row => <section key={row.id} className="pwb-app">
         <button type="button" className="pwb-open" disabled={!state.lifecycleReady || state.lifecycle[row.id]?.enabled===false} onClick={() => openApp(row.id)}><AppIcon icon={row.icon} /><span>{row.name}</span></button>
-        <div className="pwb-meta">{row.source} · {row.version} · {state.lifecycle[row.id]?.enabled===false?'Disabled':'Enabled'}</div>
-        <details><summary>Application configuration</summary><p>ID: {row.id}</p><p>Pages: {row.pages.map(page=>page.label).join(', ')}</p><p>Roles: {row.roles?.map(role=>role.name).join(', ')||'None'}</p><p>Dependencies: {row.dependencies?.map(dep=>dep.id+(dep.available?'':' — '+dep.reason)).join(', ')||'None'}</p></details>
+        <div className="pwb-meta">{row.source} · {row.version} · {t(state.lifecycle[row.id]?.enabled===false?'appDisabled':'appEnabled')}</div>
+        <details><summary>{t('appConfiguration')}</summary><p>{t('appIdentity')}: {row.id}</p><p>{t('pages')}: {row.pages.map(page=>page.label).join(', ')}</p><p>{t('appRoles')}: {row.roles?.map(role=>role.name).join(', ')||t('appNone')}</p><p>{t('appDependencies')}: {row.dependencies?.map(dep=>dep.id+(dep.available?'':' — '+dep.reason)).join(', ')||t('appNone')}</p></details>
         {setAppEnabled && <button type="button" disabled={!state.lifecycleReady || pendingApp!==null} onClick={async()=>{
           setPendingApp(row.id);setAvailabilityError(null)
           try {await setAppEnabled(row.id,state.lifecycle[row.id]?.enabled===false)} catch(error) {setAvailabilityError(error instanceof Error?error.message:'Application availability update failed')} finally {setPendingApp(null)}
-        }}>{state.lifecycle[row.id]?.enabled===false?'Enable application':'Disable application'}: {row.name}</button>}
+        }}>{t(state.lifecycle[row.id]?.enabled===false?'enableApp':'disableApp')}: {row.name}</button>}
         <div className="pwb-app-tools"><button type="button" aria-label={t('favorite') + ': ' + row.name} aria-pressed={state.apps[row.id]?.favorite ?? false} onClick={() => setPreference(row.id, { favorite: !state.apps[row.id]?.favorite })}><Star size={15} /></button>
           <button type="button" aria-label={t(state.apps[row.id]?.hidden ? 'showApp' : 'hideApp') + ': ' + row.name} onClick={() => setPreference(row.id, { hidden: !state.apps[row.id]?.hidden })}><EyeOff size={15} /></button></div>
       </section>)}</div>

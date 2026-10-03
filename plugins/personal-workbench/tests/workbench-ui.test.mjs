@@ -180,14 +180,14 @@ test('application availability disables entry without deleting mounted draft or 
  try {
   await f.click('Exercise');await f.click('Enter answer')
   const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
-  await f.click('workspace');await f.click('Disable application: Exercise')
+  await f.click('workspace');await f.click('disableApp: Exercise')
   assert.equal(draft.isConnected,true);assert.equal(f.counts().unmounts,0)
   assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden,false)
   assert.equal(f.button('Exercise').disabled,true)
   assert.equal(f.dom.window.document.querySelector('nav ul button[aria-label="Exercise"]'),null)
   await act(async()=>f.service.openApp('test.exercise'))
-  assert.match(f.dom.window.document.querySelector('[role="alert"]').textContent,/disabled/)
-  await f.click('Enable application: Exercise');await f.click('Exercise')
+  assert.match(f.dom.window.document.querySelector('[role="alert"]').textContent,/appDisabledNotice/)
+  await f.click('enableApp: Exercise');await f.click('Exercise')
   assert.equal(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'),draft)
   assert.equal(draft.value,'retained answer');assert.equal(f.counts().retained,0)
  } finally {await f.dispose()}
