@@ -1,0 +1,16 @@
+import {useEffect,useRef,useState} from 'react'
+import type {GenerationJob,GenerationRequest} from './generation-api.ts'
+import type {RecipeRecord} from './recipe-api.ts'
+export async function generationRequest(request:GenerationRequest){const response=await fetch('/api/personal-workbench/generation',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(request)});const value=await response.json();if(!response.ok)throw new Error(value.error??'Generation request failed');return value.job as GenerationJob}
+export function GenerationEditor({t,target,onDraft,onBusy}:{t:(key:any)=>string;target:{appId:string;version:number;expectedRevision:number};onDraft:(record:RecipeRecord)=>Promise<void>;onBusy:(busy:boolean)=>void}){
+ const [requirement,setRequirement]=useState(''),[job,setJob]=useState<GenerationJob|null>(null),[error,setError]=useState(''),[starting,setStarting]=useState(false)
+ const mounted=useRef(true),delivered=useRef('')
+ const active=starting||job?.status==='running'||job?.status==='saving'
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false}},[])
+ useEffect(()=>{onBusy(!!active);return()=>{onBusy(false)}},[active])
+ useEffect(()=>{if(!job||!['running','saving'].includes(job.status))return;let stopped=false,pending=false;const timer=setInterval(()=>{if(pending)return;pending=true;void generationRequest({action:'status',id:job.id}).then(next=>{if(!stopped)setJob(next)}).catch(e=>{if(!stopped)setError(e instanceof Error?e.message:String(e))}).finally(()=>{pending=false})},500);return()=>{stopped=true;clearInterval(timer)}},[job,error])
+ useEffect(()=>{if(job?.status!=='completed'||!job.record||delivered.current===job.id)return;delivered.current=job.id;void onDraft(job.record).catch(e=>setError(e instanceof Error?e.message:String(e)))},[job])
+ const start=async()=>{setStarting(true);setError('');setJob(null);try{const next=await generationRequest({action:'start',requirement,...target});if(mounted.current)setJob(next)}catch(e){if(mounted.current)setError(e instanceof Error?e.message:String(e))}finally{if(mounted.current)setStarting(false)}}
+ const cancel=async()=>{if(!job)return;setError('');try{setJob(await generationRequest({action:'cancel',id:job.id}))}catch(e){setError(e instanceof Error?e.message:String(e))}}
+ return <section aria-label={t('generationTitle')}><h3>{t('generationTitle')}</h3><p>{t('generationHelp')}</p><label>{t('generationRequirement')}<textarea aria-label={t('generationRequirement')} maxLength={16000} value={requirement} disabled={!!active} onChange={e=>setRequirement(e.target.value)}/></label><button type="button" disabled={!!active||!requirement.trim()} onClick={()=>{void start()}}>{t('generationStart')}</button><button type="button" disabled={job?.status!=='running'} onClick={()=>{void cancel()}}>{t('generationCancel')}</button>{job&&<p role="status">{t('generation'+job.status)}{job.sessionId&&<> · {t('generationSession')}: {job.sessionId}</>}</p>}{(error||job?.error)&&<p role="alert">{error||job?.error}</p>}</section>
+}

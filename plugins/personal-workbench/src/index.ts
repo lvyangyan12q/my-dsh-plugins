@@ -16,6 +16,9 @@ export const Config: z<Config> = z.object({ teacherSessionId: z.string().default
 
 /** Register read-only association metadata. Installation makes no session or model calls. */
 export function apply(ctx: Context, config: Config): void {
+  let generationHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
+  ctx.effect(() => ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/generation',handler:(req,res)=>{if(generationHandler){void generationHandler(req,res);return};res.writeHead(503,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify({error:'Generation services unavailable'}))}}),'native generation route')
+  ctx.inject(['personalWorkbenchRecipes','sessionController','agentPresets','tools','connection'],child=>child.effect(async function*(){const {installGeneration}=await import('./generation-host.ts');const owner=await installGeneration(child);generationHandler=owner.handle;yield async()=>{generationHandler=undefined;await owner.dispose()}},'native application generation'))
   let recipeHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/recipes',handler:(req,res)=>{if(recipeHandler){void recipeHandler(req,res);return};res.writeHead(503,{'content-type':'application/json'});res.end(JSON.stringify({error:'Recipe services unavailable'}))}}),'recipe route')
   ctx.inject(['storageDomain','connection'],child=>child.effect(async function*(){const {installRecipes}=await import('./recipe-host.ts');const owner=await installRecipes(child);recipeHandler=owner.handle;yield async()=>{recipeHandler=undefined;await owner.dispose()}},'durable recipes'))

@@ -58,7 +58,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check:source": "node scripts/check-source.mjs",
     "test:capabilities": "tsx --test tests/capability-host.test.mjs tests/capability-native.test.mjs tests/management-runtime.test.mjs",
-    "test:handoff": "tsx --test tests/task-client.test.mjs tests/task-ui.test.mjs tests/recipe-role-host.test.mjs tests/recipe-editor.test.mjs"
+    "test:handoff": "tsx --test tests/task-client.test.mjs tests/task-ui.test.mjs tests/recipe-role-host.test.mjs tests/recipe-editor.test.mjs",
+    "test:generation": "tsx --test tests/generation-native.test.mjs tests/generation-ui.test.mjs"
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
