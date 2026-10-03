@@ -39,3 +39,12 @@ test('trusted teaching preparation sends no request until explicit send; afterSe
 test('completion failure cannot restore an admitted draft or accidentally resend it',async()=>{
  let sent=0;const tasks=new PreparedTasks({send:async()=>{sent++}});tasks.prepare(task(),{afterSend:()=>{throw new Error('Review storage failed')}});await assert.rejects(tasks.send(key),/storage failed/);assert.equal(sent,1);assert.equal(tasks.getSnapshot().size,0);await assert.rejects(tasks.send(key),/unavailable/);assert.equal(sent,1)
 })
+
+test('code-owned beforeSend callback runs only on explicit send; a refused reservation sends no native command and retains editable preparation', async () => {
+ const calls=[];let allow=false
+ const tasks=new PreparedTasks({send:async()=>calls.push('native')})
+ tasks.prepare(task(),{beforeSend:()=>{calls.push('reserve');if(!allow)throw new Error('Reservation conflict')},afterSend:()=>calls.push('complete')})
+ tasks.editTask(key,'Edited');tasks.removeContext(key,'two');assert.deepEqual(calls,[])
+ await assert.rejects(tasks.send(key),/Reservation conflict/);assert.deepEqual(calls,['reserve']);assert.equal(tasks.getSnapshot().size,1)
+ allow=true;await tasks.send(key);assert.deepEqual(calls,['reserve','reserve','native','complete']);assert.equal(tasks.getSnapshot().size,0)
+})

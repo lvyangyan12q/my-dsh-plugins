@@ -6,6 +6,8 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
+import { registerDisplaySource } from '@deepseek-ai/dsh-personal-workbench/client'
+import { knowledgeSource } from './knowledge-reader.tsx'
 import { KaogongClassroom } from './classroom.tsx'
 import type { KaogongViewProps } from './kaogong-view.tsx'
 import { KaogongStateContext, KaogongViewState, useBusinessState } from './view-state.tsx'
@@ -31,7 +33,7 @@ export function KaogongDashboard(props: FooterProps & { ctx: ClientContext; stat
   return <KaogongStateContext.Provider value={props.state ?? local}><DashboardContent {...props} /></KaogongStateContext.Provider>
 }
 
-function DashboardContent({ wide, renderFactorySlot }: FooterProps & { ctx: ClientContext }) {
+function DashboardContent({ wide, renderFactorySlot, ctx }: FooterProps & { ctx: ClientContext }) {
   const [integration] = useBusinessState('integration', null)
   const [open, setOpen] = useBusinessState('open', false)
   if (integration) return null
@@ -53,7 +55,7 @@ function DashboardContent({ wide, renderFactorySlot }: FooterProps & { ctx: Clie
         {wide && <span>考公学习</span>}
       </button>
       {!integration && <div hidden={!open} role={open ? 'dialog' : undefined} aria-modal={open ? true : undefined} aria-label="考公学习看板" style={{ position: 'fixed', inset: 0, zIndex: 1000, overflow: 'auto', background: '#f8fafc', color: colors.ink, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <KaogongClassroom active={open} onClose={() => setOpen(false)} renderFactorySlot={renderFactorySlot} />
+        <KaogongClassroom ctx={ctx} active={open} onClose={() => setOpen(false)} renderFactorySlot={renderFactorySlot} />
       </div>}
     </>
   )
@@ -64,6 +66,12 @@ export const inject = ['slots', 'uiWorkspace']
 
 export function apply(ctx: ClientContext): void {
   const state = new KaogongViewState()
+  ctx.effect(() => registerDisplaySource(knowledgeSource), 'kaogong knowledge display source')
+  ctx.inject(['personalWorkbenchTasks'], child => {
+    const tasks = state.cell('tasks', null)
+    child.effect(() => { tasks.set(child.personalWorkbenchTasks); return () => tasks.set(null) }, 'kaogong prepared teaching tasks')
+  })
+  ctx.effect(() => () => state.cell('reader.store', null).value?.dispose(), 'kaogong display owner')
   ctx.inject(['personalWorkbenchRoles'], child => {
     const roles = state.cell('roles', null)
     child.effect(() => { roles.set(child.personalWorkbenchRoles); return () => roles.set(null) }, 'kaogong: optional teacher service')
@@ -101,9 +109,9 @@ export function apply(ctx: ClientContext): void {
 }
 
 /** Page adapter under the existing state provider; an explicit teaching callback owns any role acquisition. */
-export function KaogongWorkbenchContent({ instanceId, pageId, active, selectPage, close, onOpenTeacher, renderFactorySlot }: WorkbenchAppProps & Partial<PropsRenderFactories> & { ctx: ClientContext; onOpenTeacher?: KaogongViewProps['onOpenTeacher'] }) {
+export function KaogongWorkbenchContent({ instanceId, pageId, active, selectPage, close, onOpenTeacher, renderFactorySlot, ctx }: WorkbenchAppProps & Partial<PropsRenderFactories> & { ctx: ClientContext; onOpenTeacher?: KaogongViewProps['onOpenTeacher'] }) {
   const [, setOpen] = useBusinessState('open', false)
   useEffect(() => { if (instanceId === defaultInstance) setOpen(active) }, [active, instanceId, setOpen])
   if (instanceId !== defaultInstance) return <p role="alert">考公当前仅支持默认学习实例。</p>
-  return <KaogongClassroom embedded active={active} pageId={pageId} onSelectPage={selectPage} onClose={close} onOpenTeacher={onOpenTeacher} renderFactorySlot={renderFactorySlot} />
+  return <KaogongClassroom ctx={ctx} embedded active={active} pageId={pageId} onSelectPage={selectPage} onClose={close} onOpenTeacher={onOpenTeacher} renderFactorySlot={renderFactorySlot} />
 }

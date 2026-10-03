@@ -1,7 +1,8 @@
 import { displayModuleContext } from './display-context.ts'
 import { registerRecipeModuleContextProvider } from './module-context.ts'
 import { useSyncExternalStore } from 'react'
-import type { DisplaySource } from './display-api.ts'
+import type { ReactNode } from 'react'
+import type { DisplayRecord, DisplaySource } from './display-api.ts'
 import { displayCatalog, getDisplaySource } from './display-api.ts'
 import { DisplayStore } from './display-store.ts'
 import type { RecipeModuleProps } from './recipe-view.tsx'
@@ -15,7 +16,7 @@ function owner(props: RecipeModuleProps, source: DisplaySource) {
   if (entry?.source !== source) { entry?.store.dispose(); entry = { source, store: new DisplayStore(source, props) }; owners.set(key, entry); void entry.store.reload() }
   return entry!.store
 }
-export function DisplayModule({ type, store, t }: { type: 'stats' | 'list' | 'detail' | 'filter'; store: DisplayStore; t: Translate }) {
+export function DisplayModule({ type, store, t, renderDetail }: { type: 'stats' | 'list' | 'detail' | 'filter'; store: DisplayStore; t: Translate; renderDetail?: (record: DisplayRecord) => ReactNode }) {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   if (state.phase === 'loading') return <p role="status">{t('displayLoading')}</p>
   if (state.phase === 'error') return <div role="alert"><p>{t('displayFailed')}: {state.error}</p><button onClick={() => { void store.reload() }}>{t('retry')}</button></div>
@@ -30,7 +31,7 @@ export function DisplayModule({ type, store, t }: { type: 'stats' | 'list' | 'de
   })}</dl>
   if (type === 'list') return <ul>{records.map(record => <li key={record.id}><button aria-pressed={state.selectedId === record.id} onClick={() => store.select(record.id)}>{record.title}</button>{record.subtitle && <span> · {record.subtitle}</span>}</li>)}</ul>
   const record = records.find(record => record.id === state.selectedId)
-  return record ? <article><h4>{record.title}</h4><p>{record.subtitle}</p><dl>{Object.entries(record.fields).map(([field, value]) => <div key={field}><dt>{field}</dt><dd>{String(value ?? '')}</dd></div>)}</dl></article> : <p role="status">{t('displaySelect')}</p>
+  return record && renderDetail ? <>{renderDetail(record)}</> : record ? <article><h4>{record.title}</h4><p>{record.subtitle}</p><dl>{Object.entries(record.fields).map(([field, value]) => <div key={field}><dt>{field}</dt><dd>{String(value ?? '')}</dd></div>)}</dl></article> : <p role="status">{t('displaySelect')}</p>
 }
 export function DisplayModules({ store, t }: { store: DisplayStore; t: Translate }) { return <>{(['filter', 'stats', 'list', 'detail'] as const).map(type => <section key={type}><h3>{t('recipeModule' + type)}</h3><DisplayModule type={type} store={store} t={t} /></section>)}</> }
 export function RecipeDisplayModule(props: RecipeModuleProps & { t?: Translate }) {

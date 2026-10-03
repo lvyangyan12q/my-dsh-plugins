@@ -341,7 +341,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       }
       const keyword = params.get('q') ?? ''
       const matched = searchKnowledge(allKnowledgeEntries(knowledgeEntries), { keyword })
-      sendJson(res, 200, { entries: matched.map(({ content, ...entry }) => ({ ...entry, content: content.slice(0, 180) })) })
+      sendJson(res, 200, { entries: matched.map(({ content, ...entry }) => ({ ...entry, content: params.get('display') === '1' ? content : content.slice(0, 180) })) })
     },
   }), 'kaogong.knowledgeRoute')
   ctx.effect(() => ctx.webServer.register({

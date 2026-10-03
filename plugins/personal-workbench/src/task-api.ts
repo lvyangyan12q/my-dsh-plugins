@@ -5,7 +5,8 @@ export interface TaskContext { readonly id: string; readonly label: string; read
 export interface PreparedTask { readonly key: RoleBindingKey; readonly task: string; readonly source: { readonly pageId: string; readonly moduleId: string; readonly label: string }; readonly context: readonly TaskContext[]; readonly teaching?: boolean }
 export interface TaskState { readonly prepared: PreparedTask; readonly busy: boolean; readonly error: string | null }
 export interface PersonalWorkbenchTasks {
- prepare(task: PreparedTask, options?: { readonly afterSend?: () => void | Promise<void> }): void
+ /** Code-owned hooks run during explicit send only; they are never loaded from recipe JSON. */
+ prepare(task: PreparedTask, options?: { readonly beforeSend?: () => void | Promise<void>; readonly afterSend?: () => void | Promise<void> }): void
  getSnapshot(): ReadonlyMap<string, TaskState>
  subscribe(listener: () => void): () => void
  editTask(key: RoleBindingKey, text: string): void

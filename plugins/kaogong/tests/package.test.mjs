@@ -5,15 +5,15 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { npmCli } from '../../../scripts/release-tools.mjs'
 
-test('package includes emitted client declarations and keeps workbench runtime optional', () => {
+test('package includes public client declarations, declares shared UI runtime and keeps Host workbench integration optional', () => {
   const root = fileURLToPath(new URL('..', import.meta.url))
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
   assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
   assert.equal(manifest.devDependencies['@deepseek-ai/dsh-personal-workbench'], 'file:../personal-workbench')
   assert.equal(manifest.dependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
-  assert.equal(manifest.dsh.client.inject.includes('@deepseek-ai/dsh-personal-workbench'), false)
+  assert.equal(manifest.dsh.client.inject.includes('@deepseek-ai/dsh-personal-workbench'), true)
   const bundle = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
-  assert.doesNotMatch(bundle, /require\(["']@deepseek-ai\/dsh-personal-workbench/)
+  assert.match(bundle, /require\(["']@deepseek-ai\/dsh-personal-workbench/)
   const result = spawnSync(process.execPath, [npmCli(), 'pack', '--dry-run', '--json', '--ignore-scripts', '--offline', '--cache=lib/npm-cache'], { cwd: root, encoding: 'utf8' })
   assert.equal(result.status, 0, result.stderr)
   const [pack] = JSON.parse(result.stdout)

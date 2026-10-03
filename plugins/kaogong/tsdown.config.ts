@@ -8,7 +8,7 @@ export default defineConfig({
   dts: false,
   sourcemap: false,
   clean: false,
-  external: ['react', 'react/jsx-runtime'],
+  external: ['react', 'react/jsx-runtime', '@deepseek-ai/dsh-personal-workbench/client'],
   alias: { 'lucide-react': 'lucide-react/dist/esm/lucide-react.js' },
   noExternal: ['marked', 'dompurify'],
   outputOptions: {

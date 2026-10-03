@@ -32,7 +32,7 @@ For transition from a manual source/junction entry, follow the [preservation ste
 
 Practice issues real rounds of ten approved questions (or the explicit available remainder), cycling by original question IDs. Answers/analysis are concealed before submission. Host-issued membership and full answers determine the trusted score; model prose and Client values do not. Durable identical submissions return the same result; conflicting retries are explicit. Notebook projection recovery preserves newer attempts and reflections.
 
-Lessons capture objectives, material links, authoritative submitted rounds and explicit completion. Summary prose cannot complete tasks. Review hands off to native counselor key `kaogong/default/counselor` without a subject; teaching uses a subject-explicit teacher key. Native Sessions and assignments remain workbench-owned. Without workbench, business records and standalone learning remain available; role preparation reports unavailable.
+Lessons capture objectives, material links, authoritative submitted rounds and explicit completion. Summary prose cannot complete tasks. Review hands off to native counselor key `kaogong/default/counselor` without a subject; teaching uses a subject-explicit teacher key. Native Sessions and assignments remain workbench-owned. The Client consumes the Workbench public display runtime. If its role/task services are unavailable, business records and standalone learning remain usable; teaching preparation reports unavailable.
 
 Host and Client have separate real declaration entries. `Config` describes resolved runtime values: `questionImageRoot` and `mineru` are native `Volatile` references, read with `.get()`; raw profile YAML remains plain data. Client `KaogongView` can be hosted by the workbench or standalone shell, with one owner for the default instance.
 
@@ -41,3 +41,11 @@ Host and Client have separate real declaration entries. `Config` describes resol
 The package declares dev-only UI/test tools; production archives contain neither fixtures nor test dependencies. Build/test scripts are in `package.json`. Set `KAOGONG_TEST_RUNTIME` to the built official checkout, and optionally `KAOGONG_TEST_TOOLS` to an explicit compatible development tool anchor. The root combined build compiles workbench first and Kaogong against its newly emitted declarations.
 
 See [ticket11 evidence](../../docs/ticket11-release-evidence.md) for archive, installed consumer, data preservation and runtime checks. Native completed turns, interactive controls, desktop/narrow screenshots and rendered image pixels remain pending; passing synthetic DOM or PNG-byte checks is not visual acceptance.
+
+## Application Platform Integration
+
+The application registers its own `kaogong/knowledge` display source. Knowledge search, subject/type filters, material counts, lists and selected details use the same public `DisplayStore`/`DisplayModule` components as reading statistics. Full document bodies, tags and original image routes remain available; Kaogong owns the `DocumentMarkdown` detail renderer and all learning storage.
+
+Lecture, committed-round review and classroom continuation prepare visible tasks for the existing `kaogong/default` teacher or counselor. Preparation neither ensures a Session nor sends a native command. Users can edit the task and each evidence chunk, remove evidence, or cancel. Explicit send keeps the declared `kaogong-teach` provider/body preflight and targets the original native role scope. Classroom continuation rechecks the saved binding before sending instead of creating a replacement during preparation.
+
+Review reserves the durable round only when explicitly sent, so competing windows cannot both send it. An admission failure keeps the original prepared task retryable; a refreshed uncertain reservation requires inspecting the counselor conversation. Actual admission clears the prepared task before completion bookkeeping. A local delivery marker suppresses repeat sends if completion storage fails; the recovery button retries only the Host completion operation. Lecture and review do not automatically complete lessons or check off the plan.

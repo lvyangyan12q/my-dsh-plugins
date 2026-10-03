@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type { PersonalWorkbench, PersonalWorkbenchRoles, RoleBindingKey } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { DisplayStore, PersonalWorkbench, PersonalWorkbenchRoles, PersonalWorkbenchTasks, RoleBindingKey } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { DashboardData, PracticeData, PracticeContext, PracticeResult, ModuleSummary } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'
 import type { LessonView } from './lesson-schema.ts'
@@ -13,11 +13,12 @@ type ViewValues = {
   moduleSummary: ModuleSummary | null; submitting: boolean
   practiceRestored: boolean; practiceBusy: boolean; reflectionNotes: Record<string, string>
   practiceHistory: { roundId: string; context: PracticeContext; createdAt: string; submitted: boolean }[]
+  'reader.store': DisplayStore | null; 'review.admitted': string[]
   'reader.query': string; 'reader.entries': Entry[]; 'reader.selected': string; 'reader.entry': Entry | null
   'reader.error': string; 'reader.loading': boolean
   integration: { service: PersonalWorkbench } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
-  roles: PersonalWorkbenchRoles | null
+  roles: PersonalWorkbenchRoles | null; tasks: PersonalWorkbenchTasks | null
   'roles.selected': RoleBindingKey
   'roles.opened': RoleBindingKey[]
   'lesson.view': LessonView | null

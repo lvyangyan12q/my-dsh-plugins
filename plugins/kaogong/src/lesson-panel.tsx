@@ -111,13 +111,13 @@ export function LessonPanel({ active, onPractice, onOpenTeacher }: { active: boo
         <button disabled={busy || !!view.lesson.completion} onClick={() => void onPractice(context).catch(cause => setError(String(cause)))}><Play size={14} />课后练习</button>
         <button disabled={busy || !result || result.roundId !== practice?.roundId || !!view.lesson.completion} onClick={() => void run(async () => accept(await lessonRequest<LessonView>('link', { lessonId: view.lesson.request.lessonId, roundId: practice!.roundId })))}><Link size={14} />关联当前已提交轮次</button>
         <button disabled={busy || !roles} onClick={() => void run(async () => {
-          let value = await lessonRequest<LessonView>('prepare', { lessonId: view.lesson.request.lessonId })
-          await roles!.ensure(value.lesson.roleKey)
-          value = await lessonRequest<LessonView>('prepare', { lessonId: view.lesson.request.lessonId })
-          if (!value.lesson.binding) throw new Error('角色关联尚未就绪')
+          const value = await lessonRequest<LessonView>('prepare', { lessonId: view.lesson.request.lessonId })
           accept(value)
           await onOpenTeacher('/kaogong-teach 继续同一课堂；读取已保存的目标与证据，不自动宣布完成。', { kind: 'lesson', context,
-            lessonEvidence: { id: value.lesson.request.lessonId, title: context.title, source: 'kaogong/default/lesson-summary', content: value.summary } })
+            lessonEvidence: { id: value.lesson.request.lessonId, title: context.title, source: 'kaogong/default/lesson-summary', content: value.summary } }, {
+              beforeSend: async () => { await lessonRequest<LessonView>('prepare', { lessonId: value.lesson.request.lessonId }) },
+              afterSend: async () => { accept(await lessonRequest<LessonView>('prepare', { lessonId: value.lesson.request.lessonId })) },
+            })
         })}><BookOpen size={14} />继续原课堂</button>
       </div>
       {!roles && <span role="status">角色服务不可用；课堂任务和练习仍可保存。</span>}

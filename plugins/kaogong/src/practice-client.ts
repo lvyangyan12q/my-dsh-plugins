@@ -10,6 +10,13 @@ export async function practiceRequest<T>(action: string, body: unknown): Promise
   return value
 }
 
+const admittedKey = 'kaogong/default/admitted-reviews/v1'
+/** Delivery markers suppress repeat sends after native admission when the Host projection must be retried. */
+export function readAdmittedReviews(): string[] {
+  try { const value: unknown = JSON.parse(window.localStorage.getItem(admittedKey) ?? '[]'); return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)) : [] } catch { return [] }
+}
+export function markAdmittedReview(roundId: string) { window.localStorage.setItem(admittedKey, JSON.stringify([...new Set([...readAdmittedReviews(), roundId])])) }
+
 const draftKey = 'kaogong/default/practice-draft/v1'
 export type PracticeDraft = { roundId: string; answers: Record<string, string>; errorReasons: Record<string, string>; notes: Record<string, string> }
 /** Drafts contain learner input and a Host-issued pointer only. Storage failure is explicit. */

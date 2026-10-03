@@ -28,6 +28,7 @@ export class DisplayStore {
     this.update({ filters: { ...this.snapshot.filters, [field]: value } }); this.reconcileSelection()
   }
   setSearch = (search: string) => { this.update({ search }); this.reconcileSelection() }
+  clearSelection = () => this.update({ selectedId: undefined })
   select = (selectedId: string) => { if (this.filteredRecords().some(record => record.id === selectedId)) this.update({ selectedId }) }
   private reconcileSelection() { if (this.snapshot.selectedId && !this.filteredRecords().some(record => record.id === this.snapshot.selectedId)) this.update({ selectedId: undefined }) }
   reload = async () => {

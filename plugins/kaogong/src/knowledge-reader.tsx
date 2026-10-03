@@ -1,62 +1,62 @@
-import { useEffect } from 'react'
-import { useBusinessState } from './view-state.tsx'
+import { useEffect, useSyncExternalStore } from 'react'
+import { DisplayModule, DisplayStore } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { DisplayData, DisplayRecord, DisplaySource } from '@deepseek-ai/dsh-personal-workbench/client'
+import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
 
-export type Entry = { id: string; title: string; subject: string; kind: string; source: string; content: string }
+export type Entry = { id: string; title: string; subject: string; kind: string; source: string; content: string; tags?: string[] }
+export function knowledgeDisplayData(entries: Entry[]): DisplayData {
+  return { records: entries.map(entry => ({ id: entry.id, title: entry.title, subtitle: `${entry.subject} · ${entry.kind}`, fields: { 科目: entry.subject, 类型: entry.kind, 来源: entry.source ?? '', 正文: entry.content ?? '', 标签: entry.tags?.join(' ') ?? '' } })),
+    filters: [{ field: '科目', label: '科目' }, { field: '类型', label: '资料类型' }], stats: [{ id: 'materials', label: '条资料', operation: 'count' }] }
+}
+export const knowledgeSource: DisplaySource = { appId: 'kaogong', resource: 'knowledge', label: '考公自有知识库', load: async ({ instanceId, signal }) => {
+  if (instanceId !== 'default') throw new Error('考公当前仅支持默认学习实例。')
+  const response = await fetch('/api/kaogong/knowledge?q=&display=1', { credentials: 'same-origin', signal })
+  if (!response.ok) throw new Error('知识库加载失败')
+  const value = await response.json()
+  if (!Array.isArray(value.entries)) throw new Error('知识库返回了无法识别的数据')
+  return knowledgeDisplayData(value.entries)
+} }
+const labels: Record<string, string> = { displaySearch: '搜索知识库', displayAll: '全部', displayLoading: '正在加载资料…', displayFailed: '知识库加载失败', retry: '重试', displayNoMatches: '没有匹配资料', displayEmpty: '暂无资料', displaySelect: '请选择资料查看正文' }
+const t = (key: string) => labels[key] ?? key
+const entryOf = (record: DisplayRecord): Entry => ({ id: record.id, title: record.title, subject: String(record.fields.科目), kind: String(record.fields.类型), source: String(record.fields.来源), content: String(record.fields.正文) })
 
+/** Public display state owns filtering and selection; only the application renders its document body. */
 export function KnowledgeLibrary({ active = true }: { active?: boolean }) {
-  const [query, setQuery] = useBusinessState('reader.query', '')
-  const [entries, setEntries] = useBusinessState('reader.entries', [])
-  const [selected, setSelected] = useBusinessState('reader.selected', '')
-  const [entry, setEntry] = useBusinessState('reader.entry', null)
-  const [error, setError] = useBusinessState('reader.error', '')
-  const [loading, setLoading] = useBusinessState('reader.loading', false)
+  const owner = useRequestOwner()
+  const [store, setStore] = useBusinessState('reader.store', null)
+  useEffect(() => {
+    if (!active || store) return
+    const next = new DisplayStore(knowledgeSource, { appId: 'kaogong', instanceId: 'default', preview: false })
+    next.setSearch(owner.cell('reader.query', '').value)
+    setStore(next)
+  }, [active, store, owner, setStore])
+  return store ? <KnowledgeModules active={active} store={store} /> : null
+}
+function KnowledgeModules({ active, store }: { active: boolean; store: DisplayStore }) {
+  const owner = useRequestOwner()
+  const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   useEffect(() => {
     if (!active) return
-    const abort = new AbortController()
-    const refresh = () => {
-      setError('')
-      fetch('/api/kaogong/knowledge?q=' + encodeURIComponent(query), { signal: abort.signal })
-        .then(async r => { if (!r.ok) throw new Error('知识库加载失败'); return r.json() })
-        .then(data => { if (!abort.signal.aborted) setEntries(data.entries) })
-        .catch(e => { if (!abort.signal.aborted) setError(e.message) })
-    }
-    const timer = setTimeout(refresh, 250)
-    const interval = setInterval(refresh, 15000)
-    return () => { clearTimeout(timer); clearInterval(interval); abort.abort() }
-  }, [query, active])
+    void store.reload()
+    const interval = setInterval(() => { void store.reload() }, 15000)
+    return () => clearInterval(interval)
+  }, [active, store])
   useEffect(() => {
-    if (!active) return
-    if (!selected) { setEntry(null); return }
-    if (entry?.id === selected) return
-    const abort = new AbortController()
-    setLoading(true)
-    setEntry(null)
-    setError('')
-    fetch('/api/kaogong/knowledge?id=' + encodeURIComponent(selected), { signal: abort.signal })
-      .then(async r => { if (!r.ok) throw new Error('资料正文加载失败'); return r.json() })
-      .then(value => { if (!abort.signal.aborted) setEntry({ ...value, id: selected }) })
-      .catch(e => { if (!abort.signal.aborted) setError(e.message) })
-      .finally(() => { if (!abort.signal.aborted) setLoading(false) })
-    return () => abort.abort()
-  }, [selected, active])
-  return <div>
-    {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
-    {selected ? <>
-      <button type="button" onClick={() => setSelected('')} style={{ margin: '12px 0' }}>返回资料列表</button>
-      {loading && <p>正在加载正文…</p>}
-      {entry && <article>
-        <h3 style={{ fontSize: 18, overflowWrap: 'anywhere' }}>{entry.title}</h3>
-        <p style={{ fontSize: 12, color: '#6b7280', overflowWrap: 'anywhere' }}>{entry.subject} · {entry.kind} · {entry.source}</p>
-        <DocumentMarkdown content={entry.content} />
-      </article>}
-    </> : <>
-      <input aria-label="搜索知识库" placeholder="搜索标题、科目或正文" value={query} onChange={event => setQuery(event.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: 9, margin: '12px 0', border: '1px solid #d1d5db', borderRadius: 4 }} />
-      <div style={{ color: '#6b7280', fontSize: 12 }}>{entries.length} 条资料</div>
-      {entries.map(item => <article key={item.id} style={{ padding: '12px 0', borderBottom: '1px solid #e5e7eb' }}>
-        <button type="button" onClick={() => setSelected(item.id)} style={{ background: 'none', border: 0, color: '#1d4ed8', padding: 0, fontSize: 14, textAlign: 'left', overflowWrap: 'anywhere', cursor: 'pointer' }}>{item.title}</button>
-        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 5 }}>{item.subject} · {item.kind}</div>
-      </article>)}
-    </>}
+    owner.cell('reader.query', '').set(state.search)
+    if (state.phase !== 'ready') return
+    const record = store.filteredRecords().find(row => row.id === state.selectedId)
+    owner.cell('reader.selected', '').set(record?.id ?? '')
+    owner.cell('reader.entry', null).set(record ? entryOf(record) : null)
+  }, [state, store, owner])
+  return <div aria-label="考公资料公共模块">
+    <DisplayModule type="filter" store={store} t={t} />
+    <DisplayModule type="stats" store={store} t={t} />
+    <DisplayModule type="list" store={store} t={t} />
+    {state.selectedId && <button type="button" onClick={store.clearSelection}>返回资料列表</button>}
+    <DisplayModule type="detail" store={store} t={t} renderDetail={record => {
+      const entry = entryOf(record)
+      return <article><h3>{entry.title}</h3><p>{entry.subject} · {entry.kind} · {entry.source}</p><DocumentMarkdown content={entry.content} /></article>
+    }} />
   </div>
 }

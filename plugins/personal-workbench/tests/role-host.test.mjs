@@ -22,12 +22,13 @@ test('base Host without optional role authorities preserves the read-only proof 
 // Public authority/HTTP fixtures, not a fake conversation or a runtime-acceptance claim.
 async function fixture() {
   const rows = new Map(), created = [], events = []
+  let skillMode = 'valid'
   let rejection, broken = false, skillMissing = false, sessionMissing = false, presetChanged = false, flushFailure = false
   const ctx = {
     on: () => () => {},
     storageDomain: { open: async spec => { events.push(spec.name); return { table: name => { assert.equal(name, 'bindings'); return { get: key => rows.get(key), put: async (key, row) => { rows.set(key, row); events.push('persist') } } }, close: async () => events.push('close-domain') } } },
     agentPresets: { register: async definition => { assert.equal(definition, teacherPreset); events.push('register-preset'); return async () => events.push('remove-preset') }, resolve: async id => { assert.equal(id, teacherPresetId); return { id, broken: broken ? 'missing' : undefined } }, acquireScope: async () => ({ key: {}, [Symbol.asyncDispose]: async () => events.push('release-scope') }) },
-    skills: { list: async () => skillMissing ? [] : [{ name: 'kaogong-teach', provider: teacherSkillProvider }], get: async () => ({ name: 'kaogong-teach', provider: teacherSkillProvider, content: 'packaged body', invocation: { userInvocable: true } }) },
+    skills: { list: async () => skillMissing ? [] : [{ name: 'kaogong-teach', provider: teacherSkillProvider }], get: async () => { if (skillMode === 'unreadable') throw new Error('Skill body unreadable'); return { name: 'kaogong-teach', provider: skillMode === 'foreign-provider' ? 'learner-files' : teacherSkillProvider, content: skillMode === 'empty-body' ? '   ' : 'packaged body', invocation: { userInvocable: skillMode !== 'not-user-invocable' } } } },
     sessionController: { projections: async () => sessionMissing ? null : { values: { agentPreset: presetChanged ? 'other' : teacherPresetId } }, create: async request => { assert.equal(rows.size, 1); assert.equal(events.includes('persist'), true); created.push(request); return { sessionId: request.sessionId, agentPreset: request.agentPreset } } },
     sessionPersistence: { flush: async () => { events.push('native-durability'); if (flushFailure) throw Error('Native flush failed') } },
     connection: { requestRejection: () => rejection }, reflect: { provide: (name, value) => { assert.equal(name, 'personalWorkbenchBindings'); ctx.binding = value; return () => { delete ctx.binding } } },
@@ -42,7 +43,7 @@ async function fixture() {
     await owner.handle(req, res)
     return { status, value: content ? JSON.parse(content) : null }
   }
-  return { ctx, owner, rows, created, events, call, deny: value => { rejection = value }, broken: () => { broken = true }, missingSkill: () => { skillMissing = true }, missingSession: () => { sessionMissing = true }, changedPreset: () => { presetChanged = true }, flushFailure: value => { flushFailure = value } }
+  return { ctx, owner, rows, created, events, call, skill: mode => { skillMode = mode }, deny: value => { rejection = value }, broken: () => { broken = true }, missingSkill: () => { skillMissing = true }, missingSession: () => { sessionMissing = true }, changedPreset: () => { presetChanged = true }, flushFailure: value => { flushFailure = value } }
 }
 test('Host route authenticates before parsing and bounds methods, type, bytes and supported values with zero creation', async () => {
   const f = await fixture()
@@ -130,4 +131,25 @@ test('native blank header durability precedes ready; failed flush leaves a same-
 
 test('explicit prepared teaching driver keeps trusted provider/body preflight without hidden business evidence',async()=>{
  const f=await fixture();try{assert.equal(f.created.length,0);const response=await f.call({action:'prepare-teaching',key});assert.equal(response.status,200);assert.equal(response.value.prompt,'/kaogong-teach ');assert.equal(response.value.binding.phase,'ready');assert.equal(f.created.length,1);assert.equal('evidence' in response.value,false);f.missingSkill();const denied=await f.call({action:'prepare-teaching',key});assert.equal(denied.status,409);assert.equal(f.created.length,1)}finally{await f.owner.dispose()}
+})
+
+test('prepared Kaogong teaching rejects foreign provider, unreadable/empty body and non-invocable skill before Session creation', async () => {
+  for (const mode of ['foreign-provider', 'unreadable', 'empty-body', 'not-user-invocable']) {
+    const f = await fixture()
+    try {
+      f.skill(mode)
+      const denied = await f.call({ action: 'prepare-teaching', key })
+      assert.equal(denied.status, 409, mode)
+      assert.deepEqual(f.created, [], mode)
+      assert.equal(f.rows.size, 0)
+      f.skill('valid')
+      const ready = await f.call({ action: 'prepare-teaching', key })
+      assert.equal(ready.status, 200)
+      const id = ready.value.binding.sessionId
+      f.skill(mode)
+      assert.equal((await f.call({ action: 'prepare-teaching', key })).status, 409)
+      assert.equal(f.created.length, 1)
+      assert.equal([...f.rows.values()][0].sessionId, id, 'Rejected send preserves the original durable identity')
+    } finally { await f.owner.dispose() }
+  }
 })
