@@ -23,3 +23,6 @@ Local task identity: `12-application-platform`. Title: 工作台应用平台：�
 - Prototype source: `codex/prototype-application-platform` branch, isolated from production implementation.
 
 The implementation issue uses Markdown frontmatter as the local tracker metadata. Its body follows the to-spec template and is the sole source of the specification; do not copy it into another task file. Existing tasks 01–11 retain their own scope and acceptance status.
+## Application platform implementation graph
+
+The approved seven vertical slices are tracked locally at `.scratch/application-platform/issues/README.md` (one file per ticket, blockers listed by title). The implementation branch is `codex/application-platform`. Work only on the frontier, preserve each task's acceptance evidence, and do not infer completion from a commit. This repository currently has no remote; a real draft PR cannot be created until a destination exists.
