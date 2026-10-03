@@ -43,7 +43,12 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
 function RoleNative({ renderFactorySlot, useSession }: PropsRuntime<'personal-workbench.role-native'> & PropsRenderFactories) {
   const failure = useSession(value => value.lastAgentError ?? value.openError?.message ?? value.promptError?.error.message)
   const content = renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, { fallback: <p role="alert">原生会话组件不可用。</p> })
-  return failure ? <><p role="alert">{failure}</p>{content}</> : content
+  // The native embedded body uses flex sizing; a block parent lets long messages
+  // determine its height and pushes the composer below the clipped role pane.
+  return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
+    {failure && <p role="alert" style={{ flexShrink: 0, maxHeight: '25%', overflow: 'auto', overflowWrap: 'anywhere', margin: 0, padding: '8px 10px' }}>{failure}</p>}
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{content}</div>
+  </div>
 }
 /** Optional native surface. Registration does not read metadata or acquire a Session. */
 export function installRoleClient(ctx: Context) {
