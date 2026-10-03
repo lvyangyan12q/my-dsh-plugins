@@ -54,6 +54,15 @@ import type { RoleBindingKey, PersonalWorkbenchRoles } from '@deepseek-ai/dsh-pe
 import type { PersonalWorkbenchBindings } from '@deepseek-ai/dsh-personal-workbench'
 import type { SkillAssignment, ManagementRequest, ManagementCatalog } from '@deepseek-ai/dsh-personal-workbench'
 import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
+import { DisplayStore, DisplayModule, DisplayModules, registerDisplaySource, registerRecipeTemplate } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { DisplayData, DisplaySource, AppRecipe } from '@deepseek-ai/dsh-personal-workbench/client'
+const displayData: DisplayData = { records: [{ id: 'record', title: 'Title', fields: { category: 'work', count: 2 } }], filters: [{ field: 'category', label: 'Category' }], stats: [{ id: 'total', label: 'Total', operation: 'sum', field: 'count' }] }
+const displaySource: DisplaySource = { appId: 'kaogong', resource: 'overview', label: 'Overview', load: async () => displayData }
+const displayStore = new DisplayStore(displaySource, { appId: 'kaogong', instanceId: 'default', preview: false })
+displayStore.setFilter('category', 'work'); displayStore.setSearch('Title'); displayStore.select('record')
+void [displayStore.reload(), DisplayModule, DisplayModules, registerDisplaySource(displaySource)]
+declare const appRecipe: AppRecipe
+void registerRecipeTemplate({ id: 'example', label: 'Example', create: async () => appRecipe })
 declare const ctx: Context
 const api: PersonalWorkbench = ctx.personalWorkbench
 const bindings: PersonalWorkbenchBindings = ctx.personalWorkbenchBindings

@@ -41,3 +41,61 @@ The application center manages independently registered apps. Enable/disable is 
 Authenticated same-origin POST /api/personal-workbench/apps supports catalog and set-enabled (appId, enabled, expectedRevision). Missing records default to enabled at revision zero. Concurrent stale writes are rejected; refresh availability before retrying. The optional Host service personalWorkbenchApps exposes read, list, and setEnabled for later recipe integrations. Definitions can be registered by installed or runtime app providers; registration never resets availability. Client loading fails closed with a visible retry action.
 
 Public contracts: src/app-lifecycle-api.ts. Targeted tests: app-lifecycle-host.test.mjs, app-lifecycle-client.test.ts, workbench-ui.test.mjs, workbench-lifecycle.test.mjs, native-navigation.test.mjs.
+# Public display modules and installed data adapters
+
+Client exports `DisplayStore`, `DisplayModule`, `DisplayModules`,
+`registerDisplaySource`, and `registerRecipeTemplate`. Host
+`ctx.personalWorkbenchRecipes.registerDataSource({appId,resource})` registers a
+trusted installed source for preview/activation validation; unregistering makes
+future preview/activation fail explicitly. It does not grant cross-app access.
+The corresponding Client adapter uses the exact same app ID and resource.
+
+```ts
+import { DisplayStore, DisplayModules } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { DisplayData, DisplaySource } from '@deepseek-ai/dsh-personal-workbench/client'
+
+const source: DisplaySource = {
+  appId: 'my-app', resource: 'records', label: 'My application records',
+  async load({ appId, instanceId, preview, signal }): Promise<DisplayData> {
+    // Read this application's own domain through its authenticated route.
+    // Adapt business records here; never place them into a recipe config.
+    return {
+      records: [{ id: 'stable-id', title: 'Item', subtitle: 'Optional',
+        fields: { category: 'Example', minutes: 30, completed: true } }],
+      filters: [{ field: 'category', label: 'Category' }],
+      stats: [
+        { id: 'count', label: 'Items', operation: 'count' },
+        { id: 'total', label: 'Minutes', operation: 'sum', field: 'minutes' },
+        { id: 'mean', label: 'Average minutes', operation: 'average', field: 'minutes' },
+      ],
+    }
+  },
+}
+const store = new DisplayStore(source, {appId: 'my-app', instanceId: 'default', preview: false})
+void store.reload()
+// <DisplayModules store={store} t={t}/>
+// Or <DisplayModule type="stats" store={store} t={t}/> for a single module.
+// Dispose an application-owned store on its owner lifetime, not page switches.
+```
+
+`DisplayRecord.fields` contains only strings, finite numbers, booleans or null.
+Filter fields compare exact values; search matches title/subtitle/fields.
+All statistics use the filtered records. Numeric aggregation ignores nonnumeric
+fields. Selection updates details and clears when the selected record leaves the
+filtered set. `setFilter`, `setSearch`, `select`, `reload`, `getSnapshot`,
+`subscribe`, and `dispose` are public Store methods. Loading, source failure,
+empty data, no matches and no selection have distinct visible states. No module
+or store calls a Session or model service.
+
+Recipe renderers share an owner keyed by app ID, instance ID, preview flag and
+connection ID, across pages. Preview uses its own interaction state. Direct
+application integration (including Kaogong) should create one Store per app
+instance and pass the same Store to each public component. Installed specialized
+modules continue to register through `registerRecipeModuleRenderer`; recipes
+reference a code-owned module ID and scalar configuration, never executable code.
+
+The independent `plugins/reading-statistics` package supplies its own Host domain,
+adapter and template, with package/profile setup documented in its README. The
+ordinary recipe connection form lists only sources installed for that recipe's
+own app identity. Templates prepare drafts; saving, previewing and explicitly
+activating remain separate actions.

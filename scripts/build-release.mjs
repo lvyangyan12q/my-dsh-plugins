@@ -12,6 +12,7 @@ const env = { ...process.env, DSH_SOURCE: source, KAOGONG_TEST_RUNTIME: source, 
 for (const [pkg, commands] of [
   ['personal-workbench', [[tsdown, '-c', 'tsdown.config.ts'], ['scripts/check-source.mjs'], ['scripts/check-source.mjs', '--emit-types'], ['scripts/check-source.mjs', '--check-consumer']]],
   ['kaogong', [[tsdown, '-c', 'tsdown.host.config.ts'], [tsdown, '-c', 'tsdown.config.ts'], ['scripts/check-client-types.mjs']]],
+  ['reading-statistics', [[tsdown, '-c', 'tsdown.config.ts'], ['check-types.mjs']]],
 ]) {
   for (const command of commands) await runNode(command, { cwd: resolve(root, 'plugins', pkg), env })
   console.log(`${pkg}: clean Host/Client build, declarations and source consumers passed`)

@@ -1,3 +1,4 @@
+import { installDisplayModules } from './display-view.tsx'
 import { installRecipeClient } from './recipe-client.tsx'
 import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { useEffect, useRef } from 'react'
@@ -116,6 +117,7 @@ export function apply(ctx: Context): void {
     if(!response.ok || !data.state) throw new Error(data.error??'Application availability update failed')
     workbench.applyLifecycle([...Object.values(workbench.getSnapshot().lifecycle).filter(row=>row.appId!==appId),data.state])
   }
+  ctx.effect(() => installDisplayModules(), 'public display modules')
   const refreshRecipes = installRecipeClient(ctx, workbench)
   const navigation = new PanelNavigation()
   ctx.effect(() => () => navigation.dispose(), 'independent management navigation')
@@ -164,3 +166,9 @@ export function apply(ctx: Context): void {
 export { registerRecipeModuleRenderer, RecipePage } from './recipe-view.tsx'
 export type { RecipeModuleProps } from './recipe-view.tsx'
 export type { AppRecipe, RecipeRecord, RecipeModule } from './recipe-api.ts'
+
+export { registerDisplaySource, listDisplaySources, registerRecipeTemplate } from './display-api.ts'
+export type { DisplayData, DisplayRecord, DisplaySource, DisplayScope, RecipeTemplate } from './display-api.ts'
+export { DisplayStore } from './display-store.ts'
+export { DisplayModule, DisplayModules } from './display-view.tsx'
+export { RecipeEditor } from './recipe-editor.tsx'

@@ -1,4 +1,4 @@
-export const en = {
+export const en = {displayLoading:"Loading data...",displayFailed:"Data loading failed",displaySearch:"Search records",displayAll:"All",displayNoMatches:"No records match the filters.",displayEmpty:"No records yet.",displaySelect:"Select a record to see details.",displayUnavailable:"Data source unavailable",recipeConnections:"2. Data connections",recipeConnectionHelp:"Select an owned registered data source, then connect page modules.",recipeSource:"Data source",recipeAddConnection:"Add connection",recipeRemoveConnection:"Remove connection",recipeModuleConnection:"Module connection",
   refreshApps: "Refresh application availability",
   appsLoading: "Loading application availability…",
   appEnabled: "Enabled",
@@ -35,7 +35,7 @@ export const en = {
   minimize: 'Minimize', minimized: 'Minimized', maximize: 'Maximize', restore: 'Restore', moveWindow: 'Move window',
   windowWidth: 'Width', windowHeight: 'Height', storageFailed: 'Layout preferences could not be restored or saved.',
 }
-export const zh: typeof en = {
+export const zh: typeof en = {displayLoading:"正在加载数据…",displayFailed:"数据加载失败",displaySearch:"搜索记录",displayAll:"全部",displayNoMatches:"没有符合筛选条件的记录。",displayEmpty:"暂无记录。",displaySelect:"选择记录以查看详情。",displayUnavailable:"数据来源不可用",recipeConnections:"2. 数据连接",recipeConnectionHelp:"选择本应用注册的数据来源，再连接页面模块。",recipeSource:"数据来源",recipeAddConnection:"添加连接",recipeRemoveConnection:"移除连接",recipeModuleConnection:"模块连接",
   refreshApps: "刷新应用状态",
   appsLoading: "正在加载应用状态…",
   appEnabled: "已启用",
