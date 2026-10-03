@@ -1,0 +1,17 @@
+import type {AppRecipe,RecipeModule} from './recipe-api.ts'
+import {contentTypes} from './content-catalog.ts'
+export function RecipeModuleEditor({pageIndex,recipe,change,t}:{pageIndex:number;recipe:AppRecipe;change:(update:(r:AppRecipe)=>void)=>void;t:(key:any)=>string}){
+ const page=recipe.pages[pageIndex]
+ const update=(index:number,fn:(m:RecipeModule)=>void)=>change(r=>fn(r.pages[pageIndex].modules[index]))
+ return <section className="pwb-module-editor"><h4>{t('moduleContents')}</h4><p>{t('moduleContentsHelp')}</p>{page.modules.map((m,index)=><fieldset className="pwb-module-card" key={m.id}><legend>{t('modulePane')} {index+1}</legend>
+ <label>{t('moduleTitle')}<input aria-label={t('moduleTitle')+': '+m.id} value={m.title} onChange={e=>update(index,m=>{m.title=e.target.value})}/></label>
+ <label>{t('moduleType')}<select aria-label={t('moduleType')+': '+m.id} value={m.type} onChange={e=>update(index,m=>{m.type=e.target.value;m.config=m.type==='custom'?{mode:'generate'}:{};delete m.connectionId;delete m.roleId})}>{!contentTypes.includes(m.type as any)&&<option value={m.type}>{m.type}</option>}{contentTypes.map(type=><option key={type} value={type}>{t('recipeModule'+type)}</option>)}</select></label>
+ {m.type==='custom'&&<label>{t('moduleSource')}<select aria-label={t('moduleSource')+': '+m.id} value={String(m.config.mode??'generate')} onChange={e=>update(index,m=>{m.config={mode:e.target.value}})}>{['generate','url','file'].map(mode=><option key={mode} value={mode}>{t('moduleSource'+mode)}</option>)}</select></label>}
+ {(['website','animation'].includes(m.type)||(m.type==='custom'&&m.config.mode==='url'))&&<label>{t('moduleUrl')}<input aria-label={t('moduleUrl')+': '+m.id} type="url" placeholder="https://" value={String(m.config.url??'')} onChange={e=>update(index,m=>{m.config.url=e.target.value})}/></label>}
+ {m.type==='resources'&&<label>{t('moduleDirectory')}<input aria-label={t('moduleDirectory')+': '+m.id} placeholder={t('moduleRoot')} value={String(m.config.basePath??'')} onChange={e=>update(index,m=>{m.config.basePath=e.target.value})}/></label>}
+ {m.type==='custom'&&m.config.mode==='file'&&<label>{t('moduleFile')}<input aria-label={t('moduleFile')+': '+m.id} placeholder="pages/example.html" value={String(m.config.path??'')} onChange={e=>update(index,m=>{m.config.path=e.target.value})}/></label>}
+ {m.type==='custom'&&m.config.mode==='generate'&&<label>{t('moduleRequirement')}<textarea aria-label={t('moduleRequirement')+': '+m.id} value={String(m.config.requirement??'')} onChange={e=>update(index,m=>{m.config.requirement=e.target.value})}/></label>}
+ {(m.type==='role-chat'||m.type==='custom'&&m.config.mode==='generate')&&<label>{t('recipeTaskRole')}<select aria-label={t('recipeTaskRole')+': '+m.id} value={m.roleId??''} onChange={e=>update(index,m=>{if(e.target.value)m.roleId=e.target.value;else delete m.roleId})}><option value="">{t('recipeChooseRole')}</option>{recipe.roles.map(role=><option key={role.id} value={role.id}>{role.name}</option>)}</select><small>{t('moduleRoleHelp')}</small></label>}
+ <button data-pwb-button type="button" onClick={()=>change(r=>{r.pages[pageIndex].modules.splice(index,1)})}>{t('moduleRemove')}</button></fieldset>)}
+ <button data-pwb-button type="button" onClick={()=>change(r=>{r.pages[pageIndex].modules.push({id:'module.'+crypto.randomUUID(),type:'website',title:t('recipeModulewebsite'),config:{url:''}})})}>{t('moduleAdd')}</button></section>
+}

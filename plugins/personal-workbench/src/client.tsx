@@ -1,3 +1,4 @@
+import {installContentModules} from './content-view.tsx'
 import { installDisplayModules } from './display-view.tsx'
 import { installTasks } from './task-view.tsx'
 import { installRecipeClient } from './recipe-client.tsx'
@@ -119,6 +120,7 @@ export function apply(ctx: Context): void {
     workbench.applyLifecycle([...Object.values(workbench.getSnapshot().lifecycle).filter(row=>row.appId!==appId),data.state])
   }
   ctx.effect(() => installDisplayModules(), 'public display modules')
+  ctx.effect(()=>installContentModules(),'pane content modules')
   const refreshRecipes = installRecipeClient(ctx, workbench)
   const navigation = new PanelNavigation()
   ctx.effect(() => () => navigation.dispose(), 'independent management navigation')

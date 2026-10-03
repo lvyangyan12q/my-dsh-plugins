@@ -1,3 +1,4 @@
+import {contentTypes,contentErrors} from './content-catalog.ts'
 import {withCapabilityCatalog} from './capability-catalog.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type { IncomingMessage,ServerResponse } from 'node:http'
@@ -8,7 +9,7 @@ export const recipeDomain=defineDomain({name:'personal_workbench_recipes',versio
 export async function installRecipes(ctx:Context){
  const domain=await ctx.storageDomain.open(recipeDomain),table=domain.table('recipes'),modules=new Map<string,RecipeModuleDefinition>();let closing=false,tail=Promise.resolve();const requests=new Set<Promise<void>>(), reserved=new Set<string>()
  const sources=new Map<string,{appId:string;resource:string}>();const sourceKey=(appId:string,resource:string)=>JSON.stringify([appId,resource])
- for(const id of ['stats','list','detail','filter','role-chat'])modules.set(id,{id})
+ for(const id of contentTypes)modules.set(id,{id,validate:contentErrors})
  const serial=<T>(run:()=>Promise<T>)=>{const task=tail.catch(()=>{}).then(()=>{if(closing)throw new Error('Recipes unavailable');return run()});tail=task.then(()=>{},()=>{});return task}
  const read=(appId:string,expectedRevision:number)=>{const row=table.get(appId);if(!row)throw new Error('Recipe not found');if(row.appId!==appId)throw new Error('Recipe identity mismatch');if(row.revision!==expectedRevision)throw new Error('Recipe changed; refresh and retry');return row}
  const validate=async(recipe:AppRecipe)=>{

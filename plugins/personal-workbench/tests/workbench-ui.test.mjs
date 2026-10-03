@@ -210,7 +210,7 @@ test('manual recipe form creates stable draft identity and allows layout/modules
  const name=document.querySelector('input[aria-label="recipeName"]');assert.ok(name);assert.equal(name.value,'recipeNewName')
  const textarea=document.querySelector('textarea[aria-label="recipeConfiguration"]');const original=JSON.parse(textarea.value);assert.match(original.appId,/^app\./)
  const layout=document.querySelector('select[aria-label="recipeLayout: home"]');await act(async()=>{layout.value='stack';layout.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))});assert.equal(JSON.parse(textarea.value).pages[0].layout,'stack')
- const details=document.querySelector('input[aria-label="recipeModuledetail: home"]');await act(async()=>details.click());assert.ok(JSON.parse(textarea.value).pages[0].modules.some(module=>module.type==='detail'))
+ const details=document.querySelector('select[aria-label^="moduleType:"]');await act(async()=>{details.value='detail';details.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))});assert.ok(JSON.parse(textarea.value).pages[0].modules.some(module=>module.type==='detail'))
  await f.click('recipeAddPage');const current=JSON.parse(textarea.value);assert.equal(current.pages.length,2);assert.equal(current.appId,original.appId);await f.click('recipeNext');await f.click('recipeNext');await f.click('recipeNext');assert.equal(f.button('recipePreview').disabled,true);assert.equal(f.button('recipeActivate').disabled,true)
  }finally{await f.dispose()}
 })

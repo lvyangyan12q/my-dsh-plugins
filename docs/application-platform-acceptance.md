@@ -89,3 +89,7 @@ This release delivers installed registered modules and scalar recipes; it does n
 - Browser confirmed choosing list/detail creates a split draft with filter/list/detail and empty data/role bindings; no draft was saved or activated.
 - Builtin display modules share scoped cards, form controls, statistics and detail styles; the existing reading application's record selection still updates the detail module.
 - Reference and implementation boundaries: [worktable-template-reference.md](worktable-template-reference.md).
+
+### Independent module contents (2026-10-03)
+
+Each recipe pane now selects/configures its own builtin content type. Custom supports native DSH generation, existing URLs and local HTML. Real 3082 Browser verified generation -> explicit native send -> owned HTML output -> automatic mount -> interactive timer, persistence after restart, unchanged output after unrelated edits, manual HTML, website interaction, running animation and actual resource navigation. The temporary fixture was stopped and its synthetic app disabled after verification. Three plugin builds and 220 platform tests passed. Interface, source reference and constraints are recorded in [worktable-template-reference.md](worktable-template-reference.md).

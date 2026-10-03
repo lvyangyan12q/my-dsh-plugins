@@ -19,13 +19,14 @@ function RecipeModuleSection(props:RecipeModuleProps) {
  }catch(error){setError(error instanceof Error?error.message:String(error))}}
  return <section className="pwb-recipe-module" data-module-type={module.type} style={{display:'flex',flexDirection:'column',minWidth:0,minHeight:module.type==='role-chat'?0:undefined,overflow:module.type==='role-chat'?'hidden':undefined}}><h3 style={{flexShrink:0}}>{module.title}</h3>{View?<View {...props}/>:['stats','list','detail','filter'].includes(module.type)?<p role="status">{t('recipeEmptyModule')}</p>:<p role="alert">{t('recipeMissingModule')}: {module.type}</p>}
  {!preview&&ctx&&module.roleId&&typeof module.config.taskPrompt==='string'&&module.config.taskPrompt.trim()&&<><button data-pwb-button disabled={!ctx.get('personalWorkbenchTasks')} onClick={prepare}>{t('taskPrepared')}</button>{error&&<p role="alert">{error}</p>}</>}
- {!preview&&ctx&&module.roleId&&props.taskEditorHost&&module.type!=='role-chat'&&<PreparedTaskEditor ctx={ctx} bindingKey={{appId,instanceId,roleId:module.roleId}} label={props.recipe.roles.find(role=>role.id===module.roleId)?.name} t={t}/>}</section>
+ {!preview&&ctx&&module.roleId&&props.taskEditorHost&&module.type!=='role-chat'&&module.type!=='custom'&&<PreparedTaskEditor ctx={ctx} bindingKey={{appId,instanceId,roleId:module.roleId}} label={props.recipe.roles.find(role=>role.id===module.roleId)?.name} t={t}/>}</section>
 }
 export function RecipePage({recipe,pageId,appId,instanceId,preview=false,t,ctx,renderFactorySlot}:{recipe:AppRecipe;pageId:string;appId:string;instanceId:string;preview?:boolean;t:(key:any)=>string;ctx?:Context;renderFactorySlot?:PropsRenderFactories['renderFactorySlot']}){
  const page=recipe.pages.find(p=>p.id===pageId);if(!page)return <p role="alert">{t('recipeMissingPage')}</p>
  // One editor per role on the visible page, preferring its native chat module.
  // The draft remains in the role store when a different page becomes visible.
  const editorHosts=new Map<string,string>()
+ for(const module of page.modules)if(module.roleId&&module.type==='custom'&&module.config.mode==='generate'&&!editorHosts.has(module.roleId))editorHosts.set(module.roleId,module.id)
  for(const module of page.modules)if(module.roleId&&module.type==='role-chat'&&!editorHosts.has(module.roleId))editorHosts.set(module.roleId,module.id)
  for(const module of page.modules)if(module.roleId&&!editorHosts.has(module.roleId))editorHosts.set(module.roleId,module.id)
  const conversationOnly=page.modules.length===1&&page.modules[0].type==='role-chat'

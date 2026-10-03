@@ -61,4 +61,6 @@ export const recipeEditorStyles = `
 .pwb-template-switch{margin:10px 0;font-size:12px;color:var(--pwb-muted)}
 .pwb-template-switch summary{cursor:pointer;margin-bottom:8px}
 @media(max-width:700px){.pwb-recipe-editor{padding:12px}.pwb-generation-editor{padding:12px}.pwb-recipe-toolbar select{max-width:none;flex-basis:100%}}
+
+.pwb-recipe-editor .pwb-module-editor{grid-column:1/-1;min-width:0}.pwb-recipe-editor .pwb-module-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px}.pwb-recipe-editor .pwb-module-card label{min-width:0}.pwb-recipe-editor .pwb-module-card textarea{width:100%;min-height:90px}.pwb-recipe-editor .pwb-module-card small{font-size:12px;color:#776d63}@media(max-width:650px){.pwb-recipe-editor .pwb-module-card{grid-template-columns:1fr}}
 `
