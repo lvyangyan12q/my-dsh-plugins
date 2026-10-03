@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import {recipePageStyles} from './recipe-page-styles.ts'
 import { captureRecipeModuleContext } from './module-context.ts'
 import { PreparedTaskEditor } from './task-view.tsx'
 import type { Context } from '@deepseek-ai/cordis'
@@ -16,7 +17,7 @@ function RecipeModuleSection(props:RecipeModuleProps) {
   const context=[...captureRecipeModuleContext(props)]
   tasks.prepare({key:{appId,instanceId,roleId:module.roleId!},task:String(module.config.taskPrompt),source:{pageId,moduleId:module.id,label:module.title},context});setError('')
  }catch(error){setError(error instanceof Error?error.message:String(error))}}
- return <section style={{display:'flex',flexDirection:'column',minWidth:0,minHeight:module.type==='role-chat'?0:undefined,overflow:module.type==='role-chat'?'hidden':undefined}}><h3 style={{flexShrink:0}}>{module.title}</h3>{View?<View {...props}/>:['stats','list','detail','filter'].includes(module.type)?<p role="status">{t('recipeEmptyModule')}</p>:<p role="alert">{t('recipeMissingModule')}: {module.type}</p>}
+ return <section className="pwb-recipe-module" data-module-type={module.type} style={{display:'flex',flexDirection:'column',minWidth:0,minHeight:module.type==='role-chat'?0:undefined,overflow:module.type==='role-chat'?'hidden':undefined}}><h3 style={{flexShrink:0}}>{module.title}</h3>{View?<View {...props}/>:['stats','list','detail','filter'].includes(module.type)?<p role="status">{t('recipeEmptyModule')}</p>:<p role="alert">{t('recipeMissingModule')}: {module.type}</p>}
  {!preview&&ctx&&module.roleId&&typeof module.config.taskPrompt==='string'&&module.config.taskPrompt.trim()&&<><button data-pwb-button disabled={!ctx.get('personalWorkbenchTasks')} onClick={prepare}>{t('taskPrepared')}</button>{error&&<p role="alert">{error}</p>}</>}
  {!preview&&ctx&&module.roleId&&props.taskEditorHost&&module.type!=='role-chat'&&<PreparedTaskEditor ctx={ctx} bindingKey={{appId,instanceId,roleId:module.roleId}} label={props.recipe.roles.find(role=>role.id===module.roleId)?.name} t={t}/>}</section>
 }
@@ -28,5 +29,5 @@ export function RecipePage({recipe,pageId,appId,instanceId,preview=false,t,ctx,r
  for(const module of page.modules)if(module.roleId&&module.type==='role-chat'&&!editorHosts.has(module.roleId))editorHosts.set(module.roleId,module.id)
  for(const module of page.modules)if(module.roleId&&!editorHosts.has(module.roleId))editorHosts.set(module.roleId,module.id)
  const conversationOnly=page.modules.length===1&&page.modules[0].type==='role-chat'
- return <div data-recipe-version={recipe.version} data-preview={preview} style={{display:'grid',flex:1,width:'100%',height:preview?undefined:'100%',minWidth:0,minHeight:0,overflow:'auto',gap:16,gridTemplateColumns:page.layout==='stack'||page.modules.length===1?'minmax(0,1fr)':'repeat(auto-fit,minmax(min(100%,max(320px,calc((100% - 16px)/2))),1fr))',gridAutoRows:conversationOnly?'minmax(0,1fr)':page.modules.some(module=>module.type==='role-chat')?'minmax(440px,auto)':'auto',alignContent:conversationOnly?'stretch':'start'}}>{page.modules.map(module=><RecipeModuleSection key={module.id} recipe={recipe} module={module} appId={appId} instanceId={instanceId} preview={preview} taskEditorHost={!!module.roleId&&editorHosts.get(module.roleId)===module.id} ctx={ctx} pageId={pageId} t={t} renderFactorySlot={renderFactorySlot}/>)}</div>
+ return <><style>{recipePageStyles}</style><div className="pwb-recipe-page" data-layout={page.layout} data-recipe-version={recipe.version} data-preview={preview} style={{display:'grid',flex:1,width:'100%',height:preview?undefined:'100%',minWidth:0,minHeight:0,overflow:'auto',gap:16,gridTemplateColumns:page.layout==='stack'||page.modules.length===1?'minmax(0,1fr)':'repeat(auto-fit,minmax(min(100%,max(320px,calc((100% - 16px)/2))),1fr))',gridAutoRows:conversationOnly?'minmax(0,1fr)':page.modules.some(module=>module.type==='role-chat')?'minmax(440px,auto)':'auto',alignContent:conversationOnly?'stretch':'start'}}>{page.modules.map(module=><RecipeModuleSection key={module.id} recipe={recipe} module={module} appId={appId} instanceId={instanceId} preview={preview} taskEditorHost={!!module.roleId&&editorHosts.get(module.roleId)===module.id} ctx={ctx} pageId={pageId} t={t} renderFactorySlot={renderFactorySlot}/>)}</div></>
 }

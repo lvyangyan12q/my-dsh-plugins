@@ -82,3 +82,10 @@ This release delivers installed registered modules and scalar recipes; it does n
 - AI generation now collapses after choosing/creating a draft and can be reopened without generating anything. Name/version and page-name/layout use compact responsive columns; save and step navigation share a sticky bottom bar.
 - Formal 1280 x 720 Browser verification: editor height 849 px, application-name input starts at 468 px, bottom action bar remains at 635–696 px. AI panel expanded and collapsed correctly; no generation/save/activation request was performed. No literal svg text was found in the editor.
 - All three plugins rebuilt successfully and all 212 tests passed, including generation-to-edit-to-save-to-preview-to-activation and recipe step behavior.
+
+### Worktable-inspired templates (2026-10-03)
+
+- Three illustrated generic layout starters and a separate installed-template catalogue replace the undifferentiated template buttons. The existing recipe workflow remains authoritative.
+- Browser confirmed choosing list/detail creates a split draft with filter/list/detail and empty data/role bindings; no draft was saved or activated.
+- Builtin display modules share scoped cards, form controls, statistics and detail styles; the existing reading application's record selection still updates the detail module.
+- Reference and implementation boundaries: [worktable-template-reference.md](worktable-template-reference.md).

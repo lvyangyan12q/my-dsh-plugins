@@ -45,5 +45,20 @@ export const recipeEditorStyles = `
 .pwb-recipe-page-form>label{margin:4px 0!important}
 .pwb-recipe-navigation{position:sticky;bottom:0;z-index:1;margin:12px -20px -16px;padding:12px 20px;background:var(--pwb-paper,#fdfcf9);border-radius:0 0 10px 10px;box-shadow:0 -4px 10px #00000008}
 @media(max-width:700px){.pwb-recipe-editor>fieldset.pwb-recipe-basics,.pwb-recipe-editor>fieldset .pwb-recipe-page-form{grid-template-columns:minmax(0,1fr)}.pwb-recipe-basics>.pwb-recipe-description{grid-row:auto}.pwb-recipe-navigation{margin-left:-12px;margin-right:-12px;margin-bottom:-12px;padding:10px 12px}.pwb-recipe-navigation span{flex-basis:100%;order:4}}
+.pwb-starter-picker,.pwb-plugin-templates{margin:16px 0}
+.pwb-starter-picker h3,.pwb-plugin-templates h3{font-size:13px;font-weight:600;margin:0 0 6px}
+.pwb-starter-picker>p{font-size:12px;color:var(--pwb-muted);margin:0 0 12px}
+.pwb-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.pwb-template-grid button[data-pwb-button]{display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:12px!important;white-space:normal;min-width:0}
+.pwb-template-grid button[aria-pressed=true]{border-color:var(--pwb-accent)!important;background:var(--pwb-accent-soft)!important}
+.pwb-template-grid strong{font-size:13px;font-weight:600}
+.pwb-template-grid small{font-size:12px;line-height:1.5;color:var(--pwb-muted);font-weight:400}
+.pwb-layout-thumbnail{display:grid;gap:4px;height:64px;padding:6px;border:1px solid var(--pwb-line);border-radius:5px;background:var(--pwb-canvas)}
+.pwb-layout-thumbnail>span{min-width:0;border:1px solid var(--pwb-line);border-radius:3px;background:var(--pwb-paper)}
+.pwb-layout-thumbnail[data-layout=grid]{grid-template-columns:1fr 1fr}
+.pwb-layout-thumbnail[data-layout=split]{grid-template-columns:1fr 1.5fr}
+.pwb-layout-thumbnail[data-layout=stack]{grid-template-rows:repeat(3,1fr)}
+.pwb-template-switch{margin:10px 0;font-size:12px;color:var(--pwb-muted)}
+.pwb-template-switch summary{cursor:pointer;margin-bottom:8px}
 @media(max-width:700px){.pwb-recipe-editor{padding:12px}.pwb-generation-editor{padding:12px}.pwb-recipe-toolbar select{max-width:none;flex-basis:100%}}
 `
