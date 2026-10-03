@@ -1,3 +1,4 @@
+import {sidebarCoexistenceStyles} from './sidebar-coexistence-styles.ts'
 import { RecipeEditor } from './recipe-editor.tsx'
 import { useEffect, useRef, useState } from 'react'
 import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, ChevronDown, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search } from 'lucide-react'
@@ -42,11 +43,11 @@ export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkil
     minHeight: 40, padding: wide ? '8px 10px' : '8px 0', justifyContent: wide ? 'flex-start' : 'center',
     border: 0, borderRadius: 8, background: 'transparent', color: 'inherit', fontSize: 14, textAlign: 'left', cursor: 'pointer' }
   const label: React.CSSProperties = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
-  return <nav aria-label={t('catalogTabs')} style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0,
+  return <><style>{sidebarCoexistenceStyles}</style><nav className="pwb-sidebar-navigation" aria-label={t('catalogTabs')} style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0,
     gap: 3, paddingTop: 8, paddingBottom: 8, borderTop: '1px solid var(--dsw-alias-border-default)' }}>
     <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
       <button data-pwb-button type="button" title={t('workspace')} aria-label={t('workspace')} onClick={() => openWorkspace()} style={row}>
-        <LayoutGrid size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('workspace')}</span>}
+        <LayoutGrid size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('workspace')}<small className="pwb-sidebar-origin">{t('sidebarPlatformOrigin')}</small></span>}
       </button>
       {wide && <button data-pwb-button type="button" aria-label={t('applications')} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}
         style={{ flexShrink: 0, border: 0, background: 'transparent', color: 'inherit', padding: 8, cursor: 'pointer' }}>
@@ -64,7 +65,7 @@ export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkil
     <button data-pwb-button type="button" title={t('skills')} aria-label={t('skills')} onClick={openSkills} style={row}>
       <Sparkles size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('skills')}</span>}
     </button>
-  </nav>
+  </nav></>
 }
 
 
