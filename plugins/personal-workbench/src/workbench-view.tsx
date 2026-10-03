@@ -45,23 +45,23 @@ export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkil
   return <nav aria-label={t('catalogTabs')} style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0,
     gap: 3, paddingTop: 8, paddingBottom: 8, borderTop: '1px solid var(--dsw-alias-border-default)' }}>
     <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-      <button type="button" title={t('workspace')} aria-label={t('workspace')} onClick={() => openWorkspace()} style={row}>
+      <button data-pwb-button type="button" title={t('workspace')} aria-label={t('workspace')} onClick={() => openWorkspace()} style={row}>
         <LayoutGrid size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('workspace')}</span>}
       </button>
-      {wide && <button type="button" aria-label={t('applications')} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}
+      {wide && <button data-pwb-button type="button" aria-label={t('applications')} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}
         style={{ flexShrink: 0, border: 0, background: 'transparent', color: 'inherit', padding: 8, cursor: 'pointer' }}>
         <ChevronDown size={16} style={{ transform: expanded ? undefined : 'rotate(-90deg)' }} aria-hidden="true" />
       </button>}
     </div>
     {wide && expanded && <ul aria-label={t('applications')} style={{ listStyle: 'none', padding: '0 0 4px 19px', margin: 0,
       borderLeft: '1px solid var(--dsw-alias-border-default)', marginLeft: 18 }}>
-      {apps.map(app => <li key={app.id}><button type="button" title={app.name} aria-label={app.name} onClick={() => openApp(app.id)}
+      {apps.map(app => <li key={app.id}><button data-pwb-button type="button" title={app.name} aria-label={app.name} onClick={() => openApp(app.id)}
         style={{ ...row, minHeight: 36, fontSize: 13 }}><AppIcon icon={app.icon} /><span style={label}>{app.name}</span></button></li>)}
     </ul>}
-    <button type="button" title={t('agents')} aria-label={t('agents')} onClick={openAgents} style={row}>
+    <button data-pwb-button type="button" title={t('agents')} aria-label={t('agents')} onClick={openAgents} style={row}>
       <Bot size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('agents')}</span>}
     </button>
-    <button type="button" title={t('skills')} aria-label={t('skills')} onClick={openSkills} style={row}>
+    <button data-pwb-button type="button" title={t('skills')} aria-label={t('skills')} onClick={openSkills} style={row}>
       <Sparkles size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('skills')}</span>}
     </button>
   </nav>
@@ -124,27 +124,27 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     }}>
     <style>{workspaceStyles}</style>
     <header className="pwb-top"><LayoutGrid size={18} aria-hidden="true" /><strong>{app?.name ?? t('workspace')}</strong>
-      <button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
+      <button data-pwb-button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
-    {state.lifecycleError && <div role="alert">{t(state.lifecycleError.includes('Application disabled') ? 'appDisabledNotice' : 'appAvailabilityUnavailable')}<button type="button" onClick={()=>{void refreshApps?.()}}>{t('refreshApps')}</button></div>}
+    {state.lifecycleError && <div role="alert">{t(state.lifecycleError.includes('Application disabled') ? 'appDisabledNotice' : 'appAvailabilityUnavailable')}<button data-pwb-button type="button" onClick={()=>{void refreshApps?.()}}>{t('refreshApps')}</button></div>}
     {!state.lifecycleReady && !state.lifecycleError && <p role="status">{t('appsLoading')}</p>}
     {availabilityError && <p role="alert">{t(availabilityError.includes('changed; refresh') ? 'appAvailabilityConflict' : 'appUpdateFailed')}</p>}
     {state.storageFailed && <p role="status" className="pwb-notice">{t('storageFailed')}</p>}
     <section className="pwb-app-home" hidden={!!focused} aria-label={t('applications')}>
-      {refreshApps && <button type="button" onClick={()=>{void refreshApps()}}>{t('refreshApps')}</button>}
+      {refreshApps && <button data-pwb-button type="button" onClick={()=>{void refreshApps()}}>{t('refreshApps')}</button>}
       {refreshRecipes && <RecipeEditor t={t} refresh={refreshRecipes} />}
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />{t('showHidden')}</label>
       <div className="pwb-app-grid">{apps.map(row => <section key={row.id} className="pwb-app">
-        <button type="button" className="pwb-open" disabled={!state.lifecycleReady || state.lifecycle[row.id]?.enabled===false} onClick={() => openApp(row.id)}><AppIcon icon={row.icon} /><span>{row.name}</span></button>
+        <button data-pwb-button type="button" className="pwb-open" disabled={!state.lifecycleReady || state.lifecycle[row.id]?.enabled===false} onClick={() => openApp(row.id)}><AppIcon icon={row.icon} /><span>{row.name}</span></button>
         <div className="pwb-meta">{row.source} · {row.version} · {t(state.lifecycle[row.id]?.enabled===false?'appDisabled':'appEnabled')}</div>
         <details><summary>{t('appConfiguration')}</summary><p>{t('appIdentity')}: {row.id}</p><p>{t('pages')}: {row.pages.map(page=>page.label).join(', ')}</p><p>{t('appRoles')}: {row.roles?.map(role=>role.name).join(', ')||t('appNone')}</p><p>{t('appDependencies')}: {row.dependencies?.map(dep=>dep.id+(dep.available?'':' — '+dep.reason)).join(', ')||t('appNone')}</p></details>
-        {setAppEnabled && <button type="button" disabled={!state.lifecycleReady || pendingApp!==null} onClick={async()=>{
+        {setAppEnabled && <button data-pwb-button type="button" disabled={!state.lifecycleReady || pendingApp!==null} onClick={async()=>{
           setPendingApp(row.id);setAvailabilityError(null)
           try {await setAppEnabled(row.id,state.lifecycle[row.id]?.enabled===false)} catch(error) {setAvailabilityError(error instanceof Error?error.message:'Application availability update failed')} finally {setPendingApp(null)}
         }}>{t(state.lifecycle[row.id]?.enabled===false?'enableApp':'disableApp')}: {row.name}</button>}
-        <div className="pwb-app-tools"><button type="button" aria-label={t('favorite') + ': ' + row.name} aria-pressed={state.apps[row.id]?.favorite ?? false} onClick={() => setPreference(row.id, { favorite: !state.apps[row.id]?.favorite })}><Star size={15} /></button>
-          <button type="button" aria-label={t(state.apps[row.id]?.hidden ? 'showApp' : 'hideApp') + ': ' + row.name} onClick={() => setPreference(row.id, { hidden: !state.apps[row.id]?.hidden })}><EyeOff size={15} /></button></div>
+        <div className="pwb-app-tools"><button data-pwb-button type="button" aria-label={t('favorite') + ': ' + row.name} aria-pressed={state.apps[row.id]?.favorite ?? false} onClick={() => setPreference(row.id, { favorite: !state.apps[row.id]?.favorite })}><Star size={15} /></button>
+          <button data-pwb-button type="button" aria-label={t(state.apps[row.id]?.hidden ? 'showApp' : 'hideApp') + ': ' + row.name} onClick={() => setPreference(row.id, { hidden: !state.apps[row.id]?.hidden })}><EyeOff size={15} /></button></div>
       </section>)}</div>
       {!apps.length && <p role="status" className="pwb-empty">{t(state.definitions.length ? 'noMatches' : 'noApps')}</p>}
     </section>
@@ -153,7 +153,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
       const key = windowKey(row.appId, row.instanceId)
       const active = state.lifecycleReady && state.lifecycle[row.appId]?.enabled !== false && state.visible && state.focused === key && row.mode !== 'closed' && row.mode !== 'minimized'
       return <div key={key} ref={element => { if (element) frames.current.set(key, element); else frames.current.delete(key) }} role="region" aria-label={definition.name + ' · ' + row.instanceId} tabIndex={-1} hidden={!active} className="pwb-project">
-        <nav className="pwb-pages" role="tablist" aria-label={t('pages')}>{definition.pages.map(page => <button key={page.id} type="button" role="tab" aria-selected={row.pageId === page.id} onClick={() => selectPage(key, page.id)}>{page.label}</button>)}</nav>
+        <nav className="pwb-pages" role="tablist" aria-label={t('pages')}>{definition.pages.map(page => <button data-pwb-button key={page.id} type="button" role="tab" aria-selected={row.pageId === page.id} onClick={() => selectPage(key, page.id)}>{page.label}</button>)}</nav>
         <div className="pwb-content">{renderSlot('personal-workbench.app', { appId: row.appId, instanceId: row.instanceId, pageId: row.pageId, active, selectPage: pageId => selectPage(key, pageId), close: () => { setMode(key, 'closed'); closeWorkspace() } }, { entryKey: row.appId, fallback: <p role="alert">{t('appViewUnavailable')}</p> })}</div>
       </div>
     })}
@@ -172,7 +172,7 @@ export function ManagementPanel({ useNavigation, useWorkbench, close, management
   return <div ref={root} className="pwb-workspace pwb-project-shell pwb-independent-management" style={bounds} role="region" aria-label={panel ? t(panel) : t('catalogTabs')} tabIndex={-1} hidden={!panel}
     onKeyDown={e => { if (e.key === 'Escape' && e.target === root.current) close() }}>
     <style>{workspaceStyles}</style>
-    <header className="pwb-top"><strong>{panel ? t(panel) : t('catalogTabs')}</strong><button type="button" aria-label={t('close')} onClick={close}><X size={18} /></button></header>
+    <header className="pwb-top"><strong>{panel ? t(panel) : t('catalogTabs')}</strong><button data-pwb-button type="button" aria-label={t('close')} onClick={close}><X size={18} /></button></header>
     {(['agents','skills'] as const).map(tab => <div key={tab} hidden={panel !== tab} className="pwb-management-page">
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchCatalog')} placeholder={t('searchCatalog')} value={queries[tab]} onChange={e => setQueries(value => ({ ...value, [tab]: e.target.value }))} /></label>
       <ManagementCatalogView tab={tab} active={panel === tab} apps={apps} query={queries[tab]} commands={management ?? {}} t={t} />

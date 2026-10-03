@@ -11,6 +11,7 @@ const bridge = join(run, 'client-source-bridge.ts')
 await writeFile(bridge, [
   `export { PreparedTaskEditor } from ${JSON.stringify('../../plugins/personal-workbench/src/task-view.tsx')}`,
   `export { DisplayModule, DisplayModules } from ${JSON.stringify('../../plugins/personal-workbench/src/display-view.tsx')}`,
+  `export { controlStyles } from ${JSON.stringify('../../plugins/personal-workbench/src/control-styles.ts')}`,
   `export { DisplayStore } from ${JSON.stringify('../../plugins/personal-workbench/src/display-store.ts')}`,
 ].join('\n'))
 const config = join(run, 'tsconfig.json')

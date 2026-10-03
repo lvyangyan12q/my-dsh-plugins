@@ -68,9 +68,9 @@ export type ModuleSummary = {
 const colors = {
   ink: '#202124',
   muted: '#6b7280',
-  line: '#e5e7eb',
-  blue: '#2563eb',
-  blueSoft: '#eff6ff',
+  line: '#d7d0c5',
+  blue: '#a44c32',
+  blueSoft: '#f3e5dc',
   red: '#dc2626',
   green: '#15803d',
 }
@@ -390,8 +390,8 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                 <div style={{ color: colors.muted, fontSize: 14 }}>今天 {data?.today ?? '加载中'} · 聚焦行测与申论</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" onClick={() => { void refresh() }} disabled={loading} style={buttonStyle(false)}>{loading ? '刷新中' : '刷新'}</button>
-                {onClose && <button type="button" onClick={onClose} aria-label="关闭看板" style={buttonStyle(true)}>关闭</button>}
+                <button data-pwb-button type="button" onClick={() => { void refresh() }} disabled={loading} style={buttonStyle(false)}>{loading ? '刷新中' : '刷新'}</button>
+                {onClose && <button data-pwb-button type="button" onClick={onClose} aria-label="关闭看板" style={buttonStyle(true)}>关闭</button>}
               </div>
             </header>}
             {notice && <div style={{ ...sectionStyle, marginBottom: 14, color: colors.blue, borderColor: '#bfdbfe', background: '#f8fbff' }}>{notice}</div>}
@@ -405,16 +405,16 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                 <Metric label="距离考试" value={`${data.daysToExam}`} suffix="天" accent={colors.blue} />
                 <Metric label="计划完成" value={pct(data.pastDonePct)} suffix={`${data.pastDone}/${data.pastDays} 天`} accent={colors.green} />
                 <Metric label="做题正确率" value={pct(data.accuracyRate)} suffix={`${data.totalQuestions} 题`} accent={colors.red} />
-                <Metric label="知识库" value={`${data.knowledgeTotal}`} suffix={`讲义/笔记 · 题库 ${data.bankTotal}`} accent="#7c3aed" />
+                <Metric label="知识库" value={`${data.knowledgeTotal}`} suffix={`讲义/笔记 · 题库 ${data.bankTotal}`} accent={colors.muted} />
               </section>
               <section hidden={!shown('practice')} style={{ ...sectionStyle, marginBottom: 18 }}>
                 <SectionTitle title="模块练习" extra="每组 10 题 · 可循环练习" />
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 12 }}><button disabled={practiceBusy} onClick={() => { void readHistory() }} style={smallButton}>练习历史</button>{history.length > 0 && <select aria-label="练习历史" value={practice?.roundId ?? ''} disabled={practiceBusy} onChange={event => { if (event.target.value) void readHistory(event.target.value) }} style={{ maxWidth: '100%' }}><option value="">选择轮次</option>{history.map(row => <option key={row.roundId} value={row.roundId}>{row.createdAt.slice(0, 19)} · {row.context.subject} · {row.submitted ? '已提交' : '未提交'}</option>)}</select>}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 12 }}><button data-pwb-button disabled={practiceBusy} onClick={() => { void readHistory() }} style={smallButton}>练习历史</button>{history.length > 0 && <select aria-label="练习历史" value={practice?.roundId ?? ''} disabled={practiceBusy} onChange={event => { if (event.target.value) void readHistory(event.target.value) }} style={{ maxWidth: '100%' }}><option value="">选择轮次</option>{history.map(row => <option key={row.roundId} value={row.roundId}>{row.createdAt.slice(0, 19)} · {row.context.subject} · {row.submitted ? '已提交' : '未提交'}</option>)}</select>}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10, paddingTop: 14 }}>
                   {data.modules.map(module => <article key={module.subject} style={{ padding: 13, border: `1px solid ${colors.line}`, borderRadius: 7, background: '#fff' }}>
                     <strong style={{ display: 'block', fontSize: 14 }}>{module.subject}</strong>
                     <div style={{ margin: '7px 0 12px', color: colors.muted, fontSize: 12 }}>题库 {module.availableCount} 题 · 已练 {module.practicedCount} 题{module.practicedCount > 0 ? ` · 正确率 ${pct(module.accuracyRate)}` : ''}</div>
-                    <button type="button" disabled={practiceBusy || submitting || module.availableCount === 0} onClick={() => { startModulePractice(module.subject) }} style={{ ...smallButton, opacity: module.availableCount === 0 ? .45 : 1, cursor: module.availableCount === 0 ? 'not-allowed' : 'pointer' }}>{module.availableCount === 0 ? '暂无题目' : '开始 10 题练习'}</button>
+                    <button data-pwb-button type="button" disabled={practiceBusy || submitting || module.availableCount === 0} onClick={() => { startModulePractice(module.subject) }} style={{ ...smallButton, opacity: module.availableCount === 0 ? .45 : 1, cursor: module.availableCount === 0 ? 'not-allowed' : 'pointer' }}>{module.availableCount === 0 ? '暂无题目' : '开始 10 题练习'}</button>
                   </article>)}
                 </div>
               </section>
@@ -425,7 +425,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                   {data.todayPlan.items.map((item, index) => <div key={`${item.subject}-${item.title}-${index}`} style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 10, padding: '13px 0', borderBottom: index === data.todayPlan.items.length - 1 ? 0 : `1px solid ${colors.line}` }}>
                     <input type="checkbox" checked={item.done} onChange={event => { void toggleItem(index, event.target.checked) }} aria-label={`完成 ${item.title}`} style={{ accentColor: colors.blue }} />
                     <span style={{ minWidth: 0, textDecoration: item.done ? 'line-through' : 'none', opacity: item.done ? .55 : 1 }}><strong style={{ display: 'block', fontSize: 14 }}>{item.title}</strong><small style={{ color: colors.muted }}>{item.subject} · {item.kind}</small></span>
-                    <span style={{ display: 'flex', gap: 6 }}><button type="button" onClick={() => { void openTeacher({ subject: item.subject, title: topicOf(item), limit: 10, planIndex: index }) }} style={smallButton}>讲解</button><button type="button" onClick={() => { startPlanPractice(item, index) }} style={smallButton}>练习</button></span>
+                    <span style={{ display: 'flex', gap: 6 }}><button data-pwb-button type="button" onClick={() => { void openTeacher({ subject: item.subject, title: topicOf(item), limit: 10, planIndex: index }) }} style={smallButton}>讲解</button><button data-pwb-button type="button" onClick={() => { startPlanPractice(item, index) }} style={smallButton}>练习</button></span>
                   </div>)}
                 </section>
                 <section hidden={!shown('errors')} style={sectionStyle}>
@@ -439,23 +439,23 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                 {practice === null && result === null && <p style={{ margin: '16px 0 0', color: colors.muted }}>正在准备题目...</p>}
                 {practice !== null && result === null && <div style={{ paddingTop: 14 }}>
                   <p style={{ margin: '0 0 14px', color: colors.muted, fontSize: 13 }}>{practice.reason}{practice.cycled ? ' · 已完成一轮，当前开始循环抽题' : ''} · {practice.returned}/{practice.totalAvailable} 题</p>
-                  {practice.questions.length === 0 && <button type="button" onClick={() => { void openTeacher(practiceItem) }} style={buttonStyle(true)}>让老师出题</button>}
+                  {practice.questions.length === 0 && <button data-pwb-button data-variant="primary" type="button" onClick={() => { void openTeacher(practiceItem) }} style={buttonStyle(true)}>让老师出题</button>}
                   {practice.questions.map((question, index) => <article key={question.id} style={{ padding: '14px 0', borderBottom: `1px solid ${colors.line}` }}>
                     <div style={{ color: colors.muted, fontSize: 12 }}>第 {index + 1} 题 · {question.knowledgePoint} · {question.difficulty}</div>
                     <div style={{ color: colors.muted, fontSize: 12, overflowWrap: 'anywhere' }}>{question.id} · {question.source}</div>
                     <div style={{ margin: '8px 0', lineHeight: 1.65, overflowWrap: 'anywhere' }}>{question.subject === '行测-资料分析' ? <DocumentMarkdown content={question.stem} /> : renderStem(question.stem)}</div>
                     <div style={{ display: 'grid', gap: 6 }}>{question.options.map(option => <label key={option} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', border: `1px solid ${answers[question.id] === optionValue(option) ? '#93c5fd' : colors.line}`, borderRadius: 6, cursor: 'pointer', background: answers[question.id] === optionValue(option) ? colors.blueSoft : '#fff' }}><input type="radio" name={question.id} checked={answers[question.id] === optionValue(option)} onChange={() => setAnswers(previous => ({ ...previous, [question.id]: optionValue(option) }))} /><span>{option}</span></label>)}</div>
                   </article>)}
-                  {practice.questions.length > 0 && <button type="button" disabled={submitting} onClick={() => { void submitPractice() }} style={{ ...buttonStyle(true), marginTop: 16 }}>提交判分</button>}
+                  {practice.questions.length > 0 && <button data-pwb-button data-variant="primary" type="button" disabled={submitting} onClick={() => { void submitPractice() }} style={{ ...buttonStyle(true), marginTop: 16 }}>提交判分</button>}
                 </div>}
                 {result && <div style={{ paddingTop: 14 }}>
                   {result.results.map(entry => <details key={`material-${entry.id}`} style={{ margin: '12px 0', overflowWrap: 'anywhere' }}><summary>{entry.id} · 作答：{entry.userAnswer || '未作答'} · {entry.source}</summary><DocumentMarkdown content={entry.stem} />{entry.options.map(option => <div key={option}>{option}</div>)}<p>正确答案：{entry.correctAnswer}。{entry.explanation}</p></details>)}
-                  {result.projection === 'pending' && <p role="status">成绩已保存，错题本同步待恢复。<button onClick={() => { void practiceRequest<PracticeData>('read', { roundId: result.roundId }).then(value => setResult(value.result)).catch(cause => setError(String(cause))) }}>重试同步</button></p>}
+                  {result.projection === 'pending' && <p role="status">成绩已保存，错题本同步待恢复。<button data-pwb-button onClick={() => { void practiceRequest<PracticeData>('read', { roundId: result.roundId }).then(value => setResult(value.result)).catch(cause => setError(String(cause))) }}>重试同步</button></p>}
                   {result.review === 'sending' && <p role="status">{admitted.includes(result.roundId) ? '讲评已发送，完成状态待同步。' : '讲评已保留发送位置；请在辅导员待发送区发送或重试，刷新后需核实原会话。'}</p>}
-                  {admitted.includes(result.roundId) && result.review !== 'sent' && <button onClick={() => { void completeReview(result.roundId).catch(() => {}) }}>同步讲评完成状态</button>}
+                  {admitted.includes(result.roundId) && result.review !== 'sent' && <button data-pwb-button onClick={() => { void completeReview(result.roundId).catch(() => {}) }}>同步讲评完成状态</button>}
                   <div style={{ padding: 12, borderRadius: 6, background: result.accuracyRate >= .8 ? '#f0fdf4' : '#fff7ed', color: result.accuracyRate >= .8 ? colors.green : '#9a3412' }}><strong>{result.correctCount}/{result.totalCount} 题正确，正确率 {pct(result.accuracyRate)}</strong></div>
                   {result.results.map(entry => <div key={entry.id} style={{ padding: '12px 0', borderBottom: `1px solid ${colors.line}` }}><strong style={{ color: entry.correct ? colors.green : colors.red }}>{entry.correct ? '正确' : '需要复盘'} · {entry.knowledgePoint}</strong>{!entry.correct && <><p style={{ margin: '5px 0 0', color: colors.muted, fontSize: 13, lineHeight: 1.6 }}>正确答案：{entry.correctAnswer}{entry.explanation ? `。${entry.explanation}` : ''}</p><select aria-label={`选择 ${entry.knowledgePoint} 的错误原因`} value={errorReasonsByQuestion[entry.id] ?? ''} onChange={event => setErrorReasonsByQuestion(previous => ({ ...previous, [entry.id]: event.target.value }))} style={{ marginTop: 8, minHeight: 30, border: `1px solid ${colors.line}`, borderRadius: 5, color: colors.ink }}><option value="">选择错误原因</option>{errorReasons.map(reason => <option key={reason} value={reason}>{reason}</option>)}</select><textarea aria-label={`反思 ${entry.knowledgePoint}`} value={reflectionNotes[entry.id] ?? ''} onChange={event => setReflectionNotes(previous => ({ ...previous, [entry.id]: event.target.value }))} style={{ display: 'block', width: '100%', boxSizing: 'border-box', minHeight: 64, marginTop: 8 }} /></>}</div>)}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}><button type="button" disabled={practiceBusy || result.review !== 'ready' || admitted.includes(result.roundId)} onClick={() => { void openTeacher(practiceItem, result) }} style={buttonStyle(true)}>{result.review === 'sent' ? '已交辅导员' : result.review === 'sending' ? '讲评发送待核实' : '辅导员讲评'}</button><button type="button" disabled={practiceBusy} onClick={() => { void saveReflection() }} style={buttonStyle(false)}>保存错因并总结</button><button type="button" disabled={practiceBusy} onClick={repeatPractice} style={buttonStyle(false)}>再来 {practiceItem.limit} 题</button>{practiceItem.planIndex !== undefined && <button type="button" onClick={() => { void toggleItem(practiceItem.planIndex!, true) }} style={buttonStyle(false)}>完成任务</button>}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}><button data-pwb-button data-variant="primary" type="button" disabled={practiceBusy || result.review !== 'ready' || admitted.includes(result.roundId)} onClick={() => { void openTeacher(practiceItem, result) }} style={buttonStyle(true)}>{result.review === 'sent' ? '已交辅导员' : result.review === 'sending' ? '讲评发送待核实' : '辅导员讲评'}</button><button data-pwb-button type="button" disabled={practiceBusy} onClick={() => { void saveReflection() }} style={buttonStyle(false)}>保存错因并总结</button><button data-pwb-button type="button" disabled={practiceBusy} onClick={repeatPractice} style={buttonStyle(false)}>再来 {practiceItem.limit} 题</button>{practiceItem.planIndex !== undefined && <button data-pwb-button type="button" onClick={() => { void toggleItem(practiceItem.planIndex!, true) }} style={buttonStyle(false)}>完成任务</button>}</div>
                   {moduleSummary && <div style={{ marginTop: 16, padding: 14, border: `1px solid #bfdbfe`, borderRadius: 7, background: '#f8fbff' }}><strong>本模块错题归纳</strong><div style={{ marginTop: 7, color: colors.muted, fontSize: 13 }}>累计 {moduleSummary.totalQuestions} 题，做错 {moduleSummary.totalWrong} 题，正确率 {pct(moduleSummary.accuracyRate)}</div>{moduleSummary.weakPoints.length > 0 && <div style={{ marginTop: 10 }}>{moduleSummary.weakPoints.map(point => <div key={point.knowledgePoint} style={{ marginTop: 7, fontSize: 13 }}><strong>{point.knowledgePoint}</strong>：错 {point.wrongCount}/{point.totalCount}，主要错因 {point.topReasons.join('、')}。{point.suggestion}</div>)}</div>}</div>}
                 </div>}
               </section>}

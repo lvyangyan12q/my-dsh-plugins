@@ -53,7 +53,7 @@ function KnowledgeModules({ active, store }: { active: boolean; store: DisplaySt
     <DisplayModule type="filter" store={store} t={t} />
     <DisplayModule type="stats" store={store} t={t} />
     <DisplayModule type="list" store={store} t={t} />
-    {state.selectedId && <button type="button" onClick={store.clearSelection}>返回资料列表</button>}
+    {state.selectedId && <button data-pwb-button type="button" onClick={store.clearSelection}>返回资料列表</button>}
     <DisplayModule type="detail" store={store} t={t} renderDetail={record => {
       const entry = entryOf(record)
       return <article><h3>{entry.title}</h3><p>{entry.subject} · {entry.kind} · {entry.source}</p><DocumentMarkdown content={entry.content} /></article>

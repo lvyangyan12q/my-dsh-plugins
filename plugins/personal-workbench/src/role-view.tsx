@@ -24,11 +24,11 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: '1px solid #ddd', fontSize: 12 }}>
       <strong>{label ?? bindingKey.subject ?? bindingKey.roleId}</strong><span style={{ flex: 1 }} />
       {status?.running && <span role="status">运行中</span>}{status?.pendingInteraction && <span role="status">待处理：{status.pendingInteraction.kind}</span>}{status?.completionUnread && <span role="status">未读完成</span>}
-      {!state.binding && !state.error && window.phase !== 'error' && <button disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}>创建{label ?? '角色会话'}</button>}
-      {(state.error || window.phase === 'error' || state.binding?.phase === 'intent') && <button disabled={state.busy} onClick={retry}><RefreshCw size={14} /> 重试</button>}
+      {!state.binding && !state.error && window.phase !== 'error' && <button data-pwb-button data-variant="primary" disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}>创建{label ?? '角色会话'}</button>}
+      {(state.error || window.phase === 'error' || state.binding?.phase === 'intent') && <button data-pwb-button disabled={state.busy} onClick={retry}><RefreshCw size={14} /> 重试</button>}
       {state.binding && <details style={{ position: 'relative' }}><summary aria-label="角色会话更多操作" style={{ cursor: 'pointer' }}>更多</summary><div style={{ position: 'absolute', right: 0, top: 24, zIndex: 2, minWidth: 180, padding: 10, background: 'var(--dsw-alias-bg-base, #fff)', border: '1px solid #ddd', borderRadius: 6 }}>
         <p style={{ overflowWrap: 'anywhere', margin: '0 0 8px' }}>会话：{state.binding.sessionId}</p>
-        <button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
+        <button data-pwb-button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
       </div></details>}
     </header>
     {state.busy && <p role="status">正在连接角色会话…</p>}

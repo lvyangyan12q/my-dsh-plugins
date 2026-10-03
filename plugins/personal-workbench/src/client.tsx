@@ -179,3 +179,5 @@ export type { PersonalWorkbenchTasks, PreparedTask, TaskContext, TaskState } fro
 
 export { registerRecipeModuleContextProvider } from './module-context.ts'
 export type { RecipeModuleContext, RecipeModuleContextProvider } from './module-context.ts'
+
+export { controlStyles } from './control-styles.ts'
