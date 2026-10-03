@@ -8,11 +8,14 @@ import {createRequire} from 'node:module'
 import {Readable} from 'node:stream'
 import {installGeneration} from '../src/generation-host.ts'
 import {installRecipes} from '../src/recipe-host.ts'
+import {recipeHostDependencies} from '../src/recipe-api.ts'
+import {generationHostDependencies} from '../src/generation-api.ts'
 const source=process.env.DSH_SOURCE;assert.ok(source)
 const require=createRequire(resolve(source,'packages/client/ui-renderer/package.json'));const {Context}=require('@deepseek-ai/cordis')
 const built=p=>import(pathToFileURL(resolve(source,p,'lib/index.js')).href)
 const {MockAdapter,textResponse,maxTokensResponse}=await import(pathToFileURL(resolve(source,'packages/core/agent-loop/tests/mock-adapter.ts')).href)
 const {default:LLM,ToolCallId}=await built('packages/llm/llm'),{default:Sessions}=await built('packages/core/session'),{default:Projection}=await built('packages/session/session-projection'),{default:Prompt}=await built('packages/core/system-prompt'),{default:Tools}=await built('packages/core/tools'),{default:Agents}=await built('packages/core/agent'),{default:Loop}=await built('packages/core/agent-loop'),{default:Presets}=await built('packages/preset/agent-preset-registry'),{SkillRegistry}=await built('packages/skill/skill'),{default:SessionController}=await built('packages/api/session-controller')
+const {default:DefaultModel}=await built('packages/core/agent-default-model')
 const {default:Storage}=await built('packages/storage/storage'),{JsonStorageBackend}=await built('packages/storage/storage-json'),{DomainFacility}=await built('packages/storage/storage-domain')
 const Loader=(await import(pathToFileURL(createRequire(resolve(source,'packages/preset/agent-preset-registry/package.json')).resolve('@deepseek-ai/cordis-plugin-loader')).href)).default
 const Group=(await import(pathToFileURL(createRequire(resolve(source,'packages/preset/agent-preset-registry/package.json')).resolve('@deepseek-ai/cordis-plugin-group')).href)).default
@@ -28,9 +31,16 @@ async function fixture(script){
   ctx.provide('typert',{lookups:{configure:()=>()=>{}},contexts:{configureHost:()=>()=>{}}});ctx.provide('sessionQuery',{});ctx.provide('workspaceRegistry',{archivedSessionIds:[],get:()=>undefined});ctx.provide('attachments',{imageLimits:{maxImageBytes:1,maxImagesPerMessage:1,maxMessageImageBytes:1,maxImagePixels:1,maxImageDimension:1,mediaTypes:[]}});ctx.provide('fs',{});ctx.provide('fileUploads',{registerAgentResolver:()=>()=>{},resolve:()=>undefined})
   const selection={provider:'mock',model:'configured-model',reasoningEffort:'high'};let saves=0
   ctx.skills.register({name:'private-proof',description:'metadata',content:'private-skill-body',source:'runtime',invocation:{userInvocable:true,modelInvocable:true}})
-  ctx.provide('agentDefaultModel',{currentSelection:()=>({...selection}),saveSelection:async()=>{saves++}})
+  await ctx.plugin(DefaultModel,selection);ctx.agentDefaultModel.saveSelection=async()=>{saves++}
   await ctx.plugin(SessionController,{nativeOpen:false})
-  recipes=await installRecipes(ctx);generation=await installGeneration(ctx)
+  // The root Context deliberately has unrestricted access; production never installs owners there.
+  // Install through the exact declared child scopes so Cordis dependency enforcement remains active.
+  let recipeScope,generationScope
+  await ctx.plugin({name:'strict-recipe-owner',inject:recipeHostDependencies,apply:async child=>{recipeScope=child;recipes=await installRecipes(child)}})
+  assert.throws(()=>recipeScope.agentDefaultModel,/without inject/,'default model is also a real plugin-owned service')
+  assert.throws(()=>recipeScope.tools,/without inject/,'this fixture must enforce undeclared property access')
+  await ctx.plugin({name:'strict-generation-owner',inject:generationHostDependencies,apply:async child=>{generationScope=child;generation=await installGeneration(child)}})
+  assert.throws(()=>generationScope.skills,/without inject/,'generation cannot silently borrow undeclared service access')
   const adapter=new MockAdapter(script,{efforts:[{id:'high',name:'High'}],defaultEffort:'high'});ctx.llm.registerAdapter(['mock'],adapter)
   let executions=0;const tool={name:'write_fixture',description:'must never execute',parameters:{type:'object',properties:{}},output:{schema:{type:'object'},render:()=>[]},execute:async()=>{executions++;return {content:[],isError:false}}};ctx.tools.register(tool)
   return {ctx,root,adapter,recipes,generation,tool,saves:()=>saves,executions:()=>executions,start:(version=1,expectedRevision=0)=>generation.dispatch({action:'start',requirement:'Create a reading dashboard',appId:'app.generated',version,expectedRevision}),close:async()=>{await generation.dispose();await recipes.dispose();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}}

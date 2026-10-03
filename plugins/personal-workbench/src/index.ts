@@ -2,6 +2,8 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import z from '@deepseek-ai/schemastery'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import {recipeHostDependencies} from './recipe-api.ts'
+import {generationHostDependencies} from './generation-api.ts'
 
 export type { RoleDefinition, RoleBindingKey, RoleBinding, PersonalWorkbenchBindings, TeachingEvidence } from './role-binding-api.ts'
 export type { ManagementCatalog, ManagedRole, ManagedSkill, SkillAssignment, ManagementRequest } from './management-api.ts'
@@ -18,10 +20,10 @@ export const Config: z<Config> = z.object({ teacherSessionId: z.string().default
 export function apply(ctx: Context, config: Config): void {
   let generationHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/generation',handler:(req,res)=>{if(generationHandler){void generationHandler(req,res);return};res.writeHead(503,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify({error:'Generation services unavailable'}))}}),'native generation route')
-  ctx.inject(['personalWorkbenchRecipes','sessionController','agentPresets','tools','connection'],child=>child.effect(async function*(){const {installGeneration}=await import('./generation-host.ts');const owner=await installGeneration(child);generationHandler=owner.handle;yield async()=>{generationHandler=undefined;await owner.dispose()}},'native application generation'))
+  ctx.inject(generationHostDependencies,child=>child.effect(async function*(){const {installGeneration}=await import('./generation-host.ts');const owner=await installGeneration(child);generationHandler=owner.handle;yield async()=>{generationHandler=undefined;await owner.dispose()}},'native application generation'))
   let recipeHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/recipes',handler:(req,res)=>{if(recipeHandler){void recipeHandler(req,res);return};res.writeHead(503,{'content-type':'application/json'});res.end(JSON.stringify({error:'Recipe services unavailable'}))}}),'recipe route')
-  ctx.inject(['storageDomain','connection'],child=>child.effect(async function*(){const {installRecipes}=await import('./recipe-host.ts');const owner=await installRecipes(child);recipeHandler=owner.handle;yield async()=>{recipeHandler=undefined;await owner.dispose()}},'durable recipes'))
+  ctx.inject(recipeHostDependencies,child=>child.effect(async function*(){const {installRecipes}=await import('./recipe-host.ts');const owner=await installRecipes(child);recipeHandler=owner.handle;yield async()=>{recipeHandler=undefined;await owner.dispose()}},'durable recipes'))
   ctx.inject(['storageDomain','personalWorkbenchRecipes','personalWorkbenchBindings','personalWorkbenchApps','agentPresets','skills','workspaceRegistry'],child=>child.effect(async function*(){const {installRecipeRoles}=await import('./recipe-role-host.ts');const owner=await installRecipeRoles(child);yield async()=>{await owner.dispose()}},'durable recipe role instances'))
   let appHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/personal-workbench/apps', handler: (req,res) => {

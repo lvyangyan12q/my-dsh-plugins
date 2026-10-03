@@ -7,3 +7,6 @@ export interface RecipeModuleDefinition { id: string; validate?: (module: Recipe
 export interface GenerationCatalog { layouts: string[]; modules: string[]; connections: {appId:string;resource:string}[]; roles: {presetId:string;skillNames:string[]}[] }
 export interface PersonalWorkbenchRecipes { generationCatalog(): Promise<GenerationCatalog>; saveGenerated(recipe: AppRecipe, expectedRevision: number, signal?: AbortSignal): Promise<RecipeRecord>; list(): RecipeRecord[]; save(recipe: AppRecipe, expectedRevision: number): Promise<RecipeRecord>; preview(appId: string, expectedRevision: number): Promise<AppRecipe>; activate(appId: string, expectedRevision: number): Promise<RecipeRecord>; reserveAppId(appId: string): () => void; registerModule(definition: RecipeModuleDefinition): () => void; registerDataSource(source: { appId: string; resource: string }): () => void }
 declare module '@deepseek-ai/cordis' { interface Context { personalWorkbenchRecipes: PersonalWorkbenchRecipes } }
+
+/** Includes catalogue readers captured by the recipe service closures. */
+export const recipeHostDependencies=['storageDomain','connection','agentPresets','skills']
