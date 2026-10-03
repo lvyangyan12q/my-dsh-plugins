@@ -1,5 +1,5 @@
 import type {Context} from '@deepseek-ai/cordis'
-import type {Agent} from '@deepseek-ai/dsh-agent'
+import {assembleContextFor,type Agent} from '@deepseek-ai/dsh-agent'
 import type {IncomingMessage,ServerResponse} from 'node:http'
 import {randomUUID} from 'node:crypto'
 import {z} from 'zod'
@@ -17,7 +17,12 @@ const requestSchema=z.discriminatedUnion('action',[
 export async function installGeneration(ctx:Context){
  const builtin='personal-workbench-generator-guard'
  if(ctx.loader.builtins[builtin])throw new Error('Generator guard identity already registered')
- const guardPlugin={inject:['tools'],apply:(scope:Context)=>{scope.tools.presentAs('native');scope.tools.restrict({allow:[]});scope.tools.guard(()=> 'Application generation does not permit tool execution')}}
+ const guardPlugin={inject:['tools','systemPrompt'],apply:(scope:Context)=>{
+  scope.tools.presentAs('native');scope.tools.restrict({allow:[]});scope.tools.guard(()=> 'Application generation does not permit tool execution')
+  // Team and Schedule hydrate Agent-own tools, which inherited restrictions deliberately exempt.
+  // Narrow only the model-facing assembly; keep native execution guards and policy unchanged.
+  scope.on('system-prompt/assemble',async(_assembly,_context,next)=>({...await next(),tools:[]}))
+ }}
  ctx.loader.builtins[builtin]=guardPlugin
  let removePreset:()=>Promise<void>
  try{removePreset=await ctx.agentPresets.register({id:presetId,name:'Application recipe generator',description:'Generate data-only recipe drafts',plugins:[{name:'cordis:'+builtin}]});const preset=await ctx.agentPresets.resolve(presetId);if(preset.broken){await removePreset();throw new Error('Generator preset unavailable: '+preset.broken)}}catch(error){delete ctx.loader.builtins[builtin];throw error}
@@ -32,8 +37,9 @@ export async function installGeneration(ctx:Context){
    const created=await ctx.sessionController.create({cwd:process.cwd(),agentPreset:presetId});view.sessionId=created.sessionId
    const resolved=await ctx.sessionController.resolveAgent(created.sessionId);if('error' in resolved)throw resolved.error;agent=resolved.agent
    controller.signal.throwIfAborted()
-   // Native restriction affects globals; the guard also covers scoped, late and nested execution.
-   const toolNames=agent.ctx.tools.schemas(agent).map(tool=>tool.name)
+   // Check the native model-facing surface after all hydrated scoped contributions.
+   const assembled=await agent.ctx.systemPrompt.assemble(assembleContextFor(agent,controller.signal))
+   const toolNames=assembled.tools.map(tool=>tool.name)
    if(toolNames.length)throw new Error('Generator tool inventory is not empty: '+toolNames.join(', '))
    const safeCatalog={...catalog,connections:catalog.connections.filter(source=>source.appId===input.appId)}
    const prompt=JSON.stringify({task:'Return exactly one JSON application recipe. Use only the supplied schema and registered catalog. No markdown, code, extra keys or tool calls. The identity and version must match target. Connections must belong to target.appId. If no data source exists, use no connections. Roles are optional.',target:{appId:input.appId,version:input.version},requirement:input.requirement,schema:z.toJSONSchema(recipeSchema),catalog:safeCatalog})

@@ -16,6 +16,12 @@ const built=p=>import(pathToFileURL(resolve(source,p,'lib/index.js')).href)
 const {MockAdapter,textResponse,maxTokensResponse}=await import(pathToFileURL(resolve(source,'packages/core/agent-loop/tests/mock-adapter.ts')).href)
 const {default:LLM,ToolCallId}=await built('packages/llm/llm'),{default:Sessions}=await built('packages/core/session'),{default:Projection}=await built('packages/session/session-projection'),{default:Prompt}=await built('packages/core/system-prompt'),{default:Tools}=await built('packages/core/tools'),{default:Agents}=await built('packages/core/agent'),{default:Loop}=await built('packages/core/agent-loop'),{default:Presets}=await built('packages/preset/agent-preset-registry'),{SkillRegistry}=await built('packages/skill/skill'),{default:SessionController}=await built('packages/api/session-controller')
 const {default:DefaultModel}=await built('packages/core/agent-default-model')
+const {assembleContextFor}=await built('packages/core/agent')
+const {default:JsonlPersistence}=await built('packages/session/session-persistence-jsonl')
+const {default:Subagents}=await built('packages/subagent/subagent')
+const {default:Teams}=await built('packages/experimental/agent-team')
+const TeamTools=await built('packages/experimental/tool-agent-team')
+const {default:Schedule}=await built('packages/schedule/schedule')
 const {default:Storage}=await built('packages/storage/storage'),{JsonStorageBackend}=await built('packages/storage/storage-json'),{DomainFacility}=await built('packages/storage/storage-domain')
 const Loader=(await import(pathToFileURL(createRequire(resolve(source,'packages/preset/agent-preset-registry/package.json')).resolve('@deepseek-ai/cordis-plugin-loader')).href)).default
 const Group=(await import(pathToFileURL(createRequire(resolve(source,'packages/preset/agent-preset-registry/package.json')).resolve('@deepseek-ai/cordis-plugin-group')).href)).default
@@ -25,14 +31,14 @@ async function fixture(script){
  const root=await mkdtemp(join(tmpdir(),'platform-generator-')),ctx=new Context();let recipes,generation
  try{
   ctx.baseUrl=pathToFileURL(resolve(import.meta.dirname,'../../../package.json')).href;await ctx.plugin(Loader);ctx.loader.builtins.group=Group
-  await ctx.plugin(LLM);await ctx.plugin(Sessions);await ctx.plugin(Projection);await ctx.plugin(Prompt,{personaPrefix:''});await ctx.plugin(Tools,{mode:'ptc'});await ctx.plugin(Agents);await ctx.plugin(Loop,{agents:[]});await ctx.plugin(SkillRegistry);await ctx.plugin(Presets,{default:'my-dsh.platform-generator'})
+  await ctx.plugin(LLM);await ctx.plugin(Sessions);await ctx.plugin(Projection);await ctx.plugin(JsonlPersistence,{root:join(root,'sessions'),compression:'none'});await ctx.plugin(Prompt,{personaPrefix:''});await ctx.plugin(Tools,{mode:'ptc'});await ctx.plugin(Agents);await ctx.plugin(Loop,{agents:[]});await ctx.plugin(SkillRegistry);await ctx.plugin(Presets,{default:'my-dsh.platform-generator'})
   await ctx.plugin(Storage);ctx.storage.backend.register('json',new JsonStorageBackend(root));const facility=new DomainFacility(ctx,{backend:'json',routes:{}});ctx.storage.mount('domain',facility)
   ctx.provide('storageDomain',facility);ctx.provide('connection',{requestRejection:()=>undefined});ctx.provide('personalWorkbenchCapabilities',{agents:()=>[],skill:()=>undefined})
   ctx.provide('typert',{lookups:{configure:()=>()=>{}},contexts:{configureHost:()=>()=>{}}});ctx.provide('sessionQuery',{});ctx.provide('workspaceRegistry',{archivedSessionIds:[],get:()=>undefined});ctx.provide('attachments',{imageLimits:{maxImageBytes:1,maxImagesPerMessage:1,maxMessageImageBytes:1,maxImagePixels:1,maxImageDimension:1,mediaTypes:[]}});ctx.provide('fs',{});ctx.provide('fileUploads',{registerAgentResolver:()=>()=>{},resolve:()=>undefined})
   const selection={provider:'mock',model:'configured-model',reasoningEffort:'high'};let saves=0
   ctx.skills.register({name:'private-proof',description:'metadata',content:'private-skill-body',source:'runtime',invocation:{userInvocable:true,modelInvocable:true}})
   await ctx.plugin(DefaultModel,selection);ctx.agentDefaultModel.saveSelection=async()=>{saves++}
-  await ctx.plugin(SessionController,{nativeOpen:false})
+  await ctx.plugin(SessionController,{nativeOpen:false});await ctx.plugin(Subagents);await ctx.plugin(Teams);await ctx.plugin(TeamTools);await ctx.plugin(Schedule)
   // The root Context deliberately has unrestricted access; production never installs owners there.
   // Install through the exact declared child scopes so Cordis dependency enforcement remains active.
   let recipeScope,generationScope
@@ -52,16 +58,18 @@ test('real native Session Controller uses configured model and effort, returns e
   await f.recipes.service.save(recipe(),0);await f.recipes.service.activate('app.generated',1);const running=JSON.stringify(f.recipes.service.list()[0].running)
   assert.equal(f.adapter.requests.length,0);const job=f.start(2,2),done=await f.generation.settled(job.id);assert.equal(done.status,'completed',done.error);assert.equal(done.record.revision,3);assert.equal(done.record.draft.version,2);assert.equal(JSON.stringify(done.record.running),running)
   assert.equal(f.adapter.requests.length,1);const request=f.adapter.requests[0];assert.equal(request.provider,'mock');assert.equal(request.model,'configured-model');assert.equal(request.reasoningEffort,'high');assert.deepEqual(request.tools??[],[]);assert.equal(f.saves(),0)
-  const agent=f.ctx.agents.get(done.sessionId);assert.equal(agent.session.header.agentPreset,'my-dsh.platform-generator');assert.deepEqual(agent.ctx.tools.schemas(agent),[]);assert.equal(agent.session.requestHeader().config.reasoningEffort,'high')
+  const agent=f.ctx.agents.get(done.sessionId);assert.equal(agent.session.header.agentPreset,'my-dsh.platform-generator');assert.ok(agent.ctx.tools.schemas(agent).some(tool=>tool.name==='spawn_teammate'));assert.ok(agent.ctx.tools.schemas(agent).some(tool=>tool.name==='schedule_create'));assert.deepEqual((await agent.ctx.systemPrompt.assemble(assembleContextFor(agent))).tools,[]);assert.equal(agent.session.requestHeader().config.reasoningEffort,'high')
   assert.equal(agent.session.snapshotEvents().some(event=>event.type==='sandbox/mode'||event.type==='approval/policy'),false,'generator must not append native policy overrides');assert.doesNotMatch(JSON.stringify(request.messages),/private-skill-body/);
   await f.recipes.service.preview('app.generated',3);assert.equal(JSON.stringify(f.recipes.service.list()[0].running),running);await f.recipes.service.activate('app.generated',3);assert.equal(f.recipes.service.list()[0].running.version,2)
  }finally{await f.close()}
 })
 test('native scoped guard denies global, late scoped and nested execution; cancellation drains a hanging model',async()=>{
  const f=await fixture(['hang']);try{const job=f.start();await live(f);const current=f.generation.dispatch({action:'status',id:job.id}),agent=f.ctx.agents.get(current.sessionId)
- assert.deepEqual(agent.ctx.tools.schemas(agent),[])
+ assert.ok(agent.ctx.tools.schemas(agent).some(tool=>tool.name==='spawn_teammate'));assert.ok(agent.ctx.tools.schemas(agent).some(tool=>tool.name==='schedule_create'));assert.deepEqual((await agent.ctx.systemPrompt.assemble(assembleContextFor(agent))).tools,[]);assert.deepEqual(f.adapter.requests[0].tools??[],[])
  const global=await agent.ctx.tools.execute({name:'write_fixture',arguments:{},callId:ToolCallId('global'),agent,signal:new AbortController().signal});assert.equal(global.isError,true)
- agent.ctx.tools.register({...f.tool,name:'late_scoped'});const nestedToken={};const nested=await agent.ctx.tools.execute({name:'late_scoped',arguments:{},callId:ToolCallId('nested'),agent,signal:new AbortController().signal,parent:nestedToken});assert.equal(nested.isError,true);assert.match(JSON.stringify(nested.content),/Application generation does not permit tool execution/);assert.equal(f.executions(),0)
+ const schedule=await agent.ctx.tools.execute({name:'schedule_create',arguments:{title:'Forbidden',prompt:'Must not be scheduled',after_seconds:60},callId:ToolCallId('schedule'),agent,signal:new AbortController().signal});assert.equal(schedule.isError,true);assert.match(JSON.stringify(schedule.content),/Application generation does not permit tool execution/)
+ const team=await agent.ctx.tools.execute({name:'team_task_create',arguments:{subject:'Forbidden',description:'Must not create a task'},callId:ToolCallId('team'),agent,signal:new AbortController().signal});assert.equal(team.isError,true);assert.match(JSON.stringify(team.content),/Application generation does not permit tool execution/)
+ agent.ctx.tools.register({...f.tool,name:'late_scoped'});const nestedToken={};const nested=await agent.ctx.tools.execute({name:'late_scoped',arguments:{},callId:ToolCallId('nested'),agent,signal:new AbortController().signal,parent:nestedToken});assert.equal(nested.isError,true);assert.match(JSON.stringify(nested.content),/Application generation does not permit tool execution/);assert.equal(f.executions(),0);assert.deepEqual(await f.ctx.schedule.list({sessionId:agent.id}),[]);assert.deepEqual(f.ctx.agentTeams.listTasks(agent),[])
  f.generation.dispatch({action:'cancel',id:job.id});const done=await f.generation.settled(job.id);assert.equal(done.status,'cancelled');assert.equal(agent.status,'idle');assert.deepEqual(f.recipes.service.list(),[])
  }finally{await f.close()}
 })
@@ -88,3 +96,5 @@ test('generated drafts reject unknown preset, Skill, connection and extra execut
 })
 
 test('cancelling before native admission sends no model request and preserves empty draft storage',async()=>{const f=await fixture([]);try{const job=f.start();f.generation.dispatch({action:'cancel',id:job.id});assert.equal((await f.generation.settled(job.id)).status,'cancelled');assert.equal(f.adapter.requests.length,0);assert.deepEqual(f.recipes.service.list(),[])}finally{await f.close()}})
+
+test('effective native assembly inventory gate still rejects another plugin adding exposed tools',async()=>{const f=await fixture([validResponse()]);const remove=f.ctx.on('system-prompt/assemble',async(_assembly,_context,next)=>({...await next(),tools:[{name:'unexpected_surface',description:'metadata only',parameters:{type:'object'}}]}),{prepend:true});try{const done=await f.generation.settled(f.start().id);assert.equal(done.status,'failed');assert.match(done.error,/Generator tool inventory is not empty: unexpected_surface/);assert.equal(f.adapter.requests.length,0);assert.deepEqual(f.recipes.service.list(),[])}finally{remove();await f.close()}})
