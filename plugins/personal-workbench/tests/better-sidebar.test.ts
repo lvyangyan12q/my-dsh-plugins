@@ -71,7 +71,7 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
   try {
     assert.equal(sidebar.registrations, 0)
     assert.equal(status(), null)
-    assert.equal(ctx.slots.entries('shell.overlay').length, 3, 'teacher, workspace and independent capability management overlays')
+    assert.deepEqual(ctx.slots.entries('shell.overlay').map((row: { options: { id?: string } }) => row.options.id).sort(), ['personal-workbench', 'personal-workbench.workspace', 'personal-workbench.management'].sort())
     api.registerApp({ id, version: '1', name: 'Registered app', icon: 'book-open', source: 'fixture',
       pages: [{ id: 'lesson', label: 'Lesson' }, { id: 'practice', label: 'Practice' }], defaultLayout: { width: 600, height: 400, pageId: 'lesson' },
       dependencies: [{ id: 'optional.teacher-skill', available: false, reason: 'Skill unavailable' }] })

@@ -4,6 +4,7 @@ DSH 的本地插件仓库。
 
 - `plugins/personal-workbench`：工作台、Agent 和 Skill 管理。
 - `plugins/kaogong`：新版考公学习插件。
+- `plugins/reading-statistics`：独立阅读应用，复用公共展示模块并持有自己的数据。
 - 插件来源：原 my-dsh-plugins 的 release-verification 提交 e8f01d3。
 
 ## 本地运行
@@ -17,6 +18,8 @@ pnpm start
 ```
 
 地址：http://127.0.0.1:3082/ 。3081 为原合成测试实例，与真实学习数据分开。
+
+应用平台的扩展与验证步骤见 [开发流程](docs/application-platform-extension.md) 和 [验收证据](docs/application-platform-acceptance.md)。阅读模板需要安装 `@deepseek-ai/dsh-reading-statistics` 并应用其 bundle patch；保存和预览草稿后仍需显式启用。
 
 ## 菜单
 

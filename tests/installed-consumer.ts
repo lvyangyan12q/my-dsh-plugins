@@ -22,3 +22,18 @@ void [view, app, config, imageRoot, apply, kaogongSchema, workbenchApply, reques
 // @ts-expect-error Arbitrary completion proof is not a role key.
 const invalid: RoleBindingKey = { ...key, completed: true }
 void invalid
+
+// Installed platform extension contracts: no source or tsconfig path substitution.
+import type { AppRecipe, PersonalWorkbenchRecipes } from '@deepseek-ai/dsh-personal-workbench'
+import { DisplayStore, registerDisplaySource, registerRecipeTemplate, registerRecipeModuleContextProvider } from '@deepseek-ai/dsh-personal-workbench/client'
+import type { DisplaySource, PreparedTask, PersonalWorkbenchTasks } from '@deepseek-ai/dsh-personal-workbench/client'
+declare const recipe: AppRecipe
+declare const source: DisplaySource
+declare const tasks: PersonalWorkbenchTasks
+const recipes: PersonalWorkbenchRecipes = ctx.personalWorkbenchRecipes
+const store = new DisplayStore(source, { appId: recipe.appId, instanceId: 'owned', preview: false })
+const pending: PreparedTask = { key, task: 'Review selected record', source: { pageId: 'library', moduleId: 'books', label: 'Books' }, context: [{ id: 'selected', label: 'Selected', source: 'owned records', text: 'public synthetic record' }] }
+void [recipes.registerModule({ id: 'custom-chart', validate: module => module.config.limit === null ? ['Limit required'] : [] }), recipes.registerDataSource({ appId: recipe.appId, resource: source.resource }), registerDisplaySource(source), registerRecipeTemplate({ id: 'owned-template', label: 'Owned', create: async () => recipe }), registerRecipeModuleContextProvider('custom-chart', () => ({ phase: 'ready', context: pending.context })), store.getSnapshot(), tasks.prepare(pending)]
+// @ts-expect-error Recipe configuration is bounded scalar data, never executable application code.
+const executable: AppRecipe = { ...recipe, pages: [{ id: 'x', label: 'X', layout: 'grid', modules: [{ id: 'x', title: 'X', type: 'stats', config: { run: () => {} } }] }] }
+void executable
