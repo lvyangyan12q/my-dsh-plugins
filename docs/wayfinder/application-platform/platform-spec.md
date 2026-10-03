@@ -1,3 +1,11 @@
+---
+id: 12-application-platform
+title: 工作台应用平台：应用配方、模块联动与角色会话
+labels: [ready-for-agent]
+status: open
+assignee: null
+kind: implementation-spec
+---
 # 工作台应用平台规格
 
 状态：ready-for-agent；产品决策与第一版验收边界已获用户确认。日期：2026-10-03。
