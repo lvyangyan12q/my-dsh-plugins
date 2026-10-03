@@ -33,3 +33,11 @@ Managed Skills use the native Skill registry and `tool-skill` loader. Managed Ag
 Models discover capabilities through `list_capabilities` and delegate one task through `run_agent`. The native Agent factory composes the requested preset before publication, inherits the native parent's model route and delegated sandbox policy, pins delegated approval to `never` using native helpers, enforces a maximum delegation depth of 1, and owns cancellation and quiescent disposal. Output remains in the native Session. Invocation metadata persists separately in `my_dsh_capabilities`; a restart marks previously running invocations failed rather than claiming completion. Native Skill tool outcomes are included in execution history.
 
 `test:capabilities` uses the official built runtime with a deterministic model adapter. It verifies real preset composition, native tool discovery and dispatch, assigned Skill instructions, permission inheritance, disabled Agent invocation, a live model cancellation, child disposal, durable history replay, independent CRUD/reopen, stale revisions and role rebinding. Set `DSH_SOURCE` to the built official checkout before running it. These tests do not make external model requests.
+
+## Application availability
+
+The application center manages independently registered apps. Enable/disable is persisted in the Host domain personal_workbench_apps; local layout preferences remain separate. Disabled applications cannot be opened or focused, and their mounted owners become inactive without deletion of business data or native Sessions. Plugin disposal still removes its live registry and view entries.
+
+Authenticated same-origin POST /api/personal-workbench/apps supports catalog and set-enabled (appId, enabled, expectedRevision). Missing records default to enabled at revision zero. Concurrent stale writes are rejected; refresh availability before retrying. The optional Host service personalWorkbenchApps exposes read, list, and setEnabled for later recipe integrations. Definitions can be registered by installed or runtime app providers; registration never resets availability. Client loading fails closed with a visible retry action.
+
+Public contracts: src/app-lifecycle-api.ts. Targeted tests: app-lifecycle-host.test.mjs, app-lifecycle-client.test.ts, workbench-ui.test.mjs, workbench-lifecycle.test.mjs, native-navigation.test.mjs.

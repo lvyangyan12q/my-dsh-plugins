@@ -14,7 +14,7 @@ test('built plugin and optional consumer clean up and reactivate through real Co
     let exports
     runInNewContext(code, { console, AbortController,
       window: { localStorage: { getItem: () => null, setItem: () => {} }, __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } },
-      fetch: () => { assert.fail('registration and teardown must never acquire a Session') },
+      fetch: async url => { assert.equal(url, '/api/personal-workbench/apps'); return {ok:true,json:async()=>({version:1,states:[]})} },
     })
     return exports
   }
@@ -55,6 +55,7 @@ test('built plugin and optional consumer clean up and reactivate through real Co
     assert.equal(ctx.slots.entries('shell.overlay').length, 3, 'launcher, workspace and independent management overlays')
     const old = ctx.personalWorkbench
     assert.equal(old.getSnapshot().definitions.length, 1)
+    await old.loadLifecycle()
     old.openApp('test.lifecycle')
     await owner.dispose()
     assert.equal(ctx.get('personalWorkbench'), undefined)

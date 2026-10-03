@@ -1,5 +1,6 @@
 import type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId } from './workbench-api.ts'
 
+import type { AppLifecycleState } from './app-lifecycle-api.ts'
 interface Geometry { x: number; y: number; width: number; height: number }
 interface WindowPreference extends Geometry {
   appId: WorkbenchAppId; instanceId: WorkbenchInstanceId; pageId: string
@@ -9,6 +10,9 @@ interface WindowPreference extends Geometry {
 interface AppPreference { favorite: boolean; hidden: boolean; order: number }
 interface Preferences { version: 1; visible: boolean; windows: WindowPreference[]; apps: Record<string, AppPreference> }
 export interface WorkbenchSnapshot extends Preferences {
+  readonly lifecycle: Readonly<Record<string, AppLifecycleState>>
+  readonly lifecycleReady: boolean
+  readonly lifecycleError: string | null
   readonly catalogTab: 'applications' | 'agents' | 'skills'
   readonly definitions: readonly WorkbenchAppDefinition[]
   readonly focused: string | null
@@ -75,13 +79,26 @@ export class Workbench implements PersonalWorkbench {
   private readonly definitions = new Map<WorkbenchAppId, WorkbenchAppDefinition>()
   private readonly listeners = new Set<() => void>()
   private disposed = false
-  constructor(private readonly storage?: PreferenceStorage) {
+  constructor(private readonly storage?: PreferenceStorage, private readonly lifecycleLoader?: () => Promise<readonly AppLifecycleState[]>) {
     let preferences: Preferences
     let storageFailed = false
     try { preferences = readPreferences(storage) }
     catch (_error) { preferences = { version: 1, visible: false, windows: [], apps: Object.create(null) }; storageFailed = true }
-    this.snapshot = { ...preferences, catalogTab: 'applications', definitions: [], focused: null, focusRevision: 0, storageFailed }
+    this.snapshot = { ...preferences, lifecycle: {}, lifecycleReady: !lifecycleLoader, lifecycleError: null, catalogTab: 'applications', definitions: [], focused: null, focusRevision: 0, storageFailed }
   }
+  private loading?: Promise<void>
+  readonly loadLifecycle = (): Promise<void> => {
+    if(!this.lifecycleLoader) return Promise.resolve()
+    if(this.loading) return this.loading
+    const task=this.lifecycleLoader().then(states=>this.applyLifecycle(states)).catch(error=>{this.publish({lifecycleReady:false,lifecycleError:error instanceof Error?error.message:'Application availability unavailable'})})
+    this.loading=task;void task.finally(()=>{if(this.loading===task)this.loading=undefined});return task
+  }
+  readonly applyLifecycle = (states: readonly AppLifecycleState[]): void => {
+    const lifecycle=Object.fromEntries(states.map(row=>[row.appId,{...row}]))
+    const focused=this.snapshot.windows.find(row=>windowKey(row.appId,row.instanceId)===this.snapshot.focused)
+    this.publish({lifecycle,lifecycleReady:true,lifecycleError:null,...(focused && lifecycle[focused.appId]?.enabled===false?{focused:null}:{})})
+  }
+  readonly isEnabled = (appId: string): boolean => this.snapshot.lifecycleReady && this.snapshot.lifecycle[appId]?.enabled !== false
   readonly getSnapshot = (): WorkbenchSnapshot => this.snapshot
   readonly subscribe = (listener: () => void): (() => void) => {
     if (this.disposed) return () => {}
@@ -114,11 +131,16 @@ export class Workbench implements PersonalWorkbench {
         focused: retired.includes(this.snapshot.focused ?? '') ? null : this.snapshot.focused })
     }
   }
-  readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, focused: null, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }) }
+  readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, focused: null, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }); void this.loadLifecycle() }
   readonly closeWorkspace = (): void => { this.publish({ visible: false }) }
   readonly openApp = (appId: WorkbenchAppId, instanceId = defaultInstance): void => {
     const definition = this.definitions.get(appId)
     if (!definition || this.disposed) throw new Error(`Application unavailable: ${appId}`)
+    if(!this.isEnabled(appId)) {
+      this.publish({visible:true,focused:null,lifecycleError:this.snapshot.lifecycleReady?'Application disabled; enable it in the application center':'Application availability is loading or unavailable'})
+      if(!this.snapshot.lifecycleReady) void this.loadLifecycle()
+      return
+    }
     const key = windowKey(appId, instanceId)
     const found = this.snapshot.windows.find(row => windowKey(row.appId, row.instanceId) === key)
     const row: WindowPreference = found ? { ...found, mode: found.restoreMaximized ? 'maximized' : 'normal' } : {
@@ -128,7 +150,7 @@ export class Workbench implements PersonalWorkbench {
       focused: key, focusRevision: this.snapshot.focusRevision + 1 })
   }
   readonly focus = (key: string): void => {
-    if (!this.snapshot.windows.some(row => windowKey(row.appId, row.instanceId) === key && row.mode !== 'closed' && row.mode !== 'minimized')) return
+    if (!this.snapshot.windows.some(row => windowKey(row.appId, row.instanceId) === key && this.isEnabled(row.appId) && row.mode !== 'closed' && row.mode !== 'minimized')) return
     this.publish({ focused: key, focusRevision: this.snapshot.focusRevision + 1 })
   }
   readonly setMode = (key: string, mode: WindowPreference['mode']): void => {
@@ -136,7 +158,7 @@ export class Workbench implements PersonalWorkbench {
       restoreMaximized: mode === 'maximized' || ((mode === 'minimized' || mode === 'closed') && row.restoreMaximized) }))
     if (mode === 'closed' || mode === 'minimized') {
       const next = this.snapshot.windows.filter(row => row.mode !== 'closed' && row.mode !== 'minimized'
-        && this.definitions.has(row.appId)).at(-1)
+        && this.definitions.has(row.appId) && this.isEnabled(row.appId)).at(-1)
       this.publish({ focused: next ? windowKey(next.appId, next.instanceId) : null, focusRevision: this.snapshot.focusRevision + 1 })
     }
   }

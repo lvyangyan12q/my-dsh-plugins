@@ -19,6 +19,8 @@ export interface WorkspaceInjected {
   selectPage: Workbench['selectPage']
   setGeometry: Workbench['setGeometry']
   setPreference: Workbench['setPreference']
+  setAppEnabled?: (appId: string, enabled: boolean) => Promise<void>
+  refreshApps?: () => Promise<void>
   management?: ManagementCommands
 }
 type WorkspaceProps = PropsRuntime<'shell.overlay'> & PropsRenderSlots<'personal-workbench.app'>
@@ -31,7 +33,7 @@ export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkil
   & InjectFace<{ hooks: { workbench: Workbench } }> & { openWorkspace: Workbench['openWorkspace']; openApp: Workbench['openApp']; openAgents: () => void; openSkills: () => void }) {
   const state = useWorkbench(value => value)
   const [expanded, setExpanded] = useState(true)
-  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden).sort((a, b) =>
+  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden && state.lifecycleReady && state.lifecycle[app.id]?.enabled !== false).sort((a, b) =>
     Number(state.apps[b.id]?.favorite ?? false) - Number(state.apps[a.id]?.favorite ?? false)
     || (state.apps[a.id]?.order ?? 0) - (state.apps[b.id]?.order ?? 0) || a.name.localeCompare(b.name))
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0,
@@ -85,15 +87,18 @@ function useCenterColumn(ref: React.RefObject<HTMLDivElement>) {
 }
 
 /** Project workspace: direct content, one title and page navigation; owners stay mounted. */
-export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, renderSlot, t }: WorkspaceProps) {
+export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, setAppEnabled, refreshApps, renderSlot, t }: WorkspaceProps) {
   const state = useWorkbench(value => value)
+  useEffect(() => { void refreshApps?.() }, [refreshApps])
   const [query, setQuery] = useState('')
+  const [pendingApp,setPendingApp]=useState<string|null>(null)
+  const [availabilityError,setAvailabilityError]=useState<string|null>(null)
   const [showHidden, setShowHidden] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const bounds = useCenterColumn(root)
   const frames = useRef(new Map<string, HTMLDivElement>())
   const retained = state.windows.filter(row => state.definitions.some(app => app.id === row.appId))
-  const opened = retained.filter(row => row.mode !== 'closed' && row.mode !== 'minimized')
+  const opened = retained.filter(row => state.lifecycleReady && state.lifecycle[row.appId]?.enabled !== false && row.mode !== 'closed' && row.mode !== 'minimized')
   const focused = opened.find(row => windowKey(row.appId, row.instanceId) === state.focused)
   const app = focused && state.definitions.find(row => row.id === focused.appId)
   useEffect(() => {
@@ -119,13 +124,22 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     <header className="pwb-top"><LayoutGrid size={18} aria-hidden="true" /><strong>{app?.name ?? t('workspace')}</strong>
       <button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
+    {state.lifecycleError && <div role="alert">{state.lifecycleError}<button type="button" onClick={()=>{void refreshApps?.()}}>Refresh application availability</button></div>}
+    {!state.lifecycleReady && !state.lifecycleError && <p role="status">Loading application availability…</p>}
+    {availabilityError && <p role="alert">{availabilityError}</p>}
     {state.storageFailed && <p role="status" className="pwb-notice">{t('storageFailed')}</p>}
     <section className="pwb-app-home" hidden={!!focused} aria-label={t('applications')}>
+      {refreshApps && <button type="button" onClick={()=>{void refreshApps()}}>Refresh application availability</button>}
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />{t('showHidden')}</label>
       <div className="pwb-app-grid">{apps.map(row => <section key={row.id} className="pwb-app">
-        <button type="button" className="pwb-open" onClick={() => openApp(row.id)}><AppIcon icon={row.icon} /><span>{row.name}</span></button>
-        <div className="pwb-meta">{row.source} · {row.version}</div>
+        <button type="button" className="pwb-open" disabled={!state.lifecycleReady || state.lifecycle[row.id]?.enabled===false} onClick={() => openApp(row.id)}><AppIcon icon={row.icon} /><span>{row.name}</span></button>
+        <div className="pwb-meta">{row.source} · {row.version} · {state.lifecycle[row.id]?.enabled===false?'Disabled':'Enabled'}</div>
+        <details><summary>Application configuration</summary><p>ID: {row.id}</p><p>Pages: {row.pages.map(page=>page.label).join(', ')}</p><p>Roles: {row.roles?.map(role=>role.name).join(', ')||'None'}</p><p>Dependencies: {row.dependencies?.map(dep=>dep.id+(dep.available?'':' — '+dep.reason)).join(', ')||'None'}</p></details>
+        {setAppEnabled && <button type="button" disabled={!state.lifecycleReady || pendingApp!==null} onClick={async()=>{
+          setPendingApp(row.id);setAvailabilityError(null)
+          try {await setAppEnabled(row.id,state.lifecycle[row.id]?.enabled===false)} catch(error) {setAvailabilityError(error instanceof Error?error.message:'Application availability update failed')} finally {setPendingApp(null)}
+        }}>{state.lifecycle[row.id]?.enabled===false?'Enable application':'Disable application'}: {row.name}</button>}
         <div className="pwb-app-tools"><button type="button" aria-label={t('favorite') + ': ' + row.name} aria-pressed={state.apps[row.id]?.favorite ?? false} onClick={() => setPreference(row.id, { favorite: !state.apps[row.id]?.favorite })}><Star size={15} /></button>
           <button type="button" aria-label={t(state.apps[row.id]?.hidden ? 'showApp' : 'hideApp') + ': ' + row.name} onClick={() => setPreference(row.id, { hidden: !state.apps[row.id]?.hidden })}><EyeOff size={15} /></button></div>
       </section>)}</div>
@@ -134,7 +148,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     {retained.map(row => {
       const definition = state.definitions.find(value => value.id === row.appId)!
       const key = windowKey(row.appId, row.instanceId)
-      const active = state.visible && state.focused === key && row.mode !== 'closed' && row.mode !== 'minimized'
+      const active = state.lifecycleReady && state.lifecycle[row.appId]?.enabled !== false && state.visible && state.focused === key && row.mode !== 'closed' && row.mode !== 'minimized'
       return <div key={key} ref={element => { if (element) frames.current.set(key, element); else frames.current.delete(key) }} role="region" aria-label={definition.name + ' · ' + row.instanceId} tabIndex={-1} hidden={!active} className="pwb-project">
         <nav className="pwb-pages" role="tablist" aria-label={t('pages')}>{definition.pages.map(page => <button key={page.id} type="button" role="tab" aria-selected={row.pageId === page.id} onClick={() => selectPage(key, page.id)}>{page.label}</button>)}</nav>
         <div className="pwb-content">{renderSlot('personal-workbench.app', { appId: row.appId, instanceId: row.instanceId, pageId: row.pageId, active, selectPage: pageId => selectPage(key, pageId), close: () => { setMode(key, 'closed'); closeWorkspace() } }, { entryKey: row.appId, fallback: <p role="alert">{t('appViewUnavailable')}</p> })}</div>

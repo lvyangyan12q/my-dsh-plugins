@@ -36,7 +36,12 @@ async function fixture({ width = 960, height = 640 } = {}) {
   runInNewContext(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'), {
     window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }),
     document: dom.window.document, HTMLElement: dom.window.HTMLElement, ResizeObserver, AbortController, console,
-    fetch: () => { fetches++; throw new Error('No Session acquisition authorized by this test') },
+    fetch: async (url, options) => {
+      if(url !== '/api/personal-workbench/apps') { fetches++; throw new Error('No Session acquisition authorized by this test') }
+      const data=JSON.parse(options.body)
+      if(data.action==='catalog') return {ok:true,json:async()=>({version:1,states:[]})}
+      return {ok:true,json:async()=>({state:{appId:data.appId,enabled:data.enabled,revision:data.expectedRevision+1}})}
+    },
   })
   const ctx = {
     get: () => undefined, // Optional official plugin configuration navigation is absent.
@@ -56,6 +61,7 @@ async function fixture({ width = 960, height = 640 } = {}) {
     },
   }
   exports.apply(ctx)
+  await service.loadLifecycle()
   const overlay = declarations.find(row => row.options.name === 'shell.overlay' && row.options.id === 'personal-workbench.workspace')
   const management = declarations.find(row => row.options.id === 'personal-workbench.management')
   const launcher = declarations.find(row => row.options.name === 'sidebar.footer.action' && row.options.id === 'personal-workbench.workspace')
@@ -167,4 +173,33 @@ test('workbench home and sidebar application hierarchy share registration withou
    assert.equal(f.dom.window.document.querySelector('.pwb-project'), null)
    assert.equal(f.counts().unmounts, 1)
  } finally { await f.dispose() }
+})
+
+test('application availability disables entry without deleting mounted draft or role owner', async()=>{
+ const f=await fixture()
+ try {
+  await f.click('Exercise');await f.click('Enter answer')
+  const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
+  await f.click('workspace');await f.click('Disable application: Exercise')
+  assert.equal(draft.isConnected,true);assert.equal(f.counts().unmounts,0)
+  assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden,false)
+  assert.equal(f.button('Exercise').disabled,true)
+  assert.equal(f.dom.window.document.querySelector('nav ul button[aria-label="Exercise"]'),null)
+  await act(async()=>f.service.openApp('test.exercise'))
+  assert.match(f.dom.window.document.querySelector('[role="alert"]').textContent,/disabled/)
+  await f.click('Enable application: Exercise');await f.click('Exercise')
+  assert.equal(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'),draft)
+  assert.equal(draft.value,'retained answer');assert.equal(f.counts().retained,0)
+ } finally {await f.dispose()}
+})
+
+test('a second application enters the platform without app-specific platform conditions',async()=>{
+ const f=await fixture();let remove
+ try {
+  await act(async()=>{remove=f.service.registerApp({id:'reading',name:'Reading',version:'1',source:'Independent plugin',icon:'notebook',pages:[{id:'overview',label:'Overview'}],defaultLayout:{pageId:'overview',width:500,height:400}})})
+  assert.ok(f.dom.window.document.querySelector('nav ul button[aria-label="Reading"]'))
+  await f.click('Reading');assert.equal(f.service.getSnapshot().windows.at(-1).appId,'reading')
+  await act(async()=>remove());assert.equal(f.dom.window.document.querySelector('nav ul button[aria-label="Reading"]'),null)
+  assert.equal(f.counts().retained,0)
+ } finally {await f.dispose()}
 })

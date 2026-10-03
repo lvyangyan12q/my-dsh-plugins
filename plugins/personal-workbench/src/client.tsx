@@ -101,7 +101,20 @@ export function apply(ctx: Context): void {
   const workbench = new Workbench({
     getItem: key => window.localStorage.getItem(key),
     setItem: (key, value) => window.localStorage.setItem(key, value),
+  }, async () => {
+    const response=await fetch('/api/personal-workbench/apps',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'catalog'})})
+    if(!response.ok) throw new Error('Application availability unavailable')
+    const data=await response.json() as {version:number;states:import('./app-lifecycle-api.ts').AppLifecycleState[]}
+    if(data.version!==1 || !Array.isArray(data.states)) throw new Error('Invalid application availability')
+    return data.states
   })
+  const setAppEnabled=async(appId:string,enabled:boolean)=>{
+    const expectedRevision=workbench.getSnapshot().lifecycle[appId]?.revision??0
+    const response=await fetch('/api/personal-workbench/apps',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'set-enabled',appId,enabled,expectedRevision})})
+    const data=await response.json() as {state?:import('./app-lifecycle-api.ts').AppLifecycleState;error?:string}
+    if(!response.ok || !data.state) throw new Error(data.error??'Application availability update failed')
+    workbench.applyLifecycle([...Object.values(workbench.getSnapshot().lifecycle).filter(row=>row.appId!==appId),data.state])
+  }
   const navigation = new PanelNavigation()
   ctx.effect(() => () => navigation.dispose(), 'independent management navigation')
   ctx.inject(['layout'], child => child.effect(() => bridgeNativeNavigation(child.layout, workbench, navigation), 'native menu navigation priority'))
@@ -132,7 +145,7 @@ export function apply(ctx: Context): void {
     inject: (): WorkspaceInjected => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace,
       closeWorkspace: workbench.closeWorkspace, openApp: workbench.openApp, focusWindow: workbench.focus,
       setMode: workbench.setMode, selectPage: workbench.selectPage, setGeometry: workbench.setGeometry,
-      setPreference: workbench.setPreference, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
+      setPreference: workbench.setPreference, setAppEnabled, refreshApps: workbench.loadLifecycle, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
   }, Workspace))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',

@@ -6,6 +6,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 export type { RoleDefinition, RoleBindingKey, RoleBinding, PersonalWorkbenchBindings, TeachingEvidence } from './role-binding-api.ts'
 export type { ManagementCatalog, ManagedRole, ManagedSkill, SkillAssignment, ManagementRequest } from './management-api.ts'
 
+export type { AppLifecycleState, AppLifecycleCatalog, AppLifecycleRequest, PersonalWorkbenchApps } from './app-lifecycle-api.ts'
 export const name = 'personal-workbench'
 export const inject = ['webServer']
 
@@ -15,6 +16,15 @@ export const Config: z<Config> = z.object({ teacherSessionId: z.string().default
 
 /** Register read-only association metadata. Installation makes no session or model calls. */
 export function apply(ctx: Context, config: Config): void {
+  let appHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/personal-workbench/apps', handler: (req,res) => {
+    if(appHandler) {void appHandler(req,res);return}
+    res.writeHead(503,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify({error:'Application lifecycle services unavailable'}))
+  }}),'personal-workbench: application lifecycle route')
+  ctx.inject(['storageDomain','connection'],child=>child.effect(async function*(){
+    const {installAppLifecycle}=await import('./app-lifecycle-host.ts');const owner=await installAppLifecycle(child);appHandler=owner.handle
+    yield async()=>{appHandler=undefined;await owner.dispose()}
+  },'personal-workbench: durable application lifecycle'))
   let managementHandler: ((req: IncomingMessage, res: ServerResponse) => Promise<void>) | undefined
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/personal-workbench/management', handler: (req, res) => {
     if (managementHandler) { void managementHandler(req, res); return }
