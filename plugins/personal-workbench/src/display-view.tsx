@@ -1,3 +1,4 @@
+import { aggregateStatistic } from './display-statistics.ts'
 import { displayModuleContext } from './display-context.ts'
 import { registerRecipeModuleContextProvider } from './module-context.ts'
 import { useSyncExternalStore } from 'react'
@@ -24,9 +25,7 @@ export function DisplayModule({ type, store, t, renderDetail }: { type: 'stats' 
   if (type === 'filter') return <div><label>{t('displaySearch')}<input aria-label={t('displaySearch')} value={state.search} onChange={event => store.setSearch(event.target.value)} /></label>{state.data.filters.map(filter => <label key={filter.field}>{filter.label}<select aria-label={filter.label} value={state.filters[filter.field] ?? ''} onChange={event => store.setFilter(filter.field, event.target.value)}><option value="">{t('displayAll')}</option>{[...new Set(state.data.records.map(record => String(record.fields[filter.field] ?? '')))].filter(Boolean).sort().map(value => <option key={value}>{value}</option>)}</select></label>)}</div>
   if (!records.length) return <p role="status">{t(state.data.records.length ? 'displayNoMatches' : 'displayEmpty')}</p>
   if (type === 'stats') return <dl style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>{state.data.stats.map(stat => {
-    const numbers = records.map(record => record.fields[stat.field ?? '']).filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
-    const sum = numbers.reduce((total, value) => total + value, 0)
-    const value = stat.operation === 'count' ? records.length : stat.operation === 'sum' ? sum : numbers.length ? Math.round(sum / numbers.length * 10) / 10 : 0
+   const value = aggregateStatistic(records, stat)
     return <div key={stat.id}><dt>{stat.label}</dt><dd data-stat={stat.id}>{value}</dd></div>
   })}</dl>
   if (type === 'list') return <ul>{records.map(record => <li key={record.id}><button aria-pressed={state.selectedId === record.id} onClick={() => store.select(record.id)}>{record.title}</button>{record.subtitle && <span> · {record.subtitle}</span>}</li>)}</ul>

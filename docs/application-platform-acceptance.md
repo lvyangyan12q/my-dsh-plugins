@@ -12,7 +12,7 @@ node scripts/check-platform-tests.mjs
 node scripts/check-platform-release.mjs
 ```
 
-The build passes for Workbench, Kaogong and Reading: clean Host/Client artifacts, Workbench/Kaogong declarations, source checks and public consumer contracts. The full runner passes **209 tests, 0 failures, 0 skipped**. It uses actual shared source implementation for JSX integration; its scratch-only bridge is separate from installed-consumer proof. Native Session Controller/Agent Loop/Skill/preset integration uses the official MockAdapter and synthetic domains. These tests do not contact DeepSeek.
+The build passes for Workbench, Kaogong and Reading: clean Host/Client artifacts, Workbench/Kaogong declarations, source checks and public consumer contracts. The full runner passes **211 tests, 0 failures, 0 skipped**. It uses actual shared source implementation for JSX integration; its scratch-only bridge is separate from installed-consumer proof. Native Session Controller/Agent Loop/Skill/preset integration uses the official MockAdapter and synthetic domains. These tests do not contact DeepSeek.
 
 The release runner passes through the **official CLI installing all three exact archives** in an owned synthetic offline profile. Every installed archive file matches the built candidate. All three manifests pass official runtime compatibility with **zero exemptions** and ordinary peer policy. Root and Client declarations compile from installed product packages with no source/path remapping; Reading's installed JS Host and Client exports are consumed separately. Runtime dependency links use existing public built packages, so this is exact product installation proof rather than a fresh registry dependency-resolution test.
 
@@ -40,7 +40,7 @@ Implementation acceptance is complete. The parent branch's final code review and
 
 ## Visual scope
 
-Functional interactions are verified. The current Reading controls and list still use basic browser styling; grid spacing is not fully polished. A mixed reading/role screenshot clips part of the lower role panel, so it does not establish a complete visual layout. No claim is made that the implementation matches prototype pixels or that all screen sizes are visually accepted.
+The previously listed functional interactions are verified. Creation now has four navigable stages (name/pages, connections, roles/tasks, preview/activation), sharing one editable draft. The current Reading controls and list still use basic browser styling; grid spacing is not fully polished. The final review identified an unbounded role page that clipped the lower native conversation. The follow-up fixes give single-role pages the available width and height, bound the task editor and native chat, and retain scrolling on mixed and narrow pages. Formal Browser verification of this fix is pending; earlier screenshots do not establish the corrected layout. No claim is made that the implementation matches prototype pixels or that all screen sizes are visually accepted.
 
 ## Limits
 

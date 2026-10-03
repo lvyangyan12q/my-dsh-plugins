@@ -27,7 +27,7 @@ function RecipeRoleChat({ctx,recipe,module,appId,instanceId,preview,taskEditorHo
  const key=useMemo(()=>({appId,instanceId,roleId:module.roleId??''}),[appId,instanceId,module.roleId]),role=recipe.roles.find(r=>r.id===module.roleId)
  if(!role)return <p role="alert">{t('taskMissingRole')}</p>
  if(preview)return <p role="status">{t('taskPreview')}</p>
- return <section>{ctx&&taskEditorHost&&<PreparedTaskEditor ctx={ctx} bindingKey={key} label={role.name} t={t}/>}<div style={{minHeight:400}}>{renderFactorySlot?.('personal-workbench.role-conversation',{bindingKey:key,active:true,label:role.name},{fallback:<p role="alert">{t('taskUnavailable')}</p>})??<p role="alert">{t('taskUnavailable')}</p>}</div></section>
+ return <section style={{display:'flex',flexDirection:'column',flex:1,width:'100%',minWidth:0,minHeight:0,overflow:'hidden'}}>{ctx&&taskEditorHost&&<div style={{flexShrink:0,maxHeight:'40%',overflow:'auto'}}><PreparedTaskEditor ctx={ctx} bindingKey={key} label={role.name} t={t}/></div>}<div style={{flex:1,width:'100%',minWidth:0,minHeight:0,overflow:'hidden'}}>{renderFactorySlot?.('personal-workbench.role-conversation',{bindingKey:key,active:true,label:role.name},{fallback:<p role="alert">{t('taskUnavailable')}</p>})??<p role="alert">{t('taskUnavailable')}</p>}</div></section>
 }
 export function installTasks(ctx:Context) {
  ctx.effect(()=>registerRecipeModuleRenderer('role-chat',RecipeRoleChat),'recipe role renderer')

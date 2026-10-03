@@ -26,3 +26,23 @@ test('built module prepare stays local across pages; visible context can be remo
  await click('taskSend');assert.equal(sent.length,1);assert.deepEqual(sent[0].target,key);assert.ok(sent[0].text.startsWith('Edited task'));assert.ok(!sent[0].text.includes('Edited evidence'));assert.equal(tasks.getSnapshot().size,0)
  }finally{await act(async()=>root.unmount());dom.window.close();for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
 })
+
+test('built public role page bounds a long conversation and keeps mixed display pages scrollable',async()=>{
+ const dom=new JSDOM('<div id="mount" style="display:flex;width:1100px;height:700px;overflow:hidden"></div>',{url:'http://localhost'}),original=new Map()
+ for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ let api;const window={localStorage:{getItem:()=>null,setItem:()=>{}},__ModuleLoader__:{load:({factory})=>api=factory(require)}}
+ await runInNewContext(await readFile(new URL('../lib/client.js',import.meta.url),'utf8'),{window,console,AbortController,fetch:()=>assert.fail('Layout must not issue a request')})
+ api.apply({effect:run=>run(),inject:()=>{},reflect:{provide:()=>()=>{}},slots:{inject:()=>{},register:()=>{},registerFactory:()=>{}},locale:{register:()=>()=>{}},get:()=>undefined,sessions:{},workspaces:{list:{getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:[]}),subscribe:()=>()=>{}}}})
+ const roleRecipe={...recipe,pages:[{id:'role',label:'Role',layout:'grid',modules:[recipe.pages[0].modules[1]]}]}
+ const {createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'))
+ const slot=(name,props)=>{assert.equal(name,'personal-workbench.role-conversation');assert.equal(props.active,true);return React.createElement('div',{'data-native-fixture':true,style:{display:'flex',flexDirection:'column',height:'100%',minHeight:0}},React.createElement('div',{style:{flex:1,minHeight:0,overflow:'auto'}},'Long prepared context '.repeat(2000)),React.createElement('textarea',{'aria-label':'Native composer'}))}
+ try{await act(async()=>root.render(React.createElement(api.RecipePage,{recipe:roleRecipe,pageId:'role',appId:'reading',instanceId:'first',t:k=>k,renderFactorySlot:slot})))
+ const page=document.querySelector('[data-recipe-version]'),module=page.firstElementChild,chat=module.querySelector('section'),native=document.querySelector('[data-native-fixture]').parentElement
+ assert.equal(page.style.width,'100%');assert.equal(page.style.height,'100%');assert.equal(page.style.flex,'1 1 0%');assert.equal(page.style.minHeight,'0px');assert.equal(page.style.overflow,'auto');assert.equal(page.style.gridTemplateColumns,'minmax(0,1fr)');assert.equal(page.style.gridAutoRows,'minmax(0,1fr)')
+ for(const container of [module,chat,native]){assert.equal(container.style.minHeight,'0px');assert.equal(container.style.overflow,'hidden')}
+ assert.equal(chat.style.width,'100%');assert.equal(native.style.flex,'1 1 0%');assert.ok(document.querySelector('textarea[aria-label="Native composer"]'));assert.ok(document.body.textContent.length>30000)
+ // JSDOM checks the actual built renderer's containment contract; formal Browser verifies pixel geometry.
+ await act(async()=>root.render(React.createElement(api.RecipePage,{recipe,pageId:'home',appId:'reading',instanceId:'first',t:k=>k,renderFactorySlot:slot})))
+ assert.equal(document.querySelector('[data-recipe-version]').style.gridAutoRows,'minmax(440px,auto)');assert.equal(document.querySelector('[data-recipe-version]').style.overflow,'auto')
+ }finally{await act(async()=>root.unmount());dom.window.close();for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+})

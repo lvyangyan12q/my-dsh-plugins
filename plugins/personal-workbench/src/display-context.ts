@@ -1,3 +1,4 @@
+import { aggregateStatistic } from './display-statistics.ts'
 import type { DisplayRecord, DisplaySource, DisplayValue } from './display-api.ts'
 import type { DisplayStore } from './display-store.ts'
 import type { RecipeModuleProps } from './recipe-view.tsx'
@@ -20,9 +21,7 @@ export function displayModuleContext(props: RecipeModuleProps, store: DisplaySto
  if (selected) context.push(chunk('selection', 'taskSelectedRecord', recordContext(selected)))
  if (module.type === 'stats') {
   const statistics = state.data.stats.slice(0, 10).map(stat => {
-   const numbers = records.map(record => record.fields[stat.field ?? '']).filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
-   const sum = numbers.reduce((total, value) => total + value, 0)
-   const value = stat.operation === 'count' ? records.length : stat.operation === 'sum' ? sum : numbers.length ? Math.round(sum / numbers.length * 10) / 10 : 0
+   const value = aggregateStatistic(records, stat)
    if (!Number.isFinite(value)) throw new Error(t('taskContextUnavailable'))
    return { id: bounded(stat.id, 60), label: bounded(stat.label, 100), operation: stat.operation, field: stat.field ? bounded(stat.field, 60) : undefined, value }
   })

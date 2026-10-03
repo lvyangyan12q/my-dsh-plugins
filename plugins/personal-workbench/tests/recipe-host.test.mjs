@@ -35,9 +35,9 @@ test('durable drafts, isolated preview, CAS activation and invalid replacement p
  assert.equal((await first.call({action:'preview',appId:'app.reading',expectedRevision:1})).status,200);assert.equal(first.owner.service.list()[0].running,undefined)
  const result=await Promise.all([first.call({action:'activate',appId:'app.reading',expectedRevision:1}),first.call({action:'activate',appId:'app.reading',expectedRevision:1})]);assert.deepEqual(result.map(r=>r.status),[200,409])
  assert.equal((await first.call({action:'save',expectedRevision:2,recipe:recipe(2,'missing-plugin')})).status,200)
- assert.equal((await first.call({action:'activate',appId:'app.reading',expectedRevision:3})).status,409);assert.equal(first.owner.service.list()[0].running.version,1)
+ const rejected=await first.call({action:'activate',appId:'app.reading',expectedRevision:3});assert.equal(rejected.status,409);assert.equal(rejected.value.error.split('Unavailable module: missing-plugin').length-1,1);assert.equal(first.owner.service.list()[0].running.version,1)
  await first.close();first=undefined;second=await fixture(root);assert.equal(second.owner.service.list()[0].running.version,1);assert.equal(second.owner.service.list()[0].draft.version,2)
- const fixed=recipe(2);fixed.connections=[{id:'private',sourceAppId:'other',resource:'data'}];await second.owner.service.save(fixed,3);await assert.rejects(second.owner.service.preview('app.reading',4),/Unavailable data connection/)
+ const fixed=recipe(2);fixed.connections=[{id:'private',sourceAppId:'other',resource:'data'}];await second.owner.service.save(fixed,3);await assert.rejects(second.owner.service.preview('app.reading',4),error=>{assert.equal(error.message.split('Unavailable data connection: private').length-1,1);return true})
  const duplicate=recipe(2);duplicate.pages.push(duplicate.pages[0]);await second.owner.service.save(duplicate,4);await assert.rejects(second.owner.service.activate('app.reading',5),/Duplicate page/);assert.equal(second.owner.service.list()[0].running.version,1)
  }finally{await first?.close();await second?.close();await rm(root,{recursive:true,force:true})}
 })
