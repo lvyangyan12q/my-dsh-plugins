@@ -1,0 +1,133 @@
+diff --git a/packages/client/ui-conversation/README.md b/packages/client/ui-conversation/README.md
+index 99e42d3017..52108732cb 100644
+--- a/packages/client/ui-conversation/README.md
++++ b/packages/client/ui-conversation/README.md
+@@ -45,0 +46 @@ Target packages declaration-merge their snapshot and Location data maps, then re
++Embedded presentation hosts render the `conversation.session.chrome` factory beside `conversation.content` inside the same SessionProvider. It uses the native title, view tabs and action slots, sharing the per-Session Conversation store with the resident header and body. Only the factory declares the header's extension slots; unrelated hosts must not declare them again. The resident header delegates to this factory, preserving its existing navigation. Mounting or switching views does not create a Session or send a prompt.
+diff --git a/packages/client/ui-conversation/README.zh.md b/packages/client/ui-conversation/README.zh.md
+index 353d8be2db..c3a8354de1 100644
+--- a/packages/client/ui-conversation/README.zh.md
++++ b/packages/client/ui-conversation/README.zh.md
+@@ -172,0 +173,2 @@ selector 必须是 owner currency 的纯函数。非 null 返回值作为 `match
++
++嵌入式界面在同一个 SessionProvider 内并列渲染 conversation.session.chrome 与 conversation.content 工厂。标题、视图标签和操作仍使用原生组件，与主界面标题及正文共享每个会话的 Conversation store。标题扩展插槽只由工厂声明，其他宿主不得重复声明。主界面标题委托同一工厂，保留现有导航；挂载和切换视图不会创建会话或发送提示。
+diff --git a/packages/client/ui-conversation/src/client/apply.ts b/packages/client/ui-conversation/src/client/apply.ts
+index 0fc9b2560c..c5eee77026 100644
+--- a/packages/client/ui-conversation/src/client/apply.ts
++++ b/packages/client/ui-conversation/src/client/apply.ts
+@@ -40 +40 @@ import { ConversationHeader } from './skeleton/ConversationHeader.tsx'
+-import { ConversationSession, ConversationSessionHeader } from './skeleton/ConversationSession.tsx'
++import { ConversationSession, ConversationSessionHeader, ConversationSessionHeaderOutlet } from './skeleton/ConversationSession.tsx'
+@@ -400,8 +400,6 @@ export function apply(ctx: Context, config: Config = Config({})): void {
+-  const registerSessionHeader = () => slots.register({
+-    name: 'conversation.session.header',
+-    locale: NS,
+-    children: {
+-      'conversation.session.header.lineage': { kind: 'single', scope: 'session' },
+-      'conversation.session.header.actions': { kind: 'list', scope: 'session' },
+-      'conversation.session.header.utilities': { kind: 'list', scope: 'session' },
+-      'conversation.session.header.corner': { kind: 'single', scope: 'session' },
++  const sessionHeaderInject = (sessionId: SessionId, actions: BoundActions<typeof conversationStore>): ConversationSessionHeaderInjected => ({
++    hooks: { conversationViews },
++    open: (id) => { workspaceNavigation.openSession(id) },
++    selectView: (view) => {
++      activateView(sessionId, view)
++      actions.setView(view)
+@@ -409,7 +407,12 @@ export function apply(ctx: Context, config: Config = Config({})): void {
+-    store: conversationStore,
+-    inject: (sessionId: SessionId, actions: BoundActions<typeof conversationStore>): ConversationSessionHeaderInjected => ({
+-      hooks: { conversationViews },
+-      open: (id) => { workspaceNavigation.openSession(id) },
+-      selectView: (view) => {
+-        activateView(sessionId, view)
+-        actions.setView(view)
++  })
++  const registerSessionHeader = () => {
++    // Both render locations share the native per-Session view preference.
++    slots.registerFactory({
++      name: 'conversation.session.chrome',
++      scope: 'session',
++      locale: NS,
++      children: {
++        'conversation.session.header.lineage': { kind: 'single', scope: 'session' },
++        'conversation.session.header.actions': { kind: 'list', scope: 'session' },
++        'conversation.session.header.utilities': { kind: 'list', scope: 'session' },
++        'conversation.session.header.corner': { kind: 'single', scope: 'session' },
+@@ -417,2 +420,10 @@ export function apply(ctx: Context, config: Config = Config({})): void {
+-    }),
+-  }, ConversationSessionHeader)
++      store: conversationStore,
++      inject: sessionHeaderInject,
++    }, ConversationSessionHeader)
++    return slots.register({
++      name: 'conversation.session.header',
++      locale: NS,
++      store: conversationStore,
++      inject: sessionHeaderInject,
++    }, ConversationSessionHeaderOutlet)
++  }
+diff --git a/packages/client/ui-conversation/src/client/contract/slots.ts b/packages/client/ui-conversation/src/client/contract/slots.ts
+index 61f7d8ff8b..838da93979 100644
+--- a/packages/client/ui-conversation/src/client/contract/slots.ts
++++ b/packages/client/ui-conversation/src/client/contract/slots.ts
+@@ -226,0 +227,14 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
++    /** Native Session title and view navigation reused by embedded hosts. */
++    'conversation.session.chrome': {
++      scope: 'session'
++      props: { hideChrome: boolean }
++      children: {
++        'conversation.session.header.lineage': { kind: 'single'; scope: 'session' }
++        'conversation.session.header.actions': { kind: 'list'; scope: 'session' }
++        'conversation.session.header.utilities': { kind: 'list'; scope: 'session' }
++        'conversation.session.header.corner': { kind: 'single'; scope: 'session' }
++      }
++      store: ConversationStore
++      inject: ConversationSessionHeaderInjected
++      locale: 'conversation'
++    }
+diff --git a/packages/client/ui-conversation/src/client/skeleton/ConversationSession.tsx b/packages/client/ui-conversation/src/client/skeleton/ConversationSession.tsx
+index f1179cf32b..552e1cd120 100644
+--- a/packages/client/ui-conversation/src/client/skeleton/ConversationSession.tsx
++++ b/packages/client/ui-conversation/src/client/skeleton/ConversationSession.tsx
+@@ -3,0 +4 @@ import clsx from 'clsx'
++import type { FactoryComponentPropsOf, PropsRenderFactories, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+@@ -7 +8 @@ import type {
+-  ConversationSessionHeaderSlotProps, ConversationSessionSlotProps,
++  ConversationSessionSlotProps,
+@@ -17 +18 @@ export type ConversationSessionProps = ConversationSessionSlotProps
+-export type ConversationSessionHeaderProps = ConversationSessionHeaderSlotProps
++export type ConversationSessionHeaderProps = FactoryComponentPropsOf<'conversation.session.chrome'>
+@@ -170,0 +172,8 @@ export function ConversationSession(props: ConversationSessionProps) {
++
++/** Resident header delegates to the same native assembly used by embedded hosts.
++ * @param props - Session-bound factory renderer and chrome visibility.
++ * @returns The registered native Session header.
++ */
++export function ConversationSessionHeaderOutlet({ hideChrome, renderFactorySlot }: PropsRuntime<'conversation.session.header'> & PropsRenderFactories) {
++  return renderFactorySlot('conversation.session.chrome', { hideChrome })
++}
+diff --git a/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx b/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx
+index 138436b764..15e43a0c23 100644
+--- a/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx
++++ b/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx
+@@ -46,0 +47,20 @@ describe('target-neutral Conversation apply wiring', () => {
++  it('reuses native session navigation beneath unrelated presentation hosts', async () => {
++    const b = await bench()
++    try {
++      const chrome = b.runtime.factoryOf('conversation.session.chrome')
++      expect(chrome.scope).toBe('session')
++      expect(chrome.store).toBe(entry(b.runtime, 'conversation.session')?.store)
++      expect(chrome.children).toMatchObject({
++        'conversation.session.header.lineage': { kind: 'single', scope: 'session' },
++        'conversation.session.header.actions': { kind: 'list', scope: 'session' },
++        'conversation.session.header.utilities': { kind: 'list', scope: 'session' },
++        'conversation.session.header.corner': { kind: 'single', scope: 'session' },
++      })
++      const source = (chrome.inject!(SID, {}) as { hooks: { conversationViews: ObservableSnapshot<readonly ViewTab[]> } }).hooks.conversationViews
++      b.runtime.slots.register({ name: 'conversation.view', id: 'chat', label: 'Chat' }, (() => null) as never)
++      b.runtime.slots.register({ name: 'conversation.view', id: 'trajectory', label: 'Trajectory' }, (() => null) as never)
++      await vi.waitFor(() => expect(source.getSnapshot().map(tab => tab.id)).toEqual(['chat', 'trajectory']))
++      await b.feature.dispose()
++      expect(b.runtime.slots.spec('conversation.session.header.actions')).toBeUndefined()
++    } finally { await b.runtime.dispose() }
++  })

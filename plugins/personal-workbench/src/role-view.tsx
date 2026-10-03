@@ -46,6 +46,7 @@ function RoleNative({ renderFactorySlot, useSession }: PropsRuntime<'personal-wo
   // The native embedded body uses flex sizing; a block parent lets long messages
   // determine its height and pushes the composer below the clipped role pane.
   return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
+    <div style={{ flexShrink: 0, minWidth: 0 }}>{renderFactorySlot('conversation.session.chrome', { hideChrome: false })}</div>
     {failure && <p role="alert" style={{ flexShrink: 0, maxHeight: '25%', overflow: 'auto', overflowWrap: 'anywhere', margin: 0, padding: '8px 10px' }}>{failure}</p>}
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{content}</div>
   </div>

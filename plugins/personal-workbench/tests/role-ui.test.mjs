@@ -20,7 +20,7 @@ test('built generic role view reads per-ID official status facts without a fake 
   const fail = () => assert.fail('No native command authorized by status rendering')
   const ctx = { inject: (services, callback) => { if (services.includes('uiConversation')) callback(ctx) }, effect: action => { const result = action(); if (typeof result === 'function') cleanup.push(result); return result },
     reflect: { provide: () => () => {} }, locale: { register: () => () => {} }, sessions: { retain: fail, using: fail }, workspaces: { list: {} },
-    slots: { inject: (_name, callback) => callback(), register: () => () => {}, registerFactory: (options, component) => { entries.push({ options, component }); return () => {} } },
+    slots: { inject: (_name, callback) => callback(), register: (options, component) => { entries.push({ options, component }); return () => {} }, registerFactory: (options, component) => { entries.push({ options, component }); return () => {} } },
   }
   runInNewContext(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'), { console, AbortController, fetch: fail,
     window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }) })
@@ -42,6 +42,14 @@ test('built generic role view reads per-ID official status facts without a fake 
     assert.match(dom.window.document.body.textContent, /待处理：approval/)
     assert.match(dom.window.document.body.textContent, /未读完成/)
     assert.match(dom.window.document.body.textContent, /Math teacher/)
+    const native = entries.find(row => row.options.name === 'personal-workbench.role-native')
+    const factories = []
+    await React.act(async () => root.render(React.createElement(native.component, {
+      useSession: selector => selector({}),
+      renderFactorySlot: (name, owner) => { factories.push({ name, owner }); return React.createElement('div', null, name) },
+    })))
+    assert.deepEqual(factories.map(row => row.name), ['conversation.content', 'conversation.session.chrome'])
+    assert.equal(factories[1].owner.hideChrome, false)
   } finally {
     await React.act(async () => root.unmount())
     for (const dispose of cleanup.reverse()) await dispose()

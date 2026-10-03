@@ -26,3 +26,11 @@ The implementation issue uses Markdown frontmatter as the local tracker metadata
 ## Application platform implementation graph
 
 The approved seven vertical slices are tracked locally at `.scratch/application-platform/issues/README.md` (one file per ticket, blockers listed by title). The implementation branch is `codex/application-platform`. Work only on the frontier, preserve each task's acceptance evidence, and do not infer completion from a commit. The user supplied origin https://github.com/lvyangyan12q/my-dsh-plugins. The single implementation draft PR is https://github.com/lvyangyan12q/my-dsh-plugins/pull/2; local tickets remain the task source. The user confirmed c44d9af as the final review baseline.
+
+## Worktable canvas implementation graph
+
+The eight approved follow-up slices are tracked at [.scratch/worktable-canvas/issues/README.md](../../.scratch/worktable-canvas/issues/README.md), one Markdown file per ticket. They replace the concentrated creation form with layout-first module configuration while retaining DSH native menus, the independent upstream Worktable, existing app-private capabilities and the user's Agent management edits.
+
+Dependencies: 01 → 02 → 03; 03 → 04 and 06; 02 → 05; 04/05/06 → 07; 02–07 → 08. The four packaged workbench Skills are module generation, page adjustment, data display and application building. Final acceptance includes real native conversation/trajectory interactions, 3080 plugin provenance and preservation checks, and remote delivery to the existing repository and PR.
+
+As of 2026-10-04, ticket 02 is partially implemented; complete native session navigation and tickets 04–08 remain unverified. Ticket status and unchecked acceptance criteria are authoritative. The isolated 3086 prototype is not the deployable plugin. Do not infer completion from prototype behavior, build success or a commit.

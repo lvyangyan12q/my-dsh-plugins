@@ -1,0 +1,35 @@
+{
+  "baseCommit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+  "files": [
+    {
+      "path": "packages/client/ui-conversation/README.md",
+      "before": "20aa1d17603d415652b26a5afe47bde175d45838689642e17ef4262a8ae1eda2",
+      "after": "e805ee517443644341a94d9b62df56af920c8232db907fdd307dbd1aa0b69a3b"
+    },
+    {
+      "path": "packages/client/ui-conversation/README.zh.md",
+      "before": "6461def17963a5ca29d601cc4d8a9255c514b3b16f7df1ffd941e93bf9138600",
+      "after": "98a35b468ff2531d56ae6fc167b38ecc1765f20f889e967c13914a1001361f40"
+    },
+    {
+      "path": "packages/client/ui-conversation/src/client/apply.ts",
+      "before": "7f739def8643947ca1c75eb0ec14ba1183c9d91f22f71a4f3f6c175263d3ae9f",
+      "after": "e41778a7c5b529344ed147bccb7fbce542b57c3b70833e594c0c863091f3e66b"
+    },
+    {
+      "path": "packages/client/ui-conversation/src/client/contract/slots.ts",
+      "before": "d7a2c2132b62dd7b2eeac5ef184666ea8f84ff42a7469d4815e705a30bad0e78",
+      "after": "5002136a20773c6f5e0bee134767ac04129f3e6e762124334a5b706dd6185feb"
+    },
+    {
+      "path": "packages/client/ui-conversation/src/client/skeleton/ConversationSession.tsx",
+      "before": "a7eecaec5677b04fab9f9982ea49ae29267db924d36284f7b3e59a8f5109f72a",
+      "after": "ac5abc96e6df20e95a449891f6b0c4b17c42ba03468e39a01c26b124ed1a4726"
+    },
+    {
+      "path": "packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx",
+      "before": "bd8f728b0ba17f09748f3795d8fc1c0c46248660c59f6cdd3fbba6d6acbc4d50",
+      "after": "a438cb65409837b646cd054cb5a89a31055eedb93d7fcdd65bbb0387de9ddadc"
+    }
+  ]
+}
