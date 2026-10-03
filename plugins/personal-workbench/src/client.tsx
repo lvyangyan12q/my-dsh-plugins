@@ -176,3 +176,6 @@ export { DisplayModule, DisplayModules } from './display-view.tsx'
 export { RecipeEditor } from './recipe-editor.tsx'
 export { PreparedTaskEditor } from './task-view.tsx'
 export type { PersonalWorkbenchTasks, PreparedTask, TaskContext, TaskState } from './task-api.ts'
+
+export { registerRecipeModuleContextProvider } from './module-context.ts'
+export type { RecipeModuleContext, RecipeModuleContextProvider } from './module-context.ts'

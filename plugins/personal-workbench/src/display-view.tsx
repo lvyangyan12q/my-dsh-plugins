@@ -1,3 +1,5 @@
+import { displayModuleContext } from './display-context.ts'
+import { registerRecipeModuleContextProvider } from './module-context.ts'
 import { useSyncExternalStore } from 'react'
 import type { DisplaySource } from './display-api.ts'
 import { displayCatalog, getDisplaySource } from './display-api.ts'
@@ -41,7 +43,11 @@ export function RecipeDisplayModule(props: RecipeModuleProps & { t?: Translate }
   return <DisplayModule type={props.module.type as 'stats' | 'list' | 'detail' | 'filter'} store={owner(props, source)} t={t} />
 }
 export function installDisplayModules() {
-  const removes = ['stats', 'list', 'filter', 'detail'].map(type => registerRecipeModuleRenderer(type, RecipeDisplayModule))
+  const removes = ['stats', 'list', 'filter', 'detail'].flatMap(type => [registerRecipeModuleRenderer(type, RecipeDisplayModule),registerRecipeModuleContextProvider(type,props=>{
+    const connection=props.recipe.connections.find(c=>c.id===props.module.connectionId),source=connection?.sourceAppId===props.appId?getDisplaySource(connection.sourceAppId,connection.resource):undefined
+    if(!connection||!source)return {phase:'unavailable',reason:props.t('displayUnavailable')+': '+(connection?.resource??props.module.id)}
+    return displayModuleContext(props,owner(props,source),source)
+  })])
   const unsubscribe = displayCatalog.subscribe(() => { for (const [key, entry] of owners) if (getDisplaySource(entry.source.appId, entry.source.resource) !== entry.source) { entry.store.dispose(); owners.delete(key) } })
   return () => { unsubscribe(); for (const remove of removes.reverse()) remove(); for (const entry of owners.values()) entry.store.dispose(); owners.clear() }
 }

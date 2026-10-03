@@ -1,3 +1,4 @@
+import { registerRecipeModuleContextProvider } from './module-context.ts'
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { RecipeModuleProps } from './recipe-view.tsx'
@@ -30,5 +31,6 @@ function RecipeRoleChat({ctx,recipe,module,appId,instanceId,preview,t,renderFact
 }
 export function installTasks(ctx:Context) {
  ctx.effect(()=>registerRecipeModuleRenderer('role-chat',RecipeRoleChat),'recipe role renderer')
+ ctx.effect(()=>registerRecipeModuleContextProvider('role-chat',()=>({phase:'ready',context:[]})),'role chat context')
  ctx.inject(['personalWorkbenchRoles'],child=>child.effect(()=>child.reflect.provide('personalWorkbenchTasks',new PreparedTasks(child.personalWorkbenchRoles)),'prepared tasks'))
 }
