@@ -50,7 +50,9 @@ export async function installGeneration(ctx:Context){
    const events=agent.session.snapshotEvents().slice(offset),end=[...events].reverse().find(event=>event.type==='turn/end')
    if(end?.type!=='turn/end'||end.data.reason.kind!=='completed')throw new Error('Native generation did not complete: '+(end?.type==='turn/end'?end.data.reason.kind:'missing outcome'))
    const output=finalAssistantOutput(events)??[]
-   if(!output.length||output.some(block=>block.type!=='text'))throw new Error('Generator must return text JSON only')
+   // Official DeepSeek thinking becomes a reasoning block; it is not recipe content.
+   if(!output.some(block=>block.type==='text')||output.some(block=>block.type!=='text'&&block.type!=='reasoning'))throw new Error('Generator must return text JSON only')
+   if(events.some(event=>event.type==='assistant/message'&&event.data.message.content.some(block=>block.type==='tool-call')))throw new Error('Generator must not return tool calls')
    const text=output.map(block=>block.type==='text'?block.text:'').join('')
    if(Buffer.byteLength(text,'utf8')>262144)throw new Error('Generated recipe is too large')
    const recipe=recipeSchema.parse(JSON.parse(text))

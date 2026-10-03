@@ -13,7 +13,7 @@ import {generationHostDependencies} from '../src/generation-api.ts'
 const source=process.env.DSH_SOURCE;assert.ok(source)
 const require=createRequire(resolve(source,'packages/client/ui-renderer/package.json'));const {Context}=require('@deepseek-ai/cordis')
 const built=p=>import(pathToFileURL(resolve(source,p,'lib/index.js')).href)
-const {MockAdapter,textResponse,maxTokensResponse}=await import(pathToFileURL(resolve(source,'packages/core/agent-loop/tests/mock-adapter.ts')).href)
+const {MockAdapter,textResponse,maxTokensResponse,toolCallResponse}=await import(pathToFileURL(resolve(source,'packages/core/agent-loop/tests/mock-adapter.ts')).href)
 const {default:LLM,ToolCallId}=await built('packages/llm/llm'),{default:Sessions}=await built('packages/core/session'),{default:Projection}=await built('packages/session/session-projection'),{default:Prompt}=await built('packages/core/system-prompt'),{default:Tools}=await built('packages/core/tools'),{default:Agents}=await built('packages/core/agent'),{default:Loop}=await built('packages/core/agent-loop'),{default:Presets}=await built('packages/preset/agent-preset-registry'),{SkillRegistry}=await built('packages/skill/skill'),{default:SessionController}=await built('packages/api/session-controller')
 const {default:DefaultModel}=await built('packages/core/agent-default-model')
 const {assembleContextFor}=await built('packages/core/agent')
@@ -98,3 +98,13 @@ test('generated drafts reject unknown preset, Skill, connection and extra execut
 test('cancelling before native admission sends no model request and preserves empty draft storage',async()=>{const f=await fixture([]);try{const job=f.start();f.generation.dispatch({action:'cancel',id:job.id});assert.equal((await f.generation.settled(job.id)).status,'cancelled');assert.equal(f.adapter.requests.length,0);assert.deepEqual(f.recipes.service.list(),[])}finally{await f.close()}})
 
 test('effective native assembly inventory gate still rejects another plugin adding exposed tools',async()=>{const f=await fixture([validResponse()]);const remove=f.ctx.on('system-prompt/assemble',async(_assembly,_context,next)=>({...await next(),tools:[{name:'unexpected_surface',description:'metadata only',parameters:{type:'object'}}]}),{prepend:true});try{const done=await f.generation.settled(f.start().id);assert.equal(done.status,'failed');assert.match(done.error,/Generator tool inventory is not empty: unexpected_surface/);assert.equal(f.adapter.requests.length,0);assert.deepEqual(f.recipes.service.list(),[])}finally{remove();await f.close()}})
+
+test('official provider reasoning blocks are ignored while only strict text JSON becomes a draft',async()=>{
+ const reasoning=[{type:'block-start',index:0,blockType:'reasoning'},{type:'reasoning-delta',index:0,text:'Reasoning includes a different recipe identity; ignore it.'},{type:'block-end',index:0,block:{type:'reasoning',text:'Reasoning includes a different recipe identity; ignore it.'}}]
+ const f=await fixture([[...reasoning,...textResponse(JSON.stringify(recipe())).map(chunk=>'index'in chunk?{...chunk,index:chunk.index+1}:chunk)]]);try{const done=await f.generation.settled(f.start().id);assert.equal(done.status,'completed',done.error);assert.equal(done.record.draft.appId,'app.generated');const content=f.ctx.agents.get(done.sessionId).session.snapshotEvents().filter(event=>event.type==='assistant/message').at(-1).data.message.content;assert.deepEqual(content.map(block=>block.type),['reasoning','text']);assert.equal(f.recipes.service.list().length,1)}finally{await f.close()}
+})
+test('reasoning cannot turn prose, fenced JSON, tool calls or a reasoning-only answer into a valid recipe',async()=>{
+ const reasoning=[{type:'block-start',index:0,blockType:'reasoning'},{type:'reasoning-delta',index:0,text:JSON.stringify(recipe())},{type:'block-end',index:0,block:{type:'reasoning',text:JSON.stringify(recipe())}}]
+ const mixed=text=>[...reasoning,...textResponse(text).map(chunk=>'index'in chunk?{...chunk,index:chunk.index+1}:chunk)]
+ const f=await fixture([mixed('Here is the recipe: '+JSON.stringify(recipe())),mixed('~~~json\n'+JSON.stringify(recipe())+'\n~~~'),[...reasoning,{type:'finish',reason:{kind:'stop'}}],toolCallResponse('bad-call','schedule_list',{}),validResponse()]);try{for(let i=0;i<4;i++){const done=await f.generation.settled(f.start().id);assert.equal(done.status,'failed');assert.deepEqual(f.recipes.service.list(),[])}}finally{await f.close()}
+})
