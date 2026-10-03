@@ -35,7 +35,7 @@ export class TeacherWindow {
   private observers: (() => void)[] = []
 
   constructor(
-    private readonly sessions: Pick<ISessions, 'retain'>,
+    private readonly sessions: Pick<ISessions, 'retain'> & Partial<Pick<ISessions, 'list' | 'refresh'>>,
     private readonly association: (signal: AbortSignal) => Promise<SessionId>,
     private readonly workspaces: WorkspaceSource,
   ) {}
@@ -63,6 +63,10 @@ export class TeacherWindow {
       if (!this.archiveReady()) await this.waitForArchive(request.signal)
       if (this.disposed || generation !== this.generation) return
       this.checkArchive(id)
+      const catalog = this.waitForCatalog(id, request.signal)
+      if (catalog) await catalog
+      if (this.disposed || generation !== this.generation) return
+      this.checkArchive(id)
       reference = this.sessions.retain(id, { source: 'personalWorkbenchTeacher' })
       this.references.set(reference, 0)
       await reference.ready
@@ -70,6 +74,9 @@ export class TeacherWindow {
         this.release(reference)
         return
       }
+      this.checkArchive(id)
+      if (reference.binding.session.getSnapshot().openState !== 'open') await this.waitForSession(reference, request.signal)
+      if (this.disposed || generation !== this.generation) { this.release(reference); return }
       this.checkArchive(id)
       this.checkSession(reference)
       this.publish({ phase: 'open', reference })
@@ -153,6 +160,55 @@ export class TeacherWindow {
   private checkSession(reference: SessionReference): void {
     const snapshot = reference.binding.session.getSnapshot()
     if (snapshot.removed || snapshot.openState !== 'open') throw new Error('Session not accessible')
+  }
+
+  /** Catalog membership authorizes native retain; a persisted Host ID alone does not.
+   * Join the Controller's shared read without cancelling it for other consumers.
+   */
+  private waitForCatalog(id: SessionId, signal: AbortSignal): Promise<void> | undefined {
+    const { list, refresh } = this.sessions
+    if (!list || !refresh || (list.getSnapshot().phase === 'ready' && list.getSnapshot().byId[id])) return
+    return new Promise<void>((resolve, reject) => {
+      const aborted = () => finish(new Error('Opening abandoned'))
+      const finish = (error?: unknown) => {
+        signal.removeEventListener('abort', aborted)
+        if (error) reject(error); else resolve()
+      }
+      signal.addEventListener('abort', aborted, { once: true })
+      if (signal.aborted) { aborted(); return }
+      Promise.resolve().then(() => this.sessions.refresh!()).then(() => finish(), finish)
+    }).then(() => {
+      if (list.getSnapshot().phase !== 'ready') throw new Error('Session catalog unavailable')
+    })
+  }
+
+  /** Reference.ready settles its initial attempt; a superseding native address
+   * hydration can still be opening the same live Session generation.
+   */
+  private waitForSession(reference: SessionReference, signal: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let unsubscribe = () => {}
+      const finish = (error?: Error) => {
+        unsubscribe()
+        signal.removeEventListener('abort', aborted)
+        if (error) reject(error); else resolve()
+      }
+      const aborted = () => finish(new Error('Opening abandoned'))
+      const changed = () => {
+        try {
+          if (signal.aborted) { aborted(); return }
+          this.checkArchive(reference.sessionId)
+          const state = reference.binding.session.getSnapshot()
+          if (state.removed || state.openState === 'error') finish(new Error('Session not accessible'))
+          else if (state.openState === 'open') finish()
+        } catch { finish(new Error('Session not accessible')) }
+      }
+      const stopSession = reference.binding.session.subscribe(changed)
+      const stopArchive = this.workspaces.subscribe(changed)
+      unsubscribe = () => { stopSession(); stopArchive() }
+      signal.addEventListener('abort', aborted, { once: true })
+      changed()
+    })
   }
 
   private waitForArchive(signal: AbortSignal): Promise<void> {

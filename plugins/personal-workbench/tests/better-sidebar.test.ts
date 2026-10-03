@@ -28,7 +28,12 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
       window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }: { factory: (require: (name: string) => unknown) => typeof exports }) => {
         exports = factory(name => { if (restrictImports) assert.ok(['react', 'react/jsx-runtime'].includes(name)); return require(name) })
       } } }),
-      fetch: () => { assert.fail('No association reads or Session creation') },
+      fetch: (path: string) => {
+        // The current Workbench reads independent recipe/app availability catalogs.
+        if (path.endsWith('/recipes')) return Promise.resolve({ ok: true, json: async () => ({ version: 1, recipes: [] }) })
+        if (path.endsWith('/apps')) return Promise.resolve({ ok: true, json: async () => ({ version: 1, states: [] }) })
+        assert.fail('No association reads or Session creation')
+      },
     })
     return exports!
   }
@@ -66,7 +71,7 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
   try {
     assert.equal(sidebar.registrations, 0)
     assert.equal(status(), null)
-    assert.equal(ctx.slots.entries('shell.overlay').length, 2)
+    assert.equal(ctx.slots.entries('shell.overlay').length, 3, 'teacher, workspace and independent capability management overlays')
     api.registerApp({ id, version: '1', name: 'Registered app', icon: 'book-open', source: 'fixture',
       pages: [{ id: 'lesson', label: 'Lesson' }, { id: 'practice', label: 'Practice' }], defaultLayout: { width: 600, height: 400, pageId: 'lesson' },
       dependencies: [{ id: 'optional.teacher-skill', available: false, reason: 'Skill unavailable' }] })

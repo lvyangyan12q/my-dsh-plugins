@@ -269,3 +269,31 @@ test('removed history withdraws the provider and a stale scoped retry cannot ado
   assert.equal(f.subscriptions(), 0)
   f.owner.dispose()
 })
+
+test('settled first reference waits for a same-ID hydration open rather than reporting a failed Session', async () => {
+  const f = fixture({ state: 'loading' })
+  const opening = f.owner.open()
+  for (let i = 0; i < 5; i++) await Promise.resolve()
+  assert.equal(f.owner.getSnapshot().phase, 'loading')
+  assert.equal(f.acquired.length, 1)
+  f.session('open')
+  await opening
+  assert.equal(f.owner.getSnapshot().phase, 'open')
+  assert.equal(f.acquired.length, 1)
+  f.owner.dispose()
+  assert.equal(f.subscriptions(), 0)
+})
+test('closing or archiving during ready-but-hydrating Session wait releases once and removes all listeners', async () => {
+  for (const stop of ['close', 'archive'] as const) {
+    const f = fixture({ state: 'loading' })
+    const opening = f.owner.open()
+    for (let i = 0; i < 5; i++) await Promise.resolve()
+    if (stop === 'close') f.owner.close()
+    else f.workspace({ archivedSessionIds: [f.reference.sessionId] })
+    await opening
+    assert.equal(f.owner.getSnapshot().phase, stop === 'close' ? 'closed' : 'error')
+    assert.equal(f.released(), 1)
+    assert.equal(f.subscriptions(), 0)
+    f.owner.dispose()
+  }
+})
