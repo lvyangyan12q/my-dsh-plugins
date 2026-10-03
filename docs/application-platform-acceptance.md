@@ -59,3 +59,12 @@ This release delivers installed registered modules and scalar recipes; it does n
 自有控件统一采用共享 controlStyles，通过 data-pwb-button 与 primary 语义标记区分按钮层级，不标记原生 DSH 会话控件。新建课堂、刷新课堂补充可见文字；学习窗口、新建/保存、生成草稿、发送任务和启用应用等主要操作采用暖橙实心样式，次要操作明确描边，导航保留选中状态。考公及独立管理界面采用米白画布与深灰文字。
 
 三插件构建、类型和消费检查通过，212/212 平台测试通过。正式 3082 浏览器验证主要/次要按钮均为 36px 高度、1px 边框，主要背景 rgb(164, 76, 50)，次要背景 rgb(253, 252, 249)。统计面板、独立学习窗口、Agent 管理页均已验证。DSH 原生左侧菜单保持原样；未发送模型请求或修改学习数据。
+
+### Prepared teaching task layout (2026-10-03)
+
+- Reproduced in the formal 3082 Browser: default inline labels and narrow textareas squeezed teaching instructions, evidence and the remove button together.
+- Prepared tasks now use a scoped vertical form, full-width textareas, separate evidence title/source and a remove button in each evidence header. The Kaogong role label is human-readable.
+- The editor is bounded to half the available role pane; its content scrolls independently while send/cancel remain visible. Native menus and native conversation styling are unchanged.
+- Browser checked at 1280 × 720: editor width 370 px, textareas 340 px with 82 px minimum height, bottom actions contained within the editor; evidence remove control remains separately accessible. No teaching task was sent during this verification.
+- Clean Host/Client builds, declarations and source consumers passed for all three plugins; 212/212 platform tests passed, including edit/remove-before-explicit-send behavior.
+- Existing native session active-write-handle error remains a separate issue; this change does not claim to resolve it.

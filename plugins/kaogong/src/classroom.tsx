@@ -24,6 +24,7 @@ export function buildTeachingTask(request: KaogongTeachingRequest, material: Ent
   }
 }
 const taskLabels: Record<string, string> = { taskPrepared: '待发送教学任务', taskTarget: '目标角色', taskSource: '上下文来源', taskText: '教学任务', taskRemove: '移除资料', taskSend: '发送教学任务', taskDiscard: '取消准备', taskUnavailable: '教学任务服务不可用', retry: '重试' }
+const taskRoleLabel = (key: RoleBindingKey) => key.roleId === 'teacher' ? '任课老师' : key.roleId === 'class-advisor' ? '班主任' : '辅导员'
 const taskTranslate = (key: string) => taskLabels[key] ?? key
 
 /** Both surfaces share the existing owner. The native pane stays mounted across page changes. */
@@ -83,9 +84,9 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
         {([{ id: 'class-advisor', label: '班主任', Icon: GraduationCap }, { id: 'teacher', label: '任课老师', Icon: BookOpen }, { id: 'counselor', label: '辅导员', Icon: HeartHandshake }]).map(role => <button data-pwb-button key={role.id} title={role.label} aria-pressed={selected.roleId === role.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 30 }} onClick={() => select({ ...classroomTeacherKey, roleId: role.id, ...(role.id === 'teacher' && selected.subject ? { subject: selected.subject } : {}) })}><role.Icon size={15} />{role.label}</button>)}
         {selected.roleId === 'teacher' && <select aria-label="教师科目" value={selected.subject ?? ''} onChange={event => select({ ...classroomTeacherKey, ...(event.target.value ? { subject: event.target.value } : {}) })}><option value="">默认老师</option>{TAXONOMY.map(row => <option key={row.subject}>{row.subject}</option>)}</select>}
       </nav>}
-      {!props.renderFactorySlot && props.ctx && tasks && <PreparedTaskEditor ctx={props.ctx} bindingKey={selected} t={taskTranslate} />}
+      {!props.renderFactorySlot && props.ctx && tasks && <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: 0, maxHeight: '50%', overflow: 'hidden', padding: '8px' }}><PreparedTaskEditor ctx={props.ctx} bindingKey={selected} label={taskRoleLabel(selected)} t={taskTranslate} /></div>}
       {roles && props.renderFactorySlot ? opened.map(key => <div key={JSON.stringify(key)} hidden={!same(key, selected)} style={{ flex: 1, minHeight: 0, minWidth: 0, display: same(key, selected) ? 'flex' : 'none', flexDirection: 'column' }}>
-        {props.ctx && tasks && <PreparedTaskEditor ctx={props.ctx} bindingKey={key} t={taskTranslate} />}
+        {props.ctx && tasks && <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: 0, maxHeight: '50%', overflow: 'hidden', padding: '8px' }}><PreparedTaskEditor ctx={props.ctx} bindingKey={key} label={taskRoleLabel(key)} t={taskTranslate} /></div>}
         {props.renderFactorySlot!('personal-workbench.role-conversation', { bindingKey: key, label: key.subject ?? (key.roleId === 'teacher' ? '默认老师' : key.roleId === 'class-advisor' ? '班主任' : '辅导员'), active: studyOpen && (props.active ?? true) && same(key, selected) }, { fallback: <p role="alert">角色原生组件不可用。</p> })}
       </div>) : <p role="status">角色服务不可用；练习和讲义仍可使用。</p>}
     </aside>
