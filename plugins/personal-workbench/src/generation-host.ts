@@ -33,7 +33,8 @@ export async function installGeneration(ctx:Context){
    const resolved=await ctx.sessionController.resolveAgent(created.sessionId);if('error' in resolved)throw resolved.error;agent=resolved.agent
    controller.signal.throwIfAborted()
    // Native restriction affects globals; the guard also covers scoped, late and nested execution.
-   if(agent.ctx.tools.schemas(agent).length)throw new Error('Generator tool inventory is not empty')
+   const toolNames=agent.ctx.tools.schemas(agent).map(tool=>tool.name)
+   if(toolNames.length)throw new Error('Generator tool inventory is not empty: '+toolNames.join(', '))
    const safeCatalog={...catalog,connections:catalog.connections.filter(source=>source.appId===input.appId)}
    const prompt=JSON.stringify({task:'Return exactly one JSON application recipe. Use only the supplied schema and registered catalog. No markdown, code, extra keys or tool calls. The identity and version must match target. Connections must belong to target.appId. If no data source exists, use no connections. Roles are optional.',target:{appId:input.appId,version:input.version},requirement:input.requirement,schema:z.toJSONSchema(recipeSchema),catalog:safeCatalog})
    const offset=agent.session.snapshotEvents().length
