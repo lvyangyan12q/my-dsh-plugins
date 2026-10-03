@@ -68,3 +68,10 @@ This release delivers installed registered modules and scalar recipes; it does n
 - Browser checked at 1280 × 720: editor width 370 px, textareas 340 px with 82 px minimum height, bottom actions contained within the editor; evidence remove control remains separately accessible. No teaching task was sent during this verification.
 - Clean Host/Client builds, declarations and source consumers passed for all three plugins; 212/212 platform tests passed, including edit/remove-before-explicit-send behavior.
 - Existing native session active-write-handle error remains a separate issue; this change does not claim to resolve it.
+
+### Application generation and recipe editor layout (2026-10-03)
+
+- Reproduced the unstyled generation demand textarea (small inline native control), plain draft selector and inline recipe labels in Browser on 3082.
+- Added scoped generation and recipe editor cards: vertical full-width requirement field, separate action row, consistent draft selectors and recipe inputs, visible current-step treatment, evidence/data connection rows and advanced configuration spacing. Styles do not target native DSH menus or generated preview controls.
+- Browser verified the requirement textarea at 867 × 140 px in the 1280 × 720 viewport, draft selection and the existing reading application's data connection step. No model generation, save or activation was performed for visual verification.
+- Three clean plugin builds and all 212 platform tests passed, including generation and recipe behavior checks.
