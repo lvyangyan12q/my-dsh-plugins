@@ -1,3 +1,4 @@
+import {selectRecipeWorkspace,checkInstanceWorkspace} from './recipe-workspace.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-workspace'
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
@@ -23,11 +24,11 @@ export async function installRecipeRoles(ctx:Context) {
   for(const [name,entry]of registrations){const key=JSON.parse(name);if(key[0]===row.appId&&key[1]===row.instanceId&&!recipe.roles.some(r=>r.id===key[2])){entry.remove();registrations.delete(name)}}
  }
  const service:RecipeRoles={workspace:(appId,instanceId)=>{
-  const task=tail.catch(()=>{}).then(async()=>{if(closed||!running(appId))throw new Error('Recipe unavailable');enabled(appId);const id=JSON.stringify([appId,instanceId]);let row=instances.get(id);if(!row){let cwd:string|undefined;for(const workspace of ctx.workspaceRegistry.list()){if(await workspace.status()==='ok'){cwd=workspace.path;break}}if(!cwd)throw new Error('Trusted Host workspace unavailable');row={appId,instanceId,cwd};await instances.put(id,row)}return row.cwd});tail=task.then(()=>{},()=>{});return task
+  const task=tail.catch(()=>{}).then(async()=>{const recipe=running(appId);if(closed||!recipe)throw new Error('Recipe unavailable');enabled(appId);const id=JSON.stringify([appId,instanceId]);let row=instances.get(id);if(!row){const cwd=await selectRecipeWorkspace(ctx,recipe.workspace);row={appId,instanceId,cwd};await instances.put(id,row)}checkInstanceWorkspace(recipe.workspace,row.cwd);return row.cwd});tail=task.then(()=>{},()=>{});return task
  },register:(key,explicitEnsure=false)=>{
   const task=tail.catch(()=>{}).then(async()=>{if(closed)throw new Error('Recipe roles unavailable');const recipe=running(key.appId);if(!recipe)return;enabled(key.appId);if(key.subject!==undefined||!recipe.roles.some(r=>r.id===key.roleId))throw new Error('Recipe role unavailable');const id=JSON.stringify([key.appId,key.instanceId]);let row=instances.get(id)
-   if(!row){let cwd:string|undefined;for(const workspace of ctx.get('workspaceRegistry')?.list()??[]){if(await workspace.status()==='ok'){cwd=workspace.path;break}}if(!cwd)throw new Error('Trusted Host workspace unavailable');row={appId:key.appId,instanceId:key.instanceId,cwd};await instances.put(id,row)}
-   sync(row)
+   if(!row){const cwd=await selectRecipeWorkspace(ctx,recipe.workspace);row={appId:key.appId,instanceId:key.instanceId,cwd};await instances.put(id,row)}
+   checkInstanceWorkspace(recipe.workspace,row.cwd);sync(row)
    const saved=await ctx.personalWorkbenchBindings.read(key),role=recipe.roles.find(r=>r.id===key.roleId)!
    if(explicitEnsure&&saved&&saved.presetId!==role.presetId&&!saved.selectedPreset){if(!ctx.personalWorkbenchBindings.setPreset)throw new Error('Role Agent replacement unavailable');await ctx.personalWorkbenchBindings.setPreset(key,role.presetId,saved.sessionId)}
   });tail=task;return task

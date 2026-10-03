@@ -1,5 +1,5 @@
 import type {RecipeModule} from './recipe-api.ts'
-export const contentTypes=['stats','list','detail','filter','website','custom','role-chat','animation','resources'] as const
+export const contentTypes=['empty','stats','list','detail','filter','website','custom','role-chat','animation','resources'] as const
 export function webAddress(value:unknown):string|undefined {
  if(typeof value!=='string'||!value.trim())return undefined
  try{const url=new URL(value);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)return undefined;return url.href}catch{return undefined}

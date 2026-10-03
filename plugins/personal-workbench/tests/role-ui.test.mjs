@@ -18,7 +18,7 @@ test('built generic role view reads per-ID official status facts without a fake 
   const entries = [], cleanup = []
   let exports
   const fail = () => assert.fail('No native command authorized by status rendering')
-  const ctx = { inject: (services, callback) => { if (services.includes('conversation')) callback(ctx) }, effect: action => { const result = action(); if (typeof result === 'function') cleanup.push(result); return result },
+  const ctx = { inject: (services, callback) => { if (services.includes('uiConversation')) callback(ctx) }, effect: action => { const result = action(); if (typeof result === 'function') cleanup.push(result); return result },
     reflect: { provide: () => () => {} }, locale: { register: () => () => {} }, sessions: { retain: fail, using: fail }, workspaces: { list: {} },
     slots: { inject: (_name, callback) => callback(), register: () => () => {}, registerFactory: (options, component) => { entries.push({ options, component }); return () => {} } },
   }

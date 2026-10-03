@@ -1,6 +1,8 @@
 /** Editor-only form styles, independent from generated application previews. */
 export const recipeEditorStyles = `
 .pwb-recipe-editor{min-width:0;margin:14px 0 20px;padding:16px 20px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:10px;background:var(--pwb-paper,#fdfcf9)}
+.pwb-recipe-advanced fieldset{min-width:0;border:0;padding:0;margin:12px 0}
+.pwb-recipe-advanced fieldset :is(input,select){box-sizing:border-box;width:100%;min-width:0;min-height:40px;padding:9px 11px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:6px;background:var(--pwb-paper,#fdfcf9);color:var(--pwb-ink,#2e2b26);font:400 13px/1.6 system-ui,sans-serif}
 .pwb-recipe-editor>summary{font-size:15px;font-weight:600;cursor:pointer;padding:2px 0}
 .pwb-recipe-editor p{overflow-wrap:anywhere}
 .pwb-recipe-help,.pwb-generation-editor>p{margin:10px 0 16px;color:var(--pwb-muted,#736c62);font-size:13px;line-height:1.6}

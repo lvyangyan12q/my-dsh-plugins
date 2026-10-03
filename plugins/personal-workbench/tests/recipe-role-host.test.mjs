@@ -51,3 +51,18 @@ test('unsupported role, subject and unavailable trusted workspace cannot allocat
  const root=await mkdtemp(join(tmpdir(),'recipe-role-fail-')),native={headers:new Map(),created:[]},f=await fixture(root,native)
  try {await f.recipes.service.save(recipe(),0);await f.recipes.service.activate(key.appId,1);await assert.rejects(f.owner.service.register({...key,roleId:'missing'}),/unavailable/);await assert.rejects(f.owner.service.register({...key,subject:'invented'}),/unavailable/);f.workspace(false);await assert.rejects(f.owner.service.register(key),/workspace/);assert.deepEqual(native.created,[])}finally{await f.close();await rm(root,{recursive:true,force:true})}
 })
+
+test('selected trusted workspace controls new instances and cannot silently move existing sessions',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-selected-root-')),native={headers:new Map(),created:[]},f=await fixture(root,native)
+ const selected=join(root,'selected'),other=join(root,'other')
+ f.ctx.workspaceRegistry.list=()=>[root,selected,other].map(path=>({path,status:async()=> 'ok'}))
+ try{const draft={...recipe(),workspace:selected};await f.recipes.service.save(draft,0);await f.recipes.service.activate(key.appId,1)
+  assert.equal(await f.owner.service.workspace(key.appId,key.instanceId),selected);await f.owner.service.register(key);const binding=await f.bindings.ensure(key);assert.equal(binding.creation.cwd,selected)
+  await f.recipes.service.save({...draft,version:2,workspace:other},2);await f.recipes.service.activate(key.appId,3)
+  await assert.rejects(f.owner.service.workspace(key.appId,key.instanceId),/workspace.*changed|changed.*workspace/i);await assert.rejects(f.owner.service.register(key),/workspace.*changed|changed.*workspace/i)
+  assert.equal((await f.bindings.read(key)).sessionId,binding.sessionId);assert.equal(native.created.length,1)
+  assert.equal(await f.owner.service.workspace(key.appId,'new-instance'),other)
+  await f.recipes.service.save({...draft,version:3,workspace:join(root,'unregistered')},4);await assert.rejects(f.recipes.service.activate(key.appId,5),/workspace/i)
+  assert.equal(f.recipes.service.list()[0].running.workspace,other)
+ }finally{await f.close();await rm(root,{recursive:true,force:true})}
+})

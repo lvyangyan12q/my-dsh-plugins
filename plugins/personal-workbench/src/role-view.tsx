@@ -52,7 +52,7 @@ function RoleNative({ renderFactorySlot, useSession }: PropsRuntime<'personal-wo
 }
 /** Optional native surface. Registration does not read metadata or acquire a Session. */
 export function installRoleClient(ctx: Context) {
-  ctx.inject(['conversation'], child => {
+  ctx.inject(['uiConversation'], child => {
     const owner = new RoleClients(child)
     child.effect(() => () => owner.dispose(), 'personal-workbench: teacher owner')
     child.effect(() => child.reflect.provide('personalWorkbenchRoles', owner), 'personal-workbench: roles service')
