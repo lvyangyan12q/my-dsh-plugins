@@ -75,3 +75,10 @@ This release delivers installed registered modules and scalar recipes; it does n
 - Added scoped generation and recipe editor cards: vertical full-width requirement field, separate action row, consistent draft selectors and recipe inputs, visible current-step treatment, evidence/data connection rows and advanced configuration spacing. Styles do not target native DSH menus or generated preview controls.
 - Browser verified the requirement textarea at 867 × 140 px in the 1280 × 720 viewport, draft selection and the existing reading application's data connection step. No model generation, save or activation was performed for visual verification.
 - Three clean plugin builds and all 212 platform tests passed, including generation and recipe behavior checks.
+
+### Compact manual recipe workflow (2026-10-03)
+
+- Follow-up Browser reproduction after creating an unsaved draft: expanded AI generation pushed application-name input to 761 px below the initial viewport and made the editor 1359 px tall.
+- AI generation now collapses after choosing/creating a draft and can be reopened without generating anything. Name/version and page-name/layout use compact responsive columns; save and step navigation share a sticky bottom bar.
+- Formal 1280 x 720 Browser verification: editor height 849 px, application-name input starts at 468 px, bottom action bar remains at 635–696 px. AI panel expanded and collapsed correctly; no generation/save/activation request was performed. No literal svg text was found in the editor.
+- All three plugins rebuilt successfully and all 212 tests passed, including generation-to-edit-to-save-to-preview-to-activation and recipe step behavior.

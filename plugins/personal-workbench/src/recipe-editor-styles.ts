@@ -32,5 +32,18 @@ export const recipeEditorStyles = `
 .pwb-recipe-navigation span{flex:1;text-align:center;font-size:12px;color:var(--pwb-muted,#736c62)}
 .pwb-recipe-editor [role=alert]{padding:10px 12px;border:1px solid #d5a99c;border-radius:6px;background:#fbefea;color:#923c2c;font-size:13px}
 .pwb-recipe-editor :is(textarea,input,select):focus-visible{outline:2px solid var(--pwb-accent,#a44c32);outline-offset:1px}
+.pwb-generation-disclosure{margin:12px 0;padding:10px 12px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:7px}
+.pwb-generation-disclosure>summary{cursor:pointer;font-size:13px;font-weight:500}
+.pwb-generation-disclosure .pwb-generation-editor{border:0;margin:0;padding:12px 0 0;background:transparent}
+.pwb-generation-disclosure .pwb-generation-editor h3{display:none}
+.pwb-recipe-editor>fieldset.pwb-recipe-basics{display:grid;grid-template-columns:minmax(0,1fr) 140px;column-gap:16px;row-gap:4px;padding:12px 16px}
+.pwb-recipe-basics>.pwb-recipe-description{grid-column:1/-1;grid-row:2}
+.pwb-recipe-basics>fieldset,.pwb-recipe-basics>button{grid-column:1/-1}
+.pwb-recipe-basics>label{margin:4px 0!important}
+.pwb-recipe-basics>button{justify-self:start}
+.pwb-recipe-editor>fieldset .pwb-recipe-page-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,220px);column-gap:16px;margin:10px 0;padding:10px 14px}
+.pwb-recipe-page-form>label{margin:4px 0!important}
+.pwb-recipe-navigation{position:sticky;bottom:0;z-index:1;margin:12px -20px -16px;padding:12px 20px;background:var(--pwb-paper,#fdfcf9);border-radius:0 0 10px 10px;box-shadow:0 -4px 10px #00000008}
+@media(max-width:700px){.pwb-recipe-editor>fieldset.pwb-recipe-basics,.pwb-recipe-editor>fieldset .pwb-recipe-page-form{grid-template-columns:minmax(0,1fr)}.pwb-recipe-basics>.pwb-recipe-description{grid-row:auto}.pwb-recipe-navigation{margin-left:-12px;margin-right:-12px;margin-bottom:-12px;padding:10px 12px}.pwb-recipe-navigation span{flex-basis:100%;order:4}}
 @media(max-width:700px){.pwb-recipe-editor{padding:12px}.pwb-generation-editor{padding:12px}.pwb-recipe-toolbar select{max-width:none;flex-basis:100%}}
 `
