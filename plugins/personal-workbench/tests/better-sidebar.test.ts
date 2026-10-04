@@ -26,7 +26,7 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     let exports: { apply: Function; SlotRegistry: Function }
     runInNewContext(code, { console, AbortController,
       window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }: { factory: (require: (name: string) => unknown) => typeof exports }) => {
-        exports = factory(name => { if (restrictImports) assert.ok(['react', 'react/jsx-runtime'].includes(name)); return require(name) })
+        exports = factory(name => { if (restrictImports) assert.ok(['react', 'react/jsx-runtime', 'react-dom'].includes(name)); return require(name) })
       } } }),
       fetch: (path: string) => {
         // The current Workbench reads independent recipe/app availability catalogs.

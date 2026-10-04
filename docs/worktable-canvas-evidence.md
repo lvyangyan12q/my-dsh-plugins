@@ -434,3 +434,27 @@ Chrome DevTools 已连接正式3080，刷新后原生工作区、会话、技能
 - 实际点击预览后出现隔离预览说明；显式点击启用后 revision 4 / running version 2，第二模块保留原 ID 并变为网站，第一模块配方逐字未变，先前 iframe 节点均仍连接，其他应用全记录逐字未变，弹窗自动关闭。没有发送模型消息或清理文件、会话的请求。
 - 自动验证：三插件 clean Host/Client、declarations、source consumers 通过；完整平台测试 **280/280**。新增行为回归覆盖目标格隔离、其他页面/模块/角色/连接保护、版本递增、保存/预览/启用顺序与 revision 冲突后保留编辑、不允许预览或启用。两轴增量审查无新增问题。
 - 原生 `changes.summary` 历史轮次请求仍有 404；本轮仅恢复并验收工作台画布入口，不将该错误记为已修复。全范围最终验收仍待完成。
+
+
+## 2026-10-05：统一窗格工具栏、真实截图及发布门禁
+
+实际截图发现原放大按钮占满模块整行。现将更换内容、设置、放大/恢复和刷新汇入标题右侧的共同工具栏；刷新按钮通过 React portal 进入该工具栏，仍由原内容/数据 renderer 执行。没有移动或重建 iframe、资源状态或共享 DisplayStore。刷新操作仍保持各模块原本行为，原生对话保留自己的原生会话操作，不添加会话重建式刷新。
+
+3080 冷加载后阅读验收页的五个模块实际各显示四个紧凑动作。真实 Chrome 点击列表模块“更换内容”，八种内容卡片就地出现；取消后返回同页，不保存或发送消息。随后切到阅读对话，既有同一 Session 的两轮历史、DSH 原生标题/Agent/对话与轨迹导航、正文及完整输入区可见，没有新建会话或发送验收任务。
+
+截图接口：指定 C 或 D 输出路径都被 DevTools 自身工作区规则拒绝；无路径的元素截图成功返回原始 JPEG。本次保存的是这些实际返回字节，未修改图像、未把原型当运行界面，也未声称取得整个浏览器窗口截图。
+
+- [工作台应用入口](evidence/2026-10-05/home.jpg)
+- [调整前的数据页](evidence/2026-10-05/reading-before-toolbar.jpg)
+- [统一工具栏后的数据页](evidence/2026-10-05/reading-after-toolbar.jpg)
+- [运行格子的内容选择弹窗](evidence/2026-10-05/module-picker.jpg)
+- [应用中的 DSH 原生会话、标题和输入区](evidence/2026-10-05/native-conversation.jpg)
+- [图片字节指纹与验证回执](evidence/2026-10-05/verification.json)
+
+安装门禁发现新文件 runtime-module-dialog 的声明命中 runtime-* 临时目录排除规则。将源码命名调整为 recipe-module-dialog，保持原排除规则不变，再运行真实归档安装成功。使用 DSH 预加载的 react-dom（packages/client/web/src/platform.ts）作为客户端 external，只增加匹配 React 18 的 @types/react-dom 18.3.7；没有打包第二份 renderer。构建测试精确共享依赖表相应增加 react-dom，任务测试使用 closest 的真实模块作用域定位，原数据、显式发送和节点身份断言保留。
+
+最终该增量三插件 clean Host/Client、declarations 与源码消费者构建通过；平台 **280/280** 通过；原生 ui-conversation 全目录及 changes-open Host 测试 **41 文件 / 558 项通过**。完整 check-platform-release 再次通过实际归档字节比对、离线 CLI 安装、零兼容豁免、安装后类型消费、认证/异源拒绝、冷重启配方与阅读数据恢复、阅读卸载重装保留、HTML/CSS/SVG/JS 相对资源加载。隔离发布检查使用合成资料和零模型调用，正式 3080 截图为真实运行界面，两者不混用。
+
+changes.summary 的 404 已核对官方源码与 README：摘要存在当前 Host 的 TurnRecorder 内存 records 中；重启后旧轮次没有摘要，route 明确返回 404，Client 将其记为 missing 并不再显示文件变更卡。原生 tests 也明确断言“404 once it is gone”。因此它是原生快照生命周期约定，不是工作台路由丢失；本轮没有伪造旧摘要或改动该原生行为。持久对话和工具轨迹恢复的既有证据仍成立。
+
+两轴增量只读审查无新增明确问题。仍保留用户四个 Agent 管理源/测试修改，不纳入本次提交；全平台 c44d9af 基线最终审查与其余工单逐项证据核对仍未完成，不能据本节宣称整个任务完成。

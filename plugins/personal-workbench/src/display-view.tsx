@@ -1,3 +1,4 @@
+import {ModuleAction} from './module-action.tsx'
 import {dataModuleTypes} from './content-catalog.ts'
 import {DataVisual} from './data-visual.tsx'
 import { aggregateStatistic } from './display-statistics.ts'
@@ -47,7 +48,7 @@ export function RecipeDisplayModule(props: RecipeModuleProps & { t?: Translate }
 }
 function RefreshableDisplay({props,store,t}:{props:RecipeModuleProps;store:DisplayStore;t:Translate}) {
  const state=useSyncExternalStore(store.subscribe,store.getSnapshot,store.getSnapshot)
- return <><div className="pwb-content-toolbar"><button data-pwb-button type="button" aria-label={t('moduleReload')+': '+props.module.id} disabled={state.phase==='loading'} onClick={()=>{void store.reload()}}>{t('moduleReload')}</button></div><DisplayModule type={props.module.type as 'stats'|'list'|'detail'|'filter'|'chart'|'map'} config={props.module.config} store={store} t={t}/></>
+ return <><ModuleAction target={props.toolbarHost}><button data-pwb-button type="button" aria-label={t('moduleReload')+': '+props.module.id} disabled={state.phase==='loading'} onClick={()=>{void store.reload()}}>{t('moduleReload')}</button></ModuleAction><DisplayModule type={props.module.type as 'stats'|'list'|'detail'|'filter'|'chart'|'map'} config={props.module.config} store={store} t={t}/></>
 }
 export function installDisplayModules() {
   const removes = dataModuleTypes.flatMap(type => [registerRecipeModuleRenderer(type, RecipeDisplayModule),registerRecipeModuleContextProvider(type,props=>{

@@ -10,7 +10,7 @@ export default [
     entry: { client: 'src/client.tsx' },
     dts: false,
     outDir: 'lib', format: 'cjs', platform: 'browser', clean: false,
-    external: ['react', 'react/jsx-runtime'],
+    external: ['react', 'react/jsx-runtime', 'react-dom'],
     alias: { 'lucide-react': 'lucide-react/dist/esm/lucide-react.js' },
     outputOptions: {
       entryFileNames: 'client.js',

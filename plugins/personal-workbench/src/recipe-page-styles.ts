@@ -6,7 +6,7 @@ export const recipePageStyles=`
 .pwb-recipe-page{padding:16px;color:var(--pwb-ink,#2e2b26);font:13px/1.5 system-ui,sans-serif}
 .pwb-recipe-module:is(${dataModuleTypes.map(type=>'[data-module-type='+type+']').join(',')}){padding:16px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:8px;background:var(--pwb-paper,#fdfcf9)}
 .pwb-recipe-page[data-layout=split]>.pwb-recipe-module:is([data-module-type=filter],[data-module-type=stats]){grid-column:1/-1}
-.pwb-recipe-module>h3{margin:0 0 12px;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.pwb-module-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;flex-shrink:0;margin-bottom:12px}.pwb-module-heading>h3{margin:0;font-size:14px;font-weight:600;overflow-wrap:anywhere;min-width:0}.pwb-module-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}.pwb-module-toolbar button{flex:0 0 auto;width:auto}
 .pwb-recipe-module>.pwb-display-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}
 .pwb-recipe-module>.pwb-display-filter label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:12px}
 .pwb-recipe-module>.pwb-display-filter :is(input,select){box-sizing:border-box;width:100%;min-width:0;min-height:38px;padding:8px 10px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:6px;background:var(--pwb-canvas,#f7f5f0);color:inherit;font:inherit}

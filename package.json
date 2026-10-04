@@ -351,6 +351,7 @@
     "react-dom": "^18.2.0",
     "tsdown": "link:D:/programming/workspace/deepseek-harness/node_modules/tsdown",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@types/react-dom": "18.3.7"
   }
 }

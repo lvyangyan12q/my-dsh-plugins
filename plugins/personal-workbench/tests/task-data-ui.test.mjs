@@ -23,7 +23,7 @@ test('built display modules capture current selected/filter/aggregate data per i
  const key=instanceId=>({appId:'reading',instanceId,roleId:'analyst'}),tasks=services.personalWorkbenchTasks,prepared=instance=>tasks.getSnapshot().get(JSON.stringify(['reading',instance,'analyst',null])).prepared
  const render=(instanceId,pageId='home')=>root.render(React.createElement(api.RecipePage,{recipe,pageId,appId:'reading',instanceId,ctx,t:k=>k}))
  const click=async text=>{const button=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(button,text);await act(async()=>button.click())}
- const prepare=async type=>{const section=[...document.querySelectorAll('h3')].find(h=>h.textContent===type).parentElement;const button=[...section.querySelectorAll('button')].find(b=>b.textContent==='taskPrepared');assert.ok(button);await act(async()=>button.click())}
+ const prepare=async type=>{const section=[...document.querySelectorAll('h3')].find(h=>h.textContent===type).closest('.pwb-recipe-module');const button=[...section.querySelectorAll('button')].find(b=>b.textContent==='taskPrepared');assert.ok(button);await act(async()=>button.click())}
  const parsedChunk=(instance,suffix)=>JSON.parse(prepared(instance).context.find(c=>c.id.endsWith('.'+suffix)).text)
  try {
   await act(async()=>render('first'));await click('first A');await prepare('list');assert.equal(parsedChunk('first','selection').title,'first A');await click('first B');assert.equal(parsedChunk('first','selection').title,'first A','Prepared evidence is a frozen snapshot');await prepare('list');assert.equal(parsedChunk('first','selection').title,'first B')

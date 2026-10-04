@@ -5,7 +5,7 @@ import type {Workbench} from './workbench.ts'
 import type {WorkbenchAppDefinition,WorkbenchAppId,WorkbenchAppProps} from './workbench-api.ts'
 import type {AppRecipe} from './recipe-api.ts'
 import {recipeRequest} from './recipe-editor.tsx'
-import {RuntimeModuleDialog} from './runtime-module-dialog.tsx'
+import {RuntimeModuleDialog} from './recipe-module-dialog.tsx'
 import {RecipePage} from './recipe-view.tsx'
 const definition=(recipe:AppRecipe):WorkbenchAppDefinition=>({id:recipe.appId as WorkbenchAppId,version:String(recipe.version),name:recipe.name,icon:'layout-grid',source:'Workbench',pages:recipe.pages.map(p=>({id:p.id,label:p.label})),defaultLayout:{width:900,height:650,pageId:recipe.pages[0].id},roles:recipe.roles.map(r=>({id:r.id,name:r.name})),dependencies:recipe.pages.flatMap(p=>p.modules.map(m=>({id:m.type,available:true})))})
 export function installRecipeClient(ctx:Context,workbench:Workbench){

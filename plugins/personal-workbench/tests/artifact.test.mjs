@@ -29,7 +29,7 @@ test('built client registers one explicit provider seat and delegates the entire
     window: { __ModuleLoader__: { load: ({ id, factory }) => {
       assert.equal(id, '@deepseek-ai/dsh-personal-workbench')
       exports = factory(name => {
-        assert.ok(['react', 'react/jsx-runtime'].includes(name), `unexpected browser import: ${name}`)
+        assert.ok(['react', 'react/jsx-runtime', 'react-dom'].includes(name), `unexpected browser import: ${name}`)
         return require(name)
       })
     } } },
