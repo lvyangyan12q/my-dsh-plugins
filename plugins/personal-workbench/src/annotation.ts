@@ -25,9 +25,9 @@ export function captureAnnotation(canvas:HTMLElement,start:Point,end:Point,page:
  const scroll=canvas.querySelector('.pwb-recipe-page'),bounds=hit?.getBoundingClientRect()
  return{id:crypto.randomUUID(),moduleId:module?.id??null,moduleTitle:module?.title??page.label,box:{x,y,width,height},canvas:{width:rect.width,height:rect.height,scrollX:scroll?.scrollLeft??0,scrollY:scroll?.scrollTop??0},text:lines.join('\n'),limited,...(bounds?{moduleBounds:{x:bounds.left-rect.left,y:bounds.top-rect.top,width:bounds.width,height:bounds.height,focused:hit===focused}}:{})}
 }
-export function annotationText(recipe:AppRecipe,instanceId:string,pageId:string,annotation:CanvasAnnotation,requirement:string){
+export function annotationText(recipe:AppRecipe,instanceId:string,pageId:string,annotation:CanvasAnnotation,requirement:string,image?:{name:string;type:string}){
  if(!requirement.trim()||requirement.length>2000)throw Error('Annotation requirement must contain 1–2000 characters')
- return '📌 工作台画布标注\n'+JSON.stringify({appId:recipe.appId,instanceId,recipeVersion:recipe.version,pageId,moduleId:annotation.moduleId,moduleTitle:annotation.moduleTitle,position:annotation.box,canvas:annotation.canvas,visibleText:annotation.text,embeddedContent:annotation.limited?'not readable; coordinates only':'no inaccessible frame in selection',requirement}).replaceAll('/','\\u002f')+'\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。'
+ return '📌 工作台画布标注\n'+JSON.stringify({appId:recipe.appId,instanceId,recipeVersion:recipe.version,pageId,moduleId:annotation.moduleId,moduleTitle:annotation.moduleTitle,position:annotation.box,canvas:annotation.canvas,visibleText:annotation.text,...(image?{screenshot:{name:image.name.slice(0,200),mediaType:image.type,source:'user-attached image; not an automatic canvas capture'}}:{}),embeddedContent:annotation.limited?(image?'not readable; see user-attached screenshot':'not readable; coordinates only'):'no inaccessible frame in selection',requirement}).replaceAll('/','\\u002f')+'\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。'
 }
 
 /** Keep notes in history when their captured geometry no longer matches the visible layout. */

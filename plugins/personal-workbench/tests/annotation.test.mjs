@@ -15,11 +15,11 @@ test('annotation captures an arbitrary background or selected pane without copyi
  const background=captureAnnotation(canvas,{x:800,y:500},{x:800,y:500},recipe.pages[0]);assert.equal(background.moduleId,null);assert.equal(background.text,'')
  const text=annotationText(recipe,'default','home',selected,'Change the heading / enlarge text');assert.ok(text.includes('app.test'));assert.ok(text.includes('not readable'));assert.ok(!text.includes('Private draft'));assert.throws(()=>annotationText(recipe,'default','home',selected,''));dom.window.close()
 })
-function bridge({phase='plain',scopeMissing=false,bailResult=true,opening,unconfirmed=false}={}){
- let service;const calls=[], state={phase,draft:'prefix @report suffix',draftRev:7,occurrences:[{offset:7,length:7}]},input={state:{getSnapshot:()=>({...state})},focus:()=>calls.push(['focus'])}
+function bridge({phase='plain',scopeMissing=false,bailResult=true,opening,unconfirmed=false,attachmentRefused=false}={}){
+ let service;const calls=[], state={phase,draft:'prefix @report suffix',draftRev:7,occurrences:[{offset:7,length:7}],attachmentIds:['existing-file']},input={state:{getSnapshot:()=>({...state})},focus:()=>calls.push(['focus']),addAttachments:ids=>{calls.push(['addAttachments',ids]);if(attachmentRefused)return false;state.attachmentIds=[...state.attachmentIds,...ids];return true},removeAttachment:id=>{calls.push(['removeAttachment',id]);state.attachmentIds=state.attachmentIds.filter(value=>value!==id);return true}}
  const roles={open:async()=>{calls.push(['open']);await opening},view:{getSnapshot:()=>new Map([[JSON.stringify(['app.test','default','maker',null]),{binding:{phase:'ready',sessionId:'owned-session'},window:{phase:'open'}}]])}}
  const scope={bail:(address,event,payload)=>{assert.equal(address,scope);calls.push([event,payload]);if(bailResult&&!unconfirmed)Object.assign(state,{draft:state.draft+payload.text,draftRev:state.draftRev+1});return bailResult}}
- const child={personalWorkbenchRoles:roles,sessions:{scope:id=>{calls.push(['scope',id]);return scopeMissing?undefined:scope}},conversation:{input:{for:s=>{assert.equal(s,scope);return input}}},effect:fn=>fn(),reflect:{provide:(_name,value)=>{service=value}}}
+ const child={personalWorkbenchRoles:roles,sessions:{scope:id=>{calls.push(['scope',id]);return scopeMissing?undefined:scope}},conversation:{stageImages:(id,files)=>{calls.push(['createDrafts',id,files]);if(attachmentRefused){calls.push(['releaseDraftAttachments',['annotation-image']]);throw Error('Native draft refused images')}input.addAttachments(['annotation-image']);return()=>{input.removeAttachment('annotation-image');calls.push(['releaseDraftAttachments',['annotation-image']])}},input:{for:s=>{assert.equal(s,scope);return input}}},effect:fn=>fn(),reflect:{provide:(_name,value)=>{service=value}}}
  installAnnotations({inject:(_services,fn)=>fn(child)});return {service,calls,state}
 }
 test('native annotation appends with draft revision and compact file chip span, focusing without submitting or replacing input',async()=>{
@@ -70,4 +70,25 @@ test('stored coordinates render only on the matching module geometry and scroll 
  module.getBoundingClientRect=()=>rect(400,44,400,500);assert.equal(annotationPositionMatches(canvas,mark),false)
  module.getBoundingClientRect=()=>rect(0,44,400,500);assert.equal(annotationPositionMatches(canvas,mark),true)
  module.dataset.moduleFocused='true';assert.equal(annotationPositionMatches(canvas,mark),false);dom.window.close()
+})
+
+
+test('a screenshot is appended to the exact native draft without replacing its file chip, text or existing attachments',async()=>{
+ const f=bridge(),image=new File(['image fixture'],'selected-region.png',{type:'image/png'}),original=f.state.draft
+ await f.service.append(key,'Visual annotation',undefined,undefined,image)
+ assert.equal(f.calls.find(c=>c[0]==='createDrafts')[1],'owned-session');assert.equal(f.calls.find(c=>c[0]==='createDrafts')[2][0],image)
+ assert.deepEqual(f.state.attachmentIds,['existing-file','annotation-image']);assert.equal(f.state.draft,original+'\n\nVisual annotation');assert.deepEqual(f.state.occurrences,[{offset:7,length:7}]);assert.ok(!f.calls.some(c=>c[0]==='releaseDraftAttachments'))
+ const selected={moduleId:'web',moduleTitle:'Website',box:{x:1,y:2,width:10,height:20},canvas:{width:800,height:600,scrollX:0,scrollY:0},text:'',limited:true}
+ assert.match(annotationText(recipe,'default','home',selected,'Fix the title',image),/user-attached image; not an automatic canvas capture/)
+})
+test('refused screenshot admission or text insertion releases only this annotation image and preserves the original draft',async()=>{
+ for(const options of [{attachmentRefused:true},{bailResult:false}]){
+  const f=bridge(options),image=new File(['png'],'region.png',{type:'image/png'}),original=f.state.draft
+  await assert.rejects(f.service.append(key,'Visual annotation',undefined,undefined,image));assert.equal(f.state.draft,original);assert.deepEqual(f.state.attachmentIds,['existing-file']);assert.deepEqual(f.calls.find(c=>c[0]==='releaseDraftAttachments')[1],['annotation-image'])
+ }
+})
+test('unsupported or oversized screenshots are refused before touching a role or native draft',async()=>{
+ for(const image of [new File(['svg'],'image.svg',{type:'image/svg+xml'}),new File([],'empty.png',{type:'image/png'}),new File([new Uint8Array(8*1024*1024+1)],'large.png',{type:'image/png'})]){
+ const f=bridge();await assert.rejects(f.service.append(key,'Request',undefined,undefined,image));assert.deepEqual(f.calls,[])
+ }
 })

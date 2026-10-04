@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "path": "packages/client/ui-conversation/src/client/service.ts",
+      "before": "7e4d2488407a6c125145aa12ce733762622f6fb6089ed9b20507447d510a2845",
+      "after": "6432c2c1ce3acc829b676b555c5b6afaceb8aea7022a7f4f530e92193d08a9c5"
+    },
+    {
+      "path": "packages/client/ui-conversation/tests/service-orchestration.client.spec.ts",
+      "before": "8fdecb47f0a29c7b267643cdf4b3de01486a4a790d67b510cabdbbb93cce2ae6",
+      "after": "c7298217d0db1ae18eb34753ac4f8ede85432150ed643fd34939714106180d59"
+    }
+  ]
+}

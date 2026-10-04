@@ -1,5 +1,5 @@
 export const en = {
-annotationHistory:'Annotation history',annotationNoRecords:'No saved annotations.',annotationNoText:'No captured text.',annotationArchive:'Archive',annotationRestore:'Restore',annotationSaved:'Annotation saved',annotationStart:"Annotate canvas",
+annotationImage:'Screenshot (optional)',annotationImageHelp:'Paste or choose a screenshot (PNG, JPEG, WebP; up to 8 MiB). It is added to the native draft; annotation history stores text and position.',annotationImagePreview:'Annotation screenshot preview',annotationImageRemove:'Remove screenshot',annotationLimitedImage:'Embedded text cannot be read; your attached screenshot will accompany the position.',annotationHistory:'Annotation history',annotationNoRecords:'No saved annotations.',annotationNoText:'No captured text.',annotationArchive:'Archive',annotationRestore:'Restore',annotationSaved:'Annotation saved',annotationStart:"Annotate canvas",
 annotationCancel:"Cancel annotation",
 annotationHint:"Click or drag anywhere on the canvas, then describe your request.",
 annotationMark:"Annotation",
@@ -57,7 +57,7 @@ annotationTargetChanged:"Annotation target changed; select the area again.",gene
   windowWidth: 'Width', windowHeight: 'Height', storageFailed: 'Layout preferences could not be restored or saved.',
 }
 export const zh: typeof en = {
-annotationHistory:'标注记录',annotationNoRecords:'暂无已保存的标注。',annotationNoText:'没有捕获到可见文字。',annotationArchive:'归档',annotationRestore:'恢复',annotationSaved:'标注已保存',annotationStart:"标注画布",
+annotationImage:'截图（可选）',annotationImageHelp:'可粘贴或选择截图（PNG、JPEG、WebP，最大 8 MiB）。截图加入原生草稿，标注历史保存文字和位置。',annotationImagePreview:'标注截图预览',annotationImageRemove:'移除截图',annotationLimitedImage:'无法读取嵌入页面文字，将同时附上你选择的截图和标注位置。',annotationHistory:'标注记录',annotationNoRecords:'暂无已保存的标注。',annotationNoText:'没有捕获到可见文字。',annotationArchive:'归档',annotationRestore:'恢复',annotationSaved:'标注已保存',annotationStart:"标注画布",
 annotationCancel:"取消标注",
 annotationHint:"点击或拖动框选画布任意位置，再填写要求。",
 annotationMark:"标注",
