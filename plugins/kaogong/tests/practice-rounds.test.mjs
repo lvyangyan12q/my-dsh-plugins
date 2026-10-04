@@ -208,6 +208,25 @@ test('Host endpoints and native tool share issued-round grading and explicit wir
     assert.equal(retry.correctCount, 1)
     assert.equal((await request('submit', { roundId: issued.value.roundId, answers: answers(issued.value) })).status, 409)
     assert.equal((await request('read', { roundId: issued.value.roundId }, 'GET')).status, 405)
+    // Dashboard accuracy uses only answered questions, matching the overall statistic.
+    const table = notebook.table('questions'), original = table.get(questionId)
+    await table.put(questionId, { ...original, result: 'wrong' })
+    for (let i = 0; i < 9; i++) await table.put('skipped-' + i, { ...original, result: 'skipped' })
+    const dashboard = async () => {
+      let value
+      await routes.get('/api/kaogong/dashboard')({ headers: { authorization: 'fixture', origin: 'http://fixture' } }, { writeHead() {}, end(bytes) { value = JSON.parse(bytes) } })
+      return value
+    }
+    const partial = await dashboard()
+    assert.equal(partial.accuracyRate, 0)
+    assert.equal(partial.modules.find(row => row.subject === subject).accuracyRate, 0)
+    await table.put(questionId, { ...original, result: 'skipped' })
+    assert.equal((await dashboard()).modules.find(row => row.subject === subject).accuracyRate, 0)
+    await table.put(questionId, { ...original, result: 'correct' })
+    await table.put('answered-wrong', { ...original, result: 'wrong' })
+    const mixed = await dashboard()
+    assert.equal(mixed.accuracyRate, 0.5)
+    assert.equal(mixed.modules.find(row => row.subject === subject).accuracyRate, 0.5)
   } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
 })
 

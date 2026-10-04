@@ -404,7 +404,8 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
           if (day.items.length > 0 && day.items.every(item => item.done)) pastDone++
         }
       }
-      const analysis = analyzeQuestions(allQuestions(questions))
+      const notebookQuestions = allQuestions(questions)
+      const analysis = analyzeQuestions(notebookQuestions)
       const weakPoints = analysis.byKnowledgePoint
         .filter(point => point.wrongCount > 0)
         .slice(0, topN)
@@ -429,12 +430,13 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       const bySubject = new Map(analysis.bySubject.map(stat => [stat.subject, stat]))
       const modules = TAXONOMY.map(entry => {
         const stat = bySubject.get(entry.subject)
+        const answered = notebookQuestions.filter(question => question.subject === entry.subject && (question.result === 'correct' || question.result === 'wrong'))
         return {
           subject: entry.subject,
           availableCount: allBankQuestions(bankQuestions).filter(question => question.subject === entry.subject && question.reviewStatus === 'approved').length,
           practicedCount: stat?.totalCount ?? 0,
           wrongCount: stat?.wrongCount ?? 0,
-          accuracyRate: stat === undefined || stat.totalCount === 0 ? 0 : 1 - stat.errorRate,
+          accuracyRate: answered.length === 0 ? 0 : answered.filter(question => question.result === 'correct').length / answered.length,
         }
       })
       const todayPlan = days.get(today)
