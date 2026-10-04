@@ -1,3 +1,4 @@
+import { controlStyles } from './control-styles.ts'
 import { useSyncExternalStore } from 'react'
 import { LayoutGrid, ArrowUpRight } from 'lucide-react'
 import type { Context } from '@deepseek-ai/cordis'
@@ -8,15 +9,15 @@ import type { Workbench } from './workbench.ts'
 const tabId = 'personal-workbench.catalog'
 type Status = 'sidebarUnsupported' | null
 type SplitNode = SidebarState['bottomSplits']
-class AdapterStatus {
-  private status: Status = null
+class AdapterState<T> {
+  constructor(private status: T) {}
   private listeners = new Set<() => void>()
   readonly getSnapshot = () => this.status
   readonly subscribe = (listener: () => void) => {
     this.listeners.add(listener)
     return () => { this.listeners.delete(listener) }
   }
-  set(value: Status) { this.status = value; for (const listener of this.listeners) listener() }
+  set(value: T) { this.status = value; for (const listener of this.listeners) listener() }
 }
 
 function compatible(service: BetterSidebarService): boolean {
@@ -26,15 +27,18 @@ function compatible(service: BetterSidebarService): boolean {
       .every(key => typeof service[key as keyof BetterSidebarService] === 'function')
 }
 
-function Catalog({ ctx, workbench, enabled }: { ctx: Context; workbench: Workbench; enabled: () => boolean }) {
+function Catalog({ ctx, workbench, enabled, availability }: { ctx: Context; workbench: Workbench; enabled: () => boolean; availability: AdapterState<boolean> }) {
   const state = useSyncExternalStore(workbench.subscribe, workbench.getSnapshot, workbench.getSnapshot)
   useSyncExternalStore(listener => ctx.locale.subscribe(listener), () => ctx.locale.getSnapshot())
+  const available = useSyncExternalStore(availability.subscribe, availability.getSnapshot, availability.getSnapshot)
+  if (!available) return null
   const t = ctx.locale.bind('personal-workbench')
   const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden).sort((a, b) =>
     Number(state.apps[b.id]?.favorite ?? false) - Number(state.apps[a.id]?.favorite ?? false)
     || (state.apps[a.id]?.order ?? 0) - (state.apps[b.id]?.order ?? 0) || a.name.localeCompare(b.name))
-  return <section aria-label={t('applications')} style={{ padding: 12, minWidth: 0, color: 'var(--dsw-alias-text-primary)' }}>
-    <button type="button" title={t('workspace')} onClick={() => { if (enabled()) ctx.personalWorkbench.openWorkspace() }}
+  return <section className="pwb-workspace" aria-label={t('applications')} style={{ padding: 12, minWidth: 0, color: 'var(--dsw-alias-text-primary)' }}>
+    <style>{controlStyles}</style>
+    <button data-pwb-button type="button" title={t('workspace')} onClick={() => { if (enabled()) ctx.personalWorkbench.openWorkspace() }}
       style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 32 }}>
       <LayoutGrid size={18} aria-hidden="true" />{t('workspace')}
     </button>
@@ -42,7 +46,7 @@ function Catalog({ ctx, workbench, enabled }: { ctx: Context; workbench: Workben
     <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0' }}>{apps.map(app => {
       const missing = app.dependencies?.filter(row => !row.available) ?? []
       return <li key={app.id} style={{ borderBottom: '1px solid var(--dsw-alias-border-default)', padding: '6px 0' }}>
-        <button type="button" onClick={() => {
+        <button data-pwb-button type="button" onClick={() => {
           if (enabled() && workbench.getSnapshot().definitions.some(row => row.id === app.id)) ctx.personalWorkbench.openApp(app.id)
         }} style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', minHeight: 32, textAlign: 'left' }}>
           <ArrowUpRight size={16} aria-hidden="true" /><span style={{ overflowWrap: 'anywhere' }}>{app.name}</span>
@@ -54,7 +58,7 @@ function Catalog({ ctx, workbench, enabled }: { ctx: Context; workbench: Workben
 }
 
 function Unsupported({ useBetterSidebarAdapter, t }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'personal-workbench'>
-  & InjectFace<{ hooks: { betterSidebarAdapter: AdapterStatus } }>) {
+  & InjectFace<{ hooks: { betterSidebarAdapter: AdapterState<Status> } }>) {
   const status = useBetterSidebarAdapter(value => value)
   return status ? <span role="status" style={{ fontSize: 12, overflowWrap: 'anywhere' }}>{t(status)}</span> : null
 }
@@ -64,7 +68,7 @@ function Unsupported({ useBetterSidebarAdapter, t }: PropsRuntime<'sidebar.foote
  * @param workbench - this plugin's shared registry and presentation owner.
  */
 export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench): void {
-  const status = new AdapterStatus()
+  const status = new AdapterState<Status>(null)
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench.sidebar-status', locale: 'personal-workbench',
     inject: () => ({ hooks: { betterSidebarAdapter: status } }),
@@ -78,6 +82,7 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
     }
     child.effect(() => {
       let active = true
+      const availability = new AdapterState(true)
       const scopes = new Map<string, { scope: SessionScope; ids: Set<string> }>()
       const remember = (scope: SessionScope, id: string) => {
         let row = scopes.get(scope.sessionId)
@@ -85,6 +90,7 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
         row.ids.add(id)
       }
       const observe = () => {
+        availability.set(enabled())
         const { sessionId, state } = service.getSnapshot()
         if (!sessionId || !state) return
         const walk = (node: SplitNode) => {
@@ -100,8 +106,8 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
         icon: size => <LayoutGrid size={size} aria-hidden="true" />,
         onOpen: (tab, scope) => remember(scope, tab.id),
         onActivate: (tab, scope) => remember(scope, tab.id),
-        component: ({ visible }: TabComponentProps) => visible && enabled()
-          ? <Catalog ctx={child} workbench={workbench} enabled={enabled} /> : null,
+        component: ({ visible }: TabComponentProps) => visible
+          ? <Catalog ctx={child} workbench={workbench} enabled={enabled} availability={availability} /> : null,
       })
       let unsubscribe: () => void
       try { unsubscribe = service.subscribeState(observe) }
@@ -110,6 +116,7 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
       catch (error) { unsubscribe(); removeTab(); throw error }
       return () => {
         active = false
+        availability.set(false)
         unsubscribe()
         try { for (const { scope, ids } of scopes.values()) for (const id of ids) service.closeTab(id, scope) }
         finally { scopes.clear(); removeTab() }

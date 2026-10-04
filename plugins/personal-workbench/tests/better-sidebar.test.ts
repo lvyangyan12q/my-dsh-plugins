@@ -118,18 +118,27 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     assert.equal(api.getSnapshot().windows.length, 1)
     assert.equal(api.getSnapshot().windows[0].pageId, 'practice')
     assert.equal(api.getSnapshot().windows[0].width, 500)
+    const staleApp = [...dom.window.document.querySelectorAll('button')].find(row => row.textContent === 'Registered app')!
     sidebar.prefs.tabsEnabled[descriptor.id] = false
+    await React.act(async () => sidebar.emit())
+    assert.equal(dom.window.document.querySelectorAll('button').length, 0, 'Disabled catalog retires visible controls immediately')
+    await render(false)
+    await render(true)
+    assert.equal(dom.window.document.querySelectorAll('button').length, 0, 'A catalog mounted while disabled still observes later re-enabling')
     await React.act(async () => api.closeWorkspace())
-    await click('Registered app')
+    await React.act(async () => staleApp.click())
     assert.equal(api.getSnapshot().visible, false)
     sidebar.prefs.tabsEnabled[descriptor.id] = true
+    await React.act(async () => sidebar.emit())
+    assert.ok(dom.window.document.querySelector('button'), 'Re-enabling restores the same catalog')
+    const staleWorkspace = [...dom.window.document.querySelectorAll('button')].find(row => row.textContent === 'workspace')!
     sidebar.sessionId = 'other'
     sidebar.openTab({ type: descriptor.id })
     await React.act(async () => provider!.dispose())
     assert.equal(sidebar.listeners.size, 0)
     assert.equal(sidebar.descriptors.size, 0)
     assert.equal(sidebar.closed.length, 2)
-    await click('workspace') // Stale callbacks are inert after child disposal.
+    await React.act(async () => staleWorkspace.click()) // Stale callbacks are inert after child disposal.
     assert.equal(api.getSnapshot().visible, false)
     assert.equal(api.getSnapshot().windows.length, 1)
     await render(false)
