@@ -1,3 +1,4 @@
+import {revealAnnotationComposer} from './annotation-composer.ts'
 import {useEffect,useState,useRef} from 'react'
 import type {RefObject} from 'react'
 import type {Context} from '@deepseek-ai/cordis'
@@ -5,7 +6,7 @@ import type {AppRecipe} from './recipe-api.ts'
 import {captureAnnotation,annotationText} from './annotation.ts'
 import type {CanvasAnnotation} from './annotation.ts'
 import type {} from './annotation-client.ts'
-export function AnnotationLayer({canvas,recipe,pageId,instanceId,ctx,active,t}:{canvas:RefObject<HTMLDivElement>;recipe:AppRecipe;pageId:string;instanceId:string;ctx?:Context;active:boolean;t:(key:any)=>string}){
+export function AnnotationLayer({canvas,recipe,pageId,instanceId,ctx,active,t,onRevealRole}:{onRevealRole?:()=>void;canvas:RefObject<HTMLDivElement>;recipe:AppRecipe;pageId:string;instanceId:string;ctx?:Context;active:boolean;t:(key:any)=>string}){
  const [aiming,setAiming]=useState(false),[selection,setSelection]=useState<CanvasAnnotation|null>(null),[requirement,setRequirement]=useState(''),[roleId,setRole]=useState(''),[marks,setMarks]=useState<CanvasAnnotation[]>([]),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),start=useRef<{x:number;y:number}>(), pending=useRef<AbortController>(),[dragBox,setDragBox]=useState<CanvasAnnotation['box']|null>(null)
  const identity=JSON.stringify([recipe.appId,instanceId,pageId,recipe.version]),identityRef=useRef(identity);identityRef.current=identity
  useEffect(()=>{if(!active){pending.current?.abort();setBusy(false);setAiming(false);setSelection(null);setDragBox(null)}},[active])
@@ -16,7 +17,7 @@ export function AnnotationLayer({canvas,recipe,pageId,instanceId,ctx,active,t}:{
  const confirm=async()=>{if(!selection||!roleId)return;const captured=identity;const controller=new AbortController();pending.current=controller;setBusy(true);setError('');try{
   if(!recipe.roles.some(role=>role.id===roleId)||selection.moduleId&&!page.modules.some(module=>module.id===selection.moduleId))throw Error(t('annotationTargetChanged'))
   const bridge=ctx?.get('personalWorkbenchAnnotations');if(!bridge)throw Error(t('annotationUnavailable'))
-  await bridge.append({appId:recipe.appId,instanceId,roleId},annotationText(recipe,instanceId,pageId,selection,requirement),controller.signal)
+  await bridge.append({appId:recipe.appId,instanceId,roleId},annotationText(recipe,instanceId,pageId,selection,requirement),controller.signal,async()=>{onRevealRole?.();if(!canvas.current)throw Error(t('annotationTargetChanged'));await revealAnnotationComposer(canvas.current,{appId:recipe.appId,instanceId,roleId},controller.signal,t('annotationComposerMissing'))})
   if(identityRef.current===captured){setMarks(old=>[...old,selection].slice(-20));setSelection(null);setRequirement('');setNotice(t('annotationAdded'))}
  }catch(error){if(identityRef.current===captured)setError(error instanceof Error?error.message:String(error))}finally{if(identityRef.current===captured)setBusy(false)}}
  return <><style>{annotationStyles}</style><div className="pwb-annotation-toolbar" data-pwb-annotation-ui><button data-pwb-button type="button" aria-pressed={aiming} disabled={busy} onClick={()=>{setAiming(!aiming);setSelection(null);setError('');setNotice('')}}>{t(aiming?'annotationCancel':'annotationStart')}</button>{aiming&&<small>{t('annotationHint')}</small>}{notice&&<span role="status">{notice}</span>}</div>

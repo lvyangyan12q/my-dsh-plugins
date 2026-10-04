@@ -150,3 +150,19 @@
 正式 3082 页面通过画布局部选择“自定义页面→本地 HTML”，保存、预览、启用独立“HTML 相对资源验收”应用。运行模块显示图片、CSS、ES 模块加载状态及 template 克隆图片，经典脚本点击计数从 0 变为 1，放大/返回后仍为 1。截图 C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/worktable-html-assets.png。测试资源在 D:/programming/workspace/dsh-plugins/.my-dsh/html-resource-proof，未使用业务资料。用户原主会话草稿 d 保持原样。实际端口检查需提升权限；沙箱下 Get-NetTCPConnection 空结果不能断言无服务。确认并重启旧任务 PID41748 后，新实例 PID29324 加载修复。
 
 Standards 增量审查无新增可行动问题；Spec 提出的 template 内引用遗漏已修复并复查通过。四个用户 Agent 管理文件 SHA256 与原基线一致，未提交这些改动。画布标注已在此前提交完成，自动打开目标角色输入框、标记持久化/截图上下文仍未完成；生成 400 根因、其余真实业务验收和最终 3080 部署继续保留为总目标未完成项。
+
+## 标注自动展开与原生作用域修复（2026-10-04）
+
+标注确认后在当前页面按完整应用/实例/角色键定位已有原生角色视图，展开所属生成详情并撤销遮挡模块的聚焦。等待原生 textbox 挂载并稳定两个动画帧后再读取草稿；不创建第二个输入框、不建立或发送 Session。等待时取消、离开页面或绑定变化均拒绝未执行的追加；当前页面缺少目标输入框时保留要求并提示打开相应页面或添加 DSH 对话模块。
+
+实页初次验证复现“展开成功但草稿校验失败”。原调用 scope.bail(event, payload) 未传事件过滤的 thisArg，多个会话监听器存在时可能先被其他监听器接收。新增真实 Cordis 双会话回归先失败，再改为与原生 DSH 一致的 scope.bail(scope, event, payload) 后通过。此前单会话模拟无法覆盖该缺陷；保留实际草稿结果校验，不能仅以事件返回 true 声称追加成功。
+
+正式 3082 冷加载、会话折叠状态下完成框选→填写要求→确认→自动展开→正确角色草稿追加。原角色已有标注保留，新增“作用域修复验收”文字存在，主会话草稿 d 不变，未发送任务或调用模型。截图 C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/worktable-annotation-expanded.png。13 项定向回归和三插件完整 251/251 检查通过，三个插件官方构建、源码和消费者类型通过。Standards/Spec 两轴增量复查均无新增明确问题。标记独立持久化和截图上下文仍未交付。
+
+## 3080 部署与数据保留（2026-10-04）
+
+默认启动脚本改为 3080，可用 -Port 3082 临时验收；两者使用同一 web profile，应只启动一个实例。确认 3080 空闲后停止任务自有的 3082 实例，使用正式本地 DSH rc.2 构建和 web profile 启动 3080（本次 PID47936）。三个安装链接分别解析为 my-dsh/plugins/personal-workbench、plugins/kaogong 和 plugins/reading-statistics，加载本轮构建，未替换原生工作区菜单或开源 Worktable 代码。
+
+切换前备份插件 lib 和四个用户 Agent 管理文件到 .local/deploy-3080-1791089801985。考公存储、历史角色关联/管理记录及讲义、题目、图片、解析结果合计 5136 个文件/链接，切换前后 SHA256/链接目标逐一一致；四个 Agent 源码哈希与原用户修改基线一致，未纳入提交。旧 kaogong 路径继续解析到 my-dsh/materials/kaogong，资料引用保留。
+
+3080 认证应用目录、配方目录和本地 HTML 静态资源内容接口已通过真实请求验证，令牌未输出。验收元数据保存在 .local/deploy-3080-verdict.json。应用内浏览器访问 3080 返回 net::ERR_BLOCKED_BY_CLIENT；未绕过客户端限制，不能宣称 3080 UI 验收通过，页面证据来自切换前同一构建的 3082。后续完整模型/审批/考公流程及其余工单验收继续保持未完成，不能因端口切换或推送而勾选全部完成。

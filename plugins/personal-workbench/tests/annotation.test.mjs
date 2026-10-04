@@ -18,7 +18,7 @@ test('annotation captures an arbitrary background or selected pane without copyi
 function bridge({phase='plain',scopeMissing=false,bailResult=true,opening,unconfirmed=false}={}){
  let service;const calls=[], state={phase,draft:'prefix @report suffix',draftRev:7,occurrences:[{offset:7,length:7}]},input={state:{getSnapshot:()=>({...state})},focus:()=>calls.push(['focus'])}
  const roles={open:async()=>{calls.push(['open']);await opening},view:{getSnapshot:()=>new Map([[JSON.stringify(['app.test','default','maker',null]),{binding:{phase:'ready',sessionId:'owned-session'},window:{phase:'open'}}]])}}
- const scope={bail:(event,payload)=>{calls.push([event,payload]);if(bailResult&&!unconfirmed)Object.assign(state,{draft:state.draft+payload.text,draftRev:state.draftRev+1});return bailResult}}
+ const scope={bail:(address,event,payload)=>{assert.equal(address,scope);calls.push([event,payload]);if(bailResult&&!unconfirmed)Object.assign(state,{draft:state.draft+payload.text,draftRev:state.draftRev+1});return bailResult}}
  const child={personalWorkbenchRoles:roles,sessions:{scope:id=>{calls.push(['scope',id]);return scopeMissing?undefined:scope}},conversation:{input:{for:s=>{assert.equal(s,scope);return input}}},effect:fn=>fn(),reflect:{provide:(_name,value)=>{service=value}}}
  installAnnotations({inject:(_services,fn)=>fn(child)});return {service,calls,state}
 }
@@ -41,4 +41,21 @@ test('switching or closing an application while opening its conversation cancels
 test('focused top module owns the annotation and covered module text is excluded',()=>{
  const dom=new JSDOM('<div id="canvas"><section data-module-id="a"><b>Covered A</b><iframe></iframe></section><section data-module-id="z" data-module-focused="true"><b>Visible Z</b></section></div>'),canvas=dom.window.document.getElementById('canvas');canvas.getBoundingClientRect=()=>rect(0,0,800,600);for(const element of canvas.querySelectorAll('*'))element.getBoundingClientRect=()=>rect(0,44,800,556)
  const page={label:'Page',modules:[{id:'a',title:'A'},{id:'z',title:'Z'}]},capture=captureAnnotation(canvas,{x:100,y:100},{x:100,y:100},page);assert.equal(capture.moduleId,'z');assert.equal(capture.text,'Visible Z');assert.equal(capture.limited,false);dom.window.close()
+})
+
+test('annotation waits for native composer hydration and cancels before editing if its page closes',async()=>{
+ let release;const ready=new Promise(resolve=>release=resolve),f=bridge(),controller=new AbortController();let revealing=false
+ const append=f.service.append(key,'Annotation',controller.signal,()=>{revealing=true;return ready})
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(revealing,true);assert.ok(!f.calls.some(call=>call[0]==='slash/input-insert-text'));controller.abort();release();await assert.rejects(append,{name:'AbortError'});assert.equal(f.state.draft,'prefix @report suffix')
+ const next=bridge();await next.service.append(key,'Annotation',undefined,async()=>{assert.ok(!next.calls.some(call=>call[0]==='slash/input-insert-text'))});assert.match(next.state.draft,/Annotation/)
+})
+
+test('native Cordis dispatch addresses the target session even when another composer listener was registered first',async()=>{
+ const {Context}=await import('@deepseek-ai/cordis'),root=new Context(),other=root.extend(),target=root.extend();let service
+ target[Context.filter]=listener=>listener===target
+ const own={phase:'plain',draft:'own draft',draftRev:1,occurrences:[]},unrelated={draft:'unrelated draft'}
+ other.on('slash/input-insert-text',payload=>{unrelated.draft+=payload.text;return true})
+ target.on('slash/input-insert-text',payload=>{own.draft+=payload.text;own.draftRev++;return true})
+ const child={personalWorkbenchRoles:{open:async()=>{},view:{getSnapshot:()=>new Map([[JSON.stringify(['app.test','default','maker',null]),{binding:{phase:'ready',sessionId:'target'},window:{phase:'open'}}]])}},sessions:{scope:()=>target},conversation:{input:{for:()=>({state:{getSnapshot:()=>({...own})},focus:()=>{}})}},effect:fn=>fn(),reflect:{provide:(_name,value)=>{service=value}}}
+ try{installAnnotations({inject:(_services,fn)=>fn(child)});await service.append(key,'Scoped requirement');assert.equal(unrelated.draft,'unrelated draft');assert.equal(own.draft,'own draft\n\nScoped requirement')}finally{await root.fiber.dispose()}
 })

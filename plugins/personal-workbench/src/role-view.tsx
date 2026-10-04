@@ -23,7 +23,7 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
   useEffect(() => { if (active && !state.binding && !state.error && !state.busy) void commands.open(bindingKey).catch(() => {}) }, [active, bindingKey, commands])
   const retry = () => { const binding = state.binding; void (binding ? commands.retry(bindingKey, binding.sessionId) : commands.open(bindingKey)).catch(() => {}) }
   const replace = () => { const binding = state.binding; if (binding && globalThis.confirm('保留原会话并新建角色会话？')) void commands.replace(bindingKey, binding.sessionId).catch(() => {}) }
-  return <section aria-label="持续角色会话" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
+  return <section data-pwb-role-key={roleKey(bindingKey)} aria-label="持续角色会话" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: '1px solid #ddd', fontSize: 12 }}>
       <strong>{label ?? bindingKey.subject ?? bindingKey.roleId}</strong><span style={{ flex: 1 }} />
       {status?.running && <span role="status">运行中</span>}{status?.pendingInteraction && <span role="status">待处理：{status.pendingInteraction.kind}</span>}{status?.completionUnread && <span role="status">未读完成</span>}

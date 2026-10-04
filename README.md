@@ -17,7 +17,7 @@ node "$env:DSH_SOURCE/apps/cli/lib/bin.js" plugin --profile web add "link:D:/pro
 pnpm start
 ```
 
-地址：http://127.0.0.1:3082/ 。3081 为原合成测试实例，与真实学习数据分开。
+默认地址：http://127.0.0.1:3080/ 。需要临时验收端口时运行 `powershell -File scripts/start-dsh.ps1 -Port 3082`；两者使用同一个 web profile，不应同时启动。3081 为原合成测试实例，与真实学习数据分开。
 
 应用平台的扩展与验证步骤见 [开发流程](docs/application-platform-extension.md) 和 [验收证据](docs/application-platform-acceptance.md)。阅读模板需要安装 `@deepseek-ai/dsh-reading-statistics` 并应用其 bundle patch；保存和预览草稿后仍需显式启用。
 
