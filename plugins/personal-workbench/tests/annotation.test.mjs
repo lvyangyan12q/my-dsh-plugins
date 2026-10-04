@@ -59,3 +59,15 @@ test('native Cordis dispatch addresses the target session even when another comp
  const child={personalWorkbenchRoles:{open:async()=>{},view:{getSnapshot:()=>new Map([[JSON.stringify(['app.test','default','maker',null]),{binding:{phase:'ready',sessionId:'target'},window:{phase:'open'}}]])}},sessions:{scope:()=>target},conversation:{input:{for:()=>({state:{getSnapshot:()=>({...own})},focus:()=>{}})}},effect:fn=>fn(),reflect:{provide:(_name,value)=>{service=value}}}
  try{installAnnotations({inject:(_services,fn)=>fn(child)});await service.append(key,'Scoped requirement');assert.equal(unrelated.draft,'unrelated draft');assert.equal(own.draft,'own draft\n\nScoped requirement')}finally{await root.fiber.dispose()}
 })
+
+test('stored coordinates render only on the matching module geometry and scroll position',async()=>{
+ const {annotationPositionMatches}=await import('../src/annotation.ts')
+ const dom=new JSDOM('<div id="canvas"><div class="pwb-recipe-page"><section data-module-id="web">Title</section></div></div>'),canvas=dom.window.document.getElementById('canvas'),module=canvas.querySelector('section'),page=canvas.querySelector('.pwb-recipe-page')
+ canvas.getBoundingClientRect=()=>rect(0,0,800,600);module.getBoundingClientRect=()=>rect(0,44,400,500)
+ const mark=captureAnnotation(canvas,{x:100,y:100},{x:200,y:200},recipe.pages[0])
+ assert.equal(annotationPositionMatches(canvas,mark),true)
+ page.scrollTop=20;assert.equal(annotationPositionMatches(canvas,mark),false);page.scrollTop=0
+ module.getBoundingClientRect=()=>rect(400,44,400,500);assert.equal(annotationPositionMatches(canvas,mark),false)
+ module.getBoundingClientRect=()=>rect(0,44,400,500);assert.equal(annotationPositionMatches(canvas,mark),true)
+ module.dataset.moduleFocused='true';assert.equal(annotationPositionMatches(canvas,mark),false);dom.window.close()
+})

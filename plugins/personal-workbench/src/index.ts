@@ -23,6 +23,9 @@ export function apply(ctx: Context, config: Config): void {
     const owner = await installWorkbenchSkills(child)
     yield async () => { await owner.dispose() }
   }, 'workbench packaged Skills and application builder'))
+  let annotationHandler:((req:IncomingMessage,res:ServerResponse)=>Promise<void>)|undefined
+  ctx.effect(()=>ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/annotations',handler:(req,res)=>{if(annotationHandler){void annotationHandler(req,res);return}res.writeHead(503,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify({error:'Annotation storage unavailable'}))}}),'annotation records route')
+  ctx.inject(['storageDomain','connection','personalWorkbenchRecipes','personalWorkbenchApps'],child=>child.effect(async function*(){const {installAnnotationRecords}=await import('./annotation-host.ts');const owner=await installAnnotationRecords(child);annotationHandler=owner.handle;yield async()=>{annotationHandler=undefined;await owner.dispose()}},'durable annotation records'))
   let contentHandler:((req:IncomingMessage,res:ServerResponse)=>Promise<void>)|undefined
   ctx.effect(()=>ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/content',handler:(req,res)=>{if(contentHandler){void contentHandler(req,res);return}res.writeHead(503,{'content-type':'application/json'});res.end(JSON.stringify({error:'Content services unavailable'}))}}),'module content route')
   ctx.inject(['storageDomain','connection','personalWorkbenchRecipes','personalWorkbenchApps','personalWorkbenchRecipeRoles'],child=>child.effect(async function*(){const {installContent}=await import('./content-host.ts');const owner=await installContent(child);contentHandler=owner.handle;yield async()=>{contentHandler=undefined;await owner.dispose()}},'module content owner'))

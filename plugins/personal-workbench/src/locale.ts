@@ -1,5 +1,5 @@
 export const en = {
-annotationStart:"Annotate canvas",
+annotationHistory:'Annotation history',annotationNoRecords:'No saved annotations.',annotationNoText:'No captured text.',annotationArchive:'Archive',annotationRestore:'Restore',annotationSaved:'Annotation saved',annotationStart:"Annotate canvas",
 annotationCancel:"Cancel annotation",
 annotationHint:"Click or drag anywhere on the canvas, then describe your request.",
 annotationMark:"Annotation",
@@ -57,7 +57,7 @@ annotationTargetChanged:"Annotation target changed; select the area again.",gene
   windowWidth: 'Width', windowHeight: 'Height', storageFailed: 'Layout preferences could not be restored or saved.',
 }
 export const zh: typeof en = {
-annotationStart:"标注画布",
+annotationHistory:'标注记录',annotationNoRecords:'暂无已保存的标注。',annotationNoText:'没有捕获到可见文字。',annotationArchive:'归档',annotationRestore:'恢复',annotationSaved:'标注已保存',annotationStart:"标注画布",
 annotationCancel:"取消标注",
 annotationHint:"点击或拖动框选画布任意位置，再填写要求。",
 annotationMark:"标注",

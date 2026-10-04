@@ -1,5 +1,5 @@
 import type {AppRecipe} from './recipe-api.ts'
-export interface CanvasAnnotation {id:string;moduleId:string|null;moduleTitle:string;box:{x:number;y:number;width:number;height:number};canvas:{width:number;height:number;scrollX:number;scrollY:number};text:string;limited:boolean}
+export interface CanvasAnnotation {id:string;moduleId:string|null;moduleTitle:string;box:{x:number;y:number;width:number;height:number};canvas:{width:number;height:number;scrollX:number;scrollY:number};text:string;limited:boolean;moduleBounds?:{x:number;y:number;width:number;height:number;focused:boolean}}
 type Point={x:number;y:number}
 /** Capture only the selected rendered area, excluding composers and hidden nodes. */
 export function captureAnnotation(canvas:HTMLElement,start:Point,end:Point,page:AppRecipe['pages'][number]):CanvasAnnotation{
@@ -22,10 +22,19 @@ export function captureAnnotation(canvas:HTMLElement,start:Point,end:Point,page:
   const text=(element.textContent??'').replace(/\s+/g,' ').trim().slice(0,180)
   if(text&&!lines.includes(text)&&lines.length<8)lines.push(text)
  }
- const scroll=canvas.querySelector('.pwb-recipe-page')
- return{id:crypto.randomUUID(),moduleId:module?.id??null,moduleTitle:module?.title??page.label,box:{x,y,width,height},canvas:{width:rect.width,height:rect.height,scrollX:scroll?.scrollLeft??0,scrollY:scroll?.scrollTop??0},text:lines.join('\n'),limited}
+ const scroll=canvas.querySelector('.pwb-recipe-page'),bounds=hit?.getBoundingClientRect()
+ return{id:crypto.randomUUID(),moduleId:module?.id??null,moduleTitle:module?.title??page.label,box:{x,y,width,height},canvas:{width:rect.width,height:rect.height,scrollX:scroll?.scrollLeft??0,scrollY:scroll?.scrollTop??0},text:lines.join('\n'),limited,...(bounds?{moduleBounds:{x:bounds.left-rect.left,y:bounds.top-rect.top,width:bounds.width,height:bounds.height,focused:hit===focused}}:{})}
 }
 export function annotationText(recipe:AppRecipe,instanceId:string,pageId:string,annotation:CanvasAnnotation,requirement:string){
  if(!requirement.trim()||requirement.length>2000)throw Error('Annotation requirement must contain 1–2000 characters')
  return '📌 工作台画布标注\n'+JSON.stringify({appId:recipe.appId,instanceId,recipeVersion:recipe.version,pageId,moduleId:annotation.moduleId,moduleTitle:annotation.moduleTitle,position:annotation.box,canvas:annotation.canvas,visibleText:annotation.text,embeddedContent:annotation.limited?'not readable; coordinates only':'no inaccessible frame in selection',requirement}).replaceAll('/','\\u002f')+'\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。'
+}
+
+/** Keep notes in history when their captured geometry no longer matches the visible layout. */
+export function annotationPositionMatches(canvas:HTMLElement,mark:CanvasAnnotation):boolean{
+ const rect=canvas.getBoundingClientRect(),scroll=canvas.querySelector('.pwb-recipe-page'),near=(a:number,b:number)=>Math.abs(a-b)<1
+ if(!near(rect.width,mark.canvas.width)||!near(rect.height,mark.canvas.height)||!near(scroll?.scrollLeft??0,mark.canvas.scrollX)||!near(scroll?.scrollTop??0,mark.canvas.scrollY))return false
+ if(!mark.moduleId)return !canvas.querySelector('[data-module-focused="true"]')
+ const module=[...canvas.querySelectorAll<HTMLElement>('[data-module-id]')].find(element=>element.dataset.moduleId===mark.moduleId),bounds=module?.getBoundingClientRect(),saved=mark.moduleBounds
+ return !!module&&!!bounds&&!!saved&&near(bounds.left-rect.left,saved.x)&&near(bounds.top-rect.top,saved.y)&&near(bounds.width,saved.width)&&near(bounds.height,saved.height)&&(module.dataset.moduleFocused==='true')===saved.focused
 }
