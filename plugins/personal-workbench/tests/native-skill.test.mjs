@@ -115,3 +115,36 @@ test('native pre-step injects packaged teaching rules only for a real user slash
     await ctx.fiber.dispose()
   }
 })
+
+test('workbench packaged Skills use the native bundled provider and unload without touching unrelated application rules', async () => {
+  const { installWorkbenchSkills } = await import('../src/workbench-skills.ts')
+  const ctx = new Context()
+  await ctx.plugin(SkillRegistry)
+  const presets = []
+  const presetOwner = ctx.plugin({ apply: child => child.effect(() => child.reflect.provide('agentPresets', {
+    register: async preset => { presets.push(preset); return async () => { presets.splice(presets.indexOf(preset), 1) } },
+  })) })
+  await presetOwner
+  let owner
+  try {
+    ctx.skills.register({ name: 'application-private', description: 'Existing application rules', content: 'Keep my application rules', source: 'runtime' })
+    owner = await installWorkbenchSkills(ctx)
+    const names = ['workbench-module-generate', 'workbench-page-adjust', 'workbench-data-display', 'workbench-app-build']
+    for (const name of names) {
+      const skill = await ctx.skills.get(name)
+      assert.equal(skill?.provider, 'workbench-packaged')
+      assert.equal(skill?.source, 'bundled')
+      assert.equal(skill?.invocation.userInvocable, true)
+      assert.match(skill.content, /验收/)
+    }
+    assert.equal(presets.length, 1)
+    assert.equal(presets[0].id, 'personal-workbench.module-builder.v1')
+    assert.ok(presets[0].plugins.some(plugin => plugin.name === '@deepseek-ai/dsh-tool-fs'))
+    assert.equal(presets[0].plugins.some(plugin => /permission|sandbox/.test(plugin.name)), false)
+    await owner.dispose()
+    owner = undefined
+    assert.equal(presets.length, 0)
+    for (const name of names) assert.equal(await ctx.skills.get(name), undefined)
+    assert.equal((await ctx.skills.get('application-private')).content, 'Keep my application rules')
+  } finally { await owner?.dispose(); await presetOwner.dispose(); await ctx.fiber.dispose() }
+})

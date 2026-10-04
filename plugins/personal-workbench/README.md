@@ -128,3 +128,9 @@ Native Team and Schedule services intentionally hydrate tools in an Agent's own 
 ## Embedded native Session navigation
 
 Role modules render DSH's conversation body and Session chrome under the same retained SessionProvider. The current rc.2 source runtime needs the reviewed native-session-chrome adaptation shipped in this repository; see [adapter installation and checks](../../compat/native-session-chrome/README.md). Release builds verify the source adaptation and fail explicitly on missing or conflicting changes. Native Chat, Trajectory, tool and approval rendering stay owned by DSH. Read-only opening and navigation never send model tasks. Runtime acceptance of real tools and approvals remains separate from component and registry tests.
+
+### 工作台自带页面 Skills
+
+插件包携带 skills 目录，通过 DSH 原生 bundled filesystem provider 加载 workbench-module-generate、workbench-page-adjust、workbench-data-display 和 workbench-app-build。skills/shared/module-template.html 是统一页面样式参考。工作台自有“应用搭建”角色使用原生文件和 Skill 工具，继续遵循所绑定 Session 的权限及审批策略；它不写入公共 Agent 管理目录，不迁移应用已有私有能力。
+
+自定义生成模块可在模块内创建该角色。准备任务仅建立可编辑上下文；显式发送时调用对应 Skill。继续修改使用新的请求输出文件，并提供前一个产物路径供读取，保留原文件。实际生成、修改、显示恢复及审批仍须在宿主中完成验收。

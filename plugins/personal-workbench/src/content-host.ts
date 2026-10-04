@@ -39,9 +39,9 @@ export async function installContent(ctx:Context){
      const folder='.my-dsh/widgets/'+createHash('sha256').update(key).digest('hex'),parent=folder.slice(0,folder.lastIndexOf('/'))
      // Verify each existing parent before writing; never follow a junction outside the workspace.
      await contentPath(root,'');await mkdir(resolve(root,'.my-dsh'),{recursive:true});await contentPath(root,'.my-dsh');await mkdir(resolve(root,parent),{recursive:true});await contentPath(root,parent);await mkdir(resolve(root,folder),{recursive:true});await contentPath(root,folder)
-     const requestId=randomUUID(),path=folder+'/'+requestId+'.html',row={key,signature,root,path,requestId};await artifacts.put(key,row);return row
+     const previous=artifacts.get(key),requestId=randomUUID(),path=folder+'/'+requestId+'.html',row={key,signature,root,path,requestId};await artifacts.put(key,row);return {...row,...(previous?.signature===signature&&previous.root===root?{previousPath:resolve(root,previous.path)}:{})}
     })
-    respond(200,{requestId:row.requestId,path:resolve(row.root,row.path),relativePath:row.path});return
+    respond(200,{requestId:row.requestId,path:resolve(row.root,row.path),relativePath:row.path,...(row.previousPath?{previousPath:row.previousPath}:{})});return
    }
    if(data.action!=='artifact')throw new Error('Content action unavailable')
    const row=artifacts.get(key);if(!row||!(row.signature===signature||(()=>{try{const legacy=JSON.parse(row.signature);return Array.isArray(legacy)&&legacy.length===2&&JSON.stringify(legacy[1])===signature}catch{return false}})())||row.root!==root){respond(200,{ready:false});return}

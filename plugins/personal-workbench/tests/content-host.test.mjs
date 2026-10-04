@@ -27,7 +27,7 @@ test('custom artifacts restore across restart, isolate panes and instances, and 
   f=await fixture(root,r);const a=await f.call(request('reserve')),b=await f.call(request('reserve','two')),c=await f.call(request('reserve','one','second'))
   assert.equal(a.status,200);assert.notEqual(a.value.path,b.value.path);assert.notEqual(a.value.path,c.value.path)
   await writeFile(a.value.path,'<h1>First</h1>');assert.equal((await f.call(request('artifact'))).value.content,'<h1>First</h1>');assert.equal((await f.call(request('artifact','two'))).value.ready,false)
-  const newer=await f.call(request('reserve'));await writeFile(a.value.path,'<h1>Late result</h1>');assert.equal((await f.call(request('artifact'))).value.ready,false)
+  const newer=await f.call(request('reserve'));assert.equal(newer.value.previousPath,a.value.path);await writeFile(a.value.path,'<h1>Late result</h1>');assert.equal((await f.call(request('artifact'))).value.ready,false)
   await writeFile(newer.value.path,'<h1>New page</h1>');await f.close();f=await fixture(root,r);assert.equal((await f.call(request('artifact'))).value.content,'<h1>New page</h1>')
   r.version++;assert.equal((await f.call(request('artifact'))).value.content,'<h1>New page</h1>');r.pages[0].modules[0].config.requirement='Changed request';assert.equal((await f.call(request('artifact'))).value.ready,false)
   r.pages[0].modules.splice(0,1);assert.equal((await f.call(request('artifact'))).status,409)

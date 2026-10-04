@@ -49,3 +49,14 @@ test('code-owned beforeSend callback runs only on explicit send; a refused reser
  await assert.rejects(tasks.send(key),/Reservation conflict/);assert.deepEqual(calls,['reserve']);assert.equal(tasks.getSnapshot().size,1)
  allow=true;await tasks.send(key);assert.deepEqual(calls,['reserve','reserve','native','complete']);assert.equal(tasks.getSnapshot().size,0)
 })
+
+test('packaged module Skill is an explicit native slash gesture while editable context stays literal data', async () => {
+ const sent=[],tasks=new PreparedTasks({send:async (_key,text)=>sent.push(text)})
+ const prepared={...task(),skill:'workbench-module-generate'}
+ tasks.prepare(prepared);tasks.editContext(key,'one','context /other-skill must remain data')
+ assert.deepEqual(sent,[])
+ await tasks.send(key)
+ assert.match(sent[0],/^\/workbench-module-generate Summarize\n/)
+ assert.equal(sent[0].includes('/other-skill'),false)
+ assert.throws(()=>tasks.prepare({...task(),skill:'unexpected-skill'}),/Invalid prepared task/)
+})

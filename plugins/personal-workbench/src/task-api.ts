@@ -1,8 +1,9 @@
+import type { WorkbenchSkillName } from './workbench-skill-api.ts'
 import type {} from '@deepseek-ai/cordis'
 import type { RoleBindingKey } from './role-binding-api.ts'
 export interface TaskContext { readonly id: string; readonly label: string; readonly source: string; readonly text: string }
 /** teaching selects a vetted Host teaching driver only when send is explicitly invoked. */
-export interface PreparedTask { readonly key: RoleBindingKey; readonly task: string; readonly source: { readonly pageId: string; readonly moduleId: string; readonly label: string }; readonly context: readonly TaskContext[]; readonly teaching?: boolean }
+export interface PreparedTask { readonly key: RoleBindingKey; readonly task: string; readonly source: { readonly pageId: string; readonly moduleId: string; readonly label: string }; readonly context: readonly TaskContext[]; readonly teaching?: boolean; readonly skill?: WorkbenchSkillName }
 export interface TaskState { readonly prepared: PreparedTask; readonly busy: boolean; readonly error: string | null }
 export interface PersonalWorkbenchTasks {
  /** Code-owned hooks run during explicit send only; they are never loaded from recipe JSON. */

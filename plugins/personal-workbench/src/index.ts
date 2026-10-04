@@ -18,6 +18,11 @@ export const Config: z<Config> = z.object({ teacherSessionId: z.string().default
 
 /** Register read-only association metadata. Installation makes no session or model calls. */
 export function apply(ctx: Context, config: Config): void {
+  ctx.inject(['skills', 'agentPresets'], child => child.effect(async function* () {
+    const { installWorkbenchSkills } = await import('./workbench-skills.ts')
+    const owner = await installWorkbenchSkills(child)
+    yield async () => { await owner.dispose() }
+  }, 'workbench packaged Skills and application builder'))
   let contentHandler:((req:IncomingMessage,res:ServerResponse)=>Promise<void>)|undefined
   ctx.effect(()=>ctx.webServer.register({kind:'exact',path:'/api/personal-workbench/content',handler:(req,res)=>{if(contentHandler){void contentHandler(req,res);return}res.writeHead(503,{'content-type':'application/json'});res.end(JSON.stringify({error:'Content services unavailable'}))}}),'module content route')
   ctx.inject(['storageDomain','connection','personalWorkbenchRecipes','personalWorkbenchApps','personalWorkbenchRecipeRoles'],child=>child.effect(async function*(){const {installContent}=await import('./content-host.ts');const owner=await installContent(child);contentHandler=owner.handle;yield async()=>{contentHandler=undefined;await owner.dispose()}},'module content owner'))
