@@ -74,15 +74,35 @@ test('built client registers one explicit provider seat and delegates the entire
   assert.deepEqual(retained, [{ id: 'synthetic-teacher', source: 'personalWorkbenchTeacher' }])
   assert.equal(injected.hooks.teacherWindow.getSnapshot().reference, reference)
   const native = declarations.find(row => row.options.name === 'personal-workbench.teacher')
-  let factory
+  const factories = []
   const rendered = native.component({
     sessionId: 'synthetic-teacher', useSession: selector => selector({ openState: 'open' }), t: key => key,
-    renderFactorySlot: (name, props) => { factory = { name, props }; return 'native-factory-occurrence' },
+    renderFactorySlot: (name, props) => { factories.push({ name, props }); return `native-factory:${name}` },
   })
-  assert.equal(rendered, 'native-factory-occurrence')
-  assert.equal(factory.name, 'conversation.content')
-  assert.equal(factory.props.variant, 'embedded')
-  assert.equal(factory.props.hero, false)
+  assert.deepEqual(factories.map(row => row.name), ['conversation.content', 'conversation.session.chrome'])
+  const content = factories.find(row => row.name === 'conversation.content')
+  assert.equal(content.props.variant, 'embedded')
+  assert.equal(content.props.phase, 'active')
+  assert.equal(content.props.hero, false)
+  assert.equal(factories.find(row => row.name === 'conversation.session.chrome').props.hideChrome, false)
+  assert.equal(rendered.type, 'div')
+  assert.equal(rendered.props.style.display, 'flex')
+  assert.equal(rendered.props.style.flexDirection, 'column')
+  assert.equal(rendered.props.style.height, '100%')
+  assert.equal(rendered.props.style.minHeight, 0)
+  assert.equal(rendered.props.style.overflow, 'hidden')
+  const chromeSeat = rendered.props.children[0]
+  const contentSeat = rendered.props.children[2]
+  assert.equal(chromeSeat.props.style.flexShrink, 0)
+  assert.equal(chromeSeat.props.children, 'native-factory:conversation.session.chrome')
+  assert.equal(contentSeat.props.style.display, 'flex')
+  assert.equal(contentSeat.props.style.flex, 1)
+  assert.equal(contentSeat.props.style.minHeight, 0)
+  assert.equal(contentSeat.props.style.overflow, 'hidden')
+  assert.equal(contentSeat.props.children, 'native-factory:conversation.content')
+  assert.equal(injected.hooks.teacherWindow.getSnapshot().reference, reference, 'Both native surfaces remain under the existing teacher Provider reference')
+  assert.equal(retained.length, 1, 'Mounting header and body must not acquire a second Session')
+  assert.equal(fetches, 1, 'Mounting must not change the owning teacher association')
   const scoped = native.options.inject('synthetic-teacher')
   const failure = native.component({
     useSession: selector => selector({ openState: 'error', removed: false }), t: key => key,

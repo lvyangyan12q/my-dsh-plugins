@@ -28,6 +28,34 @@ test('actual Cordis/SlotRegistry optional role factory delegates native content 
   try {
     owner = ctx.plugin(plugin); await owner
     assert.ok(ctx.personalWorkbench)
+    // Exercise the actual registered independent-teacher occupant, not a local
+    // replica of its JSX. The current Session comes from its owning Provider;
+    // inspect the requested native factories before rendering either assembly.
+    const independentTeacher = ctx.slots.entries('personal-workbench.teacher')[0]
+    assert.ok(independentTeacher)
+    const teacherFactories = []
+    independentTeacher.component({
+      useSession: selector => selector({ removed: false, openState: 'open' }),
+      renderFactorySlot: (name, props) => { teacherFactories.push({ name, props }); return null },
+      t: key => key, retry: () => assert.fail('Mount must not retry or create a Session'),
+    })
+    assert.deepEqual(teacherFactories.map(row => row.name).sort(), ['conversation.content', 'conversation.session.chrome'], 'Independent study window must mount the native Session title, lineage, actions and view tabs beside the body')
+    assert.equal(teacherFactories.find(row => row.name === 'conversation.session.chrome').props.hideChrome, false)
+    const inaccessible = independentTeacher.component({
+      useSession: selector => selector({ removed: false, openState: 'closed' }),
+      renderFactorySlot: () => assert.fail('Closed Session must not mount native surfaces'),
+      t: key => key, retry: () => Promise.resolve(),
+    })
+    assert.equal(inaccessible.props.role, 'alert')
+    const unavailable = independentTeacher.component({
+      useSession: selector => selector({ removed: false, openState: 'open', lastAgentError: 'Teacher request failed' }),
+      renderFactorySlot: (_name, _props, options) => options.fallback,
+      t: key => key, retry: () => Promise.resolve(),
+    })
+    assert.equal(unavailable.props.style.display, 'flex')
+    assert.equal(unavailable.props.children[0].props.children.props.role, 'alert', 'A missing native factory must be visible, never silently hide the title')
+    assert.equal(unavailable.props.children[1].props.children, 'Teacher request failed')
+    assert.equal(unavailable.props.children[2].props.style.minHeight, 0)
     assert.equal(ctx.get('personalWorkbenchRoles'), undefined)
     assert.deepEqual(ctx.slots.snapshot('factory:personal-workbench.role-conversation'), [])
     const enable = async () => {

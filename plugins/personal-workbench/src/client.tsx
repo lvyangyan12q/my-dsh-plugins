@@ -1,3 +1,4 @@
+import { renderNativeSession } from './native-session-view.tsx'
 import {installAnnotations} from './annotation-client.ts'
 import {installContentModules} from './content-view.tsx'
 import { installDisplayModules } from './display-view.tsx'
@@ -92,9 +93,8 @@ function Window(props: WindowProps) {
 function NativeTeacher({ useSession, renderFactorySlot, t, retry }: PropsRuntime<'personal-workbench.teacher'> & PropsRenderFactories & PropsLocale<'personal-workbench'> & { retry: () => Promise<void> }) {
   const session = useSession(s => s)
   if (session.removed || session.openState !== 'open') return <div role="alert"><p>{t('session')}</p><button type="button" onClick={() => { void retry() }}>{t('retry')}</button></div>
-  return renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, {
-    fallback: <p role="alert">{t('unavailable')}</p>,
-  })
+  const failure = session.lastAgentError ?? session.openError?.message ?? session.promptError?.error.message
+  return renderNativeSession({ renderFactorySlot, failure, unavailable: <p role="alert">{t('unavailable')}</p> })
 }
 
 export const inject = ['slots', 'sessions', 'workspaces', 'uiSession', 'locale']

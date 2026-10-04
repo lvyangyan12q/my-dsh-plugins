@@ -5,6 +5,7 @@ import type { PropsRuntime, FactoryComponentPropsOf, PropsRenderFactories } from
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { RoleBindingKey, RoleViewState } from './role-binding-api.ts'
+import { renderNativeSession } from './native-session-view.tsx'
 import { RoleAttachment } from './role-attachment.tsx'
 import { RoleClients, roleKey } from './role-client.ts'
 
@@ -47,14 +48,7 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
 }
 function RoleNative({ renderFactorySlot, useSession }: PropsRuntime<'personal-workbench.role-native'> & PropsRenderFactories) {
   const failure = useSession(value => value.lastAgentError ?? value.openError?.message ?? value.promptError?.error.message)
-  const content = renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, { fallback: <p role="alert">原生会话组件不可用。</p> })
-  // The native embedded body uses flex sizing; a block parent lets long messages
-  // determine its height and pushes the composer below the clipped role pane.
-  return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
-    <div style={{ flexShrink: 0, minWidth: 0 }}>{renderFactorySlot('conversation.session.chrome', { hideChrome: false })}</div>
-    {failure && <p role="alert" style={{ flexShrink: 0, maxHeight: '25%', overflow: 'auto', overflowWrap: 'anywhere', margin: 0, padding: '8px 10px' }}>{failure}</p>}
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{content}</div>
-  </div>
+  return renderNativeSession({ renderFactorySlot, failure, unavailable: <p role="alert">原生会话组件不可用。</p> })
 }
 /** Optional native surface. Registration does not read metadata or acquire a Session. */
 export function installRoleClient(ctx: Context) {

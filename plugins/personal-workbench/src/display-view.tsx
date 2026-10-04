@@ -43,7 +43,11 @@ export function RecipeDisplayModule(props: RecipeModuleProps & { t?: Translate }
   const source = connection?.sourceAppId === props.appId ? getDisplaySource(connection.sourceAppId, connection.resource) : undefined
   if (!connection) return <p role="status">{t('recipeEmptyModule')}</p>
   if (!source) return <p role="alert">{t('displayUnavailable')}: {connection.resource}</p>
-  return <DisplayModule type={props.module.type as 'stats' | 'list' | 'detail' | 'filter' | 'chart' | 'map'} config={props.module.config} store={owner(props, source)} t={t} />
+  return <RefreshableDisplay props={props} store={owner(props, source)} t={t}/>
+}
+function RefreshableDisplay({props,store,t}:{props:RecipeModuleProps;store:DisplayStore;t:Translate}) {
+ const state=useSyncExternalStore(store.subscribe,store.getSnapshot,store.getSnapshot)
+ return <><div className="pwb-content-toolbar"><button data-pwb-button type="button" aria-label={t('moduleReload')+': '+props.module.id} disabled={state.phase==='loading'} onClick={()=>{void store.reload()}}>{t('moduleReload')}</button></div><DisplayModule type={props.module.type as 'stats'|'list'|'detail'|'filter'|'chart'|'map'} config={props.module.config} store={store} t={t}/></>
 }
 export function installDisplayModules() {
   const removes = dataModuleTypes.flatMap(type => [registerRecipeModuleRenderer(type, RecipeDisplayModule),registerRecipeModuleContextProvider(type,props=>{

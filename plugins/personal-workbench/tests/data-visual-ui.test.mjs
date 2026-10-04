@@ -49,3 +49,23 @@ test('chart renders accepted finite extremes around zero without invalid SVG geo
   assert.equal(store.getSnapshot().selectedId,'positive')
  }finally{await act(async()=>root.unmount());store.dispose();dom.window.close();for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key]}}
 })
+
+
+test('explicit data pane refresh reloads only its shared owned connection and preserves filtering and selection',async()=>{
+ const {RecipePage}=await import('../src/recipe-view.tsx'),{installDisplayModules}=await import('../src/display-view.tsx'),{registerDisplaySource}=await import('../src/display-api.ts')
+ const dom=new JSDOM('<div id="root"></div>'),saved=new Map()
+ for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})}
+ const {createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('root'));let loads=0,otherLoads=0
+ const remove=installDisplayModules(),withdraw=registerDisplaySource({appId:'owned',resource:'records',label:'Owned records',load:async scope=>{loads++;assert.equal(scope.appId,'owned');assert.equal(scope.instanceId,'one');return {records:[{id:'selected',title:loads===1?'Initial':'Updated',fields:{value:loads===1?10:20,category:'a'}},{id:'excluded',title:'Excluded',fields:{value:99,category:'b'}}],filters:[{field:'category',label:'Category'}],stats:[]}}}),withdrawOther=registerDisplaySource({appId:'owned',resource:'other',label:'Other',load:async()=>{otherLoads++;return {records:[],filters:[],stats:[]}}})
+ const recipe={schemaVersion:1,appId:'owned',version:1,name:'Owned',description:'',roles:[],connections:[{id:'data',sourceAppId:'owned',resource:'records'},{id:'other',sourceAppId:'owned',resource:'other'}],pages:[{id:'home',label:'Home',layout:'grid',modules:[{id:'chart',type:'chart',title:'Chart',connectionId:'data',config:{valueField:'value'}},{id:'filter',type:'filter',title:'Filter',connectionId:'data',config:{}},{id:'detail',type:'detail',title:'Detail',connectionId:'data',config:{}},{id:'other',type:'list',title:'Other',connectionId:'other',config:{}}]}]}
+ try{
+  await act(async()=>root.render(React.createElement(RecipePage,{recipe,pageId:'home',appId:'owned',instanceId:'one',t:k=>k})))
+  assert.equal(dom.window.getComputedStyle(document.querySelector('select[aria-label="Category"]')).minHeight,'38px','Refresh toolbar preserves the existing filter control style')
+  await act(async()=>document.querySelector('[aria-label="Initial: 10"]').dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})))
+  await act(async()=>{const filter=document.querySelector('select[aria-label="Category"]');filter.value='a';filter.dispatchEvent(new dom.window.Event('change',{bubbles:true}))})
+  const refresh=document.querySelector('button[aria-label="moduleReload: chart"]');assert.ok(refresh,'Data pane exposes explicit refresh')
+  await act(async()=>refresh.click())
+  assert.equal(loads,2);assert.equal(otherLoads,1);assert.equal(document.querySelector('select[aria-label="Category"]').value,'a')
+  assert.equal(document.querySelector('.pwb-display-detail h4').textContent,'Updated');assert.equal(document.querySelector('[aria-label="Updated: 20"]').getAttribute('aria-pressed'),'true');assert.equal(document.querySelector('[aria-label="Excluded: 99"]'),null)
+ }finally{await act(async()=>root.unmount());withdraw();withdrawOther();remove();dom.window.close();for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key]}}
+})

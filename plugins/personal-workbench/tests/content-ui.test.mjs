@@ -67,3 +67,22 @@ test('preparing and discarding an adjustment retains the live iframe and revokes
   assert.deepEqual(calls.find(c=>c.action==='discard'),{action:'discard',appId:'app.test',instanceId:'first',moduleId:'custom',requestId:'adjustment'})
  }finally{releaseRead(file);await f.close();remove();globalThis.fetch=oldFetch}
 })
+
+
+test('explicit refresh reloads website and unchanged local HTML without mutating module bindings or sending a task',async()=>{
+ const f=await domFixture(),remove=installContentModules(),oldFetch=globalThis.fetch,calls=[]
+ globalThis.fetch=async(_url,init)=>{const data=JSON.parse(init.body);calls.push(data);return {ok:true,json:async()=>({kind:'html',content:'<button>Same saved page</button>'})}}
+ const web={...recipe,pages:[{...recipe.pages[0],modules:[recipe.pages[0].modules[0]]}]}
+ const reload=async()=>{const button=[...document.querySelectorAll('button')].find(b=>b.textContent==='moduleReload');assert.ok(button,'Every content pane exposes explicit refresh');await act(async()=>button.click())}
+ try{
+  await act(async()=>f.root.render(React.createElement(RecipePage,{recipe:web,pageId:'home',appId:web.appId,instanceId:'one',t:k=>k})))
+  const firstWeb=document.querySelector('iframe');await reload();const nextWeb=document.querySelector('iframe')
+  assert.notEqual(nextWeb,firstWeb);assert.equal(nextWeb.getAttribute('src'),'https://example.com/');assert.deepEqual(calls,[])
+  const local={...web,pages:[{...web.pages[0],modules:[{id:'html',type:'custom',title:'Local',config:{mode:'file',path:'saved.html'}}]}]}
+  await act(async()=>f.root.render(React.createElement(RecipePage,{recipe:local,pageId:'home',appId:local.appId,instanceId:'one',t:k=>k})))
+  const firstLocal=document.querySelector('iframe'),before=calls.length;await reload();const nextLocal=document.querySelector('iframe')
+  assert.notEqual(nextLocal,firstLocal);assert.equal(nextLocal.getAttribute('srcdoc'),'<button>Same saved page</button>');assert.equal(calls.length,before+1)
+  assert.ok(calls.every(call=>call.action==='file'&&call.appId===local.appId&&call.instanceId==='one'&&call.moduleId==='html'))
+  assert.equal(local.pages[0].modules[0].config.path,'saved.html')
+ }finally{await f.close();remove();globalThis.fetch=oldFetch}
+})

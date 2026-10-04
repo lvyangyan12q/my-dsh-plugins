@@ -8,8 +8,8 @@ import {webAddress} from './content-catalog.ts'
 export async function contentRequest(props:Pick<RecipeModuleProps,'appId'|'instanceId'|'module'>,action:string,path?:string,signal?:AbortSignal,requestId?:string):Promise<any>{
  const response=await fetch('/api/personal-workbench/content',{method:'POST',credentials:'same-origin',signal,headers:{'content-type':'application/json'},body:JSON.stringify({action,appId:props.appId,instanceId:props.instanceId,moduleId:props.module.id,...(path===undefined?{}:{path}),...(requestId===undefined?{}:{requestId})})}),value=await response.json();if(!response.ok)throw new Error(value.error??'Content unavailable');return value
 }
-function Embedded({url,title,t}:{url:string;title:string;t:RecipeModuleProps['t']}){
- return <><div className="pwb-content-toolbar"><a href={url} target="_blank" rel="noopener noreferrer">{t('moduleOpen')}</a><small>{t('moduleEmbedHelp')}</small></div><iframe className="pwb-content-frame" title={title} src={url} sandbox="allow-scripts allow-forms allow-popups" referrerPolicy="no-referrer"/></>
+function Embedded({url,title,t,revision,onReload}:{url:string;title:string;t:RecipeModuleProps['t'];revision:number;onReload:()=>void}){
+ return <><div className="pwb-content-toolbar"><button data-pwb-button type="button" onClick={onReload}>{t('moduleReload')}</button><a href={url} target="_blank" rel="noopener noreferrer">{t('moduleOpen')}</a><small>{t('moduleEmbedHelp')}</small></div><iframe key={revision} className="pwb-content-frame" title={title} src={url} sandbox="allow-scripts allow-forms allow-popups" referrerPolicy="no-referrer"/></>
 }
 function FilePreview({file,title}:{file:{kind:string;content:string};title:string}){
  if(file.kind==='html')return <iframe className="pwb-content-frame" title={title} srcDoc={file.content} sandbox="allow-scripts" referrerPolicy="no-referrer"/>
@@ -17,7 +17,7 @@ function FilePreview({file,title}:{file:{kind:string;content:string};title:strin
  return <pre className="pwb-content-text">{file.content}</pre>
 }
 function ContentModule(props:RecipeModuleProps){
- const {module,preview,t,ctx}=props,[expanded,setExpanded]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false),[tick,setTick]=useState(0),[path,setPath]=useState(''),[file,setFile]=useState<any>(null),[entries,setEntries]=useState<{name:string;path:string;directory:boolean}[]>([]),[requirement,setRequirement]=useState(String(module.config.requirement??'')),[waiting,setWaiting]=useState(false)
+ const {module,preview,t,ctx}=props,[expanded,setExpanded]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false),[tick,setTick]=useState(0),[frameRevision,setFrameRevision]=useState(0),[path,setPath]=useState(''),[file,setFile]=useState<any>(null),[entries,setEntries]=useState<{name:string;path:string;directory:boolean}[]>([]),[requirement,setRequirement]=useState(String(module.config.requirement??'')),[waiting,setWaiting]=useState(false)
  const actionController=useRef<AbortController>(),conversationDetails=useRef<HTMLDetailsElement>(null)
  useEffect(()=>{const details=conversationDetails.current,show=()=>setExpanded(true);details?.addEventListener('pwb-reveal-role',show);return()=>details?.removeEventListener('pwb-reveal-role',show)},[module.type,module.config.mode,preview])
  const identity=JSON.stringify([props.appId,props.instanceId,contentIdentity(module)]),remote=['website','animation'].includes(module.type)||module.type==='custom'&&module.config.mode==='url'
@@ -42,15 +42,17 @@ function ContentModule(props:RecipeModuleProps){
    setExpanded(true);setTick(value=>value+1)
   }catch(error){if(!controller.signal.aborted)setError(error instanceof Error?error.message:String(error))}finally{if(!controller.signal.aborted)setBusy(false)}
  }
+ // Only an explicit refresh resets iframe state; reservation polling must keep it alive.
+ const reload=()=>{setFrameRevision(value=>value+1);setTick(value=>value+1)}
  if(preview)return <p role="status">{t('modulePreview')}</p>
  const url=webAddress(module.config.url)
  return <div className="pwb-content-module">
- {remote?(url?<Embedded url={url} title={module.title} t={t}/>:<p role="alert">{t('moduleUrl')}</p>):<>
- <div className="pwb-content-toolbar"><button data-pwb-button type="button" disabled={busy} onClick={()=>setTick(value=>value+1)}>{t('moduleReload')}</button>{module.type==='resources'&&<><button data-pwb-button type="button" disabled={!path||busy} onClick={()=>setPath(path.split('/').slice(0,-1).join('/'))}>{t('moduleUp')}</button><span>{path||t('moduleRoot')}</span></>}</div>
+ {remote?(url?<Embedded url={url} title={module.title} t={t} revision={frameRevision} onReload={reload}/>:<p role="alert">{t('moduleUrl')}</p>):<>
+ <div className="pwb-content-toolbar"><button data-pwb-button type="button" disabled={busy} onClick={reload}>{t('moduleReload')}</button>{module.type==='resources'&&<><button data-pwb-button type="button" disabled={!path||busy} onClick={()=>setPath(path.split('/').slice(0,-1).join('/'))}>{t('moduleUp')}</button><span>{path||t('moduleRoot')}</span></>}</div>
  {module.type==='resources'&&<ul className="pwb-resource-list">{entries.map(entry=><li key={entry.path}><button data-pwb-button type="button" disabled={busy} onClick={()=>{if(entry.directory)setPath(entry.path);else void open(entry.path)}}><span aria-hidden="true">{entry.directory?'▸':'·'}</span>{entry.name}</button></li>)}{!entries.length&&!error&&<li>{t('moduleEmpty')}</li>}</ul>}
  {module.type==='custom'&&module.config.mode==='generate'&&<>{file&&<p role="status">{t('moduleArtifactReady')}</p>}<ModuleSessionState {...props}/></>}
  {module.type==='custom'&&module.config.mode==='generate'&&<details ref={conversationDetails} className="pwb-custom-task" open={!file||expanded}><summary onClick={event=>{event.preventDefault();setExpanded(!conversationDetails.current?.open)}}>{t('moduleSourcegenerate')}</summary><p>{t('moduleGenerateHelp')}</p><label>{t('moduleRequirement')}<textarea aria-label={t('moduleRequirement')+': '+module.id} value={requirement} onChange={e=>setRequirement(e.target.value)} maxLength={2000}/></label><button data-pwb-button data-variant="primary" type="button" disabled={busy||!module.roleId||!requirement.trim()||!ctx?.get('personalWorkbenchTasks')} onClick={()=>{void prepare()}}>{t('modulePrepare')}</button>{!module.roleId&&<p role="alert">{t('taskMissingRole')}</p>}{ctx&&module.roleId&&props.taskEditorHost&&<PreparedTaskEditor ctx={ctx} bindingKey={{appId:props.appId,instanceId:props.instanceId,roleId:module.roleId}} label={props.recipe.roles.find(r=>r.id===module.roleId)?.name} t={t}/>}{props.taskEditorHost&&!props.recipe.pages.find(p=>p.id===props.pageId)?.modules.some(m=>m.type==='role-chat'&&m.roleId===module.roleId)&&props.renderFactorySlot&&<div style={{height:460,minHeight:0,marginTop:12}}>{props.renderFactorySlot('personal-workbench.role-conversation',{bindingKey:{appId:props.appId,instanceId:props.instanceId,roleId:module.roleId!},active:props.active??true,label:props.recipe.roles.find(r=>r.id===module.roleId)?.name},{fallback:<p role="alert">{t('taskUnavailable')}</p>})}</div>}</details>}
- {file?<FilePreview file={file} title={module.title}/>:module.type==='custom'&&!error&&<p role="status">{t(waiting?'moduleWaiting':'modulePending')}</p>}
+ {file?<FilePreview key={frameRevision} file={file} title={module.title}/>:module.type==='custom'&&!error&&<p role="status">{t(waiting?'moduleWaiting':'modulePending')}</p>}
  </>}{error&&<p role="alert">{error}</p>}</div>
 }
 export function installContentModules(){const removals=['website','custom','animation','resources'].map(type=>registerRecipeModuleRenderer(type,ContentModule));return()=>{for(const remove of removals)remove()}}
