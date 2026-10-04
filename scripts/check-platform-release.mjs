@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile, writeFile, realpath } from 'node:fs/promises'
+import { readFile, writeFile, realpath, mkdir } from 'node:fs/promises'
 import { resolve, join, dirname, relative, isAbsolute } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
@@ -53,7 +53,10 @@ assert.equal(typeof client.apply, 'function'); assert.equal(client.readingRecipe
 const patch = join(home, 'cordis.patch.yml')
 const { parse } = createRequire(join(source, 'packages/boot/config-editor/package.json'))('yaml')
 const previous = parse(await readFile(patch, 'utf8'))
-await writeFile(patch, JSON.stringify([...previous, { id: 'storage-json', config: { root: join(root, 'data') } }, { id: 'kaogong', config: { roleCwd: cwd } }, { id: 'agent-loop', config: { agents: [] } }, ...['session-telemetry-otel','desktop-product-telemetry','product-analytics'].map(id => ({ id, disabled: true }))]))
+// Isolated test workspace registration uses the native registry, not persisted-record edits.
+const fixture=join(root,'workspace-fixture.mjs')
+await writeFile(fixture, 'export const inject=["workspaceRegistry"];export async function apply(ctx){await ctx.workspaceRegistry.create('+JSON.stringify(cwd)+')}')
+await writeFile(patch, JSON.stringify([...previous, { insert:[{ id:'release-workspace-fixture', name:pathToFileURL(fixture).href }] }, { id: 'storage-json', config: { root: join(root, 'data') } }, { id: 'kaogong', config: { roleCwd: cwd } }, { id: 'agent-loop', config: { agents: [] } }, ...['session-telemetry-otel','desktop-product-telemetry','product-analytics'].map(id => ({ id, disabled: true }))]))
 let state
 async function host(label, visit) {
   const socket = createServer(); await new Promise(yes => socket.listen(0, '127.0.0.1', yes)); const port = socket.address().port; await new Promise(yes => socket.close(yes))
@@ -108,5 +111,18 @@ await host('official reading uninstall/reinstall / retained own data and re-enab
   assert.equal((await recipe(call,{action:'catalog'})).recipes[0].running.version,1)
   assert.equal((await apps(call,{action:'catalog'})).states.find(row=>row.appId==='reading-statistics').enabled,true)
 })
-await writeFile(join(root,'verdict.json'),JSON.stringify({ officialOfflineArchiveInstall:true, dependencyMode:'existing public dependency links; products installed from exact archives', compatibilityExemptions:0, installedBytes:true, installedConsumers:true, authenticatedLifecycle:true, coldRestart:true, readingUninstallReinstall:true, fixture:'public synthetic reading records', modelCalls:0, archives:packages.map(({sha256})=>sha256) },null,2))
+await host('installed HTML content / scoped static assets and authentication', async call => {
+  const folder=join(cwd,'html-proof');await mkdir(folder,{recursive:true})
+  await writeFile(join(folder,'icon.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="green"/></svg>')
+  await writeFile(join(folder,'theme.css'),'h1{color:rgb(12,34,56)}')
+  await writeFile(join(folder,'main.js'),'window.assetProof=true;')
+  await writeFile(join(folder,'index.html'),'<link rel="stylesheet" href="theme.css"><h1>Static assets</h1><img src="icon.svg"><script src="main.js"></script>')
+  assert.ok((await recipe(call,{action:'workspaces'})).workspaces.some(path=>resolve(path).toLowerCase()===resolve(cwd).toLowerCase()))
+  const app={schemaVersion:1,appId:'release-html',version:1,name:'HTML assets',description:'Synthetic release fixture',workspace:cwd,pages:[{id:'home',label:'Home',layout:'stack',modules:[{id:'html',type:'custom',title:'HTML',config:{mode:'file',path:'html-proof/index.html'}}]}],roles:[],connections:[]}
+  await recipe(call,{action:'save',recipe:app,expectedRevision:0});await recipe(call,{action:'preview',appId:app.appId,expectedRevision:1});await recipe(call,{action:'activate',appId:app.appId,expectedRevision:1})
+  const path='/api/personal-workbench/content',body={action:'file',appId:app.appId,instanceId:'default',moduleId:'html'}
+  await call(path,body,401,{cookie:''});await call(path,body,403,{origin:'http://foreign.invalid'})
+  const result=await call(path,body);assert.equal(result.kind,'html');assert.match(result.content,/data:text\/css;base64,/);assert.match(result.content,/data:image\/svg\+xml;base64,/);assert.match(result.content,/data:application\/javascript;base64,/)
+})
+await writeFile(join(root,'verdict.json'),JSON.stringify({ officialOfflineArchiveInstall:true, dependencyMode:'existing public dependency links; products installed from exact archives', compatibilityExemptions:0, installedBytes:true, installedConsumers:true, authenticatedLifecycle:true, installedHtmlAssets:true, coldRestart:true, readingUninstallReinstall:true, fixture:'public synthetic reading records', modelCalls:0, archives:packages.map(({sha256})=>sha256) },null,2))
 console.log('Platform release checks passed (synthetic profile; zero model calls).')

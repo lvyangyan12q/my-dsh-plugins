@@ -1,3 +1,4 @@
+import {packContentHtml} from './content-assets.ts'
 import {realpath,stat,readFile,readdir} from 'node:fs/promises'
 import {resolve,relative,isAbsolute,extname} from 'node:path'
 import {relativeContentPath} from './content-catalog.ts'
@@ -15,7 +16,8 @@ export async function readContentFile(root:string,path:string){
  if(bytes.length>2*1024*1024)throw new Error('File preview is limited to 2 MB')
  if(['.png','.jpg','.jpeg','.gif','.webp'].includes(ext))return {kind:'image',content:'data:image/'+(ext==='.jpg'||ext==='.jpeg'?'jpeg':ext.slice(1))+';base64,'+bytes.toString('base64')}
  if(!['.html','.htm','.md','.txt','.json','.csv','.ts','.tsx','.js','.css','.yml','.yaml','.log'].includes(ext))throw new Error('This file type cannot be previewed')
- return {kind:ext==='.html'||ext==='.htm'?'html':'text',content:bytes.toString('utf8')}
+ const html=ext==='.html'||ext==='.htm'
+ return {kind:html?'html':'text',content:html?await packContentHtml(root,target,bytes.toString('utf8')):bytes.toString('utf8')}
 }
 export async function listContentDirectory(root:string,path:string){
  const target=await contentPath(root,path),rows=await readdir(target,{withFileTypes:true})
