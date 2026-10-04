@@ -102,7 +102,7 @@ test('effective native assembly inventory gate still rejects another plugin addi
 
 test('official provider reasoning blocks are ignored while only strict text JSON becomes a draft',async()=>{
  const reasoning=[{type:'block-start',index:0,blockType:'reasoning'},{type:'reasoning-delta',index:0,text:'Reasoning includes a different recipe identity; ignore it.'},{type:'block-end',index:0,block:{type:'reasoning',text:'Reasoning includes a different recipe identity; ignore it.'}}]
- const f=await fixture([[...reasoning,...textResponse(JSON.stringify(recipe())).map(chunk=>'index'in chunk?{...chunk,index:chunk.index+1}:chunk)]]);try{const done=await f.generation.settled(f.start().id);assert.equal(done.status,'completed',done.error);assert.equal(done.record.draft.appId,'app.generated');const content=f.ctx.agents.get(done.sessionId).session.snapshotEvents().filter(event=>event.type==='assistant/message').at(-1).data.message.content;assert.deepEqual(content.map(block=>block.type),['reasoning','text']);assert.equal(f.recipes.service.list().length,1)}finally{await f.close()}
+ const f=await fixture([[...reasoning,...textResponse(JSON.stringify(recipe())).map(chunk=>'index'in chunk?{...chunk,index:chunk.index+1}:chunk)]]);try{const job=f.generation.dispatch({action:'start',requirement:'Use directory docs and HTML docs/index.html',appId:'app.generated',version:1,expectedRevision:0});const done=await f.generation.settled(job.id);assert.equal(done.status,'completed',done.error);assert.equal(done.record.draft.appId,'app.generated');const content=f.ctx.agents.get(done.sessionId).session.snapshotEvents().filter(event=>event.type==='assistant/message').at(-1).data.message.content;assert.deepEqual(content.map(block=>block.type),['reasoning','text']);assert.equal(f.recipes.service.list().length,1)}finally{await f.close()}
 })
 test('reasoning cannot turn prose, fenced JSON, tool calls or a reasoning-only answer into a valid recipe',async()=>{
  const reasoning=[{type:'block-start',index:0,blockType:'reasoning'},{type:'reasoning-delta',index:0,text:JSON.stringify(recipe())},{type:'block-end',index:0,block:{type:'reasoning',text:JSON.stringify(recipe())}}]
@@ -158,7 +158,7 @@ test('native app generation receives resource directory and custom HTML mode con
   ]}]}
   return textResponse(JSON.stringify(output))
  }])
- try{const done=await f.generation.settled(f.start().id);assert.equal(done.status,'completed',done.error)
+ try{const job=f.generation.dispatch({action:'start',requirement:'Use directory docs and HTML docs/index.html',appId:'app.generated',version:1,expectedRevision:0});const done=await f.generation.settled(job.id);assert.equal(done.status,'completed',done.error)
   const modules=done.record.draft.pages[0].modules
   assert.deepEqual(modules[0].config,{basePath:'docs'});assert.deepEqual(modules[1].config,{mode:'file',path:'docs/index.html'})
   assert.equal(done.record.running,undefined);await f.recipes.service.preview(done.record.appId,done.record.revision)
@@ -176,4 +176,28 @@ test('generation rejects unavailable selected directories before model admission
   const job=f.generation.dispatch({action:'start',requirement:'Build an app',appId:'app.generated',version:1,expectedRevision:0,workspace:f.root})
   const done=await f.generation.settled(job.id);assert.equal(done.status,'failed');assert.match(done.error,/workspace differs from selected target/);assert.equal(f.adapter.requests.length,1);assert.deepEqual(f.recipes.service.list(),[])
  }finally{await f.close()}
+})
+
+test('generated website and file references require user-supplied inputs; empty slots remain valid',async()=>{
+ const cases=[
+  {module:{id:'site',type:'website',title:'Site',config:{url:'https://learning.example.com/'}},requirement:'Add a website',status:'failed'},
+  {module:{id:'site',type:'website',title:'Site',config:{url:'https://example.com/'}},requirement:'Use https://example.com',status:'completed'},
+  {module:{id:'files',type:'resources',title:'Files',config:{basePath:'resources'}},requirement:'Add existing resources',status:'failed'},
+  {module:{id:'files',type:'resources',title:'Files',config:{basePath:'docs'}},requirement:'Use directory docs',status:'completed'},
+  {module:{id:'html',type:'custom',title:'HTML',config:{mode:'file',path:'docs/index.html'}},requirement:'Add an existing HTML page',status:'failed'},
+  {module:{id:'site',type:'website',title:'Site',config:{url:'https://example.com/docs'}},requirement:'Use HTTPS://example.com/docs.',status:'completed'},
+  {module:{id:'html',type:'custom',title:'HTML',config:{mode:'file',path:'docs/index.html'}},requirement:'Use private/docs/index.html',status:'failed'},
+  {module:{id:'html',type:'custom',title:'HTML',config:{mode:'file',path:'docs/index.html'}},requirement:'Use docs/index.html.backup',status:'failed'},
+  {module:{id:'html',type:'custom',title:'HTML',config:{mode:'file',path:'notes/index.html'}},requirement:'Use notes/index.html',status:'completed'},  {module:{id:'files',type:'resources',title:'Files',config:{basePath:'docs'}},requirement:'查看 docs 目录',status:'completed'},
+  {module:{id:'html',type:'custom',title:'HTML',config:{mode:'file',path:'index.html'}},requirement:'展示 index.html',status:'completed'},
+  {module:{id:'files',type:'resources',title:'Files',config:{basePath:'docs'}},requirement:'查看 private-docs 目录',status:'failed'},  {module:{id:'slot',type:'empty',title:'Website URL needed',config:{}},requirement:'Add a website',status:'completed'},
+ ]
+ for(const row of cases){
+  const output={...recipe(),pages:[{id:'home',label:'Home',layout:'stack',modules:[row.module]}]}
+  const f=await fixture([textResponse(JSON.stringify(output))])
+  try{const job=f.generation.dispatch({action:'start',requirement:row.requirement,appId:'app.generated',version:1,expectedRevision:0});const done=await f.generation.settled(job.id)
+   assert.equal(done.status,row.status,JSON.stringify({module:row.module,error:done.error}))
+   if(row.status==='failed'){assert.match(done.error,/not supplied/i);assert.deepEqual(f.recipes.service.list(),[])}
+  }finally{await f.close()}
+ }
 })
