@@ -1,3 +1,4 @@
+import {PageTemplates} from './page-template-view.tsx'
 import {ColumnDivider} from './column-divider.tsx'
 import {useState,useRef} from 'react'
 import {Globe,MessageSquare,Folder,Film,Sparkles,BarChart3,Settings,Expand,ArrowLeft,ArrowRight,X,Plus} from 'lucide-react'
@@ -41,6 +42,7 @@ export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t
  return <section className="pwb-recipe-canvas" aria-label={t('canvasTitle')}><style>{recipeCanvasStyles}</style>
   <div className="pwb-canvas-toolbar"><nav aria-label={t('canvasPages')}>{recipe.pages.map(p=><button data-pwb-button type="button" key={p.id} aria-pressed={p.id===page.id} onClick={()=>{setPage(p.id);closeSettings();setPageSettings(false)}}>{p.label}</button>)}<button data-pwb-button type="button" onClick={()=>{const id='page.'+crypto.randomUUID();change(copy=>copy.pages.push({id,label:t('recipeHome')+' '+(copy.pages.length+1),layout:'split',modules:[emptyModule(),emptyModule()]}));setPage(id);closeSettings()}}><Plus size={14}/>{t('recipeAddPage')}</button></nav><button data-pwb-button type="button" aria-expanded={pageSettings} onClick={()=>setPageSettings(!pageSettings)}>{t('canvasPageSettings')}</button></div>
   {pageSettings&&<div className="pwb-canvas-page-settings"><label>{t('recipePageLabel')}<input aria-label={t('recipePageLabel')+': '+page.id} value={page.label} onChange={event=>change(copy=>{copy.pages[pageIndex].label=event.target.value})}/></label><label>{t('recipeLayout')}<select aria-label={t('recipeLayout')+': '+page.id} value={page.layout} onChange={event=>change(copy=>{copy.pages[pageIndex].layout=event.target.value as typeof page.layout})}>{(['grid','split','stack'] as const).map(layout=><option key={layout} value={layout}>{t('recipeLayout'+layout)}</option>)}</select></label></div>}
+  <PageTemplates key={page.id} recipe={recipe} page={page} change={change} onPage={id=>{setPage(id);closeSettings()}} t={t}/>
   <p className="pwb-canvas-help">{t('canvasHelp')}</p>
   <div style={{position:'relative'}}>
   {page.layout!=='stack'&&<ColumnDivider label={t('canvasResizeColumns')} value={page.splitPercent??50} onChange={value=>change(copy=>{copy.pages[pageIndex].splitPercent=value})}/>}

@@ -1,0 +1,26 @@
+import {useEffect,useState,useSyncExternalStore} from 'react'
+import type {AppRecipe,RecipeRequest} from './recipe-api.ts'
+import type {PageTemplate} from './page-template.ts'
+import {instantiatePageTemplate} from './page-template.ts'
+import {displayCatalog,listDisplaySources} from './display-api.ts'
+async function request(data:RecipeRequest,signal?:AbortSignal){
+ const response=await fetch('/api/personal-workbench/recipes',{method:'POST',credentials:'same-origin',signal,headers:{'content-type':'application/json'},body:JSON.stringify(data)}),result=await response.json()
+ if(!response.ok)throw new Error(result.error??'Page templates unavailable')
+ return result as {templates?:PageTemplate[];template?:PageTemplate}
+}
+export function PageTemplates({recipe,page,change,onPage,t}:{recipe:AppRecipe;page:AppRecipe['pages'][number];change:(update:(recipe:AppRecipe)=>void)=>void;onPage:(id:string)=>void;t:(key:any)=>string}){
+ useSyncExternalStore(displayCatalog.subscribe,displayCatalog.getSnapshot,displayCatalog.getSnapshot)
+ const [templates,setTemplates]=useState<PageTemplate[]>([]),[name,setName]=useState(page.label),[selected,setSelected]=useState(''),[confirmed,setConfirmed]=useState(false),[connections,setConnections]=useState<Record<string,string>>({}),[roles,setRoles]=useState<Record<string,string>>({}),[error,setError]=useState(''),[busy,setBusy]=useState(false)
+ useEffect(()=>{const controller=new AbortController();void request({action:'templates'},controller.signal).then(value=>{if(!controller.signal.aborted)setTemplates(value.templates??[])}).catch(error=>{if(!controller.signal.aborted)setError(String(error.message))});return()=>controller.abort()},[])
+ const sources=listDisplaySources(recipe.appId),template=templates.find(item=>item.id===selected)
+ const save=async()=>{setBusy(true);setError('');try{const result=await request({action:'save-template',label:name.trim(),page});if(!result.template)throw Error(t('pageTemplateUnavailable'));setTemplates(old=>[...old,result.template!])}catch(error){setError(error instanceof Error?error.message:String(error))}finally{setBusy(false)}}
+ const apply=()=>{if(!template||!confirmed)return;try{const copy=instantiatePageTemplate(template);change(draft=>{for(let index=0;index<copy.modules.length;index++){
+  const original=template.page.modules[index],module=copy.modules[index],role=roles[original.id],resource=connections[original.id]
+  if(role){if(!draft.roles.some(item=>item.id===role))throw Error(t('pageTemplateBindingChanged'));module.roleId=role}
+  if(resource){const source=sources.find(item=>item.resource===resource);if(!source)throw Error(t('pageTemplateBindingChanged'));let connection=draft.connections.find(item=>item.sourceAppId===draft.appId&&item.resource===resource);if(!connection){connection={id:'data.'+crypto.randomUUID(),sourceAppId:draft.appId,resource};draft.connections.push(connection)}module.connectionId=connection.id}
+ }draft.pages.push(copy)});onPage(copy.id);setSelected('');setConfirmed(false);setError('')}catch(error){setError(error instanceof Error?error.message:String(error))}}
+ return <details className="pwb-page-templates"><summary>{t('pageTemplates')}</summary><p>{t('pageTemplateHelp')}</p><label>{t('pageTemplateName')}<input aria-label={t('pageTemplateName')} value={name} maxLength={200} onChange={event=>setName(event.target.value)}/></label><button data-pwb-button type="button" disabled={busy||!name.trim()} onClick={()=>{void save()}}>{t('pageTemplateSave')}</button>
+ <label>{t('pageTemplateChoose')}<select aria-label={t('pageTemplateChoose')} value={selected} onChange={event=>{setSelected(event.target.value);setConfirmed(false);setConnections({});setRoles({})}}><option value="">{t('pageTemplateChoose')}</option>{templates.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+ {template&&<fieldset disabled={busy}><legend>{t('pageTemplateRebind')}</legend><p>{t('workspaceRoot')}: {recipe.workspace??t('canvasDefaultWorkspace')}</p><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/>{t('pageTemplateConfirmWorkspace')}</label>{template.page.modules.map(module=><div key={module.id}><strong>{module.title||t('recipeModule'+module.type)}</strong>{module.config.requiresConnection&&<label>{t('recipeSource')}<select aria-label={t('recipeSource')+': '+module.id} value={connections[module.id]??''} onChange={event=>setConnections(old=>({...old,[module.id]:event.target.value}))}><option value="">{t('pageTemplateBindLater')}</option>{sources.map(source=><option key={source.resource} value={source.resource}>{source.label}</option>)}</select></label>}{module.config.requiresRole&&<label>{t('recipeTaskRole')}<select aria-label={t('recipeTaskRole')+': '+module.id} value={roles[module.id]??''} onChange={event=>setRoles(old=>({...old,[module.id]:event.target.value}))}><option value="">{t('pageTemplateBindLater')}</option>{recipe.roles.map(role=><option key={role.id} value={role.id}>{role.name}</option>)}</select></label>}</div>)}<p>{t('pageTemplateMissingBindings')}</p><button data-pwb-button data-variant="primary" type="button" disabled={!confirmed} onClick={apply}>{t('pageTemplateAdd')}</button></fieldset>}
+ {error&&<p role="alert">{error}</p>}</details>
+}

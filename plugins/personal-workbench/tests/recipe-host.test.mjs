@@ -49,3 +49,13 @@ test('only owned installed data sources activate and withdrawing a plugin preser
 test('conversation module without a declared target role cannot be previewed or activated',async()=>{
  const root=await mkdtemp(join(tmpdir(),'recipe-missing-role-')),f=await fixture(root);try{await f.owner.service.save(recipe(),0);await f.owner.service.activate('app.reading',1);await f.owner.service.save(recipe(2,'role-chat'),2);await assert.rejects(f.owner.service.preview('app.reading',3),/Missing role/);await assert.rejects(f.owner.service.activate('app.reading',3),/Missing role/);assert.equal(f.owner.service.list()[0].running.version,1)}finally{await f.close();await rm(root,{recursive:true,force:true})}
 })
+
+test('page templates persist sanitized structures and missing rebinding blocks activation',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-template-'));let first,second
+ try{first=await fixture(root);const page={id:'private',label:'Template page',layout:'split',splitPercent:65,modules:[{id:'private-module',title:'Chart',type:'chart',connectionId:'private-data',roleId:'private-role',config:{valueField:'count',taskPrompt:'private-task'}}]}
+ const saved=await first.call({action:'save-template',label:'Reusable',page});assert.equal(saved.status,200);assert.equal(saved.value.template.page.modules[0].roleId,undefined);assert.equal(saved.value.template.page.modules[0].connectionId,undefined);assert.ok(!JSON.stringify(saved.value).includes('private-task'));assert.equal(first.owner.service.list().length,0)
+ await first.close();first=undefined;second=await fixture(root);const list=await second.call({action:'templates'});assert.equal(list.value.templates.length,1);assert.equal(list.value.templates[0].id,saved.value.template.id);assert.equal(list.value.templates[0].page.splitPercent,65)
+ const draft={...recipe(),pages:[{...list.value.templates[0].page,id:'new-page'}]};await second.owner.service.save(draft,0);await assert.rejects(second.owner.service.preview(draft.appId,1),/reused template/);assert.equal(second.owner.service.list()[0].running,undefined)
+ second.deny(401);assert.equal((await second.call({action:'templates'})).status,401)
+ }finally{await first?.close();await second?.close();await rm(root,{recursive:true,force:true})}
+})

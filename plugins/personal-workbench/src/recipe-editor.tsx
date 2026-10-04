@@ -1,3 +1,4 @@
+import type {PageTemplate} from './page-template.ts'
 import {useEffect,useState,useSyncExternalStore} from 'react'
 import {RecipeConnections} from './recipe-connections.tsx'
 import {displayCatalog,listRecipeTemplates} from './display-api.ts'
@@ -13,7 +14,7 @@ import {createCanvasRecipe,RecipeCanvas} from './recipe-canvas.tsx'
 export async function recipeRequest(request:RecipeRequest){
  const response=await fetch('/api/personal-workbench/recipes',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(request)})
  const value=await response.json();if(!response.ok)throw new Error(value.error??'Recipe request failed')
- return value as {recipes?:RecipeRecord[];record?:RecipeRecord;recipe?:AppRecipe;workspaces?:string[]}
+ return value as {recipes?:RecipeRecord[];record?:RecipeRecord;recipe?:AppRecipe;workspaces?:string[];templates?:PageTemplate[];template?:PageTemplate}
 }
 export function RecipeEditor({t,refresh}:{t:(key:any)=>string;refresh:()=>Promise<void>}){
  useSyncExternalStore(displayCatalog.subscribe,displayCatalog.getSnapshot,displayCatalog.getSnapshot)

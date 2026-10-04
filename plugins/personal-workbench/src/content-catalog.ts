@@ -9,6 +9,8 @@ export function relativeContentPath(value:unknown):boolean {
 }
 export function contentErrors(module:RecipeModule):string[]{
  const errors:string[]=[],c=module.config
+ if(c.requiresConnection===true&&!module.connectionId)errors.push('Choose a data connection for reused template: '+module.id)
+ if(c.requiresRole===true&&!module.roleId)errors.push('Choose a role for reused template: '+module.id)
  if(module.type==='chart'&&(typeof c.valueField!=='string'||!c.valueField.trim()))errors.push('Choose a numeric field: '+module.id)
  if(module.type==='map'&&(!String(c.latitudeField??'').trim()||!String(c.longitudeField??'').trim()))errors.push('Choose latitude and longitude fields: '+module.id)
  if(['website','animation'].includes(module.type)&&!webAddress(c.url))errors.push('An HTTP(S) address is required: '+module.id)
