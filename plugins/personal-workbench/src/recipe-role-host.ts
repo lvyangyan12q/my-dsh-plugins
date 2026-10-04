@@ -1,3 +1,4 @@
+import {recipeRolePolicy} from './recipe-role-policy.ts'
 import {selectRecipeWorkspace,checkInstanceWorkspace} from './recipe-workspace.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-workspace'
@@ -38,11 +39,11 @@ export async function installRecipeRoles(ctx:Context) {
   const role=recipe.roles.find(r=>r.id===definition.key.roleId);if(!role)throw new Error('Recipe role unavailable')
   const preset=await ctx.agentPresets.resolve(definition.presetId);if(preset.broken)throw new Error('Unavailable Agent: '+definition.presetId)
   await withCapabilityCatalog(ctx,async capabilities=>{
-  const agent=capabilities.agents().find(a=>'my-dsh.'+a.id===definition.presetId)
-  if(definition.presetId.startsWith('my-dsh.')&&!agent?.userInvocable)throw new Error('Unavailable Agent: '+definition.presetId)
-  const skillNames=[...new Set([...(definition.skillNames??[]),...(agent?.skillNames??[])])]
+  const policy=recipeRolePolicy(capabilities,{id:role.id,presetId:definition.presetId,skillNames:definition.skillNames??[]},role)
+  if(!policy.agentAllowed)throw new Error('Unavailable Agent: '+definition.presetId)
+  const skillNames=policy.skillNames
   const lease=await ctx.agentPresets.acquireScope(definition.presetId)
-  try {const snapshot=await ctx.skills.snapshot({scope:lease.key,cwd:definition.creation?.cwd});for(const name of skillNames){const managed=capabilities.skill(name);if(managed&&!managed.userInvocable)throw new Error('Unavailable Skill: '+name);if(!snapshot.complete||!snapshot.skills.some(s=>s.name===name&&s.invocation.userInvocable))throw new Error('Unavailable Skill: '+name)}}finally{await lease[Symbol.asyncDispose]()}
+  try {const snapshot=await ctx.skills.snapshot({scope:lease.key,cwd:definition.creation?.cwd});for(const name of skillNames){if(!policy.skillAllowed(name))throw new Error('Unavailable Skill: '+name);if(!snapshot.complete||!snapshot.skills.some(s=>s.name===name&&s.invocation.userInvocable))throw new Error('Unavailable Skill: '+name)}}finally{await lease[Symbol.asyncDispose]()}
   })
  }}
  for(const [id,row]of instances.entries()){if(id!==JSON.stringify([row.appId,row.instanceId]))throw new Error('Recipe instance identity mismatch');sync(row)}

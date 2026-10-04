@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os'
 import {join,resolve} from 'node:path'
 import {pathToFileURL} from 'node:url'
 import {createRequire} from 'node:module'
-import {installRecipes} from '../src/recipe-host.ts'
+import {installRecipes,recipeDomain} from '../src/recipe-host.ts'
 import {installRecipeRoles} from '../src/recipe-role-host.ts'
 import {RoleBindings} from '../src/role-bindings.ts'
 import {roleBindingsDomain} from '../src/role-domain.ts'
@@ -19,10 +19,11 @@ const key={appId:'app.reading',instanceId:'first',roleId:'analyst'}
 const recipe=(version=1,presetId='my-dsh.analyst')=>({schemaVersion:1,appId:key.appId,version,name:'Reading',description:'',pages:[{id:'home',label:'Home',layout:'stack',modules:[{id:'chat',type:'role-chat',title:'Analyst',roleId:'analyst',config:{}}]}],connections:[],roles:[{id:'analyst',name:'Analyst',presetId,skillNames:['summarize']}]})
 const agent=id=>({id,name:id,description:'Analyst',persona:'Analyze',skillNames:['summarize'],modelInvocable:true,userInvocable:true,revision:1})
 const skill={name:'summarize',description:'Summary',content:'Summarize evidence',modelInvocable:true,userInvocable:true,revision:1}
-async function fixture(root,native){
+async function fixture(root,native,initial){
  const host=new Context();await host.plugin(Storage);host.storage.backend.register('json',new JsonStorageBackend(root));const facility=new DomainFacility(host,{backend:'json',routes:{}});host.storage.mount('domain',facility)
  let disabled=false,missing=false,workspace=true,owner
  const ctx={storageDomain:facility,get:name=>ctx[name],connection:{requestRejection:()=>undefined},reflect:{provide:(name,value)=>{ctx[name]=value;return()=>{delete ctx[name]}}},personalWorkbenchApps:{read:()=>({enabled:!disabled})},workspaceRegistry:{list:()=>workspace?[{path:root,status:async()=> 'ok'}]:[]},on:()=>()=>{},tools:{},agentPresets:{register:async()=>async()=>{},list:async()=>[{id:'my-dsh.analyst'},{id:'my-dsh.editor'}],resolve:async id=>({id,broken:missing?'Missing':undefined}),acquireScope:async id=>({key:{preset:id},[Symbol.asyncDispose]:async()=>{}})},skills:{register:()=>()=>{},snapshot:async()=>({complete:true,skills:[{name:'summarize',invocation:{userInvocable:true}}]})}}
+ if(initial){const seed=await facility.open(recipeDomain);await seed.table('recipes').put(initial.appId,{appId:initial.appId,revision:2,draft:initial,running:initial});await seed.close()}
  const recipes=await installRecipes(ctx),domain=await facility.open(roleBindingsDomain),capabilities=await facility.open(capabilityDomain)
  if(!capabilities.table('agents').get('analyst')){await capabilities.table('agents').put('analyst',agent('analyst'));await capabilities.table('agents').put('editor',agent('editor'));await capabilities.table('skills').put('summarize',skill)}
  const bindings=new RoleBindings(domain.table('bindings'),{validate:definition=>owner.service.validate(definition),validateExisting:async row=>{assert.equal(native.headers.get(row.sessionId),row.presetId)},create:async row=>{native.created.push(row);native.headers.set(row.sessionId,row.presetId);return row.sessionId}});ctx.personalWorkbenchBindings=bindings
@@ -66,3 +67,42 @@ test('selected trusted workspace controls new instances and cannot silently move
   assert.equal(f.recipes.service.list()[0].running.workspace,other)
  }finally{await f.close();await rm(root,{recursive:true,force:true})}
 })
+
+function privateCapabilities(f){
+ const list=f.ctx.agentPresets.list;
+ f.ctx.agentPresets.list=async()=>[...await list(),{id:'kaogong.teacher.data-analysis.v1'},{id:'personal-workbench.module-builder.v1'}];
+ f.ctx.skills.snapshot=async()=>({complete:true,skills:['summarize','kaogong-private','workbench-module-generate','workbench-page-adjust'].map(name=>({name,invocation:{userInvocable:true}}))});
+}
+test('new recipes and runtime Agent replacement cannot borrow another application private capabilities',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-private-denied-')),native={headers:new Map(),created:[]},f=await fixture(root,native);
+ try{
+  privateCapabilities(f);
+  const draft=recipe(1,'kaogong.teacher.data-analysis.v1');await f.recipes.service.save(draft,0);
+  await assert.rejects(f.recipes.service.preview(key.appId,1),/Unavailable Agent/);
+  await assert.rejects(f.recipes.service.activate(key.appId,1),/Unavailable Agent/);
+  assert.equal(f.recipes.service.list()[0].running,undefined);
+  draft.roles[0].presetId='my-dsh.analyst';draft.roles[0].skillNames=['kaogong-private'];await f.recipes.service.save(draft,1);
+  await assert.rejects(f.recipes.service.activate(key.appId,2),/Unavailable Skill/);
+  await f.recipes.service.save(recipe(),2);await f.recipes.service.activate(key.appId,3);
+  await f.owner.service.register(key);const original=await f.bindings.ensure(key);
+  await assert.rejects(f.bindings.setPreset(key,'kaogong.teacher.data-analysis.v1',original.sessionId),/Unavailable Agent/);
+  assert.deepEqual(await f.bindings.read(key),original);assert.equal(native.created.length,1);
+ }finally{await f.close();await rm(root,{recursive:true,force:true})}
+});
+test('existing private roles survive updates and restart without becoming reusable in new roles or applications',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-private-existing-')),native={headers:new Map(),created:[]},initial=recipe(1,'kaogong.teacher.data-analysis.v1');initial.roles[0].skillNames=['kaogong-private'];let f;
+ try{
+  f=await fixture(root,native,initial);privateCapabilities(f);
+  await f.owner.service.register(key);const original=await f.bindings.ensure(key);
+  const update={...structuredClone(initial),version:2};await f.recipes.service.save(update,2);await f.recipes.service.preview(key.appId,3);await f.recipes.service.activate(key.appId,3);
+  const promoted={...structuredClone(update),version:3};promoted.roles.push({...promoted.roles[0],id:'borrowed'});await f.recipes.service.save(promoted,4);
+  await assert.rejects(f.recipes.service.activate(key.appId,5),/Unavailable Agent/);
+  assert.deepEqual(f.recipes.service.list()[0].running,update);
+  const copied={...structuredClone(initial),appId:'another-app'};await f.recipes.service.save(copied,0);await assert.rejects(f.recipes.service.activate(copied.appId,1),/Unavailable Agent/);
+  await f.close();f=await fixture(root,native);privateCapabilities(f);await f.owner.service.register(key);assert.equal((await f.bindings.ensure(key)).sessionId,original.sessionId);assert.equal(native.created.length,1);
+ }finally{await f?.close();await rm(root,{recursive:true,force:true})}
+});
+test('platform module builder and packaged workbench Skills remain available without entering the public management catalog',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-platform-builder-')),native={headers:new Map(),created:[]},f=await fixture(root,native);
+ try{privateCapabilities(f);const draft=recipe(1,'personal-workbench.module-builder.v1');draft.roles[0].skillNames=['workbench-module-generate','workbench-page-adjust'];await f.recipes.service.save(draft,0);await f.recipes.service.activate(key.appId,1);await f.owner.service.register(key);const binding=await f.bindings.ensure(key);assert.equal(binding.presetId,draft.roles[0].presetId);assert.equal(native.created.length,1)}finally{await f.close();await rm(root,{recursive:true,force:true})}
+});
