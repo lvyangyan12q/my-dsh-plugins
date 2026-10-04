@@ -10,6 +10,7 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { SkillDefinition } from '@deepseek-ai/dsh-skill'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RoleBinding, RoleBindingKey, RoleDefinition } from './role-binding-api.ts'
+import { sameWorkspace } from './recipe-workspace.ts'
 import { roleBindingsDomain } from './role-domain.ts'
 import { RoleBindings } from './role-bindings.ts'
 import { roleRequest, teachingPrompt } from './role-request.ts'
@@ -52,6 +53,14 @@ export async function installRoles(ctx: Context) {
     const bindings = new RoleBindings(domain.table('bindings'), {
       validate: async definition => { await loadSkill(definition) },
       validateExisting,
+      validateAttachment: async (definition, sessionId) => {
+        const baseline = await ctx.sessionController.projections({ sessionId }, new AbortController().signal)
+        if (!baseline || baseline.values.agentPreset !== definition.presetId) throw new Error('Existing Session must use the role Agent')
+        const inspection = await ctx.sessionController.inspect(sessionId)
+        const cwd = inspection?.meta.cwd
+        if (!cwd || !definition.creation || !sameWorkspace(cwd, definition.creation.cwd)) throw new Error('Existing Session must use the role workspace')
+        return { cwd }
+      },
       create: async record => {
         // Old 06 intents lack a location: adopt only a proven existing native Session.
         let cwd = record.creation?.cwd
@@ -120,6 +129,7 @@ export async function installRoles(ctx: Context) {
           respond(200, { binding }); return
         }
         if (data.action === 'retry' || data.action === 'replace') { respond(200, { binding: await bindings[data.action](data.key, data.expectedSessionId as SessionId) }); return }
+        if (data.action === 'attach') { respond(200, { binding: await bindings.attach(data.key, data.sessionId as SessionId, data.expectedSessionId as SessionId | null) }); return }
         if (data.action === 'ensure') { respond(200, { binding: await bindings.ensure(data.key) }); return }
         const definition = bindings.definition(data.key)
         if (!definition.teaching) throw new Error('Teaching is not declared for this role')

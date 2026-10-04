@@ -22,7 +22,7 @@ test('actual Cordis/SlotRegistry optional role factory delegates native content 
   const registry = ctx.plugin(renderer.SlotRegistry); await registry
   const seed = ctx.plugin({ inject: ['slots'], apply: child => {
     child.slots.register({ name: 'root', children: { 'shell.overlay': { kind: 'list', scope: 'root' }, 'sidebar.footer.action': { kind: 'list', scope: 'root' } } }, () => null)
-    for (const [name, value] of Object.entries({ sessions: { retain: () => assert.fail('No Session at registration'), using: () => assert.fail('No command') }, workspaces: { list: {} }, uiSession: {}, uiConversation: {}, locale: { register: () => () => {} } })) child.effect(() => child.reflect.provide(name, value))
+    for (const [name, value] of Object.entries({ sessions: { retain: () => assert.fail('No Session at registration'), using: () => assert.fail('No command') }, workspaces: { list: {} }, uiSession: {}, locale: { register: () => () => {} } })) child.effect(() => child.reflect.provide(name, value))
   } }); await seed
   let native, owner
   try {
@@ -31,7 +31,7 @@ test('actual Cordis/SlotRegistry optional role factory delegates native content 
     assert.equal(ctx.get('personalWorkbenchRoles'), undefined)
     assert.deepEqual(ctx.slots.snapshot('factory:personal-workbench.role-conversation'), [])
     const enable = async () => {
-      native = ctx.plugin({ apply: child => { child.effect(() => child.reflect.provide('conversation', {})) } }); await native
+      native = ctx.plugin({ apply: child => { child.effect(() => child.reflect.provide('uiConversation', {})) } }); await native
       await new Promise(resolve => setTimeout(resolve, 0))
     }
     await enable()
@@ -41,23 +41,25 @@ test('actual Cordis/SlotRegistry optional role factory delegates native content 
     assert.equal(tree[0].scope, 'root')
     const rows = ctx.slots.entries('personal-workbench.role-native')
     assert.equal(rows.length, 1)
-    let factory
-    const result = rows[0].component({ useSession: selector => selector({}), renderFactorySlot: (name, props) => { factory = { name, props }; return 'native-boundary' } })
+    let factory, chrome
+    const result = rows[0].component({ useSession: selector => selector({}), renderFactorySlot: (name, props) => { if (name === 'conversation.session.chrome') chrome = { name, props }; else factory = { name, props }; return 'native-boundary' } })
     assert.equal(result.type, 'div')
     assert.equal(result.props.style.display, 'flex', 'Native flex body needs a bounded flex parent')
     assert.equal(result.props.style.flexDirection, 'column')
     assert.equal(result.props.style.height, '100%')
     assert.equal(result.props.style.minHeight, 0)
     assert.equal(result.props.style.overflow, 'hidden')
-    const seat = result.props.children[1]
+    const seat = result.props.children[2]
     assert.equal(seat.props.style.display, 'flex')
     assert.equal(seat.props.style.flex, 1)
     assert.equal(seat.props.style.minHeight, 0)
     assert.equal(seat.props.children, 'native-boundary')
     const failed = rows[0].component({ useSession: selector => selector({ lastAgentError: 'synthetic error' }), renderFactorySlot: () => 'native-boundary' })
-    assert.equal(failed.props.children[0].props.role, 'alert')
-    assert.equal(failed.props.children[0].props.style.flexShrink, 0)
-    assert.equal(failed.props.children[1].props.style.minHeight, 0, 'Error must not push the composer outside the bounded pane')
+    assert.equal(failed.props.children[1].props.role, 'alert')
+    assert.equal(failed.props.children[1].props.style.flexShrink, 0)
+    assert.equal(failed.props.children[2].props.style.minHeight, 0, 'Error must not push the composer outside the bounded pane')
+    assert.equal(chrome.name, 'conversation.session.chrome')
+    assert.equal(chrome.props.hideChrome, false)
     assert.equal(factory.name, 'conversation.content')
     assert.equal(factory.props.variant, 'embedded')
     assert.equal(factory.props.hero, false)

@@ -30,7 +30,7 @@ test('built generic role view reads per-ID official status facts without a fake 
   const bindingKey = { appId: 'application', instanceId: 'default', roleId: 'teacher', subject: 'math' }
   const state = { binding: { version: 1, key: bindingKey, sessionId: 'math-id', presetId: 'math', phase: 'ready', previousSessionIds: [] }, busy: false, error: null, window: { phase: 'closed' } }
   const statuses = new Map([['other-id', { running: true, pendingInteraction: { kind: 'approval' }, completionUnread: true }]])
-  const props = { ...entry.options.inject(), bindingKey, label: 'Math teacher', active: false, useRoles: selector => selector(new Map([[JSON.stringify(['application', 'default', 'teacher', 'math']), state]])), useSessionStatus: selector => selector(statuses), renderSlot: fail }
+  const props = { ...entry.options.inject(), bindingKey, t: key => key, label: 'Math teacher', active: false, useRoles: selector => selector(new Map([[JSON.stringify(['application', 'default', 'teacher', 'math']), state]])), useSessionStatus: selector => selector(statuses), renderSlot: fail }
   const { createRoot } = require('react-dom/client')
   const root = createRoot(dom.window.document.getElementById('root'))
   try {

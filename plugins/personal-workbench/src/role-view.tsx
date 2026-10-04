@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { RefreshCw, UserPlus } from 'lucide-react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { PropsRuntime, FactoryComponentPropsOf, PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { RoleBindingKey, RoleViewState } from './role-binding-api.ts'
+import { RoleAttachment } from './role-attachment.tsx'
 import { RoleClients, roleKey } from './role-client.ts'
 
 const EMPTY: RoleViewState = { binding: null, error: null, busy: false, window: { phase: 'closed' } }
@@ -13,8 +15,9 @@ function Mounted({ reference, bindingKey, mountRole, children }: { reference: Se
 }
 
 type RoleViewProps = FactoryComponentPropsOf<'personal-workbench.role-conversation'>
-export function RoleConversation({ bindingKey, active, label, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole }: RoleViewProps) {
+export function RoleConversation({ bindingKey, active, label, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, renderFactorySlot, t }: RoleViewProps) {
   const state = useRoles(value => value.get(roleKey(bindingKey))) ?? EMPTY
+  const [attachment, setAttachment] = useState<{ expectedSessionId: SessionId | null } | null>(null)
   const window = state.window
   const status = useSessionStatus(value => state.binding ? value.get(state.binding.sessionId) : undefined)
   useEffect(() => { if (active && !state.binding && !state.error && !state.busy) void commands.open(bindingKey).catch(() => {}) }, [active, bindingKey, commands])
@@ -26,11 +29,13 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
       {status?.running && <span role="status">运行中</span>}{status?.pendingInteraction && <span role="status">待处理：{status.pendingInteraction.kind}</span>}{status?.completionUnread && <span role="status">未读完成</span>}
       {!state.binding && !state.error && window.phase !== 'error' && <button data-pwb-button data-variant="primary" disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}>创建{label ?? '角色会话'}</button>}
       {(state.error || window.phase === 'error' || state.binding?.phase === 'intent') && <button data-pwb-button disabled={state.busy} onClick={retry}><RefreshCw size={14} /> 重试</button>}
+      {commands.attach && <button data-pwb-button disabled={state.busy} onClick={() => setAttachment({ expectedSessionId: state.binding?.sessionId ?? null })}>{t('roleAttach')}</button>}
       {state.binding && <details style={{ position: 'relative' }}><summary aria-label="角色会话更多操作" style={{ cursor: 'pointer' }}>更多</summary><div style={{ position: 'absolute', right: 0, top: 24, zIndex: 2, minWidth: 180, padding: 10, background: 'var(--dsw-alias-bg-base, #fff)', border: '1px solid #ddd', borderRadius: 6 }}>
         <p style={{ overflowWrap: 'anywhere', margin: '0 0 8px' }}>会话：{state.binding.sessionId}</p>
         <button data-pwb-button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
       </div></details>}
     </header>
+    {attachment && renderFactorySlot('personal-workbench.role-attachment', { bindingKey, expectedSessionId: attachment.expectedSessionId, close: () => setAttachment(null) })}
     {state.busy && <p role="status">正在连接角色会话…</p>}
     {state.error && <p role="alert">{state.error}</p>}
     {window.phase === 'error' && <p role="alert">角色会话不可访问。请同 ID 重试或显式新建。</p>}
@@ -57,7 +62,8 @@ export function installRoleClient(ctx: Context) {
     const owner = new RoleClients(child)
     child.effect(() => () => owner.dispose(), 'personal-workbench: teacher owner')
     child.effect(() => child.reflect.provide('personalWorkbenchRoles', owner), 'personal-workbench: roles service')
-    child.slots.registerFactory({ name: 'personal-workbench.role-conversation', scope: 'root', children: { 'personal-workbench.role-native': { kind: 'single', scope: 'session' } },
+    child.slots.registerFactory({ name: 'personal-workbench.role-attachment', scope: 'root', locale: 'personal-workbench', inject: () => ({ commands: owner }) }, RoleAttachment)
+    child.slots.registerFactory({ name: 'personal-workbench.role-conversation', scope: 'root', locale: 'personal-workbench', children: { 'personal-workbench.role-native': { kind: 'single', scope: 'session' } },
       inject: () => ({ hooks: { roles: owner }, commands: owner, mountRole: (key, reference) => owner.owner(key).teacher.mount(reference) }),
     }, RoleConversation)
     child.slots.inject('personal-workbench.role-native', () => child.slots.register({ name: 'personal-workbench.role-native' }, RoleNative))

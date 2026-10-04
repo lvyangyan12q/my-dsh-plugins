@@ -61,6 +61,12 @@ export class RoleClient implements PersonalWorkbenchRoles {
     this.adopt(parseRoleBinding(response.binding, key))
     await this.teacher.open()
   })
+  readonly attach = (key: RoleBindingKey, sessionId: SessionId, expectedSessionId: SessionId | null) => this.run(async () => {
+    if ((this.snapshot.binding?.sessionId ?? null) !== expectedSessionId) throw new Error('Role binding changed; refresh before attachment')
+    const response = await this.call('attach', key, { sessionId, expectedSessionId })
+    this.adopt(parseRoleBinding(response.binding, key))
+    await this.teacher.open()
+  })
   readonly teach = (key: RoleBindingKey, evidence: TeachingEvidence) => this.run(async () => {
     const response = await this.call('teach', key, { evidence })
     const binding = parseRoleBinding(response.binding, key)
@@ -178,6 +184,7 @@ export class RoleClients implements PersonalWorkbenchRoles {
   ensure = (key: RoleBindingKey) => this.owner(key).ensure(key)
   retry = (key: RoleBindingKey, id: SessionId) => this.owner(key).retry(key, id)
   replace = (key: RoleBindingKey, id: SessionId) => this.owner(key).replace(key, id)
+  attach = (key: RoleBindingKey, sessionId: SessionId, expectedSessionId: SessionId | null) => this.owner(key).attach(key, sessionId, expectedSessionId)
   sendTeaching = (key: RoleBindingKey, text: string) => this.owner(key).sendTeaching(key, text)
   send = (key: RoleBindingKey, text: string) => this.owner(key).send(key, text)
   teach = (key: RoleBindingKey, evidence: TeachingEvidence) => this.owner(key).teach(key, evidence)

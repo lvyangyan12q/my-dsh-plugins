@@ -8,6 +8,7 @@ import type { PersonalWorkbenchBindings, RoleBinding, RoleBindingKey, RoleDefini
 export function bindingKey(key: RoleBindingKey): string { return JSON.stringify([key.appId, key.instanceId, key.roleId, key.subject ?? null]) }
 export interface Authority {
   validate(definition: RoleDefinition): Promise<void>
+  validateAttachment?(definition: RoleDefinition, sessionId: SessionId): Promise<{ cwd: string }>
   validateExisting?(record: RoleBinding): Promise<void>
   create(record: RoleBinding): Promise<SessionId>
 }
@@ -46,6 +47,23 @@ export class RoleBindings implements PersonalWorkbenchBindings {
     const row = this.table.get(bindingKey(key))
     if (row && bindingKey(row.key) !== bindingKey(key)) throw new Error('Stored role key mismatch')
     return row ?? null
+  }
+  attach(key: RoleBindingKey, sessionId: SessionId, expectedSessionId: SessionId | null): Promise<RoleBinding> {
+    return this.serial(key, async () => {
+      const old = this.current(key)
+      if ((old?.sessionId ?? null) !== expectedSessionId) throw new Error('Role binding changed; refresh before attachment')
+      const declared = this.definition(key)
+      const definition = { ...declared, creation: old?.creation ?? declared.creation }
+      await this.authority.validate(definition)
+      if (!this.authority.validateAttachment) throw new Error('Existing Session attachment unavailable')
+      const creation = await this.authority.validateAttachment(definition, sessionId)
+      if (!isAbsolute(creation.cwd)) throw new Error('Existing Session workspace unavailable')
+      const next: RoleBinding = { version: 1, key: { ...key }, sessionId, presetId: definition.presetId,
+        ...(old?.selectedPreset ? { selectedPreset: true } : {}), phase: 'ready', creation,
+        previousSessionIds: old?.sessionId === sessionId ? old.previousSessionIds : [...new Set([...(old?.previousSessionIds ?? []), ...(old ? [old.sessionId] : [])])].filter(id => id !== sessionId) }
+      await this.table.put(bindingKey(key), next)
+      return next
+    })
   }
   setPreset(key: RoleBindingKey, presetId: string, expectedSessionId: SessionId | null): Promise<RoleBinding> {
     return this.serial(key, async () => {

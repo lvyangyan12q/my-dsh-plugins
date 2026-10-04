@@ -29,6 +29,8 @@ export interface RoleBinding {
 export interface PersonalWorkbenchBindings {
   /** Register exactly one key. Duplicate registrations reject; dispose withdraws only its declaration. */
   registerRole(definition: RoleDefinition): () => void
+  /** Bind an existing, validated native Session without creating or sending. */
+  attach?(key: RoleBindingKey, sessionId: SessionId, expectedSessionId: SessionId | null): Promise<RoleBinding>
   setPreset?(key: RoleBindingKey, presetId: string, expectedSessionId: SessionId | null): Promise<RoleBinding>
   /** Current app-owned declarations only; withdrawal does not erase durable bindings. */
   listRoles(): readonly RoleDefinition[]
@@ -56,6 +58,8 @@ export interface PersonalWorkbenchRoles {
   ensure(key: RoleBindingKey): Promise<void>
   retry(key: RoleBindingKey, expectedSessionId: SessionId): Promise<void>
   replace(key: RoleBindingKey, expectedSessionId: SessionId): Promise<void>
+  /** Explicit attachment preserves native history and sends no message. */
+  attach?(key: RoleBindingKey, sessionId: SessionId, expectedSessionId: SessionId | null): Promise<void>
   send(key: RoleBindingKey, text: string): Promise<void>
   /** Explicit prepared teaching command; Host validates the declared trusted teaching Skill. */
   sendTeaching(key: RoleBindingKey, text: string): Promise<void>
@@ -74,6 +78,7 @@ declare module '@deepseek-ai/cordis' {
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } }
   interface SlotFactoryMap {
-    'personal-workbench.role-conversation': { scope: 'root'; props: { readonly bindingKey: RoleBindingKey; readonly active: boolean; readonly label?: string }; inject: RoleViewInjected; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
+    'personal-workbench.role-attachment': { scope: 'root'; props: { bindingKey: RoleBindingKey; expectedSessionId: SessionId | null; close: () => void }; inject: { commands: PersonalWorkbenchRoles }; locale: 'personal-workbench' }
+    'personal-workbench.role-conversation': { scope: 'root'; locale: 'personal-workbench'; props: { readonly bindingKey: RoleBindingKey; readonly active: boolean; readonly label?: string }; inject: RoleViewInjected; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
   }
 }

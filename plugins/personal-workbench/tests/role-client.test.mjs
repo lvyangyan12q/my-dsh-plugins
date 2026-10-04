@@ -21,6 +21,7 @@ function fixture({ pending = false, archived = false, fail = false, sending } = 
   const owner = new RoleClient(ctx, async (_url, options) => {
     const data = JSON.parse(options.body); requests.push(data)
     if (data.action === 'teach' || data.action === 'retry') binding ??= record('teacher-1')
+    if (data.action === 'attach') binding = record(data.sessionId)
     if (data.action === 'replace') binding = { ...record('teacher-2'), previousSessionIds: [binding.sessionId] }
     return { ok: !fail, json: async () => ({ binding, prompt: '/kaogong-teach actual evidence', error: 'Native command failed' }) }
   })
@@ -156,4 +157,18 @@ test('prepared teaching reaches the exact scoped native role only after Host tru
  const retained=[],sent=[],requests=[];const ctx={workspaces:{list:{getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:[]}),subscribe:()=>()=>{}}},conversation:{send:()=>assert.fail('Ambient context')},sessions:{retain:id=>{retained.push(id);return{sessionId:id,binding:{session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}},ctx:scopedConversation(async text=>sent.push({id,text}))},ready:Promise.resolve(),release:()=>{}}},async using(id,_options,run){return run(this.retain(id))}}}
  const roles=new RoleClients(ctx,async(_url,options)=>{const request=JSON.parse(options.body);requests.push(request);return{ok:true,json:async()=>({binding:record('trusted-role'),prompt:'/kaogong-teach '})}})
  assert.deepEqual(requests,[]);await roles.sendTeaching(key,'Edited user task');assert.deepEqual(requests.map(r=>r.action),['prepare-teaching']);assert.deepEqual(sent,[{id:'trusted-role',text:'/kaogong-teach Edited user task'}]);assert.deepEqual(retained,['trusted-role','trusted-role']);roles.dispose()
+})
+
+test('explicit attachment opens the exact existing Session without sending and stale local attachment never reaches the Host', async () => {
+  const f = fixture()
+  try {
+    await f.owner.attach(key, 'existing-native', null)
+    assert.equal(f.owner.getSnapshot().binding.sessionId, 'existing-native')
+    assert.deepEqual(f.retained, ['existing-native'])
+    assert.deepEqual(f.sent, [])
+    assert.deepEqual(f.requests, [{ action: 'attach', key, sessionId: 'existing-native', expectedSessionId: null }])
+    await assert.rejects(f.owner.attach(key, 'other-native', null), /changed/)
+    assert.equal(f.requests.length, 1)
+    assert.equal(f.owner.getSnapshot().binding.sessionId, 'existing-native')
+  } finally { f.owner.dispose() }
 })

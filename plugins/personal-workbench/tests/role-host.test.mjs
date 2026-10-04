@@ -153,3 +153,30 @@ test('prepared Kaogong teaching rejects foreign provider, unreadable/empty body 
     } finally { await f.owner.dispose() }
   }
 })
+
+test('explicit existing Session attachment retains its native ID, rejects stale/location/preset mismatches and never creates a Session', async () => {
+  const f = await fixture()
+  f.ctx.sessionController.inspect = async () => ({ meta: { cwd: 'C:/learning' } })
+  try {
+    const first = await f.call({ action: 'attach', key, sessionId: 'existing-native', expectedSessionId: null })
+    assert.equal(first.status, 200)
+    assert.equal(first.value.binding.sessionId, 'existing-native')
+    assert.equal(first.value.binding.phase, 'ready')
+    assert.deepEqual(f.created, [])
+    assert.equal((await f.call({ action: 'read', key })).value.binding.sessionId, 'existing-native')
+    const stale = await f.call({ action: 'attach', key, sessionId: 'other-native', expectedSessionId: null })
+    assert.equal(stale.status, 409)
+    assert.equal(stale.value.binding.sessionId, 'existing-native')
+    f.ctx.sessionController.inspect = async () => ({ meta: { cwd: 'C:/different-project' } })
+    const location = await f.call({ action: 'attach', key, sessionId: 'other-native', expectedSessionId: 'existing-native' })
+    assert.equal(location.status, 409)
+    assert.match(location.value.error, /workspace/)
+    assert.equal(location.value.binding.sessionId, 'existing-native')
+    f.ctx.sessionController.inspect = async () => ({ meta: { cwd: 'C:/learning' } })
+    f.changedPreset()
+    const preset = await f.call({ action: 'attach', key, sessionId: 'other-native', expectedSessionId: 'existing-native' })
+    assert.equal(preset.status, 409)
+    assert.equal(preset.value.binding.sessionId, 'existing-native')
+    assert.deepEqual(f.created, [])
+  } finally { await f.owner.dispose() }
+})

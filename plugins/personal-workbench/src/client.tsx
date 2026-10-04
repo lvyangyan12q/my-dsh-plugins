@@ -96,7 +96,7 @@ function NativeTeacher({ useSession, renderFactorySlot, t, retry }: PropsRuntime
   })
 }
 
-export const inject = ['slots', 'sessions', 'workspaces', 'uiSession', 'uiConversation', 'locale']
+export const inject = ['slots', 'sessions', 'workspaces', 'uiSession', 'locale']
 
 /** Register the shared application workspace and the independent native teacher proof.
  * @param ctx - client plugin context; all registrations unwind with its fiber.
