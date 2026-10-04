@@ -503,3 +503,13 @@ changes.summary 的 404 已核对官方源码与 README：摘要存在当前 Hos
 完整平台283/283及三插件Host/Client、声明、source consumers通过；增加停用后立即撤下控件、重新挂载时保持停用、随后恢复，以及旧回调拒绝操作的行为断言。两轴增量审查均无新增问题。最新平台发布门禁通过真实归档安装、认证、冷重启、阅读卸载重装和HTML相对资源，回执见 [sidebar-release.json](evidence/2026-10-05/sidebar-release.json)。正式3080已刷新当前链接构建；四个用户Agent管理文件与同步前指纹一致。3087保留运行供后续验收。
 
 本节补齐侧栏适配开关的真实启停证据，尚不等于三环境完整教学闭环。原生授权/提问/Stop/同Session编辑器所有权及其余旧工单GUI门禁仍需逐项补证，保持总任务未完成。
+
+### 2026-10-05 — shared native composer teardown ownership
+
+Chrome DevTools connected to both formal 3080 and isolated installed 3087; the independent reading app opens with its original native menus and 3 / 210 / 70 statistics. This restores the browser acceptance path, not completion of the full application goal.
+
+A minimized real React + Lexical regression proved a native lifecycle defect: unmounting an earlier composer clears the root attached by a later view of the same editor. Both ownership-transfer cases failed with actual null roots before the change. ComposerContentEditable now detaches only its own current root. The two new regressions plus editor-focus and InputBar suites passed: 3 files, 105 tests. The native ui-conversation Client rebuilt successfully.
+
+The reviewed adapter is distributed in compat/native-composer-root, with precise before/after source hashes, the native regression tests, a backup before application, and refusal to overwrite local changes. Its apply/conflict/idempotent fixture test passed. build-release now requires the adapter verification. Standards and Spec follow-up reviews found no additional actionable issues for this teardown change. The four preserved Agent management file fingerprints still match the synchronization receipt.
+
+Remaining: simultaneous main/app composer draft synchronization and focus handoff. The real 3080 same-Session reproduction still has two different visible test drafts; no test messages were sent. This teardown-only repair must not be claimed as fixing the complete dual-view workflow. 3087 has no model credentials; its missing-credential response is not a successful model conversation. Native browser teardown acceptance is still pending after the focused code tests.

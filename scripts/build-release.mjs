@@ -10,6 +10,7 @@ const tsdown = process.env.RELEASE_TSDOWN_CLI ?? resolve(root, 'node_modules/tsd
 const env = { ...process.env, DSH_SOURCE: source, KAOGONG_TEST_RUNTIME: source, KAOGONG_WORKBENCH_TYPES: resolve(root, 'plugins/personal-workbench') }
 await runNode(['scripts/check-native-session-chrome.mjs'], { cwd: root, env })
 await runNode(['scripts/check-native-draft-images.mjs'], { cwd: root, env })
+await runNode(['scripts/check-native-composer-root.mjs'], { cwd: root, env })
 // The Host build cleans this package's lib once; Client and declarations then add their outputs.
 for (const [pkg, commands] of [
   ['personal-workbench', [[tsdown, '-c', 'tsdown.config.ts'], ['scripts/check-source.mjs'], ['scripts/check-source.mjs', '--emit-types'], ['scripts/check-source.mjs', '--check-consumer']]],

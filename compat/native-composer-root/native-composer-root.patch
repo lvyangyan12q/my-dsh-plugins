@@ -1,0 +1,59 @@
+diff --git a/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx b/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx
+index b975ee1f2c..d296129fb7 100644
+--- a/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx
++++ b/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx
+@@ -29,7 +29,11 @@ export function ComposerContentEditable({ editor, editable, ...rest }: ComposerC
+     const el = ref.current
+     if (editor === null || el === null) return
+     editor.setRootElement(el)
+-    return () => { editor.setRootElement(null) }
++    return () => {
++      // Another native view of this Session may have taken the single editor
++      // root since this surface mounted. Only its current owner may detach it.
++      if (editor.getRootElement() === el) editor.setRootElement(null)
++    }
+   }, [editor])
+   useLayoutEffect(() => {
+     if (editor !== null) editor.setEditable(editable)
+diff --git a/packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx b/packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx
+new file mode 100644
+--- /dev/null
++++ b/packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx
+@@ -0,0 +1,37 @@
++// @vitest-environment jsdom
++import * as React from 'react'
++import { afterEach, expect, it } from 'vitest'
++import { act, cleanup, render } from '@testing-library/react'
++import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
++import { ComposerContentEditable } from '../src/client/input/editor/ComposerContentEditable.tsx'
++
++afterEach(cleanup)
++
++function fixture() {
++  const editor = createEditor({ namespace: 'shared-root-regression', onError: error => { throw error } })
++  const first = render(<ComposerContentEditable editor={editor} editable aria-label="main" />)
++  const second = render(<ComposerContentEditable editor={editor} editable aria-label="app" />)
++  return { editor, first, second, firstRoot: first.getByRole('textbox', { name: 'main' }), secondRoot: second.getByRole('textbox', { name: 'app' }) }
++}
++
++it('does not detach the active app composer when the earlier main composer unmounts', () => {
++  const f = fixture()
++  expect(f.editor.getRootElement()).toBe(f.secondRoot)
++  f.first.unmount()
++  expect(f.editor.getRootElement()).toBe(f.secondRoot)
++  act(() => f.editor.update(() => {
++    $getRoot().clear().append($createParagraphNode().append($createTextNode('still attached')))
++  }, { discrete: true }))
++  expect(f.secondRoot.textContent).toBe('still attached')
++  f.second.unmount()
++  expect(f.editor.getRootElement()).toBeNull()
++})
++
++it('does not detach a different root after an explicit ownership transfer', () => {
++  const f = fixture()
++  act(() => f.editor.setRootElement(f.firstRoot))
++  f.second.unmount()
++  expect(f.editor.getRootElement()).toBe(f.firstRoot)
++  f.first.unmount()
++  expect(f.editor.getRootElement()).toBeNull()
++})
