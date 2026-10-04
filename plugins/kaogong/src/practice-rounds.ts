@@ -42,11 +42,10 @@ export class PracticeRounds {
       if (previous && (!previous.score || previous.context.subject !== context.subject || previous.context.knowledgePoint !== context.knowledgePoint)) throw new PracticeError('next round requires a submitted round in the same module')
       const bank: BankQuestion[] = [...this.bank.entries()].map(([id, row]) => ({ id, ...row })).filter(safePracticeQuestion)
       const notebook: Question[] = [...this.notebook.entries()].map(([id, row]) => ({ id, ...row }))
-      let controls = { ...context, limit: 10, weak, difficulty }
-      let full = selectPractice(bank, notebook, controls)
+      const controls = { ...context, limit: 10, weak, difficulty }
+      const full = selectPractice(bank, notebook, controls)
       if (full.totalAvailable === 0 && context.knowledgePoint) {
-        controls = { ...controls, knowledgePoint: undefined }
-        full = selectPractice(bank, notebook, controls)
+        throw new PracticeError('没有匹配当前科目、考点和难度的可练习题目；请确认考点名称或显式选择科目练习')
       }
       const seen = previous?.seenIds ?? []
       let selected = selectPractice(bank, notebook, { ...controls, excludeIds: seen }).selected

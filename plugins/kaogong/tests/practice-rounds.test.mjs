@@ -210,3 +210,20 @@ test('Host endpoints and native tool share issued-round grading and explicit wir
     assert.equal((await request('read', { roundId: issued.value.roundId }, 'GET')).status, 405)
   } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
 })
+
+test('explicit knowledge point never silently issues unrelated subject questions', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-target-')); const app = await boot(root)
+  try {
+    await app.bank.put('unrelated', bankRow())
+    await assert.rejects(app.service.start({ ...context, knowledgePoint: '比重-基期比重' }), /没有匹配.*考点/)
+    assert.equal(app.rounds.size, 0)
+    assert.equal(app.notebook.size, 0)
+    await app.bank.put('matched', { ...bankRow(), knowledgePoint: '比重-基期比重' })
+    const round = await app.service.start({ ...context, knowledgePoint: '比重-基期比重' })
+    assert.equal(round.returned, 1)
+    assert.deepEqual(round.questions.map(row => row.id), ['matched'])
+    assert.equal(round.context.knowledgePoint, '比重-基期比重')
+    const general = await app.service.start(context)
+    assert.equal(general.returned, 2)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
