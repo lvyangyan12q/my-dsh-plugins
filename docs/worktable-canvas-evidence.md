@@ -60,3 +60,9 @@
 12 项原生 Skill 与显式任务回归、4 项真实产物存储/文件边界回归、1 项模块角色界面回归通过，源码及消费者类型检查与三个插件发布构建通过。直接 tsc -p tsconfig.json 遇到 better-sidebar.tsx 现有 size 参数隐式 any；未将该失败算作类型检查通过，发布构建使用仓库 check-source 的真实 DSH 路径映射。四个用户 Agent 管理文件哈希保持一致。
 
 3082 已创建并启用“模块生成与审批验收”应用，左模块绑定平台自有搭建角色；准备和显式发送成功，原生会话显示 /workbench-module-generate 与运行状态。真实页面产出和显示尚待验证，不能据此勾选生成完整闭环。
+
+## 实际页面生成和显示验证（2026-10-04）
+
+“模块生成与审批验收”应用 app.792701b4-f125-4b78-9044-ab6cf7a72af0，实例 default，页面 home，左模块 module.8f4a280e-3466-4006-9c48-7bede156c17a。通过原生 Skill 加载共享模板，原生 read/write 工具真实写入请求 0f22b8a4-71db-4f82-84be-5f9180f14bf6 的输出 HTML。正式 iframe 出现“学习计时器”页面，实际开始、暂停、重置操作成功；刷新并重新进入应用后恢复同一模块页面。右模块仍为空，没有被生成结果覆盖。截图：C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/worktable-generated-timer.png。
+
+生成的原生任务在写入产物之后、最后一次 read 之后报 INVALID_REQUEST（400，无响应正文）。原生对话显示失败状态，页面仍能加载并操作。轨迹证明已加载包内 Skill 和模板、执行了实际写入及读取；不能把可用产物当作任务正常完成。尚待定位模型请求失败、继续修改、审批拒绝以及模块生命周期状态的完整验收。
