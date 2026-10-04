@@ -1,10 +1,11 @@
-import {useSyncExternalStore} from 'react'
+import {useSyncExternalStore,useState} from 'react'
 import type {PropsRenderFactories} from '@deepseek-ai/dsh-client-ui-slots'
 import type {Context} from '@deepseek-ai/cordis'
 import type {Workbench} from './workbench.ts'
 import type {WorkbenchAppDefinition,WorkbenchAppId,WorkbenchAppProps} from './workbench-api.ts'
 import type {AppRecipe} from './recipe-api.ts'
 import {recipeRequest} from './recipe-editor.tsx'
+import {RuntimeModuleDialog} from './runtime-module-dialog.tsx'
 import {RecipePage} from './recipe-view.tsx'
 const definition=(recipe:AppRecipe):WorkbenchAppDefinition=>({id:recipe.appId as WorkbenchAppId,version:String(recipe.version),name:recipe.name,icon:'layout-grid',source:'Workbench',pages:recipe.pages.map(p=>({id:p.id,label:p.label})),defaultLayout:{width:900,height:650,pageId:recipe.pages[0].id},roles:recipe.roles.map(r=>({id:r.id,name:r.name})),dependencies:recipe.pages.flatMap(p=>p.modules.map(m=>({id:m.type,available:true})))})
 export function installRecipeClient(ctx:Context,workbench:Workbench){
@@ -21,7 +22,8 @@ export function installRecipeClient(ctx:Context,workbench:Workbench){
    // The slot component remains stable; recipe changes reconcile existing pages and modules.
    const View=(props:WorkbenchAppProps&Partial<PropsRenderFactories>&{t:(key:any)=>string})=>{
     const value=useSyncExternalStore(subscribe,snapshot,snapshot)
-    return <RecipePage recipe={value} pageId={props.pageId} appId={props.appId} instanceId={props.instanceId} t={props.t} ctx={ctx} renderFactorySlot={props.renderFactorySlot}/>
+    const [target,setTarget]=useState<{appId:string;pageId:string;moduleId:string;changeContent:boolean}|null>(null)
+    return <><RecipePage onEditModule={(pageId,moduleId,changeContent)=>setTarget({appId:props.appId,pageId,moduleId,changeContent})} recipe={value} pageId={props.pageId} appId={props.appId} instanceId={props.instanceId} t={props.t} ctx={ctx} renderFactorySlot={props.renderFactorySlot}/>{target&&<RuntimeModuleDialog target={target} t={props.t} refresh={refresh} onClose={()=>setTarget(null)}/>}</>
    }
    const removeView=ctx.slots.register({name:'personal-workbench.app',key:recipe.appId,locale:'personal-workbench'},View)
    try{

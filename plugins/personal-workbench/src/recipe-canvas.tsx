@@ -31,7 +31,7 @@ export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t
     <button data-pwb-button type="button" title={t('canvasFocus')} aria-label={t('canvasFocus')+': '+module.id} aria-pressed={focused===module.id} onClick={()=>{setFocused(focused===module.id?null:module.id);setSelected(module.id)}}><Expand size={14}/></button>
     <button data-pwb-button type="button" title={t('moduleRemove')} aria-label={t('moduleRemove')+': '+module.id} onClick={()=>{change(copy=>{copy.pages[pageIndex].modules=copy.pages[pageIndex].modules.filter(m=>m.id!==module.id)});if(open)closeSettings()}}><X size={14}/></button>
    </div></CanvasPaneHeader>
-   {module.type==='empty'?<div className="pwb-canvas-picker"><p>{t('canvasChooseContent')}</p><div>{choices.map(([type,ChoiceIcon])=><button data-pwb-button key={type} type="button" aria-label={t('recipeModule'+type)+': '+module.id} onClick={()=>choose(module.id,type)}><ChoiceIcon size={22}/><span>{t('recipeModule'+type)}</span></button>)}</div></div>:<>
+   {module.type==='empty'?<CanvasContentPicker moduleId={module.id} t={t} onChoose={type=>choose(module.id,type)}/>:<>
     <div className="pwb-canvas-summary"><Icon size={25}/><strong>{t('recipeModule'+module.type)}</strong><span>{String(module.config.url??module.config.path??module.config.basePath??module.config.requirement??'')||t('canvasConfigureHelp')}</span>
      {module.connectionId&&<small>{t('recipeSource')}: {recipe.connections.find(c=>c.id===module.connectionId)?.resource}</small>}{module.roleId&&<small>{t('recipeTaskRole')}: {recipe.roles.find(r=>r.id===module.roleId)?.name}</small>}
     </div>
@@ -48,4 +48,8 @@ export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t
   {page.layout!=='stack'&&page.modules.length>1&&<ColumnDivider label={t('canvasResizeColumns')} value={page.splitPercent??50} onChange={value=>change(copy=>{copy.pages[pageIndex].splitPercent=value})}/>}
   <div className="pwb-canvas-grid" data-layout={page.layout} style={{gridTemplateColumns:page.layout==='stack'?undefined:(page.splitPercent??50)+'fr '+(100-(page.splitPercent??50))+'fr'}}>{page.modules.map(card)}</div></div><button className="pwb-canvas-add" data-pwb-button type="button" onClick={()=>change(copy=>{copy.pages[pageIndex].modules.push(emptyModule())})}><Plus size={18}/>{t('moduleAdd')}</button>
  </section>
+}
+
+export function CanvasContentPicker({moduleId,t,onChoose}:{moduleId:string;t:(key:any)=>string;onChoose:(type:string)=>void}){
+ return <div className="pwb-canvas-picker"><p>{t('canvasChooseContent')}</p><div>{choices.map(([type,ChoiceIcon])=><button data-pwb-button key={type} type="button" aria-label={t('recipeModule'+type)+': '+moduleId} onClick={()=>onChoose(type)}><ChoiceIcon size={22}/><span>{t('recipeModule'+type)}</span></button>)}</div></div>
 }
