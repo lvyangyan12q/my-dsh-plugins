@@ -5,7 +5,7 @@ import {RecipeModuleEditor} from './recipe-module-editor.tsx'
 import {recipeCanvasStyles} from './recipe-canvas-styles.ts'
 
 type Change=(update:(recipe:AppRecipe)=>void)=>void
-const choices=[['website',Globe],['custom',Sparkles],['role-chat',MessageSquare],['resources',Folder],['animation',Film],['stats',BarChart3]] as const
+const choices=[['website',Globe],['custom',Sparkles],['role-chat',MessageSquare],['resources',Folder],['animation',Film],['stats',BarChart3],['chart',BarChart3],['map',Globe]] as const
 export function emptyModule():RecipeModule{return{id:'module.'+crypto.randomUUID(),type:'empty',title:'',config:{}}}
 export function createCanvasRecipe(appId:string,layout:AppRecipe['pages'][number]['layout'],t:(key:any)=>string):AppRecipe{
  return{schemaVersion:1,appId,version:1,name:t('recipeNewName'),description:'',pages:[{id:'home',label:t('recipeHome'),layout,modules:Array.from({length:layout==='grid'?4:layout==='stack'?3:2},emptyModule)}],connections:[],roles:[]}

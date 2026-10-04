@@ -1,3 +1,4 @@
+import {DataVisual} from './data-visual.tsx'
 import { aggregateStatistic } from './display-statistics.ts'
 import { displayModuleContext } from './display-context.ts'
 import { registerRecipeModuleContextProvider } from './module-context.ts'
@@ -17,13 +18,14 @@ function owner(props: RecipeModuleProps, source: DisplaySource) {
   if (entry?.source !== source) { entry?.store.dispose(); entry = { source, store: new DisplayStore(source, props) }; owners.set(key, entry); void entry.store.reload() }
   return entry!.store
 }
-export function DisplayModule({ type, store, t, renderDetail }: { type: 'stats' | 'list' | 'detail' | 'filter'; store: DisplayStore; t: Translate; renderDetail?: (record: DisplayRecord) => ReactNode }) {
+export function DisplayModule({ type, store, t, renderDetail,config={} }: { type: 'stats' | 'list' | 'detail' | 'filter' | 'chart' | 'map'; config?:import('./recipe-api.ts').RecipeModule['config']; store: DisplayStore; t: Translate; renderDetail?: (record: DisplayRecord) => ReactNode }) {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   if (state.phase === 'loading') return <p role="status">{t('displayLoading')}</p>
   if (state.phase === 'error') return <div role="alert"><p>{t('displayFailed')}: {state.error}</p><button data-pwb-button onClick={() => { void store.reload() }}>{t('retry')}</button></div>
   const records = store.filteredRecords()
   if (type === 'filter') return <div className="pwb-display-filter"><label>{t('displaySearch')}<input aria-label={t('displaySearch')} value={state.search} onChange={event => store.setSearch(event.target.value)} /></label>{state.data.filters.map(filter => <label key={filter.field}>{filter.label}<select aria-label={filter.label} value={state.filters[filter.field] ?? ''} onChange={event => store.setFilter(filter.field, event.target.value)}><option value="">{t('displayAll')}</option>{[...new Set(state.data.records.map(record => String(record.fields[filter.field] ?? '')))].filter(Boolean).sort().map(value => <option key={value}>{value}</option>)}</select></label>)}</div>
   if (!records.length) return <p role="status">{t(state.data.records.length ? 'displayNoMatches' : 'displayEmpty')}</p>
+  if(type==='chart'||type==='map')return <DataVisual type={type} config={config} records={records} selectedId={state.selectedId} select={store.select} t={t}/>
   if (type === 'stats') return <dl className="pwb-display-stats" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>{state.data.stats.map(stat => {
    const value = aggregateStatistic(records, stat)
     return <div key={stat.id}><dt>{stat.label}</dt><dd data-stat={stat.id}>{value}</dd></div>
@@ -40,10 +42,10 @@ export function RecipeDisplayModule(props: RecipeModuleProps & { t?: Translate }
   const source = connection?.sourceAppId === props.appId ? getDisplaySource(connection.sourceAppId, connection.resource) : undefined
   if (!connection) return <p role="status">{t('recipeEmptyModule')}</p>
   if (!source) return <p role="alert">{t('displayUnavailable')}: {connection.resource}</p>
-  return <DisplayModule type={props.module.type as 'stats' | 'list' | 'detail' | 'filter'} store={owner(props, source)} t={t} />
+  return <DisplayModule type={props.module.type as 'stats' | 'list' | 'detail' | 'filter' | 'chart' | 'map'} config={props.module.config} store={owner(props, source)} t={t} />
 }
 export function installDisplayModules() {
-  const removes = ['stats', 'list', 'filter', 'detail'].flatMap(type => [registerRecipeModuleRenderer(type, RecipeDisplayModule),registerRecipeModuleContextProvider(type,props=>{
+  const removes = ['stats', 'list', 'filter', 'detail', 'chart', 'map'].flatMap(type => [registerRecipeModuleRenderer(type, RecipeDisplayModule),registerRecipeModuleContextProvider(type,props=>{
     const connection=props.recipe.connections.find(c=>c.id===props.module.connectionId),source=connection?.sourceAppId===props.appId?getDisplaySource(connection.sourceAppId,connection.resource):undefined
     if(!connection||!source)return {phase:'unavailable',reason:props.t('displayUnavailable')+': '+(connection?.resource??props.module.id)}
     return displayModuleContext(props,owner(props,source),source)

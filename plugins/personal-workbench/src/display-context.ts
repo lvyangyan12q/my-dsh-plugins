@@ -18,6 +18,7 @@ export function displayModuleContext(props: RecipeModuleProps, store: DisplaySto
  const origin = `${source.label} (${props.appId}/${props.instanceId}/${module.connectionId}: ${source.resource})`
  const chunk = (suffix: string, label: string, value: unknown): TaskContext => ({ id: module.id + '.' + suffix, label: t(label), source: origin, text: JSON.stringify(value) })
  const context: TaskContext[] = [chunk('scope', 'taskDataScope', { appId: props.appId, instanceId: props.instanceId, connectionId: module.connectionId, resource: source.resource, search: bounded(state.search, 300), filters: Object.fromEntries(Object.entries(state.filters).slice(0, 20).map(([field, value]) => [bounded(field, 60), bounded(value, 100)])), matchedRecords: records.length, totalRecords: state.data.records.length, selectedId: state.selectedId ?? null })]
+ if(module.type==='chart'||module.type==='map')context.push(chunk('mapping','displayFieldMapping',{type:module.type,...Object.fromEntries((module.type==='chart'?['valueField']:['latitudeField','longitudeField']).map(field=>[field,bounded(String(module.config[field]??''),120)]))}))
  if (selected) context.push(chunk('selection', 'taskSelectedRecord', recordContext(selected)))
  if (module.type === 'stats') {
   const statistics = state.data.stats.slice(0, 10).map(stat => {
