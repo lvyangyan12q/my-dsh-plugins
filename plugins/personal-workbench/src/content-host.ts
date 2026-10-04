@@ -1,3 +1,4 @@
+import {contentIdentity,matchesContentIdentity} from './content-identity.ts'
 import type {Context} from '@deepseek-ai/cordis'
 import type {IncomingMessage,ServerResponse} from 'node:http'
 import {createHash,randomUUID} from 'node:crypto'
@@ -25,7 +26,7 @@ export async function installContent(ctx:Context){
    if(ctx.personalWorkbenchApps.read(data.appId).enabled===false)throw new Error('Application disabled')
    const recipe=ctx.personalWorkbenchRecipes.list().find(r=>r.appId===data.appId)?.running,module=recipe?.pages.flatMap(p=>p.modules).find(m=>m.id===data.moduleId)
    if(!recipe||!module||!['resources','custom'].includes(module.type))throw new Error('Running content module unavailable')
-   const root=await ctx.personalWorkbenchRecipeRoles.workspace(data.appId,data.instanceId),key=JSON.stringify([data.appId,data.instanceId,data.moduleId]),signature=JSON.stringify(module)
+   const root=await ctx.personalWorkbenchRecipeRoles.workspace(data.appId,data.instanceId),key=JSON.stringify([data.appId,data.instanceId,data.moduleId]),signature=contentIdentity(module)
    if(module.type==='resources'){
     const base=await contentPath(root,String(module.config.basePath??''))
     if(data.action==='list')respond(200,await listContentDirectory(base,data.path??''))
@@ -39,12 +40,12 @@ export async function installContent(ctx:Context){
      const folder='.my-dsh/widgets/'+createHash('sha256').update(key).digest('hex'),parent=folder.slice(0,folder.lastIndexOf('/'))
      // Verify each existing parent before writing; never follow a junction outside the workspace.
      await contentPath(root,'');await mkdir(resolve(root,'.my-dsh'),{recursive:true});await contentPath(root,'.my-dsh');await mkdir(resolve(root,parent),{recursive:true});await contentPath(root,parent);await mkdir(resolve(root,folder),{recursive:true});await contentPath(root,folder)
-     const previous=artifacts.get(key),requestId=randomUUID(),path=folder+'/'+requestId+'.html',row={key,signature,root,path,requestId};await artifacts.put(key,row);return {...row,...(previous?.signature===signature&&previous.root===root?{previousPath:resolve(root,previous.path)}:{})}
+     const previous=artifacts.get(key),requestId=randomUUID(),path=folder+'/'+requestId+'.html',row={key,signature,root,path,requestId};await artifacts.put(key,row);return {...row,...(previous&&matchesContentIdentity(previous.signature,module)&&previous.root===root?{previousPath:resolve(root,previous.path)}:{})}
     })
     respond(200,{requestId:row.requestId,path:resolve(row.root,row.path),relativePath:row.path,...(row.previousPath?{previousPath:row.previousPath}:{})});return
    }
    if(data.action!=='artifact')throw new Error('Content action unavailable')
-   const row=artifacts.get(key);if(!row||!(row.signature===signature||(()=>{try{const legacy=JSON.parse(row.signature);return Array.isArray(legacy)&&legacy.length===2&&JSON.stringify(legacy[1])===signature}catch{return false}})())||row.root!==root){respond(200,{ready:false});return}
+   const row=artifacts.get(key);if(!row||!matchesContentIdentity(row.signature,module)||row.root!==root){respond(200,{ready:false});return}
    try{const file=await readContentFile(root,row.path);respond(200,{ready:true,requestId:row.requestId,...file})}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')respond(200,{ready:false,requestId:row.requestId});else throw error}
   }catch(error){respond(409,{error:error instanceof Error?error.message:'Content request failed'})}
  }

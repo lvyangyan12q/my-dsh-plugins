@@ -118,3 +118,12 @@ test('generation catalogue exposes only managed public Agents and Skills, preser
  const catalog=await f.recipes.service.generationCatalog();assert.deepEqual(catalog.roles,[{presetId:'my-dsh.catalog-managed',skillNames:['public-proof']}]);assert.ok((await f.ctx.agentPresets.list()).some(role=>role.id==='application-private'));assert.ok(await f.ctx.skills.get('private-proof'))
  }finally{await privateRole?.();await managed?.();await f.close()}
 })
+
+test('generated output cannot borrow registered application-private Agents or unmanaged Skills',async()=>{
+ const rows=[{...recipe(),roles:[{id:'reader',name:'Reader',presetId:'application-private',skillNames:[]}]},{...recipe(),roles:[{id:'reader',name:'Reader',presetId:'my-dsh.catalog-managed',skillNames:['private-proof']}]}]
+ const f=await fixture(rows.map(row=>textResponse(JSON.stringify(row))));let privateRole,managed
+ try{privateRole=await f.ctx.agentPresets.register({id:'application-private',plugins:[]});managed=await f.ctx.agentPresets.register({id:'my-dsh.catalog-managed',plugins:[]});f.ctx.personalWorkbenchCapabilities.agents=()=>[{id:'catalog-managed',name:'Public',description:'',persona:'Public',skillNames:[],userInvocable:true,modelInvocable:true,revision:1}]
+  for(const row of rows){const done=await f.generation.settled(f.start().id);assert.equal(done.status,'failed');assert.match(done.error,/generation catalog/i);assert.deepEqual(f.recipes.service.list(),[])}
+  assert.ok((await f.ctx.agentPresets.list()).some(role=>role.id==='application-private'));assert.ok(await f.ctx.skills.get('private-proof'))
+ }finally{await managed?.();await privateRole?.();await f.close()}
+})

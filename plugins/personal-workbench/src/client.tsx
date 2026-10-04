@@ -1,3 +1,4 @@
+import {installAnnotations} from './annotation-client.ts'
 import {installContentModules} from './content-view.tsx'
 import { installDisplayModules } from './display-view.tsx'
 import { installTasks } from './task-view.tsx'
@@ -165,6 +166,7 @@ export function apply(ctx: Context): void {
   installOptionalBetterSidebar(ctx, workbench)
   installRoleClient(ctx)
   installTasks(ctx)
+  installAnnotations(ctx)
 }
 
 export { registerRecipeModuleRenderer, RecipePage } from './recipe-view.tsx'

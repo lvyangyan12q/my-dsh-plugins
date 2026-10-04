@@ -1,4 +1,6 @@
 import type {RecipeModule} from './recipe-api.ts'
+export const dataModuleTypes=['stats','list','detail','filter','chart','map'] as const
+export function isDataModuleType(type:string):boolean{return dataModuleTypes.some(value=>value===type)}
 export const contentTypes=['empty','chart','map','stats','list','detail','filter','website','custom','role-chat','animation','resources'] as const
 export function webAddress(value:unknown):string|undefined {
  if(typeof value!=='string'||!value.trim())return undefined

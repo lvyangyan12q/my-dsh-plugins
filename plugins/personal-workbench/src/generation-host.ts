@@ -1,3 +1,4 @@
+import {validateGenerationRoles} from './generation-catalog.ts'
 import * as nativeToolSkill from '@deepseek-ai/dsh-tool-skill'
 import {workbenchSkillProvider} from './workbench-skill-api.ts'
 import type {Context} from '@deepseek-ai/cordis'
@@ -62,6 +63,7 @@ export async function installGeneration(ctx:Context){
    if(Buffer.byteLength(text,'utf8')>262144)throw new Error('Generated recipe is too large')
    const recipe=recipeSchema.parse(JSON.parse(text))
    if(recipe.appId!==input.appId||recipe.version!==input.version)throw new Error('Generated recipe identity or version changed')
+   validateGenerationRoles(recipe,safeCatalog)
    controller.signal.throwIfAborted()
    // Once commit starts cancel is refused; saveGenerated revalidates and commits under recipe CAS.
    view.status='saving'

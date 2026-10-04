@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {test} from 'node:test'
-import {mkdtemp,rm,writeFile,mkdir,symlink} from 'node:fs/promises'
+import {mkdtemp,rm,writeFile,readFile,mkdir,symlink} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join,resolve} from 'node:path'
 import {pathToFileURL} from 'node:url'
@@ -54,4 +54,14 @@ test('module admission validates web protocols, file scope and generation role w
  assert.ok(contentErrors({id:'x',type:'custom',config:{mode:'generate'}}).length)
  assert.ok(contentErrors({id:'x',type:'website',config:{url:'javascript:1'}}).length)
  assert.deepEqual(contentErrors({id:'x',type:'custom',roleId:'maker',config:{mode:'generate'}}),[])
+})
+
+test('renaming a generated module preserves legacy artifact and next adjustment path, while content changes invalidate it',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'content-rename-')),r=recipe();let f
+ try{r.pages[0].modules[0].title='Original';f=await fixture(root,r);const reserved=await f.call(request('reserve'));await writeFile(reserved.value.path,'<h1>Keep page</h1>');await f.close();f=undefined
+  const storage=join(root,'storage/personal_workbench_content.json'),data=JSON.parse(await readFile(storage,'utf8'))
+  const replace=value=>{if(!value||typeof value!=='object')return;for(const [key,child]of Object.entries(value)){if(key==='signature'&&typeof child==='string')value[key]=JSON.stringify(r.pages[0].modules[0]);else replace(child)}};replace(data);await writeFile(storage,JSON.stringify(data))
+  r.pages[0].modules[0].title='Renamed';r.version++;f=await fixture(root,r);assert.equal((await f.call(request('artifact'))).value.content,'<h1>Keep page</h1>');const next=await f.call(request('reserve'));assert.equal(next.value.previousPath,reserved.value.path)
+  await writeFile(next.value.path,'<h1>Adjusted</h1>');r.pages[0].modules[0].config.requirement='New target';assert.equal((await f.call(request('artifact'))).value.ready,false)
+ }finally{await f?.close();await rm(root,{recursive:true,force:true})}
 })

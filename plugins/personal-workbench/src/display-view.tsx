@@ -1,3 +1,4 @@
+import {dataModuleTypes} from './content-catalog.ts'
 import {DataVisual} from './data-visual.tsx'
 import { aggregateStatistic } from './display-statistics.ts'
 import { displayModuleContext } from './display-context.ts'
@@ -45,7 +46,7 @@ export function RecipeDisplayModule(props: RecipeModuleProps & { t?: Translate }
   return <DisplayModule type={props.module.type as 'stats' | 'list' | 'detail' | 'filter' | 'chart' | 'map'} config={props.module.config} store={owner(props, source)} t={t} />
 }
 export function installDisplayModules() {
-  const removes = ['stats', 'list', 'filter', 'detail', 'chart', 'map'].flatMap(type => [registerRecipeModuleRenderer(type, RecipeDisplayModule),registerRecipeModuleContextProvider(type,props=>{
+  const removes = dataModuleTypes.flatMap(type => [registerRecipeModuleRenderer(type, RecipeDisplayModule),registerRecipeModuleContextProvider(type,props=>{
     const connection=props.recipe.connections.find(c=>c.id===props.module.connectionId),source=connection?.sourceAppId===props.appId?getDisplaySource(connection.sourceAppId,connection.resource):undefined
     if(!connection||!source)return {phase:'unavailable',reason:props.t('displayUnavailable')+': '+(connection?.resource??props.module.id)}
     return displayModuleContext(props,owner(props,source),source)

@@ -1,8 +1,9 @@
+import {dataModuleTypes} from './content-catalog.ts'
 /** Built-in template modules share one skin; installed custom modules and native chat remain owned by their plugins. */
 export const recipePageStyles=`
 @media(max-width:700px){.pwb-recipe-page{grid-template-columns:minmax(0,1fr)!important}.pwb-column-divider{display:none!important}}
 .pwb-recipe-page{padding:16px;color:var(--pwb-ink,#2e2b26);font:13px/1.5 system-ui,sans-serif}
-.pwb-recipe-module:is([data-module-type=stats],[data-module-type=list],[data-module-type=filter],[data-module-type=detail]){padding:16px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:8px;background:var(--pwb-paper,#fdfcf9)}
+.pwb-recipe-module:is(${dataModuleTypes.map(type=>'[data-module-type='+type+']').join(',')}){padding:16px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:8px;background:var(--pwb-paper,#fdfcf9)}
 .pwb-recipe-page[data-layout=split]>.pwb-recipe-module:is([data-module-type=filter],[data-module-type=stats]){grid-column:1/-1}
 .pwb-recipe-module>h3{margin:0 0 12px;font-size:14px;font-weight:600;overflow-wrap:anywhere}
 .pwb-recipe-module>.pwb-display-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}

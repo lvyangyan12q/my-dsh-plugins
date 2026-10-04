@@ -1,3 +1,4 @@
+import {contentIdentity} from './content-identity.ts'
 import {useEffect,useRef,useState} from 'react'
 import type {RecipeModuleProps} from './recipe-view.tsx'
 import {registerRecipeModuleRenderer} from './recipe-view.tsx'
@@ -18,7 +19,7 @@ function FilePreview({file,title}:{file:{kind:string;content:string};title:strin
 function ContentModule(props:RecipeModuleProps){
  const {module,preview,t,ctx}=props,[error,setError]=useState(''),[busy,setBusy]=useState(false),[tick,setTick]=useState(0),[path,setPath]=useState(''),[file,setFile]=useState<any>(null),[entries,setEntries]=useState<{name:string;path:string;directory:boolean}[]>([]),[requirement,setRequirement]=useState(String(module.config.requirement??'')),[waiting,setWaiting]=useState(false)
  const actionController=useRef<AbortController>()
- const identity=JSON.stringify([props.appId,props.instanceId,module]),remote=['website','animation'].includes(module.type)||module.type==='custom'&&module.config.mode==='url'
+ const identity=JSON.stringify([props.appId,props.instanceId,contentIdentity(module)]),remote=['website','animation'].includes(module.type)||module.type==='custom'&&module.config.mode==='url'
  useEffect(()=>{actionController.current?.abort();setBusy(false);setPath('');setFile(null);setEntries([]);setRequirement(String(module.config.requirement??''));setWaiting(false);setError('')},[identity])
  useEffect(()=>()=>actionController.current?.abort(),[identity,path])
  useEffect(()=>{

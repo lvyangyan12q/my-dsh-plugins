@@ -36,7 +36,7 @@ test('loaded artifact keeps associated native session failure visible and observ
  const f=await domFixture(),remove=installContentModules(),oldFetch=globalThis.fetch
  const draft={...recipe,roles:[{id:'maker',name:'Maker',presetId:'test',skillNames:[]}],pages:[{...recipe.pages[0],modules:[{id:'custom',type:'custom',title:'Custom',roleId:'maker',config:{mode:'generate'}}]}]}
  let snapshot={running:false,lastAgentError:'400 INVALID_REQUEST',promptError:null,openError:null},listeners=new Set()
- const session={getSnapshot:()=>snapshot,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)}}
+ const session={notifier:true,getSnapshot(){assert.equal(this.notifier,true);return snapshot},subscribe(fn){assert.equal(this.notifier,true);listeners.add(fn);return()=>listeners.delete(fn)}}
  const states=new Map([[JSON.stringify(['app.test','first','maker',null]),{error:null,busy:false,window:{phase:'open',reference:{binding:{session}}}}]])
  const ctx={get:name=>name==='personalWorkbenchRoles'?{view:{getSnapshot:()=>states,subscribe:()=>()=>{}}}:undefined}
  globalThis.fetch=async()=>({ok:true,json:async()=>({ready:true,kind:'html',content:'<h1>Generated</h1>',requestId:'one'})})
