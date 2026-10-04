@@ -16,8 +16,8 @@ test('mixed module preview stays inert and website runtime uses a sandboxed fram
 test('each pane can independently switch content types and custom supports all three sources without saving or starting AI',async()=>{
  const f=await domFixture(),oldFetch=globalThis.fetch,calls=[];globalThis.fetch=async(_url,options)=>{calls.push(JSON.parse(options.body));return{ok:true,json:async()=>({recipes:[]})}}
  const change=async(selector,value)=>{const el=document.querySelector(selector);assert.ok(el);await act(async()=>{Object.getOwnPropertyDescriptor(f.dom.window.HTMLSelectElement.prototype,'value').set.call(el,value);el.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))})}
- try{await act(async()=>f.root.render(React.createElement(RecipeEditor,{t:k=>k,refresh:async()=>{}})));await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeCreate').click());let selects=document.querySelectorAll('select[aria-label^="moduleType:"]');assert.equal(selects.length,2);const id=selects[0].getAttribute('aria-label');assert.ok([...selects[0].options].some(o=>o.value==='resources'))
- await change('select[aria-label="'+id+'"]','custom');let mode=document.querySelector('select[aria-label^="moduleSource:"]');assert.deepEqual([...mode.options].map(o=>o.value),['generate','url','file']);await change('select[aria-label^="moduleSource:"]','file');assert.ok(document.querySelector('input[aria-label^="moduleFile:"]'));const draft=JSON.parse(document.querySelector('textarea[aria-label="recipeConfiguration"]').value);assert.equal(draft.pages[0].modules[0].config.mode,'file');assert.equal(draft.pages[0].modules[1].type,'list');assert.ok(calls.every(c=>c.action==='catalog'))
+ try{await act(async()=>f.root.render(React.createElement(RecipeEditor,{t:k=>k,refresh:async()=>{}})));await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeCreate').click());const panes=document.querySelectorAll('[data-module-id]');assert.equal(panes.length,4);const id=panes[0].getAttribute('data-module-id');
+ await act(async()=>document.querySelector('button[aria-label="recipeModulecustom: '+id+'"]').click());let mode=document.querySelector('select[aria-label^="moduleSource:"]');assert.deepEqual([...mode.options].map(o=>o.value),['generate','url','file']);await change('select[aria-label^="moduleSource:"]','file');assert.ok(document.querySelector('input[aria-label^="moduleFile:"]'));const draft=JSON.parse(document.querySelector('textarea[aria-label="recipeConfiguration"]').value);assert.equal(draft.pages[0].modules[0].config.mode,'file');assert.equal(draft.pages[0].modules[1].type,'empty');assert.ok(calls.every(c=>['catalog','workspaces'].includes(c.action)))
  }finally{await f.close();globalThis.fetch=oldFetch}
 })
 test('custom generation prepares an exact owned output task, requires explicit send, rejects stale targets and mounts the returned HTML',async()=>{
@@ -29,5 +29,20 @@ test('custom generation prepares an exact owned output task, requires explicit s
  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='modulePrepare').click());assert.equal(prepared.task,'Build a timer');assert.deepEqual(prepared.key,{appId:'app.test',instanceId:'first',roleId:'maker'});assert.match(prepared.context[0].text,/owned\/job-one.html/);assert.equal(calls.filter(c=>c.action==='reserve').length,1)
  await options.beforeSend();requestId='job-two';await assert.rejects(options.beforeSend(),/target changed/);requestId='job-one';ready=true
  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='moduleReload').click());const frame=document.querySelector('iframe');assert.equal(frame.getAttribute('srcdoc'),'<h1>Generated timer</h1>');assert.equal(frame.getAttribute('sandbox'),'allow-scripts');assert.ok(!calls.some(c=>c.action==='send'))
+ }finally{await f.close();remove();globalThis.fetch=oldFetch}
+})
+
+test('loaded artifact keeps associated native session failure visible and observes recovery without sending',async()=>{
+ const f=await domFixture(),remove=installContentModules(),oldFetch=globalThis.fetch
+ const draft={...recipe,roles:[{id:'maker',name:'Maker',presetId:'test',skillNames:[]}],pages:[{...recipe.pages[0],modules:[{id:'custom',type:'custom',title:'Custom',roleId:'maker',config:{mode:'generate'}}]}]}
+ let snapshot={running:false,lastAgentError:'400 INVALID_REQUEST',promptError:null,openError:null},listeners=new Set()
+ const session={getSnapshot:()=>snapshot,subscribe:fn=>{listeners.add(fn);return()=>listeners.delete(fn)}}
+ const states=new Map([[JSON.stringify(['app.test','first','maker',null]),{error:null,busy:false,window:{phase:'open',reference:{binding:{session}}}}]])
+ const ctx={get:name=>name==='personalWorkbenchRoles'?{view:{getSnapshot:()=>states,subscribe:()=>()=>{}}}:undefined}
+ globalThis.fetch=async()=>({ok:true,json:async()=>({ready:true,kind:'html',content:'<h1>Generated</h1>',requestId:'one'})})
+ try{await act(async()=>f.root.render(React.createElement(RecipePage,{recipe:draft,pageId:'home',appId:draft.appId,instanceId:'first',ctx,t:k=>k})))
+ assert.ok(document.querySelector('iframe'));assert.match(document.body.textContent,/moduleArtifactReady/);assert.match(document.body.textContent,/400 INVALID_REQUEST/);assert.equal(document.querySelector('details.pwb-custom-task').open,false)
+ await act(async()=>{snapshot={...snapshot,lastAgentError:null,running:true};for(const fn of listeners)fn()})
+ assert.doesNotMatch(document.body.textContent,/400 INVALID_REQUEST/);assert.match(document.body.textContent,/moduleSessionRunning/);assert.ok(document.querySelector('iframe'))
  }finally{await f.close();remove();globalThis.fetch=oldFetch}
 })
