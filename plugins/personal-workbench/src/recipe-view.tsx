@@ -44,5 +44,5 @@ export function RecipePage(props:Parameters<typeof KeptRecipePage>[0]){
  const [visited,setVisited]=useState<Set<string>>(()=>new Set([props.pageId]))
  useEffect(()=>{setVisited(old=>old.has(props.pageId)?old:new Set([...old,props.pageId]))},[props.pageId])
  const visible=new Set([...visited,props.pageId])
- return <>{props.recipe.pages.filter(page=>visible.has(page.id)).map(page=><div key={page.id} hidden={page.id!==props.pageId} style={{minWidth:0,minHeight:0,height:'100%'}}><KeptRecipePage {...props} pageId={page.id} active={page.id===props.pageId}/></div>)}</>
+ return <>{props.recipe.pages.filter(page=>visible.has(page.id)).map(page=><div key={page.id} data-recipe-page={page.id} hidden={page.id!==props.pageId} style={{minWidth:0,minHeight:0,height:'100%'}}><KeptRecipePage {...props} pageId={page.id} active={page.id===props.pageId}/></div>)}</>
 }
