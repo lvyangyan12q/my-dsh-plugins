@@ -24,5 +24,11 @@ test('a user configures the chosen pane in-place without losing another pane or 
   await click('canvasDone: left');assert.equal(document.querySelector('input[aria-label="moduleUrl: left"]'),null)
   await click('canvasChangeContent: left');assert.equal(current.pages[0].modules[0].type,'empty');assert.equal(current.pages[0].modules[0].id,'left')
   assert.equal(current.pages[0].modules[1].config.url,'https://example.org/keep')
+ const divider=document.querySelector('[role="separator"]');assert.ok(divider)
+ await act(async()=>divider.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true})));assert.equal(current.pages[0].splitPercent,55)
+ const {recipeSchema}=await import('../src/recipe-schema.ts');assert.equal(recipeSchema.parse(current).pages[0].splitPercent,55);assert.equal(recipeSchema.safeParse({...current,pages:[{...current.pages[0],splitPercent:99}]}).success,false)
+ const titles=document.querySelectorAll('.pwb-canvas-pane-header');const drag=new dom.window.Event('dragstart',{bubbles:true});Object.defineProperty(drag,'dataTransfer',{value:{setData:()=>{},effectAllowed:''}})
+ await act(async()=>titles[0].dispatchEvent(drag));await act(async()=>titles[1].dispatchEvent(new dom.window.Event('drop',{bubbles:true,cancelable:true})))
+ assert.deepEqual(current.pages[0].modules.map(m=>m.id),['right','left']);assert.equal(current.pages[0].modules[0].config.url,'https://example.org/keep')
  }finally{await act(async()=>root.unmount());dom.window.close();for(const [name,descriptor]of original){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name]}}
 })

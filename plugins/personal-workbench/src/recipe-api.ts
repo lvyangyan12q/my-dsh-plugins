@@ -1,6 +1,6 @@
 import type {} from '@deepseek-ai/cordis'
 export interface RecipeModule { id: string; type: string; title: string; connectionId?: string; roleId?: string; config: Record<string, string | number | boolean | null> }
-export interface AppRecipe { schemaVersion: 1; workspace?: string; appId: string; version: number; name: string; description: string; pages: { id: string; label: string; layout: 'stack' | 'grid' | 'split'; modules: RecipeModule[] }[]; connections: { id: string; sourceAppId: string; resource: string }[]; roles: { id: string; name: string; presetId: string; skillNames: string[] }[] }
+export interface AppRecipe { schemaVersion: 1; workspace?: string; appId: string; version: number; name: string; description: string; pages: { id: string; label: string; layout: 'stack' | 'grid' | 'split'; splitPercent?: number; modules: RecipeModule[] }[]; connections: { id: string; sourceAppId: string; resource: string }[]; roles: { id: string; name: string; presetId: string; skillNames: string[] }[] }
 export interface RecipeRecord { appId: string; revision: number; draft: AppRecipe; running?: AppRecipe }
 export type RecipeRequest = { action: 'catalog' } | { action: 'workspaces' } | { action: 'save'; expectedRevision: number; recipe: AppRecipe } | { action: 'preview' | 'activate'; appId: string; expectedRevision: number }
 export interface RecipeModuleDefinition { id: string; validate?: (module: RecipeModule, recipe: AppRecipe) => string[] }
