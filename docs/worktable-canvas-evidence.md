@@ -166,3 +166,15 @@ Standards 增量审查无新增可行动问题；Spec 提出的 template 内引�
 切换前备份插件 lib 和四个用户 Agent 管理文件到 .local/deploy-3080-1791089801985。考公存储、历史角色关联/管理记录及讲义、题目、图片、解析结果合计 5136 个文件/链接，切换前后 SHA256/链接目标逐一一致；四个 Agent 源码哈希与原用户修改基线一致，未纳入提交。旧 kaogong 路径继续解析到 my-dsh/materials/kaogong，资料引用保留。
 
 3080 认证应用目录、配方目录和本地 HTML 静态资源内容接口已通过真实请求验证，令牌未输出。验收元数据保存在 .local/deploy-3080-verdict.json。应用内浏览器访问 3080 返回 net::ERR_BLOCKED_BY_CLIENT；未绕过客户端限制，不能宣称 3080 UI 验收通过，页面证据来自切换前同一构建的 3082。后续完整模型/审批/考公流程及其余工单验收继续保持未完成，不能因端口切换或推送而勾选全部完成。
+
+## 原生续改、轨迹与重启恢复实测（2026-10-04）
+
+正式同构建 3082 的“模块生成与审批验收”应用，从已有计时器模块填写续改需求，准备任务显示旧产物及本次新输出路径，显式发送后实际调用 workbench-page-adjust。沿用原角色 Session，第 3 轮读取旧页面、写入新 HTML，29 秒后以 completed 结束。原生持久日志确认该轮仅有 read/write 两次工具调用，无 assistant/attempt 失败记录；没有通过手写成品替代模型结果。旧 HTML 与首轮 write 参数逐字相同，新 HTML 与本轮 write 参数逐字相同。
+
+页面自动挂载新产物，标题变为“专注学习计时器”，标题下间距为 2px。实际点击开始、暂停；放大与返回仍保留暂停的 00:00:28。点击重置后刷新并重新打开应用，仍加载新标题和原有三类计时统计。这里证明的是产物恢复，不把计时器的临时秒数宣称为跨刷新持久化。应用内切换原生“轨迹”可见实际 Skill 正文、历史失败以及本轮读写工具记录；主会话草稿 d、角色已有两条未发送标注均未被此次模块任务覆盖或发送。
+
+只读核对脚本 verify-generation-continuation.mjs 的结果保存在本地 harness .scratch/worktable-implementation/generation-continuation-verdict.json。新产物请求 ID d0350185-d747-413d-9bdb-52efa841ab18，旧文件 SHA256 0c3281190fb1cb04adfab2086bd914afcdd6a97ef50bfe04fecf51668f4b9616，新文件 SHA256 50cb8e809075b1ccae4eb620311a2fe577d4c739e20d116f5506f3d78e34cb8e。刷新后截图为 C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/worktable-continuation-refreshed.jpg。
+
+测试结束停止本次临时 3082，恢复正式 3080（本次 PID25028）。认证 artifact 接口返回本次 requestId、ready:true 及新标题/间距，证明产物在 Host 冷重启后仍注册可读。5136 项原资料/存储文件及链接、四个用户 Agent 修改文件再次校验无变化，3082 不再监听。新建 3080 浏览器页仍返回 net::ERR_BLOCKED_BY_CLIENT，不能将接口验收等同于正式端口 UI 验收。
+
+历史第 1 轮生成后的 INVALID_REQUEST 400 本轮未复现：同一 Session 的实际续改成功，只能证明可以继续使用，不能证明根因或修复。没有据此添加未经复现支持的 provider 补丁。03 的真实审批、04 的取消/重试等剩余分支、05–08 未完成的业务和整体浏览器验收继续保持未完成；本条证据不勾选整个工单。
