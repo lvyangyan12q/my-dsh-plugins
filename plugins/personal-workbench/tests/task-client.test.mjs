@@ -72,3 +72,10 @@ test('explicit discard waits for owned reservation cleanup and retains an editab
  tasks.prepare(task(),{onDiscard:async()=>{cleanups++}});await tasks.send(key)
  assert.equal(cleanups,2,'Successful send must not discard its output reservation')
 })
+
+
+test('generation delivery identity survives editing and removing all user task context',async()=>{
+ const f=fixture(),id='88b7181b-ac45-40e7-a143-78ea06e822cd';f.tasks.prepare({...task(),generationRequestId:id});f.tasks.removeContext(key,'one');f.tasks.removeContext(key,'two');f.tasks.editTask(key,'Changed task with no output context');await f.tasks.send(key)
+ assert.ok(f.sent[0].text.endsWith('Workbench generation request: '+id));assert.ok(!f.sent[0].text.includes('old content'));assert.ok(!f.sent[0].text.includes('must not send'));f.roles.dispose()
+ assert.throws(()=>new PreparedTasks({send:async()=>{}}).prepare({...task(),generationRequestId:'injected\ntext'}),/Invalid prepared task/)
+})

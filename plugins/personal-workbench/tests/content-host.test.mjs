@@ -13,11 +13,13 @@ const source=process.env.DSH_SOURCE;assert.ok(source)
 const require=createRequire(resolve(source,'packages/client/ui-renderer/package.json')),{Context}=require('@deepseek-ai/cordis')
 const built=p=>import(pathToFileURL(resolve(source,p,'lib/index.js')).href)
 const {default:Storage}=await built('packages/storage/storage'),{JsonStorageBackend}=await built('packages/storage/storage-json'),{DomainFacility}=await built('packages/storage/storage-domain')
+const nativeRequests=new Map()
 async function fixture(root,recipe){
+ const history=nativeRequests.get(root)??new Set();nativeRequests.set(root,history)
  const host=new Context();await host.plugin(Storage);host.storage.backend.register('json',new JsonStorageBackend(join(root,'storage')));const facility=new DomainFacility(host,{backend:'json',routes:{}});host.storage.mount('domain',facility)
- let rejection,enabled=true
- const owner=await installContent({storageDomain:facility,connection:{requestRejection:()=>rejection},personalWorkbenchApps:{read:()=>({enabled})},personalWorkbenchRecipes:{list:()=>[{appId:recipe.appId,running:recipe}]},personalWorkbenchRecipeRoles:{workspace:async()=>root}})
- return {deny:value=>{rejection=value},disable:()=>{enabled=false},call:async(data,method='POST')=>{const req=Readable.from([JSON.stringify(data)]);req.method=method;req.headers={'content-type':'application/json'};let status,value;await owner.handle(req,{setHeader:()=>{},writeHead:n=>{status=n},end:body=>{value=body?JSON.parse(body):undefined}});return {status,value}},close:async()=>{await owner.dispose();await host.fiber.dispose()}}
+ let rejection,enabled=true,nativeEvents=null
+ const owner=await installContent({storageDomain:facility,connection:{requestRejection:()=>rejection},personalWorkbenchApps:{read:()=>({enabled})},personalWorkbenchRecipes:{list:()=>[{appId:recipe.appId,running:recipe}]},personalWorkbenchRecipeRoles:{workspace:async()=>root,register:async()=>{}},personalWorkbenchBindings:{ensure:async()=>({sessionId:'session.fixture',phase:'ready'})},sessionController:{inspect:async()=>({events:nativeEvents??[...history].flatMap((id,index)=>[{type:'turn/start',data:{turn:index+1}},{type:'user/message',data:{source:{kind:'user'},content:[{type:'text',text:'Request identity: '+id}]}},{type:'turn/end',data:{turn:index+1,reason:{kind:'completed'}}}])})}})
+ return {events:value=>{nativeEvents=value},deny:value=>{rejection=value},disable:()=>{enabled=false},call:async(data,method='POST')=>{if(data.action==='begin')history.add(data.requestId);const req=Readable.from([JSON.stringify(data)]);req.method=method;req.headers={'content-type':'application/json'};let status,value;await owner.handle(req,{setHeader:()=>{},writeHead:n=>{status=n},end:body=>{value=body?JSON.parse(body):undefined}});return {status,value}},close:async()=>{await owner.dispose();await host.fiber.dispose()}}
 }
 const recipe=()=>({appId:'app.test',version:1,pages:[{modules:[{id:'one',type:'custom',roleId:'maker',config:{mode:'generate'}},{id:'two',type:'custom',roleId:'maker',config:{mode:'generate'}},{id:'files',type:'resources',config:{basePath:'docs'}},{id:'manual',type:'custom',config:{mode:'file',path:'docs/page.html'}}]}]})
 const request=(action,moduleId='one',instanceId='first',path)=>({action,appId:'app.test',instanceId,moduleId,...(path===undefined?{}:{path})})
@@ -128,5 +130,34 @@ test('a new adjustment freezes a readable old artifact against subsequent writes
   assert.equal(await readFile(next.value.previousPath,'utf8'),'<h1>Accepted old page</h1>')
   await f.call({...request('discard'),requestId:next.value.requestId});await f.close();f=await fixture(root,r)
   assert.equal((await f.call(request('artifact'))).value.content,'<h1>Accepted old page</h1>')
+ }finally{await f?.close();await rm(root,{recursive:true,force:true})}
+})
+
+
+test('native running, stopped and failed module turns never publish an early written replacement',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'content-terminal-')),r=recipe();let f
+ try{
+  f=await fixture(root,r);const old=await f.call(request('reserve'));await f.call({...request('begin'),requestId:old.value.requestId});await writeFile(old.value.path,'<h1>Completed original</h1>');assert.equal((await f.call(request('artifact'))).value.content,'<h1>Completed original</h1>')
+  for(const reason of ['aborted','error','completed']){
+   const next=await f.call(request('reserve'));await f.call({...request('begin'),requestId:next.value.requestId});await writeFile(next.value.path,'<h1>Early replacement</h1>')
+   const events=[{type:'turn/start',data:{turn:7}},{type:'user/message',data:{source:{kind:'user'},content:[{type:'text',text:'Request identity: '+next.value.requestId}]}}];f.events(events)
+   const pending=await f.call(request('artifact'));assert.equal(pending.value.content,'<h1>Completed original</h1>','A written file is not proof of native completion');assert.equal(pending.value.pending,true)
+   // Referencing this request in another task's editable context does not own its turn.
+   f.events([{type:'turn/start',data:{turn:7}},{type:'user/message',data:{source:{kind:'user'},content:[{type:'text',text:'Quoted Request identity: '+next.value.requestId+'\n\nWorkbench generation request: 00000000-0000-0000-0000-000000000001'}]}},{type:'turn/end',data:{turn:7,reason:{kind:'completed'}}}]);assert.equal((await f.call(request('artifact'))).value.pending,true)
+   // Another turn on the shared role must not settle this module's task.
+   f.events([...events,{type:'turn/end',data:{turn:8,reason:{kind:'completed'}}}]);assert.equal((await f.call(request('artifact'))).value.pending,true)
+   f.events([...events,{type:'turn/end',data:{turn:7,reason:{kind:reason}}}]);const settled=await f.call(request('artifact'))
+   assert.equal(settled.value.content,reason==='completed'?'<h1>Early replacement</h1>':'<h1>Completed original</h1>');assert.notEqual(settled.value.pending,true)
+   if(reason!=='completed'){const retry=await f.call(request('reserve'));assert.equal(await readFile(retry.value.previousPath,'utf8'),'<h1>Completed original</h1>');await f.call({...request('discard'),requestId:retry.value.requestId})}
+   f.events(null)
+  }
+ }finally{await f?.close();await rm(root,{recursive:true,force:true})}
+})
+
+
+test('a completed native turn without its requested HTML reports a retryable error and keeps the old page',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'content-missing-output-'));let f
+ try{f=await fixture(root,recipe());const missing=await f.call(request('reserve'));await f.call({...request('begin'),requestId:missing.value.requestId});const empty=await f.call(request('artifact'));assert.equal(empty.value.ready,false);assert.ok(empty.value.error);assert.notEqual(empty.value.pending,true)
+  await writeFile(missing.value.path,'<h1>Original page</h1>');await f.call(request('artifact'));const next=await f.call(request('reserve'));await f.call({...request('begin'),requestId:next.value.requestId});const retained=await f.call(request('artifact'));assert.equal(retained.value.content,'<h1>Original page</h1>');assert.ok(retained.value.error);assert.notEqual(retained.value.pending,true)
  }finally{await f?.close();await rm(root,{recursive:true,force:true})}
 })

@@ -53,7 +53,7 @@ test('preparing and discarding an adjustment retains the live iframe and revokes
  let reserved=false,releaseRead
  const deferred=new Promise(resolve=>{releaseRead=resolve})
  const file={ready:true,kind:'html',content:'<h1>Completed timer</h1>',requestId:'original'}
- globalThis.fetch=async(_url,init)=>{if(_url.endsWith('/annotations'))return {ok:true,json:async()=>({records:[]})};const data=JSON.parse(init.body);calls.push(data);if(data.action==='reserve'){reserved=true;return {ok:true,json:async()=>({requestId:'adjustment',path:'D:/workspace/next.html',previousPath:'D:/workspace/old.html'})}}if(data.action==='discard')return {ok:true,json:async()=>({discarded:true})};return {ok:true,json:async()=>reserved?deferred:file}}
+ globalThis.fetch=async(_url,init)=>{if(_url.endsWith('/annotations'))return {ok:true,json:async()=>({records:[]})};const data=JSON.parse(init.body);calls.push(data);if(data.action==='reserve'){reserved=true;return {ok:true,json:async()=>({requestId:'00000000-0000-0000-0000-000000000002',path:'D:/workspace/next.html',previousPath:'D:/workspace/old.html'})}}if(data.action==='discard')return {ok:true,json:async()=>({discarded:true})};return {ok:true,json:async()=>reserved?deferred:file}}
  const tasks=new PreparedTasks({send:async()=>assert.fail('Prepare/discard must not send')}),ctx={get:name=>name==='personalWorkbenchTasks'?tasks:undefined}
  const draft={...recipe,roles:[{id:'maker',name:'Maker',presetId:'test',skillNames:[]}],pages:[{...recipe.pages[0],modules:[{id:'custom',type:'custom',title:'Custom',roleId:'maker',config:{mode:'generate',requirement:'Adjust title'}}]}]}
  try{
@@ -64,7 +64,7 @@ test('preparing and discarding an adjustment retains the live iframe and revokes
   await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='taskDiscard').click())
   assert.equal(document.querySelector('iframe'),frame)
   assert.equal(tasks.getSnapshot().size,0)
-  assert.deepEqual(calls.find(c=>c.action==='discard'),{action:'discard',appId:'app.test',instanceId:'first',moduleId:'custom',requestId:'adjustment'})
+  assert.deepEqual(calls.find(c=>c.action==='discard'),{action:'discard',appId:'app.test',instanceId:'first',moduleId:'custom',requestId:'00000000-0000-0000-0000-000000000002'})
  }finally{releaseRead(file);await f.close();remove();globalThis.fetch=oldFetch}
 })
 

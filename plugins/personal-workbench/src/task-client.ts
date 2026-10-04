@@ -13,7 +13,7 @@ export class PreparedTasks implements PersonalWorkbenchTasks {
  getSnapshot = () => this.state
  subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
  prepare = (prepared: PreparedTask,options?:TaskHooks) => {
-  if ((prepared.skill !== undefined && !workbenchSkillNames.includes(prepared.skill)) || !prepared.key.appId || !prepared.key.instanceId || !prepared.key.roleId || !prepared.task.trim() || prepared.task.length > 32000 || prepared.context.length > 100 || new Set(prepared.context.map(c=>c.id)).size !== prepared.context.length || prepared.context.some(c=>!c.id || c.text.length > 32000)) throw new Error('Invalid prepared task')
+  if ((prepared.generationRequestId !== undefined && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(prepared.generationRequestId)) || (prepared.skill !== undefined && !workbenchSkillNames.includes(prepared.skill)) || !prepared.key.appId || !prepared.key.instanceId || !prepared.key.roleId || !prepared.task.trim() || prepared.task.length > 32000 || prepared.context.length > 100 || new Set(prepared.context.map(c=>c.id)).size !== prepared.context.length || prepared.context.some(c=>!c.id || c.text.length > 32000)) throw new Error('Invalid prepared task')
   const key = roleKey(prepared.key)
   if (this.state.get(key)?.busy) throw new Error('Task is sending')
   if(options?.beforeSend)this.beforeSend.set(key,options.beforeSend);else this.beforeSend.delete(key)
@@ -46,5 +46,5 @@ export class PreparedTasks implements PersonalWorkbenchTasks {
 /** Context is user-supplied evidence with explicit provenance, never system instructions. */
 export function preparedText(prepared:PreparedTask):string {
  const context=prepared.context.map(c=>({label:c.label,source:c.source,text:c.text}))
- return `${prepared.skill ? '/' + prepared.skill + ' ' : ''}${prepared.task}\n\nSource and context (user-provided evidence):\n${JSON.stringify({source:prepared.source,context}).replaceAll('/', '\\u002f')}`
+ return `${prepared.skill ? '/' + prepared.skill + ' ' : ''}${prepared.task}\n\nSource and context (user-provided evidence):\n${JSON.stringify({source:prepared.source,context}).replaceAll('/', '\\u002f')}` + (prepared.generationRequestId ? '\n\nWorkbench generation request: ' + prepared.generationRequestId : '')
 }
