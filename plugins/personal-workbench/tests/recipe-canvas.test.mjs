@@ -27,8 +27,22 @@ test('a user configures the chosen pane in-place without losing another pane or 
  const divider=document.querySelector('[role="separator"]');assert.ok(divider)
  await act(async()=>divider.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true})));assert.equal(current.pages[0].splitPercent,55)
  const {recipeSchema}=await import('../src/recipe-schema.ts');assert.equal(recipeSchema.parse(current).pages[0].splitPercent,55);assert.equal(recipeSchema.safeParse({...current,pages:[{...current.pages[0],splitPercent:99}]}).success,false)
- const titles=document.querySelectorAll('.pwb-canvas-pane-header');const drag=new dom.window.Event('dragstart',{bubbles:true});Object.defineProperty(drag,'dataTransfer',{value:{setData:()=>{},effectAllowed:''}})
- await act(async()=>titles[0].dispatchEvent(drag));await act(async()=>titles[1].dispatchEvent(new dom.window.Event('drop',{bubbles:true,cancelable:true})))
+ const titles=document.querySelectorAll('.pwb-canvas-pane-header')
+ const pointer=async(target,type,x,y,id=1)=>{const event=new dom.window.MouseEvent(type,{bubbles:true,cancelable:true,clientX:x,clientY:y,button:0});Object.defineProperty(event,'pointerId',{value:id});await act(async()=>target.dispatchEvent(event))}
+ document.elementFromPoint=()=>titles[1]
+ // Small clicks, cancelled gestures, other pointers and toolbar actions must not move panes.
+ await pointer(titles[0],'pointerdown',20,20);await pointer(titles[0],'pointerup',22,20)
+ assert.deepEqual(current.pages[0].modules.map(m=>m.id),['left','right'])
+ await pointer(titles[0],'pointerdown',20,20);await pointer(titles[0],'pointermove',320,20);await pointer(titles[0],'pointercancel',320,20);await pointer(titles[0],'pointerup',320,20)
+ assert.deepEqual(current.pages[0].modules.map(m=>m.id),['left','right'])
+ await pointer(titles[0],'pointerdown',20,20);await pointer(titles[0],'pointerup',320,20,2)
+ assert.deepEqual(current.pages[0].modules.map(m=>m.id),['left','right'])
+ await act(async()=>titles[0].dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));await pointer(titles[0],'pointerup',320,20)
+ assert.deepEqual(current.pages[0].modules.map(m=>m.id),['left','right'])
+ await pointer(titles[0].querySelector('button'),'pointerdown',20,20);await pointer(titles[0],'pointerup',320,20)
+ assert.deepEqual(current.pages[0].modules.map(m=>m.id),['left','right'])
+ await pointer(titles[0],'pointerdown',20,20);await pointer(titles[0],'pointermove',320,20);await pointer(titles[0],'pointerup',320,20)
+
  assert.deepEqual(current.pages[0].modules.map(m=>m.id),['right','left']);assert.equal(current.pages[0].modules[0].config.url,'https://example.org/keep')
  }finally{await act(async()=>root.unmount());dom.window.close();for(const [name,descriptor]of original){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name]}}
 })
