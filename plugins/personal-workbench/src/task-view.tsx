@@ -42,7 +42,7 @@ function TaskEditor({tasks,bindingKey,label,t,roles}:{tasks:PreparedTasks|import
   </div>
   <div className="pwb-task-actions">
    <button type="button" data-pwb-button data-variant="primary" disabled={!prepared.task.trim()||!!roleState?.error||roleState?.busy} onClick={()=>{void tasks.send(bindingKey).catch(()=>{})}}>{t('taskSend')}</button>
-   <button type="button" data-pwb-button onClick={()=>tasks.discard(bindingKey)}>{t('taskDiscard')}</button>
+   <button type="button" data-pwb-button onClick={()=>{void tasks.discard(bindingKey).catch(()=>{})}}>{t('taskDiscard')}</button>
   </div>
  </fieldset></>
 }

@@ -60,3 +60,15 @@ test('packaged module Skill is an explicit native slash gesture while editable c
  assert.equal(sent[0].includes('/other-skill'),false)
  assert.throws(()=>tasks.prepare({...task(),skill:'unexpected-skill'}),/Invalid prepared task/)
 })
+
+test('explicit discard waits for owned reservation cleanup and retains an editable task if cleanup fails',async()=>{
+ let fail=true,cleanups=0,sends=0;const tasks=new PreparedTasks({send:async()=>{sends++}})
+ tasks.prepare(task(),{onDiscard:async()=>{cleanups++;if(fail)throw new Error('Cleanup unavailable')}})
+ await assert.rejects(async()=>tasks.discard(key),/Cleanup unavailable/)
+ assert.equal(tasks.getSnapshot().get(roleKey(key)).busy,false)
+ assert.match(tasks.getSnapshot().get(roleKey(key)).error,/Cleanup unavailable/)
+ fail=false;await tasks.discard(key)
+ assert.equal(tasks.getSnapshot().size,0);assert.equal(cleanups,2);assert.equal(sends,0)
+ tasks.prepare(task(),{onDiscard:async()=>{cleanups++}});await tasks.send(key)
+ assert.equal(cleanups,2,'Successful send must not discard its output reservation')
+})

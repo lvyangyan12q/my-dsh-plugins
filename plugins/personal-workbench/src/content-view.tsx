@@ -5,8 +5,8 @@ import {registerRecipeModuleRenderer} from './recipe-view.tsx'
 import {PreparedTaskEditor} from './task-view.tsx'
 import {ModuleSessionState} from './module-session-state.tsx'
 import {webAddress} from './content-catalog.ts'
-export async function contentRequest(props:Pick<RecipeModuleProps,'appId'|'instanceId'|'module'>,action:string,path?:string,signal?:AbortSignal):Promise<any>{
- const response=await fetch('/api/personal-workbench/content',{method:'POST',credentials:'same-origin',signal,headers:{'content-type':'application/json'},body:JSON.stringify({action,appId:props.appId,instanceId:props.instanceId,moduleId:props.module.id,...(path===undefined?{}:{path})})}),value=await response.json();if(!response.ok)throw new Error(value.error??'Content unavailable');return value
+export async function contentRequest(props:Pick<RecipeModuleProps,'appId'|'instanceId'|'module'>,action:string,path?:string,signal?:AbortSignal,requestId?:string):Promise<any>{
+ const response=await fetch('/api/personal-workbench/content',{method:'POST',credentials:'same-origin',signal,headers:{'content-type':'application/json'},body:JSON.stringify({action,appId:props.appId,instanceId:props.instanceId,moduleId:props.module.id,...(path===undefined?{}:{path}),...(requestId===undefined?{}:{requestId})})}),value=await response.json();if(!response.ok)throw new Error(value.error??'Content unavailable');return value
 }
 function Embedded({url,title,t}:{url:string;title:string;t:RecipeModuleProps['t']}){
  return <><div className="pwb-content-toolbar"><a href={url} target="_blank" rel="noopener noreferrer">{t('moduleOpen')}</a><small>{t('moduleEmbedHelp')}</small></div><iframe className="pwb-content-frame" title={title} src={url} sandbox="allow-scripts allow-forms allow-popups" referrerPolicy="no-referrer"/></>
@@ -28,8 +28,8 @@ function ContentModule(props:RecipeModuleProps){
   const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined
   const load=async()=>{try{
    const action=module.type==='resources'?'list':module.config.mode==='file'?'file':'artifact',value=await contentRequest(props,action,path,controller.signal)
-   if(controller.signal.aborted)return;setError('')
-   if(action==='list'){setEntries(value.entries);setFile(null)}else{setFile(value.ready===false?null:value);setWaiting(value.ready===false&&!!value.requestId)}
+   if(controller.signal.aborted)return;setError(value.error??'')
+   if(action==='list'){setEntries(value.entries);setFile(null)}else{setFile(value.ready===false?null:value);setWaiting(value.pending===true)}
    if(action==='artifact'&&!controller.signal.aborted)timer=setTimeout(()=>{void load()},3000)
   }catch(error){if(!controller.signal.aborted)setError(error instanceof Error?error.message:String(error))}}
   void load();return()=>{controller.abort();if(timer)clearTimeout(timer)}
@@ -38,8 +38,8 @@ function ContentModule(props:RecipeModuleProps){
  const prepare=async()=>{
   if(!ctx||!module.roleId)return;actionController.current?.abort();const controller=new AbortController();actionController.current=controller;setBusy(true);setError('')
   try{const tasks=ctx.get('personalWorkbenchTasks');if(!tasks)throw new Error(t('taskUnavailable'));const result=await contentRequest(props,'reserve',undefined,controller.signal);if(controller.signal.aborted)return
-   tasks.prepare({key:{appId:props.appId,instanceId:props.instanceId,roleId:module.roleId},skill:file&&result.previousPath?'workbench-page-adjust':'workbench-module-generate',source:{pageId:props.pageId,moduleId:module.id,label:module.title},task:requirement,context:[{id:'widget-output',label:module.title,source:props.appId+'/'+props.instanceId+'/'+module.id,text:'Build a self-contained HTML page for this module. Use inline CSS and JavaScript. Save the finished page at this exact absolute path: '+result.path+'\nPrevious output (preserve it): '+(result.previousPath??'none')+'\nRequest identity: '+result.requestId+'\nDo not replace other module artifacts. The workbench will load this file automatically. Do not change DSH or plugin source.'}]},{beforeSend:async()=>{const latest=await contentRequest(props,'artifact');if(latest.requestId!==result.requestId)throw new Error('Generation target changed; prepare the task again')}})
-   setFile(null);setWaiting(true);setTick(value=>value+1)
+   tasks.prepare({key:{appId:props.appId,instanceId:props.instanceId,roleId:module.roleId},skill:file&&result.previousPath?'workbench-page-adjust':'workbench-module-generate',source:{pageId:props.pageId,moduleId:module.id,label:module.title},task:requirement,context:[{id:'widget-output',label:module.title,source:props.appId+'/'+props.instanceId+'/'+module.id,text:'Build a self-contained HTML page for this module. Use inline CSS and JavaScript. Save the finished page at this exact absolute path: '+result.path+'\nPrevious output (preserve it): '+(result.previousPath??'none')+'\nRequest identity: '+result.requestId+'\nDo not replace other module artifacts. The workbench will load this file automatically. Do not change DSH or plugin source.'}]},{beforeSend:async()=>{const latest=await contentRequest(props,'begin',undefined,undefined,result.requestId);if(latest.requestId!==result.requestId)throw new Error('Generation target changed; prepare the task again')},onDiscard:async()=>{await contentRequest(props,'discard',undefined,undefined,result.requestId);setWaiting(false);setTick(value=>value+1)}})
+   setExpanded(true);setTick(value=>value+1)
   }catch(error){if(!controller.signal.aborted)setError(error instanceof Error?error.message:String(error))}finally{if(!controller.signal.aborted)setBusy(false)}
  }
  if(preview)return <p role="status">{t('modulePreview')}</p>
