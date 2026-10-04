@@ -9,10 +9,12 @@ export function DataVisual({type,records,config,selectedId,select,t}:Props){
   if(!field)return <p role="status">{t('displayChooseValue')}</p>
   const values=records.flatMap(record=>numeric(record.fields[field])?[{record,value:record.fields[field] as number}]:[])
   if(!values.length)return <p role="status">{t('displayNoNumeric')}</p>
-  const low=Math.min(0,...values.map(row=>row.value)),high=Math.max(0,...values.map(row=>row.value)),span=high-low||1,origin=160+(-low/span)*400,height=values.length*36+40
+  // Normalize before subtracting so valid finite extremes cannot overflow the SVG range.
+  const scale=Math.max(...values.map(row=>Math.abs(row.value)))||1
+  const low=Math.min(0,...values.map(row=>row.value/scale)),high=Math.max(0,...values.map(row=>row.value/scale)),span=high-low||1,origin=160+(-low/span)*400,height=values.length*36+40
   return <div style={{maxHeight:440,overflow:'auto'}}><svg role="group" aria-label={t('recipeModulechart')} viewBox={'0 0 600 '+height} style={{width:'100%',minWidth:280}}>
    <line x1={origin} x2={origin} y1={5} y2={height-20} stroke="currentColor" opacity=".3"/>
-   {values.map(({record,value},index)=>{const endpoint=160+(value-low)/span*400;return <g key={record.id} {...activate(record.id)} aria-label={record.title+': '+value} aria-pressed={selectedId===record.id} style={{cursor:'pointer'}}><title>{record.title+': '+value}</title><rect x="0" y={index*36} width="600" height="34" fill={selectedId===record.id?'var(--pwb-accent-soft,#f3e5dc)':'transparent'}/><text x="4" y={index*36+22} fontSize="12" fill="currentColor">{record.title.length>20?record.title.slice(0,20)+'…':record.title}</text><rect x={Math.min(origin,endpoint)} y={index*36+7} width={Math.max(2,Math.abs(endpoint-origin))} height="20" rx="3" fill="var(--pwb-accent,#a44c32)"/><text x="566" y={index*36+22} fontSize="12" fill="currentColor">{value}</text></g>})}
+   {values.map(({record,value},index)=>{const endpoint=160+(value/scale-low)/span*400;return <g key={record.id} {...activate(record.id)} aria-label={record.title+': '+value} aria-pressed={selectedId===record.id} style={{cursor:'pointer'}}><title>{record.title+': '+value}</title><rect x="0" y={index*36} width="600" height="34" fill={selectedId===record.id?'var(--pwb-accent-soft,#f3e5dc)':'transparent'}/><text x="4" y={index*36+22} fontSize="12" fill="currentColor">{record.title.length>20?record.title.slice(0,20)+'…':record.title}</text><rect x={Math.min(origin,endpoint)} y={index*36+7} width={Math.max(2,Math.abs(endpoint-origin))} height="20" rx="3" fill="var(--pwb-accent,#a44c32)"/><text x="566" y={index*36+22} fontSize="12" fill="currentColor">{value}</text></g>})}
   </svg><small>{field} · {values.length}/{records.length}</small></div>
  }
  const lat=String(config.latitudeField??''),lon=String(config.longitudeField??'')

@@ -28,3 +28,24 @@ test('recipe registers chart/map through an owned shared connection and blocks c
  const foreign={...recipe,appId:'foreign'};await act(async()=>root.render(React.createElement(RecipePage,{recipe:foreign,pageId:'home',appId:'foreign',instanceId:'one',t:k=>k})));assert.equal(loads,1);assert.equal(document.querySelector('svg'),null);assert.match(document.body.textContent,/displayUnavailable/)
  }finally{await act(async()=>root.unmount());withdraw();remove();dom.window.close();for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key]}}
 })
+
+
+test('chart renders accepted finite extremes around zero without invalid SVG geometry',async()=>{
+ const dom=new JSDOM('<div id="root"></div>'),saved=new Map()
+ for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})}
+ const {createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('root'))
+ const store=new DisplayStore({appId:'owned',resource:'records',label:'Owned',load:async()=>({records:[{id:'negative',title:'Negative limit',fields:{value:-Number.MAX_VALUE}},{id:'positive',title:'Positive limit',fields:{value:Number.MAX_VALUE}},{id:'zero',title:'Zero',fields:{value:0}}],filters:[],stats:[]})},{appId:'owned',instanceId:'one',preview:false})
+ try{
+  await store.reload();assert.equal(store.getSnapshot().phase,'ready')
+  await act(async()=>root.render(React.createElement(DisplayModule,{type:'chart',store,t:k=>k,config:{valueField:'value'}})))
+  const chart=document.querySelector('svg');assert.ok(chart)
+  for(const element of chart.querySelectorAll('[x],[x1],[x2],[width]'))for(const attribute of ['x','x1','x2','width'])if(element.hasAttribute(attribute))assert.ok(Number.isFinite(Number(element.getAttribute(attribute))),attribute+' must remain finite')
+  assert.equal(Number(chart.querySelector('line').getAttribute('x1')),360)
+  const bar=id=>chart.querySelector('[aria-label="'+(id==='negative'?'Negative limit: '+(-Number.MAX_VALUE):id==='positive'?'Positive limit: '+Number.MAX_VALUE:'Zero: 0')+'"] rect:nth-of-type(2)')
+  assert.equal(Number(bar('negative').getAttribute('x')),160);assert.equal(Number(bar('negative').getAttribute('width')),200)
+  assert.equal(Number(bar('positive').getAttribute('x')),360);assert.equal(Number(bar('positive').getAttribute('width')),200)
+  assert.equal(Number(bar('zero').getAttribute('x')),360);assert.equal(Number(bar('zero').getAttribute('width')),2)
+  await act(async()=>chart.querySelector('[aria-label="Positive limit: '+Number.MAX_VALUE+'"]').dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Enter',bubbles:true})))
+  assert.equal(store.getSnapshot().selectedId,'positive')
+ }finally{await act(async()=>root.unmount());store.dispose();dom.window.close();for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key]}}
+})
