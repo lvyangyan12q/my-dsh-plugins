@@ -1,3 +1,5 @@
+import * as nativeToolSkill from '@deepseek-ai/dsh-tool-skill'
+import {workbenchSkillProvider} from './workbench-skill-api.ts'
 import type {Context} from '@deepseek-ai/cordis'
 import {assembleContextFor,type Agent} from '@deepseek-ai/dsh-agent'
 import type {IncomingMessage,ServerResponse} from 'node:http'
@@ -15,6 +17,8 @@ const requestSchema=z.discriminatedUnion('action',[
 ])
 /** No ambient conversation, external model client, executable output or policy overrides. */
 export async function installGeneration(ctx:Context){
+ const skillBuiltin='personal-workbench-generator-native-skill'
+ if(ctx.loader.builtins[skillBuiltin])throw new Error('Generator Skill loader identity already registered')
  const builtin='personal-workbench-generator-guard'
  if(ctx.loader.builtins[builtin])throw new Error('Generator guard identity already registered')
  const guardPlugin={inject:['tools','systemPrompt'],apply:(scope:Context)=>{
@@ -24,8 +28,9 @@ export async function installGeneration(ctx:Context){
   scope.on('system-prompt/assemble',async(_assembly,_context,next)=>({...await next(),tools:[]}))
  }}
  ctx.loader.builtins[builtin]=guardPlugin
+ ctx.loader.builtins[skillBuiltin]=nativeToolSkill
  let removePreset:()=>Promise<void>
- try{removePreset=await ctx.agentPresets.register({id:presetId,name:'Application recipe generator',description:'Generate data-only recipe drafts',plugins:[{name:'cordis:'+builtin}]});const preset=await ctx.agentPresets.resolve(presetId);if(preset.broken){await removePreset();throw new Error('Generator preset unavailable: '+preset.broken)}}catch(error){delete ctx.loader.builtins[builtin];throw error}
+ try{removePreset=await ctx.agentPresets.register({id:presetId,name:'Application recipe generator',description:'Generate data-only recipe drafts',plugins:[{name:'cordis:'+skillBuiltin},{name:'cordis:'+builtin}]});const preset=await ctx.agentPresets.resolve(presetId);if(preset.broken){await removePreset();throw new Error('Generator preset unavailable: '+preset.broken)}}catch(error){delete ctx.loader.builtins[builtin];delete ctx.loader.builtins[skillBuiltin];throw error}
  const jobs=new Map<string,{view:GenerationJob;controller:AbortController;task:Promise<void>}>()
  let closing=false
  const execute=async(input:Extract<z.infer<typeof requestSchema>,{action:'start'}>,job:{view:GenerationJob;controller:AbortController})=>{
@@ -42,7 +47,7 @@ export async function installGeneration(ctx:Context){
    const toolNames=assembled.tools.map(tool=>tool.name)
    if(toolNames.length)throw new Error('Generator tool inventory is not empty: '+toolNames.join(', '))
    const safeCatalog={...catalog,connections:catalog.connections.filter(source=>source.appId===input.appId)}
-   const prompt=JSON.stringify({task:'Return exactly one JSON application recipe. Use only the supplied schema and registered catalog. No markdown, code, extra keys or tool calls. The identity and version must match target. Connections must belong to target.appId. If no data source exists, use no connections. Roles are optional.',target:{appId:input.appId,version:input.version},requirement:input.requirement,schema:z.toJSONSchema(recipeSchema),catalog:safeCatalog})
+   const prompt='/workbench-app-build '+JSON.stringify({task:'Return exactly one JSON application recipe. Use only the supplied schema and registered catalog. No markdown, code, extra keys or tool calls. The identity and version must match target. Connections must belong to target.appId. If no data source exists, use no connections. Roles are optional.',target:{appId:input.appId,version:input.version},requirement:input.requirement,schema:z.toJSONSchema(recipeSchema),catalog:safeCatalog}).replaceAll('/','\\u002f')
    const offset=agent.session.snapshotEvents().length
    controller.signal.throwIfAborted()
    agent.followup(createUserMessage({content:[{type:'text',text:prompt}],source:{kind:'user'}}))
@@ -83,5 +88,5 @@ export async function installGeneration(ctx:Context){
   const respond=(status:number,value:unknown)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(value))}
   try{const rejection=ctx.connection.requestRejection(req);if(rejection!==undefined){respond(rejection,{error:'Authenticated same-origin request required'});return}if(closing){respond(503,{error:'Generation unavailable'});return}if(req.method!=='POST'){res.setHeader('allow','POST');respond(405,{error:'POST required'});return}if(!req.headers['content-type']?.startsWith('application/json')){respond(415,{error:'JSON required'});return}let size=0;const chunks:Buffer[]=[];for await(const chunk of req){const bytes=Buffer.from(chunk);size+=bytes.length;if(size>32768){respond(413,{error:'Request too large'});return}chunks.push(bytes)}const job=dispatch(JSON.parse(Buffer.concat(chunks).toString('utf8')));respond(200,{job})}catch(error){respond(409,{error:error instanceof Error?error.message:'Generation request failed'})}
  }
- return {dispatch,handle:(req:IncomingMessage,res:ServerResponse)=>{const task=handle(req,res);requests.add(task);void task.finally(()=>requests.delete(task)).catch(()=>{});return task},settled:async(id:string)=>{const job=jobs.get(id);if(!job)throw new Error('Generation job not found');await job.task;return structuredClone(job.view)},dispose:async()=>{closing=true;for(const job of jobs.values())if(job.view.status==='running')job.controller.abort(new Error('Generation service closing'));await Promise.allSettled([...requests,...[...jobs.values()].map(job=>job.task)]);await removePreset();if(ctx.loader.builtins[builtin]===guardPlugin)delete ctx.loader.builtins[builtin]}}
+ return {dispatch,handle:(req:IncomingMessage,res:ServerResponse)=>{const task=handle(req,res);requests.add(task);void task.finally(()=>requests.delete(task)).catch(()=>{});return task},settled:async(id:string)=>{const job=jobs.get(id);if(!job)throw new Error('Generation job not found');await job.task;return structuredClone(job.view)},dispose:async()=>{closing=true;for(const job of jobs.values())if(job.view.status==='running')job.controller.abort(new Error('Generation service closing'));await Promise.allSettled([...requests,...[...jobs.values()].map(job=>job.task)]);await removePreset();if(ctx.loader.builtins[builtin]===guardPlugin)delete ctx.loader.builtins[builtin];if(ctx.loader.builtins[skillBuiltin]===nativeToolSkill)delete ctx.loader.builtins[skillBuiltin]}}
 }

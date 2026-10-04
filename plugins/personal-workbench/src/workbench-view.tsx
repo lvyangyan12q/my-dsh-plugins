@@ -90,7 +90,7 @@ function useCenterColumn(ref: React.RefObject<HTMLDivElement>) {
 }
 
 /** Project workspace: direct content, one title and page navigation; owners stay mounted. */
-export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, setAppEnabled, refreshApps, refreshRecipes, renderSlot, t }: WorkspaceProps) {
+export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, setAppEnabled, refreshApps, refreshRecipes, management, renderSlot, t }: WorkspaceProps) {
   const state = useWorkbench(value => value)
   useEffect(() => { void refreshApps?.(); void refreshRecipes?.() }, [refreshApps, refreshRecipes])
   const [query, setQuery] = useState('')
@@ -133,7 +133,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     {state.storageFailed && <p role="status" className="pwb-notice">{t('storageFailed')}</p>}
     <section className="pwb-app-home" hidden={!!focused} aria-label={t('applications')}>
       {refreshApps && <button data-pwb-button type="button" onClick={()=>{void refreshApps()}}>{t('refreshApps')}</button>}
-      {refreshRecipes && <RecipeEditor t={t} refresh={refreshRecipes} />}
+      {refreshRecipes && <RecipeEditor t={t} refresh={refreshRecipes} onOpenSession={management?.openSession} />}
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />{t('showHidden')}</label>
       <div className="pwb-app-grid">{apps.map(row => <section key={row.id} className="pwb-app">

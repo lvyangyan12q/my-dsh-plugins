@@ -15,6 +15,7 @@ const require=createRequire(resolve(source,'packages/client/ui-renderer/package.
 const built=p=>import(pathToFileURL(resolve(source,p,'lib/index.js')).href)
 const {MockAdapter,textResponse,maxTokensResponse,toolCallResponse}=await import(pathToFileURL(resolve(source,'packages/core/agent-loop/tests/mock-adapter.ts')).href)
 const {default:LLM,ToolCallId}=await built('packages/llm/llm'),{default:Sessions}=await built('packages/core/session'),{default:Projection}=await built('packages/session/session-projection'),{default:Prompt}=await built('packages/core/system-prompt'),{default:Tools}=await built('packages/core/tools'),{default:Agents}=await built('packages/core/agent'),{default:Loop}=await built('packages/core/agent-loop'),{default:Presets}=await built('packages/preset/agent-preset-registry'),{SkillRegistry}=await built('packages/skill/skill'),{default:SessionController}=await built('packages/api/session-controller')
+const filesystem=await built('packages/skill/skill-filesystem')
 const {default:DefaultModel}=await built('packages/core/agent-default-model')
 const {assembleContextFor}=await built('packages/core/agent')
 const {default:JsonlPersistence}=await built('packages/session/session-persistence-jsonl')
@@ -31,7 +32,7 @@ async function fixture(script){
  const root=await mkdtemp(join(tmpdir(),'platform-generator-')),ctx=new Context();let recipes,generation
  try{
   ctx.baseUrl=pathToFileURL(resolve(import.meta.dirname,'../../../package.json')).href;await ctx.plugin(Loader);ctx.loader.builtins.group=Group
-  await ctx.plugin(LLM);await ctx.plugin(Sessions);await ctx.plugin(Projection);await ctx.plugin(JsonlPersistence,{root:join(root,'sessions'),compression:'none'});await ctx.plugin(Prompt,{personaPrefix:''});await ctx.plugin(Tools,{mode:'ptc'});await ctx.plugin(Agents);await ctx.plugin(Loop,{agents:[]});await ctx.plugin(SkillRegistry);await ctx.plugin(Presets,{default:'my-dsh.platform-generator'})
+  await ctx.plugin(LLM);await ctx.plugin(Sessions);await ctx.plugin(Projection);await ctx.plugin(JsonlPersistence,{root:join(root,'sessions'),compression:'none'});await ctx.plugin(Prompt,{personaPrefix:''});await ctx.plugin(Tools,{mode:'ptc'});await ctx.plugin(Agents);await ctx.plugin(Loop,{agents:[]});await ctx.plugin(SkillRegistry);await ctx.plugin(filesystem,{providerName:'workbench-packaged',includeDefaultRoots:false,bundledSkillDir:resolve(import.meta.dirname,'../skills'),watch:false});await ctx.plugin(Presets,{default:'my-dsh.platform-generator'})
   await ctx.plugin(Storage);ctx.storage.backend.register('json',new JsonStorageBackend(root));const facility=new DomainFacility(ctx,{backend:'json',routes:{}});ctx.storage.mount('domain',facility)
   ctx.provide('storageDomain',facility);ctx.provide('connection',{requestRejection:()=>undefined});ctx.provide('personalWorkbenchCapabilities',{agents:()=>[],skill:()=>undefined})
   ctx.provide('typert',{lookups:{configure:()=>()=>{}},contexts:{configureHost:()=>()=>{}}});ctx.provide('sessionQuery',{});ctx.provide('workspaceRegistry',{archivedSessionIds:[],get:()=>undefined});ctx.provide('attachments',{imageLimits:{maxImageBytes:1,maxImagesPerMessage:1,maxMessageImageBytes:1,maxImagePixels:1,maxImageDimension:1,mediaTypes:[]}});ctx.provide('fs',{});ctx.provide('fileUploads',{registerAgentResolver:()=>()=>{},resolve:()=>undefined})
@@ -46,7 +47,7 @@ async function fixture(script){
   assert.throws(()=>recipeScope.agentDefaultModel,/without inject/,'default model is also a real plugin-owned service')
   assert.throws(()=>recipeScope.tools,/without inject/,'this fixture must enforce undeclared property access')
   await ctx.plugin({name:'strict-generation-owner',inject:generationHostDependencies,apply:async child=>{generationScope=child;generation=await installGeneration(child)}})
-  assert.throws(()=>generationScope.skills,/without inject/,'generation cannot silently borrow undeclared service access')
+  assert.ok(generationScope.skills,'generation declares the native Skill dependency explicitly')
   const adapter=new MockAdapter(script,{efforts:[{id:'high',name:'High'}],defaultEffort:'high'});ctx.llm.registerAdapter(['mock'],adapter)
   let executions=0;const tool={name:'write_fixture',description:'must never execute',parameters:{type:'object',properties:{}},output:{schema:{type:'object'},render:()=>[]},execute:async()=>{executions++;return {content:[],isError:false}}};ctx.tools.register(tool)
   return {ctx,root,adapter,recipes,generation,tool,saves:()=>saves,executions:()=>executions,start:(version=1,expectedRevision=0)=>generation.dispatch({action:'start',requirement:'Create a reading dashboard',appId:'app.generated',version,expectedRevision}),close:async()=>{await generation.dispose();await recipes.dispose();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}}
@@ -59,7 +60,7 @@ test('real native Session Controller uses configured model and effort, returns e
   assert.equal(f.adapter.requests.length,0);const job=f.start(2,2),done=await f.generation.settled(job.id);assert.equal(done.status,'completed',done.error);assert.equal(done.record.revision,3);assert.equal(done.record.draft.version,2);assert.equal(JSON.stringify(done.record.running),running)
   assert.equal(f.adapter.requests.length,1);const request=f.adapter.requests[0];assert.equal(request.provider,'mock');assert.equal(request.model,'configured-model');assert.equal(request.reasoningEffort,'high');assert.deepEqual(request.tools??[],[]);assert.equal(f.saves(),0)
   const agent=f.ctx.agents.get(done.sessionId);assert.equal(agent.session.header.agentPreset,'my-dsh.platform-generator');assert.ok(agent.ctx.tools.schemas(agent).some(tool=>tool.name==='spawn_teammate'));assert.ok(agent.ctx.tools.schemas(agent).some(tool=>tool.name==='schedule_create'));assert.deepEqual((await agent.ctx.systemPrompt.assemble(assembleContextFor(agent))).tools,[]);assert.equal(agent.session.requestHeader().config.reasoningEffort,'high')
-  assert.equal(agent.session.snapshotEvents().some(event=>event.type==='sandbox/mode'||event.type==='approval/policy'),false,'generator must not append native policy overrides');assert.doesNotMatch(JSON.stringify(request.messages),/private-skill-body/);
+  assert.equal(agent.session.snapshotEvents().some(event=>event.type==='sandbox/mode'||event.type==='approval/policy'),false,'generator must not append native policy overrides');assert.doesNotMatch(JSON.stringify(request.messages),/private-skill-body/);assert.match(JSON.stringify(request.messages),/公共能力只选管理入口/);assert.match(JSON.stringify(request.messages),/workbench-app-build/);
   await f.recipes.service.preview('app.generated',3);assert.equal(JSON.stringify(f.recipes.service.list()[0].running),running);await f.recipes.service.activate('app.generated',3);assert.equal(f.recipes.service.list()[0].running.version,2)
  }finally{await f.close()}
 })
@@ -107,4 +108,13 @@ test('reasoning cannot turn prose, fenced JSON, tool calls or a reasoning-only a
  const reasoning=[{type:'block-start',index:0,blockType:'reasoning'},{type:'reasoning-delta',index:0,text:JSON.stringify(recipe())},{type:'block-end',index:0,block:{type:'reasoning',text:JSON.stringify(recipe())}}]
  const mixed=text=>[...reasoning,...textResponse(text).map(chunk=>'index'in chunk?{...chunk,index:chunk.index+1}:chunk)]
  const f=await fixture([mixed('Here is the recipe: '+JSON.stringify(recipe())),mixed('~~~json\n'+JSON.stringify(recipe())+'\n~~~'),[...reasoning,{type:'finish',reason:{kind:'stop'}}],toolCallResponse('bad-call','schedule_list',{}),validResponse()]);try{for(let i=0;i<4;i++){const done=await f.generation.settled(f.start().id);assert.equal(done.status,'failed');assert.deepEqual(f.recipes.service.list(),[])}}finally{await f.close()}
+})
+
+
+test('generation catalogue exposes only managed public Agents and Skills, preserving application-private registrations',async()=>{
+ const f=await fixture([]);let managed,privateRole;try{managed=await f.ctx.agentPresets.register({id:'my-dsh.catalog-managed',plugins:[]});privateRole=await f.ctx.agentPresets.register({id:'application-private',plugins:[]});f.ctx.skills.register({name:'public-proof',description:'Public',content:'Public skill',source:'runtime',invocation:{userInvocable:true,modelInvocable:true}})
+ f.ctx.personalWorkbenchCapabilities.agents=()=>[{id:'catalog-managed',name:'Public',description:'',persona:'Public',skillNames:['public-proof'],userInvocable:true,modelInvocable:true,revision:1}]
+ f.ctx.personalWorkbenchCapabilities.skill=name=>name==='public-proof'?{name,description:'Public',content:'Public skill',userInvocable:true,modelInvocable:true,revision:1}:undefined
+ const catalog=await f.recipes.service.generationCatalog();assert.deepEqual(catalog.roles,[{presetId:'my-dsh.catalog-managed',skillNames:['public-proof']}]);assert.ok((await f.ctx.agentPresets.list()).some(role=>role.id==='application-private'));assert.ok(await f.ctx.skills.get('private-proof'))
+ }finally{await privateRole?.();await managed?.();await f.close()}
 })
