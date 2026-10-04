@@ -41,6 +41,19 @@ test('composer adapter preserves local changes, installs its regression and veri
     assert.equal(await readFile(unrelated, 'utf8'), 'keep user changes\n')
     assert.equal(run().status, 0)
     assert.equal(run('--apply').status, 0)
+    execFileSync('git', ['-C', fixture, 'apply', '--unidiff-zero', '-R', resolve(root, 'compat/native-composer-root/upgrade-native-composer-root.patch')], { stdio: 'ignore' })
+    for (const row of manifest.files) {
+      if (row.previous === null) {
+        await assert.rejects(readFile(resolve(fixture, row.path)), { code: 'ENOENT' })
+      } else {
+        assert.equal(hash(await readFile(resolve(fixture, row.path), 'utf8')), row.previous)
+      }
+    }
+    assert.notEqual(run().status, 0)
+    const upgraded = run('--apply')
+    assert.equal(upgraded.status, 0, upgraded.stderr)
+    for (const row of manifest.files) assert.equal(hash(await readFile(resolve(fixture, row.path), 'utf8')), row.after)
+    assert.equal(await readFile(unrelated, 'utf8'), 'keep user changes\n')
   } finally {
     assert(basename(fixture).startsWith('my-dsh-composer-root-'))
     assert.equal(dirname(fixture), resolve(tmpdir()))

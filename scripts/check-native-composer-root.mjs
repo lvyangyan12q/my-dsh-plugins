@@ -10,8 +10,13 @@ const source = resolve(process.env.DSH_SOURCE)
 const directory = resolve(root, 'compat/native-composer-root')
 const manifest = JSON.parse(await readFile(resolve(directory, 'manifest.json'), 'utf8'))
 const allowed = new Set([
-  'packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx',
-  'packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx',
+  "packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx",
+  "packages/client/ui-conversation/src/client/input/editor/DraftEditor.tsx",
+  "packages/client/ui-conversation/src/client/input/editor/composer-surfaces.ts",
+  "packages/client/ui-conversation/src/client/input/editor/view-binding.ts",
+  "packages/client/ui-conversation/src/client/skeleton/InputBar.tsx",
+  "packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx",
+  "packages/client/ui-conversation/tests/input-bar.client.spec.tsx"
 ])
 if (manifest.files.length !== allowed.size || new Set(manifest.files.map(row => row.path)).size !== allowed.size || manifest.files.some(row => !allowed.has(row.path))) throw new Error('Unexpected compatibility patch file set')
 const hash = value => createHash('sha256').update(value.replaceAll('\r\n', '\n')).digest('hex')
@@ -23,16 +28,18 @@ async function state() {
 }
 const rows = await state()
 if (rows.every(row => row.actual === row.after)) {
-  console.log('Native composer teardown ownership adaptation verified; rebuild native client before runtime acceptance')
+  console.log('Native shared composer view adaptation verified; rebuild native client before runtime acceptance')
 } else {
   if (!process.argv.includes('--apply')) throw new Error('Native composer root adaptation missing; explicitly run with --apply after reviewing compat/native-composer-root/README.md')
-  if (!rows.every(row => row.actual === row.before)) throw new Error('Native checkout differs from the reviewed baseline; preserve local changes and adapt explicitly')
-  const patch = resolve(directory, 'native-composer-root.patch')
-  execFileSync('git', ['-C', source, 'apply', '--check', patch], { stdio: 'inherit' })
+  const initial = rows.every(row => row.actual === row.before)
+  const previous = rows.every(row => row.actual === row.previous)
+  if (!initial && !previous) throw new Error('Native checkout differs from the reviewed baseline; preserve local changes and adapt explicitly')
+  const patch = resolve(directory, previous ? 'upgrade-native-composer-root.patch' : 'native-composer-root.patch')
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '--check', patch], { stdio: 'inherit' })
   const backup = resolve(root, '.local/backups', `native-composer-root-${Date.now()}`)
   await mkdir(backup, { recursive: true })
-  for (const row of rows) if (row.before !== null) await copyFile(resolve(source, row.path), resolve(backup, row.path.replaceAll('/', '__')))
-  execFileSync('git', ['-C', source, 'apply', patch], { stdio: 'inherit' })
+  for (const row of rows) if (row.actual !== null) await copyFile(resolve(source, row.path), resolve(backup, row.path.replaceAll('/', '__')))
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', patch], { stdio: 'inherit' })
   if (!(await state()).every(row => row.actual === row.after)) throw new Error('Applied patch differs from reviewed source')
-  console.log('Applied native composer root ownership adaptation; originals backed up. Rebuild native client next.')
+  console.log('Applied native composer shared composer view adaptation; originals backed up. Rebuild native client next.')
 }
