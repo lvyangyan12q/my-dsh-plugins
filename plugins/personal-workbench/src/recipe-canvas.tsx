@@ -45,7 +45,7 @@ export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t
   <PageTemplates key={page.id} recipe={recipe} page={page} change={change} onPage={id=>{setPage(id);closeSettings()}} t={t}/>
   <p className="pwb-canvas-help">{t('canvasHelp')}</p>
   <div style={{position:'relative'}}>
-  {page.layout!=='stack'&&<ColumnDivider label={t('canvasResizeColumns')} value={page.splitPercent??50} onChange={value=>change(copy=>{copy.pages[pageIndex].splitPercent=value})}/>}
-  <div className="pwb-canvas-grid" data-layout={page.layout} style={{gridTemplateColumns:page.layout==='stack'?undefined:(page.splitPercent??50)+'fr '+(100-(page.splitPercent??50))+'fr'}}>{page.modules.map(card)}<button className="pwb-canvas-add" data-pwb-button type="button" onClick={()=>change(copy=>{copy.pages[pageIndex].modules.push(emptyModule())})}><Plus size={18}/>{t('moduleAdd')}</button></div></div>
+  {page.layout!=='stack'&&page.modules.length>1&&<ColumnDivider label={t('canvasResizeColumns')} value={page.splitPercent??50} onChange={value=>change(copy=>{copy.pages[pageIndex].splitPercent=value})}/>}
+  <div className="pwb-canvas-grid" data-layout={page.layout} style={{gridTemplateColumns:page.layout==='stack'?undefined:(page.splitPercent??50)+'fr '+(100-(page.splitPercent??50))+'fr'}}>{page.modules.map(card)}</div></div><button className="pwb-canvas-add" data-pwb-button type="button" onClick={()=>change(copy=>{copy.pages[pageIndex].modules.push(emptyModule())})}><Plus size={18}/>{t('moduleAdd')}</button>
  </section>
 }
