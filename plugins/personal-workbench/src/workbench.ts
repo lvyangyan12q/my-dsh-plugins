@@ -105,31 +105,38 @@ export class Workbench implements PersonalWorkbench {
     this.listeners.add(listener)
     return () => { this.listeners.delete(listener) }
   }
-  readonly registerApp = (definition: WorkbenchAppDefinition): (() => void) => {
+  readonly registerApp = (definition: WorkbenchAppDefinition): (() => void) & { update: (next: WorkbenchAppDefinition) => void } => {
     if (this.disposed) throw new Error('Workbench is disposed')
     if (this.definitions.has(definition.id)) throw new Error(`Duplicate application: ${definition.id}`)
-    if (!definition.id || !definition.pages.length || new Set(definition.pages.map(page => page.id)).size !== definition.pages.length
-      || !definition.pages.some(page => page.id === definition.defaultLayout.pageId)) throw new Error('Invalid application pages')
-    // Freeze a copy so later consumer mutation cannot bypass registry publication.
-    const current = Object.freeze({ ...definition,
-      pages: Object.freeze(definition.pages.map(page => Object.freeze({ ...page }))),
-      defaultLayout: Object.freeze({ ...definition.defaultLayout }),
-      roles: definition.roles && Object.freeze(definition.roles.map(role => Object.freeze({ ...role }))),
-      dependencies: definition.dependencies && Object.freeze(definition.dependencies.map(row => Object.freeze({ ...row }))) })
-    this.definitions.set(definition.id, current)
-    this.publish({ definitions: [...this.definitions.values()], windows: this.snapshot.windows.map(row =>
-      row.appId === definition.id && !current.pages.some(page => page.id === row.pageId)
-        ? { ...row, pageId: current.defaultLayout.pageId } : row) })
+    const id = definition.id
     let active = true
-    return () => {
+    const update = (next: WorkbenchAppDefinition) => {
+      if (!active || this.disposed) throw new Error('Application registration is disposed')
+      if (next.id !== id) throw new Error('Application identity cannot change')
+      if (!next.id || !next.pages.length || new Set(next.pages.map(page => page.id)).size !== next.pages.length
+        || !next.pages.some(page => page.id === next.defaultLayout.pageId)) throw new Error('Invalid application pages')
+      // Only the registration owner can update its frozen metadata without retiring windows.
+      const current = Object.freeze({ ...next,
+        pages: Object.freeze(next.pages.map(page => Object.freeze({ ...page }))),
+        defaultLayout: Object.freeze({ ...next.defaultLayout }),
+        roles: next.roles && Object.freeze(next.roles.map(role => Object.freeze({ ...role }))),
+        dependencies: next.dependencies && Object.freeze(next.dependencies.map(row => Object.freeze({ ...row }))) })
+      this.definitions.set(id, current)
+      this.publish({ definitions: [...this.definitions.values()], windows: this.snapshot.windows.map(row =>
+        row.appId === id && !current.pages.some(page => page.id === row.pageId)
+          ? { ...row, pageId: current.defaultLayout.pageId } : row) })
+    }
+    update(definition)
+    const remove = () => {
       if (!active || this.disposed) return
       active = false
-      this.definitions.delete(definition.id)
-      const retired = this.snapshot.windows.filter(row => row.appId === definition.id).map(row => windowKey(row.appId, row.instanceId))
+      this.definitions.delete(id)
+      const retired = this.snapshot.windows.filter(row => row.appId === id).map(row => windowKey(row.appId, row.instanceId))
       this.publish({ definitions: [...this.definitions.values()],
-        windows: this.snapshot.windows.map(row => row.appId === definition.id ? { ...row, mode: 'closed' } : row),
+        windows: this.snapshot.windows.map(row => row.appId === id ? { ...row, mode: 'closed' } : row),
         focused: retired.includes(this.snapshot.focused ?? '') ? null : this.snapshot.focused })
     }
+    return Object.assign(remove, { update })
   }
   readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, focused: null, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }); void this.loadLifecycle() }
   readonly closeWorkspace = (): void => { this.publish({ visible: false }) }

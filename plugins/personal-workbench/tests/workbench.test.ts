@@ -105,3 +105,27 @@ test('offscreen dimensions are constrained for desktop and tiny viewports', () =
     assert.ok(geometry.x + geometry.width <= width && geometry.y + geometry.height <= height)
   }
 })
+
+test('only the active registration owner updates metadata without retiring instances', () => {
+  const workbench = new Workbench()
+  const dispose = workbench.registerApp(app)
+  workbench.openApp(app.id)
+  workbench.selectPage(key, 'practice')
+  const focused = workbench.getSnapshot().focused
+  const window = workbench.getSnapshot().windows[0]
+  const next = { ...app, name: 'Updated', version: '2', pages: [{ id: 'lesson', label: 'Updated lesson' }] }
+  dispose.update(next)
+  assert.equal(workbench.getSnapshot().focused, focused)
+  assert.equal(workbench.getSnapshot().windows[0].mode, window.mode)
+  assert.equal(workbench.getSnapshot().windows[0].pageId, 'lesson')
+  assert.equal(workbench.getSnapshot().definitions[0].name, 'Updated')
+  const snapshot = workbench.getSnapshot()
+  assert.throws(() => dispose.update({ ...next, id: 'other' as WorkbenchAppId }), /identity/)
+  assert.throws(() => dispose.update({ ...next, pages: [] }), /pages/)
+  assert.equal(workbench.getSnapshot(), snapshot)
+  dispose()
+  workbench.registerApp(app)
+  assert.throws(() => dispose.update(next), /disposed/)
+  assert.equal(workbench.getSnapshot().definitions[0].version, '1.0')
+  workbench.dispose()
+})

@@ -20,7 +20,7 @@ function ContentModule(props:RecipeModuleProps){
  const {module,preview,t,ctx}=props,[expanded,setExpanded]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false),[tick,setTick]=useState(0),[frameRevision,setFrameRevision]=useState(0),[path,setPath]=useState(''),[file,setFile]=useState<any>(null),[entries,setEntries]=useState<{name:string;path:string;directory:boolean}[]>([]),[requirement,setRequirement]=useState(String(module.config.requirement??'')),[waiting,setWaiting]=useState(false)
  const actionController=useRef<AbortController>(),conversationDetails=useRef<HTMLDetailsElement>(null)
  useEffect(()=>{const details=conversationDetails.current,show=()=>setExpanded(true);details?.addEventListener('pwb-reveal-role',show);return()=>details?.removeEventListener('pwb-reveal-role',show)},[module.type,module.config.mode,preview])
- const identity=JSON.stringify([props.appId,props.instanceId,contentIdentity(module)]),remote=['website','animation'].includes(module.type)||module.type==='custom'&&module.config.mode==='url'
+ const identity=JSON.stringify([props.appId,props.instanceId,props.recipe.workspace??null,contentIdentity(module)]),remote=['website','animation'].includes(module.type)||module.type==='custom'&&module.config.mode==='url'
  useEffect(()=>{actionController.current?.abort();setExpanded(false);setBusy(false);setPath('');setFile(null);setEntries([]);setRequirement(String(module.config.requirement??''));setWaiting(false);setError('')},[identity])
  useEffect(()=>()=>actionController.current?.abort(),[identity,path])
  useEffect(()=>{

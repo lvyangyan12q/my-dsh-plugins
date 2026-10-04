@@ -21,5 +21,16 @@ test('built Client installs real recipe app registration and keyed runtime; draf
  const preview=renderToStaticMarkup(React.createElement(api.RecipePage,{recipe:records[0].draft,appId:recipe.appId,instanceId:'preview.fixture',pageId:'home',preview:true,t:key=>key}));assert.match(preview,/data-preview="true"/);assert.equal(service.getSnapshot().definitions[0].version,'1')
  const release=api.registerRecipeModuleRenderer('example.special',({preview,module})=>React.createElement('output',null,module.title+': '+(preview?'preview':'running')))
  const specialized={...recipe,pages:[{...recipe.pages[0],modules:[{...recipe.pages[0].modules[0],type:'example.special'}]}]};const rendered=renderToStaticMarkup(React.createElement(api.RecipePage,{recipe:specialized,appId:recipe.appId,instanceId:'default',pageId:'home',t:key=>key}));assert.match(rendered,/Summary: running/);release();assert.equal(models,0)
+ const focused=service.getSnapshot().focused
+ records[0].running={...recipe,version:2,name:'Reading updated',pages:[{...recipe.pages[0],label:'Updated home',modules:[{...recipe.pages[0].modules[0],title:'Updated summary'}]}]}
+ await commands.refreshRecipes()
+ const updatedRuntime=entries.find(e=>e.options.name==='personal-workbench.app'&&e.options.key===recipe.appId)
+ assert.equal(updatedRuntime.component,runtime.component,'activating a version preserves the registered component identity')
+ assert.equal(service.getSnapshot().focused,focused,'metadata updates do not retire the open instance')
+ assert.equal(service.getSnapshot().definitions[0].version,'2')
+ assert.equal(service.getSnapshot().definitions[0].name,'Reading updated')
+ const updatedHtml=renderToStaticMarkup(React.createElement(updatedRuntime.component,{appId:recipe.appId,instanceId:'default',pageId:'home',active:true,t:key=>key}))
+ assert.match(updatedHtml,/Updated summary/)
+ assert.match(updatedHtml,/data-recipe-version="2"/)
  for(const cleanup of cleanups.reverse())cleanup()
 })

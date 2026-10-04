@@ -86,3 +86,23 @@ test('explicit refresh reloads website and unchanged local HTML without mutating
   assert.equal(local.pages[0].modules[0].config.path,'saved.html')
  }finally{await f.close();remove();globalThis.fetch=oldFetch}
 })
+
+test('layout updates retain loaded files but a changed workspace clears stale content and rechecks the Host boundary', async()=>{
+ const f=await domFixture(),remove=installContentModules(),oldFetch=globalThis.fetch,calls=[]
+ let allowed=true
+ globalThis.fetch=async(_url,init)=>{calls.push(init);return allowed?{ok:true,json:async()=>({kind:'html',content:'<h1>Workspace A</h1>'})}:{ok:false,json:async()=>({error:'Instance workspace changed; use a new instance'})}}
+ const local={...recipe,workspace:'D:/workspace-A',pages:[{...recipe.pages[0],modules:[{id:'local',type:'custom',title:'Local',config:{mode:'file',path:'saved.html'}}]}]}
+ const render=value=>f.root.render(React.createElement(RecipePage,{recipe:value,pageId:'home',appId:local.appId,instanceId:'one',t:k=>k}))
+ try{
+  await act(async()=>render(local))
+  const frame=document.querySelector('iframe');assert.ok(frame)
+  await act(async()=>render({...local,version:2,pages:[{...local.pages[0],layout:'stack'}]}))
+  assert.equal(document.querySelector('iframe'),frame);assert.equal(calls.length,1)
+  allowed=false
+  await act(async()=>render({...local,version:3,workspace:'D:/workspace-B'}))
+  assert.equal(!!document.querySelector('iframe'),false,'Old workspace content must not remain under a changed boundary')
+  assert.equal(calls[0].signal.aborted,true)
+  assert.equal(calls.length,2)
+  assert.match(document.querySelector('[role=alert]').textContent,/workspace changed/)
+ }finally{await f.close();remove();globalThis.fetch=oldFetch}
+})
