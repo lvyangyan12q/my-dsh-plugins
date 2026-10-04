@@ -12,8 +12,8 @@ export const recipeEditorStyles = `
 .pwb-generation-editor{min-width:0;margin:16px 0;padding:18px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:8px;background:var(--pwb-canvas,#f7f5f0)}
 .pwb-generation-editor h3{margin:0;font-size:15px;font-weight:600}
 .pwb-generation-field,.pwb-recipe-editor>fieldset label,.pwb-recipe-advanced label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:500;margin:10px 0}
-.pwb-generation-editor textarea,.pwb-recipe-editor>fieldset input:not([type=checkbox]),.pwb-recipe-editor>fieldset select,.pwb-recipe-toolbar select,.pwb-recipe-advanced textarea{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--pwb-line,#d7d0c5);border-radius:6px;background:var(--pwb-paper,#fdfcf9);color:var(--pwb-ink,#2e2b26);padding:9px 11px;font:400 13px/1.6 system-ui,sans-serif}
-.pwb-recipe-editor>fieldset input:not([type=checkbox]),.pwb-recipe-editor>fieldset select,.pwb-recipe-toolbar select{min-height:40px}
+.pwb-generation-editor select,.pwb-generation-editor textarea,.pwb-recipe-editor>fieldset input:not([type=checkbox]),.pwb-recipe-editor>fieldset select,.pwb-recipe-toolbar select,.pwb-recipe-advanced textarea{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--pwb-line,#d7d0c5);border-radius:6px;background:var(--pwb-paper,#fdfcf9);color:var(--pwb-ink,#2e2b26);padding:9px 11px;font:400 13px/1.6 system-ui,sans-serif}
+.pwb-generation-editor select,.pwb-recipe-editor>fieldset input:not([type=checkbox]),.pwb-recipe-editor>fieldset select,.pwb-recipe-toolbar select{min-height:40px}
 .pwb-generation-editor textarea{display:block;min-height:140px;resize:vertical}
 .pwb-generation-actions{margin-top:12px}
 .pwb-recipe-editor>fieldset{min-inline-size:0;min-width:0;margin:16px 0;padding:16px;border:1px solid var(--pwb-line,#d7d0c5);border-radius:8px}

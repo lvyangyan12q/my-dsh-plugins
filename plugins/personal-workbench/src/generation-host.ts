@@ -1,3 +1,5 @@
+import {isAbsolute} from 'node:path'
+import {sameWorkspace} from './recipe-workspace.ts'
 import {validateGenerationRoles} from './generation-catalog.ts'
 import * as nativeToolSkill from '@deepseek-ai/dsh-tool-skill'
 import {workbenchSkillProvider} from './workbench-skill-api.ts'
@@ -13,7 +15,7 @@ import type {GenerationJob} from './generation-api.ts'
 const presetId='my-dsh.platform-generator'
 const identity=z.string().min(1).max(200)
 const requestSchema=z.discriminatedUnion('action',[
- z.object({action:z.literal('start'),requirement:z.string().trim().min(1).max(16000),appId:identity,version:z.number().int().positive(),expectedRevision:z.number().int().nonnegative()}).strict(),
+ z.object({action:z.literal('start'),workspace:z.string().min(1).max(2000).optional(),requirement:z.string().trim().min(1).max(16000),appId:identity,version:z.number().int().positive(),expectedRevision:z.number().int().nonnegative()}).strict(),
  z.object({action:z.enum(['status','cancel']),id:z.string().uuid()}).strict(),
 ])
 /** No ambient conversation, external model client, executable output or policy overrides. */
@@ -40,7 +42,11 @@ export async function installGeneration(ctx:Context){
   controller.signal.addEventListener('abort',cancel,{once:true})
   try{
    const catalog=await ctx.personalWorkbenchRecipes.generationCatalog();controller.signal.throwIfAborted()
-   const created=await ctx.sessionController.create({cwd:process.cwd(),agentPreset:presetId});view.sessionId=created.sessionId
+   const requested=input.workspace??ctx.personalWorkbenchRecipes.list().find(row=>row.appId===input.appId)?.draft.workspace
+   if(requested&&!isAbsolute(requested))throw new Error('An absolute trusted Host workspace is required')
+   const workspace=requested?catalog.workspaces.find(path=>sameWorkspace(path,requested)):catalog.workspaces[0]
+   if(requested&&!workspace)throw new Error('Trusted Host workspace unavailable')
+   const created=await ctx.sessionController.create({cwd:workspace??process.cwd(),agentPreset:presetId});view.sessionId=created.sessionId
    const resolved=await ctx.sessionController.resolveAgent(created.sessionId);if('error' in resolved)throw resolved.error;agent=resolved.agent
    controller.signal.throwIfAborted()
    // Check the native model-facing surface after all hydrated scoped contributions.
@@ -48,7 +54,7 @@ export async function installGeneration(ctx:Context){
    const toolNames=assembled.tools.map(tool=>tool.name)
    if(toolNames.length)throw new Error('Generator tool inventory is not empty: '+toolNames.join(', '))
    const safeCatalog={...catalog,connections:catalog.connections.filter(source=>source.appId===input.appId)}
-   const prompt='/workbench-app-build '+JSON.stringify({task:'Return exactly one JSON application recipe. Use only the supplied schema and registered catalog. No markdown, code, extra keys or tool calls. The identity and version must match target. Connections must belong to target.appId. If no data source exists, use no connections. Roles are optional.',target:{appId:input.appId,version:input.version},requirement:input.requirement,schema:z.toJSONSchema(recipeSchema),catalog:safeCatalog}).replaceAll('/','\\u002f')
+   const prompt='/workbench-app-build '+JSON.stringify({task:'Return exactly one JSON application recipe. Use only the supplied schema and registered catalog. No markdown, code, extra keys or tool calls. The identity and version must match target. Connections must belong to target.appId. If no data source exists, use no connections. Roles are optional. catalog.moduleExamples describes each supported config shape; adapt values to the requirements, never copy example paths as facts. resources uses config.basePath, not config.path. custom requires mode=url, file, or generate. Generated custom pages and role-chat require a roleId from recipe.roles. Data modules use connectionId from recipe.connections and real field names; do not invent a source or role. The workspace must exactly match target.workspace; omit workspace when target has none. Never infer workspace from the Host launch directory.',target:{appId:input.appId,version:input.version,...(workspace?{workspace}:{})},requirement:input.requirement,schema:z.toJSONSchema(recipeSchema),catalog:safeCatalog}).replaceAll('/','\\u002f')
    const offset=agent.session.snapshotEvents().length
    controller.signal.throwIfAborted()
    agent.followup(createUserMessage({content:[{type:'text',text:prompt}],source:{kind:'user'}}))
@@ -63,6 +69,7 @@ export async function installGeneration(ctx:Context){
    if(Buffer.byteLength(text,'utf8')>262144)throw new Error('Generated recipe is too large')
    const recipe=recipeSchema.parse(JSON.parse(text))
    if(recipe.appId!==input.appId||recipe.version!==input.version)throw new Error('Generated recipe identity or version changed')
+   if(workspace?!recipe.workspace||!sameWorkspace(recipe.workspace,workspace):recipe.workspace!==undefined)throw new Error('Generated workspace differs from selected target')
    validateGenerationRoles(recipe,safeCatalog)
    controller.signal.throwIfAborted()
    // Once commit starts cancel is refused; saveGenerated revalidates and commits under recipe CAS.

@@ -35,7 +35,7 @@ async function fixture(script){
   await ctx.plugin(LLM);await ctx.plugin(Sessions);await ctx.plugin(Projection);await ctx.plugin(JsonlPersistence,{root:join(root,'sessions'),compression:'none'});await ctx.plugin(Prompt,{personaPrefix:''});await ctx.plugin(Tools,{mode:'ptc'});await ctx.plugin(Agents);await ctx.plugin(Loop,{agents:[]});await ctx.plugin(SkillRegistry);await ctx.plugin(filesystem,{providerName:'workbench-packaged',includeDefaultRoots:false,bundledSkillDir:resolve(import.meta.dirname,'../skills'),watch:false});await ctx.plugin(Presets,{default:'my-dsh.platform-generator'})
   await ctx.plugin(Storage);ctx.storage.backend.register('json',new JsonStorageBackend(root));const facility=new DomainFacility(ctx,{backend:'json',routes:{}});ctx.storage.mount('domain',facility)
   ctx.provide('storageDomain',facility);ctx.provide('connection',{requestRejection:()=>undefined});ctx.provide('personalWorkbenchCapabilities',{agents:()=>[],skill:()=>undefined})
-  ctx.provide('typert',{lookups:{configure:()=>()=>{}},contexts:{configureHost:()=>()=>{}}});ctx.provide('sessionQuery',{});ctx.provide('workspaceRegistry',{archivedSessionIds:[],get:()=>undefined});ctx.provide('attachments',{imageLimits:{maxImageBytes:1,maxImagesPerMessage:1,maxMessageImageBytes:1,maxImagePixels:1,maxImageDimension:1,mediaTypes:[]}});ctx.provide('fs',{});ctx.provide('fileUploads',{registerAgentResolver:()=>()=>{},resolve:()=>undefined})
+  ctx.provide('typert',{lookups:{configure:()=>()=>{}},contexts:{configureHost:()=>()=>{}}});ctx.provide('sessionQuery',{});ctx.provide('workspaceRegistry',{archivedSessionIds:[],list:()=>[],get:()=>undefined});ctx.provide('attachments',{imageLimits:{maxImageBytes:1,maxImagesPerMessage:1,maxMessageImageBytes:1,maxImagePixels:1,maxImageDimension:1,mediaTypes:[]}});ctx.provide('fs',{});ctx.provide('fileUploads',{registerAgentResolver:()=>()=>{},resolve:()=>undefined})
   const selection={provider:'mock',model:'configured-model',reasoningEffort:'high'};let saves=0
   ctx.skills.register({name:'private-proof',description:'metadata',content:'private-skill-body',source:'runtime',invocation:{userInvocable:true,modelInvocable:true}})
   await ctx.plugin(DefaultModel,selection);ctx.agentDefaultModel.saveSelection=async()=>{saves++}
@@ -126,4 +126,54 @@ test('generated output cannot borrow registered application-private Agents or un
   for(const row of rows){const done=await f.generation.settled(f.start().id);assert.equal(done.status,'failed');assert.match(done.error,/generation catalog/i);assert.deepEqual(f.recipes.service.list(),[])}
   assert.ok((await f.ctx.agentPresets.list()).some(role=>role.id==='application-private'));assert.ok(await f.ctx.skills.get('private-proof'))
  }finally{await managed?.();await privateRole?.();await f.close()}
+})
+
+test('application generation uses the trusted target workspace rather than the Host launch directory',async()=>{
+ let target
+ const f=await fixture([options=>{
+  const prompt=options.messages.flatMap(message=>message.content??[]).find(block=>block.type==='text'&&block.text.includes('"task":"Return exactly one JSON application recipe.'))?.text
+  assert.ok(prompt,'Native request includes generation input')
+  const input=JSON.parse(prompt.slice(prompt.indexOf('{')));target=input.target
+  return textResponse(JSON.stringify({...recipe(),workspace:input.target.workspace??process.cwd()}))
+ }])
+ try{
+  f.ctx.workspaceRegistry.list=()=>[{path:f.root,status:async()=>'ok'}]
+  const done=await f.generation.settled(f.start().id)
+  assert.equal(done.status,'completed',done.error)
+  assert.equal(target.workspace,f.root)
+  assert.equal(done.record.draft.workspace,f.root)
+  const agent=f.ctx.agents.get(done.sessionId);assert.equal(agent.session.header.cwd,f.root)
+ }finally{await f.close()}
+})
+
+test('native app generation receives resource directory and custom HTML mode contracts that produce a valid draft',async()=>{
+ const f=await fixture([options=>{
+  const prompt=options.messages.flatMap(message=>message.content??[]).find(block=>block.type==='text'&&block.text.includes('"task":"Return exactly one JSON application recipe.'))?.text
+  const input=JSON.parse(prompt.slice(prompt.indexOf('{')))
+  const examples=input.catalog.moduleExamples??[]
+  const resources=examples.find(module=>module.type==='resources'),html=examples.find(module=>module.type==='custom'&&module.config.mode==='file')
+  const output={...recipe(),pages:[{id:'home',label:'Resources',layout:'split',modules:[
+   {id:'files',title:'Files',type:'resources',config:resources?{...resources.config,basePath:'docs'}:{path:'docs'}},
+   {id:'html',title:'Local HTML',type:'custom',config:html?{...html.config,path:'docs/index.html'}:{path:'docs/index.html'}}
+  ]}]}
+  return textResponse(JSON.stringify(output))
+ }])
+ try{const done=await f.generation.settled(f.start().id);assert.equal(done.status,'completed',done.error)
+  const modules=done.record.draft.pages[0].modules
+  assert.deepEqual(modules[0].config,{basePath:'docs'});assert.deepEqual(modules[1].config,{mode:'file',path:'docs/index.html'})
+  assert.equal(done.record.running,undefined);await f.recipes.service.preview(done.record.appId,done.record.revision)
+ }finally{await f.close()}
+})
+
+test('generation rejects unavailable selected directories before model admission and rejects model workspace substitution',async()=>{
+ const f=await fixture([textResponse(JSON.stringify({...recipe(),workspace:process.cwd()}))])
+ try{
+  f.ctx.workspaceRegistry.list=()=>[{path:f.root,status:async()=>'ok'}]
+  for(const workspace of ['relative-directory',join(f.root,'not-registered')]){
+   const job=f.generation.dispatch({action:'start',requirement:'Build an app',appId:'app.generated',version:1,expectedRevision:0,workspace})
+   const done=await f.generation.settled(job.id);assert.equal(done.status,'failed');assert.match(done.error,/trusted Host workspace/i);assert.equal(f.adapter.requests.length,0)
+  }
+  const job=f.generation.dispatch({action:'start',requirement:'Build an app',appId:'app.generated',version:1,expectedRevision:0,workspace:f.root})
+  const done=await f.generation.settled(job.id);assert.equal(done.status,'failed');assert.match(done.error,/workspace differs from selected target/);assert.equal(f.adapter.requests.length,1);assert.deepEqual(f.recipes.service.list(),[])
+ }finally{await f.close()}
 })
