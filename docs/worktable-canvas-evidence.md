@@ -473,3 +473,16 @@ changes.summary 的 404 已核对官方源码与 README：摘要存在当前 Hos
 正式3080任务自有进程18048重启为28020，仍使用web profile与原存储。Chrome DevTools重新加载并实际点击阅读统计，恢复既有两轮历史、阅读分析助手、原生标题/对话/轨迹与标注入口。四个用户Agent管理源/测试文件与 .local/sync-3080.json 保存指纹均一致，没有覆盖或提交它们。
 
 全目标尚未关闭：Better Sidebar 未安装、安装启用、安装停用三环境的完整流程，以及旧工单剩余真实GUI门禁仍须逐项核对和补证；不得以本轮测试或截图代替这些验收。
+
+
+## 2026-10-05：实际安装包无 Better Sidebar 浏览器验收与窄屏
+
+独立 DSH 3087 / PID6032 使用已通过发布门禁的 .scratch/platform-release-1791136146584 隔离 home/profile/platform-proof，以及其中正式 CLI 安装的三个最新归档包。该 profile 无 Better Sidebar 依赖或 bundle，没有修改正式3080、用户模型配置、学习资料或其存储。Chrome 独立浏览器上下文 installed-gui-no-sidebar 完成实际登录，凭据未写入交付证据；原生预览说明确认后选择稍后配置密钥。
+
+实际点击原生工作台入口、阅读统计应用，默认三条合成书籍显示3本/210分钟/平均70。操作分类下拉框选文学，再实际点击傲慢与偏见，列表剩两本、统计2/150/75、详情为Jane Austen/文学/reading/30分钟及原笔记。不是用接口响应替代交互结果。
+
+使用 Chrome DevTools emulate(viewport=480x900x1) 验证真实CSS响应布局：浏览器innerWidth与body.scrollWidth均480，工作台与应用region宽424且scrollWidth424；模块变为单栏，筛选框/下拉框、四个统一模块按钮和统计可见。原始元素范围JPEG字节保存在 [installed-no-sidebar-narrow.jpg](evidence/2026-10-05/installed-no-sidebar-narrow.jpg)，SHA256=636bf6f343c8575359e2707514f819548efadf710886e2f818961fa0eeb4a71a。此截图只覆盖可见区域，没有声称截取整张长页面。
+
+完整刷新后原生无密钥配置提示再次出现，选择稍后配置，实际重新打开工作台/阅读统计。原三条业务记录、笔记与统计3/210/70恢复；页面筛选与选中记录随新页面加载重置，没有声称它们跨整页刷新持久化。认证公共recipe catalog为200，reading-statistics revision3/running version1与release-html revision2/version1仍存在。
+
+3080既有原生阅读会话也用480x900实际查看，输入与正文适配，随后恢复1440x1000。无侧栏实例尚未配置模型密钥，本节未进行模型调用，不能代替三种环境完整教学/授权/停止流程。3087保留运行用于后续验收；启用/停用Better Sidebar的完整流程、同Session编辑器所有权与原生GUI门禁仍待完成。
