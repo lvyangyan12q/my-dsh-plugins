@@ -1,6 +1,6 @@
 # Full-scope acceptance audit
 
-Audit source: latest implementation b7ba8f76dc0be479480aba3802fd9f129daa8356 and scoped evidence through 1efb0f4b377553959fa0679ac3faf84f7a2c4e68, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
+Audit source: latest implementation f2ee7ba30cc78ff2a95fe9e2cfe292acc7df797e with exact clean-source build, 294-test, installed release and old-to-new upgrade receipts, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
 
 The [requirement inventory](evidence/2026-10-10/requirement-inventory.json) identifies each of 123 numbered/bulleted requirements by source, line and exact-text SHA256: all 36 Workbench and 28 Platform user stories, plus their implementation/testing decisions. Each still requires individual closure against its exact scope. Approved canvas changes, native-menu preservation, management-only public capability reuse, retained app-private capabilities, application-provided map data and the old-kaogong observation period remain part of scope.
 
@@ -20,6 +20,10 @@ The [requirement inventory](evidence/2026-10-10/requirement-inventory.json) iden
 | Remote deliverable | remote-committed-source.json; exact remote branch identity | A pushed commit and passing tests do not close the remaining runtime gates |
 
 ## Current independent source proof
+
+Exact f2ee7ba source now passes three-plugin formal builds and 294/294 tests. Fresh official archive installation verifies all installed bytes, public consumer declarations, rc.2 compatibility without exemptions, authenticated lifecycle, cold restart, Reading uninstall/reinstall and scoped HTML assets. The retained old archive pair also upgrades to these exact packages and preserves lessons/tasks/scores, images, native role/Skill assignments and uninstall/reinstall data hashes. See [current release receipt](evidence/2026-10-10/current-source-release-f2ee7ba.json). These are isolated synthetic non-model checks; full native interactive/IME/browser teaching requirements remain open.
+
+## Historical independent source proof
 
 Exact pushed implementation b42d3f75ab599cdaa31fdad4d982811aeafcbee4 was exported with git archive, excluding the four user management changes. Three plugin Host/Client builds, declarations and official source consumer checks passed, followed by **291/291 remote-only tests**, zero failures/skips. Official synthetic archive install, exact bytes, public consumer types, authenticated lifecycle, cold restart, Reading uninstall/reinstall and scoped HTML assets passed. The same exact source also passed old archive pair -> current archive upgrade, exact lesson/task/score and native role/assignment recovery, missing/relative material-root behavior, Workbench uninstall/standalone/reinstall and Kaogong reinstall. Old and new archive identities and both actual verdict hashes are recorded in [the current receipt](evidence/2026-10-10/remote-committed-source-b42d3f7.json). Existing public development/cache anchors were used; this is not fresh registry dependency-resolution proof.
 
@@ -94,3 +98,6 @@ computer-use真实输入法验收未执行：Node运行时连续退出，重置�
 
 
 2026-10-10: Latest implementation f2ee7ba fixes a real 480px annotation defect: the wrapped toolbar was 72px high while the selection overlay used a fixed 44px top, covering 28px. Selection, requirement editor and history now follow the measured toolbar boundary with resize cleanup. A red UI regression becomes 4/4 green; exact clean source builds all three plugins and passes 294/294 platform tests. Official installed archive bytes match; actual 480x720 browser replay changes overlay top from155 to183, matching toolbar bottom183, and both editors stay10px below the toolbar within viewport. Narrow layout hides stale marks and returning1920x945 restores two marks. 3080 linked plugin build was updated preserving the four user Agent files; refreshing that live browser was not part of this receipt. Screenshot attachment acceptance remains open because provider file access was denied; a second isolated text note is not screenshot evidence. See [toolbar repair receipt](evidence/2026-10-10/annotation-toolbar-wrap.json). Complete original native teaching/IME/environment gates remain open.
+
+
+2026-10-10: The latest installed release and old-to-new upgrade proof adds bounded decisions for independent delivery, Host completion authority and platform ownership/public-display reuse. Four decisions gain direct scoped proof and two recovery/migration decisions remain partial. Original 123 requirement identities are unchanged; no whole teaching/environment or model gate is closed.

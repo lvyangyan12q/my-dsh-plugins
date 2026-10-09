@@ -404,7 +404,10 @@
       "section": "Implementation Decisions",
       "number": 1,
       "requirementSha256": "bcb53975960b0bc26b7dd53a2f7940094e77060c897931935cba284324a3313b",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at independent plugin delivery scope: exact Host/Client archives import, official rc.2 compatibility with zero exemptions, public installed consumers and generic bounded native seams; no business hardcoding into native DSH",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:2",
@@ -602,7 +605,10 @@
       "section": "Implementation Decisions",
       "number": 19,
       "requirementSha256": "a2c132a9c5c3381c0fab6eda4fcdf061ef74210d4fbcfed87e90081283c51a44",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at Host authority and persistence contract: scored round, explicit lesson confirmation, duplicate submission and review-claim protection tested in exact installed upgrade; full model teaching workflow remains a separate gate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:20",
@@ -620,7 +626,10 @@
       "section": "Implementation Decisions",
       "number": 21,
       "requirementSha256": "a1265a0d30af99550dcf420a3743205ae2fef4860527c8bf72263b033d3c7c4a",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: exact old/new archive upgrade and durable records/legacy assets retained; original-user backup/restore and full migration scope need their own individual proof",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:22",
@@ -1098,7 +1107,10 @@
       "section": "Implementation Decisions",
       "number": 1,
       "requirementSha256": "8d1d710ae3c4dbb0a9563b9a0cb6a9e72350072ceffe121afbbed9951cb2665e",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at platform/business ownership boundary: independent Workbench, Kaogong and Reading packages; core source scan has no application-specific business conditional and both applications own their data services",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:2",
@@ -1288,7 +1300,10 @@
       "section": "Testing Decisions",
       "number": 5,
       "requirementSha256": "9ad2b151d775b11b03571ea0940496785cb48eb33ae06d2c7732edc89c52c90a",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: exact installed cold restart/uninstall/reinstall preserves enabled state, data and native role bindings; whole invalid-reference GUI/replacement recovery still requires individual proof",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
     },
     {
       "id": "platform:Testing Decisions:6",
@@ -1297,7 +1312,13 @@
       "section": "Testing Decisions",
       "number": 6,
       "requirementSha256": "277a0eeda3796afd012af7cab10cb436b9fc4d229d8ab88ab9acb82dd1dee8c5",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at shared display/ownership contract: Kaogong knowledge-reader consumes the same public DisplayModule/DisplayStore used by Reading recipes, source proof and actual prior material/display browser receipts; full teaching/model gates remain separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json",
+        "plugins/kaogong/src/knowledge-reader.tsx",
+        "docs/evidence/2026-10-10/formal-cross-page-material.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
+      ]
     },
     {
       "id": "platform:Testing Decisions:7",
