@@ -32,7 +32,7 @@ const icons = { 'book-open': BookOpen, 'graduation-cap': GraduationCap, briefcas
 function AppIcon({ icon }: { icon: WorkbenchIcon }) { const Icon = icons[icon]; return <Icon size={18} aria-hidden="true" /> }
 
 /** Full-width navigation follows the native Workspace browser in the sidebar. */
-export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkills, useWorkbench, t, wide }: PropsRuntime<'sidebar.footer.action'> & PropsLocale<'personal-workbench'>
+export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkills, useWorkbench, t, wide }: PropsRuntime<'sidebar.sections'> & PropsLocale<'personal-workbench'>
   & InjectFace<{ hooks: { workbench: Workbench } }> & { openWorkspace: Workbench['openWorkspace']; openApp: Workbench['openApp']; openAgents: () => void; openSkills: () => void }) {
   const state = useWorkbench(value => value)
   const [expanded, setExpanded] = useState(true)

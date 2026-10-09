@@ -10,6 +10,10 @@ The Client retains one application view per default instance across workspace/pa
 
 Kaogong remains optional and owns its own learning domains, endpoints, personas and teaching Skill. Workbench removal leaves those business records intact; reinstall can recover saved role associations and assignments. There is no Kaogong runtime peer workaround.
 
+## Native sidebar sections
+
+Full application navigation registers in the root `sidebar.sections` list after native Workspace browsing and before the existing footer. It keeps applications beneath Workbench and preserves separate Agent/Skill entries. The generic [native sidebar adaptation](../../compat/native-sidebar-sections/README.md) supplies this public seat on the reviewed rc.2 host; native menu handlers, Workspace ownership and footer CSS remain unchanged. Build verification rejects an unadapted host instead of targeting private CSS-module classes.
+
 ## Optional Better Sidebar
 
 The official sidebar launcher works without Better Sidebar. The optional adapter targets exactly `0.24.1` with its public tab lifecycle, targeted open and state subscription capabilities. It registers a catalog tab using the same workbench owner, not duplicate app views or Sessions. Absence, unsupported capabilities and unload remain explicit.

@@ -18,7 +18,7 @@ const config = join(run, 'tsconfig.json')
 await writeFile(config, JSON.stringify({ extends: resolve(root, 'plugins/personal-workbench/tsconfig.json'), compilerOptions: { paths: { '@deepseek-ai/dsh-personal-workbench/client': [bridge] } } }))
 const env = { ...process.env, DSH_SOURCE: source, KAOGONG_TEST_RUNTIME: source, KAOGONG_WORKBENCH_TYPES: resolve(root, 'plugins/personal-workbench'), NODE_PATH: resolve(source, 'node_modules') }
 const output = await runNode([resolve(root, 'node_modules/tsx/dist/cli.mjs'), '--tsconfig', config, '--test',
-  'plugins/personal-workbench/tests/*.test.ts', 'plugins/personal-workbench/tests/*.test.mjs',
+  'scripts/native-sidebar-sections.test.mjs', 'plugins/personal-workbench/tests/*.test.ts', 'plugins/personal-workbench/tests/*.test.mjs',
   'plugins/kaogong/tests/*.test.ts', 'plugins/kaogong/tests/*.test.tsx', 'plugins/kaogong/tests/*.test.mjs',
   'plugins/reading-statistics/tests/*.test.mjs', 'tests/release-package.test.mjs'], { cwd: root, env })
 await writeFile(join(run, 'tests.log'), output)

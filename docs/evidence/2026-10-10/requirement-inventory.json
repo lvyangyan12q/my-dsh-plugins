@@ -405,7 +405,11 @@
       "section": "Implementation Decisions",
       "number": 2,
       "requirementSha256": "045a95aea833dd4a9ee02a5b7f5f86aa84aa590a6ae553d4709d5b1aed7fbfb4",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at native styling/public extension scope; full native teaching gates remain separately open",
+      "evidence": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json"
+      ],
+      "scopeNote": "Platform CSS does not rewrite native footer or Better Sidebar; upstream Worktable own styles are user-authorized."
     },
     {
       "id": "workbench:Implementation Decisions:3",
@@ -466,7 +470,11 @@
       "section": "Implementation Decisions",
       "number": 7,
       "requirementSha256": "a31960a88462f4f0c556274f4badc8bfd0fd981465c8895d95baccaab78e05d6",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at native styling/public extension scope; full native teaching gates remain separately open",
+      "evidence": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json"
+      ],
+      "scopeNote": "Generic public list slot, bounded native adaptation and unchanged native handlers/CSS; real disposal and browser navigation evidence."
     },
     {
       "id": "workbench:Implementation Decisions:8",

@@ -21,6 +21,8 @@ pnpm start
 
 应用平台的扩展与验证步骤见 [开发流程](docs/application-platform-extension.md) 和 [验收证据](docs/application-platform-acceptance.md)。阅读模板需要安装 `@deepseek-ai/dsh-reading-statistics` 并应用其 bundle patch；保存和预览草稿后仍需显式启用。
 
+原生侧栏需应用 [通用插件区域兼容补丁](compat/native-sidebar-sections/README.md) 并构建原生 Client；工作台大菜单使用 `sidebar.sections`，不修改原生 footer 或内部 CSS 类名。发布构建会校验该前提。
+
 ## 菜单
 
 原生工作区保留；工作台、Agent、Skills 为独立纵向入口。考公学习是工作台下面的子菜单，教师验证不再占用一级菜单。Agent 和 Skills 直接打开对应目录。

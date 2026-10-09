@@ -8,6 +8,7 @@ const source = process.env.DSH_SOURCE
 assert(source, 'Set DSH_SOURCE to the already-built official rc.2 checkout')
 const tsdown = process.env.RELEASE_TSDOWN_CLI ?? resolve(root, 'node_modules/tsdown/dist/run.mjs')
 const env = { ...process.env, DSH_SOURCE: source, KAOGONG_TEST_RUNTIME: source, KAOGONG_WORKBENCH_TYPES: resolve(root, 'plugins/personal-workbench') }
+await runNode(['scripts/check-native-sidebar-sections.mjs'], { cwd: root, env })
 await runNode(['scripts/check-native-session-chrome.mjs'], { cwd: root, env })
 await runNode(['scripts/check-native-draft-images.mjs'], { cwd: root, env })
 await runNode(['scripts/check-native-composer-root.mjs'], { cwd: root, env })

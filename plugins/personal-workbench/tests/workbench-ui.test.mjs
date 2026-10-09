@@ -65,7 +65,8 @@ async function fixture({ width = 960, height = 640 } = {}) {
   await service.loadLifecycle()
   const overlay = declarations.find(row => row.options.name === 'shell.overlay' && row.options.id === 'personal-workbench.workspace')
   const management = declarations.find(row => row.options.id === 'personal-workbench.management')
-  const launcher = declarations.find(row => row.options.name === 'sidebar.footer.action' && row.options.id === 'personal-workbench.workspace')
+  const launcher = declarations.find(row => row.options.name === 'sidebar.sections' && row.options.id === 'personal-workbench.workspace')
+  assert.ok(launcher,'full application navigation must use the additive section seat, not the native footer action row')
   assert.deepEqual(JSON.parse(JSON.stringify(overlay.options.children)), { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } })
   function Exercise({ active, pageId }) {
     const [answer, setAnswer] = React.useState('')

@@ -155,8 +155,8 @@ export function apply(ctx: Context): void {
       setMode: workbench.setMode, selectPage: workbench.selectPage, setGeometry: workbench.setGeometry,
       setPreference: workbench.setPreference, setAppEnabled, refreshRecipes, refreshApps: workbench.loadLifecycle, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
   }, Workspace))
-  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
-    name: 'sidebar.footer.action', id: 'personal-workbench.workspace', locale: 'personal-workbench',
+  ctx.slots.inject('sidebar.sections', () => ctx.slots.register({
+    name: 'sidebar.sections', id: 'personal-workbench.workspace', locale: 'personal-workbench',
     inject: () => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace, openApp: workbench.openApp, openAgents: () => openManagement('agents'), openSkills: () => openManagement('skills') }),
   }, WorkspaceLauncher))
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
