@@ -65,7 +65,7 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
     setStudyPage(request.kind === 'review' ? 'errors' : 'classroom')
     setStudyOpen(true)
   })
-  return <section ref={studyRoot} className="kg-study-shell" data-study={studyOpen} hidden={!(props.active ?? true)} role={studyOpen ? 'dialog' : 'region'} aria-label={studyOpen ? '独立学习窗口' : '考公学习内容'} tabIndex={-1} onKeyDown={event => { if (studyOpen && !event.defaultPrevented && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeStudy() } }}>
+  return <section ref={studyRoot} className="kg-study-shell" data-study={studyOpen} hidden={!(props.active ?? true)} role={studyOpen ? 'dialog' : 'region'} aria-label={studyOpen ? '独立学习窗口' : '考公学习内容'} tabIndex={-1} onKeyDown={event => { if (studyOpen && !event.defaultPrevented && !event.nativeEvent.isComposing && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeStudy() } }}>
     <style>{learningStyles}</style>
     <header className="kg-study-toolbar">
       <div><strong>{studyOpen ? '学习窗口' : '考公学习'}</strong><span>{studyOpen ? '专注课堂、资料与老师对话' : '查看进度，进入独立窗口学习'}</span></div>

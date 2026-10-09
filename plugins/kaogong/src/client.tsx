@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { SidebarFooterActionOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
@@ -36,12 +36,23 @@ export function KaogongDashboard(props: FooterProps & { ctx: ClientContext; stat
 function DashboardContent({ wide, renderFactorySlot, ctx }: FooterProps & { ctx: ClientContext }) {
   const [integration] = useBusinessState('integration', null)
   const [open, setOpen] = useBusinessState('open', false)
+  const surface = useRef<HTMLDivElement>(null)
+  const launcher = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!open || integration || !surface.current) return
+    const dialog = surface.current
+    dialog.focus()
+    return () => {
+      if (dialog.contains(document.activeElement) || document.activeElement === document.body) launcher.current?.focus()
+    }
+  }, [open, integration])
   if (integration) return null
 
   return (
     <>
       <button
         type="button"
+        ref={launcher}
         title="打开考公学习看板"
         aria-label="打开考公学习看板"
         onClick={() => setOpen(true)}
@@ -54,7 +65,31 @@ function DashboardContent({ wide, renderFactorySlot, ctx }: FooterProps & { ctx:
         <span aria-hidden="true" style={{ display: 'grid', placeItems: 'center', width: 20, height: 20, borderRadius: 6, background: colors.blueSoft, color: colors.blue, fontSize: 12, fontWeight: 700 }}>考</span>
         {wide && <span>考公学习</span>}
       </button>
-      {!integration && <div hidden={!open} role={open ? 'dialog' : undefined} aria-modal={open ? true : undefined} aria-label="考公学习看板" style={{ position: 'fixed', inset: 0, zIndex: 1000, overflow: 'auto', background: '#f8fafc', color: colors.ink, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      {!integration && <div ref={surface} tabIndex={-1} onKeyDown={event => {
+        if (event.defaultPrevented || event.nativeEvent.isComposing) return
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          event.stopPropagation()
+          setOpen(false)
+        } else if (event.key === 'Tab') {
+          const root = event.currentTarget
+          const controls = [...root.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href], [tabindex], summary')].filter(control => {
+            if (control.tabIndex < 0 || control.matches(':disabled')) return false
+            for (let node: HTMLElement | null = control; node && node !== root; node = node.parentElement) {
+              const style = window.getComputedStyle(node)
+              if (node.hidden || style.display === 'none' || style.visibility === 'hidden') return false
+            }
+            return true
+          })
+          const first = controls[0], last = controls[controls.length - 1]
+          if (!first || document.activeElement === root || (event.shiftKey ? document.activeElement === first : document.activeElement === last)) {
+            event.preventDefault()
+            const target = event.shiftKey ? last : first
+            target?.focus()
+            if (!first) root.focus()
+          }
+        }
+      }} hidden={!open} role={open ? 'dialog' : undefined} aria-modal={open ? true : undefined} aria-label="考公学习看板" style={{ position: 'fixed', inset: 0, zIndex: 1000, overflow: 'auto', background: '#f8fafc', color: colors.ink, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <KaogongClassroom ctx={ctx} active={open} onClose={() => setOpen(false)} renderFactorySlot={renderFactorySlot} />
       </div>}
     </>
