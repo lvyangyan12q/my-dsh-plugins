@@ -965,10 +965,11 @@
       "section": "User Stories",
       "number": 17,
       "requirementSha256": "ab0bda63f586681a85a562198d867173540ea19bd1a190c7958f29ab1a1bbc30",
-      "evidenceStatus": "partial: actual request failure/retry and no-match result observed; loading and empty underlying dataset browser states and full visual gate still unverified",
+      "evidenceStatus": "satisfied for rendered functional loading/empty/error states: first-load text transitions to empty underlying dataset on exact installed source; previous browser receipt proves request failure and real Retry recovery; complete visual gates remain separately open",
       "evidencePaths": [
         "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
-        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json",
+        "docs/evidence/2026-10-10/reading-empty-loading-browser.json"
       ]
     },
     {

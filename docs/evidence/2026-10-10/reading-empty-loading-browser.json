@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "b7ba8f76dc0be479480aba3802fd9f129daa8356",
+  "installedBytesEqual": true,
+  "profileRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\display-empty-browser-1791578647873",
+  "profilePackages": [
+    "@deepseek-ai/dsh-personal-workbench",
+    "@deepseek-ai/dsh-reading-statistics"
+  ],
+  "betterSidebarInstalled": false,
+  "url": "http://127.0.0.1:3090/",
+  "dataset": {
+    "initialized": true,
+    "records": 0,
+    "seed": "empty",
+    "isolatedAcceptance": true
+  },
+  "method": "Public installed plugin initialization and recipe save/preview/activate; actual browser navigation/clicks in a new isolated browser context; read-only MutationObserver captures first rendered load under Slow 3G, then normal network restored",
+  "observation": {
+    "transitions": [
+      {
+        "key": "[\"正在加载数据…\",\"正在加载数据…\",\"正在加载数据…\",\"正在加载数据…\"]",
+        "statuses": [
+          "正在加载数据…",
+          "正在加载数据…",
+          "正在加载数据…",
+          "正在加载数据…"
+        ],
+        "at": 49095.40000009537
+      },
+      {
+        "key": "[\"暂无记录。\",\"暂无记录。\",\"暂无记录。\"]",
+        "statuses": [
+          "暂无记录。",
+          "暂无记录。",
+          "暂无记录。"
+        ],
+        "at": 51145.800000190735
+      }
+    ],
+    "loadingObserved": true,
+    "emptyObserved": true,
+    "alerts": []
+  },
+  "screenshot": {
+    "path": "docs/evidence/2026-10-10/reading-empty-display.jpg",
+    "sha256": "76cfc0252aa47598366ba5625e68f2dbe8059fa8967a606c1fd5c551a6387d72",
+    "bytes": 59591,
+    "inspection": "Desktop shows empty filter/statistics/list/detail modules, annotation toolbar, native DSH workspace and Settings; no apparent clipping in this specific frame"
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "formal3080DataChanges": 0,
+  "modelMessagesSent": 0,
+  "annotationProbe": {
+    "isolated3090": "Clicked actual annotation toolbar and canvas region; requirement editor showed coordinates, optional screenshot, requirement, role selector and append-to-native-draft button; canceled without saving",
+    "formal3080": "Opened Reading application in existing acceptance tab and confirmed visible enabled annotation toolbar and records button",
+    "limitations": "This new probe did not submit or persist an annotation, drag a rectangle or execute a model task"
+  },
+  "limits": [
+    "Refresh with already-loaded data intentionally retains prior content; first-load textual loading is the observation here",
+    "Screenshot covers only this empty desktop display, not complete material/mobile/full-app visual gates",
+    "No full teaching/sidebar matrix, physical IME, native model question/permission/Stop or annotation submission acceptance in this receipt",
+    "No implementation changed; previous exact-source tests not repeated"
+  ]
+}
