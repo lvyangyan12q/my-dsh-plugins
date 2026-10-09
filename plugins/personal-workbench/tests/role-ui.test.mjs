@@ -42,6 +42,14 @@ test('built generic role view reads per-ID official status facts without a fake 
     assert.match(dom.window.document.body.textContent, /待处理：approval/)
     assert.match(dom.window.document.body.textContent, /未读完成/)
     assert.match(dom.window.document.body.textContent, /Math teacher/)
+    const openedHistory=[]
+    state.binding.previousSessionIds=['prior-agent-session']
+    await React.act(async()=>root.render(React.createElement(entry.component,{...props,openHistory:id=>openedHistory.push(id)})))
+    const historyButton=dom.window.document.querySelector('button[aria-label="roleOpenHistory: prior-agent-session"]')
+    assert.ok(historyButton,'Retained prior Session IDs need a visible native-history entrance')
+    await React.act(async()=>historyButton.click())
+    assert.deepEqual(openedHistory,['prior-agent-session'])
+    assert.equal(state.binding.sessionId,'math-id','Viewing history cannot replace the active role binding')
     const native = entries.find(row => row.options.name === 'personal-workbench.role-native')
     const factories = []
     await React.act(async () => root.render(React.createElement(native.component, {

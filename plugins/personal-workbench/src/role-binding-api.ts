@@ -68,6 +68,8 @@ export interface PersonalWorkbenchRoles {
 /** Read-only Client view facts; native drafts remain owned by the native composer. */
 export interface RoleViewState { readonly binding: RoleBinding | null; readonly error: string | null; readonly busy: boolean; readonly window: WindowSnapshot }
 export interface RoleViewInjected {
+  /** Open a retained prior Session in native navigation without changing the current role binding. */
+  readonly openHistory?: (sessionId: SessionId) => void
   readonly hooks: { readonly roles: HostObservable<ReadonlyMap<string, RoleViewState>> }
   readonly commands: PersonalWorkbenchRoles
   readonly mountRole: (key: RoleBindingKey, reference: SessionReference) => () => void

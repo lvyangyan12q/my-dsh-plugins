@@ -1,3 +1,4 @@
+import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { useEffect, useState } from 'react'
 import { RefreshCw, UserPlus } from 'lucide-react'
 import type { Context } from '@deepseek-ai/cordis'
@@ -16,7 +17,7 @@ function Mounted({ reference, bindingKey, mountRole, children }: { reference: Se
 }
 
 type RoleViewProps = FactoryComponentPropsOf<'personal-workbench.role-conversation'>
-export function RoleConversation({ bindingKey, active, label, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, renderFactorySlot, t }: RoleViewProps) {
+export function RoleConversation({ bindingKey, active, label, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, openHistory, renderFactorySlot, t }: RoleViewProps) {
   const state = useRoles(value => value.get(roleKey(bindingKey))) ?? EMPTY
   const [attachment, setAttachment] = useState<{ expectedSessionId: SessionId | null } | null>(null)
   const window = state.window
@@ -34,6 +35,7 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
       {state.binding && <details style={{ position: 'relative' }}><summary aria-label="角色会话更多操作" style={{ cursor: 'pointer' }}>更多</summary><div style={{ position: 'absolute', right: 0, top: 24, zIndex: 2, minWidth: 180, padding: 10, background: 'var(--dsw-alias-bg-base, #fff)', border: '1px solid #ddd', borderRadius: 6 }}>
         <p style={{ overflowWrap: 'anywhere', margin: '0 0 8px' }}>会话：{state.binding.sessionId}</p>
         <button data-pwb-button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
+        {!!state.binding.previousSessionIds.length && <div role="group" aria-label={t('roleHistory')} style={{maxHeight:180,overflow:'auto',display:'flex',flexDirection:'column',gap:6,marginTop:10}}>{[...state.binding.previousSessionIds].reverse().map(id=><button key={id} data-pwb-button type="button" disabled={state.busy||!openHistory} aria-label={t('roleOpenHistory')+': '+id} title={!openHistory?t('roleHistoryUnavailable'):undefined} style={{whiteSpace:'normal',overflowWrap:'anywhere',textAlign:'left'}} onClick={()=>openHistory?.(id)}>{t('roleOpenHistory')} · {id}</button>)}</div>}
       </div></details>}
     </header>
     {attachment && renderFactorySlot('personal-workbench.role-attachment', { bindingKey, expectedSessionId: attachment.expectedSessionId, close: () => setAttachment(null) })}
@@ -58,7 +60,7 @@ export function installRoleClient(ctx: Context) {
     child.effect(() => child.reflect.provide('personalWorkbenchRoles', owner), 'personal-workbench: roles service')
     child.slots.registerFactory({ name: 'personal-workbench.role-attachment', scope: 'root', locale: 'personal-workbench', inject: () => ({ commands: owner }) }, RoleAttachment)
     child.slots.registerFactory({ name: 'personal-workbench.role-conversation', scope: 'root', locale: 'personal-workbench', children: { 'personal-workbench.role-native': { kind: 'single', scope: 'session' } },
-      inject: () => ({ hooks: { roles: owner }, commands: owner, mountRole: (key, reference) => owner.owner(key).teacher.mount(reference) }),
+      inject: () => ({ hooks: { roles: owner }, commands: owner, mountRole: (key, reference) => owner.owner(key).teacher.mount(reference), openHistory: child.get?.('uiWorkspace') ? (id: SessionId) => { (child.get('uiWorkspace') as UiWorkspace).openSession(id) } : undefined }),
     }, RoleConversation)
     child.slots.inject('personal-workbench.role-native', () => child.slots.register({ name: 'personal-workbench.role-native' }, RoleNative))
   })
