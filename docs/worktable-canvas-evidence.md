@@ -623,3 +623,9 @@ Actual 3080 acceptance closes the independent study and outer workspace, then re
 An earlier close after restored page state left BODY focused, but an explicit external entry route passes; no code defect or speculative focus rewrite is inferred. No implementation changed, so the already-passing tests were not repeated. The existing built Workspace test covers its simulated draft/result retention and single mount; it is separate from this actual native browser evidence.
 
 [Receipt](evidence/2026-10-10/formal-outer-retention.json) provides bounded partial evidence for Workbench stories 9 and 13. It does not prove closing a running Agent, Host study-data persistence, layout across page reload or all application/environment combinations. No new screenshot was attempted. Other full-scope gates remain open.
+
+### 2026-10-10：最新远程提交的独立源码验收
+
+从已核对远程分支的 fa100cb18ec6eab3074d2824f751087edc2ed88e 导出干净源码，排除四个用户未提交的 Agent 管理文件。三个插件 Host/Client 构建、类型声明与消费者检查通过，288/288 测试通过，无跳过。官方离线归档安装、产物字节核对、认证生命周期、冷重启、阅读应用卸载重装及 HTML 静态资源检查通过。四个用户文件哈希与保存基线相同。详见 [本次独立验收记录](evidence/2026-10-10/remote-committed-source-final.json)。
+
+验收使用现有开发依赖和合成安装数据，模型调用为零；没有补齐真实原生提问/审批/停止、全部侧栏教学环境或物理输入法的验收。先前 e922 的记录保留作为历史证据，不代表本次源码。整体目标继续保持未完成。
