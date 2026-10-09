@@ -50,6 +50,21 @@ test('built generic role view reads per-ID official status facts without a fake 
     })))
     assert.deepEqual(factories.map(row => row.name), ['conversation.content', 'conversation.session.chrome'])
     assert.equal(factories[1].owner.hideChrome, false)
+    const attachment = entries.find(row => row.options.name === 'personal-workbench.role-attachment')
+    const candidates = ['session-one', 'session-two'].map(id => ({ id, displayTitle: 'Same title', cwd: '/same/workspace', origin: 'user' }))
+    await React.act(async () => root.render(React.createElement(attachment.component, {
+      bindingKey, expectedSessionId: 'math-id', commands: { attach: fail }, close: fail, t: key => key,
+      useSessions: selector => selector({ phase: 'ready', ids: candidates.map(row => row.id), byId: Object.fromEntries(candidates.map(row => [row.id, row])) }),
+      useWorkspaces: selector => selector({ phase: 'ready', archivedSessionIds: [] }),
+    })))
+    const choices = [...dom.window.document.querySelectorAll('option')].filter(option => option.value)
+    assert.equal(choices.length, 2)
+    assert.equal(new Set(choices.map(option => option.textContent)).size, 2, 'Native Sessions with identical title/cwd must remain distinguishable')
+    for (const [index, choice] of choices.entries()) {
+      assert.equal(choice.value, candidates[index].id, 'Readable labels cannot alter native binding identity')
+      assert.ok(choice.textContent.includes(candidates[index].id))
+    }
+
   } finally {
     await React.act(async () => root.unmount())
     for (const dispose of cleanup.reverse()) await dispose()

@@ -22,7 +22,7 @@ export function RoleAttachment({ bindingKey, expectedSessionId, commands, close,
     <label style={{ display: 'grid', gap: 6 }}>{t('roleExistingSession')}
       <select data-pwb-field value={selected} disabled={!ready || busy} onChange={event => setSelected(event.target.value)}>
         <option value="">{t('roleChooseSession')}</option>
-        {rows.map(row => <option key={row.id} value={row.id}>{row.displayTitle} · {row.cwd ?? row.id}</option>)}
+        {rows.map(row => <option key={row.id} value={row.id}>{row.displayTitle} · {row.id}{row.cwd ? ' · ' + row.cwd : null}</option>)}
       </select>
     </label>
     <small>{t('roleAttachHelp')}</small>
