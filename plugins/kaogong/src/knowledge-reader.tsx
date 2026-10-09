@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { optionalWorkbenchClient } from './optional-workbench-client.ts'
 import { StandaloneKnowledgeLibrary } from './standalone-knowledge-reader.tsx'
 const { DisplayModule, DisplayStore } = optionalWorkbenchClient ?? {}
@@ -41,6 +41,7 @@ function WorkbenchKnowledgeLibrary({ active = true }: { active?: boolean }) {
 }
 function KnowledgeModules({ active, store }: { active: boolean; store: DisplayStoreType }) {
   const owner = useRequestOwner()
+  const root = useRef<HTMLDivElement>(null)
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   useEffect(() => {
     if (!active) return
@@ -56,11 +57,11 @@ function KnowledgeModules({ active, store }: { active: boolean; store: DisplaySt
     owner.cell('reader.entry', null).set(record ? entryOf(record) : null)
   }, [state, store, owner])
   if (!DisplayModule) return null
-  return <div aria-label="考公资料公共模块">
+  return <div ref={root} aria-label="考公资料公共模块">
     <DisplayModule type="filter" store={store} t={t} />
     <DisplayModule type="stats" store={store} t={t} />
     <DisplayModule type="list" store={store} t={t} />
-    {state.selectedId && <button data-pwb-button type="button" onClick={store.clearSelection}>返回资料列表</button>}
+    {state.selectedId && <button data-pwb-button type="button" onClick={() => { store.clearSelection(); root.current?.querySelector<HTMLInputElement>('input')?.focus() }}>返回资料列表</button>}
     <DisplayModule type="detail" store={store} t={t} renderDetail={record => {
       const entry = entryOf(record)
       return <article><h3>{entry.title}</h3><p>{entry.subject} · {entry.kind} · {entry.source}</p><DocumentMarkdown content={entry.content} /></article>

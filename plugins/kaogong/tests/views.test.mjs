@@ -741,3 +741,21 @@ test('narrow study switches content and retained native conversation without act
     assert.equal(calls.some(row=>row.url.endsWith('/submit')||row.url.endsWith('/start')),false)
   } finally {cleanup();window.matchMedia=previous}
 })
+
+
+test('public material return focuses retained search and keeps Escape inside the study window', async () => {
+  mockApi()
+  const state=new client.KaogongViewState()
+  render(React.createElement(client.KaogongStateContext.Provider,{value:state},React.createElement(client.KaogongWorkbenchContent,{appId:'kaogong',instanceId:'default',pageId:'materials',active:true,selectPage(){},close(){}})))
+  fireEvent.click(screen.getByRole('button',{name:'打开学习窗口'}))
+  fireEvent.click(await screen.findByRole('button',{name:'测试讲义'}))
+  const back=screen.getByRole('button',{name:'返回资料列表'})
+  back.focus()
+  fireEvent.click(back)
+  assert.ok(document.activeElement===screen.getByRole('textbox',{name:'搜索知识库'}),'public return must focus the retained search')
+  assert.equal(state.cell('reader.selected','').value,'')
+  fireEvent.keyDown(document.activeElement,{key:'Escape'})
+  assert.equal(screen.queryByRole('dialog',{name:'独立学习窗口'}),null)
+  assert.ok(document.activeElement===screen.getByRole('button',{name:'打开学习窗口'}))
+  assert.equal(calls.some(row=>row.url.endsWith('/submit')||row.url.endsWith('/start')),false)
+})
