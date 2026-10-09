@@ -2,127 +2,71 @@ diff --git a/docs/subsystems/slots.md b/docs/subsystems/slots.md
 index 13b47b7460..3f8df78923 100644
 --- a/docs/subsystems/slots.md
 +++ b/docs/subsystems/slots.md
-@@ -116,6 +116,7 @@ root
- │  ├─ sidebar.brand.mark
- │  ├─ sidebar.brand.name
- │  ├─ sidebar.panellist
+@@ -118,0 +119 @@ root
 +│  ├─ sidebar.sections
- │  ├─ sidebar.footer.action
- │  ├─ sidebar.workspaces
- │  │  ├─ sidebar.workspaces.directoryFlow
 diff --git a/docs/subsystems/slots.zh.md b/docs/subsystems/slots.zh.md
 index 42bf724545..ba50d65187 100644
 --- a/docs/subsystems/slots.zh.md
 +++ b/docs/subsystems/slots.zh.md
-@@ -116,6 +116,7 @@ root
- │  ├─ sidebar.brand.mark
- │  ├─ sidebar.brand.name
- │  ├─ sidebar.panellist
+@@ -118,0 +119 @@ root
 +│  ├─ sidebar.sections
- │  ├─ sidebar.footer.action
- │  ├─ sidebar.workspaces
- │  │  ├─ sidebar.workspaces.directoryFlow
 diff --git a/packages/client/ui-sidebar/README.i18n.yaml b/packages/client/ui-sidebar/README.i18n.yaml
 index b1ffa3bf3e..336d17ae68 100644
 --- a/packages/client/ui-sidebar/README.i18n.yaml
 +++ b/packages/client/ui-sidebar/README.i18n.yaml
-@@ -23,6 +23,9 @@
- /deepseek-ai-dsh-client-ui-sidebar/use-this-package/global-panel-entries:
-   en: 5d3300d3506254c5
-   zh: 541ae1ee1e10b921
+@@ -25,0 +26,3 @@
 +/deepseek-ai-dsh-client-ui-sidebar/use-this-package/plugin-sections:
 +  en: a5212713706dccbe
 +  zh: 671ba27bd20dec13
- /deepseek-ai-dsh-client-ui-sidebar/use-this-package/collapse-behavior:
-   en: 8996c9b65c8eb635
-   zh: 9c7ce08b90f3c1f5
 diff --git a/packages/client/ui-sidebar/README.md b/packages/client/ui-sidebar/README.md
 index 0314df8089..80eb51ddf1 100644
 --- a/packages/client/ui-sidebar/README.md
 +++ b/packages/client/ui-sidebar/README.md
-@@ -37,6 +37,10 @@ The expanded brand row renders `sidebar.brand.mark` and `sidebar.brand.name` as
- 
- Plugins add an icon component to the root-scoped `sidebar.panellist` list with an `id`, optional `order`, and a string or locale-aware `label`. The same id addresses the component registered in the layout's root-scoped `main` keyed slot; selecting a missing main entry throws without changing the current selection. The label supplies plain visible text, the accessible name, and the collapsed tooltip. Each row reads its own selected state through `usePanelInfo`; moving DOM focus to search or a directory picker does not change the displayed panel or its selected row. With no registrations, neither the list nor spacing for it is rendered. The shipped composition registers no example panel.
- 
+@@ -39,0 +40,4 @@ Plugins add an icon component to the root-scoped `sidebar.panellist` list with a
 +### Plugin sections
 +
 +Plugins register root-scoped list entries in `sidebar.sections` after native Workspace browsing and before the footer. Each entry receives `wide` and `expandSidebar`, owns its section layout, and is removed when its registration is disposed. This seat adds navigation without replacing native Workspace, panel, footer-action or Settings entries. With no occupants, it renders no content or spacing.
 +
- ### Collapse behavior
- 
- The sidebar and conversation-header toggles show the effective shortcut from the command catalog in their hover and keyboard-focus tooltips and `aria-keyshortcuts`. An unbound command shows only the action label.
 diff --git a/packages/client/ui-sidebar/README.zh.md b/packages/client/ui-sidebar/README.zh.md
 index 3255915dcb..296ccdbad1 100644
 --- a/packages/client/ui-sidebar/README.zh.md
 +++ b/packages/client/ui-sidebar/README.zh.md
-@@ -37,6 +37,10 @@ dsh Web 客户端的侧边栏让用户识别当前构建、启动新会话、将
- 
- 插件在 root 作用域的 `sidebar.panellist` list 中注册图标组件，提供 `id`、可选 `order`，以及字符串或 locale-aware 的 `label`。同一个 id 寻址布局中 root 作用域 `main` keyed slot 的组件；选择不存在的主面板条目会抛错，并保留当前选中态。标签提供普通可见文字、无障碍名称和折叠提示。每一行通过 `usePanelInfo` 读取自己的选中态；DOM 焦点移到搜索框或目录选择器时，显示的面板及其列表项选中态不变。没有注册项时，列表及其间距均不渲染。产品随附的组合不注册示例面板。
- 
+@@ -39,0 +40,4 @@ dsh Web 客户端的侧边栏让用户识别当前构建、启动新会话、将
 +### 插件区域
 +
 +插件在根作用域列表槽 `sidebar.sections` 注册区域，位置在原生工作区浏览区之后、底栏之前。每个区域接收 `wide` 和 `expandSidebar`，自行负责区域布局，并在注册释放时移除。该槽添加导航入口，保留原生工作区、主面板、底栏动作和设置入口。没有注册时不显示内容或间距。
 +
- ### 折叠行为
- 
- 侧栏及会话头部的开关从命令目录读取当前有效快捷键，用于悬停、键盘聚焦提示和 `aria-keyshortcuts`。未绑定的命令只显示操作名称。
 diff --git a/packages/client/ui-sidebar/src/client/SidebarRoot.tsx b/packages/client/ui-sidebar/src/client/SidebarRoot.tsx
 index 46c019305f..4f010218b7 100644
 --- a/packages/client/ui-sidebar/src/client/SidebarRoot.tsx
 +++ b/packages/client/ui-sidebar/src/client/SidebarRoot.tsx
-@@ -301,6 +301,11 @@ export function SidebarRoot({
-         })}
-       </div>
- 
+@@ -303,0 +304,5 @@ export function SidebarRoot({
 +      {renderSlot('sidebar.sections', {
 +        wide,
 +        expandSidebar: () => { if (collapsed) toggleSidebar() },
 +      })}
 +
-       {/* Footer actions stack above Settings in both sidebar widths. */}
-       <div className={css.footArea}>
-         <div className={css.footerActions}>
 diff --git a/packages/client/ui-sidebar/src/client/contract/slots.ts b/packages/client/ui-sidebar/src/client/contract/slots.ts
 index c6ba475fec..055cc55228 100644
 --- a/packages/client/ui-sidebar/src/client/contract/slots.ts
 +++ b/packages/client/ui-sidebar/src/client/contract/slots.ts
-@@ -46,6 +46,9 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
-      * The sidebar passes only its column state — it holds no settings state.
-      */
-     'sidebar.settings': { kind: 'single'; scope: 'root'; owner: SidebarSettingsOwnerProps }
+@@ -48,0 +49,3 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 +    /** Additive plugin sections after native workspace browsing and before the foot.
 +     * Occupants own their section layout; no native menu or footer is replaced. */
 +    'sidebar.sections': { kind: 'list'; scope: 'root'; owner: SidebarSectionOwnerProps }
-     /**
-      * Optional actions beside Settings at the sidebar foot. Declared by this
-      * package's 'sidebar' entry; each action receives only the column state.
-@@ -142,6 +145,7 @@ export type SidebarRootComponentProps =
-     | 'sidebar.toggle.badge'
-     | 'sidebar.panellist'
-     | 'sidebar.workspaces'
+@@ -144,0 +148 @@ export type SidebarRootComponentProps =
 +    | 'sidebar.sections'
-     | 'sidebar.settings'
-     | 'sidebar.footer.action'
-   >
 diff --git a/packages/client/ui-sidebar/src/client/index.ts b/packages/client/ui-sidebar/src/client/index.ts
 index 3cd24cfc12..63ea81f925 100644
 --- a/packages/client/ui-sidebar/src/client/index.ts
 +++ b/packages/client/ui-sidebar/src/client/index.ts
-@@ -83,6 +83,7 @@ export function apply(ctx: ClientContext): void {
-       'sidebar.panellist': { kind: 'list', scope: 'root' },
-       'sidebar.workspaces': { kind: 'single', scope: 'root' },
-       'sidebar.settings': { kind: 'single', scope: 'root' },
+@@ -85,0 +86 @@ export function apply(ctx: ClientContext): void {
 +      'sidebar.sections': { kind: 'list', scope: 'root' },
-       'sidebar.footer.action': { kind: 'list', scope: 'root' },
-     },
-     inject: injectProps,
 diff --git a/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap b/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap
 index 652e9f6b39..2e7c508336 100644
 --- a/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap
 +++ b/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap
-@@ -1,5 +1,165 @@
- // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
- 
+@@ -2,0 +3,160 @@
 +exports[`sidebar shell snapshots > composes independent plugin sections without replacing the native foot 1`] = `
 +<div
 +  data-slot="sidebar"
@@ -283,92 +227,44 @@ index 652e9f6b39..2e7c508336 100644
 +</div>
 +`;
 +
- exports[`sidebar shell snapshots > renders Windows caption controls in expanded and collapsed states > windows collapsed 1`] = `
- <div
-   data-slot="sidebar"
-@@ -67,6 +227,10 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded
-         style="display: contents;"
-       />
-     </div>
+@@ -69,0 +230,4 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded
 +    <div
 +      data-slot="sidebar.sections"
 +      style="display: contents;"
 +    />
-     <div
-       class="footArea"
-     >
-@@ -210,6 +374,10 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded
-         style="display: contents;"
-       />
-     </div>
+@@ -212,0 +377,4 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded
 +    <div
 +      data-slot="sidebar.sections"
 +      style="display: contents;"
 +    />
-     <div
-       class="footArea"
-     >
-@@ -319,6 +487,10 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
-         style="display: contents;"
-       />
-     </div>
+@@ -321,0 +490,4 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
 +    <div
 +      data-slot="sidebar.sections"
 +      style="display: contents;"
 +    />
-     <div
-       class="footArea"
-     >
-@@ -462,6 +634,10 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, capsul
-         style="display: contents;"
-       />
-     </div>
+@@ -464,0 +637,4 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, capsul
 +    <div
 +      data-slot="sidebar.sections"
 +      style="display: contents;"
 +    />
-     <div
-       class="footArea"
-     >
-@@ -605,6 +781,10 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
-         style="display: contents;"
-       />
-     </div>
+@@ -607,0 +784,4 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
 +    <div
 +      data-slot="sidebar.sections"
 +      style="display: contents;"
 +    />
-     <div
-       class="footArea"
-     >
 diff --git a/packages/client/ui-sidebar/tests/apply.client.spec.tsx b/packages/client/ui-sidebar/tests/apply.client.spec.tsx
 index 19be12019f..2b04a3c510 100644
 --- a/packages/client/ui-sidebar/tests/apply.client.spec.tsx
 +++ b/packages/client/ui-sidebar/tests/apply.client.spec.tsx
-@@ -69,6 +69,7 @@ describe('ui-sidebar apply', () => {
-     expect(b.slots.spec('sidebar.brand.name')).toEqual({ kind: 'single', scope: 'root' })
-     expect(b.slots.spec('sidebar.workspaces')).toEqual({ kind: 'single', scope: 'root' })
-     expect(b.slots.spec('sidebar.settings')).toEqual({ kind: 'single', scope: 'root' })
+@@ -71,0 +72 @@ describe('ui-sidebar apply', () => {
 +    expect(b.slots.spec('sidebar.sections')).toEqual({ kind: 'list', scope: 'root' })
-     expect(b.slots.spec('sidebar.footer.action')).toEqual({ kind: 'list', scope: 'root' })
-     expect(b.slots.spec('sidebar.panellist')).toEqual({ kind: 'list', scope: 'root' })
-     // Copy rides the standard locale seat, not the inject face.
 diff --git a/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx b/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
 index f2407246f8..b2d64cd433 100644
 --- a/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
 +++ b/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
-@@ -62,6 +62,7 @@ function mountShell({ collapsed = false, width = 300, shortcuts = [] }: {
-         if (key === 'sidebar.brand.mark') return brandMark
-         if (key === 'sidebar.brand.name') return brandName
-         if (key === 'sidebar.toggle.badge') return null
+@@ -64,0 +65 @@ function mountShell({ collapsed = false, width = 300, shortcuts = [] }: {
 +        if (key === 'sidebar.sections') return <div data-testid="extension-section" data-wide={owner.wide} />
-         if (key === 'sidebar.settings') {
-           settingsOwner = owner
-           return <div data-testid="settings-seat" data-wide={owner.wide} />
-@@ -99,6 +100,23 @@ function mountShell({ collapsed = false, width = 300, shortcuts = [] }: {
- }
- 
- describe('SidebarRoot shell', () => {
+@@ -101,0 +103,17 @@ describe('SidebarRoot shell', () => {
 +  it('places additive plugin sections after native browsing while retaining native footer and settings', () => {
 +    const b = mountShell()
 +    const region = screen.getByTestId('region'), extension = screen.getByTestId('extension-section'), footer = screen.getByTestId('footer-action-seat'), settings = screen.getByTestId('settings-seat')
@@ -386,17 +282,11 @@ index f2407246f8..b2d64cd433 100644
 +    expect(screen.getByTestId('footer-action-seat').getAttribute('data-wide')).toBe('false')
 +    expect(screen.getByTestId('settings-seat').getAttribute('data-wide')).toBe('false')
 +  })
-   it('advertises the effective new-session binding', () => {
-     const shortcut: ShortcutCatalogEntry = { id: 'session.new' as ShortcutCommandId, label: 'New', aliases: [],
-       binding: null, modified: true, conflicts: [], issue: null, keys: ['Ctrl', 'N'], aria: 'Control+N' }
 diff --git a/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx b/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
 index 1b7ef3003e..e2668dd0f8 100644
 --- a/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
 +++ b/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
-@@ -54,6 +54,21 @@ async function bench(options: { locale?: 'en' } = {}) {
- }
- 
- describe('sidebar shell snapshots', () => {
+@@ -56,0 +57,15 @@ describe('sidebar shell snapshots', () => {
 +  it('composes independent plugin sections without replacing the native foot', async () => {
 +    const {runtime} = await bench({locale:'en'})
 +    const section = runtime.ctx.slots.register({name:'sidebar.sections',id:'fixture-extension'}, ({wide}) => <nav aria-label="Fixture extension" data-wide={wide}>Fixture section</nav>)
@@ -412,6 +302,3 @@ index 1b7ef3003e..e2668dd0f8 100644
 +      expect(slot.view.getAllByRole('button',{name:'New session'})[0]).toBe(nativeButton)
 +    }finally{section();footer();await runtime.dispose()}
 +  })
-   it('renders the expanded column in the default locale (zh, no setLocale)', async () => {
-     const { runtime } = await bench()
-     const slot = runtime.renderSlot('sidebar', { collapsed: false, width: 300 })
