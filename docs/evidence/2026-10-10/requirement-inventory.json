@@ -47,7 +47,13 @@
       "section": "User Stories",
       "number": 4,
       "requirementSha256": "3f8e160fa24b358eeb6f94eefc0d59dadf6ef85b23209e4fa4854d595ede1ebd",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at shared catalog/state contract; full teaching workflow in all sidebar environments remains a separate gate",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:User Stories:5",
@@ -332,7 +338,15 @@
       "section": "User Stories",
       "number": 33,
       "requirementSha256": "e8702061f7c782f502f754be39073bf955633ecadbea87e40125df16f8ee9123",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: public declaration and supported slot registration, exercised by optional consumer and installed Kaogong/Reading",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:User Stories:34",
@@ -341,7 +355,15 @@
       "section": "User Stories",
       "number": 34,
       "requirementSha256": "d2477cdfdbb53240bc70c7ce38144d68551dcade42105de09e6f3d6f14832db5",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: built-plugin dispose/reactivate through actual Cordis/SlotRegistry removes old registration and avoids duplicate entries",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:User Stories:35",
@@ -350,7 +372,13 @@
       "section": "User Stories",
       "number": 35,
       "requirementSha256": "d952df9685052bba5b7346f423d299d7eaf9d04faef53a7c1004ac67f053c9d7",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for optional Better Sidebar incompatibility: explicit unsupported reason and working primary entry; no broad version support claim",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:User Stories:36",
@@ -395,7 +423,15 @@
       "section": "Implementation Decisions",
       "number": 4,
       "requirementSha256": "1d50548d008d3b53bf9ace52c6f74fe421a3d86da9d9bad6e01aee91384a544b",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: stable registration fields, duplicate rejection, cleanup and zero Session acquisition",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:5",
@@ -404,7 +440,15 @@
       "section": "Implementation Decisions",
       "number": 5,
       "requirementSha256": "b99b67b626ccee906cca27a675d96c8740a929d1cb397124c2034896720e1d21",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: persisted state contains stable preferences, not installed definitions or React content",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:6",
@@ -431,7 +475,13 @@
       "section": "Implementation Decisions",
       "number": 8,
       "requirementSha256": "61aab15ffcd5661379f2de8f76c4cd38183f770426e457eb519f067ecabec911",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: absent provider has no registration; unsupported provider keeps primary entry; real Cordis disposal tested",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:9",
@@ -440,7 +490,13 @@
       "section": "Implementation Decisions",
       "number": 9,
       "requirementSha256": "710f28572427620aaf4ef272879d402ce05fc893e74da92c4ecc4864d5adb715",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: catalog delegates to the same owner and never borrows Sidebar Session state",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:10",
@@ -764,7 +820,13 @@
       "section": "User Stories",
       "number": 9,
       "requirementSha256": "aa3fb57c9144e47f004361372220f360466713b99fdfc59a99a7e2f419af1694",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: explicit activation is the only publication step; generated/saved/previewed drafts retain running version",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "platform:User Stories:10",
@@ -791,7 +853,14 @@
       "section": "User Stories",
       "number": 12,
       "requirementSha256": "ca889e04714b3d9c36ad2d95100d20f95f2256b654497d4b54bd92a74bee4566",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: disabled and readiness-pending applications cannot open, including after preference reload",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs",
+        "plugins/personal-workbench/tests/app-lifecycle-client.test.ts",
+        "plugins/personal-workbench/tests/workbench-ui.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "platform:User Stories:13",
@@ -935,7 +1004,13 @@
       "section": "User Stories",
       "number": 28,
       "requirementSha256": "d60fefc06e0b8d6543c7bfa4d721ff9222de6b02ef23aff64a2e0e6766ca380e",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: explicit Host module/role/connection failures preserve old running version; capability-specific rendered recovery remains separately indexed",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:1",
@@ -962,7 +1037,13 @@
       "section": "Implementation Decisions",
       "number": 3,
       "requirementSha256": "44c2589e2c77b6bbc39d06f9f9483acaa45319754feee89144fb060f2eb39448",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for scalar recipe contract: stable declared identities and no executable/business data payload; credential handling audit remains separate",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:4",
@@ -989,7 +1070,13 @@
       "section": "Implementation Decisions",
       "number": 6,
       "requirementSha256": "a319c61f4e676329014a3364c7a0ccb08e732cb1a51ad1a4907cb26600e2344d",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for first-release owned-data connection contract; real external cross-app authorization remains out of scope",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:7",
@@ -1034,7 +1121,13 @@
       "section": "Implementation Decisions",
       "number": 11,
       "requirementSha256": "b664032d5893cd606fa362ce62d20ed3b422b51d28e9062ee59a26fbcf0b3b08",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: distinct draft/preview/running state, validated references, CAS, failure retains old running version",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:12",
@@ -1043,7 +1136,14 @@
       "section": "Implementation Decisions",
       "number": 12,
       "requirementSha256": "0d2ca9928d9ea5faf347b83d76b0bb8fedfcc0305843352ef6fbe01c14ed75b5",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: disabling changes availability only; exact Reading data and running recipe survive restore and reinstall",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs",
+        "plugins/personal-workbench/tests/app-lifecycle-client.test.ts",
+        "plugins/personal-workbench/tests/workbench-ui.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:13",
