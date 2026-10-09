@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useBusinessState } from './view-state.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
 
@@ -13,6 +13,15 @@ export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean
   const [entry, setEntry] = useBusinessState('reader.entry', null)
   const [error, setError] = useBusinessState('reader.error', '')
   const [loading, setLoading] = useBusinessState('reader.loading', false)
+  const searchInput = useRef<HTMLInputElement>(null)
+  const backButton = useRef<HTMLButtonElement>(null)
+  const previousSelection = useRef(selected)
+  useEffect(() => {
+    if (!active || previousSelection.current === selected) return
+    previousSelection.current = selected
+    if (selected) backButton.current?.focus()
+    else searchInput.current?.focus()
+  }, [selected, active])
   useEffect(() => {
     if (!active) return
     const abort = new AbortController()
@@ -46,7 +55,7 @@ export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean
   return <div aria-label="考公独立资料">
     {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
     {selected ? <>
-      <button data-pwb-button type="button" onClick={() => setSelected('')} style={{ margin: '12px 0' }}>返回资料列表</button>
+      <button ref={backButton} data-pwb-button type="button" onClick={() => setSelected('')} style={{ margin: '12px 0' }}>返回资料列表</button>
       {loading && <p>正在加载正文…</p>}
       {entry && <article>
         <h3 style={{ fontSize: 18, overflowWrap: 'anywhere' }}>{entry.title}</h3>
@@ -54,7 +63,7 @@ export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean
         <DocumentMarkdown content={entry.content} />
       </article>}
     </> : <>
-      <input aria-label="搜索知识库" placeholder="搜索标题、科目或正文" value={query} onChange={event => setQuery(event.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: 9, margin: '12px 0', border: '1px solid #d1d5db', borderRadius: 4 }} />
+      <input ref={searchInput} aria-label="搜索知识库" placeholder="搜索标题、科目或正文" value={query} onChange={event => setQuery(event.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: 9, margin: '12px 0', border: '1px solid #d1d5db', borderRadius: 4 }} />
       <label>科目<select aria-label="科目" value={subject} onChange={event => setSubject(event.target.value)}><option value="">全部</option>{[...new Set(entries.map(item => item.subject))].map(value => <option key={value}>{value}</option>)}</select></label>
       <label>资料类型<select aria-label="资料类型" value={kind} onChange={event => setKind(event.target.value)}><option value="">全部</option>{[...new Set(entries.map(item => item.kind))].map(value => <option key={value}>{value}</option>)}</select></label>
       <div style={{ color: '#6b7280', fontSize: 12 }}>{filtered.length} 条资料</div>

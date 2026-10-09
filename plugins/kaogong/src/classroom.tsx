@@ -32,6 +32,16 @@ const taskTranslate = (key: string) => taskLabels[key] ?? key
 export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> & Partial<PropsRenderFactories> & { onOpenTeacher?: KaogongViewProps['onOpenTeacher']; ctx?: ClientContext }) {
   const [studyOpen, setStudyOpen] = useBusinessState('study.open', false)
   const [studyPage, setStudyPage] = useBusinessState('study.page', 'classroom')
+  const [studyPane, setStudyPane] = useState<'content' | 'conversation'>('content')
+  const [narrow, setNarrow] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia('(max-width:760px)').matches)
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return
+    const media = window.matchMedia('(max-width:760px)')
+    const update = () => setNarrow(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
   const studyRoot = useRef<HTMLElement>(null)
   const studyLauncher = useRef<HTMLButtonElement>(null)
   const wasStudyOpen = useRef(studyOpen)
@@ -63,15 +73,17 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
     tasks.prepare(task, options)
     select(task.key)
     setStudyPage(request.kind === 'review' ? 'errors' : 'classroom')
+    setStudyPane('conversation')
     setStudyOpen(true)
   })
-  return <section ref={studyRoot} className="kg-study-shell" data-study={studyOpen} hidden={!(props.active ?? true)} role={studyOpen ? 'dialog' : 'region'} aria-label={studyOpen ? '独立学习窗口' : '考公学习内容'} tabIndex={-1} onKeyDown={event => { if (studyOpen && !event.defaultPrevented && !event.nativeEvent.isComposing && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeStudy() } }}>
+  return <section ref={studyRoot} className="kg-study-shell" data-study={studyOpen} data-pane={studyPane} hidden={!(props.active ?? true)} role={studyOpen ? 'dialog' : 'region'} aria-label={studyOpen ? '独立学习窗口' : '考公学习内容'} tabIndex={-1} onKeyDown={event => { if (studyOpen && !event.defaultPrevented && !event.nativeEvent.isComposing && event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeStudy() } }}>
     <style>{learningStyles}</style>
     <header className="kg-study-toolbar">
       <div><strong>{studyOpen ? '学习窗口' : '考公学习'}</strong><span>{studyOpen ? '专注课堂、资料与老师对话' : '查看进度，进入独立窗口学习'}</span></div>
-      {studyOpen ? <button data-pwb-button type="button" onClick={closeStudy} aria-label="关闭学习窗口"><X size={16} />返回统计面板</button> : <button data-pwb-button data-variant="primary" ref={studyLauncher} type="button" className="kg-study-launch" onClick={() => { if (['practice', 'materials', 'errors'].includes(props.pageId ?? '')) setStudyPage(props.pageId!); setStudyOpen(true) }}><Maximize2 size={16} />打开学习窗口</button>}
+      {studyOpen ? <button data-pwb-button type="button" onClick={closeStudy} aria-label="关闭学习窗口"><X size={16} />返回统计面板</button> : <button data-pwb-button data-variant="primary" ref={studyLauncher} type="button" className="kg-study-launch" onClick={() => { if (['practice', 'materials', 'errors'].includes(props.pageId ?? '')) setStudyPage(props.pageId!); setStudyPane('content'); setStudyOpen(true) }}><Maximize2 size={16} />打开学习窗口</button>}
     </header>
-    {studyOpen && <nav className="kg-study-pages" aria-label="学习窗口页面">{[{ id: 'classroom', label: '课堂' }, { id: 'materials', label: '讲义' }, { id: 'practice', label: '练习' }, { id: 'errors', label: '错题' }].map(page => <button data-pwb-button type="button" key={page.id} aria-pressed={studyPage === page.id} onClick={() => setStudyPage(page.id)}>{page.label}</button>)}</nav>}
+    {studyOpen && <nav className="kg-study-pages" aria-label="学习窗口页面">{[{ id: 'classroom', label: '课堂' }, { id: 'materials', label: '讲义' }, { id: 'practice', label: '练习' }, { id: 'errors', label: '错题' }].map(page => <button data-pwb-button type="button" key={page.id} aria-pressed={studyPage === page.id} onClick={() => { setStudyPage(page.id); setStudyPane('content') }}>{page.label}</button>)}</nav>}
+    {studyOpen && narrow && <nav className="kg-study-pane-tabs" aria-label="学习内容与对话"><button data-pwb-button type="button" aria-pressed={studyPane === 'content'} onClick={() => setStudyPane('content')}>学习内容</button><button data-pwb-button type="button" aria-pressed={studyPane === 'conversation'} onClick={() => setStudyPane('conversation')}>角色对话</button></nav>}
     <div ref={root} className="kg-classroom" style={{ gridTemplateColumns: studyOpen ? `minmax(0, ${leftWidth}fr) 7px minmax(0, ${100 - leftWidth}fr)` : 'minmax(0, 1fr)', minWidth: 0, minHeight: 0, height: '100%', width: '100%', flex: 1 }}>
     <style>{`.kg-classroom{display:grid;letter-spacing:0}.kg-classroom>div,.kg-classroom>aside{min-width:0;min-height:0;overflow:auto}.kg-classroom>aside{border-left:1px solid #ddd}.kg-classroom h1{font-size:18px!important;overflow-wrap:anywhere}.kg-classroom header{flex-wrap:wrap}.kg-classroom button{max-width:100%;white-space:normal;overflow-wrap:anywhere}.kg-divider{cursor:col-resize;background:#eef0f3;touch-action:none}.kg-divider:hover,.kg-divider:focus-visible{background:#93b4f5;outline:none}`}</style>
     <div className="kg-study-content"><KaogongView {...props} focusedStudy={studyOpen} pageId={studyOpen ? studyPage : props.pageId} onSelectPage={studyOpen ? setStudyPage : props.onSelectPage} onOpenTeacher={teach} /></div>
@@ -88,7 +100,7 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
       {!props.renderFactorySlot && props.ctx && tasks && PreparedTaskEditor && <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: 0, maxHeight: '50%', overflow: 'hidden', padding: '8px' }}><PreparedTaskEditor ctx={props.ctx} bindingKey={selected} label={taskRoleLabel(selected)} t={taskTranslate} /></div>}
       {roles && props.renderFactorySlot ? opened.map(key => <div key={JSON.stringify(key)} hidden={!same(key, selected)} style={{ flex: 1, minHeight: 0, minWidth: 0, display: same(key, selected) ? 'flex' : 'none', flexDirection: 'column' }}>
         {props.ctx && tasks && PreparedTaskEditor && <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: 0, maxHeight: '50%', overflow: 'hidden', padding: '8px' }}><PreparedTaskEditor ctx={props.ctx} bindingKey={key} label={taskRoleLabel(key)} t={taskTranslate} /></div>}
-        {props.renderFactorySlot!('personal-workbench.role-conversation', { bindingKey: key, label: key.subject ?? (key.roleId === 'teacher' ? '默认老师' : key.roleId === 'class-advisor' ? '班主任' : '辅导员'), active: studyOpen && (props.active ?? true) && same(key, selected) }, { fallback: <p role="alert">角色原生组件不可用。</p> })}
+        {props.renderFactorySlot!('personal-workbench.role-conversation', { bindingKey: key, label: key.subject ?? (key.roleId === 'teacher' ? '默认老师' : key.roleId === 'class-advisor' ? '班主任' : '辅导员'), active: studyOpen && (props.active ?? true) && same(key, selected) && (!narrow || studyPane === 'conversation') }, { fallback: <p role="alert">角色原生组件不可用。</p> })}
       </div>) : <p role="status">角色服务不可用；练习和讲义仍可使用。</p>}
     </aside>
   </div>

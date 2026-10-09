@@ -581,3 +581,16 @@ The official CLI installed the final Kaogong archive into the independent standa
 Also reconfirmed actual 3080 annotation behavior after a fresh reload: Reading bookshelf -> annotate canvas -> point selection -> requirement/role/optional screenshot editor. The probe was cancelled without saving, appending or sending, preserving existing drafts. This is current-runtime confirmation of the previously accepted annotation implementation.
 
 Overall completion remains unproven: the full three-sidebar teaching matrix, remaining broader visual/IME gates, real native question/approval/Stop/close-without-cancel interactions blocked by prior provider403, and final original-scope reconciliation remain open.
+
+
+## 2026-10-10: standalone narrow learning layout and material focus
+
+Actual 3088 Chrome acceptance found the independent study window still split at 480px: material content was 282.59px and its image 201.20px wide. The narrow CSS omitted the column override. The fix adds single-column content/conversation switching, retains the native role mount, and marks hidden conversation inactive so it cannot claim the composer. At desktop width the original split and column sizing remain.
+
+The same browser flow exposed document selection and return removing the focused button, leaving BODY focused and preventing Escape from reaching the study window. The standalone reader now focuses its return button on an actual selection change and the restored search input on return, without initial autofocus. Both failures have built-client regressions that failed before the fix.
+
+Final official archive installation into the isolated 3088 profile matches Host/Client bytes. Actual 480px content width is 478px, body scroll width 480px, image loaded at 396.61px (745x610 source). Conversation occupies the full 478px when selected; returning retains the document. Desktop 1440px restores 844.19px/562.80px panes. Final actual document selection focuses Return; returning focuses search; physical Escape closes the inner study window and returns focus to its launcher while preserving the outer dashboard. No model call or study-data write was made.
+
+The [before](evidence/2026-10-10/standalone-material-narrow-before.jpg) and [after](evidence/2026-10-10/standalone-material-narrow-after.jpg) are actual returned element JPEGs. The after image predates duplicate CSS cleanup and the focus-only adjustment; final installed DOM confirms the same layout. This is synthetic fixture evidence, not real teaching or physical IME acceptance. [Receipt](evidence/2026-10-10/standalone-study-responsive.json).
+
+All three plugin release builds/types pass; local integrated tests 287/287; final archive/consumer/authentication/lifecycle/cold-restart/uninstall-reinstall/HTML-asset release gates pass. The count includes the user's uncommitted management test and is not certified as a remote-only count. Incremental Standards and Spec review found no actionable issue after removing duplicate CSS. User management files are preserved; remaining full-scope gates stay open.

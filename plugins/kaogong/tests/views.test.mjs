@@ -656,6 +656,9 @@ test('standalone built client opens knowledge and practice without a Workbench f
   fireEvent.click(await screen.findByRole('button', { name: '测试讲义' }))
   await screen.findByText('合成测试资料', { exact: false })
   assert.ok(screen.getByRole('table'))
+  assert.ok(document.activeElement === screen.getByRole('button', { name: '返回资料列表' }), 'opening a standalone document must retain keyboard focus')
+  fireEvent.click(screen.getByRole('button', { name: '返回资料列表' }))
+  assert.ok(document.activeElement === screen.getByRole('textbox', { name: '搜索知识库' }), 'returning must focus the restored material list')
   fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
   await screen.findByRole('radio', { name: 'A. 10%' })
   assert.equal(screen.queryByText('正确答案：', { exact: false }), null)
@@ -706,4 +709,35 @@ test('standalone dialog focuses its surface, closes with Escape and restores its
   fireEvent.keyDown(first, { key: 'Escape' })
   assert.equal(screen.queryByRole('dialog', { name: '考公学习看板' }), null)
   assert.ok(document.activeElement === launcher)
+})
+
+
+test('narrow study switches content and retained native conversation without activating a hidden role', async () => {
+  mockApi()
+  const previous=window.matchMedia
+  let change
+  const media={matches:true,addEventListener:(_type,listener)=>{change=listener},removeEventListener(){}}
+  window.matchMedia=()=>media
+  let mounts=0,unmounts=0,currentActive
+  function RetainedRole({active}) { currentActive=active; React.useEffect(()=>{mounts++;return()=>{unmounts++}},[]);return React.createElement('div',null,'narrow retained role') }
+  const state=new client.KaogongViewState()
+  state.cell('roles',null).set({open:async()=>{}})
+  try {
+    render(React.createElement(client.KaogongStateContext.Provider,{value:state},React.createElement(client.KaogongWorkbenchContent,{appId:'kaogong',instanceId:'default',active:true,pageId:'materials',selectPage(){},close(){},renderFactorySlot:(_name,props)=>React.createElement(RetainedRole,{active:props.active})})))
+    fireEvent.click(screen.getByRole('button',{name:'打开学习窗口'}))
+    const shell=screen.getByRole('dialog',{name:'独立学习窗口'})
+    assert.equal(shell.dataset.pane,'content')
+    assert.equal(currentActive,false,'hidden native conversation must not own composer focus')
+    fireEvent.click(screen.getByRole('button',{name:'角色对话',exact:true}))
+    assert.equal(shell.dataset.pane,'conversation')
+    assert.equal(currentActive,true)
+    fireEvent.click(screen.getByRole('button',{name:'讲义',exact:true}))
+    assert.equal(shell.dataset.pane,'content','page navigation returns to content')
+    assert.equal(currentActive,false)
+    act(()=>{media.matches=false;change({matches:false})})
+    assert.equal(currentActive,true,'desktop split restores the visible role')
+    assert.equal(mounts,1)
+    assert.equal(unmounts,0)
+    assert.equal(calls.some(row=>row.url.endsWith('/submit')||row.url.endsWith('/start')),false)
+  } finally {cleanup();window.matchMedia=previous}
 })
