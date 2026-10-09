@@ -140,6 +140,7 @@ test('workbench packaged Skills use the native bundled provider and unload witho
     assert.equal(presets.length, 1)
     assert.equal(presets[0].id, 'personal-workbench.module-builder.v1')
     assert.ok(presets[0].plugins.some(plugin => plugin.name === '@deepseek-ai/dsh-tool-fs'))
+    assert.ok(presets[0].plugins.some(plugin => plugin.name === '@deepseek-ai/dsh-tool-ask-user'), 'Module builder must expose native questions')
     assert.equal(presets[0].plugins.some(plugin => /permission|sandbox/.test(plugin.name)), false)
     await owner.dispose()
     owner = undefined

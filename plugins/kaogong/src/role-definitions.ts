@@ -22,6 +22,7 @@ export async function kaogongRolePresets() {
     { name: '@deepseek-ai/dsh-persona', config: { prefix: (await readFile(new URL(`../roles/personas/${row.file}.md`, import.meta.url), 'utf8')).replaceAll('{科目}', row.subject ?? '已确认科目'), complete: false, includeRuntimeContext: true } },
     { name: '@deepseek-ai/dsh-skill-filesystem', config: { providerName: teachingSkillProvider, includeDefaultRoots: false, customSkillDirs: [], bundledSkillDir: fileURLToPath(new URL('../roles/skills/', import.meta.url)), watch: false } },
     { name: '@deepseek-ai/dsh-tool-skill', config: {} },
+    { name: '@deepseek-ai/dsh-tool-ask-user', config: {} },
   ] })))
 }
 

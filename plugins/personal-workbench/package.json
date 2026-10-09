@@ -80,6 +80,7 @@
     "@deepseek-ai/dsh-skill-filesystem": "0.2.0-rc.2",
     "@deepseek-ai/dsh-tool-fs": "0.2.0-rc.2",
     "@deepseek-ai/dsh-tool-skill": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tool-ask-user": "0.2.0-rc.2",
     "@deepseek-ai/dsh-persona": "0.2.0-rc.2"
   },
   "devDependencies": {

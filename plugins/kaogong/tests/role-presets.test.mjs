@@ -13,6 +13,7 @@ const load = async path => (await import(pathToFileURL(resolve(source, path)).hr
 
 test('activated personas require real evidence and user-confirmed native handoff instead of obsolete dispatch', async () => {
   for (const preset of await kaogongRolePresets()) {
+    assert.ok(preset.plugins.some(row => row.name === '@deepseek-ai/dsh-tool-ask-user'), 'Every teaching role must expose native questions')
     const persona = preset.plugins.find(row => row.name === '@deepseek-ai/dsh-persona').config
     assert.equal(persona.complete, false)
     assert.equal(persona.includeRuntimeContext, true)
@@ -34,6 +35,7 @@ test('actual preset registry activates application personas in independent scope
     for (const path of ['packages/llm/llm/lib/index.js', 'packages/core/session/lib/index.js', 'packages/session/session-projection/lib/index.js']) await ctx.plugin(await load(path))
     await ctx.plugin(await load('packages/core/system-prompt/lib/index.js'), { personaPrefix: 'UNCHANGED DEPLOYMENT GUARD' })
     await ctx.plugin(await load('packages/core/tools/lib/index.js'))
+    await ctx.plugin(await load('packages/interaction/user-questions/lib/index.js'))
     await ctx.plugin(await load('packages/core/agent/lib/index.js'))
     await ctx.plugin(await load('packages/core/agent-loop/lib/index.js'), { agents: [] })
     const { SkillRegistry } = await import(pathToFileURL(resolve(source, 'packages/skill/skill/lib/index.js')).href)
@@ -45,6 +47,7 @@ test('actual preset registry activates application personas in independent scope
       assert.equal(resolved.broken, undefined, `${preset.id}: ${resolved.broken}`)
       const lease = await ctx.agentPresets.acquireScope(preset.id)
       try {
+        assert.ok(ctx.tools.get('ask_user_question', lease.key), 'Native question tool must activate in the role scope')
         const assembly = await ctx.systemPrompt.assemble({ scope: lease.key })
         assert.notEqual(assembly.sections.find(row => row.name === 'deployment:persona-prefix')?.text, 'UNCHANGED DEPLOYMENT GUARD')
         const skill = await ctx.skills.get('kaogong-teach', { scope: lease.key })
