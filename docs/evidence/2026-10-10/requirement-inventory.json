@@ -328,7 +328,10 @@
       "section": "User Stories",
       "number": 31,
       "requirementSha256": "15d76ab87d4cd0b863767d83f2e345a4698793a3945d3e444351af0298c1dda2",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: real archived bound Session shows explicit error, retains ID and requires Retry after native unarchive; replacement confirmation/cancellation and reattachment preserve original draft across Host restart; deleted/otherwise inaccessible references and full historical turns still require individual proof",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/role-session-recovery-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:32",

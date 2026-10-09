@@ -1,6 +1,6 @@
 # Full-scope acceptance audit
 
-Audit source: latest implementation f2ee7ba30cc78ff2a95fe9e2cfe292acc7df797e with exact clean-source build, 294-test, installed release and old-to-new upgrade receipts, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
+Audit source: latest implementation cc73c946b04b9193137c4b245cc97365f982daf1 with exact clean-source build, 294-test and installed release; old-to-new upgrade separately evidenced at f2ee7ba, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
 
 The [requirement inventory](evidence/2026-10-10/requirement-inventory.json) identifies each of 123 numbered/bulleted requirements by source, line and exact-text SHA256: all 36 Workbench and 28 Platform user stories, plus their implementation/testing decisions. Each still requires individual closure against its exact scope. Approved canvas changes, native-menu preservation, management-only public capability reuse, retained app-private capabilities, application-provided map data and the old-kaogong observation period remain part of scope.
 
@@ -104,3 +104,6 @@ computer-use真实输入法验收未执行：Node运行时连续退出，重置�
 
 
 2026-10-10: Actual installed 3091 UI completes the non-model practice boundary using a read-only snapshot of 62 existing approved records: ten distinct questions, hidden answers, partial-answer reload, authoritative scoring/analysis, saved nine wrong-answer reasons and one acceptance note, ten unseen next questions, history/close/reload recovery. Formal six-file data and four user changes remain byte-identical. This supplies bounded proof for Workbench stories 22–23; counselor/native interaction and the whole three-sidebar teaching workflow remain open. Existing bank OCR contamination and absent diagram assets are explicitly retained as content-quality limitations. See [practice browser receipt](evidence/2026-10-10/kaogong-practice-browser.json).
+
+
+2026-10-10: Real archived test-role recovery retains the old ID, hides its composer and requires an explicit retry. Native unarchive followed by Retry restores the exact draft; explicit replacement confirmation preserves the old ID, and keyboard reattachment restores the original draft through Host restart. Same-title/same-directory Session chooser labels were actually indistinguishable; failing built UI and browser checks are repaired by showing native IDs without altering binding values. Exact cc73c94 builds, 294/294 tests and official archive lifecycle/restart/uninstall checks pass. Story31 remains partial for deleted/otherwise inaccessible Sessions and full historic turns. See [role recovery receipt](evidence/2026-10-10/role-session-recovery-browser.json).
