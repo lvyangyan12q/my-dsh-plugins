@@ -1,0 +1,1124 @@
+{
+  "sourceCommit": "e9220b27ac2266123021f58093e3a39cfb779298",
+  "canonicalSources": [
+    "docs/personal-workbench-spec.md",
+    "docs/wayfinder/application-platform/platform-spec.md"
+  ],
+  "scopeOverrides": [
+    "docs/worktable-canvas-adjustment.md",
+    "user: retain native menus and upstream Worktable",
+    "user: reusable Agent/Skills only from management; app-private capabilities retained",
+    "user: map data supplied by each application; no synthetic map acceptance",
+    "user: retain old kaogong path during observation; do not delete"
+  ],
+  "overallStatus": "incomplete; evidence index is not a completion verdict",
+  "entries": [
+    {
+      "id": "workbench:User Stories:1",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 27,
+      "section": "User Stories",
+      "number": 1,
+      "requirementSha256": "5b6f8df6e0492362a03d64bf4b4741bc51cfcb1201f412798b3df1996dce52de",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 28,
+      "section": "User Stories",
+      "number": 2,
+      "requirementSha256": "7d434619f0a2905c16734907cb43da0de484c9cf8fdc4348d36cac3f0f09de6f",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 29,
+      "section": "User Stories",
+      "number": 3,
+      "requirementSha256": "2c537fc9faa85dbfa056d2d666fb51957883e5ecda30e1041dbb3f44f7d0d82c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:4",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 30,
+      "section": "User Stories",
+      "number": 4,
+      "requirementSha256": "3f8e160fa24b358eeb6f94eefc0d59dadf6ef85b23209e4fa4854d595ede1ebd",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 31,
+      "section": "User Stories",
+      "number": 5,
+      "requirementSha256": "727700416b95bbc50af8bd5b09e7494bc1a7d03c0e117bc9a81e0e9ca9cfae18",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 32,
+      "section": "User Stories",
+      "number": 6,
+      "requirementSha256": "1fdf7e60f1f1275a976ff20a06034164cab0c48cbabd9e3d53f322f7de11374b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:7",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 33,
+      "section": "User Stories",
+      "number": 7,
+      "requirementSha256": "d90053d346abbcbf7aac988559aae238508afa7b73bda19aa08f21a9ca064b8c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:8",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 34,
+      "section": "User Stories",
+      "number": 8,
+      "requirementSha256": "80de596137e1426d935379a5a6de9da23b5bff9da69e7a1176a9cd0ed061de9b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:9",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 35,
+      "section": "User Stories",
+      "number": 9,
+      "requirementSha256": "a0bcc604698f51165eb23be95aabdcb1d5901c264ac6131aebc4b1f0aa84a5d8",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:10",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 36,
+      "section": "User Stories",
+      "number": 10,
+      "requirementSha256": "a271824f27098a8cde6db41d35b54859d5e524539035a9ba61cfd1dc813bcecf",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:11",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 37,
+      "section": "User Stories",
+      "number": 11,
+      "requirementSha256": "82d6e67c78787fb4c17821073316920d5afc2a1a39493fc84c6bf6eb5dcab8f0",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:12",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 38,
+      "section": "User Stories",
+      "number": 12,
+      "requirementSha256": "e42e5eb9b0b306d2b09cb29a26113e6ed5760e2168dacc82b336545cfefe0e80",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:13",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 39,
+      "section": "User Stories",
+      "number": 13,
+      "requirementSha256": "0f39c3f51400a8b353272bea557c89193325bb825c9415392a77a46942623a8e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:14",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 40,
+      "section": "User Stories",
+      "number": 14,
+      "requirementSha256": "e58fdcdfa873376606d5049cb1b255504d956813c04c4791a892c5cd4869418e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:15",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 41,
+      "section": "User Stories",
+      "number": 15,
+      "requirementSha256": "40f47e72c60046b036ef9630d3da6a76e912d26f22bb780a3fae30fd48acf06e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:16",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 42,
+      "section": "User Stories",
+      "number": 16,
+      "requirementSha256": "1c771863b035076636b7ba95cea9dc7916b6d18d0c7600133e55d1526642e697",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:17",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 43,
+      "section": "User Stories",
+      "number": 17,
+      "requirementSha256": "c46fd89742e346daaf0826dbab0f1b2f5d4ae1fe025a624bf989eccdfdd1316b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:18",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 44,
+      "section": "User Stories",
+      "number": 18,
+      "requirementSha256": "0b2f7a0b7d126fcded2092bac41a4558082f0750469dce42074bbccbc1fe790b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:19",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 45,
+      "section": "User Stories",
+      "number": 19,
+      "requirementSha256": "b8a2bfe2727751378fac0eee4df75d0ff61e86aa3c9543272ca9611b01ec98e3",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:20",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 46,
+      "section": "User Stories",
+      "number": 20,
+      "requirementSha256": "0792e427aca1e626d47984cf04b0bb47e235d3cc31b54289627fdfc1631407e5",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:21",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 47,
+      "section": "User Stories",
+      "number": 21,
+      "requirementSha256": "5300d80ec00f7cc6fcd90a95878f36c9f2c62993605a3cd3fbf005be2b72d273",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:22",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 48,
+      "section": "User Stories",
+      "number": 22,
+      "requirementSha256": "37794592330e74319e7336d187b149f83d62f40a2a720e1594b32be92874553c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:23",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 49,
+      "section": "User Stories",
+      "number": 23,
+      "requirementSha256": "a7b296c1ea17f76f86876abf0a14051e62ce66c73d243cf10e0d9e0d0d356f04",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:24",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 50,
+      "section": "User Stories",
+      "number": 24,
+      "requirementSha256": "3305af7fd160fbdcf30985debc17e32cbf5cfebe8d5b2b4d192ffb867e19b85c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:25",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 51,
+      "section": "User Stories",
+      "number": 25,
+      "requirementSha256": "3044c8262cda0542b024b591048bf091bbad7d9593a08f0c2c06fc6d98394b97",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:26",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 52,
+      "section": "User Stories",
+      "number": 26,
+      "requirementSha256": "ed2a09e475d43e11cd92f33d1b64cd627f4e6a397abadfccc7233fe0c61b0b81",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:27",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 53,
+      "section": "User Stories",
+      "number": 27,
+      "requirementSha256": "26742cc234be04d70cdc2ed458893e20580e492d2f34db5c6131ff985da73b61",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:28",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 54,
+      "section": "User Stories",
+      "number": 28,
+      "requirementSha256": "e0f67b23cffae7837e273a76d9911e8271ef3c7161adc48d2ff14a0ccb4201e5",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:29",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 55,
+      "section": "User Stories",
+      "number": 29,
+      "requirementSha256": "ab2941c6ecc4399da286ab925bfcd7074b8baac001efbd199444422906a815bb",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:30",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 56,
+      "section": "User Stories",
+      "number": 30,
+      "requirementSha256": "6198b58a15b143e2128f1d674f6d86155a1aa6d4af4e7d2be1cb283c1fe56c62",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:31",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 57,
+      "section": "User Stories",
+      "number": 31,
+      "requirementSha256": "15d76ab87d4cd0b863767d83f2e345a4698793a3945d3e444351af0298c1dda2",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:32",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 58,
+      "section": "User Stories",
+      "number": 32,
+      "requirementSha256": "3f3a728c4681463753f400d0b629efaaed28f56354fd0a9d9da19e1d968cba1e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:33",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 59,
+      "section": "User Stories",
+      "number": 33,
+      "requirementSha256": "e8702061f7c782f502f754be39073bf955633ecadbea87e40125df16f8ee9123",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:34",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 60,
+      "section": "User Stories",
+      "number": 34,
+      "requirementSha256": "d2477cdfdbb53240bc70c7ce38144d68551dcade42105de09e6f3d6f14832db5",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:35",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 61,
+      "section": "User Stories",
+      "number": 35,
+      "requirementSha256": "d952df9685052bba5b7346f423d299d7eaf9d04faef53a7c1004ac67f053c9d7",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:36",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 62,
+      "section": "User Stories",
+      "number": 36,
+      "requirementSha256": "c48068417ff0e37094bda63f587b7ddf0f18e8056b98d748f8220919c3739e90",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:1",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 66,
+      "section": "Implementation Decisions",
+      "number": 1,
+      "requirementSha256": "bcb53975960b0bc26b7dd53a2f7940094e77060c897931935cba284324a3313b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 67,
+      "section": "Implementation Decisions",
+      "number": 2,
+      "requirementSha256": "045a95aea833dd4a9ee02a5b7f5f86aa84aa590a6ae553d4709d5b1aed7fbfb4",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 68,
+      "section": "Implementation Decisions",
+      "number": 3,
+      "requirementSha256": "bd5aeec9ae3761e3598a3f70fec9289bf39d0fdec2c0f17e7c5a3f2187fa82cb",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:4",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 69,
+      "section": "Implementation Decisions",
+      "number": 4,
+      "requirementSha256": "1d50548d008d3b53bf9ace52c6f74fe421a3d86da9d9bad6e01aee91384a544b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 70,
+      "section": "Implementation Decisions",
+      "number": 5,
+      "requirementSha256": "b99b67b626ccee906cca27a675d96c8740a929d1cb397124c2034896720e1d21",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 71,
+      "section": "Implementation Decisions",
+      "number": 6,
+      "requirementSha256": "5df4bf3633be21940abd6e7277bf83c4806727691bf164c38bc24e94b9373a4c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:7",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 72,
+      "section": "Implementation Decisions",
+      "number": 7,
+      "requirementSha256": "a31960a88462f4f0c556274f4badc8bfd0fd981465c8895d95baccaab78e05d6",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:8",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 73,
+      "section": "Implementation Decisions",
+      "number": 8,
+      "requirementSha256": "61aab15ffcd5661379f2de8f76c4cd38183f770426e457eb519f067ecabec911",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:9",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 74,
+      "section": "Implementation Decisions",
+      "number": 9,
+      "requirementSha256": "710f28572427620aaf4ef272879d402ce05fc893e74da92c4ecc4864d5adb715",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:10",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 75,
+      "section": "Implementation Decisions",
+      "number": 10,
+      "requirementSha256": "190c1630f95ecc0b5d86834fe0f15c14a5a7d2f6311119ed9a356240afb43d6a",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:11",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 76,
+      "section": "Implementation Decisions",
+      "number": 11,
+      "requirementSha256": "621456b90042a4c78fa193670f80c60fbfcca87ee9ccc4b61ee358a82c2eca89",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:12",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 77,
+      "section": "Implementation Decisions",
+      "number": 12,
+      "requirementSha256": "49b61f10a8c6dffc8ba13d2428cd81e77500ef0fcf1e669ffccaf298056a4536",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:13",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 78,
+      "section": "Implementation Decisions",
+      "number": 13,
+      "requirementSha256": "23b1cf53c792c5df149930f8f479016ddc3b346e15c114033f77e4c294205b57",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:14",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 79,
+      "section": "Implementation Decisions",
+      "number": 14,
+      "requirementSha256": "b2e9172f7218c4adb2d39c4892ce9c17ce6b2c244bdbd5a6d945371b4052e2bb",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:15",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 80,
+      "section": "Implementation Decisions",
+      "number": 15,
+      "requirementSha256": "f0fec4959711f826488294bd1d89bcf44210514fee0457429ef3ed9739beb595",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:16",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 81,
+      "section": "Implementation Decisions",
+      "number": 16,
+      "requirementSha256": "240e4446f8ee52299e4cc5a3c6bcd9db14c2a50945936c8221e0fd65abda6a40",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:17",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 82,
+      "section": "Implementation Decisions",
+      "number": 17,
+      "requirementSha256": "0ecfb4d6706e5060d5c11398c5bee1b2e41d6489335859500c610530d4b4a25f",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:18",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 83,
+      "section": "Implementation Decisions",
+      "number": 18,
+      "requirementSha256": "59bbaed5620f9596f3867699be5c4391330e1f8a558f296a473f73c08e94fadf",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:19",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 84,
+      "section": "Implementation Decisions",
+      "number": 19,
+      "requirementSha256": "a2c132a9c5c3381c0fab6eda4fcdf061ef74210d4fbcfed87e90081283c51a44",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:20",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 85,
+      "section": "Implementation Decisions",
+      "number": 20,
+      "requirementSha256": "ae93ee5ae03a37664ef4f3d845d5172ae926e962215a19a48382cd44ead4b896",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:21",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 86,
+      "section": "Implementation Decisions",
+      "number": 21,
+      "requirementSha256": "a1265a0d30af99550dcf420a3743205ae2fef4860527c8bf72263b033d3c7c4a",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:22",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 87,
+      "section": "Implementation Decisions",
+      "number": 22,
+      "requirementSha256": "7ae2857bf16a3e3050e88fb54df90b87d91baae9381ce64fb0cc1b2c1487397a",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:23",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 88,
+      "section": "Implementation Decisions",
+      "number": 23,
+      "requirementSha256": "8c2d6111d91060b1f9b7543f3a04d7293947a6582cb867a8bf37bfb6f3691144",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:24",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 89,
+      "section": "Implementation Decisions",
+      "number": 24,
+      "requirementSha256": "3c7460cc431eefd44232fae8f7dbb44bf28a3d4cd9d465f2873b3dced2885748",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:1",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 93,
+      "section": "Testing Decisions",
+      "number": 1,
+      "requirementSha256": "08006937d7ffd3f77b99f051c0cc831046e85918370c12765432e320a6d1b280",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 94,
+      "section": "Testing Decisions",
+      "number": 2,
+      "requirementSha256": "f7a9a0c548c3501fbe05d7a0f2f95643204e6de21b3e2ecfe978236c052f0007",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 95,
+      "section": "Testing Decisions",
+      "number": 3,
+      "requirementSha256": "bb6efe4bdfff49ef243988c23f9952e600aee0054950c816a4821a89ebc097b3",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:4",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 96,
+      "section": "Testing Decisions",
+      "number": 4,
+      "requirementSha256": "34998c673e9145381d7cbcd310ce586731dc7deae641091e0dc10256f39318ca",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 97,
+      "section": "Testing Decisions",
+      "number": 5,
+      "requirementSha256": "63f86f3ca87eabb6cafdf9f8815e0875b8f06da6601e7be5a51abf3a2df09429",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 98,
+      "section": "Testing Decisions",
+      "number": 6,
+      "requirementSha256": "4d339db6c5d8a3a8a160dfeff8d893bc044667bd35efd0ee860702dab4e33b72",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:7",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 99,
+      "section": "Testing Decisions",
+      "number": 7,
+      "requirementSha256": "081cb63525f31169766818293f25b5bbfc17d1f582637df7f511a6497f2780e6",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:8",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 100,
+      "section": "Testing Decisions",
+      "number": 8,
+      "requirementSha256": "e55649dc56706ddba35a9b09f7e442152b629befc94188b36456449488944eda",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:9",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 101,
+      "section": "Testing Decisions",
+      "number": 9,
+      "requirementSha256": "d4ebe6604f286f6bcd8ecdcfd511eb34424d9600b302c6c29df1de42dbd6a6e2",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:10",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 102,
+      "section": "Testing Decisions",
+      "number": 10,
+      "requirementSha256": "a06a0cf73baa7a8670cee3144eca2547cb2d782c5d2f9e882c13efc8da091f0d",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:11",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 103,
+      "section": "Testing Decisions",
+      "number": 11,
+      "requirementSha256": "ef20888d9b01b0e4439321d934a9b03b23fdeb103545f7a8bde2988623b73394",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:12",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 104,
+      "section": "Testing Decisions",
+      "number": 12,
+      "requirementSha256": "778405df9539cd962e265204be1033849396f3a00fe17db6f3391bb29733847b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:1",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 25,
+      "section": "User Stories",
+      "number": 1,
+      "requirementSha256": "7ee3ab9791d4d4b7031945767c8bdbf69dbdc22f9e85af3fbe0cf1f436c68e93",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:2",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 26,
+      "section": "User Stories",
+      "number": 2,
+      "requirementSha256": "7ee43348337f73108fe14e35bab5f797b9f368a564a4f88a1d6114332ab8b8a0",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 27,
+      "section": "User Stories",
+      "number": 3,
+      "requirementSha256": "681a8f77dac64f57ea6322dbe800f4eccec52ac2fe97e0bd6c67c845dc2054f6",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:4",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 28,
+      "section": "User Stories",
+      "number": 4,
+      "requirementSha256": "2cb445857783945cf8ae478bed303bb5078da72617e94b142d08e4566ce9627e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 29,
+      "section": "User Stories",
+      "number": 5,
+      "requirementSha256": "dc8641e1bc2e1f27d8477bfbf7981b4bf2295e1b8fafedb133a679853e3acb31",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 30,
+      "section": "User Stories",
+      "number": 6,
+      "requirementSha256": "8556b26417ca9d58fcddb6421e9d5ccd08af73f4c0ebe8900b0929080e5d8249",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:7",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 31,
+      "section": "User Stories",
+      "number": 7,
+      "requirementSha256": "75d4e02f9bb10d6fb3df5272439aac969deda887f9d16ee16efebe4289169bb0",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:8",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 32,
+      "section": "User Stories",
+      "number": 8,
+      "requirementSha256": "3c023e2725dc4316c7c094192a80029c3abaeb7c2a193f5102f01f4ab79e344c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 33,
+      "section": "User Stories",
+      "number": 9,
+      "requirementSha256": "aa3fb57c9144e47f004361372220f360466713b99fdfc59a99a7e2f419af1694",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:10",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 34,
+      "section": "User Stories",
+      "number": 10,
+      "requirementSha256": "78d09287ba5d809f5760f5d644503ffd15a06479c35fe2353993fde29847abdb",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:11",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 35,
+      "section": "User Stories",
+      "number": 11,
+      "requirementSha256": "b3a2b1dc05488f3a93ef291cb22f097756c0df69f629999c0af95cb13e2eba2d",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:12",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 36,
+      "section": "User Stories",
+      "number": 12,
+      "requirementSha256": "ca889e04714b3d9c36ad2d95100d20f95f2256b654497d4b54bd92a74bee4566",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:13",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 37,
+      "section": "User Stories",
+      "number": 13,
+      "requirementSha256": "4e87fa08e965950a4cca80ab0e29b658dee18fa29c6c29a26e78c13ff8d2ba92",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:14",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 38,
+      "section": "User Stories",
+      "number": 14,
+      "requirementSha256": "b0cdff2dde133320ab4ab3836aaaeb7dad2e482f28179ed1756ee1d8467a18e9",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:15",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 39,
+      "section": "User Stories",
+      "number": 15,
+      "requirementSha256": "44efbd1ddddcf5c2f170ea2227d5fc319a084b2ab116065bc2865c2671c6453e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:16",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 40,
+      "section": "User Stories",
+      "number": 16,
+      "requirementSha256": "216c10eeb4b3c46b2ca5aa18a44ad3e198b98e97c83b6e819517e45ba54719ef",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:17",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 41,
+      "section": "User Stories",
+      "number": 17,
+      "requirementSha256": "ab0bda63f586681a85a562198d867173540ea19bd1a190c7958f29ab1a1bbc30",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:18",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 42,
+      "section": "User Stories",
+      "number": 18,
+      "requirementSha256": "8442b37a404d1176d883a2565c8316780c3c86f5deb22d488c09a952ceac25d9",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:19",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 43,
+      "section": "User Stories",
+      "number": 19,
+      "requirementSha256": "29276659e3c99af09d6cf639e96ad1fa92ad893b5595e4bfec961793e11d5b4b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:20",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 44,
+      "section": "User Stories",
+      "number": 20,
+      "requirementSha256": "151010f537833529d829e51dbdaabaa0d70689dc9fd6a05be53135e91fe8fafa",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:21",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 45,
+      "section": "User Stories",
+      "number": 21,
+      "requirementSha256": "021ab015fc469ea613556a2ff72fbdeffbeaf1b5d4f466a9927fa44e0489da47",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:22",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 46,
+      "section": "User Stories",
+      "number": 22,
+      "requirementSha256": "0615161010a2f8854a5bea48e3df4d6fd97bff93c977e1b306677d953adbaac3",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:23",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 47,
+      "section": "User Stories",
+      "number": 23,
+      "requirementSha256": "c46e6cade7ac24e233486ebdb9e4d02dac6ca8835e482f2e81d55797e08de951",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:24",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 48,
+      "section": "User Stories",
+      "number": 24,
+      "requirementSha256": "3a6078fa1c13585a135ca74d35d91abab1577d97c23215b36ae13adb87bf6415",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:25",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 49,
+      "section": "User Stories",
+      "number": 25,
+      "requirementSha256": "81b59ffb64ef5f55b1f7466abcd34e335b6b1c1aedec09fddfef250d149335c6",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:26",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 50,
+      "section": "User Stories",
+      "number": 26,
+      "requirementSha256": "d9adaf00abcb32dc59385a36d3bc80be508c3aeba5df7042f115a6fdd4eb6dfa",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:27",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 51,
+      "section": "User Stories",
+      "number": 27,
+      "requirementSha256": "b2b7e3e9548f1ec1e2be8b15886493c2eac13fe6dcf0a101ccc27ac96c04d6db",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:28",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 52,
+      "section": "User Stories",
+      "number": 28,
+      "requirementSha256": "d60fefc06e0b8d6543c7bfa4d721ff9222de6b02ef23aff64a2e0e6766ca380e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:1",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 56,
+      "section": "Implementation Decisions",
+      "number": 1,
+      "requirementSha256": "8d1d710ae3c4dbb0a9563b9a0cb6a9e72350072ceffe121afbbed9951cb2665e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:2",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 57,
+      "section": "Implementation Decisions",
+      "number": 2,
+      "requirementSha256": "715929ac0554f1d3df7ca2d10f9e394a209a6ca8dcd0ac8a3bbce52478b523ce",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 58,
+      "section": "Implementation Decisions",
+      "number": 3,
+      "requirementSha256": "44c2589e2c77b6bbc39d06f9f9483acaa45319754feee89144fb060f2eb39448",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:4",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 59,
+      "section": "Implementation Decisions",
+      "number": 4,
+      "requirementSha256": "b4c82730f6fae2f206b191bbb07c38c809de390f8c2301b311eb5ba1fc2e734c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 60,
+      "section": "Implementation Decisions",
+      "number": 5,
+      "requirementSha256": "941c7c7b60fad087389bb0b4e2bf3bb10920f50efb67b9084ffb04889b96f9f0",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 61,
+      "section": "Implementation Decisions",
+      "number": 6,
+      "requirementSha256": "a319c61f4e676329014a3364c7a0ccb08e732cb1a51ad1a4907cb26600e2344d",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:7",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 62,
+      "section": "Implementation Decisions",
+      "number": 7,
+      "requirementSha256": "2d893e818d383ace02431332fb0e4608c76bbbaa03db29fe4d7d2d0fde37eb55",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:8",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 63,
+      "section": "Implementation Decisions",
+      "number": 8,
+      "requirementSha256": "103d3d1365f48d8a21ec9bc587b45ec523068308b3c2bd6a4e592c8cbc2e1e3d",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 64,
+      "section": "Implementation Decisions",
+      "number": 9,
+      "requirementSha256": "3dad1b73a2b4b23f1c5043da6a79b6757a43ea20a4ed2aff1d5346a15bb936dc",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:10",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 65,
+      "section": "Implementation Decisions",
+      "number": 10,
+      "requirementSha256": "89ab2172899b7bbca626012920223022c50a9867baf087d5b29b8552b0080b7b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:11",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 66,
+      "section": "Implementation Decisions",
+      "number": 11,
+      "requirementSha256": "b664032d5893cd606fa362ce62d20ed3b422b51d28e9062ee59a26fbcf0b3b08",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:12",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 67,
+      "section": "Implementation Decisions",
+      "number": 12,
+      "requirementSha256": "0d2ca9928d9ea5faf347b83d76b0bb8fedfcc0305843352ef6fbe01c14ed75b5",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:13",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 68,
+      "section": "Implementation Decisions",
+      "number": 13,
+      "requirementSha256": "f7e0ccc91a5cbb4095dc81f05a100ba68ceed8793f0856c46957cd53b80992bb",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:14",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 69,
+      "section": "Implementation Decisions",
+      "number": 14,
+      "requirementSha256": "940452fbcbef8825474fb3731305809aa3cb474a1a357045d8eda029de16fc7e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:1",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 73,
+      "section": "Testing Decisions",
+      "number": 1,
+      "requirementSha256": "6a577381c3b64bbfd1bef096e8f7514c09e6f37101985c1f0c0fde2a65e0b5be",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:2",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 74,
+      "section": "Testing Decisions",
+      "number": 2,
+      "requirementSha256": "07b32812f4011968e9b68c57f292bc66baeb9243737330f6dda6c11fd068c7f2",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 75,
+      "section": "Testing Decisions",
+      "number": 3,
+      "requirementSha256": "d548ef1560d74a6c9ba2989d912daca16548a4a2a5525ee9d0bc374a9854f7f3",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:4",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 76,
+      "section": "Testing Decisions",
+      "number": 4,
+      "requirementSha256": "58776aaed66cf67f546ca106012ff2df4e2633289d97f34e267783c919ce0721",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 77,
+      "section": "Testing Decisions",
+      "number": 5,
+      "requirementSha256": "9ad2b151d775b11b03571ea0940496785cb48eb33ae06d2c7732edc89c52c90a",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 78,
+      "section": "Testing Decisions",
+      "number": 6,
+      "requirementSha256": "277a0eeda3796afd012af7cab10cb436b9fc4d229d8ab88ab9acb82dd1dee8c5",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:7",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 79,
+      "section": "Testing Decisions",
+      "number": 7,
+      "requirementSha256": "4b376e3abf6d859295dc451bc9fa72a6bf4c828ecbe9ca7c69e300595e9ae23f",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:8",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 80,
+      "section": "Testing Decisions",
+      "number": 8,
+      "requirementSha256": "f61fe9ff73db1ed10ce85654a71e7c0ffdf572f42e3f7bbbb4dc113e087bba10",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 81,
+      "section": "Testing Decisions",
+      "number": 9,
+      "requirementSha256": "417458200e02d4b6aa49f2e5186fb8136056c25ae19251896ce3a5e934c1812c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    }
+  ]
+}

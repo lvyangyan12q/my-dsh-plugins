@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-10",
+  "browser": "Chrome DevTools",
+  "url": "http://127.0.0.1:3080/",
+  "role": "Kaogong default teacher; existing native history retained",
+  "attempts": [
+    {
+      "model": "DeepSeek V4.1 Flash",
+      "outcome": "AUTH; upstream subscription payment authorization failure; no question card"
+    },
+    {
+      "model": "DeepSeek-V41-Flash",
+      "outcome": "AUTH; same upstream subscription payment authorization failure; no question card"
+    }
+  ],
+  "modelSelectionRestored": "DeepSeek V4.1 Flash",
+  "reasoningSelectionRestored": "Default",
+  "providerSettingsChanged": false,
+  "credentialsChanged": false,
+  "studyDataChanged": false,
+  "successfulQuestionAcceptance": false,
+  "scope": "explicit system-only prompts; no lesson/material/file operations",
+  "remaining": "real question, approval, Stop and close-without-cancel acceptance remain open"
+}
