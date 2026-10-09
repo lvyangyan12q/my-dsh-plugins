@@ -85,7 +85,10 @@
       "section": "User Stories",
       "number": 7,
       "requirementSha256": "d90053d346abbcbf7aac988559aae238508afa7b73bda19aa08f21a9ca064b8c",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: installed real browser search, favorite, manual up/down ordering, hide/show and full-refresh preference retention; application catalog and native sidebar share order",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-catalog-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:8",

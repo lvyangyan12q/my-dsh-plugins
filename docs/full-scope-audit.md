@@ -1,6 +1,6 @@
 # Full-scope acceptance audit
 
-Audit source: latest implementation cc73c946b04b9193137c4b245cc97365f982daf1 with exact clean-source build, 294-test and installed release; old-to-new upgrade separately evidenced at f2ee7ba, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
+Audit source: latest implementation 9eee3d960aa4378bc5037320fe8ec6d49de5bce8 with exact clean-source build, 295-test and full installed release proof plus browser catalog acceptance. The f2ee7ba old-to-new upgrade remains separately scoped. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace canonical specifications or close their tasks.
 
 The [requirement inventory](evidence/2026-10-10/requirement-inventory.json) identifies each of 123 numbered/bulleted requirements by source, line and exact-text SHA256: all 36 Workbench and 28 Platform user stories, plus their implementation/testing decisions. Each still requires individual closure against its exact scope. Approved canvas changes, native-menu preservation, management-only public capability reuse, retained app-private capabilities, application-provided map data and the old-kaogong observation period remain part of scope.
 
@@ -110,3 +110,7 @@ computer-use真实输入法验收未执行：Node运行时连续退出，重置�
 
 
 2026-10-10: Real persistence-loss injection for a newly created, isolated empty role Session returns 409 with the original binding, hides the composer and does not create a replacement. Actual Retry preserves that ID; actual confirmed New creates a distinct ready Session and retains the old ID. Original native files are restored byte-for-byte after stopping the owned Host. Story31 gains missing-record proof while other inaccessible conditions remain unverified. No source changed; current installed cc73c94 identity and prior 294-test receipt remain separately verified. See [missing Session receipt](evidence/2026-10-10/missing-session-browser.json).
+
+Incremental update (2026-10-10): [application catalog browser receipt](evidence/2026-10-10/application-catalog-browser.json) closes Workbench story 7 with real search, favorite, hide/show, up/down ordering and refresh retention. A built UI regression first reproduced disagreeing card/sidebar order; the repair adds move buttons and a shared comparator for home/native/Better Sidebar views. Exact source 9eee3d960aa4378bc5037320fe8ec6d49de5bce8 passes three builds and 295 tests; its official archive installs byte-for-byte in isolated 3089. Actual Better Sidebar Tab rendering, full teaching and native model/IME gates remain open. Four user-owned management files remain unchanged.
+
+The same 9eee3d9 source also passes fresh official archive installation, exact installed bytes/consumer declarations, authenticated lifecycle, cold restart, Reading uninstall/reinstall and scoped HTML assets. Receipt and test-log hashes are included in the catalog evidence; these synthetic zero-model release checks do not close native model interaction gates.
