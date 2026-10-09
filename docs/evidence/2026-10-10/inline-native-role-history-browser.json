@@ -1,0 +1,212 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "da08d9bb3b31420752f5ee897345023913e89160",
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual app More > View in application, native Trace tab, Close history, repeated reopen; read-only DOM and public role API capture",
+  "observations": {
+    "opened": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "history": {
+        "text": "历史角色会话 · efd2c984-c376-4bc6-a236-6f85988345f2\n关闭历史会话\nworkspace\nLifecycle acceptance\n对话\n轨迹\n\n跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。\n\n工作区内修改\nDeepSeek-V41-Flash\nHigh",
+        "drafts": [
+          "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+        ],
+        "tabs": [
+          {
+            "text": "对话",
+            "selected": "true"
+          },
+          {
+            "text": "轨迹",
+            "selected": "false"
+          }
+        ],
+        "rect": {
+          "width": 1592,
+          "height": 694
+        },
+        "alerts": []
+      },
+      "currentDrafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。"
+      ]
+    },
+    "trace": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "history": {
+        "text": "历史角色会话 · efd2c984-c376-4bc6-a236-6f85988345f2\n关闭历史会话\nworkspace\nLifecycle acceptance\n对话\n轨迹\n\n跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。\n\n工作区内修改\nDeepSeek-V41-Flash\nHigh",
+        "drafts": [
+          "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+        ],
+        "tabs": [
+          {
+            "text": "对话",
+            "selected": "false"
+          },
+          {
+            "text": "轨迹",
+            "selected": "true"
+          }
+        ],
+        "rect": {
+          "width": 1592,
+          "height": 694
+        },
+        "alerts": []
+      },
+      "currentDrafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。"
+      ]
+    },
+    "closed": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "history": null,
+      "currentDrafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。"
+      ]
+    },
+    "reopened": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "history": {
+        "text": "历史角色会话 · efd2c984-c376-4bc6-a236-6f85988345f2\n关闭历史会话\nworkspace\nLifecycle acceptance\n对话\n轨迹\n\n跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。\n\n工作区内修改\nDeepSeek-V41-Flash\nHigh",
+        "drafts": [
+          "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+        ],
+        "tabs": [
+          {
+            "text": "对话",
+            "selected": "false"
+          },
+          {
+            "text": "轨迹",
+            "selected": "true"
+          }
+        ],
+        "rect": {
+          "width": 1592,
+          "height": 694
+        },
+        "alerts": []
+      },
+      "currentDrafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。"
+      ]
+    }
+  },
+  "installedArchiveSha256": "f0d87c0c1895f2d98e92b046dd5e6c903c6209d53e54c3c04ece0fdb490c081e",
+  "installedBytesEqual": true,
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "cleanChecks": {
+    "testsPassed": 295,
+    "testsLogSha256": "7455ac36a424c932bc6475ce488822d751462ae7c79806cb4d5ad2d9efd33c4a",
+    "releaseVerdictSha256": "e3479978734894366aefb6aed43fc946645d71fb3cf8c87f1cc60431287e153b",
+    "releaseVerdict": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "f0d87c0c1895f2d98e92b046dd5e6c903c6209d53e54c3c04ece0fdb490c081e",
+        "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    }
+  },
+  "regressions": [
+    "Missing inline history factory first failed, then exact old ID acquisition and release passed",
+    "Full real Cordis integration reproduced duplicate scoped native-child ownership; distinct history-native child fixed registration and unload integration"
+  ],
+  "limits": [
+    "Old Session has zero submitted model turns; completed-message transcript display remains unproven",
+    "Native main-view blank-session workspace chooser still exists; application view now displays the real preserved draft without it",
+    "No sends or model calls during this acceptance; full teaching/IME/permission/Stop gates remain open"
+  ]
+}
