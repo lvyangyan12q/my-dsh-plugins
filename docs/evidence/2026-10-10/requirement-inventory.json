@@ -939,9 +939,10 @@
       "section": "User Stories",
       "number": 15,
       "requirementSha256": "44efbd1ddddcf5c2f170ea2227d5fc319a084b2ab116065bc2865c2671c6453e",
-      "evidenceStatus": "partial: built Reading with real Host filters science to 1/60 and literature selection coherently; independent current-browser filter-to-stat interaction not re-certified in this audit",
+      "evidenceStatus": "satisfied for actual installed display filtering: science yields 1/60/60 and literature 2/150/75 in both statistics and list; records unchanged",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
       ]
     },
     {
@@ -951,9 +952,10 @@
       "section": "User Stories",
       "number": 16,
       "requirementSha256": "216c10eeb4b3c46b2ca5aa18a44ad3e198b98e97c83b6e819517e45ba54719ef",
-      "evidenceStatus": "partial at first-release list/detail scope: real Host-backed built Client selection updates detail and filter clears out-of-scope selection; real map explicitly deferred by user and full rendered scope remains separate",
+      "evidenceStatus": "satisfied at approved first-release list/detail scope: actual selected science book shows correct details, switching to literature clears it; real map remains explicitly deferred by user",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
       ]
     },
     {
@@ -963,9 +965,10 @@
       "section": "User Stories",
       "number": 17,
       "requirementSha256": "ab0bda63f586681a85a562198d867173540ea19bd1a190c7958f29ab1a1bbc30",
-      "evidenceStatus": "partial: real Host-backed built Client shows deferred loading, empty, failure/retry and withdrawn source states; complete current browser error/loading visual gate not closed",
+      "evidenceStatus": "partial: actual request failure/retry and no-match result observed; loading and empty underlying dataset browser states and full visual gate still unverified",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
       ]
     },
     {
@@ -1263,7 +1266,10 @@
       "section": "Testing Decisions",
       "number": 3,
       "requirementSha256": "d548ef1560d74a6c9ba2989d912daca16548a4a2a5525ee9d0bc374a9854f7f3",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for actual installed display chain: filter updates statistics/list, selection updates detail, filtered-out selection clears and display interactions send no model task; maps explicitly deferred",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
+      ]
     },
     {
       "id": "platform:Testing Decisions:4",
