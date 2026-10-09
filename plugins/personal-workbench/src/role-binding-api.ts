@@ -1,7 +1,7 @@
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionReference } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
-import type { WindowSnapshot } from './teacher-window.ts'
+import type { TeacherWindow, WindowSnapshot } from './teacher-window.ts'
 
 /** Complete structural identity; absence of subject is a distinct legacy/default key. */
 export interface RoleBindingKey { readonly appId: string; readonly instanceId: string; readonly roleId: string; readonly subject?: string }
@@ -80,6 +80,7 @@ declare module '@deepseek-ai/cordis' {
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } }
   interface SlotFactoryMap {
+    'personal-workbench.role-history': { scope: 'root'; locale: 'personal-workbench'; props: { sessionId: SessionId; close: () => void }; inject: { createHistory: (id: SessionId) => TeacherWindow }; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
     'personal-workbench.role-attachment': { scope: 'root'; props: { bindingKey: RoleBindingKey; expectedSessionId: SessionId | null; close: () => void }; inject: { commands: PersonalWorkbenchRoles }; locale: 'personal-workbench' }
     'personal-workbench.role-conversation': { scope: 'root'; locale: 'personal-workbench'; props: { readonly bindingKey: RoleBindingKey; readonly active: boolean; readonly label?: string; readonly expectedPresetId?: string }; inject: RoleViewInjected; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
   }

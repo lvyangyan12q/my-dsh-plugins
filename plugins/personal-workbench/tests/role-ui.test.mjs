@@ -26,6 +26,7 @@ test('built generic role view reads per-ID official status facts without a fake 
     window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }) })
   exports.apply(ctx)
   const entry = entries.find(row => row.options.name === 'personal-workbench.role-conversation')
+  assert.ok(entries.find(row=>row.options.name==='personal-workbench.role-history'),'Retained Session history needs a scoped native view inside the application')
   assert.ok(entry.options.inject().hooks.roles, 'Observables travel through the documented inject hooks compartment')
   const bindingKey = { appId: 'application', instanceId: 'default', roleId: 'teacher', subject: 'math' }
   const state = { binding: { version: 1, key: bindingKey, sessionId: 'math-id', presetId: 'math', phase: 'ready', previousSessionIds: [] }, busy: false, error: null, window: { phase: 'closed' } }
@@ -50,11 +51,28 @@ test('built generic role view reads per-ID official status facts without a fake 
     await React.act(async()=>historyButton.click())
     assert.deepEqual(openedHistory,['prior-agent-session'])
     assert.equal(state.binding.sessionId,'math-id','Viewing history cannot replace the active role binding')
+    const historyCalls=[]
+    await React.act(async()=>root.render(React.createElement(entry.component,{...props,renderFactorySlot:(name,props)=>{historyCalls.push({name,props});return React.createElement('div',null,'Native history viewer') }})))
+    await React.act(async()=>dom.window.document.querySelector('button[aria-label="roleViewHistory: prior-agent-session"]').click())
+    assert.equal(historyCalls.at(-1).name,'personal-workbench.role-history')
+    assert.equal(historyCalls.at(-1).props.sessionId,'prior-agent-session')
+    assert.equal(state.binding.sessionId,'math-id')
+    await React.act(async()=>historyCalls.at(-1).props.close())
     state.window={phase:'open',reference:{sessionId:'math-id'}}
     await React.act(async()=>root.render(React.createElement(entry.component,{...props,expectedPresetId:'new-agent',SessionProvider:()=>assert.fail('A mismatched Agent must not expose the old native composer')})))
     assert.match(dom.window.document.body.textContent,/rolePresetChanged/,'Activating a different Agent must visibly explain why the old role Session is not usable')
     assert.equal(state.binding.sessionId,'math-id','A changed recipe must preserve the old Session until explicit replacement')
     assert.ok([...dom.window.document.querySelectorAll('button')].some(button=>button.textContent.includes('新建角色会话')),'Explicit recovery must remain available')
+    const history=entries.find(row=>row.options.name==='personal-workbench.role-history'),retained=[],released=[]
+    ctx.workspaces.list={getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:[]}),subscribe:()=>()=>{}}
+    ctx.sessions.retain=id=>{retained.push(id);const binding={session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}}};return {sessionId:id,binding,ready:Promise.resolve(binding),release:()=>released.push(id)}}
+    await React.act(async()=>{root.render(React.createElement(history.component,{...history.options.inject(),sessionId:'prior-agent-session',close:fail,t:k=>k,SessionProvider:({session,children})=>React.createElement('div',{'data-native-id':session.sessionId},children),renderSlot:name=>React.createElement('div',null,name)}));await new Promise(resolve=>setTimeout(resolve,0))})
+    assert.deepEqual(retained,['prior-agent-session'],'Viewing history must retain the exact old native Session')
+    assert.equal(dom.window.document.querySelector('[data-native-id]').getAttribute('data-native-id'),'prior-agent-session')
+    assert.match(dom.window.document.body.textContent,/personal-workbench.role-native/)
+    assert.equal(state.binding.sessionId,'math-id')
+    await React.act(async()=>root.render(React.createElement('div')))
+    assert.deepEqual(released,['prior-agent-session'],'Leaving history releases its separate native reference')
     const native = entries.find(row => row.options.name === 'personal-workbench.role-native')
     const factories = []
     await React.act(async () => root.render(React.createElement(native.component, {
