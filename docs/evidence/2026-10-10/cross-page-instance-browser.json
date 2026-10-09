@@ -1,0 +1,543 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "9eee3d960aa4378bc5037320fe8ec6d49de5bce8",
+  "installedWorkbenchArchiveSha256": "782c943010ba46c111001f4bd8b89100eed2bce276c7849f041d4de531d102f8",
+  "method": "Public recipe API prepares an isolated two-page app; actual Chrome click/fill creates native role, switches pages, edits draft, reloads, opens two instances through an officially installed consumer button calling public personalWorkbench.openApp, then cold-restarts owned Host and reopens both",
+  "profileRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854",
+  "url": "http://127.0.0.1:3089/",
+  "application": "cross-page-proof",
+  "role": "analyst",
+  "nativeSessionIds": {
+    "default": "efd2c984-c376-4bc6-a236-6f85988345f2",
+    "second": "3e812836-da19-46c1-a447-325d1bbf862f"
+  },
+  "consumer": {
+    "name": "@deepseek-ai/dsh-instance-proof",
+    "version": "0.0.2",
+    "archiveSha256": "9244741d4480b5904edbe77f426946086afb6b202bf528ee65be886ffe42e794",
+    "installedClientSha256": "003c4d6f2fab73bb44d091ab0dcb19d856fe8a32cd62cbf5d6dd8ba9d0449eb3",
+    "installedBytesEqual": true,
+    "clientSource": "window.__ModuleLoader__.load({id:'@deepseek-ai/dsh-instance-proof',factory:require=>{const React=require('react');return {inject:['personalWorkbench','slots'],apply:ctx=>{try {ctx.effect(()=>ctx.slots.register({name:'sidebar.sections',id:'instance-proof'},()=>React.createElement('section',{'aria-label':'隔离实例验收入口'},...['default','second'].map(instanceId=>React.createElement('button',{key:instanceId,type:'button',onClick:()=>ctx.personalWorkbench.openApp('cross-page-proof',instanceId)},'验收实例 '+instanceId)))),'owned instance proof entry')}catch(error){console.error('Instance proof apply failed',error);throw error}}}}});\n",
+    "productionInstallation": false,
+    "initialFailure": "Temporary consumer initially omitted slots service dependency; reinstalling same package version retained cached bytes. Version 0.0.2 declares slots and matches installed Client bytes; actual native application starts successfully."
+  },
+  "crossPage": {
+    "lesson": {
+      "status": 200,
+      "binding": {
+        "version": 1,
+        "key": {
+          "appId": "cross-page-proof",
+          "instanceId": "default",
+          "roleId": "analyst"
+        },
+        "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+        "presetId": "my-dsh.dependency-lifecycle-acceptance",
+        "phase": "ready",
+        "previousSessionIds": [],
+        "creation": {
+          "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+        }
+      },
+      "selectedPage": [
+        "学习页面",
+        "对话"
+      ],
+      "drafts": [
+        {
+          "visible": true,
+          "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。",
+          "page": "lesson"
+        }
+      ],
+      "roles": [
+        "[\"cross-page-proof\",\"default\",\"analyst\",null]"
+      ],
+      "alerts": []
+    },
+    "review": {
+      "status": 200,
+      "binding": {
+        "version": 1,
+        "key": {
+          "appId": "cross-page-proof",
+          "instanceId": "default",
+          "roleId": "analyst"
+        },
+        "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+        "presetId": "my-dsh.dependency-lifecycle-acceptance",
+        "phase": "ready",
+        "previousSessionIds": [],
+        "creation": {
+          "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+        }
+      },
+      "selectedPage": [
+        "复习页面",
+        "对话"
+      ],
+      "drafts": [
+        {
+          "visible": false,
+          "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。",
+          "page": "lesson"
+        },
+        {
+          "visible": true,
+          "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。",
+          "page": "review"
+        }
+      ],
+      "roles": [
+        "[\"cross-page-proof\",\"default\",\"analyst\",null]",
+        "[\"cross-page-proof\",\"default\",\"analyst\",null]"
+      ],
+      "alerts": []
+    },
+    "returned": {
+      "status": 200,
+      "binding": {
+        "version": 1,
+        "key": {
+          "appId": "cross-page-proof",
+          "instanceId": "default",
+          "roleId": "analyst"
+        },
+        "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+        "presetId": "my-dsh.dependency-lifecycle-acceptance",
+        "phase": "ready",
+        "previousSessionIds": [],
+        "creation": {
+          "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+        }
+      },
+      "selectedPage": [
+        "学习页面",
+        "对话"
+      ],
+      "drafts": [
+        {
+          "visible": true,
+          "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+          "page": "lesson"
+        },
+        {
+          "visible": false,
+          "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+          "page": "review"
+        }
+      ],
+      "roles": [
+        "[\"cross-page-proof\",\"default\",\"analyst\",null]",
+        "[\"cross-page-proof\",\"default\",\"analyst\",null]"
+      ],
+      "alerts": []
+    },
+    "reloaded": {
+      "status": 200,
+      "binding": {
+        "version": 1,
+        "key": {
+          "appId": "cross-page-proof",
+          "instanceId": "default",
+          "roleId": "analyst"
+        },
+        "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+        "presetId": "my-dsh.dependency-lifecycle-acceptance",
+        "phase": "ready",
+        "previousSessionIds": [],
+        "creation": {
+          "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+        }
+      },
+      "selectedPage": [
+        "学习页面",
+        "对话"
+      ],
+      "drafts": [
+        {
+          "visible": true,
+          "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+          "page": "lesson"
+        }
+      ],
+      "roles": [
+        "[\"cross-page-proof\",\"default\",\"analyst\",null]"
+      ],
+      "alerts": []
+    }
+  },
+  "instances": {
+    "beforeCreate": {
+      "default": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": false,
+        "drafts": [
+          {
+            "visible": false,
+            "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+            "page": "lesson"
+          }
+        ]
+      },
+      "second": {
+        "status": 200,
+        "binding": null,
+        "visible": true,
+        "drafts": []
+      }
+    },
+    "created": {
+      "default": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": false,
+        "drafts": [
+          {
+            "visible": false,
+            "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+            "page": "lesson"
+          }
+        ]
+      },
+      "second": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "second",
+            "roleId": "analyst"
+          },
+          "sessionId": "3e812836-da19-46c1-a447-325d1bbf862f",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": true,
+        "drafts": [
+          {
+            "visible": true,
+            "text": "",
+            "page": "lesson"
+          }
+        ]
+      }
+    },
+    "secondDraft": {
+      "default": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": false,
+        "drafts": [
+          {
+            "visible": false,
+            "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+            "page": "lesson"
+          }
+        ]
+      },
+      "second": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "second",
+            "roleId": "analyst"
+          },
+          "sessionId": "3e812836-da19-46c1-a447-325d1bbf862f",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": true,
+        "drafts": [
+          {
+            "visible": true,
+            "text": "第二实例独立草稿：不会覆盖第一个实例。",
+            "page": "lesson"
+          }
+        ]
+      }
+    },
+    "defaultReturned": {
+      "default": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": true,
+        "drafts": [
+          {
+            "visible": true,
+            "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+            "page": "lesson"
+          }
+        ]
+      },
+      "second": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "second",
+            "roleId": "analyst"
+          },
+          "sessionId": "3e812836-da19-46c1-a447-325d1bbf862f",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": false,
+        "drafts": [
+          {
+            "visible": false,
+            "text": "第二实例独立草稿：不会覆盖第一个实例。",
+            "page": "lesson"
+          }
+        ]
+      }
+    },
+    "secondReturned": {
+      "default": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": false,
+        "drafts": [
+          {
+            "visible": false,
+            "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+            "page": "lesson"
+          }
+        ]
+      },
+      "second": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "second",
+            "roleId": "analyst"
+          },
+          "sessionId": "3e812836-da19-46c1-a447-325d1bbf862f",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": true,
+        "drafts": [
+          {
+            "visible": true,
+            "text": "第二实例独立草稿：不会覆盖第一个实例。",
+            "page": "lesson"
+          }
+        ]
+      }
+    },
+    "coldSecond": {
+      "default": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": false,
+        "drafts": [
+          {
+            "visible": false,
+            "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+            "page": "lesson"
+          }
+        ]
+      },
+      "second": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "second",
+            "roleId": "analyst"
+          },
+          "sessionId": "3e812836-da19-46c1-a447-325d1bbf862f",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": true,
+        "drafts": [
+          {
+            "visible": true,
+            "text": "第二实例独立草稿：不会覆盖第一个实例。",
+            "page": "lesson"
+          }
+        ]
+      }
+    },
+    "coldDefault": {
+      "default": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": true,
+        "drafts": [
+          {
+            "visible": true,
+            "text": "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。",
+            "page": "lesson"
+          }
+        ]
+      },
+      "second": {
+        "status": 200,
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "second",
+            "roleId": "analyst"
+          },
+          "sessionId": "3e812836-da19-46c1-a447-325d1bbf862f",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        },
+        "visible": false,
+        "drafts": [
+          {
+            "visible": false,
+            "text": "第二实例独立草稿：不会覆盖第一个实例。",
+            "page": "lesson"
+          }
+        ]
+      }
+    }
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "limits": [
+    "No completed model turns or conversation-history/trace transcript were created; cross-page full historical-message continuity remains unproven",
+    "Native composer fill appended to existing draft in review; captured exact resulting draft is compared through return/reload/cold restart",
+    "No synthetic DOM events or private-page objects; the extra instance buttons are a real consumer extension installed only in owned isolated profile",
+    "No production source change or unchanged test-suite rerun; latest 9eee3d9 clean full 295-test and release proof remains separately cited",
+    "Full native teaching, question/permission/Stop, physical IME and three-sidebar environment gates remain open"
+  ]
+}

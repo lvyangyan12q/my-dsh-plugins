@@ -1032,7 +1032,10 @@
       "section": "User Stories",
       "number": 21,
       "requirementSha256": "021ab015fc469ea613556a2ff72fbdeffbeaf1b5d4f466a9927fa44e0489da47",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual two-page native UI uses same Session ID, shares edited draft, restores after browser reload and Host cold restart; completed historical messages across pages not yet exercised",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/cross-page-instance-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:22",
@@ -1041,7 +1044,10 @@
       "section": "User Stories",
       "number": 22,
       "requirementSha256": "0615161010a2f8854a5bea48e3df4d6fd97bff93c977e1b306677d953adbaac3",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: actual public consumer buttons open default/second instances; second initially has no binding, explicit creation allocates different real native Session; distinct drafts survive switching and Host cold restart",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/cross-page-instance-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:23",
@@ -1090,7 +1096,10 @@
       "section": "User Stories",
       "number": 27,
       "requirementSha256": "b2b7e3e9548f1ec1e2be8b15886493c2eac13fe6dcf0a101ccc27ac96c04d6db",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for enabled recipe and role associations: actual browser reload and Host cold restart retain running two-page application and both exact native role Session IDs; no claim about all outer-layout or running-model gates",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/cross-page-instance-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:28",
