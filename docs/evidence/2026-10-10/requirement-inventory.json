@@ -328,9 +328,10 @@
       "section": "User Stories",
       "number": 31,
       "requirementSha256": "15d76ab87d4cd0b863767d83f2e345a4698793a3945d3e444351af0298c1dda2",
-      "evidenceStatus": "partial: real archived bound Session shows explicit error, retains ID and requires Retry after native unarchive; replacement confirmation/cancellation and reattachment preserve original draft across Host restart; deleted/otherwise inaccessible references and full historical turns still require individual proof",
+      "evidenceStatus": "partial: actual native archived and physically missing Session records expose recovery errors, preserve old binding IDs and require explicit retry or confirmed new Session; original attachment/draft restoration tested separately; other inaccessible conditions such as native permission denial remain open",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/role-session-recovery-browser.json"
+        "docs/evidence/2026-10-10/role-session-recovery-browser.json",
+        "docs/evidence/2026-10-10/missing-session-browser.json"
       ]
     },
     {
