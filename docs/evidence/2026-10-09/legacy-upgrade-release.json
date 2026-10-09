@@ -1,0 +1,18 @@
+{
+  "officialOfflineInstall": true,
+  "normalPeerPolicy": true,
+  "installedConsumers": true,
+  "upgrade": true,
+  "uninstallReinstall": true,
+  "nativePreStep": true,
+  "modelCalls": 0,
+  "browserAcceptance": "pending",
+  "completedNativeTurn": "pending",
+  "archives": [
+    "4bbd09a73e9fdc7c2591661da8ae16401209611b5961ec36dd1bd41a29c97424",
+    "7819c40f17c85526c2eb5d71404de60e2b4838ce66ce5265601b96ea73343883"
+  ],
+  "sourceCommit": "46c49ff6535041671c16cdd6879a35a45bc6b45e",
+  "fixture": "synthetic legacy notebook/progress/bank/knowledge with original reviewed baseline 08/09 archives",
+  "cachePreparation": "existing public cache supplemented by official isolated CLI install; scripts disabled; final checker ran offline with outbound denied"
+}
