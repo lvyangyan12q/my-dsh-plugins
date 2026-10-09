@@ -46,3 +46,24 @@ test('a user configures the chosen pane in-place without losing another pane or 
  assert.deepEqual(current.pages[0].modules.map(m=>m.id),['right','left']);assert.equal(current.pages[0].modules[0].config.url,'https://example.org/keep')
  }finally{await act(async()=>root.unmount());dom.window.close();for(const [name,descriptor]of original){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name]}}
 })
+
+test('unrecognized module type keeps its draft identity and shows a readable type rather than a locale key', async () => {
+ const {renderToStaticMarkup}=await import('react-dom/server')
+ const recipe={schemaVersion:1,appId:'custom.contract',version:2,name:'Draft',description:'',pages:[{id:'home',label:'Home',layout:'stack',modules:[{id:'external',type:'external-widget',title:'My external widget',config:{reference:'keep'}}]}],connections:[],roles:[]}
+ const before=structuredClone(recipe)
+ const html=renderToStaticMarkup(React.createElement(RecipeCanvas,{recipe,change:()=>assert.fail('viewing unknown types must not rewrite a draft'),t:key=>key==='moduleType'?'Content type':key}))
+ assert.ok(html.includes('Content type: external-widget'),'unknown module must show a readable type')
+ assert.equal(html.includes('recipeModuleexternal-widget'),false,'unregistered locale keys must not leak into the canvas')
+ assert.ok(html.includes('My external widget'))
+ assert.deepEqual(recipe,before)
+})
+
+test('all supported public data modules retain their localized labels even without a canvas picker card', async () => {
+ const {renderToStaticMarkup}=await import('react-dom/server')
+ for(const [type,label] of [['list','数据列表'],['detail','详情'],['filter','筛选']]){
+ const recipe={schemaVersion:1,appId:'known.types',version:1,name:'Known',description:'',pages:[{id:'home',label:'Home',layout:'stack',modules:[{id:'known',type,title:'Existing',config:{}}]}],connections:[],roles:[]}
+ const html=renderToStaticMarkup(React.createElement(RecipeCanvas,{recipe,change:()=>assert.fail('render must not mutate'),t:key=>key==='recipeModule'+type?label:key==='moduleType'?'内容类型':key}))
+ assert.ok(html.includes(label),'supported '+type+' must retain its localized label')
+ assert.equal(html.includes('内容类型: '+type),false)
+ }
+})

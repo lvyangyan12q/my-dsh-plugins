@@ -1,3 +1,4 @@
+import {contentTypes} from './content-catalog.ts'
 import {PageTemplates} from './page-template-view.tsx'
 import {ColumnDivider} from './column-divider.tsx'
 import {useState} from 'react'
@@ -32,7 +33,7 @@ export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t
     <button data-pwb-button type="button" title={t('moduleRemove')} aria-label={t('moduleRemove')+': '+module.id} onClick={()=>{change(copy=>{copy.pages[pageIndex].modules=copy.pages[pageIndex].modules.filter(m=>m.id!==module.id)});if(open)closeSettings()}}><X size={14}/></button>
    </div></CanvasPaneHeader>
    {module.type==='empty'?<CanvasContentPicker moduleId={module.id} t={t} onChoose={type=>choose(module.id,type)}/>:<>
-    <div className="pwb-canvas-summary"><Icon size={25}/><strong>{t('recipeModule'+module.type)}</strong><span>{String(module.config.url??module.config.path??module.config.basePath??module.config.requirement??'')||t('canvasConfigureHelp')}</span>
+    <div className="pwb-canvas-summary"><Icon size={25}/><strong>{contentTypes.some(type=>type===module.type)?t('recipeModule'+module.type):t('moduleType')+': '+module.type}</strong><span>{String(module.config.url??module.config.path??module.config.basePath??module.config.requirement??'')||t('canvasConfigureHelp')}</span>
      {module.connectionId&&<small>{t('recipeSource')}: {recipe.connections.find(c=>c.id===module.connectionId)?.resource}</small>}{module.roleId&&<small>{t('recipeTaskRole')}: {recipe.roles.find(r=>r.id===module.roleId)?.name}</small>}
     </div>
     {open&&<div className="pwb-canvas-settings"><RecipeModuleEditor recipe={recipe} pageIndex={pageIndex} moduleId={module.id} change={change} t={t}/><button data-pwb-button data-variant="primary" type="button" aria-label={t('canvasDone')+': '+module.id} onClick={closeSettings}>{t('canvasDone')}</button></div>}
