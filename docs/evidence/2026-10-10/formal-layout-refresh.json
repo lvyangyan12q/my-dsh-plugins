@@ -1,0 +1,64 @@
+{
+  "sourceCommit": "4320eb30714a5ce3cf313f95ad1ab74a9955cca7",
+  "url": "http://127.0.0.1:3080/",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "appId": "app.792701b4-f125-4b78-9044-ab6cf7a72af0",
+  "instanceId": "default",
+  "pageId": "home",
+  "recipeVersion": 1,
+  "keyboardResize": {
+    "before": 50,
+    "key": "ArrowRight",
+    "after": 55
+  },
+  "focus": {
+    "moduleId": "module.8f4a280e-3466-4006-9c48-7bede156c17a",
+    "width": 1160,
+    "moduleNodesRetainedBeforeReload": true,
+    "iframeNodeRetainedBeforeReload": true
+  },
+  "fullBrowserReload": {
+    "focusRestored": true,
+    "ratioRestored": 55,
+    "moduleIdsRetained": true,
+    "renderedIframeTitle": "专注学习计时器",
+    "nativeDraftsUnchanged": true,
+    "nativeSessionIdsUnchanged": true
+  },
+  "draftHashes": [
+    {
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "length": 27,
+      "sha256": "4f091635e7013eb49c4b30904ed657a783de6504ab794ebc87681433e57bd30f"
+    },
+    {
+      "length": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "length": 605,
+      "sha256": "8f45b2d296681fa6c20399ea1505f0328f44fa0110c1e302f2caccc6c3d80d99"
+    }
+  ],
+  "sessions": [
+    "ed2e6b58-a3c9-4135-9325-c7a0c83ce74c",
+    "11c43f7b-b082-4ccf-bfc5-af38f81632e2",
+    "03187104-497f-4fd0-8c8c-f10b15fa1f00"
+  ],
+  "cleanup": {
+    "ratio": 50,
+    "focus": null
+  },
+  "limits": [
+    "No new model send or study data mutation",
+    "Reload recreates DOM; same-node claim only covers focus before reload",
+    "No claim that temporary iframe timer seconds persist across reload",
+    "This proves module ratio/focus, not all outer window sizes/tabs or running Agent retention"
+  ]
+}

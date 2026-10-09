@@ -126,7 +126,11 @@
       "section": "User Stories",
       "number": 12,
       "requirementSha256": "e42e5eb9b0b306d2b09cb29a26113e6ed5760e2168dacc82b336545cfefe0e80",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual module ratio/focus and idle native drafts/sessions survive full browser reload; outer window dimensions/tabs scope remains open",
+      "evidence": [
+        "docs/evidence/2026-10-10/formal-layout-refresh.json",
+        "plugins/personal-workbench/tests/runtime-layout.test.mjs"
+      ]
     },
     {
       "id": "workbench:User Stories:13",
@@ -313,7 +317,13 @@
       "section": "User Stories",
       "number": 32,
       "requirementSha256": "3f3a728c4681463753f400d0b629efaaed28f56354fd0a9d9da19e1d968cba1e",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for opening and using Kaogong after official Workbench uninstall; model-backed teacher acceptance remains a separate requirement",
+      "evidence": [
+        "docs/evidence/2026-10-09/standalone-kaogong-browser.json",
+        "docs/evidence/2026-10-10/standalone-study-responsive.json",
+        "plugins/kaogong/tests/views.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
     },
     {
       "id": "workbench:User Stories:33",
