@@ -1093,9 +1093,10 @@
       "section": "User Stories",
       "number": 26,
       "requirementSha256": "d9adaf00abcb32dc59385a36d3bc80be508c3aeba5df7042f115a6fdd4eb6dfa",
-      "evidenceStatus": "partial: actual Agent change keeps prior Session until explicit confirmation, cancellation preserves it; confirmed replacement retains prior ID. Actual history navigation reveals native old Agent and returning preserves the new role binding. Zero-turn old Session shows native workspace chooser; old draft and completed historical transcript display remain unproven.",
+      "evidenceStatus": "partial: actual Agent change keeps prior Session until explicit confirmation, cancellation preserves it; confirmed replacement retains prior ID. Actual history navigation reveals native old Agent and returning preserves the new role binding. Zero-turn old Session shows native workspace chooser; old draft and completed historical transcript display remain unproven. Actual running Agent mismatch now hides stale native composer with explicit preservation/recovery guidance; restoring the original Agent restores the exact unsent draft and same Session without new Session creation. Historical completed messages remain unproven.",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/agent-change-history-browser.json"
+        "docs/evidence/2026-10-10/agent-change-history-browser.json",
+        "docs/evidence/2026-10-10/agent-preset-change-guard-browser.json"
       ]
     },
     {
