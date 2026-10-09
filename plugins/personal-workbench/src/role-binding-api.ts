@@ -81,6 +81,6 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } }
   interface SlotFactoryMap {
     'personal-workbench.role-attachment': { scope: 'root'; props: { bindingKey: RoleBindingKey; expectedSessionId: SessionId | null; close: () => void }; inject: { commands: PersonalWorkbenchRoles }; locale: 'personal-workbench' }
-    'personal-workbench.role-conversation': { scope: 'root'; locale: 'personal-workbench'; props: { readonly bindingKey: RoleBindingKey; readonly active: boolean; readonly label?: string }; inject: RoleViewInjected; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
+    'personal-workbench.role-conversation': { scope: 'root'; locale: 'personal-workbench'; props: { readonly bindingKey: RoleBindingKey; readonly active: boolean; readonly label?: string; readonly expectedPresetId?: string }; inject: RoleViewInjected; children: { 'personal-workbench.role-native': { kind: 'single'; scope: 'session' } } }
   }
 }

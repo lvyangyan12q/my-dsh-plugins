@@ -17,10 +17,11 @@ function Mounted({ reference, bindingKey, mountRole, children }: { reference: Se
 }
 
 type RoleViewProps = FactoryComponentPropsOf<'personal-workbench.role-conversation'>
-export function RoleConversation({ bindingKey, active, label, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, openHistory, renderFactorySlot, t }: RoleViewProps) {
+export function RoleConversation({ bindingKey, active, label, expectedPresetId, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, openHistory, renderFactorySlot, t }: RoleViewProps) {
   const state = useRoles(value => value.get(roleKey(bindingKey))) ?? EMPTY
   const [attachment, setAttachment] = useState<{ expectedSessionId: SessionId | null } | null>(null)
   const window = state.window
+  const presetChanged = !!(expectedPresetId && state.binding && state.binding.presetId !== expectedPresetId)
   const status = useSessionStatus(value => state.binding ? value.get(state.binding.sessionId) : undefined)
   useEffect(() => { if (active && !state.binding && !state.error && !state.busy) void commands.open(bindingKey).catch(() => {}) }, [active, bindingKey, commands])
   const retry = () => { const binding = state.binding; void (binding ? commands.retry(bindingKey, binding.sessionId) : commands.open(bindingKey)).catch(() => {}) }
@@ -39,11 +40,12 @@ export function RoleConversation({ bindingKey, active, label, SessionProvider, r
       </div></details>}
     </header>
     {attachment && renderFactorySlot('personal-workbench.role-attachment', { bindingKey, expectedSessionId: attachment.expectedSessionId, close: () => setAttachment(null) })}
+    {presetChanged && <p role="alert">{t('rolePresetChanged')}</p>}
     {state.busy && <p role="status">正在连接角色会话…</p>}
     {state.error && <p role="alert">{state.error}</p>}
     {window.phase === 'error' && <p role="alert">角色会话不可访问。请同 ID 重试或显式新建。</p>}
-    {window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '角色创建尚未完成，请同 ID 重试。' : '点击创建，开始与角色对话。'}</p>}
-    {window.phase === 'open' && <div style={{ position: 'relative', zIndex: 0, flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}><Mounted reference={window.reference} bindingKey={bindingKey} mountRole={mountRole}><SessionProvider session={window.reference} empty={() => <p role="alert">角色会话不可访问。请同 ID 重试。</p>}>
+    {!presetChanged && window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '角色创建尚未完成，请同 ID 重试。' : '点击创建，开始与角色对话。'}</p>}
+    {!presetChanged && window.phase === 'open' && <div style={{ position: 'relative', zIndex: 0, flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}><Mounted reference={window.reference} bindingKey={bindingKey} mountRole={mountRole}><SessionProvider session={window.reference} empty={() => <p role="alert">角色会话不可访问。请同 ID 重试。</p>}>
       {renderSlot('personal-workbench.role-native', {})}
     </SessionProvider></Mounted></div>}
   </section>

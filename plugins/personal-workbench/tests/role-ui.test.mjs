@@ -50,6 +50,11 @@ test('built generic role view reads per-ID official status facts without a fake 
     await React.act(async()=>historyButton.click())
     assert.deepEqual(openedHistory,['prior-agent-session'])
     assert.equal(state.binding.sessionId,'math-id','Viewing history cannot replace the active role binding')
+    state.window={phase:'open',reference:{sessionId:'math-id'}}
+    await React.act(async()=>root.render(React.createElement(entry.component,{...props,expectedPresetId:'new-agent',SessionProvider:()=>assert.fail('A mismatched Agent must not expose the old native composer')})))
+    assert.match(dom.window.document.body.textContent,/rolePresetChanged/,'Activating a different Agent must visibly explain why the old role Session is not usable')
+    assert.equal(state.binding.sessionId,'math-id','A changed recipe must preserve the old Session until explicit replacement')
+    assert.ok([...dom.window.document.querySelectorAll('button')].some(button=>button.textContent.includes('新建角色会话')),'Explicit recovery must remain available')
     const native = entries.find(row => row.options.name === 'personal-workbench.role-native')
     const factories = []
     await React.act(async () => root.render(React.createElement(native.component, {
