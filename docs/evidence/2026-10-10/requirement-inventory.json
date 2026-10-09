@@ -92,7 +92,14 @@
       "section": "User Stories",
       "number": 9,
       "requirementSha256": "a0bcc604698f51165eb23be95aabdcb1d5901c264ac6131aebc4b1f0aa84a5d8",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: current default-instance close/reopen verified; complete original scope still requires individual proof",
+      "evidence": [
+        {
+          "receipt": "docs/evidence/2026-10-10/formal-outer-retention.json",
+          "scope": "explicit entry focus, same material and idle role nodes, same role session IDs and exact draft hashes",
+          "limits": "not running Agent close, reload-layout or independent Host study-data persistence proof"
+        }
+      ]
     },
     {
       "id": "workbench:User Stories:10",
@@ -128,7 +135,14 @@
       "section": "User Stories",
       "number": 13,
       "requirementSha256": "0f39c3f51400a8b353272bea557c89193325bb825c9415392a77a46942623a8e",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: current default-instance close/reopen verified; complete original scope still requires individual proof",
+      "evidence": [
+        {
+          "receipt": "docs/evidence/2026-10-10/formal-outer-retention.json",
+          "scope": "explicit entry focus, same material and idle role nodes, same role session IDs and exact draft hashes",
+          "limits": "not running Agent close, reload-layout or independent Host study-data persistence proof"
+        }
+      ]
     },
     {
       "id": "workbench:User Stories:14",
