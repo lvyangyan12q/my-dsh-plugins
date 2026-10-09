@@ -1056,7 +1056,10 @@
       "section": "User Stories",
       "number": 23,
       "requirementSha256": "c46e6cade7ac24e233486ebdb9e4d02dac6ca8835e482f2e81d55797e08de951",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual review/analysis module actions target their declared roles and preserve independent prepared tasks; native completed delivery remains unproven because Send task was not clicked",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/module-handoff-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:24",
@@ -1065,7 +1068,10 @@
       "section": "User Stories",
       "number": 24,
       "requirementSha256": "3a6078fa1c13585a135ca74d35d91abab1577d97c23215b36ae13adb87bf6415",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for pre-send user control: actual editor shows source and role, task/context edit, cross-page continuation, context removal and role-specific discard; no claim about successful model execution",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/module-handoff-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:25",
