@@ -16,7 +16,7 @@ import {createCanvasRecipe,RecipeCanvas,CanvasContentPicker} from './recipe-canv
 export async function recipeRequest(request:RecipeRequest){
  const response=await fetch('/api/personal-workbench/recipes',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(request)})
  const value=await response.json();if(!response.ok)throw new Error(value.error??'Recipe request failed')
- return value as {recipes?:RecipeRecord[];record?:RecipeRecord;recipe?:AppRecipe;workspaces?:string[];templates?:PageTemplate[];template?:PageTemplate}
+ return value as {recipes?:RecipeRecord[];dependencies?:Record<string,import('./recipe-api.ts').RecipeDependency[]>;record?:RecipeRecord;recipe?:AppRecipe;workspaces?:string[];templates?:PageTemplate[];template?:PageTemplate}
 }
 export function RecipeEditor({t,refresh,onOpenSession,target,onActivated,onBusy}:{target?:{pageId:string;moduleId:string;appId:string;changeContent:boolean};onActivated?:()=>void;onBusy?:(busy:boolean)=>void;onOpenSession?:(id:string)=>void;t:(key:any)=>string;refresh:()=>Promise<void>}){
  useSyncExternalStore(displayCatalog.subscribe,displayCatalog.getSnapshot,displayCatalog.getSnapshot)

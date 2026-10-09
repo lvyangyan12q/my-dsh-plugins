@@ -10,8 +10,11 @@ import type { ComponentType } from 'react'
 import type { AppRecipe,RecipeModule } from './recipe-api.ts'
 export interface RecipeModuleProps { toolbarHost?:HTMLDivElement|null; onEditModule?:(pageId:string,moduleId:string,changeContent:boolean)=>void; placement?:number; focused?:boolean; onFocus?:()=>void; active?:boolean; recipe:AppRecipe; module:RecipeModule; appId:string; instanceId:string; preview:boolean; taskEditorHost?:boolean; ctx?:Context; pageId:string; t:(key:any)=>string; renderFactorySlot?:PropsRenderFactories['renderFactorySlot'] }
 const renderers=new Map<string,ComponentType<RecipeModuleProps>>()
+const rendererListeners=new Set<()=>void>()
+const renderersChanged=()=>{for(const listener of rendererListeners)listener()}
+export const recipeRendererCatalog={has:(id:string)=>renderers.has(id),subscribe:(listener:()=>void)=>{rendererListeners.add(listener);return()=>{rendererListeners.delete(listener)}}}
 /** Renderers are installed code owned by plugins; recipes contain no executable source. */
-export function registerRecipeModuleRenderer(id:string,view:ComponentType<RecipeModuleProps>):()=>void{if(renderers.has(id))throw new Error('Duplicate module renderer');renderers.set(id,view);return()=>{if(renderers.get(id)===view)renderers.delete(id)}}
+export function registerRecipeModuleRenderer(id:string,view:ComponentType<RecipeModuleProps>):()=>void{if(renderers.has(id))throw new Error('Duplicate module renderer');renderers.set(id,view);renderersChanged();return()=>{if(renderers.get(id)===view){renderers.delete(id);renderersChanged()}}}
 function RecipeModuleSection(props:RecipeModuleProps) {
  const [toolbarHost,setToolbarHost]=useState<HTMLDivElement|null>(null)
  const [error,setError]=useState(''),{module,ctx,preview,t,appId,instanceId,pageId}=props,View=renderers.get(module.type)

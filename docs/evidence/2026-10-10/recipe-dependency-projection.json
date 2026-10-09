@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-09T19:08:15.299Z",
+  "baseCommit": "fcdb5399661ac1492ebaf686646aae294b20b457",
+  "scope": "Running recipe dependency projection; no full-goal completion claim",
+  "red": {
+    "test": "built Client installs real recipe app registration and keyed runtime; draft/preview do not replace running app",
+    "symptom": "withdrawing the actual renderer must update catalog availability",
+    "actual": true,
+    "expected": false
+  },
+  "changes": [
+    "Client checks actual renderer and owned display adapter registries, subscribes to both and disposes subscriptions",
+    "Host catalog reports modules, owned sources, resolved Agent status and Skill policy/snapshot availability",
+    "Same-version refresh updates dependency metadata without replacing runtime component or recipe",
+    "Unavailable Host role status is explicit instead of claiming availability"
+  ],
+  "verification": {
+    "localTests": 292,
+    "passed": 292,
+    "failed": 0,
+    "userDirtyIncluded": true,
+    "testRoot": "platform-tests-1791572750728",
+    "build": "Three plugin builds, official source types, declarations and consumers passed",
+    "releaseRoot": "platform-release-1791572793599",
+    "release": "Official archive install, cold restart, uninstall/reinstall and scoped content checks passed; synthetic profile, zero model calls",
+    "finalAdditionalAssertions": "7/7 focused client and role-host cases passed after additional rendered-error and disabled-Agent assertions"
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "remaining": [
+    "Full latest remote-only source verification remains pending",
+    "Formal current browser dependency recovery remains pending",
+    "Native sidebar private class selector must still be removed via a public additive seam",
+    "Full successful native teacher/model and physical IME gates remain incomplete"
+  ]
+}

@@ -59,3 +59,20 @@ test('page templates persist sanitized structures and missing rebinding blocks a
  second.deny(401);assert.equal((await second.call({action:'templates'})).status,401)
  }finally{await first?.close();await second?.close();await rm(root,{recursive:true,force:true})}
 })
+
+test('catalog reports real withdrawn Host modules and owned sources without changing the running recipe',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-dependencies-')),f=await fixture(root)
+ try{
+  const row=recipe(1,'extension.actual');row.connections=[{id:'data',sourceAppId:row.appId,resource:'owned'}];row.pages[0].modules[0].connectionId='data'
+  const removeModule=f.owner.service.registerModule({id:'extension.actual'}),removeSource=f.owner.service.registerDataSource({appId:row.appId,resource:'owned'})
+  await f.owner.service.save(row,0);await f.owner.service.activate(row.appId,1)
+  const before=structuredClone(f.owner.service.list())
+  assert.ok((await f.call({action:'catalog'})).value.dependencies[row.appId].every(dep=>dep.available))
+  removeModule();removeSource()
+  const after=await f.call({action:'catalog'});assert.equal(after.status,200)
+  assert.deepEqual(after.value.dependencies[row.appId],[{id:'extension.actual',available:false,reason:'Unavailable module: extension.actual'},{id:'connection:data',available:false,reason:'Unavailable data connection: data'}])
+  assert.deepEqual(f.owner.service.list(),before)
+  const restoreModule=f.owner.service.registerModule({id:'extension.actual'}),restoreSource=f.owner.service.registerDataSource({appId:row.appId,resource:'owned'})
+  assert.ok((await f.call({action:'catalog'})).value.dependencies[row.appId].every(dep=>dep.available));restoreSource();restoreModule()
+ }finally{await f.close();await rm(root,{recursive:true,force:true})}
+})
