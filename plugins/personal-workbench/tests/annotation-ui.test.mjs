@@ -52,3 +52,22 @@ test('save failure and page closure during a delayed save never append to a nati
   }finally{finish();await f.close();globalThis.fetch=originalFetch}
  }
 })
+
+
+test('wrapped annotation toolbar stays outside selection and both editors as its height changes',async()=>{
+ const f=await fixture(),canvas=React.createRef();let toolbarHeight=72;
+ try{
+  await act(async()=>f.root.render(React.createElement('div',{ref:canvas},React.createElement('section',{'data-module-id':'web'},'Visible'),React.createElement(AnnotationLayer,{canvas,recipe,pageId:'home',instanceId:'default',active:true,t:k=>k}))));
+  canvas.current.getBoundingClientRect=()=>({left:0,top:100,width:424,height:600,right:424,bottom:700});
+  document.querySelector('.pwb-annotation-toolbar').getBoundingClientRect=()=>({left:0,top:100,width:424,height:toolbarHeight,right:424,bottom:100+toolbarHeight});
+  canvas.current.querySelector('section').getBoundingClientRect=()=>({left:0,top:180,width:424,height:520,right:424,bottom:700});
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='annotationStart').click());
+  const aim=document.querySelector('[aria-label=annotationArea]');assert.equal(f.dom.window.getComputedStyle(aim).top,'72px','The selection layer must start below the wrapped toolbar');
+  await act(async()=>{for(const type of ['pointerdown','pointerup'])aim.dispatchEvent(new f.dom.window.MouseEvent(type,{bubbles:true,clientX:100,clientY:280,button:0}))});
+  assert.equal(f.dom.window.getComputedStyle(document.querySelector('[aria-label=annotationEditor]')).top,'82px');
+  toolbarHeight=108;await act(async()=>f.dom.window.dispatchEvent(new f.dom.window.Event('resize')));
+  assert.equal(f.dom.window.getComputedStyle(document.querySelector('[aria-label=annotationEditor]')).top,'118px','The open editor must follow a resized toolbar');
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent.startsWith('annotationHistory')).click());
+  assert.equal(f.dom.window.getComputedStyle(document.querySelector('[aria-label=annotationHistory]')).top,'118px','History must use the same toolbar boundary');
+ }finally{await f.close()}
+})
