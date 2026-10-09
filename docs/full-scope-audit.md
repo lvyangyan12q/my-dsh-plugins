@@ -1,6 +1,6 @@
 # Full-scope acceptance audit
 
-Audit source: committed implementation b42d3f75ab599cdaa31fdad4d982811aeafcbee4, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
+Audit source: latest implementation b7ba8f76dc0be479480aba3802fd9f129daa8356 and scoped evidence through 1efb0f4b377553959fa0679ac3faf84f7a2c4e68, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
 
 The [requirement inventory](evidence/2026-10-10/requirement-inventory.json) identifies each of 123 numbered/bulleted requirements by source, line and exact-text SHA256: all 36 Workbench and 28 Platform user stories, plus their implementation/testing decisions. Each still requires individual closure against its exact scope. Approved canvas changes, native-menu preservation, management-only public capability reuse, retained app-private capabilities, application-provided map data and the old-kaogong observation period remain part of scope.
 
@@ -25,7 +25,7 @@ Exact pushed implementation b42d3f75ab599cdaa31fdad4d982811aeafcbee4 was exporte
 
 The local integrated suite is separately 292/292 and includes the user's uncommitted Agent inventory-ownership test. All four preserved user-file fingerprints match their saved baseline; their archived text matches exact git objects after CRLF normalization, with both raw hashes recorded. Earlier e922/285 and fa100/288 receipts remain historical proof and do not represent this current source. No original broad GUI/model requirement is closed by the current synthetic install evidence.
 
-The fixed-true recipe dependency defect is implemented and covered by actual Client registration withdrawal/restoration, Host module/source withdrawal/restoration and disabled/unresolved Agent/Skill tests. Formal current-browser capability recovery is still pending. The sidebar private native class selector remains an implementation contradiction requiring a public additive extension seam.
+The fixed-true recipe dependency defect is implemented and covered by actual Client registration withdrawal/restoration, Host module/source withdrawal/restoration and disabled/unresolved Agent/Skill tests. Actual isolated installed-browser managed Agent/Skill availability recovery is now proven at its catalog/view scope; model-backed native Session recovery remains separate. The private native footer selector was replaced by the public additive sidebar.sections seam; actual short viewport preservation passed. See the latest scoped receipts below.
 
 ## Current external blocker
 
@@ -76,3 +76,6 @@ computer-use真实输入法验收未执行：Node运行时连续退出，重置�
 
 
 2026-10-10: Actual isolated installed-browser capability lifecycle exposed a stale Refresh application status defect (lifecycle-only refresh). A failing/passing regression now covers same-version recipe dependency refresh with existing draft DOM retained. Latest clean committed implementation b7ba8f76dc0be479480aba3802fd9f129daa8356 passes three builds, 293/293 tests and official installation/restart/uninstall gates. Its exact archive was installed in the existing isolated 3089 profile. Same managed Agent disable/re-enable and same assigned Skill disable/re-enable now update actual visible dependency configuration after a browser Refresh click. Running recipe version 3/revision 10, role/preset/Skill IDs, mounted app view and original three record IDs/210 minutes remain. See [live capability browser recovery](evidence/2026-10-10/live-capability-browser-recovery.json). No native role Session or model task was created; full teaching/environment/physical IME gates remain incomplete.
+
+
+2026-10-10: Formal 3080 independent study selected real PDF 101–131 material: 21 rendered tables at desktop width, visible source/page range, chapters 6–8, and a loaded 1137×559 image. At 480×720 the dialog/body fit the viewport; the first 6-row/41-cell table scrolls horizontally (cell x moves exactly 100px) while the image fits its 335px reader. Return-to-list restores search focus; four native draft hashes unchanged. See [cross-page material receipt](evidence/2026-10-10/formal-cross-page-material.json). The 123-entry canonical identity list is unchanged; stories20/testing9/testing11 retain partial status. No screenshot or source-PDF page-break comparison is claimed. Historical source text still refers to the retained old kaogong directory; deletion is not authorized or certified.

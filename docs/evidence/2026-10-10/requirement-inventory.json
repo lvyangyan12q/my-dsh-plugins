@@ -215,7 +215,10 @@
       "section": "User Stories",
       "number": 20,
       "requirementSha256": "0792e427aca1e626d47984cf04b0bb47e235d3cc31b54289627fdfc1631407e5",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/formal-cross-page-material.json"
+      ]
     },
     {
       "id": "workbench:User Stories:21",
@@ -720,7 +723,10 @@
       "section": "Testing Decisions",
       "number": 9,
       "requirementSha256": "d4ebe6604f286f6bcd8ecdcfd511eb34424d9600b302c6c29df1de42dbd6a6e2",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/formal-cross-page-material.json"
+      ]
     },
     {
       "id": "workbench:Testing Decisions:10",
@@ -738,7 +744,10 @@
       "section": "Testing Decisions",
       "number": 11,
       "requirementSha256": "ef20888d9b01b0e4439321d934a9b03b23fdeb103545f7a8bde2988623b73394",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/formal-cross-page-material.json"
+      ]
     },
     {
       "id": "workbench:Testing Decisions:12",
@@ -1252,5 +1261,6 @@
       "requirementSha256": "417458200e02d4b6aa49f2e5186fb8136056c25ae19251896ce3a5e934c1812c",
       "evidenceStatus": "requires individual proof; inventory does not certify completion"
     }
-  ]
+  ],
+  "latestEvidenceCommit": "1efb0f4b377553959fa0679ac3faf84f7a2c4e68"
 }
