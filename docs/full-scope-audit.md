@@ -64,3 +64,6 @@ Incremental contract audit (2026-10-10): [15 scoped requirement decisions](evide
 独立3089从正式归档安装的合成profile启动。缺失模块草稿仍被预览拒绝，启用按钮不可用；原运行版本1、三条阅读记录和3/210/70统计保持，实际打开原应用正常。发现未知模块显示原始翻译键，先以失败回归复现，再改为完整contentTypes目录判定已知翻译、未知类型显示本地化内容类型及原标识。审查发现的list/detail/filter标签回归另经失败/通过用例修复。三项定向、291项本地回归及三插件构建/归档安装通过；291包含用户未提交管理测试，不作为远程源码独立计数。官方安装修复归档后实页显示“内容类型: unregistered”，错误和数据保护仍通过。详见 [回执](evidence/2026-10-10/module-type-fallback.json)。
 
 computer-use真实输入法验收未执行：Node运行时连续退出，重置后仍同错误；未发出Windows输入操作。物理输入法、原生模型交互及其他未完成范围继续保留。没有新截图，不关闭完整视觉门禁。
+
+
+2026-10-10: The public additive sidebar.sections seam replaces private native footer class styling; native CSS is unchanged. Actual 1440x600 reproduction found the application list collapsing the native workspace region to zero and pushing the footer beyond the viewport. Plugin-owned list scrolling now restores the native region to 66px and keeps the footer inside the viewport; 480x720 rail and four native draft hashes are preserved. See [short viewport receipt](evidence/2026-10-10/sidebar-short-viewport.json) and [public extension receipt](evidence/2026-10-10/native-sidebar-sections.json). The local 293-test suite includes a retained user test. Latest clean-source verification and remaining full native model/environment/IME gates remain open.

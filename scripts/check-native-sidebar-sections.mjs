@@ -29,5 +29,5 @@ if (rows.every(row => row.actual === row.after)) {
   for (const row of rows) await copyFile(resolve(source,row.path), resolve(backup,row.path.replaceAll('/','__')))
   execFileSync('git', ['-C',source,'apply','--unidiff-zero',patch], { stdio:'inherit' })
   if (!(await state()).every(row => row.actual === row.after)) throw new Error('Applied patch differs from reviewed source')
-  console.log('Applied native draft images adaptation; originals backed up. Build the native client next.')
+  console.log('Applied native sidebar sections adaptation; originals backed up. Build the native client next.')
 }
