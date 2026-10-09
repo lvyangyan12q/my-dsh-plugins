@@ -1,0 +1,335 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "f2ee7ba30cc78ff2a95fe9e2cfe292acc7df797e",
+  "url": "http://127.0.0.1:3091/",
+  "isolatedRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\practice-browser-1791582015514",
+  "installedBytesEqual": true,
+  "environment": "Native rc.2 sidebar, no Better Sidebar, exact official archives installed offline",
+  "fixture": {
+    "type": "Read-only snapshot of existing approved question records; original IDs/stems/options/answers unchanged",
+    "subject": "行测-数量关系",
+    "knowledgePoint": "和差倍比问题",
+    "count": 62,
+    "independentlyVerifiedExamOrigin": false
+  },
+  "formalDataHashesUnchanged": {
+    "bank": "8b2e130696aeb5d862a83cc844de05f0020f4c4c8e43fcfea978d6583f8af883",
+    "knowledge": "3235a7f68f1d6e21024113276008e2ef0e3f8eb13d4586ef186175a0dc697d9d",
+    "lessons": "f08c0f04e8e565187cc6eb56b93e445640f1a5e2a83c968d3f2693aa38aba70b",
+    "notebook": "b18bfa5c92334ebd8fda4dd1a42ba401fac4a8f9e2dcca0be087a63531196be1",
+    "practice": "339f3194c2be35c9b1119c5168249b0914d6d32f9e8bfd807aeef3c70161559b",
+    "progress": "e183ebb16237f0c5b2f571880020be9b67c877f70d5806844aa5de342530a0cc"
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "method": "Actual browser sidebar/practice/start clicks, radio fill_form, partial-answer reload, submit, error-reason/notes fill_form, save reflection, next round, history switch, close/reopen, scored reload; read-only public practice/read for authority checks",
+  "roundId": "6e0a5c3b-c46b-47f6-844d-b09e4e1530e3",
+  "ids": [
+    "b_5b077553-1360-4337-845a-96488844cb60",
+    "b_d3039549-a04b-48af-8632-d08bcea28811",
+    "b_5515f4ee-1a34-4eef-afd1-8abb0212efdd",
+    "b_21de48ff-13f0-4537-8805-f518d05dcc62",
+    "b_e25a5a4b-c927-488a-bc66-d9d3dded978b",
+    "b_8a5ecb78-2225-4b73-b150-c7a0d5cfc6ed",
+    "b_1d643126-0e2e-46da-915d-c3875864d3f4",
+    "b_9097554f-8d75-4752-b1cd-c178a1dd01f6",
+    "b_90978a52-4830-41e4-be70-15b8eebd034b",
+    "b_2adb017b-995b-4385-b988-664511b75d92"
+  ],
+  "preSubmit": {
+    "returned": 10,
+    "totalAvailable": 62,
+    "resultNull": true,
+    "noAnswerFields": true,
+    "radios": 40,
+    "answerTextVisible": false
+  },
+  "partialReload": {
+    "identical": true,
+    "answers": {
+      "b_5b077553-1360-4337-845a-96488844cb60": "A",
+      "b_d3039549-a04b-48af-8632-d08bcea28811": "A",
+      "b_5515f4ee-1a34-4eef-afd1-8abb0212efdd": "A"
+    },
+    "checked": 3
+  },
+  "score": {
+    "total": 10,
+    "correct": 1,
+    "accuracy": 0.1,
+    "rows": [
+      {
+        "id": "b_5b077553-1360-4337-845a-96488844cb60",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "C",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_d3039549-a04b-48af-8632-d08bcea28811",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "D",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_5515f4ee-1a34-4eef-afd1-8abb0212efdd",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "C",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_21de48ff-13f0-4537-8805-f518d05dcc62",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "C",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_e25a5a4b-c927-488a-bc66-d9d3dded978b",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "B",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_8a5ecb78-2225-4b73-b150-c7a0d5cfc6ed",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "B",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_1d643126-0e2e-46da-915d-c3875864d3f4",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "C",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_9097554f-8d75-4752-b1cd-c178a1dd01f6",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "D",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_90978a52-4830-41e4-be70-15b8eebd034b",
+        "userAnswer": "A",
+        "correct": false,
+        "correctAnswer": "B",
+        "explanationPresent": true
+      },
+      {
+        "id": "b_2adb017b-995b-4385-b988-664511b75d92",
+        "userAnswer": "A",
+        "correct": true,
+        "correctAnswer": "A",
+        "explanationPresent": true
+      }
+    ],
+    "projection": "complete"
+  },
+  "alerts": [],
+  "scoreTextShown": true,
+  "next": {
+    "roundId": "577baebb-7d4f-45c9-bd84-c5be101d1b89",
+    "ids": [
+      "b_9bc0d2ba-9302-478b-88a9-7e64e5e70e92",
+      "b_7f47de30-7d7d-4471-81a4-ed7c27ceb2be",
+      "b_8cf1e9a0-af0f-49b0-ad5f-ce3fa2e0a618",
+      "b_75ad9913-6802-43e3-9269-89fcafe7d77a",
+      "b_ee65a18b-fa5b-4a8f-b652-fb9621dbd6ff",
+      "b_b4a46f68-19ed-4391-9abb-91067685a00e",
+      "b_a810a430-7973-483c-b4e4-cf72a2584bef",
+      "b_741d1c8e-fbac-4602-b537-bdc761011684",
+      "b_d2101fc7-e3e7-4c4a-b9e2-0f5b47482b11",
+      "b_9a4ee69e-cffa-45f0-ac27-19c7acd3efc6"
+    ],
+    "returned": 10,
+    "result": null,
+    "noAnswerFields": true,
+    "checked": 0,
+    "answers": {},
+    "overlap": 0
+  },
+  "reflections": {
+    "roundId": "6e0a5c3b-c46b-47f6-844d-b09e4e1530e3",
+    "reflections": [
+      {
+        "id": "b_5b077553-1360-4337-845a-96488844cb60",
+        "errorReason": "计算/分析失误",
+        "notes": "隔离验收笔记：先列方程，再核对优惠券与租金比例。",
+        "savedAt": "2026-10-09T21:44:00.037Z",
+        "notesRevision": 2
+      },
+      {
+        "id": "b_d3039549-a04b-48af-8632-d08bcea28811",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_5515f4ee-1a34-4eef-afd1-8abb0212efdd",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_21de48ff-13f0-4537-8805-f518d05dcc62",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_e25a5a4b-c927-488a-bc66-d9d3dded978b",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_8a5ecb78-2225-4b73-b150-c7a0d5cfc6ed",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_1d643126-0e2e-46da-915d-c3875864d3f4",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_9097554f-8d75-4752-b1cd-c178a1dd01f6",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_90978a52-4830-41e4-be70-15b8eebd034b",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      }
+    ],
+    "result": {
+      "total": 10,
+      "correct": 1,
+      "projection": "complete"
+    },
+    "notice": true,
+    "notes": [
+      "隔离验收笔记：先列方程，再核对优惠券与租金比例。"
+    ]
+  },
+  "history": {
+    "roundId": "6e0a5c3b-c46b-47f6-844d-b09e4e1530e3",
+    "scoreText": true,
+    "reasons": [
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误"
+    ],
+    "notes": [
+      "隔离验收笔记：先列方程，再核对优惠券与租金比例。"
+    ],
+    "history": [
+      "选择轮次",
+      "2026-10-09T21:44:21 · 行测-数量关系 · 未提交",
+      "2026-10-09T21:41:32 · 行测-数量关系 · 已提交"
+    ]
+  },
+  "closeReopen": {
+    "roundId": "6e0a5c3b-c46b-47f6-844d-b09e4e1530e3",
+    "scoreText": true,
+    "notes": [
+      "隔离验收笔记：先列方程，再核对优惠券与租金比例。"
+    ],
+    "alerts": []
+  },
+  "scoredReload": {
+    "roundId": "6e0a5c3b-c46b-47f6-844d-b09e4e1530e3",
+    "score": {
+      "total": 10,
+      "correct": 1,
+      "accuracy": 0.1
+    },
+    "reflections": [
+      {
+        "id": "b_5b077553-1360-4337-845a-96488844cb60",
+        "errorReason": "计算/分析失误",
+        "notes": "隔离验收笔记：先列方程，再核对优惠券与租金比例。",
+        "savedAt": "2026-10-09T21:44:00.037Z",
+        "notesRevision": 2
+      },
+      {
+        "id": "b_d3039549-a04b-48af-8632-d08bcea28811",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_5515f4ee-1a34-4eef-afd1-8abb0212efdd",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_21de48ff-13f0-4537-8805-f518d05dcc62",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_e25a5a4b-c927-488a-bc66-d9d3dded978b",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_8a5ecb78-2225-4b73-b150-c7a0d5cfc6ed",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_1d643126-0e2e-46da-915d-c3875864d3f4",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_9097554f-8d75-4752-b1cd-c178a1dd01f6",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      },
+      {
+        "id": "b_90978a52-4830-41e4-be70-15b8eebd034b",
+        "errorReason": "计算/分析失误",
+        "savedAt": "2026-10-09T21:44:00.037Z"
+      }
+    ],
+    "scoreText": true,
+    "notes": [
+      "隔离验收笔记：先列方程，再核对优惠券与租金比例。"
+    ],
+    "reasons": [
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误",
+      "计算/分析失误"
+    ],
+    "alerts": []
+  },
+  "independentScoreMatched": true,
+  "modelCalls": 0,
+  "limits": [
+    "This proves ten-question selection/submission/results/next/history/notes in the native-sidebar environment, not the complete teaching workflow in all three sidebar environments",
+    "Counselor model review, native question/permission/Stop/streaming-close and physical IME remain open",
+    "Existing approved bank includes OCR-contaminated option/explanation text and at least one diagram described as text without a supplied image; retained unchanged, content fidelity is not certified",
+    "No original study records, private question text or screenshots of user materials published to Git; receipt contains IDs and acceptance-created notes only",
+    "Isolated fixture helper initializes an empty notebook/knowledge/progress store and its synthetic default plan; no formal plan migrated or claimed"
+  ]
+}

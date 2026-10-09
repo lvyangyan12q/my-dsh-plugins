@@ -101,3 +101,6 @@ computer-use真实输入法验收未执行：Node运行时连续退出，重置�
 
 
 2026-10-10: The latest installed release and old-to-new upgrade proof adds bounded decisions for independent delivery, Host completion authority and platform ownership/public-display reuse. Four decisions gain direct scoped proof and two recovery/migration decisions remain partial. Original 123 requirement identities are unchanged; no whole teaching/environment or model gate is closed.
+
+
+2026-10-10: Actual installed 3091 UI completes the non-model practice boundary using a read-only snapshot of 62 existing approved records: ten distinct questions, hidden answers, partial-answer reload, authoritative scoring/analysis, saved nine wrong-answer reasons and one acceptance note, ten unseen next questions, history/close/reload recovery. Formal six-file data and four user changes remain byte-identical. This supplies bounded proof for Workbench stories 22–23; counselor/native interaction and the whole three-sidebar teaching workflow remain open. Existing bank OCR contamination and absent diagram assets are explicitly retained as content-quality limitations. See [practice browser receipt](evidence/2026-10-10/kaogong-practice-browser.json).

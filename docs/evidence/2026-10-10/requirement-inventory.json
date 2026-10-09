@@ -241,7 +241,10 @@
       "section": "User Stories",
       "number": 22,
       "requirementSha256": "37794592330e74319e7336d187b149f83d62f40a2a720e1594b32be92874553c",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at ten-question practice behavior: actual installed UI begins ten distinct approved-bank snapshot questions and continues to ten unseen questions; complete three-environment teaching workflow remains separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:23",
@@ -250,7 +253,10 @@
       "section": "User Stories",
       "number": 23,
       "requirementSha256": "a7b296c1ea17f76f86876abf0a14051e62ce66c73d243cf10e0d9e0d0d356f04",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at submission/results boundary: actual installed UI/API hide answers before submission, Host score matches unchanged bank answers, results/analyses and saved reflections survive reload; question OCR/image fidelity is not certified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:24",
