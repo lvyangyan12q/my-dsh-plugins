@@ -1,0 +1,29 @@
+{
+  "verifiedAt": "2026-10-09T18:17:08.8316512Z",
+  "commit": "a82442b8bd763ad0ae7ce4377db994b85054af07",
+  "url": "http://127.0.0.1:3080/",
+  "viewportWidth": 480,
+  "bodyScrollWidth": 480,
+  "historyPanel": {
+    "right": 464,
+    "clientWidth": 353,
+    "scrollWidth": 353,
+    "width": 360,
+    "left": 104,
+    "records": 3
+  },
+  "escape": {
+    "panelClosed": true,
+    "focus": "标注记录 (3)"
+  },
+  "limits": [
+    "Read-only history and Escape check; no new annotation, archive action or model send",
+    "Does not close the full visual or native model interaction acceptance"
+  ],
+  "pullRequest": {
+    "bodyUpdatedAndReadBack": true,
+    "url": "https://github.com/lvyangyan12q/my-dsh-plugins/pull/2",
+    "state": "open",
+    "draft": false
+  }
+}
