@@ -20,7 +20,12 @@
       "section": "User Stories",
       "number": 1,
       "requirementSha256": "5b6f8df6e0492362a03d64bf4b4741bc51cfcb1201f412798b3df1996dce52de",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for primary DSH sidebar entry: actual 3080 Workbench navigation opens shared applications; no claim about the entire Better Sidebar teaching matrix",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/sidebar-short-viewport.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "workbench:User Stories:2",
@@ -765,7 +770,12 @@
       "section": "User Stories",
       "number": 1,
       "requirementSha256": "7ee3ab9791d4d4b7031945767c8bdbf69dbdc22f9e85af3fbe0cf1f436c68e93",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for multiple installed/recipe applications in one center: actual formal 3080 and isolated installed 3089 include Kaogong, Reading and custom HTML",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:2",
@@ -774,7 +784,12 @@
       "section": "User Stories",
       "number": 2,
       "requirementSha256": "7ee43348337f73108fe14e35bab5f797b9f368a564a4f88a1d6114332ab8b8a0",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for additive native menu preservation: public sections seat, native CSS unchanged, real desktop/short/narrow workspace and footer reachable",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/sidebar-short-viewport.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:3",
@@ -792,7 +807,10 @@
       "section": "User Stories",
       "number": 4,
       "requirementSha256": "2cb445857783945cf8ae478bed303bb5078da72617e94b142d08e4566ce9627e",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual editable form name changes and explicit save/preview/activation asserted in clean Client tests; complete current rendered name/description editing not separately observed",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:5",
@@ -837,12 +855,16 @@
       "section": "User Stories",
       "number": 9,
       "requirementSha256": "aa3fb57c9144e47f004361372220f360466713b99fdfc59a99a7e2f419af1694",
-      "evidenceStatus": "satisfied: explicit activation is the only publication step; generated/saved/previewed drafts retain running version",
+      "evidenceStatus": "satisfied for explicit activation: actual 3089 repair requires Save and Preview before Activate; old running version preserved until explicit click",
       "evidence": [
         "docs/evidence/2026-10-10/contract-requirements-audit.json",
         "plugins/personal-workbench/src/recipe-api.ts",
         "plugins/personal-workbench/tests/recipe-host.test.mjs",
         "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
       ]
     },
     {
@@ -852,7 +874,11 @@
       "section": "User Stories",
       "number": 10,
       "requirementSha256": "78d09287ba5d809f5760f5d644503ffd15a06479c35fe2353993fde29847abdb",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for configuration/dependency inspection: actual installed view displays app/page/role/module/data/Agent/Skill identities and unavailable reasons, refresh reflects same-capability restoration",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:11",
@@ -870,13 +896,17 @@
       "section": "User Stories",
       "number": 12,
       "requirementSha256": "ca889e04714b3d9c36ad2d95100d20f95f2256b654497d4b54bd92a74bee4566",
-      "evidenceStatus": "satisfied: disabled and readiness-pending applications cannot open, including after preference reload",
+      "evidenceStatus": "satisfied at user-visible entry/readiness lifecycle: actual built Client rejects disabled opening before/after restart; official installed lifecycle persists disable state; no native task cancellation claim",
       "evidence": [
         "docs/evidence/2026-10-10/contract-requirements-audit.json",
         "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs",
         "plugins/personal-workbench/tests/app-lifecycle-client.test.ts",
         "plugins/personal-workbench/tests/workbench-ui.test.mjs",
         "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
       ]
     },
     {
@@ -895,7 +925,12 @@
       "section": "User Stories",
       "number": 14,
       "requirementSha256": "b0cdff2dde133320ab4ab3836aaaeb7dad2e482f28179ed1756ee1d8467a18e9",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for no-AI display application: actual isolated installed Reading opens three records and statistics without model route; no Session/model operation performed",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:15",
@@ -904,7 +939,10 @@
       "section": "User Stories",
       "number": 15,
       "requirementSha256": "44efbd1ddddcf5c2f170ea2227d5fc319a084b2ab116065bc2865c2671c6453e",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: built Reading with real Host filters science to 1/60 and literature selection coherently; independent current-browser filter-to-stat interaction not re-certified in this audit",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:16",
@@ -913,7 +951,10 @@
       "section": "User Stories",
       "number": 16,
       "requirementSha256": "216c10eeb4b3c46b2ca5aa18a44ad3e198b98e97c83b6e819517e45ba54719ef",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial at first-release list/detail scope: real Host-backed built Client selection updates detail and filter clears out-of-scope selection; real map explicitly deferred by user and full rendered scope remains separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:17",
@@ -922,7 +963,10 @@
       "section": "User Stories",
       "number": 17,
       "requirementSha256": "ab0bda63f586681a85a562198d867173540ea19bd1a190c7958f29ab1a1bbc30",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: real Host-backed built Client shows deferred loading, empty, failure/retry and withdrawn source states; complete current browser error/loading visual gate not closed",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:18",
@@ -949,7 +993,11 @@
       "section": "User Stories",
       "number": 20,
       "requirementSha256": "151010f537833529d829e51dbdaabaa0d70689dc9fd6a05be53135e91fe8fafa",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for reuse of managed capabilities: actual public management creates Agent/Skill, running recipe references unchanged managed identifiers, disable/restore affects projected dependencies; native conversation execution remains separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:21",
@@ -994,7 +1042,11 @@
       "section": "User Stories",
       "number": 25,
       "requirementSha256": "81b59ffb64ef5f55b1f7466abcd34e335b6b1c1aedec09fddfef250d149335c6",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for display selection/filter no-AI contract: actual built Client restricts HTTP paths and throws for every unauthorized AI/Session call; filter/selection/loading/retry complete with zero forbidden calls; actual no-AI installed app agrees",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:26",
@@ -1021,12 +1073,18 @@
       "section": "User Stories",
       "number": 28,
       "requirementSha256": "d60fefc06e0b8d6543c7bfa4d721ff9222de6b02ef23aff64a2e0e6766ca380e",
-      "evidenceStatus": "partial: explicit Host module/role/connection failures preserve old running version; capability-specific rendered recovery remains separately indexed",
+      "evidenceStatus": "satisfied for absent module/capability reasons and repair: actual module-label/preview rejection, Agent missing draft error and runtime Skill availability/recovery remain visible without a blank application",
       "evidence": [
         "docs/evidence/2026-10-10/contract-requirements-audit.json",
         "plugins/personal-workbench/src/recipe-api.ts",
         "plugins/personal-workbench/tests/recipe-host.test.mjs",
         "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/module-type-fallback.json",
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
       ]
     },
     {
