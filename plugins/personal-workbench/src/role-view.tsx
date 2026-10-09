@@ -53,14 +53,14 @@ function RoleNative({ renderFactorySlot, useSession }: PropsRuntime<'personal-wo
   return renderNativeSession({ renderFactorySlot, failure, unavailable: <p role="alert">原生会话组件不可用。</p> })
 }
 /** Optional native surface. Registration does not read metadata or acquire a Session. */
-export function installRoleClient(ctx: Context) {
+export function installRoleClient(ctx: Context, onOpenHistory?: () => void) {
   ctx.inject(['uiConversation'], child => {
     const owner = new RoleClients(child)
     child.effect(() => () => owner.dispose(), 'personal-workbench: teacher owner')
     child.effect(() => child.reflect.provide('personalWorkbenchRoles', owner), 'personal-workbench: roles service')
     child.slots.registerFactory({ name: 'personal-workbench.role-attachment', scope: 'root', locale: 'personal-workbench', inject: () => ({ commands: owner }) }, RoleAttachment)
     child.slots.registerFactory({ name: 'personal-workbench.role-conversation', scope: 'root', locale: 'personal-workbench', children: { 'personal-workbench.role-native': { kind: 'single', scope: 'session' } },
-      inject: () => ({ hooks: { roles: owner }, commands: owner, mountRole: (key, reference) => owner.owner(key).teacher.mount(reference), openHistory: child.get?.('uiWorkspace') ? (id: SessionId) => { (child.get('uiWorkspace') as UiWorkspace).openSession(id) } : undefined }),
+      inject: () => ({ hooks: { roles: owner }, commands: owner, mountRole: (key, reference) => owner.owner(key).teacher.mount(reference), openHistory: child.get?.('uiWorkspace') ? (id: SessionId) => { (child.get('uiWorkspace') as UiWorkspace).openSession(id); onOpenHistory?.() } : undefined }),
     }, RoleConversation)
     child.slots.inject('personal-workbench.role-native', () => child.slots.register({ name: 'personal-workbench.role-native' }, RoleNative))
   })

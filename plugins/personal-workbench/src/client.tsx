@@ -164,7 +164,7 @@ export function apply(ctx: Context): void {
     inject: () => ({ hooks: { navigation, workbench }, close: navigation.close, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
   }, ManagementPanel))
   installOptionalBetterSidebar(ctx, workbench)
-  installRoleClient(ctx)
+  installRoleClient(ctx, workbench.closeWorkspace)
   installTasks(ctx)
   installAnnotations(ctx)
 }
