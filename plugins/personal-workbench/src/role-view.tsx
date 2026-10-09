@@ -63,13 +63,14 @@ export function installRoleClient(ctx: Context, onOpenHistory?: () => void) {
   ctx.inject(['uiConversation'], child => {
     const owner = new RoleClients(child)
     const createHistory = (id:SessionId) => new TeacherWindow(child.sessions,async()=>id,child.workspaces.list)
-    child.slots.registerFactory({name:'personal-workbench.role-history',scope:'root',locale:'personal-workbench',children:{'personal-workbench.role-native':{kind:'single',scope:'session'}},inject:()=>({createHistory})},RoleHistory)
+    child.slots.registerFactory({name:'personal-workbench.role-history',scope:'root',locale:'personal-workbench',children:{'personal-workbench.history-native':{kind:'single',scope:'session'}},inject:()=>({createHistory})},RoleHistory)
     child.effect(() => () => owner.dispose(), 'personal-workbench: teacher owner')
     child.effect(() => child.reflect.provide('personalWorkbenchRoles', owner), 'personal-workbench: roles service')
     child.slots.registerFactory({ name: 'personal-workbench.role-attachment', scope: 'root', locale: 'personal-workbench', inject: () => ({ commands: owner }) }, RoleAttachment)
     child.slots.registerFactory({ name: 'personal-workbench.role-conversation', scope: 'root', locale: 'personal-workbench', children: { 'personal-workbench.role-native': { kind: 'single', scope: 'session' } },
       inject: () => ({ hooks: { roles: owner }, commands: owner, mountRole: (key, reference) => owner.owner(key).teacher.mount(reference), openHistory: child.get?.('uiWorkspace') ? (id: SessionId) => { (child.get('uiWorkspace') as UiWorkspace).openSession(id); onOpenHistory?.() } : undefined }),
     }, RoleConversation)
+    child.slots.inject('personal-workbench.history-native', () => child.slots.register({ name: 'personal-workbench.history-native' }, RoleNative))
     child.slots.inject('personal-workbench.role-native', () => child.slots.register({ name: 'personal-workbench.role-native' }, RoleNative))
   })
 }

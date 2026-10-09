@@ -69,7 +69,7 @@ test('built generic role view reads per-ID official status facts without a fake 
     await React.act(async()=>{root.render(React.createElement(history.component,{...history.options.inject(),sessionId:'prior-agent-session',close:fail,t:k=>k,SessionProvider:({session,children})=>React.createElement('div',{'data-native-id':session.sessionId},children),renderSlot:name=>React.createElement('div',null,name)}));await new Promise(resolve=>setTimeout(resolve,0))})
     assert.deepEqual(retained,['prior-agent-session'],'Viewing history must retain the exact old native Session')
     assert.equal(dom.window.document.querySelector('[data-native-id]').getAttribute('data-native-id'),'prior-agent-session')
-    assert.match(dom.window.document.body.textContent,/personal-workbench.role-native/)
+    assert.match(dom.window.document.body.textContent,/personal-workbench.history-native/)
     assert.equal(state.binding.sessionId,'math-id')
     await React.act(async()=>root.render(React.createElement('div')))
     assert.deepEqual(released,['prior-agent-session'],'Leaving history releases its separate native reference')
