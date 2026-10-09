@@ -6,7 +6,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
-import { registerDisplaySource } from '@deepseek-ai/dsh-personal-workbench/client'
+import { optionalWorkbenchClient } from './optional-workbench-client.ts'
 import { knowledgeSource } from './knowledge-reader.tsx'
 import { KaogongClassroom } from './classroom.tsx'
 import type { KaogongViewProps } from './kaogong-view.tsx'
@@ -66,7 +66,8 @@ export const inject = ['slots', 'uiWorkspace']
 
 export function apply(ctx: ClientContext): void {
   const state = new KaogongViewState()
-  ctx.effect(() => registerDisplaySource(knowledgeSource), 'kaogong knowledge display source')
+  const registerSource = optionalWorkbenchClient?.registerDisplaySource
+  if (registerSource) ctx.effect(() => registerSource(knowledgeSource), 'kaogong knowledge display source')
   ctx.inject(['personalWorkbenchTasks'], child => {
     const tasks = state.cell('tasks', null)
     child.effect(() => { tasks.set(child.personalWorkbenchTasks); return () => tasks.set(null) }, 'kaogong prepared teaching tasks')

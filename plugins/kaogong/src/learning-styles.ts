@@ -1,4 +1,11 @@
-import { controlStyles } from '@deepseek-ai/dsh-personal-workbench/client'
+import { optionalWorkbenchClient } from './optional-workbench-client.ts'
+const controlStyles = optionalWorkbenchClient?.controlStyles ?? `
+.kg-study-shell{--pwb-canvas:#f7f5f0;--pwb-paper:#fdfcf9;--pwb-ink:#2e2b26;--pwb-muted:#736c62;--pwb-line:#d7d0c5;--pwb-accent:#a44c32}
+.kg-study-shell [data-pwb-button]{min-height:36px;padding:7px 12px;border:1px solid var(--pwb-line);border-radius:7px;background:var(--pwb-paper);color:var(--pwb-ink);font:inherit;cursor:pointer}
+.kg-study-shell [data-pwb-button]:focus-visible{outline:2px solid var(--pwb-accent);outline-offset:3px}
+.kg-study-shell [data-pwb-button]:disabled{opacity:.48;cursor:not-allowed}
+.kg-study-shell [data-pwb-button][data-variant=primary]{background:var(--pwb-accent);color:#fffaf6}
+`
 /** Scoped styles: native DSH navigation and conversation controls keep their own theme. */
 export const learningStyles = `
 .kg-study-shell{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;height:100%;background:var(--pwb-canvas, #f7f5f0);outline:none}.kg-study-shell[hidden]{display:none}

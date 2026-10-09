@@ -1,5 +1,8 @@
 import { useEffect, useSyncExternalStore } from 'react'
-import { DisplayModule, DisplayStore } from '@deepseek-ai/dsh-personal-workbench/client'
+import { optionalWorkbenchClient } from './optional-workbench-client.ts'
+import { StandaloneKnowledgeLibrary } from './standalone-knowledge-reader.tsx'
+const { DisplayModule, DisplayStore } = optionalWorkbenchClient ?? {}
+import type { DisplayStore as DisplayStoreType } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { DisplayData, DisplayRecord, DisplaySource } from '@deepseek-ai/dsh-personal-workbench/client'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
@@ -22,18 +25,21 @@ const t = (key: string) => labels[key] ?? key
 const entryOf = (record: DisplayRecord): Entry => ({ id: record.id, title: record.title, subject: String(record.fields.科目), kind: String(record.fields.类型), source: String(record.fields.来源), content: String(record.fields.正文) })
 
 /** Public display state owns filtering and selection; only the application renders its document body. */
-export function KnowledgeLibrary({ active = true }: { active?: boolean }) {
+export function KnowledgeLibrary(props: { active?: boolean }) {
+  return optionalWorkbenchClient ? <WorkbenchKnowledgeLibrary {...props} /> : <StandaloneKnowledgeLibrary {...props} />
+}
+function WorkbenchKnowledgeLibrary({ active = true }: { active?: boolean }) {
   const owner = useRequestOwner()
   const [store, setStore] = useBusinessState('reader.store', null)
   useEffect(() => {
-    if (!active || store) return
+    if (!active || store || !DisplayStore) return
     const next = new DisplayStore(knowledgeSource, { appId: 'kaogong', instanceId: 'default', preview: false })
     next.setSearch(owner.cell('reader.query', '').value)
     setStore(next)
   }, [active, store, owner, setStore])
   return store ? <KnowledgeModules active={active} store={store} /> : null
 }
-function KnowledgeModules({ active, store }: { active: boolean; store: DisplayStore }) {
+function KnowledgeModules({ active, store }: { active: boolean; store: DisplayStoreType }) {
   const owner = useRequestOwner()
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   useEffect(() => {
@@ -49,6 +55,7 @@ function KnowledgeModules({ active, store }: { active: boolean; store: DisplaySt
     owner.cell('reader.selected', '').set(record?.id ?? '')
     owner.cell('reader.entry', null).set(record ? entryOf(record) : null)
   }, [state, store, owner])
+  if (!DisplayModule) return null
   return <div aria-label="考公资料公共模块">
     <DisplayModule type="filter" store={store} t={t} />
     <DisplayModule type="stats" store={store} t={t} />

@@ -635,3 +635,41 @@ test('independent learning window hides statistics and preserves role mount, fil
   assert.equal(unmounts, 0)
   assert.equal(calls.some(row => row.url.endsWith('/submit') || row.url.endsWith('/start')), false)
 })
+
+test('standalone built client opens knowledge and practice without a Workbench factory', async () => {
+  let standalone
+  const previousLoader = window.__ModuleLoader__
+  window.__ModuleLoader__ = { load({ factory }) {
+    standalone = factory(name => {
+      if (name === '@deepseek-ai/dsh-personal-workbench/client') throw new Error('client-modules: require("' + name + '") missed the module table — not a platform seed word, not a materialized module, and no registered package factory')
+      return testingRequire(name)
+    })
+  } }
+  try { vm.runInThisContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')) }
+  finally { window.__ModuleLoader__ = previousLoader }
+  mockApi()
+  const ctx = { get: () => undefined }
+  const state = new standalone.KaogongViewState()
+  render(React.createElement(standalone.KaogongDashboard, { ctx, state, wide: true }))
+  fireEvent.click(screen.getByRole('button', { name: '打开考公学习看板' }))
+  await screen.findByRole('textbox', { name: '搜索知识库' })
+  fireEvent.click(await screen.findByRole('button', { name: '测试讲义' }))
+  await screen.findByText('合成测试资料', { exact: false })
+  assert.ok(screen.getByRole('table'))
+  fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
+  await screen.findByRole('radio', { name: 'A. 10%' })
+  assert.equal(screen.queryByText('正确答案：', { exact: false }), null)
+  assert.equal(calls.some(call => call.url.includes('/api/personal-workbench/')), false)
+})
+
+test('optional Workbench integration does not conceal an installed factory failure', () => {
+  const previousLoader = window.__ModuleLoader__
+  window.__ModuleLoader__ = { load({ factory }) {
+    factory(name => {
+      if (name === '@deepseek-ai/dsh-personal-workbench/client') throw new Error('WORKBENCH_INIT_FAILED')
+      return testingRequire(name)
+    })
+  } }
+  try { assert.throws(() => vm.runInThisContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')), /WORKBENCH_INIT_FAILED/) }
+  finally { window.__ModuleLoader__ = previousLoader }
+})
