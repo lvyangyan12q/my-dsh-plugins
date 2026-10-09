@@ -1,6 +1,6 @@
 import type { DisplayData, DisplayRecord, DisplayScope, DisplaySource } from './display-api.ts'
 
-export interface DisplaySnapshot { phase: 'loading' | 'ready' | 'error'; data: DisplayData; filters: Record<string, string>; search: string; selectedId?: string; error?: string }
+export interface DisplaySnapshot { hasLoaded?: boolean; phase: 'loading' | 'ready' | 'error'; data: DisplayData; filters: Record<string, string>; search: string; selectedId?: string; error?: string }
 const empty = (): DisplayData => ({ records: [], filters: [], stats: [] })
 function validData(data: DisplayData) {
   if (!data || !Array.isArray(data.records) || !Array.isArray(data.filters) || !Array.isArray(data.stats) || data.records.length > 10000) return false
@@ -12,7 +12,7 @@ function validData(data: DisplayData) {
 }
 /** One owner per app instance and declared connection, shared across pages. No Session dependency. */
 export class DisplayStore {
-  private snapshot: DisplaySnapshot = { phase: 'loading', data: empty(), filters: {}, search: '' }
+  private snapshot: DisplaySnapshot = { hasLoaded: false, phase: 'loading', data: empty(), filters: {}, search: '' }
   private listeners = new Set<() => void>()
   private controller?: AbortController
   private disposed = false
@@ -39,7 +39,7 @@ export class DisplayStore {
       const data = await this.source.load({ ...this.scope, signal: controller.signal })
       if (controller.signal.aborted || this.disposed) return
       if (!validData(data)) throw new Error('Invalid display data')
-      this.update({ phase: 'ready', data }); this.reconcileSelection()
+      this.update({ hasLoaded: true, phase: 'ready', data }); this.reconcileSelection()
     } catch (error) { if (!controller.signal.aborted && !this.disposed) this.update({ phase: 'error', error: error instanceof Error ? error.message : String(error) }) }
   }
   dispose() { this.disposed = true; this.controller?.abort(); this.listeners.clear() }

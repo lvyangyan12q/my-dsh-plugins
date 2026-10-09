@@ -22,17 +22,17 @@ function owner(props: RecipeModuleProps, source: DisplaySource) {
 }
 export function DisplayModule({ type, store, t, renderDetail,config={} }: { type: 'stats' | 'list' | 'detail' | 'filter' | 'chart' | 'map'; config?:import('./recipe-api.ts').RecipeModule['config']; store: DisplayStore; t: Translate; renderDetail?: (record: DisplayRecord) => ReactNode }) {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
-  if (state.phase === 'loading') return <p role="status">{t('displayLoading')}</p>
+  if (state.phase === 'loading' && !state.hasLoaded) return <p role="status">{t('displayLoading')}</p>
   if (state.phase === 'error') return <div role="alert"><p>{t('displayFailed')}: {state.error}</p><button data-pwb-button onClick={() => { void store.reload() }}>{t('retry')}</button></div>
   const records = store.filteredRecords()
-  if (type === 'filter') return <div className="pwb-display-filter"><label>{t('displaySearch')}<input aria-label={t('displaySearch')} value={state.search} onChange={event => store.setSearch(event.target.value)} /></label>{state.data.filters.map(filter => <label key={filter.field}>{filter.label}<select aria-label={filter.label} value={state.filters[filter.field] ?? ''} onChange={event => store.setFilter(filter.field, event.target.value)}><option value="">{t('displayAll')}</option>{[...new Set(state.data.records.map(record => String(record.fields[filter.field] ?? '')))].filter(Boolean).sort().map(value => <option key={value}>{value}</option>)}</select></label>)}</div>
+  if (type === 'filter') return <div className="pwb-display-filter" aria-busy={state.phase === 'loading'}><label>{t('displaySearch')}<input aria-label={t('displaySearch')} value={state.search} onChange={event => store.setSearch(event.target.value)} /></label>{state.data.filters.map(filter => <label key={filter.field}>{filter.label}<select aria-label={filter.label} value={state.filters[filter.field] ?? ''} onChange={event => store.setFilter(filter.field, event.target.value)}><option value="">{t('displayAll')}</option>{[...new Set(state.data.records.map(record => String(record.fields[filter.field] ?? '')))].filter(Boolean).sort().map(value => <option key={value}>{value}</option>)}</select></label>)}</div>
   if (!records.length) return <p role="status">{t(state.data.records.length ? 'displayNoMatches' : 'displayEmpty')}</p>
   if(type==='chart'||type==='map')return <DataVisual type={type} config={config} records={records} selectedId={state.selectedId} select={store.select} t={t}/>
-  if (type === 'stats') return <dl className="pwb-display-stats" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>{state.data.stats.map(stat => {
+  if (type === 'stats') return <dl aria-busy={state.phase === 'loading'} className="pwb-display-stats" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>{state.data.stats.map(stat => {
    const value = aggregateStatistic(records, stat)
     return <div key={stat.id}><dt>{stat.label}</dt><dd data-stat={stat.id}>{value}</dd></div>
   })}</dl>
-  if (type === 'list') return <ul className="pwb-display-list">{records.map(record => <li key={record.id}><button data-pwb-button aria-pressed={state.selectedId === record.id} onClick={() => store.select(record.id)}>{record.title}</button>{record.subtitle && <span> · {record.subtitle}</span>}</li>)}</ul>
+  if (type === 'list') return <ul className="pwb-display-list" aria-busy={state.phase === 'loading'}>{records.map(record => <li key={record.id}><button data-pwb-button aria-pressed={state.selectedId === record.id} onClick={() => store.select(record.id)}>{record.title}</button>{record.subtitle && <span> · {record.subtitle}</span>}</li>)}</ul>
   const record = records.find(record => record.id === state.selectedId)
   return record && renderDetail ? <>{renderDetail(record)}</> : record ? <article className="pwb-display-detail"><h4>{record.title}</h4><p>{record.subtitle}</p><dl>{Object.entries(record.fields).map(([field, value]) => <div key={field}><dt>{field}</dt><dd>{String(value ?? '')}</dd></div>)}</dl></article> : <p role="status">{t('displaySelect')}</p>
 }

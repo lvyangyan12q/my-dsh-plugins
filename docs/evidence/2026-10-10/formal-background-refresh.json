@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-10",
+  "baseline": "854fd3fecd74e6e1d2f637af617e474cb6792b06",
+  "sourceFingerprints": {
+    "plugins/personal-workbench/src/display-store.ts": "bccce14e48044f65f5079ac2dfd08abd60335a499d12f3cbb0f19bf8b8357ff3",
+    "plugins/personal-workbench/src/display-view.tsx": "daaf2ba5bbc389f3f1c89cf156d9ab3491e430a5d82a546ce843e7b4b52c490f",
+    "plugins/personal-workbench/tests/data-visual-ui.test.mjs": "29692ea07f2c20eb4f3fc4f115a33e5ea0c21859bfc87b0394edcb0df2605d8b"
+  },
+  "defect": "DisplayModule loading replaces already loaded record controls, removing keyboard focus during 15-second knowledge refresh",
+  "regression": {
+    "red": "background loading must retain the record button",
+    "green": true,
+    "checks": [
+      "same list button and search input DOM",
+      "focused button retained",
+      "selection and detail while loading",
+      "aria-busy restores after load"
+    ]
+  },
+  "browser": {
+    "url": "http://127.0.0.1:3080/",
+    "separateAcceptanceTab": true,
+    "originalPageReloaded": false,
+    "formalProcessRestarted": false,
+    "pluginTarget": "D:/programming/workspace/my-dsh/plugins/kaogong",
+    "linkedKaogongHostClientExactBytes": true,
+    "viewport": 480,
+    "bodyScrollWidth": 480,
+    "studyWidth": 424,
+    "contentWidth": 422,
+    "retainedButtonAfterRefresh": true,
+    "selectedTitles": [
+      "【讲义】第三章 高频考点之比重类",
+      "【资料理论讲义】四海2025下半年(1).pdf [PDF 1-100]",
+      "逻辑判断600题解析篇.pdf [PDF 1-100]"
+    ],
+    "loadedImage": {
+      "route": "/api/kaogong/document-image",
+      "lazyScrollRequired": true,
+      "complete": true,
+      "naturalWidth": 226,
+      "naturalHeight": 109,
+      "width": 226,
+      "height": 109
+    },
+    "nativeConversation": [
+      "session hierarchy",
+      "agent team",
+      "对话",
+      "轨迹"
+    ],
+    "draftLengthsBeforeAndAfter": [
+      0,
+      27,
+      605,
+      0
+    ],
+    "modelMessagesSent": 0,
+    "studyRecordsWritten": 0,
+    "screenshot": {
+      "success": false,
+      "error": "Page.captureScreenshot timed out",
+      "noNewImageArtifact": true
+    }
+  },
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "6ca0c0455b74dd00da59e3fac1eb1e5035450d3b89391347ee55a5fa2200f485",
+      "0acef74c620704c923082cc0f74b1381e1012d7b0364718477dda6cf29b54641",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "tests": {
+    "localIntegrated": 288,
+    "passed": 288,
+    "failed": 0,
+    "remoteOnlyNotVerified": true
+  },
+  "builds": "three plugins Host/Client/types/consumers passed",
+  "review": {
+    "standards": "no actionable incremental issue",
+    "spec": "no actionable incremental issue"
+  },
+  "scopeLimits": [
+    "Does not prove real teaching/approval/Stop",
+    "Does not close three-sidebar matrix",
+    "No new formal screenshot",
+    "No physical IME acceptance"
+  ]
+}

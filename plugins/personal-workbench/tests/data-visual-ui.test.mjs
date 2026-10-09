@@ -69,3 +69,31 @@ test('explicit data pane refresh reloads only its shared owned connection and pr
   assert.equal(document.querySelector('.pwb-display-detail h4').textContent,'Updated');assert.equal(document.querySelector('[aria-label="Updated: 20"]').getAttribute('aria-pressed'),'true');assert.equal(document.querySelector('[aria-label="Excluded: 99"]'),null)
  }finally{await act(async()=>root.unmount());withdraw();withdrawOther();remove();dom.window.close();for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key]}}
 })
+
+
+test('background refresh preserves record controls and keyboard focus until owned data changes', async () => {
+ const dom=new JSDOM('<div id="root"></div>'),saved=new Map()
+ for(const [key,value] of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})}
+ const {createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('root'))
+ let finish,initial=true
+ const data={records:[{id:'book',title:'Retained book',fields:{kind:'material'}}],filters:[{field:'kind',label:'Kind'}],stats:[]}
+ const store=new DisplayStore({appId:'owned',resource:'records',label:'Owned',load:()=>initial?(initial=false,Promise.resolve(data)):new Promise(resolve=>{finish=resolve})},{appId:'owned',instanceId:'one',preview:false})
+ try {
+  await store.reload()
+  await act(async()=>root.render(React.createElement(React.Fragment,null,React.createElement(DisplayModule,{type:'filter',store,t:k=>k}),React.createElement(DisplayModule,{type:'list',store,t:k=>k}),React.createElement(DisplayModule,{type:'detail',store,t:k=>k}))))
+  const button=document.querySelector('.pwb-display-list button'),input=document.querySelector('input')
+  button.focus()
+  let pending
+  await act(async()=>{pending=store.reload()})
+  assert.ok(button.isConnected,'background loading must retain the record button')
+  assert.ok(document.activeElement===button,'background loading must retain keyboard focus')
+  assert.ok(input===document.querySelector('input'),'background loading must retain filter input')
+  assert.equal(document.querySelector('.pwb-display-list').getAttribute('aria-busy'),'true')
+  await act(async()=>button.dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})))
+  assert.equal(store.getSnapshot().selectedId,'book')
+  assert.equal(document.querySelector('.pwb-display-detail h4').textContent,'Retained book')
+  await act(async()=>{finish(data);await pending})
+  assert.ok(document.activeElement===button)
+  assert.equal(document.querySelector('.pwb-display-list').getAttribute('aria-busy'),'false')
+ } finally {await act(async()=>root.unmount());store.dispose();dom.window.close();for(const [key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key]}}
+})
