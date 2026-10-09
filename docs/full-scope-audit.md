@@ -1,6 +1,6 @@
 # Full-scope acceptance audit
 
-Audit source: committed implementation e9220b27ac2266123021f58093e3a39cfb779298, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
+Audit source: committed implementation b42d3f75ab599cdaa31fdad4d982811aeafcbee4, 2026-10-10. Overall status: incomplete. This document indexes evidence and remaining verification; it does not replace the canonical specifications or close their tasks.
 
 The [requirement inventory](evidence/2026-10-10/requirement-inventory.json) identifies each of 123 numbered/bulleted requirements by source, line and exact-text SHA256: all 36 Workbench and 28 Platform user stories, plus their implementation/testing decisions. Each still requires individual closure against its exact scope. Approved canvas changes, native-menu preservation, management-only public capability reuse, retained app-private capabilities, application-provided map data and the old-kaogong observation period remain part of scope.
 
@@ -21,9 +21,11 @@ The [requirement inventory](evidence/2026-10-10/requirement-inventory.json) iden
 
 ## Current independent source proof
 
-A git archive of the exact pushed commit excludes all user uncommitted files. With existing public development dependencies, all three plugin Host/Client/type/consumer builds pass, followed by 285/285 tests. The newly added keyboard regression is included. The final installed archive check passes exact product bytes, public consumers, compatibility with zero exemptions, authenticated lifecycle, cold restart, Reading uninstall/reinstall and scoped HTML assets. The [receipt](evidence/2026-10-10/remote-committed-source.json) records those boundaries. This is not fresh registry dependency-resolution proof.
+Exact pushed implementation b42d3f75ab599cdaa31fdad4d982811aeafcbee4 was exported with git archive, excluding the four user management changes. Three plugin Host/Client builds, declarations and official source consumer checks passed, followed by **291/291 remote-only tests**, zero failures/skips. Official synthetic archive install, exact bytes, public consumer types, authenticated lifecycle, cold restart, Reading uninstall/reinstall and scoped HTML assets passed. The same exact source also passed old archive pair -> current archive upgrade, exact lesson/task/score and native role/assignment recovery, missing/relative material-root behavior, Workbench uninstall/standalone/reinstall and Kaogong reinstall. Old and new archive identities and both actual verdict hashes are recorded in [the current receipt](evidence/2026-10-10/remote-committed-source-b42d3f7.json). Existing public development/cache anchors were used; this is not fresh registry dependency-resolution proof.
 
-The local integrated suite remains 286/286. Its extra test is the user's uncommitted Agent-library inventory-ownership test. None of the four user management files was staged or overwritten; their synchronization fingerprints remain unchanged. Do not cite 286 as the remote-only test count.
+The local integrated suite is separately 292/292 and includes the user's uncommitted Agent inventory-ownership test. All four preserved user-file fingerprints match their saved baseline; their archived text matches exact git objects after CRLF normalization, with both raw hashes recorded. Earlier e922/285 and fa100/288 receipts remain historical proof and do not represent this current source. No original broad GUI/model requirement is closed by the current synthetic install evidence.
+
+The fixed-true recipe dependency defect is implemented and covered by actual Client registration withdrawal/restoration, Host module/source withdrawal/restoration and disabled/unresolved Agent/Skill tests. Formal current-browser capability recovery is still pending. The sidebar private native class selector remains an implementation contradiction requiring a public additive extension seam.
 
 ## Current external blocker
 

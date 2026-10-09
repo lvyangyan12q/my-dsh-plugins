@@ -25,7 +25,7 @@ Local task identity: `12-application-platform`. Title: 工作台应用平台：�
 The implementation issue uses Markdown frontmatter as the local tracker metadata. Its body follows the to-spec template and is the sole source of the specification; do not copy it into another task file. Existing tasks 01–11 retain their own scope and acceptance status.
 ## Application platform implementation graph
 
-The approved seven vertical slices are tracked locally at `.scratch/application-platform/issues/README.md` (one file per ticket, blockers listed by title). The implementation branch is `codex/application-platform`. Work only on the frontier, preserve each task's acceptance evidence, and do not infer completion from a commit. The user supplied origin https://github.com/lvyangyan12q/my-dsh-plugins. The single implementation draft PR is https://github.com/lvyangyan12q/my-dsh-plugins/pull/2; local tickets remain the task source. The user confirmed c44d9af as the final review baseline.
+The approved seven vertical slices are tracked locally at `.scratch/application-platform/issues/README.md` (one file per ticket, blockers listed by title). The implementation branch is `codex/application-platform`. Work only on the frontier, preserve each task's acceptance evidence, and do not infer completion from a commit. The user supplied origin https://github.com/lvyangyan12q/my-dsh-plugins. The single implementation PR is https://github.com/lvyangyan12q/my-dsh-plugins/pull/2; local tickets remain the task source. The user confirmed c44d9af as the final review baseline.
 
 ## Worktable canvas implementation graph
 
@@ -38,4 +38,4 @@ As of 2026-10-09, layout/module generation, persistent annotation, native sessio
 
 ## Current original-scope audit
 
-See [full-scope audit](../full-scope-audit.md) and its 123-entry canonical requirement inventory. Committed source e9220b2 passes three clean builds, 285 tests and exact installed-archive checks independently of four retained user management modifications. The local integrated suite has 286 tests. Native question rechecks on 2026-10-10 still fail with upstream payment authorization; original model selection was restored. No original task is closed by this index.
+See [full-scope audit](../full-scope-audit.md) and its 123-entry canonical requirement inventory. Exact remote implementation b42d3f7 passes three clean builds, 291 tests and exact installed-archive plus old-to-current upgrade checks independently of four retained user management modifications. The local suite has 292 tests. The fixed-true dependency defect is repaired; formal dependency recovery and the sidebar public extension seam remain open. Native question rechecks still fail with upstream payment authorization. No original task is closed by this index.
