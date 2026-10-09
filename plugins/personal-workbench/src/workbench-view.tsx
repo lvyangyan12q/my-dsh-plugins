@@ -96,6 +96,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
   const [query, setQuery] = useState('')
   const [pendingApp,setPendingApp]=useState<string|null>(null)
   const [availabilityError,setAvailabilityError]=useState<string|null>(null)
+  const refreshApplicationStatus=async()=>{setAvailabilityError(null);try{await Promise.all([refreshApps?.(),refreshRecipes?.()])}catch(error){setAvailabilityError(error instanceof Error?error.message:String(error))}}
   const [showHidden, setShowHidden] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const bounds = useCenterColumn(root)
@@ -127,12 +128,12 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     <header className="pwb-top"><LayoutGrid size={18} aria-hidden="true" /><strong>{app?.name ?? t('workspace')}</strong>
       <button data-pwb-button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
-    {state.lifecycleError && <div role="alert">{t(state.lifecycleError.includes('Application disabled') ? 'appDisabledNotice' : 'appAvailabilityUnavailable')}<button data-pwb-button type="button" onClick={()=>{void refreshApps?.()}}>{t('refreshApps')}</button></div>}
+    {state.lifecycleError && <div role="alert">{t(state.lifecycleError.includes('Application disabled') ? 'appDisabledNotice' : 'appAvailabilityUnavailable')}<button data-pwb-button type="button" onClick={()=>{void refreshApplicationStatus()}}>{t('refreshApps')}</button></div>}
     {!state.lifecycleReady && !state.lifecycleError && <p role="status">{t('appsLoading')}</p>}
     {availabilityError && <p role="alert">{t(availabilityError.includes('changed; refresh') ? 'appAvailabilityConflict' : 'appUpdateFailed')}</p>}
     {state.storageFailed && <p role="status" className="pwb-notice">{t('storageFailed')}</p>}
     <section className="pwb-app-home" hidden={!!focused} aria-label={t('applications')}>
-      {refreshApps && <button data-pwb-button type="button" onClick={()=>{void refreshApps()}}>{t('refreshApps')}</button>}
+      {refreshApps && <button data-pwb-button type="button" onClick={()=>{void refreshApplicationStatus()}}>{t('refreshApps')}</button>}
       {refreshRecipes && <RecipeEditor t={t} refresh={refreshRecipes} onOpenSession={management?.openSession} />}
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={e => setQuery(e.target.value)} /></label>
       <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />{t('showHidden')}</label>

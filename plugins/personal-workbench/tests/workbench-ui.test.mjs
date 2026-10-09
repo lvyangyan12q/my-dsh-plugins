@@ -15,7 +15,7 @@ const h = React.createElement
 function boundHook(source) {
   return selector => selector(React.useSyncExternalStore(source.subscribe, source.getSnapshot, source.getSnapshot))
 }
-async function fixture({ width = 960, height = 640 } = {}) {
+async function fixture({ width = 960, height = 640, recipeCatalog = () => ({version:1,recipes:[]}) } = {}) {
   const dom = new JSDOM('<button id="origin">Origin</button><div id="mount"></div>', { url: 'http://localhost' })
   const globals = new Map()
   for (const [name, value] of Object.entries({ window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement,
@@ -37,7 +37,7 @@ async function fixture({ width = 960, height = 640 } = {}) {
     window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }),
     document: dom.window.document, HTMLElement: dom.window.HTMLElement, ResizeObserver, AbortController, console, crypto: globalThis.crypto, structuredClone,
     fetch: async (url, options) => {
-      if(url === '/api/personal-workbench/recipes') return {ok:true,json:async()=>({version:1,recipes:[]})}
+      if(url === '/api/personal-workbench/recipes') return {ok:true,json:async()=>recipeCatalog()}
       if(url !== '/api/personal-workbench/apps') { fetches++; throw new Error('No Session acquisition authorized by this test') }
       const data=JSON.parse(options.body)
       if(data.action==='catalog') return {ok:true,json:async()=>({version:1,states:[]})}
@@ -213,5 +213,18 @@ test('manual recipe form creates stable draft identity and allows layout/modules
  await f.click('canvasPageSettings');const layout=document.querySelector('select[aria-label="recipeLayout: home"]');await act(async()=>{layout.value='stack';layout.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))});assert.equal(JSON.parse(textarea.value).pages[0].layout,'stack')
  const firstId=original.pages[0].modules[0].id;const choose=document.querySelector('button[aria-label="recipeModulestats: '+firstId+'"]');assert.ok(choose);await act(async()=>choose.click());const details=document.querySelector('select[aria-label^="moduleType:"]');await act(async()=>{details.value='detail';details.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))});assert.ok(JSON.parse(textarea.value).pages[0].modules.some(module=>module.type==='detail'))
  await f.click('recipeAddPage');const current=JSON.parse(textarea.value);assert.equal(current.pages.length,2);assert.equal(current.appId,original.appId);assert.ok(document.querySelector('[aria-label="canvasTitle"]'));assert.equal(f.button('recipePreview').disabled,true);assert.equal(f.button('recipeActivate').disabled,true)
+ }finally{await f.dispose()}
+})
+
+
+test('application status refresh updates unchanged running recipe dependency projection and retains open app draft',async()=>{
+ let available=true;const recipe={schemaVersion:1,appId:'dependency-refresh',version:1,name:'Dependency refresh',description:'Fixture',pages:[{id:'home',label:'Home',layout:'stack',modules:[{id:'empty',type:'empty',title:'Empty',config:{}}]}],connections:[],roles:[{id:'analyst',name:'Analyst',presetId:'my-dsh.analyst',skillNames:[]}]};
+ const f=await fixture({recipeCatalog:()=>({version:1,recipes:[{appId:recipe.appId,revision:2,draft:recipe,running:recipe}],dependencies:{[recipe.appId]:[{id:'agent:analyst',available,...(!available?{reason:'Unavailable Agent: my-dsh.analyst'}:{})}]}})});
+ try{
+  await f.click('Exercise');await f.click('Enter answer');const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]');
+  await f.click('workspace');available=false;await f.click('refreshApps');
+  assert.equal(f.service.getSnapshot().definitions.find(row=>row.id===recipe.appId).dependencies.find(row=>row.id==='agent:analyst').available,false,'refresh must update actual recipe dependency projection');
+  assert.equal(draft.isConnected,true);assert.equal(draft.value,'retained answer');assert.equal(f.counts().unmounts,0);
+  available=true;await f.click('refreshApps');assert.equal(f.service.getSnapshot().definitions.find(row=>row.id===recipe.appId).dependencies.find(row=>row.id==='agent:analyst').available,true);
  }finally{await f.dispose()}
 })
