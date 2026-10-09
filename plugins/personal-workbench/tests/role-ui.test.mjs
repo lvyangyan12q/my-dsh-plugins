@@ -63,6 +63,14 @@ test('built generic role view reads per-ID official status facts without a fake 
     assert.match(dom.window.document.body.textContent,/rolePresetChanged/,'Activating a different Agent must visibly explain why the old role Session is not usable')
     assert.equal(state.binding.sessionId,'math-id','A changed recipe must preserve the old Session until explicit replacement')
     assert.ok([...dom.window.document.querySelectorAll('button')].some(button=>button.textContent.includes('新建角色会话')),'Explicit recovery must remain available')
+    const reopened=[]
+    state.error='Application disabled'
+    const recoveredProps={...props,expectedPresetId:'new-agent',commands:{open:async key=>reopened.push(key)},SessionProvider:fail}
+    await React.act(async()=>root.render(React.createElement(entry.component,{...recoveredProps,active:false})))
+    assert.equal(reopened.length,0,'Hidden application must not reopen its role')
+    await React.act(async()=>root.render(React.createElement(entry.component,{...recoveredProps,active:true})))
+    assert.deepEqual(reopened,[bindingKey],'Explicitly reopening an enabled application must re-read its retained role despite cached disabled errors')
+    state.error=null
     const history=entries.find(row=>row.options.name==='personal-workbench.role-history'),retained=[],released=[]
     ctx.workspaces.list={getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:[]}),subscribe:()=>()=>{}}
     ctx.sessions.retain=id=>{retained.push(id);const binding={session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}}};return {sessionId:id,binding,ready:Promise.resolve(binding),release:()=>released.push(id)}}

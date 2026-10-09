@@ -26,7 +26,7 @@ export function installRecipeClient(ctx:Context,workbench:Workbench){
    const View=(props:WorkbenchAppProps&Partial<PropsRenderFactories>&{t:(key:any)=>string})=>{
     const value=useSyncExternalStore(subscribe,snapshot,snapshot)
     const [target,setTarget]=useState<{appId:string;pageId:string;moduleId:string;changeContent:boolean}|null>(null)
-    return <><RecipePage onEditModule={(pageId,moduleId,changeContent)=>setTarget({appId:props.appId,pageId,moduleId,changeContent})} recipe={value} pageId={props.pageId} appId={props.appId} instanceId={props.instanceId} t={props.t} ctx={ctx} renderFactorySlot={props.renderFactorySlot}/>{target&&<RuntimeModuleDialog target={target} t={props.t} refresh={refresh} onClose={()=>setTarget(null)}/>}</>
+    return <><RecipePage onEditModule={(pageId,moduleId,changeContent)=>setTarget({appId:props.appId,pageId,moduleId,changeContent})} recipe={value} active={props.active} pageId={props.pageId} appId={props.appId} instanceId={props.instanceId} t={props.t} ctx={ctx} renderFactorySlot={props.renderFactorySlot}/>{target&&<RuntimeModuleDialog target={target} t={props.t} refresh={refresh} onClose={()=>setTarget(null)}/>}</>
    }
    const removeView=ctx.slots.register({name:'personal-workbench.app',key:recipe.appId,locale:'personal-workbench'},View)
    try{

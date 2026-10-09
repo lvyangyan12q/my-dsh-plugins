@@ -39,11 +39,11 @@ export function AnnotationLayer({canvas,recipe,pageId,instanceId,ctx,active,t,on
  },[canvas,identity])
  useEffect(()=>{setBusy(false);setAiming(false);setSelection(null);setRecords([]);setHistory(false);setRequirement('');setError('');setNotice('');setDragBox(null);return()=>pending.current?.abort()},[identity])
  useEffect(()=>{
-  if(!ctx)return
+  if(!ctx||!active)return
   const controller=new AbortController(),current=++revision.current
   annotationRequest({action:'list',appId:recipe.appId,instanceId,pageId},controller.signal).then(result=>{if(!controller.signal.aborted&&revision.current===current){setRecords(result.records);setStorageError('')}}).catch(error=>{if(!controller.signal.aborted&&revision.current===current)setStorageError(error instanceof Error?error.message:String(error))})
   return()=>controller.abort()
- },[identity,reload,ctx])
+ },[identity,reload,ctx,active])
  const archive=async(record:AnnotationRecord)=>{setBusy(true);setStorageError('');const current=++revision.current,captured=identity,controller=new AbortController();pending.current=controller;try{const result=await annotationRequest({action:'archive',appId:recipe.appId,instanceId,pageId,id:record.annotation.id,archived:!record.archived},controller.signal);if(!controller.signal.aborted&&identityRef.current===captured&&revision.current===current)setRecords(result.records)}catch(error){if(revision.current===current)setStorageError(error instanceof Error?error.message:String(error))}finally{if(revision.current===current)setBusy(false)}}
  const marks=records.filter(record=>!record.archived&&record.recipeVersion===recipe.version&&canvas.current&&annotationPositionMatches(canvas.current,record.annotation)).map(record=>record.annotation)
  const page=recipe.pages.find(page=>page.id===pageId);if(!page)return null

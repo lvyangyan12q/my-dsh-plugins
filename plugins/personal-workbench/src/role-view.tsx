@@ -26,7 +26,9 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
   const window = state.window
   const presetChanged = !!(expectedPresetId && state.binding && state.binding.presetId !== expectedPresetId)
   const status = useSessionStatus(value => state.binding ? value.get(state.binding.sessionId) : undefined)
-  useEffect(() => { if (active && !state.binding && !state.error && !state.busy) void commands.open(bindingKey).catch(() => {}) }, [active, bindingKey, commands])
+  const identity = roleKey(bindingKey)
+  // Re-read on explicit view activation, including cached disabled errors; never ensure or replace.
+  useEffect(() => { if (active && !state.busy) void commands.open(bindingKey).catch(() => {}) }, [active, identity, commands])
   const retry = () => { const binding = state.binding; void (binding ? commands.retry(bindingKey, binding.sessionId) : commands.open(bindingKey)).catch(() => {}) }
   const replace = () => { const binding = state.binding; if (binding && globalThis.confirm('保留原会话并新建角色会话？')) void commands.replace(bindingKey, binding.sessionId).catch(() => {}) }
   return <section data-pwb-role-key={roleKey(bindingKey)} aria-label="持续角色会话" style={{ position: 'relative', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
