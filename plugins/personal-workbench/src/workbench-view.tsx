@@ -1,3 +1,4 @@
+import { compareApplications } from './app-order.ts'
 import {sidebarCoexistenceStyles} from './sidebar-coexistence-styles.ts'
 import { RecipeEditor } from './recipe-editor.tsx'
 import { useEffect, useRef, useState } from 'react'
@@ -36,9 +37,7 @@ export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkil
   & InjectFace<{ hooks: { workbench: Workbench } }> & { openWorkspace: Workbench['openWorkspace']; openApp: Workbench['openApp']; openAgents: () => void; openSkills: () => void }) {
   const state = useWorkbench(value => value)
   const [expanded, setExpanded] = useState(true)
-  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden && state.lifecycleReady && state.lifecycle[app.id]?.enabled !== false).sort((a, b) =>
-    Number(state.apps[b.id]?.favorite ?? false) - Number(state.apps[a.id]?.favorite ?? false)
-    || (state.apps[a.id]?.order ?? 0) - (state.apps[b.id]?.order ?? 0) || a.name.localeCompare(b.name))
+  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden && state.lifecycleReady && state.lifecycle[app.id]?.enabled !== false).sort(compareApplications(state.apps))
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0,
     minHeight: 40, padding: wide ? '8px 10px' : '8px 0', justifyContent: wide ? 'flex-start' : 'center',
     border: 0, borderRadius: 8, background: 'transparent', color: 'inherit', fontSize: 14, textAlign: 'left', cursor: 'pointer' }
@@ -112,8 +111,19 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     else root.current?.focus()
     return () => { if (before instanceof HTMLElement && before.isConnected) before.focus() }
   }, [state.visible, state.focusRevision])
-  const apps = state.definitions.filter(row => (showHidden || !state.apps[row.id]?.hidden)
+  const orderedApps = [...state.definitions].sort(compareApplications(state.apps))
+  const apps = orderedApps.filter(row => (showHidden || !state.apps[row.id]?.hidden)
     && row.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
+  const sameGroup = (row: WorkbenchAppDefinition) => apps.filter(candidate => !!state.apps[candidate.id]?.favorite === !!state.apps[row.id]?.favorite)
+  const moveApp = (row: WorkbenchAppDefinition, direction: -1 | 1) => {
+    const visible = sameGroup(row), index = visible.findIndex(candidate => candidate.id === row.id)
+    const neighbor = visible[index + direction]
+    if (!neighbor) return
+    const group = orderedApps.filter(candidate => !!state.apps[candidate.id]?.favorite === !!state.apps[row.id]?.favorite)
+    const from = group.findIndex(candidate => candidate.id === row.id), to = group.findIndex(candidate => candidate.id === neighbor.id)
+    ;[group[from], group[to]] = [group[to], group[from]]
+    group.forEach((candidate, order) => setPreference(candidate.id, { order }))
+  }
   return <div ref={root} className="pwb-workspace pwb-project-shell" style={bounds} hidden={!state.visible} role="region" aria-label={app?.name ?? t('workspace')} tabIndex={-1}
     onKeyDown={event => {
       if (event.defaultPrevented || event.nativeEvent.isComposing) return
@@ -146,7 +156,9 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
           try {await setAppEnabled(row.id,state.lifecycle[row.id]?.enabled===false)} catch(error) {setAvailabilityError(error instanceof Error?error.message:'Application availability update failed')} finally {setPendingApp(null)}
         }}>{t(state.lifecycle[row.id]?.enabled===false?'enableApp':'disableApp')}: {row.name}</button>}
         <div className="pwb-app-tools"><button data-pwb-button type="button" aria-label={t('favorite') + ': ' + row.name} aria-pressed={state.apps[row.id]?.favorite ?? false} onClick={() => setPreference(row.id, { favorite: !state.apps[row.id]?.favorite })}><Star size={15} /></button>
-          <button data-pwb-button type="button" aria-label={t(state.apps[row.id]?.hidden ? 'showApp' : 'hideApp') + ': ' + row.name} onClick={() => setPreference(row.id, { hidden: !state.apps[row.id]?.hidden })}><EyeOff size={15} /></button></div>
+          <button data-pwb-button type="button" aria-label={t(state.apps[row.id]?.hidden ? 'showApp' : 'hideApp') + ': ' + row.name} onClick={() => setPreference(row.id, { hidden: !state.apps[row.id]?.hidden })}><EyeOff size={15} /></button>
+          <button data-pwb-button type="button" aria-label={t('moveUp') + ': ' + row.name} title={t('moveUp')} disabled={sameGroup(row)[0]?.id === row.id} onClick={() => moveApp(row, -1)}><ArrowUp size={15} /></button>
+          <button data-pwb-button type="button" aria-label={t('moveDown') + ': ' + row.name} title={t('moveDown')} disabled={sameGroup(row).at(-1)?.id === row.id} onClick={() => moveApp(row, 1)}><ArrowDown size={15} /></button></div>
       </section>)}</div>
       {!apps.length && <p role="status" className="pwb-empty">{t(state.definitions.length ? 'noMatches' : 'noApps')}</p>}
     </section>

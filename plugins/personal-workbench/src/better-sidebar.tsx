@@ -1,3 +1,4 @@
+import { compareApplications } from './app-order.ts'
 import { controlStyles } from './control-styles.ts'
 import { useSyncExternalStore } from 'react'
 import { LayoutGrid, ArrowUpRight } from 'lucide-react'
@@ -33,9 +34,7 @@ function Catalog({ ctx, workbench, enabled, availability }: { ctx: Context; work
   const available = useSyncExternalStore(availability.subscribe, availability.getSnapshot, availability.getSnapshot)
   if (!available) return null
   const t = ctx.locale.bind('personal-workbench')
-  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden).sort((a, b) =>
-    Number(state.apps[b.id]?.favorite ?? false) - Number(state.apps[a.id]?.favorite ?? false)
-    || (state.apps[a.id]?.order ?? 0) - (state.apps[b.id]?.order ?? 0) || a.name.localeCompare(b.name))
+  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden).sort(compareApplications(state.apps))
   return <section className="pwb-workspace" aria-label={t('applications')} style={{ padding: 12, minWidth: 0, color: 'var(--dsw-alias-text-primary)' }}>
     <style>{controlStyles}</style>
     <button data-pwb-button type="button" title={t('workspace')} onClick={() => { if (enabled()) ctx.personalWorkbench.openWorkspace() }}

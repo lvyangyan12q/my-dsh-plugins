@@ -228,3 +228,31 @@ test('application status refresh updates unchanged running recipe dependency pro
   available=true;await f.click('refreshApps');assert.equal(f.service.getSnapshot().definitions.find(row=>row.id===recipe.appId).dependencies.find(row=>row.id==='agent:analyst').available,true);
  }finally{await f.dispose()}
 })
+
+
+test('catalog and sidebar share favorite and user order with persisted preferences', async () => {
+ const f=await fixture()
+ let remove
+ try {
+  await act(async()=>{remove=f.service.registerApp({id:'test.alpha',version:'1',name:'Alpha',source:'UI test registration',icon:'book-open',pages:[{id:'home',label:'Home'}],defaultLayout:{width:700,height:500,pageId:'home'}})})
+  await f.click('workspace')
+  const cards=()=>[...f.dom.window.document.querySelectorAll('.pwb-app-grid .pwb-open')].map(row=>row.textContent)
+  const sidebar=()=>[...f.dom.window.document.querySelectorAll('nav[aria-label="catalogTabs"] ul button')].map(row=>row.textContent)
+  assert.deepEqual(cards(),['Alpha','Exercise'])
+  assert.deepEqual(sidebar(),cards())
+  await f.click('moveUp: Exercise')
+  assert.deepEqual(cards(),['Exercise','Alpha'])
+  assert.deepEqual(sidebar(),cards())
+  assert.equal(f.button('moveUp: Exercise').disabled,true)
+  assert.equal(f.button('moveDown: Alpha').disabled,true)
+  await f.click('favorite: Alpha')
+  assert.deepEqual(cards(),['Alpha','Exercise'])
+  assert.deepEqual(sidebar(),cards())
+  assert.equal(f.button('moveDown: Alpha').disabled,true,'manual ordering stays inside favorite group')
+  const saved=JSON.parse(f.dom.window.localStorage.getItem('personal-workbench.layout.v1'))
+  assert.equal(saved.apps['test.alpha'].favorite,true)
+  assert(saved.apps['test.exercise'].order<saved.apps['test.alpha'].order)
+  await f.click('favorite: Alpha')
+  assert.deepEqual(cards(),['Exercise','Alpha'])
+ } finally {await act(async()=>remove?.());await f.dispose()}
+})
