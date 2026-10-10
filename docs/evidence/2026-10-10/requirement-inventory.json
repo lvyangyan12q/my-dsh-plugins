@@ -902,7 +902,10 @@
       "section": "User Stories",
       "number": 8,
       "requirementSha256": "3c023e2725dc4316c7c094192a80029c3abaeb7c2a193f5102f01f4ab79e344c",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for actual installed data-connected draft preview: category filters update statistics/list and selected detail, filtered-out detail clears, running filter state stays independent, and read-only catalogue/business data comparisons remain unchanged; full real AI generation/activation chain is a separate open gate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/reading-draft-preview-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:9",
