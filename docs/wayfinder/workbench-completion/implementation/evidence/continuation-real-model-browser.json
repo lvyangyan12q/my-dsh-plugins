@@ -362,6 +362,159 @@
     "originalAnswersUnchanged": true,
     "all59ActualBrowserCoverageClaimed": false
   },
+  "OwnedExternalAnimationActualMotion": {
+    "url": "http://127.0.0.1:3094/",
+    "standaloneOwnedPage": true,
+    "previousHostIframeLoaded": true,
+    "animationName": "slide",
+    "sampleMilliseconds": 650,
+    "xBefore": 157.2215576171875,
+    "xAfter": 169.0834197998047,
+    "reducedMotion": false,
+    "hostIframeInternalMotionMeasured": false
+  },
+  "NarrowKaogongIndependentStudy": {
+    "viewport": {
+      "width": 480,
+      "height": 900
+    },
+    "documentScrollWidth": 480,
+    "dialogLeft": 56,
+    "dialogRight": 480,
+    "overflowControls": [],
+    "openedFromDashboard": true,
+    "switchedToWrongQuestions": true,
+    "weakPointsAndActualAggregateDisplayed": true,
+    "switchedToMaterials": true,
+    "selectedOriginalImportedAnalysis": true,
+    "documentId": "sha256:934c3f2c18b778f93085649dbcf3fb038d040cd6650597c33fd0e3ec1e0b3f62",
+    "documentImages": [
+      {
+        "width": 226,
+        "height": 109,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 173,
+        "height": 156,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 354,
+        "height": 140,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 301,
+        "height": 229,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 557,
+        "height": 334,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 496,
+        "height": 298,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 500,
+        "height": 251,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 334,
+        "height": 259,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 390,
+        "height": 223,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      }
+    ],
+    "practiceOriginalFourImagesWithinViewport": true,
+    "escapeClosedAndRestoredOpenButtonFocus": true,
+    "enterReopenedAndFocusedStudyDialog": true,
+    "reopenedStudyPage": "练习",
+    "lastStudyMaterialsPageRestorationClaimed": false,
+    "all59QuestionsBrowserCoverageClaimed": false,
+    "physicalImeClaimed": false
+  },
+  "HeadteacherSingleRoundReadRed": {
+    "viewport": {
+      "width": 480,
+      "height": 900
+    },
+    "nativeTitleVisible": "考公备考计划制定",
+    "nativeTabs": [
+      "对话",
+      "轨迹"
+    ],
+    "oneVisibleComposer": {
+      "left": 73,
+      "right": 452
+    },
+    "explicitReadOnlyCorrectionSent": true,
+    "actualTools": [
+      "kaogong_list_questions",
+      "kaogong_analyze_errors"
+    ],
+    "latestCompletedRoundExpected": {
+      "total": 10,
+      "correct": 3,
+      "wrong": 7,
+      "skipped": 0
+    },
+    "aggregateJudgmentActual": {
+      "total": 20,
+      "correct": 3,
+      "wrong": 8,
+      "skipped": 9
+    },
+    "aggregateAllActual": {
+      "total": 28,
+      "correct": 10,
+      "wrong": 9,
+      "skipped": 9
+    },
+    "modelAdmittedEarlierRoundAggregateMix": true,
+    "modelDidNotReadLatestRound": true,
+    "modelClaimedRoundReadUnavailable": true,
+    "verdict": "failed; implementation assigned; post-install actual model retry required",
+    "businessDomainFiles": 17,
+    "changedDomainFiles": [],
+    "credentialAndPatchHashesPreserved": true
+  },
   "sanitization": {
     "localPaths": "owned-workspace",
     "nativeSessionAndQuestionIdentities": "SHA-256 fingerprints",
