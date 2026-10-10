@@ -909,7 +909,10 @@
       "section": "User Stories",
       "number": 11,
       "requirementSha256": "b3a2b1dc05488f3a93ef291cb22f097756c0df69f629999c0af95cb13e2eba2d",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for tested platform retention: actual disable/cold restart/enable preserves exact recipe, two native role associations, retained historical ID and current/old drafts; separate installed Reading lifecycle proves business-record retention. Running-model continuity is not claimed",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-disable-restore-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:12",
@@ -918,7 +921,7 @@
       "section": "User Stories",
       "number": 12,
       "requirementSha256": "ca889e04714b3d9c36ad2d95100d20f95f2256b654497d4b54bd92a74bee4566",
-      "evidenceStatus": "satisfied at user-visible entry/readiness lifecycle: actual built Client rejects disabled opening before/after restart; official installed lifecycle persists disable state; no native task cancellation claim",
+      "evidenceStatus": "satisfied for tested native sidebar/catalog/public consumer routes: disabled sidebar entry absent, catalog open disabled, actual existing public instance open rejected with explicit guidance and no visible app; disabled Host role read denied without discarding association",
       "evidence": [
         "docs/evidence/2026-10-10/contract-requirements-audit.json",
         "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs",
@@ -928,7 +931,8 @@
       ],
       "evidencePaths": [
         "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
-        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/application-disable-restore-browser.json"
       ]
     },
     {
