@@ -1,0 +1,9 @@
+# 08 canonical cause-explanation classification
+
+The canonical saved classroom point is valid taxonomy but had no exact imported bank label. The single approved source item under 原因解释类 was independently checked against original question-book physical page 189/question 20 and explanation physical pages 463–464: full question/options, classification 原因解释类 and original answer all agree. Private source content is kept outside the repository.
+
+An explicit same-subject identity comparison maps only 行测-判断推理 / 原因解释类 to 逻辑判断-原因解释. Practice selection and classroom scored-round evidence share this comparison. Raw classifications, bank fields, scores, answers, review and the original classroom objective remain unchanged; no substring matching or other explanation/attribution labels are included. A requested ten-question round truthfully contains one available question.
+
+TDD: public selection failed 0 versus expected 1 before the mapping; then the public JSON-domain classroom link failed its point check before sharing that mapping. Both became green. Focused core and classroom regression: 24/24 passed, including foreign subjects, unknown source-label suffixes, pending review and unrelated explanation rounds excluded. Read-only current owned source-loader plus new selector check changed this exact canonical target from 0 to 1 eligible with original bank SHA unchanged. No Host or Browser acceptance claimed.
+
+Plain Host tsc lacked local workbench package resolution; configured type checker subsequently encountered stale workbench declaration missing WorkbenchAppRegistration from the newly merged source-app restoration change. Parent combined full gate must regenerate dependent declarations and perform installed original-classroom acceptance. No full build or live mutation done by this subtask.

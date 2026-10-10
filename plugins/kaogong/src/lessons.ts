@@ -5,6 +5,7 @@ import type { KnowledgeEntryRecord } from './schemas.ts'
 import type { PracticeRounds } from './practice-rounds.ts'
 import { PracticeError } from './practice-rounds.ts'
 import { TAXONOMY } from './taxonomy.ts'
+import { canonicalKnowledgePoint } from './knowledge-point-identity.ts'
 
 type Binding = { phase: 'intent' | 'ready'; sessionId: string; presetId: string }
 /** One default-instance lesson owner; accepted attempts are always resolved by the existing scorer. */
@@ -101,8 +102,9 @@ export class Lessons {
   private async evidence(row: Lesson, roundId: string): Promise<LessonEvidence> {
     const round = await this.practice.read(roundId), result = round.result
     if (!result || result.totalCount === 0) throw new PracticeError('本轮未提交或没有可评分作答')
-    if (round.context.subject !== row.request.subject || (row.request.knowledgePoint &&
-      result.results.some(q => q.knowledgePoint !== row.request.knowledgePoint))) throw new PracticeError('作答不属于本课科目或考点')
+    const point = row.request.knowledgePoint
+    if (round.context.subject !== row.request.subject || (point &&
+      result.results.some(q => canonicalKnowledgePoint(q.subject, q.knowledgePoint) !== canonicalKnowledgePoint(row.request.subject, point)))) throw new PracticeError('作答不属于本课科目或考点')
     return { roundId, total: result.totalCount, correct: result.correctCount, questionIds: result.results.map(q => q.id),
       reflectedIds: round.reflections.map(q => q.id), answered: result.results.every(q => !!q.userAnswer.trim()),
       reflectionsComplete: result.results.filter(q => !q.correct).every(q => round.reflections.some(r => r.id === q.id && !!r.errorReason)),
