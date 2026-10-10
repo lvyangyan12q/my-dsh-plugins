@@ -1,8 +1,8 @@
 {
   "date": "2026-10-10",
-  "sourceCommit": "46ec21c9f3c43818c1a420be41264871f589434e",
-  "reviewedHead": "46ec21c9f3c43818c1a420be41264871f589434e",
-  "method": "Executed scripts/check-platform-release.mjs from a clean git archive, after complete three-plugin build and 308 passing tests",
+  "sourceCommit": "9d56163c1bc8f660e85611872d97803672fc6c2a",
+  "reviewedHead": "9d56163c1bc8f660e85611872d97803672fc6c2a",
+  "method": "Executed scripts/check-platform-release.mjs from a clean git archive, after complete three-plugin build and 309 passing tests",
   "verdict": {
     "officialOfflineArchiveInstall": true,
     "dependencyMode": "existing public dependency links; products installed from exact archives",
@@ -16,7 +16,7 @@
     "fixture": "public synthetic reading records",
     "modelCalls": 0,
     "archives": [
-      "b1592457504bb9e780bb44b5ff30cec4980b7cd0b249104ba21d7a8fa3c4869e",
+      "780bdce8e9808f24ad4116885a395e6fc30f7b4bbb96e24749441545288c3f37",
       "c96fc9e0e024a272f75d6c641654add9a02cef98b6d38216b917259121d43e16",
       "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
     ]
@@ -26,6 +26,6 @@
     "Synthetic Reading fixtures prove data lifecycle and recovery; this is not a historical user deployment migration replay.",
     "Model calls are deliberately blocked; real teaching, permission, Stop, streaming and AI application generation remain unverified.",
     "Public installed-type consumers and HTML asset access checks do not certify every responsive layout, physical IME or teaching compatibility combination.",
-    "User management modifications and private screenshots remain outside this remote delivery."
+    "User-authorized management modifications are included; private screenshots and unrelated local audit edits remain outside remote delivery."
   ]
 }

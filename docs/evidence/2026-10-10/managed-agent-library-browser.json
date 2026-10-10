@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-10",
+  "commit": "9d56163c1bc8f660e85611872d97803672fc6c2a",
+  "archiveSha256": "780bdce8e9808f24ad4116885a395e6fc30f7b4bbb96e24749441545288c3f37",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "url": "http://127.0.0.1:3089/",
+  "authorization": "User explicitly approved including the four existing Agent management files in remote PR #2",
+  "method": "Exact clean archive install, actual Agent navigation and managed record selection, read-only authenticated management catalog and role binding reads",
+  "observations": {
+    "publicManagedAgentCount": 2,
+    "allPublicAgentsManaged": true,
+    "noApplicationTeacherPresetsInPublicAgents": true,
+    "globalApplicationBindingSelectorAbsent": true,
+    "fixedOfficialPluginEntryVisible": true,
+    "kaogongRoleCount": 9,
+    "allKaogongRolePresetsAvailable": true,
+    "allKaogongTeachingSkillsAvailable": true,
+    "existingTwoTeacherSessionBindingsUnchanged": true,
+    "errors": 0
+  },
+  "tests": {
+    "cleanPassing": 309,
+    "failed": 0,
+    "skipped": 0
+  },
+  "limits": [
+    "This implements management provenance and preserves application-private presets; it does not execute model teaching or certify all provider interactions.",
+    "Private screenshots and unrelated local audit edits remain outside remote delivery."
+  ]
+}

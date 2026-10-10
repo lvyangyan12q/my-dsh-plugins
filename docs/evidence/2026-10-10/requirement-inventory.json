@@ -233,7 +233,10 @@
       "section": "User Stories",
       "number": 18,
       "requirementSha256": "0b2f7a0b7d126fcded2092bac41a4558082f0750469dce42074bbccbc1fe790b",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual data-analysis/reasoning teachers have independent native presets and durable Sessions, isolated unsent drafts, Conversation/Trace tabs and cold-restart recovery; completed teaching history and remaining subject matrix unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-subject-session-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:19",
@@ -352,7 +355,10 @@
       "section": "User Stories",
       "number": 29,
       "requirementSha256": "ab2941c6ecc4399da286ab925bfcd7074b8baac001efbd199444422906a815bb",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for reusable Agent library ownership: saved managed records only; actual application teacher presets excluded, nine application roles and teaching dependencies remain available, existing teacher bindings preserved",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/managed-agent-library-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:30",
