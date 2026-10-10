@@ -280,7 +280,11 @@
       "section": "User Stories",
       "number": 25,
       "requirementSha256": "3044c8262cda0542b024b591048bf091bbad7d9593a08f0c2c06fc6d98394b97",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for persistent classroom homework/completion/summary: actual form creation, real existing submitted round/reflections, explicit learner confirmation, cold Host restart and visible classroom recovery; model-generated teaching and the full teaching chain remain separate unmet requirements",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/lesson-persistence-verification.json",
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:26",
