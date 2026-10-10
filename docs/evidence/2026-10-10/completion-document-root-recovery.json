@@ -1,0 +1,24 @@
+{
+  "sourceReferenceCount": 3097,
+  "copiedReferenceCount": 3097,
+  "copiedBytes": 38748972,
+  "sourceImagesReadOnly": true,
+  "sourceBusinessBackupUnchanged": true,
+  "credentialsFileUnchanged": true,
+  "onlyKaogongOutputDirChanged": true,
+  "hostRestarted": false,
+  "impactedDocumentAssetCount": 150,
+  "impactedPublicStatusCounts": {
+    "401": 1
+  },
+  "impactedPublicByteMatches": 0,
+  "publicReadErrors": [
+    {
+      "status": 401,
+      "body": "{\"error\":\"Image access denied\"}"
+    }
+  ],
+  "cause": "owned live kaogong config missing durable absolute mineru.outputDir; route returns503 before filesystem access",
+  "unauthenticatedPublicRead": "401 Image access denied; authenticated installed Browser read still parent-owned",
+  "classification": "isolated historical replay configuration gap; no proven product resolver defect"
+}
