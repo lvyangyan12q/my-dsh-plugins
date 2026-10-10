@@ -79,3 +79,52 @@ test('generation delivery identity survives editing and removing all user task c
  assert.ok(f.sent[0].text.endsWith('Workbench generation request: '+id));assert.ok(!f.sent[0].text.includes('old content'));assert.ok(!f.sent[0].text.includes('must not send'));f.roles.dispose()
  assert.throws(()=>new PreparedTasks({send:async()=>{}}).prepare({...task(),generationRequestId:'injected\ntext'}),/Invalid prepared task/)
 })
+
+test('edited task survives browser service restart with exact role identity and no implicit send',async()=>{
+ const {JSDOM}=await import('jsdom');const dom=new JSDOM('',{url:'http://localhost'}),sent=[];
+ try{
+ const roles={send:async(target,text)=>sent.push({target,text})};
+ const first=new PreparedTasks(roles,dom.window.localStorage);first.prepare(task());first.editTask(key,'Resume edited goal');first.editContext(key,'one','Resume edited evidence');first.removeContext(key,'two');
+ const secondKey={...key,instanceId:'second'};first.prepare(task(secondKey));
+ const restored=new PreparedTasks(roles,dom.window.localStorage);
+ assert.equal(restored.getSnapshot().size,2);assert.deepEqual(sent,[]);
+ const pending=restored.getSnapshot().get(roleKey(key));assert.equal(pending.prepared.task,'Resume edited goal');assert.deepEqual(pending.prepared.context,[{id:'one',label:'Selected book',source:'Own data',text:'Resume edited evidence'}]);
+ await restored.send(key);assert.equal(sent.length,1);assert.deepEqual(sent[0].target,key);
+ const cold=new PreparedTasks(roles,dom.window.localStorage);assert.equal(cold.getSnapshot().has(roleKey(key)),false);assert.equal(cold.getSnapshot().has(roleKey(secondKey)),true);await cold.discard(secondKey);assert.equal(new PreparedTasks(roles,dom.window.localStorage).getSnapshot().size,0);
+ }finally{dom.window.close()}
+})
+
+test('reload during native send preserves a blocked draft and its recovery explanation through edits',async()=>{
+ const {JSDOM}=await import('jsdom');const dom=new JSDOM('',{url:'http://localhost'});let settle,sends=0;const hold=new Promise(resolve=>settle=resolve);
+ const roles={send:async()=>{sends++;await hold}};
+ try{
+ const tasks=new PreparedTasks(roles,dom.window.localStorage);tasks.prepare(task());const command=tasks.send(key);
+ const restored=new PreparedTasks(roles,dom.window.localStorage);assert.equal(restored.getSnapshot().get(roleKey(key)).recoveryRequired,true);
+ restored.editTask(key,'Keep edited work');assert.match(restored.getSnapshot().get(roleKey(key)).error,/explicit task preparation/);
+ await assert.rejects(restored.send(key),/explicit task preparation/);assert.equal(sends,1);
+ settle();await command;assert.equal(new PreparedTasks(roles,dom.window.localStorage).getSnapshot().size,0);
+ }finally{settle();dom.window.close()}
+})
+
+test('restored code-owned preparation cannot send without its explicit reservation callback',async()=>{
+ const {JSDOM}=await import('jsdom');const dom=new JSDOM('',{url:'http://localhost'});let sends=0,reservations=0;
+ try{
+ const roles={send:async()=>{sends++}},tasks=new PreparedTasks(roles,dom.window.localStorage);
+ const generated={...task(),generationRequestId:'88b7181b-ac45-40e7-a143-78ea06e822cd'};
+ tasks.prepare(generated,{beforeSend:()=>{reservations++}});
+ const restored=new PreparedTasks(roles,dom.window.localStorage);assert.equal(restored.getSnapshot().get(roleKey(key)).prepared.generationRequestId,generated.generationRequestId);assert.equal(restored.getSnapshot().get(roleKey(key)).recoveryRequired,true);
+ await assert.rejects(restored.send(key),/explicit task preparation/);assert.equal(sends,0);assert.equal(reservations,0);
+ restored.prepare(generated,{beforeSend:()=>{reservations++}});await restored.send(key);assert.equal(sends,1);assert.equal(reservations,1);
+ }finally{dom.window.close()}
+})
+
+test('invalid, future or oversized browser task state is ignored; unavailable storage still permits local work',async()=>{
+ const {preparedTaskStorageKey}=await import('../src/task-preferences.ts');const {JSDOM}=await import('jsdom');const dom=new JSDOM('',{url:'http://localhost'});let sends=0;const roles={send:async()=>{sends++}};
+ try{
+ const seed=new PreparedTasks(roles,dom.window.localStorage);seed.prepare(task());const valid=JSON.parse(dom.window.localStorage.getItem(preparedTaskStorageKey));
+ for(const raw of ['{broken',JSON.stringify({...valid,version:2}),JSON.stringify({...valid,tasks:[...valid.tasks,...valid.tasks]}),JSON.stringify({...valid,tasks:[{prepared:{...task(),teaching:'yes'},recoveryRequired:false}]}),' '.repeat(1048577)]){dom.window.localStorage.setItem(preparedTaskStorageKey,raw);assert.equal(new PreparedTasks(roles,dom.window.localStorage).getSnapshot().size,0)}
+ assert.equal(sends,0);
+ const blocked={getItem(){throw new Error('Storage blocked')},setItem(){throw new Error('Quota')},removeItem(){throw new Error('Storage blocked')}};
+ const local=new PreparedTasks(roles,blocked);local.prepare(task());local.editTask(key,'Local edited goal');await local.send(key);assert.equal(sends,1);assert.equal(local.getSnapshot().size,0);
+ }finally{dom.window.close()}
+})
