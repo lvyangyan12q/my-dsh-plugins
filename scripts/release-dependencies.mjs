@@ -13,9 +13,9 @@ export async function resolveReleaseDependencies({worktree,source,dependencies})
   let entry
   if(native(dep)){
    let foreign
-   for(const require of [sourceRequire,pnpmRequire]){let candidate;try{candidate=await realpath(require.resolve(dep))}catch(error){if(error.code!=='MODULE_NOT_FOUND'&&error.code!=='ERR_PACKAGE_PATH_NOT_EXPORTED')throw error;continue}const anchor=await packageAnchor(candidate,dep);if(!inside(sourceRoot,anchor)||!inside(sourceRoot,candidate)){foreign=Error('Native dependency escapes DSH_SOURCE: '+dep);continue}entry=candidate;break}
+   for(const [require,exposure] of [[sourceRequire,join(sourceRoot,'node_modules',dep)],[pnpmRequire,join(sourceRoot,'node_modules/.pnpm/node_modules',dep)]]){let exposed;try{exposed=await realpath(exposure)}catch(error){if(error.code!=='ENOENT')throw error;continue}if(!inside(sourceRoot,exposed)){foreign=Error('Native dependency escapes DSH_SOURCE: '+dep);continue}let candidate;try{candidate=await realpath(require.resolve(dep))}catch(error){if(error.code!=='MODULE_NOT_FOUND'&&error.code!=='ERR_PACKAGE_PATH_NOT_EXPORTED')throw error;continue}const anchor=await packageAnchor(candidate,dep);if(!inside(sourceRoot,anchor)||!inside(sourceRoot,candidate)){foreign=Error('Native dependency escapes DSH_SOURCE: '+dep);continue}entry=candidate;break}
    if(!entry&&foreign)throw foreign
-   if(!entry){manifests??=await manifestPackages(sourceRoot);const dir=manifests.get(dep);assert(dir,'Native dependency missing from DSH_SOURCE: '+dep);const require=createRequire(join(dir,'package.json'));try{entry=require.resolve(dep)}catch(error){if(error.code!=='MODULE_NOT_FOUND'&&error.code!=='ERR_PACKAGE_PATH_NOT_EXPORTED')throw error;entry=require.resolve(dir)}}
+   if(!entry){manifests??=await manifestPackages(sourceRoot);const dir=manifests.get(dep);assert(dir,'Native dependency missing from DSH_SOURCE: '+dep);const require=createRequire(join(dir,'package.json'));try{entry=require.resolve(dep)}catch(error){if(error.code!=='MODULE_NOT_FOUND'&&error.code!=='ERR_PACKAGE_PATH_NOT_EXPORTED')throw error;entry=require.resolve(dir)}if(!inside(await realpath(dir),await realpath(entry)))entry=require.resolve(dir)}
   }else entry=ordinary.resolve(dep)
   entry=await realpath(entry);const anchor=await packageAnchor(entry,dep)
   assert((await stat(entry)).isFile(),'Dependency entry missing: '+dep)
