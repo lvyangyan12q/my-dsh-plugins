@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -16,14 +17,34 @@ const examples = (): ReadingRecord[] => [
 ]
 export async function installReading(ctx: Context) {
   const domain = await ctx.storageDomain.open(readingDomain), table = domain.table('instances')
-  let unregister: () => void
-  try { unregister = ctx.personalWorkbenchRecipes.registerDataSource({ appId: readingAppId, resource: readingResource }) } catch (error) { await domain.close(); throw error }
+  const disposers: (() => void)[] = []
+  try { disposers.push(ctx.personalWorkbenchRecipes.registerDataSource({ appId: readingAppId, resource: readingResource })); disposers.push(ctx.personalWorkbenchRecipes.registerModule({ id: 'reading-record-editor', validate: (_module, recipe) => recipe.appId === readingAppId ? [] : ['Reading editor belongs to reading-statistics'] })) } catch (error) { for (const dispose of disposers.reverse()) dispose(); await domain.close(); throw error }
   let closing = false, tail = Promise.resolve()
   const requests = new Set<Promise<void>>()
   const read = (instanceId: string): ReadingInstance => structuredClone(table.get(identity.parse(instanceId)) ?? { instanceId, initialized: false, records: [] })
   const initialize = (instanceId: string, seed: 'examples' | 'empty' = 'examples') => {
     identity.parse(instanceId)
     const task = tail.catch(() => {}).then(async () => { if (closing) throw new Error('Reading data unavailable'); const existing = table.get(instanceId); if (existing?.initialized) return structuredClone(existing); const row: ReadingInstance = { instanceId, initialized: true, records: seed === 'examples' ? examples() : [] }; await table.put(instanceId, row); return structuredClone(row) })
+    tail = task.then(() => {}, () => {}); return task
+  }
+  const mutate = (data: { action: string; instanceId: string; record?: Omit<ReadingRecord, 'id'>; recordId?: string; confirmed?: boolean }) => {
+    const task = tail.catch(() => {}).then(async () => {
+      if (closing) throw new Error('Reading data unavailable')
+      const row = read(data.instanceId)
+      if (data.action === 'create') {
+        if (!data.record || !data.record.title.trim()) throw new Error('A reading title is required')
+        if (row.records.length >= 2000) throw new Error('Reading record limit reached')
+        row.records.push({ id: randomUUID(), ...data.record })
+      } else {
+        const index = row.records.findIndex(record => record.id === data.recordId)
+        if (index < 0) throw new Error('Reading record not found in this instance')
+        if (data.action === 'delete') { if (data.confirmed !== true) throw new Error('Confirm deletion first'); row.records.splice(index, 1) }
+        else { if (!data.record || !data.record.title.trim()) throw new Error('A reading title is required'); row.records[index] = { id: row.records[index]!.id, ...data.record } }
+      }
+      row.initialized = true
+      await table.put(data.instanceId, row)
+      return structuredClone(row)
+    })
     tail = task.then(() => {}, () => {}); return task
   }
   const dispatch = async (req: IncomingMessage, res: ServerResponse) => {
@@ -37,12 +58,12 @@ export async function installReading(ctx: Context) {
       for await (const chunk of req) { const bytes = Buffer.from(chunk); size += bytes.length; if (size > 8192) { respond(413, { error: 'Request too large' }); return } chunks.push(bytes) }
       let input: unknown
       try { input = JSON.parse(Buffer.concat(chunks).toString('utf8')) } catch { respond(400, { error: 'Invalid JSON' }); return }
-      const parsed = z.object({ action: z.enum(['read', 'initialize']), instanceId: identity, preview: z.boolean().default(false), seed: z.enum(['examples', 'empty']).optional() }).strict().safeParse(input)
+      const parsed = z.object({ action: z.enum(['read', 'initialize', 'create', 'update', 'delete']), instanceId: identity, preview: z.boolean().default(false), seed: z.enum(['examples', 'empty']).optional(), record: recordSchema.omit({ id: true }).optional(), recordId: identity.optional(), confirmed: z.boolean().optional() }).strict().safeParse(input)
       if (!parsed.success) { respond(400, { error: 'Invalid reading request' }); return }
       const data = parsed.data
-      if (data.action === 'initialize' && data.preview) { respond(409, { error: 'Preview cannot initialize data' }); return }
-      respond(200, { version: 1, instance: data.action === 'read' ? read(data.preview ? 'default' : data.instanceId) : await initialize(data.instanceId, data.seed) })
+      if (data.action !== 'read' && data.preview) { respond(409, { error: 'Preview cannot modify reading data' }); return }
+      respond(200, { version: 1, instance: data.action === 'read' ? read(data.preview ? 'default' : data.instanceId) : data.action === 'initialize' ? await initialize(data.instanceId, data.seed) : await mutate(data) })
     } catch (error) { respond(409, { error: error instanceof Error ? error.message : 'Reading request failed' }) }
   }
-  return { read, initialize, handle: (req: IncomingMessage, res: ServerResponse) => { if (closing) { res.writeHead(503); res.end(); return Promise.resolve() } const task = dispatch(req, res); requests.add(task); void task.finally(() => requests.delete(task)).catch(() => {}); return task }, dispose: async () => { closing = true; unregister(); await Promise.allSettled([...requests, tail]); await domain.close() } }
+  return { read, initialize, handle: (req: IncomingMessage, res: ServerResponse) => { if (closing) { res.writeHead(503); res.end(); return Promise.resolve() } const task = dispatch(req, res); requests.add(task); void task.finally(() => requests.delete(task)).catch(() => {}); return task }, dispose: async () => { closing = true; for (const dispose of disposers.reverse()) dispose(); await Promise.allSettled([...requests, tail]); await domain.close() } }
 }

@@ -134,3 +134,41 @@ test('ordinary template and connection form save a draft, preview without replac
     await ui.commands.setAppEnabled('reading-statistics', true); ui.workbench.openApp('reading-statistics'); assert.equal(ui.workbench.getSnapshot().windows.length, 1); assert.equal(ui.forbidden(), 0)
   } finally { await ui?.close(); await server.close(); await rm(folder, { recursive: true, force: true }) }
 })
+
+test('public reading records create/edit/delete persist per instance, refuse preview and unconfirmed deletion', async () => {
+  const folder = await mkdtemp(join(tmpdir(), 'reading-records-')); let server = await host(folder)
+  const record = { title: 'My reading journal', author: 'Reader', category: 'My books', status: 'reading', minutes: 45, notes: 'Own notes' }
+  try {
+    assert.equal((await server.call('/api/reading-statistics/data', { action: 'create', instanceId: 'personal', preview: true, record })).status, 409)
+    assert.equal(server.reading.read('personal').initialized, false)
+    const created = await server.call('/api/reading-statistics/data', { action: 'create', instanceId: 'personal', record })
+    assert.equal(created.status, 200); const id = created.value.instance.records[0].id
+    assert.deepEqual(created.value.instance.records[0], { id, ...record }); assert.equal(server.reading.read('default').records.length, 0)
+    const changed = { ...record, minutes: 75, status: 'finished', notes: 'Completed' }
+    const edited = await server.call('/api/reading-statistics/data', { action: 'update', instanceId: 'personal', recordId: id, record: changed })
+    assert.equal(edited.status, 200); assert.deepEqual(edited.value.instance.records[0], { id, ...changed })
+    assert.equal((await server.call('/api/reading-statistics/data', { action: 'delete', instanceId: 'personal', recordId: id })).status, 409)
+    await server.close(); server = await host(folder)
+    const reopened = await server.call('/api/reading-statistics/data', { action: 'read', instanceId: 'personal' }); assert.deepEqual(reopened.value.instance.records, [{ id, ...changed }])
+    assert.equal((await server.call('/api/reading-statistics/data', { action: 'update', instanceId: 'another', recordId: id, record: changed })).status, 409)
+    const removed = await server.call('/api/reading-statistics/data', { action: 'delete', instanceId: 'personal', recordId: id, confirmed: true }); assert.equal(removed.status, 200); assert.equal(removed.value.instance.records.length, 0)
+    await server.close(); server = await host(folder); assert.equal((await server.call('/api/reading-statistics/data', { action: 'read', instanceId: 'personal' })).value.instance.records.length, 0)
+  } finally { await server.close(); await rm(folder, { recursive: true, force: true }) }
+})
+test('built reading editor adds own records, edits, confirms delete and retries failed dependency without AI', async () => {
+  const folder = await mkdtemp(join(tmpdir(), 'reading-record-editor-ui-')); const server = await host(folder); let ui
+  try {
+    await server.reading.initialize('default'); ui = await client(server); const recipe = ui.reading.readingRecipe()
+    const page = (preview = false) => h(ui.platform.RecipePage, { recipe, pageId: 'library', appId: recipe.appId, instanceId: 'default', preview, t: key => key })
+    await ui.render(page()); await ui.flush(); await ui.click('新增阅读记录')
+    const fill = async (label, value) => { const el = ui.document.querySelector('[aria-label="'+label+'"]'); assert.ok(el,label); const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype; await act(async () => { Object.getOwnPropertyDescriptor(proto,'value').set.call(el,value); el.dispatchEvent(new window.Event('input',{bubbles:true})) }); }
+    await fill('书名','User owned book'); await fill('阅读分钟','25'); await fill('阅读笔记','My actual notes'); await ui.click('保存阅读记录')
+    assert.match(ui.document.querySelector('[data-reading-editor]').textContent,/User owned book/)
+    const own = server.reading.read('default').records.find(r=>r.title==='User owned book'); assert.equal(own.minutes,25); assert.equal(server.reading.read('other').records.length,0)
+    await act(async()=>ui.document.querySelector('[aria-label="编辑阅读记录: '+own.id+'"]').click()); await fill('阅读分钟','40'); await ui.click('保存阅读记录'); assert.equal(server.reading.read('default').records.find(r=>r.id===own.id).minutes,40)
+    await ui.render(page(true)); await ui.flush(); assert.equal(ui.document.querySelector('[data-reading-editor] button[aria-label="编辑阅读记录: '+own.id+'"]'),null); assert.match(ui.document.querySelector('[data-reading-editor]').textContent,/预览只读/)
+    await ui.render(page()); await ui.flush(); await act(async()=>ui.document.querySelector('[aria-label="删除阅读记录: '+own.id+'"]').click()); await ui.click('取消删除'); assert.equal(server.reading.read('default').records.length,4)
+    await act(async()=>ui.document.querySelector('[aria-label="删除阅读记录: '+own.id+'"]').click()); ui.fail(true); await ui.click('确认删除阅读记录'); assert.match(ui.document.querySelector('[data-reading-editor]').textContent,/Reading backend failed/); assert.equal(server.reading.read('default').records.length,4)
+    ui.fail(false); await ui.click('重试加载阅读记录'); await act(async()=>ui.document.querySelector('[aria-label="删除阅读记录: '+own.id+'"]').click()); await ui.click('确认删除阅读记录'); assert.equal(server.reading.read('default').records.length,3); assert.equal(ui.forbidden(),0)
+  } finally { await ui?.close(); await server.close(); await rm(folder,{recursive:true,force:true}) }
+})
