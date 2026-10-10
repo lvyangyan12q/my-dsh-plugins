@@ -11,6 +11,7 @@ test('workspace selector recognises Windows spelling without changing saved iden
   ['//server/share/workspace','\\\\server\\share\\workspace',true],
   ['D:/proof/missing','D:\\proof\\workspace',false],
   ['/proof/Workspace','/proof/workspace',false],
+  ['//proof/Workspace','//proof/workspace',false],
   ['/proof/a\\b','/proof/a/b',false],
  ]
  for(const[selected,known,available]of cases){
