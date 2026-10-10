@@ -4,7 +4,7 @@ import React, { act } from 'react'
 import { JSDOM } from 'jsdom'
 import { ManagementCatalogView } from '../src/management-view.tsx'
 
-test('independent libraries save invocation policy and preserve native session identity on binding', async () => {
+test('independent libraries save invocation policy without managing application role bindings', async () => {
   const dom = new JSDOM('<div id="mount"></div>', { url: 'http://localhost' })
   const original = new Map()
   for (const [name, value] of Object.entries({ window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true })) {
@@ -38,10 +38,8 @@ test('independent libraries save invocation policy and preserve native session i
     const modelToggle = [...document.querySelectorAll('label')].find(label => label.textContent.includes('允许模型调用')).querySelector('input')
     await act(async () => modelToggle.click()); await click('保存')
     assert.equal(agent.modelInvocable, false)
-    const select = document.querySelector('select[aria-label="绑定应用角色"]')
-    await act(async () => { select.value = JSON.stringify(key); select.dispatchEvent(new dom.window.Event('change', { bubbles: true })) })
-    await click('绑定')
-    assert.equal(calls.find(row => row.action === 'agent-bind').expectedSessionId, 'existing-session')
+    assert.equal(document.querySelector('select[aria-label="绑定应用角色"]'), null)
+    assert.equal(calls.some(row => row.action === 'agent-bind'), false)
     await act(async () => render('skills'))
     await act(async () => document.querySelector('.pim-card').click())
     assert.equal(document.querySelector('textarea[aria-label="Skill 内容"]').value, 'Actual saved instructions')

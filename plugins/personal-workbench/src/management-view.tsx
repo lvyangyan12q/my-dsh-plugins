@@ -27,9 +27,8 @@ export function ManagementCatalogView({ tab, active, apps, query, commands, t }:
   const [busy, setBusy] = useState(false)
   const [reload, setReload] = useState(0)
   const [notice, setNotice] = useState('')
-  const [bindingKey, setBindingKey] = useState('')
   const [contentReady, setContentReady] = useState(true)
-  useEffect(() => { setSelected(null); setDraft(null); setError(null); setNotice(''); setBindingKey('') }, [tab])
+  useEffect(() => { setSelected(null); setDraft(null); setError(null); setNotice('') }, [tab])
   useEffect(() => {
     if (!active) return
     const controller = new AbortController()
@@ -98,7 +97,6 @@ export function ManagementCatalogView({ tab, active, apps, query, commands, t }:
         {roles.map(role => <p key={JSON.stringify(role.key)}>{label(role.key.appId)} · {role.name}{role.key.subject ? ` · ${role.key.subject}` : ''}</p>)}
         {tab === 'skills' && agentUsers.map(agent => <p key={agent.id}>Agent · {agent.name}</p>)}
         {!roles.length && (tab !== 'skills' || !agentUsers.length) && <p>暂无引用</p>}
-        {selected && tab === 'agents' && <div className="pim-binding"><label>绑定应用角色<select aria-label="绑定应用角色" value={bindingKey} onChange={event => setBindingKey(event.target.value)}><option value="">选择应用角色</option>{catalog?.roles.map(role => <option key={JSON.stringify(role.key)} value={JSON.stringify(role.key)}>{label(role.key.appId)} · {role.name} · {role.key.subject ?? role.key.instanceId}</option>)}</select></label><p>更换 Agent 会新建会话，保留原会话。</p><button data-pwb-button type="button" disabled={busy || !bindingKey} onClick={() => { void run({ action: 'agent-bind', key: JSON.parse(bindingKey), agentId: selected, expectedSessionId: catalog?.roles.find(role => JSON.stringify(role.key) === bindingKey)?.binding?.sessionId ?? null }, '已更新角色绑定') }}>绑定</button></div>}
         <h4>调用记录</h4>
         {catalog?.executions?.filter(row => row.capabilityId === selected).slice(-20).reverse().map(row => <p key={row.id}>{row.status} · {row.kind} · {row.startedAt}{row.error && ` · ${row.error}`}</p>)}
       </>}

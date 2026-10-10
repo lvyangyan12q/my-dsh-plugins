@@ -14,18 +14,18 @@ const {default:Storage}=await built('packages/storage/storage');const {JsonStora
 const {SkillRegistry}=await built('packages/skill/skill')
 const skill={name:'shared-proof',description:'Check a reusable capability',content:'Check the evidence before answering.',modelInvocable:true,userInvocable:true}
 const agent={id:'shared-proof-agent',name:'Shared proof Agent',description:'Evidence review',persona:'Review evidence.',skillNames:[skill.name],modelInvocable:true,userInvocable:true}
-async function fixture(root){
+async function fixture(root,applicationRoles=[]){
  const ctx=new Context();await ctx.plugin(Storage);await ctx.plugin(SkillRegistry)
  ctx.storage.backend.register('json',new JsonStorageBackend(root));const facility=new DomainFacility(ctx,{backend:'json',routes:{}});ctx.storage.mount('domain',facility)
- const presets=new Map(),tools=new Map(),listeners=new Map();let created,disposed=0,blocked=false
- const authority={storageDomain:facility,skills:ctx.skills,personalWorkbenchBindings:{listRoles:()=>[],setPreset:async()=>{throw new Error('unused')}},
+ const presets=new Map(applicationRoles.map(role=>[role.presetId,{id:role.presetId,name:role.key.roleId}])),tools=new Map(),listeners=new Map();let created,disposed=0,blocked=false
+ const authority={storageDomain:facility,skills:ctx.skills,personalWorkbenchBindings:{listRoles:()=>applicationRoles,setPreset:async()=>{throw new Error('unused')}},
  agentPresets:{list:async()=>[...presets.values()].map(({id,name,description})=>({id,name,description})),register:async definition=>{assert.equal(definition.plugins[0].name,'@deepseek-ai/dsh-tool-skill');assert.equal(definition.id,'my-dsh.shared-proof-agent');presets.set(definition.id,definition);return async()=>{presets.delete(definition.id)}},mount:async()=>{},composedPreset:()=>undefined},
  tools:{register:tool=>{tools.set(tool.name,tool);return()=>tools.delete(tool.name)}},on:(name,fn)=>{listeners.set(name,fn);return()=>listeners.delete(name)},sessionController:{create:async request=>({sessionId:'opened',agentPreset:request.agentPreset})},
  agents:{create:async options=>{created=options;const events=[{type:'turn/end',seq:0,time:0,data:{turn:1,reason:{kind:blocked?'blocked':'completed'}}}];const child={id:options.sessionId,session:{append:()=>{},snapshotEvents:()=>events},followup:message=>{assert.equal(message.content[0].text,'inspect evidence')},cancel:()=>{},whenIdle:async()=>{}};await options.setup({},child);return {agent:child,dispose:async()=>{disposed++}}}}
  }
  const parent={id:'parent-proof',ctx:{agents:authority.agents,get:()=>undefined},options:{},session:{requestHeader:()=>undefined,header:{id:'parent-proof',cwd:'C:/proof',delegationDepth:0}}}
  const owner=await installCapabilities(authority)
- return {ctx,owner,tools,parent,get created(){return created},get disposed(){return disposed},block:()=>{blocked=true},close:async()=>{await owner.dispose();await ctx.fiber.dispose()}}
+ return {ctx,owner,tools,parent,presets,get created(){return created},get disposed(){return disposed},block:()=>{blocked=true},close:async()=>{await owner.dispose();await ctx.fiber.dispose()}}
 }
 test('independent Skills/Agents persist, share native registrations, reject stale writes and prevent deleting used Skills',async()=>{
  const root=await mkdtemp(join(tmpdir(),'capability-proof-'));let f
@@ -35,6 +35,29 @@ test('independent Skills/Agents persist, share native registrations, reject stal
  await assert.rejects(f.owner.dispatch({action:'skill-remove',name:skill.name,expectedRevision:1}),/used/)
  await f.close();f=await fixture(root);assert.equal((await f.ctx.skills.get(skill.name)).content,skill.content);assert.equal((await f.owner.catalog())[0].revision,1)
  const opened=await f.owner.dispatch({action:'agent-open',id:agent.id});assert.equal(opened.agentPreset,'my-dsh.shared-proof-agent')
+ }finally{await f?.close();await rm(root,{recursive:true,force:true})}
+})
+test('Agent library is owned by saved records rather than native or application preset inventories',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'capability-private-'));let f
+ const privateRole={key:{appId:'kaogong',instanceId:'default',roleId:'teacher'},presetId:'kaogong.teacher.data-analysis.v1'}
+ const roles=[privateRole]
+ try{
+   f=await fixture(root,roles)
+   f.presets.set('native-default',{id:'native-default',name:'Native default'})
+   assert.deepEqual(await f.owner.catalog(),[])
+   await assert.rejects(f.owner.dispatch({action:'agent-open',id:privateRole.presetId}),/Managed Agent unavailable/)
+   await assert.rejects(f.owner.dispatch({action:'agent-open',id:'native-default'}),/Managed Agent unavailable/)
+   assert.equal(f.created,undefined)
+   await f.owner.dispatch({action:'skill-save',skill,expectedRevision:0})
+   await f.owner.dispatch({action:'agent-save',agent,expectedRevision:0})
+   roles.push({key:{appId:'other-app',instanceId:'default',roleId:'helper'},presetId:'my-dsh.shared-proof-agent'})
+   const rows=await f.owner.catalog()
+   assert.equal(rows.length,1)
+   assert.equal(rows[0].id,agent.id)
+   assert.equal(rows[0].managed,true)
+   assert.deepEqual(rows[0].appIds,['other-app'])
+   const opened=await f.owner.dispatch({action:'agent-open',id:agent.id})
+   assert.equal(opened.agentPreset,'my-dsh.shared-proof-agent')
  }finally{await f?.close();await rm(root,{recursive:true,force:true})}
 })
 test('model Agent dispatch uses selected native preset, reports actual outcome, releases child and persists execution history',async()=>{

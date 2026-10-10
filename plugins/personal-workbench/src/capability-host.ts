@@ -29,9 +29,11 @@ export async function installCapabilities(ctx: Context, usedSkill: (name:string)
  const uses=(id:string)=>ctx.personalWorkbenchBindings.listRoles().filter(role=>role.presetId===id).map(role=>role.key.appId)
  const catalog=async():Promise<ManagedAgent[]>=>{
    const native=await ctx.agentPresets.list()
-   return native.map(preset=>{
-     const saved=[...agents.entries()].map(([,row])=>row).find(row=>nativeId(row.id)===preset.id)
-     return {...(saved??{id:preset.id,name:preset.name??preset.id,description:preset.description??'',persona:'',skillNames:[],modelInvocable:false,userInvocable:true,revision:0}),managed:!!saved,presetId:preset.id,appIds:[...new Set(uses(preset.id))],...(preset.broken?{broken:preset.broken}:{})}
+   const savedAgents=[...agents.entries()].map(([,row])=>row)
+   return savedAgents.map(saved=>{
+     const presetId=nativeId(saved.id)
+     const preset=native.find(row=>row.id===presetId)
+     return {...saved,managed:true,presetId,appIds:[...new Set(uses(presetId))],...(!preset?{broken:'Managed Agent preset unavailable'}:preset.broken?{broken:preset.broken}:{})}
    })
  }
  const projectSkills=()=>[...skills.entries()].map(([,row])=>({name:row.name,managed:true,revision:row.revision}))
@@ -122,8 +124,10 @@ export async function installCapabilities(ctx: Context, usedSkill: (name:string)
      return {binding:await ctx.personalWorkbenchBindings.setPreset(request.key,id,request.expectedSessionId as SessionId|null)}
    }
    if(request.action==='agent-open'){
-     const managed=agents.get(request.id);if(managed&&!managed.userInvocable)throw new Error('Agent user invocation is disabled')
-     return ctx.sessionController.create({agentPreset:managed?nativeId(request.id):request.id,...(request.cwd?{cwd:request.cwd}:{})})
+     const managed=agents.get(request.id)
+     if(!managed)throw new Error('Managed Agent unavailable')
+     if(!managed.userInvocable)throw new Error('Agent user invocation is disabled')
+     return ctx.sessionController.create({agentPreset:nativeId(request.id),...(request.cwd?{cwd:request.cwd}:{})})
    }
    if(request.action==='agent-save'){
      const current=agents.get(request.agent.id);if((current?.revision??0)!==request.expectedRevision)throw new Error('Agent changed; refresh before saving')
