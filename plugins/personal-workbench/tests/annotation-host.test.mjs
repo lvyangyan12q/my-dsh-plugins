@@ -53,3 +53,20 @@ test('annotations accept the same long module titles as valid application recipe
   assert.equal(result.status,200);assert.equal(result.value.records[0].annotation.moduleTitle.length,500)
  }finally{await f?.close();await rm(root,{recursive:true,force:true})}
 })
+
+test('editing a saved annotation preserves target, geometry and archive state across reopen',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'annotation-edit-')),r=recipe();let f
+ try { f=await fixture(root,r); const original=(await f.call(save)).value.records[0];
+  await f.call({...scope,action:'archive',id:'mark-one',archived:true});
+  const updated=await f.call({...scope,action:'update',id:'mark-one',recipeVersion:1,requirement:'Make this saved title clearer',roleId:'maker'});
+  assert.equal(updated.status,200); const record=updated.value.records[0];
+  assert.equal(record.requirement,'Make this saved title clearer');assert.deepEqual(record.annotation,original.annotation);assert.equal(record.createdAt,original.createdAt);assert.equal(record.archived,true);
+  await f.close();f=await fixture(root,r);assert.equal((await f.call({...scope,action:'list'})).value.records[0].requirement,'Make this saved title clearer');
+  assert.equal((await f.call({...scope,action:'update',id:'missing',recipeVersion:1,requirement:'Missing',roleId:'maker'})).status,409);
+  r.version=2;assert.equal((await f.call({...scope,action:'update',id:'mark-one',recipeVersion:2,requirement:'Must not migrate',roleId:'maker'})).status,409);
+  assert.equal((await f.call({...scope,action:'list'})).value.records[0].recipeVersion,1);
+  r.version=1;r.pages[0].modules=r.pages[0].modules.filter(row=>row.id!=='one');assert.equal((await f.call({...scope,action:'update',id:'mark-one',recipeVersion:1,requirement:'Must not relocate',roleId:'maker'})).status,409);
+  const retained=(await f.call({...scope,action:'list'})).value.records[0];assert.equal(retained.requirement,'Make this saved title clearer');assert.deepEqual(retained.annotation,original.annotation);
+
+ } finally { await f?.close();await rm(root,{recursive:true,force:true}) }
+})

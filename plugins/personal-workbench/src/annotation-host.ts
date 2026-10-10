@@ -12,6 +12,7 @@ const requestSchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('list'),...scope}).strict(),
  z.object({action:z.literal('save'),...scope,...fields}).strict(),
  z.object({action:z.literal('archive'),...scope,id,archived:z.boolean()}).strict(),
+ z.object({action:z.literal('update'),...scope,id,recipeVersion:fields.recipeVersion,requirement:fields.requirement,roleId:fields.roleId}).strict(),
 ])
 const recordSchema=z.object({...scope,...fields,createdAt:z.string(),archived:z.boolean()}).strict()
 const definition=defineDomain({name:'personal_workbench_annotations',version:1,tables:{records:domainTable<string,z.infer<typeof recordSchema>>(recordSchema)}})
@@ -41,6 +42,12 @@ export async function installAnnotationRecords(ctx:Context){
      if(existing&&existing.recipeVersion!==data.recipeVersion)throw Error('Annotation belongs to an earlier page version')
      if(!existing&&list().length>=200)throw Error('This page has reached its 200 annotation limit')
      const {action,...record}=data;await table.put(key,{...record,createdAt:existing?.createdAt??new Date().toISOString(),archived:false})
+    }else if(data.action==='update'){
+     const key=JSON.stringify([data.appId,data.instanceId,data.pageId,data.id]),record=table.get(key)
+     if(!record)throw Error('Annotation unavailable; reopen its history')
+     const page=recipe.pages.find(page=>page.id===data.pageId)
+     if(record.recipeVersion!==data.recipeVersion||recipe.version!==data.recipeVersion||!page||!recipe.roles.some(role=>role.id===data.roleId)||record.annotation.moduleId&&!page.modules.some(module=>module.id===record.annotation.moduleId))throw Error('Annotation target changed; historical versions cannot be edited on the current page')
+     await table.put(key,{...record,requirement:data.requirement,roleId:data.roleId})
     }else if(data.action==='archive'){
      const key=JSON.stringify([data.appId,data.instanceId,data.pageId,data.id]),record=table.get(key);if(!record)throw Error('Annotation unavailable');await table.put(key,{...record,archived:data.archived})
     }

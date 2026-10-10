@@ -71,3 +71,23 @@ test('wrapped annotation toolbar stays outside selection and both editors as its
   assert.equal(f.dom.window.getComputedStyle(document.querySelector('[aria-label=annotationHistory]')).top,'118px','History must use the same toolbar boundary');
  }finally{await f.close()}
 })
+
+test('saved annotation can cancel, save and reopen edits before a separate explicit draft append',async()=>{
+ const f=await fixture(),canvas=React.createRef(),oldFetch=globalThis.fetch,calls=[];
+ const mark={id:'saved',moduleId:null,moduleTitle:'Home',box:{x:20,y:60,width:40,height:30},canvas:{width:800,height:600,scrollX:0,scrollY:0},text:'Captured context',limited:false};
+ let stored=[{appId:'app.test',instanceId:'default',pageId:'home',recipeVersion:1,annotation:mark,requirement:'Original request',roleId:'maker',createdAt:'2026-10-11',archived:false}],draft='Existing native draft',writes=0;
+ globalThis.fetch=async(_url,options)=>{const data=JSON.parse(options.body);if(data.action==='update'){writes++;stored=stored.map(row=>({...row,requirement:data.requirement,roleId:data.roleId}))}return {ok:true,json:async()=>({records:stored})}};
+ const ctx={get:()=>({append:async(_key,text)=>{calls.push(text);draft+='\n'+text;return 'session'}})};
+ const render=()=>f.root.render(React.createElement('div',{ref:canvas},React.createElement(AnnotationLayer,{canvas,recipe,pageId:'home',instanceId:'default',active:true,ctx,t:k=>k})));
+ const click=async text=>{const button=[...document.querySelectorAll('button')].find(b=>b.textContent===text||b.textContent.startsWith(text+' ('));assert.ok(button,'Missing '+text);await act(async()=>button.click())};
+ const type=async text=>{const input=document.querySelector('textarea');await act(async()=>{Object.getOwnPropertyDescriptor(f.dom.window.HTMLTextAreaElement.prototype,'value').set.call(input,text);input.dispatchEvent(new f.dom.window.Event('input',{bubbles:true}))})};
+ try {await act(async()=>render());canvas.current.getBoundingClientRect=()=>({left:0,top:0,width:800,height:600});
+  await click('annotationHistory');await click('annotationEdit');await type('Canceled request');await click('annotationCancel');assert.equal(writes,0);assert.equal(draft,'Existing native draft');
+  await click('annotationEdit');await type('Saved edit');await click('annotationSave');assert.equal(writes,1);assert.equal(calls.length,0);assert.equal(draft,'Existing native draft');assert.deepEqual(stored[0].annotation,mark);
+  await act(async()=>f.root.render(null));await act(async()=>render());canvas.current.getBoundingClientRect=()=>({left:0,top:0,width:800,height:600});await click('annotationHistory');await click('annotationEdit');assert.equal(document.querySelector('textarea').value,'Saved edit');await click('annotationCancel');
+  await click('annotationAppend');assert.equal(calls.length,1);assert.match(draft,/^Existing native draft/);assert.match(draft,/Saved edit/);assert.equal(writes,1,'Explicit append must not save or modify the annotation');
+  canvas.current.getBoundingClientRect=()=>({left:0,top:0,width:900,height:600});await click('annotationAppend');assert.equal(calls.length,1);assert.match(document.body.textContent,/annotationTargetChanged/);assert.deepEqual(stored[0].annotation,mark);
+  recipe.version=2;await act(async()=>render());await click('annotationHistory');await click('annotationEdit');assert.equal(document.querySelector('textarea'),null);assert.match(document.body.textContent,/annotationTargetChanged/);assert.equal(writes,1);
+
+ } finally {recipe.version=1;await f.close();globalThis.fetch=oldFetch}
+})
