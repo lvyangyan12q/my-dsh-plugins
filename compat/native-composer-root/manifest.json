@@ -43,5 +43,41 @@
       "previous": "2fa76bf2cd26efc8a0327dc9c8187939ef521d4e9ff7d260698d869bda754a70",
       "after": "30209a936934cf9ffa63bf01ecdf5c16c27098f817e9a0bfd2704a55f54acda5"
     }
+  ],
+  "reviewedCombinations": [
+    {
+      "id": "platform-native-hooks-v1",
+      "sourceCommit": "d76d31673e727389321e1da3d6d801a4aee5699b",
+      "files": [
+        {
+          "path": "packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx",
+          "after": "65aa555376fce0563631d3ed847062743d13e4e038b22404337adaa880a211d3"
+        },
+        {
+          "path": "packages/client/ui-conversation/src/client/input/editor/DraftEditor.tsx",
+          "after": "cc8433d524a11c4c1e93f6b02238e9de9c43961f5f0f33b370e8dcd9991a8932"
+        },
+        {
+          "path": "packages/client/ui-conversation/src/client/input/editor/composer-surfaces.ts",
+          "after": "a8bbcd86c38a24d8756a7cd6f1cf23fc0582103c0f62da4936b135b79fe09108"
+        },
+        {
+          "path": "packages/client/ui-conversation/src/client/input/editor/view-binding.ts",
+          "after": "f48935ad678bfea50d53689945a445121c0469922b7c2a8758f9f0458dc733f5"
+        },
+        {
+          "path": "packages/client/ui-conversation/src/client/skeleton/InputBar.tsx",
+          "after": "53594c87334095bc1c178dd6fed9c8a1459349e31b61f503919f386b10b6b0a2"
+        },
+        {
+          "path": "packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx",
+          "after": "01c0a5ab62fe2a8385f97c9411a50b030ecc5b1e9823e3aa0e695f490612e223"
+        },
+        {
+          "path": "packages/client/ui-conversation/tests/input-bar.client.spec.tsx",
+          "after": "30209a936934cf9ffa63bf01ecdf5c16c27098f817e9a0bfd2704a55f54acda5"
+        }
+      ]
+    }
   ]
 }

@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const manifest = JSON.parse(await readFile(resolve(root,'compat/native-session-chrome/manifest.json'),'utf8'))
-const source = process.env.DSH_SOURCE
+const source = process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE
 assert(source, 'Set DSH_SOURCE for the reviewed source fixture')
 const hash = text => createHash('sha256').update(text.replaceAll('\r\n','\n')).digest('hex')
 
@@ -47,6 +47,35 @@ test('native adapter rejects local changes, applies only its six reviewed files 
     assert.match(checked.stdout,/adaptation verified/)
   } finally {
     assert(basename(fixture).startsWith('my-dsh-native-chrome-'))
+    assert.equal(dirname(fixture),resolve(tmpdir()))
+    await rm(fixture,{recursive:true,force:true})
+  }
+})
+
+test('native-session-chrome accepts only the complete reviewed platform native composition', async () => {
+  const fixture = await mkdtemp(resolve(tmpdir(), 'my-dsh-composed-native-'))
+  const run = (...args) => spawnSync(process.execPath, [resolve(root, 'scripts/check-native-session-chrome.mjs'), ...args], { encoding:'utf8', env:{...process.env, DSH_SOURCE:fixture} })
+  try {
+    for (const row of manifest.files) {
+      const content = execFileSync('git', ['-C', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE, 'show', 'd76d31673e727389321e1da3d6d801a4aee5699b:' + row.path], {encoding:'utf8'})
+      await mkdir(dirname(resolve(fixture,row.path)), {recursive:true})
+      await writeFile(resolve(fixture,row.path), content)
+    }
+    assert.equal(run().status, 0)
+    assert.equal(run('--apply').status, 0)
+    const altered = resolve(fixture,manifest.files[0].path)
+    const original = await readFile(altered,'utf8')
+    await writeFile(altered, original + '\n// unrelated local change\n')
+    assert.notEqual(run().status, 0)
+    assert.notEqual(run('--apply').status, 0)
+    assert.equal(await readFile(altered,'utf8'),original + '\n// unrelated local change\n')
+    await writeFile(altered, original)
+    const legacy = execFileSync('git', ['-C', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE, 'show', manifest.baseCommit + ':' + manifest.files[0].path], {encoding:'utf8'})
+    await writeFile(altered,legacy)
+    assert.notEqual(run().status,0)
+    assert.notEqual(run('--apply').status,0)
+  } finally {
+    assert(basename(fixture).startsWith('my-dsh-composed-native-'))
     assert.equal(dirname(fixture),resolve(tmpdir()))
     await rm(fixture,{recursive:true,force:true})
   }

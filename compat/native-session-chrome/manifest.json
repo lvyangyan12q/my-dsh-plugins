@@ -31,5 +31,37 @@
       "before": "bd8f728b0ba17f09748f3795d8fc1c0c46248660c59f6cdd3fbba6d6acbc4d50",
       "after": "a438cb65409837b646cd054cb5a89a31055eedb93d7fcdd65bbb0387de9ddadc"
     }
+  ],
+  "reviewedCombinations": [
+    {
+      "id": "platform-native-hooks-v1",
+      "sourceCommit": "d76d31673e727389321e1da3d6d801a4aee5699b",
+      "files": [
+        {
+          "path": "packages/client/ui-conversation/README.md",
+          "after": "e805ee517443644341a94d9b62df56af920c8232db907fdd307dbd1aa0b69a3b"
+        },
+        {
+          "path": "packages/client/ui-conversation/README.zh.md",
+          "after": "98a35b468ff2531d56ae6fc167b38ecc1765f20f889e967c13914a1001361f40"
+        },
+        {
+          "path": "packages/client/ui-conversation/src/client/apply.ts",
+          "after": "a63fe8d4f606c1496402bbb09e879818d27693a5e30f095860fc1894cc6efa1b"
+        },
+        {
+          "path": "packages/client/ui-conversation/src/client/contract/slots.ts",
+          "after": "5002136a20773c6f5e0bee134767ac04129f3e6e762124334a5b706dd6185feb"
+        },
+        {
+          "path": "packages/client/ui-conversation/src/client/skeleton/ConversationSession.tsx",
+          "after": "ac5abc96e6df20e95a449891f6b0c4b17c42ba03468e39a01c26b124ed1a4726"
+        },
+        {
+          "path": "packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx",
+          "after": "5cf260ae0d13adde33f45793e3a5e8b8341ad75f8cc1134d202fe3980244fe35"
+        }
+      ]
+    }
   ]
 }
