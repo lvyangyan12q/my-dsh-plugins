@@ -74,13 +74,21 @@ test('built generic role view reads per-ID official status facts without a fake 
     const history=entries.find(row=>row.options.name==='personal-workbench.role-history'),retained=[],released=[]
     ctx.workspaces.list={getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:[]}),subscribe:()=>()=>{}}
     ctx.sessions.retain=id=>{retained.push(id);const binding={session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}}};return {sessionId:id,binding,ready:Promise.resolve(binding),release:()=>released.push(id)}}
-    await React.act(async()=>{root.render(React.createElement(history.component,{...history.options.inject(),sessionId:'prior-agent-session',close:fail,t:k=>k,SessionProvider:({session,children})=>React.createElement('div',{'data-native-id':session.sessionId},children),renderSlot:name=>React.createElement('div',null,name)}));await new Promise(resolve=>setTimeout(resolve,0))})
+    let requestedHistory='prior-agent-session'
+    const historyRenders=[]
+    const historyProps={...history.options.inject(),close:fail,t:k=>k,SessionProvider:({session,children})=>{historyRenders.push({requested:requestedHistory,rendered:session.sessionId});return React.createElement('div',{'data-native-id':session.sessionId},children)},renderSlot:name=>React.createElement('div',null,name)}
+    await React.act(async()=>{root.render(React.createElement(history.component,{...historyProps,sessionId:requestedHistory}));await new Promise(resolve=>setTimeout(resolve,0))})
     assert.deepEqual(retained,['prior-agent-session'],'Viewing history must retain the exact old native Session')
     assert.equal(dom.window.document.querySelector('[data-native-id]').getAttribute('data-native-id'),'prior-agent-session')
     assert.match(dom.window.document.body.textContent,/personal-workbench.history-native/)
     assert.equal(state.binding.sessionId,'math-id')
+    requestedHistory='second-prior-session'
+    await React.act(async()=>{root.render(React.createElement(history.component,{...historyProps,sessionId:requestedHistory}));await new Promise(resolve=>setTimeout(resolve,0))})
+    assert.ok(historyRenders.some(row=>row.requested==='second-prior-session'&&row.rendered==='second-prior-session'))
+    assert.ok(historyRenders.every(row=>row.requested===row.rendered),'A new history identity must never render the previous native conversation, even before passive effects run')
+    assert.deepEqual(retained,['prior-agent-session','second-prior-session'])
     await React.act(async()=>root.render(React.createElement('div')))
-    assert.deepEqual(released,['prior-agent-session'],'Leaving history releases its separate native reference')
+    assert.deepEqual(released,['prior-agent-session','second-prior-session'],'Switching and leaving history release each separate native reference')
     const native = entries.find(row => row.options.name === 'personal-workbench.role-native')
     const factories = []
     await React.act(async () => root.render(React.createElement(native.component, {
