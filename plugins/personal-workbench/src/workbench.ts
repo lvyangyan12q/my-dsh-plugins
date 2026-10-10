@@ -80,6 +80,7 @@ function readPreferences(storage?: PreferenceStorage): Preferences {
 export class Workbench implements PersonalWorkbench {
   private snapshot: WorkbenchSnapshot
   private readonly definitions = new Map<WorkbenchAppId, WorkbenchAppDefinition>()
+  private readonly registrations = new Map<WorkbenchAppId, symbol>()
   private readonly listeners = new Set<() => void>()
   private disposed = false
   constructor(private readonly storage?: PreferenceStorage, private readonly lifecycleLoader?: () => Promise<readonly AppLifecycleState[]>) {
@@ -113,6 +114,7 @@ export class Workbench implements PersonalWorkbench {
     if (this.definitions.has(definition.id)) throw new Error(`Duplicate application: ${definition.id}`)
     const id = definition.id
     let active = true
+    let suspended = false
     const update = (next: WorkbenchAppDefinition) => {
       if (!active || this.disposed) throw new Error('Application registration is disposed')
       if (next.id !== id) throw new Error('Application identity cannot change')
@@ -130,9 +132,13 @@ export class Workbench implements PersonalWorkbench {
           ? { ...row, pageId: current.defaultLayout.pageId } : row) })
     }
     update(definition)
+    const token = Symbol(id)
+    this.registrations.set(id, token)
     const remove = () => {
-      if (!active || this.disposed) return
+      if ((!active && !suspended) || this.disposed || this.registrations.get(id) !== token) return
       active = false
+      suspended = false
+      this.registrations.delete(id)
       this.definitions.delete(id)
       const retired = this.snapshot.windows.filter(row => row.appId === id).map(row => windowKey(row.appId, row.instanceId))
       this.publish({ definitions: [...this.definitions.values()],
@@ -142,8 +148,9 @@ export class Workbench implements PersonalWorkbench {
     // A renderer dependency may disappear during Client reconstruction. Hide its
     // live view without turning the saved presentation into a user's close.
     const suspend = () => {
-      if (!active || this.disposed) return
+      if (!active || this.disposed || this.registrations.get(id) !== token) return
       active = false
+      suspended = true
       this.definitions.delete(id)
       this.publish({ definitions: [...this.definitions.values()] })
     }
@@ -193,7 +200,7 @@ export class Workbench implements PersonalWorkbench {
     this.publish({ apps: { ...this.snapshot.apps, [appId]: { ...current, ...preference } } })
   }
   /** Stop notifications and clear live registrations without touching Sessions or stored layout. */
-  dispose(): void { this.disposed = true; this.listeners.clear(); this.definitions.clear(); this.snapshot = { ...this.snapshot, definitions: [], windows: [], focused: null, visible: false } }
+  dispose(): void { this.disposed = true; this.listeners.clear(); this.definitions.clear(); this.registrations.clear(); this.snapshot = { ...this.snapshot, definitions: [], windows: [], focused: null, visible: false } }
   private updateWindow(key: string, update: (row: WindowPreference) => WindowPreference): void {
     this.publish({ windows: this.snapshot.windows.map(row => windowKey(row.appId, row.instanceId) === key ? update(row) : row) })
   }

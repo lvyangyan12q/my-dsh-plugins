@@ -5,7 +5,9 @@ import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
-import type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
+import type {} from '@deepseek-ai/cordis-plugin-loader'
+import type { ClientModuleLoader } from '@deepseek-ai/dsh-client-modules/client'
+import type { PersonalWorkbench, WorkbenchAppRegistration, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
 import { optionalWorkbenchClient } from './optional-workbench-client.ts'
 import { knowledgeSource } from './knowledge-reader.tsx'
 import { KaogongClassroom } from './classroom.tsx'
@@ -101,6 +103,17 @@ export const inject = ['slots', 'uiWorkspace']
 
 export function apply(ctx: ClientContext): void {
   const state = new KaogongViewState()
+  let sourceRegistration: WorkbenchAppRegistration | undefined
+  let sourceModules: ClientModuleLoader | undefined
+  const depart = (registration: WorkbenchAppRegistration) => {
+    const entry = ctx.fiber?.entry
+    const removed = sourceModules && !sourceModules.manifest.plugins.some(row => row.id === kaogongApp.source)
+    const ownerRemoved = !ctx.fiber || (ctx.fiber.uid === null && !entry)
+    if (entry?.disabled || removed || ownerRemoved || typeof registration.suspend !== 'function') registration()
+    else registration.suspend()
+  }
+  // The source owner outlives a missing renderer and can still permanently retire it later.
+  ctx.effect(() => () => { if (sourceRegistration) depart(sourceRegistration) }, 'kaogong source application lifetime')
   const registerSource = optionalWorkbenchClient?.registerDisplaySource
   if (registerSource) ctx.effect(() => registerSource(knowledgeSource), 'kaogong knowledge display source')
   ctx.inject(['personalWorkbenchTasks'], child => {
@@ -123,9 +136,11 @@ export function apply(ctx: ClientContext): void {
     child.slots.inject('personal-workbench.app', () => {
       const View = (props: WorkbenchAppProps & PropsRenderFactories) => <KaogongStateContext.Provider value={state}><KaogongWorkbenchContent {...props} ctx={ctx} /></KaogongStateContext.Provider>
       const removeView = child.slots.register({ name: 'personal-workbench.app', key: kaogongApp.id }, View)
-      let removeApp: () => void
-      try { removeApp = child.personalWorkbench.registerApp(kaogongApp) }
+      let removeApp: WorkbenchAppRegistration
+      try { sourceRegistration = removeApp = child.personalWorkbench.registerApp(kaogongApp) }
       catch (error) { removeView(); throw error }
+      // Public native metadata distinguishes an installed renderer reload from removal.
+      sourceModules = ctx.get?.('modules') as ClientModuleLoader | undefined
       const integration = state.cell('integration', null)
       try {
         integration.set({ service: child.personalWorkbench })
@@ -137,7 +152,7 @@ export function apply(ctx: ClientContext): void {
         throw error
       }
       return () => {
-        try { removeApp() }
+        try { depart(removeApp) }
         finally { removeView(); integration.set(null) }
       }
     })
