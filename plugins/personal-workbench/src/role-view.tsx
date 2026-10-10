@@ -1,5 +1,5 @@
 import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { RefreshCw, UserPlus } from 'lucide-react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { PropsRuntime, FactoryComponentPropsOf, PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
@@ -27,11 +27,13 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
   const presetChanged = !!(expectedPresetId && state.binding && state.binding.presetId !== expectedPresetId)
   const status = useSessionStatus(value => state.binding ? value.get(state.binding.sessionId) : undefined)
   const identity = roleKey(bindingKey)
+  const surface=useRef<HTMLElement>(null)
+  useEffect(()=>{const node=surface.current;if(!node)return;const reveal=()=>{setHistoryId(null);setAttachment(null)};node.addEventListener('pwb-reveal-role',reveal);return()=>node.removeEventListener('pwb-reveal-role',reveal)},[identity])
   // Re-read on explicit view activation, including cached disabled errors; never ensure or replace.
   useEffect(() => { if (active && !state.busy) void commands.open(bindingKey).catch(() => {}) }, [active, identity, commands])
   const retry = () => { const binding = state.binding; void (binding ? commands.retry(bindingKey, binding.sessionId) : commands.open(bindingKey)).catch(() => {}) }
   const replace = () => { const binding = state.binding; if (binding && globalThis.confirm('保留原会话并新建角色会话？')) void commands.replace(bindingKey, binding.sessionId).catch(() => {}) }
-  return <section data-pwb-role-key={roleKey(bindingKey)} aria-label="持续角色会话" style={{ position: 'relative', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
+  return <section ref={surface} data-pwb-role-key={roleKey(bindingKey)} aria-label="持续角色会话" style={{ position: 'relative', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, height: '100%', background: 'var(--dsw-alias-bg-base, #fff)' }}>
     <header style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '6px 10px', borderBottom: '1px solid #ddd', fontSize: 12 }}>
       <strong>{label ?? bindingKey.subject ?? bindingKey.roleId}</strong><span style={{ flex: 1 }} />
       {status?.running && <span role="status">运行中</span>}{status?.pendingInteraction && <span role="status">待处理：{status.pendingInteraction.kind}</span>}{status?.completionUnread && <span role="status">未读完成</span>}
