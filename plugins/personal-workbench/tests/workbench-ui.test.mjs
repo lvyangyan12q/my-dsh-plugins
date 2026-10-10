@@ -374,3 +374,20 @@ test('both independent libraries reach official plugin configuration without cre
     assert.equal(f.counts().retained, 0)
   } finally { await f.dispose() }
 })
+
+
+test('reverse keyboard window navigation from the application center selects the last visible window',async()=>{
+ const f=await fixture();const registrations=[]
+ try{
+  await f.click('Exercise');await f.click('Enter answer')
+  const doc=f.dom.window.document,draft=doc.querySelector('input[aria-label="Answer draft"]')
+  for(const [id,name] of [['test.alpha','Alpha'],['test.beta','Beta']]){
+   await act(async()=>{registrations.push(f.service.registerApp({id,version:'1',name,source:'UI test registration',icon:'book-open',pages:[{id:'home',label:'Home'}],defaultLayout:{width:700,height:500,pageId:'home'}}));f.service.openApp(id)})
+  }
+  await f.click('workspace')
+  assert.equal(f.service.getSnapshot().focused,null)
+  await act(async()=>doc.querySelector('[data-window-mode]').dispatchEvent(new f.dom.window.KeyboardEvent('keydown',{key:'F6',ctrlKey:true,shiftKey:true,bubbles:true})))
+  assert.equal(f.service.getSnapshot().focused,JSON.stringify(['test.beta','default']),'Reverse navigation begins at the last eligible window, not the penultimate window')
+  assert.equal(draft.isConnected,true);assert.equal(draft.value,'retained answer')
+ }finally{await act(async()=>{for(const remove of registrations)remove()});await f.dispose()}
+})
