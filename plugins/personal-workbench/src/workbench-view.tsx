@@ -136,6 +136,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     }}>
     <style>{workspaceStyles}</style>
     <header className="pwb-top"><LayoutGrid size={18} aria-hidden="true" /><strong>{app?.name ?? t('workspace')}</strong>
+      {focused && <button data-pwb-button type="button" aria-label={t('minimize') + ': ' + app!.name} title={t('minimize')} onClick={() => setMode(windowKey(focused.appId, focused.instanceId), 'minimized')}><Minus size={18} aria-hidden="true" /></button>}
       <button data-pwb-button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
     {state.lifecycleError && <div role="alert">{t(state.lifecycleError.includes('Application disabled') ? 'appDisabledNotice' : 'appAvailabilityUnavailable')}<button data-pwb-button type="button" onClick={()=>{void refreshApplicationStatus()}}>{t('refreshApps')}</button></div>}
@@ -143,6 +144,10 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     {availabilityError && <p role="alert">{t(availabilityError.includes('changed; refresh') ? 'appAvailabilityConflict' : 'appUpdateFailed')}</p>}
     {state.storageFailed && <p role="status" className="pwb-notice">{t('storageFailed')}</p>}
     <section className="pwb-app-home" hidden={!!focused} aria-label={t('applications')}>
+      {retained.some(row => row.mode === 'minimized' && state.lifecycleReady && state.lifecycle[row.appId]?.enabled !== false) && <nav aria-label={t('minimized')} style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:16}}>{retained.filter(row => row.mode === 'minimized' && state.lifecycleReady && state.lifecycle[row.appId]?.enabled !== false).map(row => {
+        const definition = state.definitions.find(app => app.id === row.appId)!
+        return <button data-pwb-button type="button" key={windowKey(row.appId,row.instanceId)} aria-label={t('restore') + ': ' + definition.name + ' · ' + row.instanceId} onClick={() => openApp(row.appId,row.instanceId)}><AppIcon icon={definition.icon} />{t('restore')}: {definition.name} · {row.instanceId}</button>
+      })}</nav>}
       {refreshApps && <button data-pwb-button type="button" onClick={()=>{void refreshApplicationStatus()}}>{t('refreshApps')}</button>}
       {refreshRecipes && <RecipeEditor t={t} refresh={refreshRecipes} onOpenSession={management?.openSession} />}
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchApps')} placeholder={t('searchApps')} value={query} onChange={e => setQuery(e.target.value)} /></label>

@@ -256,3 +256,24 @@ test('catalog and sidebar share favorite and user order with persisted preferenc
   assert.deepEqual(cards(),['Exercise','Alpha'])
  } finally {await act(async()=>remove?.());await f.dispose()}
 })
+
+
+test('minimize and explicit restore retain the same application instance, page and draft',async()=>{
+ const f=await fixture()
+ try{
+  await f.click('Exercise');await f.click('Enter answer');await f.click('Practice')
+  const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]'),key=f.service.getSnapshot().focused
+  await f.click('minimize: Exercise')
+  assert.equal(f.service.getSnapshot().windows.find(row=>row.appId==='test.exercise').mode,'minimized')
+  assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden,false)
+  assert.equal(draft.isConnected,true);assert.equal(f.dom.window.document.querySelector('output[aria-label="Activity"]').textContent,'false')
+  await f.click('restore: Exercise · default')
+  assert.equal(f.service.getSnapshot().focused,key)
+  assert.equal(f.service.getSnapshot().windows.length,1)
+  assert.equal(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'),draft)
+  assert.equal(draft.value,'retained answer')
+  assert.equal(f.dom.window.document.querySelector('output[aria-label="Selected page"]').textContent,'practice')
+  assert.equal(f.dom.window.document.activeElement,f.dom.window.document.querySelector('.pwb-project'))
+  assert.deepEqual(f.counts(),{fetches:0,retained:0,mounts:1,unmounts:0})
+ }finally{await f.dispose()}
+})
