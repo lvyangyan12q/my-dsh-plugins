@@ -505,7 +505,10 @@
       "section": "Implementation Decisions",
       "number": 6,
       "requirementSha256": "5df4bf3633be21940abd6e7277bf83c4806727691bf164c38bc24e94b9373a4c",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: existing Kaogong view state transfers into explicit default instance without duplication; non-default instance is rejected. Business domains remain owned by Kaogong. Arbitrary legacy deployment migration is not established.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:7",
@@ -634,7 +637,10 @@
       "section": "Implementation Decisions",
       "number": 17,
       "requirementSha256": "0ecfb4d6706e5060d5c11398c5bee1b2e41d6489335859500c610530d4b4a25f",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at supported public integration boundary: built shared Kaogong content and original standalone sidebar entry use one state owner; actual official Cordis optional-provider/keyed-slot lifecycle enables, withdraws, reappears and reloads with one app registration and retained standalone entry. Full real-provider Better Sidebar matrix is separate.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:18",
@@ -643,7 +649,10 @@
       "section": "Implementation Decisions",
       "number": 18,
       "requirementSha256": "59bbaed5620f9596f3867699be5c4391330e1f8a558f296a473f73c08e94fadf",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: original practice/statistics/plan/knowledge pure regression files plus MinerU and material repair remain byte-equivalent after newline normalization to c44d9af and all their tests pass in the clean archive run. Existing views preserve practice/results/material/reflection across transfer. Complete real question-bank and original document/image fidelity remains unproven.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:19",
@@ -766,7 +775,10 @@
       "section": "Testing Decisions",
       "number": 7,
       "requirementSha256": "081cb63525f31169766818293f25b5bbfc17d1f582637df7f511a6497f2780e6",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied: existing core logic, MinerU and material repair regression files are unchanged from the agreed baseline, their test assertions were inspected, current files match the clean archive source, and every named regression passes in its complete 306-test execution log.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json"
+      ]
     },
     {
       "id": "workbench:Testing Decisions:8",
