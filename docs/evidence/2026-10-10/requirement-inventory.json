@@ -303,7 +303,10 @@
       "section": "User Stories",
       "number": 27,
       "requirementSha256": "26742cc234be04d70cdc2ed458893e20580e492d2f34db5c6131ff985da73b61",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual embedded native model/reasoning and access-mode menus plus slash Skill discovery inspected; per-tool permission details, full role matrix and real provider execution remain unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-role-configuration-inspection.json"
+      ]
     },
     {
       "id": "workbench:User Stories:28",
