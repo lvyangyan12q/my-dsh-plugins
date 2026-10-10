@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "947052dbaa495442e750f06b8755d6d9840d0575",
+  "installedArchiveSha256": "b2e5e0c4b0f8aaf96d463f63969abf1f0b89f061cb1edff8d4a3a33c875c36e7",
+  "environment": {
+    "ownedHostPort": 3089,
+    "viewport": {
+      "width": 1920,
+      "height": 945
+    },
+    "betterSidebarVersion": "0.24.1",
+    "betterSidebarInstallation": "Official CLI local link to existing installed package; not a registry resolution proof",
+    "workbenchInstallation": "Official CLI archive installation, every packaged file byte verified"
+  },
+  "method": "Actual Chrome DevTools public clicks, accessibility snapshots and read-only DOM/elementFromPoint observations",
+  "before": {
+    "catalogInheritedFixedWindowPosition": true,
+    "closeWorkspaceHiddenButCatalogCoveredSidebarToolbar": true,
+    "toolbarButtonsOccluded": true
+  },
+  "after": {
+    "catalogPosition": "static",
+    "catalogContainedWithinSidebarTab": true,
+    "closeButtonUnoccluded": true,
+    "newTabButtonUnoccluded": true,
+    "actualCloseRemovedWorkbenchTab": true,
+    "actualReopenRestoredCatalog": true,
+    "actualNewTabOpenedStartTab": true,
+    "repeatWorkbenchSelectionReusedSingleTab": true,
+    "readingDefaultOpenedFromSidebar": true,
+    "readingStatistics": {
+      "books": 3,
+      "minutes": 210,
+      "averageMinutes": 70
+    },
+    "kaogongDefaultOpenedFromSidebar": true,
+    "oneVisibleWorkspace": true,
+    "nativeSessionTreeAndMenusPreserved": true
+  },
+  "verification": {
+    "allThreePluginBuildsPassed": true,
+    "cleanCommittedSourceTests": {
+      "tests": 306,
+      "passed": 306,
+      "failed": 0,
+      "skipped": 0
+    },
+    "workingTreeIncludingUserChangesTests": {
+      "tests": 307,
+      "passed": 307,
+      "failed": 0,
+      "skipped": 0
+    },
+    "userManagementFilesUnchanged": true
+  },
+  "limits": [
+    "Formal 3080 profile was not restarted or updated by this check.",
+    "No model Send, teaching, permission, Stop, streaming or physical IME acceptance is claimed.",
+    "Kaogong data in this isolated profile is empty; this check does not establish migration or real-data teaching.",
+    "This desktop browser check is not the full release or responsive compatibility matrix.",
+    "No raw session IDs, drafts, credentials, screenshots or business records are included."
+  ]
+}
