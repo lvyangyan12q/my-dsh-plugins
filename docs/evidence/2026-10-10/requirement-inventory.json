@@ -175,13 +175,14 @@
       "section": "User Stories",
       "number": 12,
       "requirementSha256": "e42e5eb9b0b306d2b09cb29a26113e6ed5760e2168dacc82b336545cfefe0e80",
-      "evidenceStatus": "partial: actual module ratio/focus and idle native drafts/sessions survive full browser reload; outer window dimensions/tabs scope remains open",
+      "evidenceStatus": "partial: actual module ratio/focus and idle native drafts/sessions survive full browser reload; outer window dimensions/tabs scope remains open Additional installed-browser fix restores study open/closed state, errors page, reasoning teacher selection and narrow conversation pane after reload and explicit application reopen; same native Session and one study window retained. Full original layout/IME/provider scope remains open.",
       "evidence": [
         "docs/evidence/2026-10-10/formal-layout-refresh.json",
         "plugins/personal-workbench/tests/runtime-layout.test.mjs"
       ],
       "evidencePaths": [
-        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json"
+        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json",
+        "docs/evidence/2026-10-10/learning-window-preferences-browser.json"
       ]
     },
     {
@@ -624,10 +625,11 @@
       "section": "Implementation Decisions",
       "number": 11,
       "requirementSha256": "621456b90042a4c78fa193670f80c60fbfcca87ee9ccc4b61ee358a82c2eca89",
-      "evidenceStatus": "partial: built Client proves external disable/withdraw focus recovery; actual isolated installed-browser keyboard close/reopen and multiple-app switching preserve focus, drafts and annotations; whole physical IME, responsive geometry and unobscured-content acceptance still incomplete",
+      "evidenceStatus": "partial: built Client proves external disable/withdraw focus recovery; actual isolated installed-browser keyboard close/reopen and multiple-app switching preserve focus, drafts and annotations; whole physical IME, responsive geometry and unobscured-content acceptance still incomplete Additional installed-browser fix restores study open/closed state, errors page, reasoning teacher selection and narrow conversation pane after reload and explicit application reopen; same native Session and one study window retained. Full original layout/IME/provider scope remains open.",
       "evidencePaths": [
         "docs/evidence/2026-10-10/workspace-external-focus-repair.json",
-        "docs/evidence/2026-10-10/owned-keyboard-annotation-browser.json"
+        "docs/evidence/2026-10-10/owned-keyboard-annotation-browser.json",
+        "docs/evidence/2026-10-10/learning-window-preferences-browser.json"
       ]
     },
     {
@@ -885,9 +887,10 @@
       "section": "Testing Decisions",
       "number": 11,
       "requirementSha256": "ef20888d9b01b0e4439321d934a9b03b23fdeb103545f7a8bde2988623b73394",
-      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified",
+      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified Additional installed-browser fix restores study open/closed state, errors page, reasoning teacher selection and narrow conversation pane after reload and explicit application reopen; same native Session and one study window retained. Full original layout/IME/provider scope remains open.",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/formal-cross-page-material.json"
+        "docs/evidence/2026-10-10/formal-cross-page-material.json",
+        "docs/evidence/2026-10-10/learning-window-preferences-browser.json"
       ]
     },
     {
