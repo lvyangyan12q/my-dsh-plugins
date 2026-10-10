@@ -83,6 +83,10 @@ function useCenterColumn(ref: React.RefObject<HTMLDivElement>) {
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(center); observer.observe(frame)
+    // Sidebar resizing can move the center without changing its dimensions.
+    for (const sidebar of [frame.children[0], frame.children[2]]) {
+      if (sidebar instanceof HTMLElement) observer.observe(sidebar)
+    }
     return () => observer.disconnect()
   }, [])
   return bounds

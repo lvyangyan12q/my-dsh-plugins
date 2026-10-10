@@ -15,8 +15,15 @@ const h = React.createElement
 function boundHook(source) {
   return selector => selector(React.useSyncExternalStore(source.subscribe, source.getSnapshot, source.getSnapshot))
 }
-async function fixture({ width = 960, height = 640, recipeCatalog = () => ({version:1,recipes:[]}) } = {}) {
+async function fixture({ nativeColumns = false, width = 960, height = 640, recipeCatalog = () => ({version:1,recipes:[]}) } = {}) {
   const dom = new JSDOM('<button id="origin">Origin</button><div id="mount"></div>', { url: 'http://localhost' })
+  let sidebarWidth = 280
+  const columnObservers = new Map()
+  if (nativeColumns) {
+    dom.window.document.body.innerHTML = '<button id="origin">Origin</button><div id="frame"><div id="sidebar"></div><div id="center"></div><div id="rightbar"></div><div id="mount" data-shell-overlay></div></div>'
+    const rect = (left, width) => ({left,top:0,width,height:768,right:left+width,bottom:768})
+    for (const [id, read] of Object.entries({frame:()=>rect(0,768),sidebar:()=>rect(0,sidebarWidth),center:()=>rect(sidebarWidth,400),rightbar:()=>rect(sidebarWidth+400,312)})) dom.window.document.getElementById(id).getBoundingClientRect = read
+  }
   const globals = new Map()
   for (const [name, value] of Object.entries({ window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement,
     IS_REACT_ACT_ENVIRONMENT: true })) {
@@ -25,8 +32,8 @@ async function fixture({ width = 960, height = 640, recipeCatalog = () => ({vers
   }
   class ResizeObserver {
     constructor(callback) { this.callback = callback }
-    observe() { this.callback() }
-    disconnect() {}
+    observe(element) { columnObservers.set(element, this.callback); this.callback() }
+    disconnect() { for (const [element, callback] of columnObservers) if (callback === this.callback) columnObservers.delete(element) }
   }
   const { createRoot } = require('react-dom/client')
   Object.defineProperty(dom.window.HTMLElement.prototype, 'clientWidth', { get: () => width })
@@ -102,6 +109,7 @@ async function fixture({ width = 960, height = 640, recipeCatalog = () => ({vers
     !element.closest('[hidden]') && (element.getAttribute('aria-label') === label || element.textContent === label))
   const click = async label => { const target = button(label); assert.ok(target, `Missing visible button: ${label}`); await act(async () => target.click()); return target }
   return { dom, ctx, declarations, service, root, removeApp, removeView, click, button,
+    async collapseNativeSidebar() { await act(async () => {sidebarWidth = 56;columnObservers.get(dom.window.document.getElementById('sidebar'))?.()}) },
     counts: () => ({ fetches, retained, mounts, unmounts }),
     async dispose() {
       await act(async () => root.unmount())
@@ -325,4 +333,18 @@ test('external application disable and withdrawal move keyboard focus out of hid
   assert.ok(doc.activeElement===origin,'Closing after external changes returns focus to the original external entry')
   assert.equal(f.counts().retained,0)
  }finally{await f.dispose()}
+})
+
+test('workspace follows native sidebar collapse even when center width and frame dimensions stay unchanged', async () => {
+  const f = await fixture({nativeColumns:true})
+  try {
+    await f.click('Exercise')
+    const workspace = f.dom.window.document.querySelector('[data-window-mode]')
+    assert.equal(workspace.style.left, '280px')
+    assert.equal(workspace.style.width, '400px')
+    await f.collapseNativeSidebar()
+    assert.equal(workspace.style.left, '56px', 'Position-only center movement must not leave the workspace covering the native right sidebar')
+    assert.equal(workspace.style.width, '400px')
+    assert.equal(f.dom.window.document.getElementById('sidebar').style.width, '')
+  } finally { await f.dispose() }
 })
