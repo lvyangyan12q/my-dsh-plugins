@@ -614,7 +614,10 @@
       "section": "Implementation Decisions",
       "number": 16,
       "requirementSha256": "240e4446f8ee52299e4cc5a3c6bcd9db14c2a50945936c8221e0fd65abda6a40",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: installation-relative packaged personas and teaching Skill verified against installed archive bytes and actual official preset registry tests; retained legacy teacher ID and corrected obsolete installation guide; arbitrary historical deployment migration remains unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/packaged-role-guide-audit.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:17",
