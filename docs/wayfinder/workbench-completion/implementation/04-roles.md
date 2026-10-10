@@ -31,3 +31,7 @@ blocked_by: []
 ## Evidence and closure
 
 仅在每项标准有与其范围匹配的实际证据后关闭；研究、夹具、原型、源码断言和推送不代替使用验收。修复按已确认公共接缝 TDD，遵循实际安装浏览器/Host 流程。缺证据或外部条件阻塞如实记录，不勾选。
+
+## 2026-10-10 partial installed checkpoint
+
+Official installed archive at `2d06641c802475b807130f5f100e0b6ebbfbb7c3` preserves a publicly prepared, user-edited ordinary task and context after browser refresh and Host cold restart. Reopening the application displays the exact fields; role creation remains available and no send occurred. Public discard removes the task editor and owned cache. [Actual browser receipt](../../../evidence/2026-10-10/completion-task-recovery-browser.json). Cross-instance, callback recovery, binding/history/permission and remaining full ticket criteria remain open.
