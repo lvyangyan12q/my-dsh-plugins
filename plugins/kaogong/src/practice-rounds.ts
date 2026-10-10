@@ -19,8 +19,9 @@ export function safePracticeQuestion(question: BankQuestion, verifiedFigure = fa
   if (/花生批注\s*[:：]/.test(text)) return false
   const content = [question.stem, ...question.options].join('\n')
   if (/答案|解析|(?:answer|solution|explanation)\s*[:：]|(?:^|\n)\s*\d+[.、]\s*[A-D](?:\s+\d+[.、]\s*[A-D])+/im.test(content)) return false
-  // A source title may name an analysis volume; explicit source answers still cannot be issued.
-  if (/答案|解析\s*[:：]|(?:answer|solution|explanation)\s*[:：]|(?:^|\n)\s*\d+[.、]\s*[A-D](?:\s+\d+[.、]\s*[A-D])+/im.test(question.source)) return false
+  // Only a bounded bibliography descriptor may contain "解析"; other source labels stay closed.
+  const sourceMetadata = question.source.replace(/（(?:华图)?名师解析）|\((?:华图)?名师解析\)/gu, '')
+  if (/答案|解析|解答|\b(?:answer|solution|explanation)\b|(?:^|\n)\s*\d+[.、]\s*[A-D](?:\s+\d+[.、]\s*[A-D])+/im.test(sourceMetadata)) return false
   return question.options.length > 0 && question.options.some(option => optionKey(option) === question.correctAnswer.trim())
 }
 

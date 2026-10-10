@@ -430,3 +430,18 @@ test('bibliographic metadata does not excuse leaked answers, commentary, missing
     for (const [index, fields] of refused.entries()) assert.deepEqual(app.bank.get(`refused-${index}`), { ...clean, ...fields })
   } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
 })
+
+test('only a bounded bibliography descriptor can contain analysis while source solution labels remain withheld', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-source-label-')); const app = await boot(root)
+  const sources = ['【解析】B为正确选项', '解析 B符合条件', '[解析] B', '【解答】B', '解答 B', '[answer] B', '【solution】B', 'explanation B', '原题集（华图名师解析：B）', '原题集（名师解析）\n【解析】B']
+  try {
+    await app.bank.put('bibliography', { ...bankRow(), source: '2009年北京市公务员考试行测真题（华图名师解析）' })
+    for (const [index, source] of sources.entries()) await app.bank.put(`source-leak-${index}`, { ...bankRow(), source })
+    const issued = await app.service.start(context)
+    assert.equal(issued.totalAvailable, 1)
+    assert.deepEqual(issued.questions.map(q => q.id), ['bibliography'])
+    assert.match(issued.reason, /暂缓 10 道/)
+    assert.equal(app.notebook.size, 0)
+    for (const [index, source] of sources.entries()) assert.equal(app.bank.get(`source-leak-${index}`).source, source)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
