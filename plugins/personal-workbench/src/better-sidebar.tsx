@@ -35,7 +35,7 @@ function Catalog({ ctx, workbench, enabled, availability }: { ctx: Context; work
   if (!available) return null
   const t = ctx.locale.bind('personal-workbench')
   const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden).sort(compareApplications(state.apps))
-  return <section className="pwb-workspace" aria-label={t('applications')} style={{ padding: 12, minWidth: 0, color: 'var(--dsw-alias-text-primary)' }}>
+  return <section className="pwb-sidebar-catalog" aria-label={t('applications')} style={{ padding: 12, minWidth: 0, color: 'var(--dsw-alias-text-primary)' }}>
     <style>{controlStyles}</style>
     <button data-pwb-button type="button" title={t('workspace')} onClick={() => { if (enabled()) ctx.personalWorkbench.openWorkspace() }}
       style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 32 }}>

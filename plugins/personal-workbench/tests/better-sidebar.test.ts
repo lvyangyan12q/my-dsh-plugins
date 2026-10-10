@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { runInNewContext } from 'node:vm'
+import { workspaceStyles } from '../src/workbench-styles.ts'
 import { SidebarFixture, provideSidebar } from './better-sidebar-fixture.ts'
 import type { Workbench } from '../src/workbench.ts'
 import type { WorkbenchAppId } from '../src/workbench-api.ts'
@@ -97,6 +98,13 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     assert.equal(localeListeners.size, 0)
     await render(true)
     assert.equal(localeListeners.size, 1)
+    // The real overlay CSS stays mounted even when the workspace is closed.
+    const overlayStyles = dom.window.document.createElement('style')
+    overlayStyles.textContent = workspaceStyles
+    dom.window.document.head.append(overlayStyles)
+    const catalog = dom.window.document.querySelector('section[aria-label="applications"]')!
+    assert.notEqual(dom.window.getComputedStyle(catalog).position, 'fixed', 'Catalog must remain inside the Better Sidebar tab, without covering its toolbar')
+    overlayStyles.remove()
     assert.ok(dom.window.document.querySelector('[role="status"]')?.textContent.includes('Skill unavailable'))
     const click = async (text: string) => {
       const button = [...dom.window.document.querySelectorAll('button')].find((row: HTMLButtonElement) => row.textContent === text)
