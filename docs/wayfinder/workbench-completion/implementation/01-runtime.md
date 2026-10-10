@@ -32,3 +32,7 @@ blocked_by: []
 ## Evidence and closure
 
 仅在每项标准有与其范围匹配的实际证据后关闭；研究、夹具、原型、源码断言和推送不代替使用验收。修复按已确认公共接缝 TDD，遵循实际安装浏览器/Host 流程。缺证据或外部条件阻塞如实记录，不勾选。
+
+## 2026-10-10 partial installed checkpoint
+
+Official archive at `2d06641c802475b807130f5f100e0b6ebbfbb7c3` passed the adopted-session unload browser RED→GREEN: native Workbench tab 1→0, unrelated File tab and native session tree preserved. Re-enable and browser reload each restore exactly one catalog; isolated configuration restored byte-for-byte. Evidence: [browser receipt](../../../evidence/2026-10-10/completion-sidebar-retirement-browser.json). Full ticket remains open for the remaining window, compatibility, dormant-session and executing-Agent scope.

@@ -1,8 +1,8 @@
 {
   "date": "2026-10-10",
-  "sourceCommit": "b92175c3b49b65fd6a3f17e6fa8dad566efdecb4",
-  "reviewedHead": "b92175c3b49b65fd6a3f17e6fa8dad566efdecb4",
-  "method": "Executed scripts/check-platform-release.mjs from a clean git archive, after complete three-plugin build, official Client factory resolution and 320 passing tests; repeated module resolution on exact installed artifacts",
+  "sourceCommit": "2d06641c802475b807130f5f100e0b6ebbfbb7c3",
+  "reviewedHead": "2d06641c802475b807130f5f100e0b6ebbfbb7c3",
+  "method": "Executed scripts/check-platform-release.mjs from a clean git archive, after complete three-plugin build, official Client factory resolution and 328 passing tests; repeated module resolution on exact installed artifacts",
   "verdict": {
     "officialOfflineArchiveInstall": true,
     "dependencyMode": "existing public dependency links; products installed from exact archives",
@@ -18,7 +18,7 @@
     "fixture": "public synthetic reading records",
     "modelCalls": 0,
     "archives": [
-      "3334436037ebd40ff661d495946da28bed9e1e3b58bdc189fe8f2413d746bd0a",
+      "daf6f724d0ffcbcdbb1b7d2e55cc858fe678ce4d3b34c45260ebac153ff04bfb",
       "ce3b1524a705d16a66d6f62993e3956fd0022338d98e476f4e7c018568c84f20",
       "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
     ]

@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "2d06641c802475b807130f5f100e0b6ebbfbb7c3",
+  "installedArchiveSha256": "daf6f724d0ffcbcdbb1b7d2e55cc858fe678ce4d3b34c45260ebac153ff04bfb",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "browser": "Chrome DevTools, isolated owned DSH on 3089",
+  "before": {
+    "sourceCommit": "b92175c3b49b65fd6a3f17e6fa8dad566efdecb4",
+    "action": "Disable Better Sidebar through native plugin management, then select native session",
+    "result": {
+      "workbenchTabs": 1,
+      "unrelatedFileTab": true,
+      "catalogs": 0,
+      "nativeTree": true
+    },
+    "assertion": "SIDEBAR_OWNED_TAB_UNLOAD_FAIL"
+  },
+  "after": {
+    "action": "Same native UI steps on officially installed new archive",
+    "result": {
+      "workbenchTabs": 0,
+      "unrelatedFileTab": true,
+      "catalogs": 0,
+      "nativeTree": true
+    }
+  },
+  "reenable": {
+    "openNativeGuideCatalog": true,
+    "result": {
+      "workbenchTabs": 1,
+      "unrelatedFileTab": true,
+      "catalogs": 1
+    }
+  },
+  "browserReload": {
+    "result": {
+      "workbenchTabs": 1,
+      "unrelatedFileTab": true,
+      "catalogs": 1,
+      "nativeTree": true
+    }
+  },
+  "configurationRestoredByteExactly": true,
+  "modelCalls": 0,
+  "limits": [
+    "Only the adopted current native session was tested; dormant sessions and immediate Workbench-own unload remain open.",
+    "No model streaming, approval, Stop, AI generation or physical IME acceptance.",
+    "Authoring and prepared-task persistence have source/Host regressions but their full installed-browser acceptance remains open.",
+    "Formal 3080 plugins, user configuration and business data were not changed by this test."
+  ]
+}
