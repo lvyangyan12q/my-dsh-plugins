@@ -267,13 +267,13 @@ test('verified display supplements preserve bank text and immutable grade snapsh
   } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
 })
 
-test('verified terminal advertisement repairs affect public option display only and preserve issued grading snapshots', async () => {
+for (const separator of ['、', '，']) test(`verified terminal advertisement (${separator}) repairs affect public option display only and preserve issued grading snapshots`, async () => {
   const root = await mkdtemp(join(tmpdir(), 'practice-footer-')), ctx = new Context()
   await ctx.plugin(Storage)
   const backend = new JsonStorageBackend(root); ctx.storage.backend.register('json', backend)
   const facility = new DomainFacility(ctx, { backend: 'json' }); ctx.storage.mount('domain', facility)
   const imageRoot = join(root, 'images'), routes = new Map(), disposers = [], domains = new Map()
-  const raw = { ...bankRow(), options: ['A. first', 'B. second', 'C. third', 'D. fourth\n公考最新资料、更新进度微信 SKA674'], correctAnswer: 'D' }
+  const raw = { ...bankRow(), options: ['A. first', 'B. second', 'C. third', `D. fourth\n公考最新资料${separator}更新进度微信 SKA674`], correctAnswer: 'D' }
   const sha = value => createHash('sha256').update(value).digest('hex')
   const host = { storageDomain: { async open(spec) { const domain = await facility.open(spec); domains.set(spec.name, domain); return domain } }, inject() {}, logger: { warn() {} }, effect(effect) { const dispose = effect(); if (typeof dispose === 'function') disposers.push(dispose) }, connection: { requestRejection: () => undefined }, webServer: { register(route) { routes.set(route.path, route.handler); return () => routes.delete(route.path) } }, tools: { register() {} } }
   const request = async (action, body) => {
@@ -301,4 +301,28 @@ test('verified terminal advertisement repairs affect public option display only 
     const changed = await request('start', context)
     assert.deepEqual(changed.questions[0].options, raw.options, 'a changed original stem invalidates the proof rather than editing unverified options')
   } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
+})
+
+
+test('publisher solution annotations are withheld from new practice and unsubmitted legacy rounds without changing saved grading', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-publisher-note-')), app = await boot(root)
+  const clean = bankRow(), contaminated = { ...bankRow(1), options: ['A. first', 'B. second', 'C. third', 'D. fourth ⑳花生批注：A且B的否定为非A或非B'] }
+  try {
+    await app.bank.put('clean', clean)
+    const legacy = await app.service.start(context)
+    const original = app.rounds.get(legacy.roundId)
+    await app.rounds.put(legacy.roundId, { ...original, questions: [{ id: 'legacy', ...contaminated }] })
+    await app.bank.put('annotated-option', contaminated)
+    await app.bank.put('annotated-stem', { ...bankRow(2), stem: clean.stem + '\n花生批注：先看必要条件' })
+    const issued = await app.service.start(context)
+    assert.deepEqual(issued.questions.map(row => row.id), ['clean'])
+    await assert.rejects(app.service.read(legacy.roundId), /批注.*重新开始/)
+    assert.deepEqual(app.bank.get('annotated-option'), contaminated)
+    assert.deepEqual(app.rounds.get(legacy.roundId).questions[0].options, contaminated.options)
+    const graded = await app.service.submit(legacy.roundId, [{ id: 'legacy', answer: contaminated.correctAnswer }])
+    assert.equal(graded.correctCount, 1)
+    assert.equal(graded.results[0].explanation, contaminated.explanation)
+    assert.deepEqual(graded.results[0].options, contaminated.options)
+    assert.equal((await app.service.read(legacy.roundId)).result.correctCount, 1)
+  } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
 })

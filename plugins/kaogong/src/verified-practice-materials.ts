@@ -63,7 +63,7 @@ const optionRepairSchema = z.object({
   }).strict()).max(5000),
 }).strict()
 const unchangedOptions = (_id: string, _stem: string, options: string[]) => options
-const terminalAdvertisement = /\s*公考最新资料、更新进度微信\s*SKA674\s*$/
+const terminalAdvertisement = /\s*公考最新资料[、，]更新进度微信\s*SKA674\s*$/
 
 /** Apply only individually source-verified footer exclusions; never alter stored options or grading keys. */
 export async function loadVerifiedPracticeOptions(root?: string): Promise<typeof unchangedOptions> {
