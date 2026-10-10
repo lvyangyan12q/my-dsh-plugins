@@ -158,6 +158,8 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
   const [submitting, setSubmitting] = useBusinessState('submitting', false)
   const [restored, setRestored] = useBusinessState('practiceRestored', false)
   const [practiceBusy, setPracticeBusy] = useBusinessState('practiceBusy', false)
+  const [practicePreparing, setPracticePreparing] = useBusinessState('practicePreparing', false)
+  const [practicePreparationError, setPracticePreparationError] = useBusinessState('practicePreparationError', null)
   const [reflectionNotes, setReflectionNotes] = useBusinessState('reflectionNotes', {})
   const [history, setHistory] = useBusinessState('practiceHistory', [])
   const [admitted, setAdmitted] = useBusinessState('review.admitted', readAdmittedReviews())
@@ -275,6 +277,9 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
     const release = requests.beginPracticeCommand()
     if (!release) return
     setPracticeBusy(true)
+    setPracticePreparing(true)
+    setPracticePreparationError(null)
+    setError(null)
     const previousRoundId = !resetSeen ? practice?.roundId : undefined
     const current = requests.request('practice')
     onSelectPage?.('practice')
@@ -296,9 +301,12 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
       setSeenQuestionIds(previous => [...new Set([...previous, ...value.questions.map(question => question.id)])])
       if (value.questions.length === 0) setNotice('当前题库没有匹配题，可以让老师按本节知识点出题。')
     } catch (cause) {
-      if (current()) setError(cause instanceof Error ? cause.message : String(cause))
+      if (current()) {
+        const message = cause instanceof Error ? cause.message : String(cause)
+        setPracticePreparationError(message); setError(message)
+      }
     } finally {
-      release(); setPracticeBusy(false)
+      release(); setPracticeBusy(false); setPracticePreparing(false)
     }
   }
 
@@ -436,7 +444,18 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
               </div>
               {practiceItem && <section hidden={!(shown('practice') || (shown('errors') && result !== null))} style={{ ...sectionStyle, marginTop: 18, borderTop: `3px solid ${colors.blue}` }}>
                 <SectionTitle title={result ? '课后复盘' : '本节练习'} extra={`${practiceItem.subject} · ${practiceItem.title}`} />
-                {practice === null && result === null && <p style={{ margin: '16px 0 0', color: colors.muted }}>正在准备题目...</p>}
+                {practice === null && result === null && (practicePreparing ? <p role="status" style={{ margin: '16px 0 0', color: colors.muted }}>正在准备题目...</p> : <div style={{ paddingTop: 14 }}>
+                  <p role="alert">{practicePreparationError ?? '题目尚未准备完成，请明确重试。'}</p>
+                  <button data-pwb-button type="button" disabled={practiceBusy} onClick={() => { void loadPractice(practiceItem, [], true) }}>按原条件重试</button>
+                  {practiceItem.knowledgePoint && <>
+                    <p>可以明确改为本科目练习；此操作不修改原课堂目标或考点。</p>
+                    <button data-pwb-button data-variant="primary" type="button" disabled={practiceBusy} onClick={() => {
+                      const { knowledgePoint, ...subjectContext } = practiceItem
+                      setNotice('原课堂目标和考点保持不变，此轮不会自动关联课堂；关联时仍核对原考点要求。')
+                      void loadPractice(subjectContext, [], true)
+                    }}>解除考点限制并练习本科目</button>
+                  </>}
+                </div>)} 
                 {practice !== null && result === null && <div style={{ paddingTop: 14 }}>
                   <p style={{ margin: '0 0 14px', color: colors.muted, fontSize: 13 }}>{practice.reason}{practice.cycled ? ' · 已完成一轮，当前开始循环抽题' : ''} · {practice.returned}/{practice.totalAvailable} 题</p>
                   {practice.questions.length === 0 && <button data-pwb-button data-variant="primary" type="button" onClick={() => { void openTeacher(practiceItem) }} style={buttonStyle(true)}>让老师出题</button>}

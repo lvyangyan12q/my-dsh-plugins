@@ -12,7 +12,7 @@ type ViewValues = {
   practice: PracticeData | null; practiceItem: PracticeContext | null; answers: Record<string, string>
   result: PracticeResult | null; seenQuestionIds: string[]; errorReasons: Record<string, string>
   moduleSummary: ModuleSummary | null; submitting: boolean
-  practiceRestored: boolean; practiceBusy: boolean; reflectionNotes: Record<string, string>
+  practiceRestored: boolean; practiceBusy: boolean; practicePreparing: boolean; practicePreparationError: string | null; reflectionNotes: Record<string, string>
   practiceHistory: { roundId: string; context: PracticeContext; createdAt: string; submitted: boolean }[]
   'reader.store': DisplayStore | null; 'review.admitted': string[]
   'reader.query': string; 'reader.entries': Entry[]; 'reader.selected': string; 'reader.entry': Entry | null
