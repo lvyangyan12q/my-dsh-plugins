@@ -19,3 +19,14 @@ Original native teaching/question/permission/Stop/streaming/IME and complete sid
 ## Additional statistics repair
 
 439ec49 also handles representable sums after intermediate overflow. Totals outside the supported number range now show a scoped unavailable status; other cards remain usable, and role evidence is unavailable with the same reason rather than an exception or invalid value. Filtering restores valid evidence. Both regressions exercise actual rendered DisplayModule and displayModuleContext, failed before repair, and pass after it. Exact clean source passes three-plugin builds,302 tests and official installed release checks. See [numeric verification](statistics-range-verification.json). No screenshot/browser payload is included in this follow-up; no broader teaching/IME completion claim.
+
+
+## Current committed review and history identity repair
+
+Reviewed `c44d9af...30205b9` (151 commits, 296 changed files), with bounded Standards coverage of 13 files/sections and Spec coverage of approximately 17. This is not an exhaustive full-branch review.
+
+Standards: no documented-standard breach found in those paths. The existing P3 duplicated authenticated JSON handling remains a heuristic maintenance observation.
+
+Spec: one P2 defect found and fixed in `94b7820`: a retained history component could render Session A under the newly requested Session B heading before passive effects ran. History state now carries the requested identity; mismatching state cannot render or retry. The built Client regression failed before the repair, passed after it, and checks release of both exact references. Independent reviewer reinspection confirmed the fix; error-state retry lacks its own isolated regression.
+
+All three clean-commit builds and 305 tests passed, along with exact archive installation, authenticated lifecycle, cold restart, Reading reinstall and scoped HTML assets. No model calls. User management modifications were preserved. See [receipt](history-session-identity-review.json). The original full release acceptance remains incomplete.
