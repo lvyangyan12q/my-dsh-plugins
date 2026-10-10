@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-10",
+  "commit": "46ec21c9f3c43818c1a420be41264871f589434e",
+  "archiveSha256": "b1592457504bb9e780bb44b5ff30cec4980b7cd0b249104ba21d7a8fa3c4869e",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "url": "http://127.0.0.1:3089/",
+  "method": "Temporarily renamed only owned installed kaogong-teach/SKILL.md after exact path/hash guard; actual create-default-teacher click, role read and retry UI; file restored byte-identically",
+  "before": {
+    "internalMessage": "Packaged role Skill body unavailable for user invocation",
+    "roleReadStatus": 409,
+    "bindingPresent": false,
+    "nativeSessionRows": 3
+  },
+  "after": {
+    "localizedActionableGuidanceVisible": true,
+    "retryVisible": true,
+    "roleReadStatus": 409,
+    "bindingPresent": false,
+    "nativeSessionRows": 3
+  },
+  "restoration": {
+    "fileBytesEqual": true,
+    "retryClearsAlert": true,
+    "createTeacherButtonReturns": true,
+    "roleReadStatus": 200,
+    "bindingPresent": false,
+    "nativeSessionRows": 3,
+    "noImplicitSessionCreated": true
+  },
+  "regression": {
+    "red": "missing packaged teaching Skill needs actionable localized guidance",
+    "cleanTests": 308,
+    "failed": 0,
+    "skipped": 0,
+    "unrelatedNativeErrorsPreserved": true
+  },
+  "limits": [
+    "Actual missing-file condition covers readable packaged teaching Skill dependency, not every disabled-provider or permission-denied condition.",
+    "No provider call or teaching turn; actual committed Skill load, streaming, permissions, Stop and generation remain unverified.",
+    "3080 and user business data untouched; all temporary owned file changes restored."
+  ]
+}

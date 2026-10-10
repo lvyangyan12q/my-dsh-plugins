@@ -242,9 +242,10 @@
       "section": "User Stories",
       "number": 19,
       "requirementSha256": "b8a2bfe2727751378fac0eee4df75d0ff61e86aa3c9543272ca9611b01ec98e3",
-      "evidenceStatus": "partial: actual installed DSH public preset scopes discover packaged kaogong-teach for all nine application roles, with exact provider and invocation flags. Committed load count remains zero and model catalog is unavailable; real teaching Skill execution and missing teaching dependency GUI still require acceptance",
+      "evidenceStatus": "partial: real installed nine-role packaged Skill discovery verified; actual missing packaged file blocks creation with actionable localized guidance and no Session, byte restoration and retry recover without implicit creation. Actual committed teaching Skill execution remains unproven because model catalog is unavailable",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/kaogong-teaching-skill-preflight-browser.json"
+        "docs/evidence/2026-10-10/kaogong-teaching-skill-preflight-browser.json",
+        "docs/evidence/2026-10-10/teaching-skill-missing-recovery-browser.json"
       ]
     },
     {
