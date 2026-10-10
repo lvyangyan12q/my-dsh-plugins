@@ -15,3 +15,7 @@ P3 average overflow fixed in c2e16f0: extreme finite inputs no longer overflow b
 Clean source validation: three-plugin Host/Client builds, declarations and source consumers; 299 tests passed, zero failures/skips; official archive installation, public consumers, authenticated lifecycle, cold restart, Reading uninstall/reinstall, scoped HTML assets passed with zero model calls. See [receipt](review-role-statistics-fixes.json).
 
 Original native teaching/question/permission/Stop/streaming/IME and complete sidebar teaching matrix remain open. This repair does not establish full release completion.
+
+## Additional statistics repair
+
+439ec49 also handles representable sums after intermediate overflow. Totals outside the supported number range now show a scoped unavailable status; other cards remain usable, and role evidence is unavailable with the same reason rather than an exception or invalid value. Filtering restores valid evidence. Both regressions exercise actual rendered DisplayModule and displayModuleContext, failed before repair, and pass after it. Exact clean source passes three-plugin builds,302 tests and official installed release checks. See [numeric verification](statistics-range-verification.json). No screenshot/browser payload is included in this follow-up; no broader teaching/IME completion claim.
