@@ -34,7 +34,10 @@
       "section": "User Stories",
       "number": 2,
       "requirementSha256": "7d434619f0a2905c16734907cb43da0de484c9cf8fdc4348d36cac3f0f09de6f",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for ordinary native sidebar use without Better Sidebar; broader original native teaching and sidebar runtime gates remain separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-navigation-contract-audit.json"
+      ]
     },
     {
       "id": "workbench:User Stories:3",
@@ -67,7 +70,10 @@
       "section": "User Stories",
       "number": 5,
       "requirementSha256": "727700416b95bbc50af8bd5b09e7494bc1a7d03c0e117bc9a81e0e9ca9cfae18",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for distinct applications, Agent and Skills navigation categories; broader original native teaching and sidebar runtime gates remain separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-navigation-contract-audit.json"
+      ]
     },
     {
       "id": "workbench:User Stories:6",
@@ -106,13 +112,16 @@
       "section": "User Stories",
       "number": 9,
       "requirementSha256": "a0bcc604698f51165eb23be95aabdcb1d5901c264ac6131aebc4b1f0aa84a5d8",
-      "evidenceStatus": "partial: current default-instance close/reopen verified; complete original scope still requires individual proof",
+      "evidenceStatus": "satisfied for reopening and focusing one existing application instance; broader original native teaching and sidebar runtime gates remain separate",
       "evidence": [
         {
           "receipt": "docs/evidence/2026-10-10/formal-outer-retention.json",
           "scope": "explicit entry focus, same material and idle role nodes, same role session IDs and exact draft hashes",
           "limits": "not running Agent close, reload-layout or independent Host study-data persistence proof"
         }
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-navigation-contract-audit.json"
       ]
     },
     {
