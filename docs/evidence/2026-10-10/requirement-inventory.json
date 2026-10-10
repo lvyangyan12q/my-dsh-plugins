@@ -566,7 +566,10 @@
       "section": "Implementation Decisions",
       "number": 11,
       "requirementSha256": "621456b90042a4c78fa193670f80c60fbfcca87ee9ccc4b61ee358a82c2eca89",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: built Client regression proves focus leaves externally disabled/withdrawn content and closing returns to original entry, with retained draft on disable; whole real-browser keyboard, physical IME and responsive/unobscured-content acceptance still incomplete",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/workspace-external-focus-repair.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:12",
