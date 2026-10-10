@@ -151,6 +151,19 @@ export class PracticeRounds {
   read(id: string) {
     return this.run(async () => { const round = this.round(id); await this.project(id, round); return this.view(id, this.round(id)) })
   }
+  /** Read completed score snapshots without projecting notebook writes or mutating any domain. */
+  readCompleted(id?: string, subject?: string) {
+    return this.run(async () => {
+      const selected = id ? [id, this.round(id)] as const : [...this.rounds.entries()]
+        .filter(([, round]) => round.score && (!subject || round.context.subject === subject))
+        .sort((a, b) => b[1].score!.sequence - a[1].score!.sequence)[0]
+      if (!selected) return null
+      const [roundId, round] = selected
+      if (!round.score) throw new PracticeError('这轮练习尚未提交，不能作为已完成单轮成绩', 409)
+      if (subject && round.context.subject !== subject) throw new PracticeError('轮次科目与读取条件不一致', 409)
+      return { submittedAt: round.score.submittedAt, round: this.view(roundId, round) }
+    })
+  }
   /** History lists issued IDs without exposing open-round answers. */
   history() {
     return [...this.rounds.entries()].map(([roundId, round]) => ({ roundId, context: round.context, createdAt: round.createdAt, submitted: Boolean(round.score) }))

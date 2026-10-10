@@ -54,7 +54,14 @@ test('actual preset registry activates application personas in independent scope
         assert.match(skill?.content ?? '', /教学阶段与推进条件/)
         assert.equal(skill?.source, 'bundled')
         assert.match(skill.content,/本轮.*累计/);assert.match(skill.content,/userAnswer.*为空.*未答.*correct=false.*错题/);assert.match(skill.content,/分母.*跳过/);
-        if(preset.id==='kaogong.class-advisor.v1')assert.match(preset.plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix,/本轮.*累计/);
+        if(preset.id==='kaogong.class-advisor.v1') {
+          const prefix=preset.plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix
+          assert.match(prefix,/kaogong_practice_read/)
+          assert.match(prefix,/不.*要求用户.*roundId/)
+          assert.ok(assembly.sections.some(section=>section.text?.includes('kaogong_practice_read')),'Actual advisor persona must provide the readonly round lookup path')
+          assert.match(skill.content,/kaogong_practice_read/)
+          assert.match(skill.content,/未.*读取.*保存有误/)
+        }
         // Test the actual acquired native scope, not an unused role file.
         if(preset.id.includes('teacher')||preset.id==='kaogong.counselor.v1'){
           const prefix=preset.plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix
