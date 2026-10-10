@@ -55,6 +55,7 @@
     "This run reuses the previously submitted real ten-question round and its saved reflections; it does not claim a new ten-question submission.",
     "No model teaching, counselor response, permission, Stop, IME, map or Better Sidebar acceptance is claimed.",
     "No screenshot, conversation draft text, lesson title, Session ID or raw browser payload is included in this remote-safe receipt.",
-    "The local workspace Kaogong build differs from the clean tested archive; this acceptance proves the clean archive only."
-  ]
+    "The local workspace Kaogong Client byte differences were subsequently verified as region path comments only; source and executable code match the clean archive. This run still certifies the isolated browser, not the formal running Host."
+  ],
+  "formalReferenceEvidence": "docs/evidence/2026-10-10/formal-kaogong-build-reference.json"
 }
