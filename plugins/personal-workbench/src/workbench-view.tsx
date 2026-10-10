@@ -124,7 +124,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     ;[group[from], group[to]] = [group[to], group[from]]
     group.forEach((candidate, order) => setPreference(candidate.id, { order }))
   }
-  return <div ref={root} className="pwb-workspace pwb-project-shell" style={bounds} hidden={!state.visible} role="region" aria-label={app?.name ?? t('workspace')} tabIndex={-1}
+  return <div ref={root} className="pwb-workspace pwb-project-shell" data-window-mode={focused?.mode ?? 'normal'} style={bounds} hidden={!state.visible} role="region" aria-label={app?.name ?? t('workspace')} tabIndex={-1}
     onKeyDown={event => {
       if (event.defaultPrevented || event.nativeEvent.isComposing) return
       if (event.key === 'Escape' && event.target === root.current) { event.preventDefault(); closeWorkspace() }
@@ -136,6 +136,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     }}>
     <style>{workspaceStyles}</style>
     <header className="pwb-top"><LayoutGrid size={18} aria-hidden="true" /><strong>{app?.name ?? t('workspace')}</strong>
+      {focused && <button data-pwb-button type="button" aria-label={t(focused.mode === 'maximized' ? 'restore' : 'maximize') + ': ' + app!.name} title={t(focused.mode === 'maximized' ? 'restore' : 'maximize')} onClick={() => setMode(windowKey(focused.appId, focused.instanceId), focused.mode === 'maximized' ? 'normal' : 'maximized')}>{focused.mode === 'maximized' ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button>}
       {focused && <button data-pwb-button type="button" aria-label={t('minimize') + ': ' + app!.name} title={t('minimize')} onClick={() => setMode(windowKey(focused.appId, focused.instanceId), 'minimized')}><Minus size={18} aria-hidden="true" /></button>}
       <button data-pwb-button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
@@ -172,7 +173,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
       const key = windowKey(row.appId, row.instanceId)
       const active = state.lifecycleReady && state.lifecycle[row.appId]?.enabled !== false && state.visible && state.focused === key && row.mode !== 'closed' && row.mode !== 'minimized'
       return <div key={key} ref={element => { if (element) frames.current.set(key, element); else frames.current.delete(key) }} role="region" aria-label={definition.name + ' · ' + row.instanceId} tabIndex={-1} hidden={!active} className="pwb-project">
-        <nav className="pwb-pages" role="tablist" aria-label={t('pages')}>{definition.pages.map(page => <button data-pwb-button key={page.id} type="button" role="tab" aria-selected={row.pageId === page.id} onClick={() => selectPage(key, page.id)}>{page.label}</button>)}</nav>
+        <nav className="pwb-pages" hidden={row.mode === 'maximized'} role="tablist" aria-label={t('pages')}>{definition.pages.map(page => <button data-pwb-button key={page.id} type="button" role="tab" aria-selected={row.pageId === page.id} onClick={() => selectPage(key, page.id)}>{page.label}</button>)}</nav>
         <div className="pwb-content">{renderSlot('personal-workbench.app', { appId: row.appId, instanceId: row.instanceId, pageId: row.pageId, active, selectPage: pageId => selectPage(key, pageId), close: () => { setMode(key, 'closed'); closeWorkspace() } }, { entryKey: row.appId, fallback: <p role="alert">{t('appViewUnavailable')}</p> })}</div>
       </div>
     })}

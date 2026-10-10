@@ -277,3 +277,28 @@ test('minimize and explicit restore retain the same application instance, page a
   assert.deepEqual(f.counts(),{fetches:0,retained:0,mounts:1,unmounts:0})
  }finally{await f.dispose()}
 })
+
+test('maximize, minimize and restore keep the same page and draft while releasing page-navigation space',async()=>{
+ const f=await fixture()
+ try{
+  await f.click('Exercise');await f.click('Enter answer');await f.click('Practice')
+  const doc=f.dom.window.document,draft=doc.querySelector('input[aria-label="Answer draft"]'),pages=doc.querySelector('[role="tablist"][aria-label="pages"]')
+  await f.click('maximize: Exercise')
+  assert.equal(pages.hidden,true)
+  assert.ok(f.button('restore: Exercise'))
+  assert.equal(doc.querySelector('input[aria-label="Answer draft"]'),draft)
+  assert.equal(draft.value,'retained answer')
+  assert.equal(doc.querySelector('output[aria-label="Selected page"]').textContent,'practice')
+  assert.equal(doc.querySelector('nav[aria-label="catalogTabs"]').closest('[hidden]'),null)
+  await f.click('minimize: Exercise');await f.click('restore: Exercise · default')
+  assert.equal(pages.hidden,true,'restoring a minimized maximized window keeps its focus mode')
+  assert.ok(f.button('restore: Exercise'))
+  await f.click('restore: Exercise')
+  assert.equal(pages.hidden,false)
+  assert.ok(f.button('maximize: Exercise'))
+  assert.equal(doc.querySelector('input[aria-label="Answer draft"]'),draft)
+  assert.equal(draft.value,'retained answer')
+  assert.equal(doc.querySelector('output[aria-label="Selected page"]').textContent,'practice')
+  assert.deepEqual(f.counts(),{fetches:0,retained:0,mounts:1,unmounts:0})
+ }finally{await f.dispose()}
+})

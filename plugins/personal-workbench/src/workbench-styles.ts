@@ -22,5 +22,8 @@ export const workspaceStyles = `
 .pwb-project{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;outline:none}.pwb-project .pwb-content{display:flex;flex:1;overflow:hidden}
 .pwb-app-home{padding:24px;overflow:auto;flex:1}.pwb-app-home .pwb-search{max-width:420px;margin-left:0}.pwb-app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}.pwb-app-grid .pwb-app{border:1px solid var(--pwb-line);border-radius:9px;padding:18px}
 .pwb-management-page{display:flex;flex-direction:column;min-height:0;flex:1}.pwb-management-page>.pwb-search{max-width:420px}.pwb-management-page>.pwb-management{flex:1;overflow:auto;padding:16px 24px}
+.pwb-project-shell .pwb-pages[hidden]{display:none}
+.pwb-project-shell[data-window-mode=maximized]>.pwb-top{min-height:38px;padding:3px 12px;justify-content:flex-end}
+.pwb-project-shell[data-window-mode=maximized]>.pwb-top>svg,.pwb-project-shell[data-window-mode=maximized]>.pwb-top>strong{display:none}
 ${controlStyles}
 `
