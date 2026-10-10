@@ -90,7 +90,8 @@
       "ExplicitLearnerConfirmation": true,
       "CompletedTaskDoesNotClaimLongTermMastery": true,
       "OriginalRestrictedLessonRemainsUnfinished": true,
-      "ColdRestartPending": true
+      "ColdRestartPending": false,
+      "ColdRestartCompletedLessonNotesAndOriginalPendingPreserved": true
     },
     "counselorReview": {
       "PreparedFromActualRound": true,
@@ -99,7 +100,7 @@
       "NoDuplicateSubmission": true
     },
     "counselorExplanationConsistencyPassed": false,
-    "counselorExplanationFailure": "One explanation contradicted its source option; remediation and real retry pending",
+    "counselorExplanationFailure": "Earlier explanation contradicted its source option; corrected follow-up is retained separately and does not erase prior failure",
     "headteacherPlan": {
       "NativePlanViewProgressAndErrorsCalled": true,
       "ExplicitUserAuthorizedPlanSet": true,
@@ -108,16 +109,33 @@
       "DailyModules": 2,
       "ActualTaskCompletionNotAutomatic": true,
       "ModelNarrativeConfusesRoundAndCumulative": true,
-      "ColdRestartPending": true
+      "ColdRestartPending": false,
+      "ColdRestartNativePlanHistoryPreserved": true
     },
     "guidanceFix": {
-      "sourceCommit": "2adb01aa15290ff8117d62a47d632c495813e3f4",
-      "actualInstalledRetest": false
+      "sourceCommit": "e9897a74462242e02d6589c1ca040b060ae90d29",
+      "actualInstalledRetest": true,
+      "scope": "Observed counselor correction only; no guarantee for every future explanation"
     },
-    "latestMaterialSourceFixInstalledRetest": false
+    "latestMaterialSourceFixInstalledRetest": false,
+    "counselorGuidanceRetry": {
+      "InstalledSource": "e9897a74462242e02d6589c1ca040b060ae90d29",
+      "NativeTeachSkillExplicitlyInvoked": true,
+      "RoundAndCumulativeSeparated": true,
+      "OriginalScoreNotChanged": true,
+      "OriginalNarrativeFailureRemainsInHistory": true,
+      "DoesNotGuaranteeAllModelAnswers": true,
+      "sourceOptionConsistencyCorrectedForObservedExample": true,
+      "roundCounts": {
+        "total": 10,
+        "correct": 3,
+        "incorrect": 7,
+        "unanswered": 0
+      }
+    }
   },
   "latestVerifiedCleanGate": {
-    "sourceCommit": "29b051712892b217ccc480889a5c745bd29bc27f",
+    "sourceCommit": "e9897a74462242e02d6589c1ca040b060ae90d29",
     "tests": 347,
     "passed": 347,
     "failed": 0,
@@ -135,20 +153,20 @@
     "modelCalls": 0
   },
   "limits": [
-    "Actual Kaogong browser observations are installed c966 source; the later material/source fixes and teaching guidance have not received their installed retest.",
-    "Different source-pinned installed observations are not full acceptance of the new integrated tip.",
-    "Full manual authoring, complete role replacement and historical conversation/material continuity still require installed acceptance.",
+    "Historical Kaogong actual practice/unmatched observations were installed c966; source-pinned guidance correction and cold continuation used installed e989.",
+    "Current merged role-choice and figure eligibility product fixes await installed and full-gate acceptance.",
+    "Reading real role task completed on c966 but had no application-native result entry; the subsequently merged entry needs installed retry and Reading cold recovery.",
+    "Full manual authoring, complete role replacement and historical conversation/material coverage still require installed acceptance.",
     "The original restricted lesson remains unfinished; generic lesson closure does not imply its completion or long-term mastery.",
-    "Generic lesson closure and native headteacher plan cold recovery remain pending.",
-    "Counselor explanation contradicted an option, and headteacher narrative confused round and cumulative statistics; new guidance needs real retry.",
+    "Earlier incorrect counselor/plan narratives remain in history; one corrected follow-up is not a guarantee of all model answers.",
     "Physical Chinese IME, full compatibility/upgrade/rollback and dormant/PWB-own unload matrices remain open.",
-    "The 29b clean gate uses synthetic fixtures and zero model calls; actual model observations are separate and the later merged guidance is outside that gate.",
+    "The e989 clean gate uses synthetic fixtures and zero model calls, and does not cover later merged product fixes.",
     "Raw request/content/tool paths, native Session IDs, credentials, screenshots and historical materials are excluded."
   ],
   "previousVerifiedCleanGate": {
-    "sourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
-    "tests": 341,
-    "passed": 341,
+    "sourceCommit": "29b051712892b217ccc480889a5c745bd29bc27f",
+    "tests": 347,
+    "passed": 347,
     "failed": 0,
     "skipped": 0,
     "officialOfflineArchiveInstall": true,
@@ -162,5 +180,45 @@
     "readingUninstallReinstall": true,
     "compatibilityExemptions": 0,
     "modelCalls": 0
+  },
+  "readingPartial": {
+    "SourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
+    "InitialExampleRecords": 3,
+    "InitialMinutes": 210,
+    "CategoryAndStatusFilterMatched": 1,
+    "MatchedMinutes": 120,
+    "NoMatchClearedDetailListAndStatistics": true,
+    "RuntimeRoleConfigurationSavedPreviewedExplicitlyActivated": true,
+    "PreparedTaskContainedExactSelectedRecordAndFilters": true,
+    "NativeModelTaskCompleted": true,
+    "ApplicationNativeResultEntryMissing": true,
+    "ColdRecoveryPending": true,
+    "selectedRecordDetailRendered": true,
+    "newNativeResultEntryInstalledRetest": false
+  },
+  "documentImageRecovery": {
+    "ownedReferencedAssetCount": 3097,
+    "hashVerified": true,
+    "liveOwnedConfigOnly": true,
+    "modelAndCredentialPreserved": true,
+    "authenticatedBrowser": {
+      "Http200Images": 6,
+      "ActualLazyImagesLoaded": 6,
+      "NaturalWidths": [
+        776,
+        670,
+        479,
+        734,
+        728,
+        742
+      ],
+      "ExistingUnsubmittedPracticeRecoveredAfterBrowserRefresh": true
+    }
+  },
+  "latestColdConfig": {
+    "CurrentUserCredentialPreserved": true,
+    "CurrentModelAndMaterialPatchPreserved": true,
+    "NativeCounselorCorrectionHistoryPreserved": true,
+    "scope": "Byte preservation of current authorized model/material configuration; not a claim of returning to pre-configuration bytes"
   }
 }
