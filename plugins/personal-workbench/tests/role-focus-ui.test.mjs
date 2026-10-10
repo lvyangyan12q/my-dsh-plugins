@@ -35,5 +35,3 @@ test('subject and role selection retain keyboard focus across an embedded compos
   assert.equal(document.activeElement?.tagName,'TEXTAREA','Explicit Tab navigation can enter the content without focus being restored to the selector')
  }finally{await act(async()=>root.unmount());dom.window.close();for(const[name,value]of saved){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
 })
-
-
