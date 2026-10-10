@@ -1,30 +1,42 @@
-import { z } from 'zod'
 import { TAXONOMY } from './taxonomy.ts'
 
 const storageKey = 'kaogong/default/learning-view/v1'
-const preferences = z.object({
-  version: z.literal(1), studyOpen: z.boolean(),
-  page: z.enum(['classroom', 'materials', 'practice', 'errors']),
-  pane: z.enum(['content', 'conversation']),
-  role: z.object({ roleId: z.enum(['class-advisor', 'teacher', 'counselor']),
-    subject: z.string().refine(value => TAXONOMY.some(row => row.subject === value)).optional(),
-  }).strict().refine(role => role.roleId === 'teacher' || role.subject === undefined),
-}).strict()
-export type LearningPreferences = z.infer<typeof preferences>
+export type LearningPreferences = {
+  version: 1; studyOpen: boolean
+  page: 'classroom' | 'materials' | 'practice' | 'errors'
+  pane: 'content' | 'conversation'
+  role: { roleId: 'class-advisor' | 'teacher' | 'counselor'; subject?: string }
+}
+const record = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+
+/** No additional Client runtime dependency: only known, bounded display choices are restored. */
+function validate(value: unknown): LearningPreferences | null {
+  if (!record(value) || Object.keys(value).length !== 5 ||
+    !Object.keys(value).every(key => ['version', 'studyOpen', 'page', 'pane', 'role'].includes(key))) return null
+  const { version, studyOpen, page, pane, role } = value
+  if (version !== 1 || typeof studyOpen !== 'boolean' ||
+    (page !== 'classroom' && page !== 'materials' && page !== 'practice' && page !== 'errors') ||
+    (pane !== 'content' && pane !== 'conversation') || !record(role) ||
+    !Object.keys(role).every(key => key === 'roleId' || key === 'subject')) return null
+  const { roleId, subject } = role
+  if (roleId !== 'class-advisor' && roleId !== 'teacher' && roleId !== 'counselor') return null
+  if (subject !== undefined && (roleId !== 'teacher' || typeof subject !== 'string' ||
+    !TAXONOMY.some(row => row.subject === subject))) return null
+  return { version, studyOpen, page, pane, role: { roleId, ...(typeof subject === 'string' ? { subject } : {}) } }
+}
 
 /** Display choices only. Native bindings, messages, drafts and business evidence stay with their owners. */
 export function readLearningPreferences(): LearningPreferences | null {
   try {
     const raw = window.localStorage.getItem(storageKey)
-    if (!raw || raw.length > 4096) return null
-    const value = preferences.safeParse(JSON.parse(raw))
-    return value.success ? value.data : null
+    return !raw || raw.length > 4096 ? null : validate(JSON.parse(raw))
   } catch { return null }
 }
 
 export function writeLearningPreferences(value: LearningPreferences): void {
-  const validated = preferences.safeParse(value)
-  if (!validated.success) return
-  try { window.localStorage.setItem(storageKey, JSON.stringify(validated.data)) }
+  const validated = validate(value)
+  if (!validated) return
+  try { window.localStorage.setItem(storageKey, JSON.stringify(validated)) }
   catch { /* Disabled or full browser storage must not prevent learning navigation. */ }
 }
