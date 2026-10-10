@@ -69,3 +69,12 @@ Review reserves the durable round only when explicitly sent, so competing window
 三插件构建后，`scripts/check-client-module-artifacts.mjs` 使用当前官方 DSH 的平台种子与 ClientModuleSystem 加载实际客户端产物，并覆盖无工作台的独立考公工厂。客户端的 require 不向 Node 依赖目录兜底，因此仅 Host 安装的依赖不能掩盖浏览器启动失败。发行验收在官方 CLI 精确归档安装后，用同一检查从隔离 profile 解析三插件的实际安装路径，再次核对客户端工厂。
 
 检查不激活 Cordis 入口、不执行模型调用，也不验证页面渲染；仅为 Node 中导入平台种子提供空 CSS 模块绑定。正式图文、输入、对话和生命周期仍需实际安装后的浏览器验收。
+
+
+### 已核验选项页脚投影
+
+可在同一持久图片目录的 `verified/option-repairs.json` 保存本地版本 1 索引。`associations` 每条包含 `questionId`、原题 `stemSha256`、`optionsSha256`（原选项数组 `JSON.stringify` 的 SHA-256）、`optionIndices`（从 0 开始）、`sourcePdfSha256` 和从 1 开始的 `sourcePage`。
+
+维护者必须先唯一定位并视检原 PDF 的对应选项，再创建关联。当前仅支持排除指定选项末端的明确广告 `公考最新资料、更新进度微信 SKA674`，不支持任意替换选项、截掉未知后文或写入答案。题干和全部选项都必须与核验时的内容哈希一致。来源哈希和页码提供人工核验记录，不表示程序已经核实 PDF 内容。
+
+修复仅影响公开练习题面和提交后结果显示；题库、发题快照、答案与原解析保持。无索引、内容改变或无可确认末端广告时保留原选项；索引超界、无效或重复时记录加载失败并保留原内容。索引与资料应留在本地私有资料目录，不能随发布包上传。

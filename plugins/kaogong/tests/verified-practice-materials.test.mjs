@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm, rmdir, symlink, unlink } from 'node:fs/p
 import { tmpdir } from 'node:os'
 import { join, dirname, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
-import { loadVerifiedPracticeMaterials } from '../src/verified-practice-materials.ts'
+import { loadVerifiedPracticeMaterials, loadVerifiedPracticeOptions } from '../src/verified-practice-materials.ts'
 const sha = bytes => createHash('sha256').update(bytes).digest('hex')
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'verified-material-associations-'))
@@ -56,4 +56,25 @@ test('traversal and directory links outside the configured material root are ref
     await f.close()
     assert.equal(dirname(outside), resolve(tmpdir())); await rm(outside, { recursive: true, force: true })
   }
+})
+
+
+test('option footer proofs remain scoped to exact question content and reject ambiguous repair indices', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'verified-options-'))
+  const stem = 'Original question', options = ['A. first', 'B. second\n公考最新资料、更新进度微信 SKA674']
+  const row = { questionId: 'q1', stemSha256: sha(stem), optionsSha256: sha(JSON.stringify(options)), optionIndices: [1], sourcePdfSha256: sha('source-pdf'), sourcePage: 29 }
+  const save = associations => writeFile(join(root, 'verified', 'option-repairs.json'), JSON.stringify({ version: 1, associations }))
+  try {
+    await mkdir(join(root, 'verified'))
+    assert.deepEqual((await loadVerifiedPracticeOptions(root))('q1', stem, options), options)
+    await save([row]); const repair = await loadVerifiedPracticeOptions(root)
+    assert.deepEqual(repair('q1', stem, options), ['A. first', 'B. second'])
+    assert.deepEqual(options, ['A. first', 'B. second\n公考最新资料、更新进度微信 SKA674'])
+    assert.deepEqual(repair('other', stem, options), options)
+    assert.deepEqual(repair('q1', stem + ' changed', options), options)
+    const revised = [options[0], options[1] + '\nnext question']; assert.deepEqual(repair('q1', stem, revised), revised)
+    await save([{ ...row, optionsSha256: sha(JSON.stringify(revised)) }]); assert.deepEqual((await loadVerifiedPracticeOptions(root))('q1', stem, revised), revised, 'proof cannot authorize removal of unknown trailing text')
+    await save([row, row]); await assert.rejects(loadVerifiedPracticeOptions(root), /Duplicate/)
+    await save([{ ...row, optionIndices: [1, 1] }]); await assert.rejects(loadVerifiedPracticeOptions(root), /Duplicate/)
+  } finally { assert.equal(dirname(root), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
 })

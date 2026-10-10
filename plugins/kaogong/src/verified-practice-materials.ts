@@ -49,3 +49,44 @@ export async function loadVerifiedPracticeMaterials(root?: string): Promise<(id:
     return stem.includes(reference) ? stem : stem + '\n\n' + reference
   }
 }
+
+
+const optionRepairSchema = z.object({
+  version: z.literal(1),
+  associations: z.array(z.object({
+    questionId: z.string().min(1).max(200),
+    stemSha256: digest,
+    optionsSha256: digest,
+    optionIndices: z.array(z.number().int().min(0).max(25)).min(1).max(26),
+    sourcePdfSha256: digest,
+    sourcePage: z.number().int().positive(),
+  }).strict()).max(5000),
+}).strict()
+const unchangedOptions = (_id: string, _stem: string, options: string[]) => options
+const terminalAdvertisement = /\s*公考最新资料、更新进度微信\s*SKA674\s*$/
+
+/** Apply only individually source-verified footer exclusions; never alter stored options or grading keys. */
+export async function loadVerifiedPracticeOptions(root?: string): Promise<typeof unchangedOptions> {
+  if (!root || !isAbsolute(root)) return unchangedOptions
+  const directory = await realpath(root)
+  let indexPath: string
+  try { indexPath = await realpath(resolve(directory, 'verified/option-repairs.json')) }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return unchangedOptions; throw error }
+  const offset = relative(directory, indexPath)
+  if (!offset || offset.startsWith('..') || isAbsolute(offset)) throw new Error('Verified option index escapes configured root')
+  if ((await stat(indexPath)).size > 1_000_000) throw new Error('Verified option index is too large')
+  const bytes = await readFile(indexPath)
+  if (bytes.length > 1_000_000) throw new Error('Verified option index is too large')
+  const index = optionRepairSchema.parse(JSON.parse(bytes.toString('utf8')))
+  const associations = new Map<string, typeof index.associations[number]>()
+  for (const row of index.associations) {
+    if (associations.has(row.questionId) || new Set(row.optionIndices).size !== row.optionIndices.length) throw new Error('Duplicate verified option repair identity')
+    associations.set(row.questionId, row)
+  }
+  return (id, stem, options) => {
+    const row = associations.get(id)
+    if (!row || sha(stem) !== row.stemSha256 || sha(JSON.stringify(options)) !== row.optionsSha256) return options
+    if (row.optionIndices.some(index => !options[index] || !terminalAdvertisement.test(options[index]) || !options[index].replace(terminalAdvertisement, '').trim())) return options
+    return options.map((option, index) => row.optionIndices.includes(index) ? option.replace(terminalAdvertisement, '') : option)
+  }
+}

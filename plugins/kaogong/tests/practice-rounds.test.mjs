@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createRequire } from 'node:module'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { resolve, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -264,4 +265,40 @@ test('verified display supplements preserve bank text and immutable grade snapsh
     assert.deepEqual(app.bank.get('with-material').options, raw.options)
     assert.equal((await app.service.read(round.roundId)).questions[0].stem, raw.stem + image)
   } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
+})
+
+test('verified terminal advertisement repairs affect public option display only and preserve issued grading snapshots', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-footer-')), ctx = new Context()
+  await ctx.plugin(Storage)
+  const backend = new JsonStorageBackend(root); ctx.storage.backend.register('json', backend)
+  const facility = new DomainFacility(ctx, { backend: 'json' }); ctx.storage.mount('domain', facility)
+  const imageRoot = join(root, 'images'), routes = new Map(), disposers = [], domains = new Map()
+  const raw = { ...bankRow(), options: ['A. first', 'B. second', 'C. third', 'D. fourth\n公考最新资料、更新进度微信 SKA674'], correctAnswer: 'D' }
+  const sha = value => createHash('sha256').update(value).digest('hex')
+  const host = { storageDomain: { async open(spec) { const domain = await facility.open(spec); domains.set(spec.name, domain); return domain } }, inject() {}, logger: { warn() {} }, effect(effect) { const dispose = effect(); if (typeof dispose === 'function') disposers.push(dispose) }, connection: { requestRejection: () => undefined }, webServer: { register(route) { routes.set(route.path, route.handler); return () => routes.delete(route.path) } }, tools: { register() {} } }
+  const request = async (action, body) => {
+    const req = Readable.from([JSON.stringify(body)]); req.method = 'POST'; req.headers = { 'content-type': 'application/json' }
+    let status, value; await routes.get('/api/kaogong/practice/' + action)(req, { writeHead(code) { status = code }, end(bytes) { value = JSON.parse(bytes) } })
+    assert.equal(status, 200); return value
+  }
+  try {
+    const seed = await facility.open(bankDomainSpec)
+    await seed.table('questions').put('pinned-footer', raw)
+    await seed.close()
+    await mkdir(join(imageRoot, 'verified'), { recursive: true })
+    await writeFile(join(imageRoot, 'verified', 'option-repairs.json'), JSON.stringify({ version: 1, associations: [{ questionId: 'pinned-footer', stemSha256: sha(raw.stem), optionsSha256: sha(JSON.stringify(raw.options)), optionIndices: [3], sourcePdfSha256: 'a'.repeat(64), sourcePage: 29 }] }))
+    await apply(host, resolveConfig({ Config }, { mineru: { outputDir: root }, questionImageRoot: imageRoot }))
+    const issued = await request('start', context)
+    assert.deepEqual(issued.questions[0].options, ['A. first', 'B. second', 'C. third', 'D. fourth'])
+    assert.equal(issued.result, null)
+    assert.deepEqual(domains.get(bankDomainSpec.name).table('questions').get('pinned-footer'), raw)
+    assert.deepEqual(domains.get(practiceDomainSpec.name).table('rounds').get(issued.roundId).questions[0].options, raw.options)
+    const score = await request('submit', { roundId: issued.roundId, answers: answers(issued, 'D') })
+    assert.equal(score.correctCount, 1); assert.equal(score.results[0].correctAnswer, 'D'); assert.equal(score.results[0].explanation, raw.explanation)
+    assert.equal(score.results[0].options[3], 'D. fourth')
+    const bank = domains.get(bankDomainSpec.name).table('questions')
+    await bank.put('pinned-footer', { ...raw, stem: raw.stem + ' changed' })
+    const changed = await request('start', context)
+    assert.deepEqual(changed.questions[0].options, raw.options, 'a changed original stem invalidates the proof rather than editing unverified options')
+  } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
 })
