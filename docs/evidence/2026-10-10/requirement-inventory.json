@@ -802,7 +802,10 @@
       "section": "Testing Decisions",
       "number": 3,
       "requirementSha256": "bb6efe4bdfff49ef243988c23f9952e600aee0054950c816a4821a89ebc097b3",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: owned installed Better Sidebar 0.24.1 actual native/catalog entry sharing, disabled native access, restored catalog, and unchanged historical business records verified. Actual hot-disable leaves one unavailable native Workbench tab, including after reload; real-ID capture regression passes but does not resolve the actual integration failure. Full original real-teaching compatibility matrix remains open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/better-sidebar-historical-matrix-browser.json"
+      ]
     },
     {
       "id": "workbench:Testing Decisions:4",
