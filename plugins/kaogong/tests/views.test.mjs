@@ -759,3 +759,63 @@ test('public material return focuses retained search and keeps Escape inside the
   assert.ok(document.activeElement===screen.getByRole('button',{name:'打开学习窗口'}))
   assert.equal(calls.some(row=>row.url.endsWith('/submit')||row.url.endsWith('/start')),false)
 })
+
+test('fresh learning owner restores only presentation choices without a new role session', async () => {
+  mockApi()
+  const previous=window.matchMedia
+  window.matchMedia=()=>({matches:true,addEventListener(){},removeEventListener(){}})
+  const content=state=>React.createElement(client.KaogongStateContext.Provider,{value:state},React.createElement(client.KaogongWorkbenchContent,{appId:'kaogong',instanceId:'default',pageId:'classroom',active:true,selectPage(){},close(){},renderFactorySlot:(_name,props)=>React.createElement('div',{'aria-label':'会话目标'},JSON.stringify(props.bindingKey))}))
+  let opens=0
+  const owner=()=>{const s=new client.KaogongViewState();s.cell('roles',null).set({open:async()=>{opens++}});return s}
+  try {
+    render(content(owner()))
+    fireEvent.click(screen.getByRole('button',{name:'打开学习窗口'}))
+    fireEvent.change(screen.getByRole('combobox',{name:'教师科目'}),{target:{value:'行测-判断推理'}})
+    fireEvent.click(screen.getByRole('button',{name:'错题',exact:true}))
+    fireEvent.click(screen.getByRole('button',{name:'角色对话',exact:true}))
+    cleanup()
+    const restored=owner()
+    render(content(restored))
+    const shell=screen.getByRole('dialog',{name:'独立学习窗口'})
+    assert.equal(shell.dataset.pane,'conversation')
+    assert.equal(screen.getByRole('button',{name:'错题',exact:true}).getAttribute('aria-pressed'),'true')
+    assert.equal(screen.getByRole('combobox',{name:'教师科目'}).value,'行测-判断推理')
+    assert.equal(JSON.parse(screen.getByLabelText('会话目标').textContent).subject,'行测-判断推理')
+    assert.equal(opens,0,'restoring display choices must not implicitly create a native Session')
+    const saved=JSON.parse(window.localStorage.getItem('kaogong/default/learning-view/v1'))
+    assert.deepEqual(Object.keys(saved).sort(),['page','pane','role','studyOpen','version'])
+    assert.deepEqual(Object.keys(saved.role).sort(),['roleId','subject'])
+  } finally {cleanup();window.matchMedia=previous}
+})
+
+test('invalid or foreign learning preference records cannot redirect native role bindings', () => {
+  const base={version:1,studyOpen:true,page:'errors',pane:'conversation',role:{roleId:'teacher',subject:'行测-判断推理'}}
+  for(const value of [null,{...base,version:2},{...base,page:'unknown'},{...base,sessionId:'foreign-session'},
+    {...base,role:{roleId:'teacher',subject:'unknown'}},{...base,role:{roleId:'teacher',appId:'other'}},
+    {...base,role:{roleId:'counselor',subject:'行测-判断推理'}},{...base,role:{roleId:'unknown'}}]){
+    window.localStorage.setItem('kaogong/default/learning-view/v1',JSON.stringify(value))
+    const owner=new client.KaogongViewState()
+    assert.equal(owner.cell('study.open',false).value,false)
+    assert.deepEqual(owner.cell('roles.selected',{appId:'kaogong',instanceId:'default',roleId:'teacher'}).value,{appId:'kaogong',instanceId:'default',roleId:'teacher'})
+  }
+  for(const raw of ['{broken',' '.repeat(4097)]){
+    window.localStorage.setItem('kaogong/default/learning-view/v1',raw)
+    assert.equal(new client.KaogongViewState().cell('study.open',false).value,false)
+  }
+})
+
+test('disabled or full browser preference storage leaves in-memory learning navigation usable', () => {
+  const prototype=Object.getPrototypeOf(window.localStorage)
+  const get=Object.getOwnPropertyDescriptor(prototype,'getItem'),set=Object.getOwnPropertyDescriptor(prototype,'setItem')
+  try {
+    Object.defineProperty(prototype,'getItem',{configurable:true,value(){throw new Error('Storage unavailable')}})
+    Object.defineProperty(prototype,'setItem',{configurable:true,value(){throw new Error('Quota exceeded')}})
+    const owner=new client.KaogongViewState()
+    owner.cell('study.open',false).set(true)
+    owner.cell('study.page','classroom').set('errors')
+    owner.cell('study.pane','content').set('conversation')
+    assert.equal(owner.cell('study.open',false).value,true)
+    assert.equal(owner.cell('study.page','classroom').value,'errors')
+    assert.equal(owner.cell('study.pane','content').value,'conversation')
+  } finally {Object.defineProperty(prototype,'getItem',get);Object.defineProperty(prototype,'setItem',set)}
+})

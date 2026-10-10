@@ -4,6 +4,7 @@ import type { DisplayStore, PersonalWorkbench, PersonalWorkbenchRoles, PersonalW
 import type { DashboardData, PracticeData, PracticeContext, PracticeResult, ModuleSummary } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'
 import type { LessonView } from './lesson-schema.ts'
+import { readLearningPreferences, writeLearningPreferences } from './learning-preferences.ts'
 
 /** Fixed types and namespaces for the default instance's transient values. */
 type ViewValues = {
@@ -19,7 +20,7 @@ type ViewValues = {
   integration: { service: PersonalWorkbench } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: PersonalWorkbenchRoles | null; tasks: PersonalWorkbenchTasks | null
-  'study.open': boolean; 'study.page': string
+  'study.open': boolean; 'study.page': string; 'study.pane': 'content' | 'conversation'
   'roles.selected': RoleBindingKey
   'roles.opened': RoleBindingKey[]
   'lesson.view': LessonView | null
@@ -34,6 +35,26 @@ export class KaogongViewState {
   private cells = new Map<string, unknown>()
   private requests = new Map<string, number>()
   private practiceCommand = false
+  constructor() {
+    const saved = readLearningPreferences()
+    if (!saved) return
+    this.cell('study.open', saved.studyOpen)
+    this.cell('study.page', saved.page)
+    this.cell('study.pane', saved.pane)
+    this.cell('roles.selected', { appId: 'kaogong', instanceId: 'default', ...saved.role })
+  }
+
+  private saveDisplayChoices() {
+    const selected = this.cell('roles.selected', { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }).value
+    if (!selected || selected.appId !== 'kaogong' || selected.instanceId !== 'default') return
+    const page = this.cell('study.page', 'classroom').value
+    if (page !== 'classroom' && page !== 'materials' && page !== 'practice' && page !== 'errors') return
+    const roleId = selected.roleId
+    if (roleId !== 'teacher' && roleId !== 'class-advisor' && roleId !== 'counselor') return
+    writeLearningPreferences({ version: 1, studyOpen: this.cell('study.open', false).value, page,
+      pane: this.cell('study.pane', 'content').value,
+      role: { roleId, ...(selected.subject ? { subject: selected.subject } : {}) } })
+  }
   /** Acquire the shared practice command owner synchronously before React rerenders. */
   beginPracticeCommand(): (() => void) | null {
     if (this.practiceCommand) return null
@@ -53,6 +74,7 @@ export class KaogongViewState {
     if (!this.cells.has(key)) {
       const cell: Cell<ViewValues[K]> = { value: initial, listeners: new Set<() => void>(), set: action => {
         cell.value = typeof action === 'function' ? action(cell.value) : action
+        if (key === 'study.open' || key === 'study.page' || key === 'study.pane' || key === 'roles.selected') this.saveDisplayChoices()
         for (const listener of cell.listeners) listener()
       } }
       this.cells.set(key, cell)

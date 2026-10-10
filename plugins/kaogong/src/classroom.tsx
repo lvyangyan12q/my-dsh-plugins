@@ -32,7 +32,7 @@ const taskTranslate = (key: string) => taskLabels[key] ?? key
 export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> & Partial<PropsRenderFactories> & { onOpenTeacher?: KaogongViewProps['onOpenTeacher']; ctx?: ClientContext }) {
   const [studyOpen, setStudyOpen] = useBusinessState('study.open', false)
   const [studyPage, setStudyPage] = useBusinessState('study.page', 'classroom')
-  const [studyPane, setStudyPane] = useState<'content' | 'conversation'>('content')
+  const [studyPane, setStudyPane] = useBusinessState('study.pane', 'content')
   const [narrow, setNarrow] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia('(max-width:760px)').matches)
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return
@@ -54,7 +54,7 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
   const [roles] = useBusinessState('roles', null)
   const [tasks] = useBusinessState('tasks', null)
   const [selected, setSelected] = useBusinessState('roles.selected', classroomTeacherKey)
-  const [opened, setOpened] = useBusinessState('roles.opened', [classroomTeacherKey])
+  const [opened, setOpened] = useBusinessState('roles.opened', [selected])
   const same = (a: RoleBindingKey, b: RoleBindingKey) => a.roleId === b.roleId && a.subject === b.subject
   const select = (key: RoleBindingKey) => { setSelected(key); setOpened(values => values.some(value => same(value, key)) ? values : [...values, key]) }
   const state = useRequestOwner()
