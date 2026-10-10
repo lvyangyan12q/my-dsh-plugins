@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-10",
+  "method": "Read-only semantic comparison of real migration backup and current business domains by historical record identity and fields; file bytes hashed. No record content or IDs exported.",
+  "legacyJunctionResolvesToCurrentMaterials": true,
+  "results": [
+    {
+      "domain": "kaogong_bank",
+      "backupVersion": 2,
+      "currentVersion": 2,
+      "globalMatches": true,
+      "backupSha256": "8b2e130696aeb5d862a83cc844de05f0020f4c4c8e43fcfea978d6583f8af883",
+      "currentSha256": "8b2e130696aeb5d862a83cc844de05f0020f4c4c8e43fcfea978d6583f8af883",
+      "tables": [
+        {
+          "table": "questions",
+          "backupRecords": 3994,
+          "currentRecords": 3994,
+          "missingHistoricalIds": 0,
+          "identicalHistoricalRecords": 3994,
+          "changedHistoricalRecords": 0,
+          "addedIds": 0,
+          "changedFields": {}
+        }
+      ]
+    },
+    {
+      "domain": "kaogong_knowledge",
+      "backupVersion": 1,
+      "currentVersion": 1,
+      "globalMatches": true,
+      "backupSha256": "3235a7f68f1d6e21024113276008e2ef0e3f8eb13d4586ef186175a0dc697d9d",
+      "currentSha256": "3235a7f68f1d6e21024113276008e2ef0e3f8eb13d4586ef186175a0dc697d9d",
+      "tables": [
+        {
+          "table": "entries",
+          "backupRecords": 72,
+          "currentRecords": 72,
+          "missingHistoricalIds": 0,
+          "identicalHistoricalRecords": 72,
+          "changedHistoricalRecords": 0,
+          "addedIds": 0,
+          "changedFields": {}
+        }
+      ]
+    },
+    {
+      "domain": "kaogong_notebook",
+      "backupVersion": 1,
+      "currentVersion": 1,
+      "globalMatches": true,
+      "backupSha256": "1be146c83e34f27858cc07cb4345dd33cb96a8e623a000ffd53ef8712335381e",
+      "currentSha256": "b18bfa5c92334ebd8fda4dd1a42ba401fac4a8f9e2dcca0be087a63531196be1",
+      "tables": [
+        {
+          "table": "questions",
+          "backupRecords": 8,
+          "currentRecords": 22,
+          "missingHistoricalIds": 0,
+          "identicalHistoricalRecords": 8,
+          "changedHistoricalRecords": 0,
+          "addedIds": 14,
+          "changedFields": {}
+        }
+      ]
+    },
+    {
+      "domain": "kaogong_progress",
+      "backupVersion": 1,
+      "currentVersion": 1,
+      "globalMatches": true,
+      "backupSha256": "e183ebb16237f0c5b2f571880020be9b67c877f70d5806844aa5de342530a0cc",
+      "currentSha256": "e183ebb16237f0c5b2f571880020be9b67c877f70d5806844aa5de342530a0cc",
+      "tables": [
+        {
+          "table": "days",
+          "backupRecords": 216,
+          "currentRecords": 216,
+          "missingHistoricalIds": 0,
+          "identicalHistoricalRecords": 216,
+          "changedHistoricalRecords": 0,
+          "addedIds": 0,
+          "changedFields": {}
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "A current change may be an authorized later edit; changed records are not automatically restored.",
+    "The recorded migration backup contains business storage/configuration, not an independent original-material tree.",
+    "This proves current comparison facts, not arbitrary migration replay/rollback or full original PDF/image fidelity.",
+    "Static image checking covers only stored Markdown references containing the known question image marker; it is not a rendered image/PDF or complete original-material fidelity audit."
+  ],
+  "formalConfiguredRoots": [
+    {
+      "field": "roleCwd",
+      "matchesCanonicalMaterials": true,
+      "directoryExists": true
+    },
+    {
+      "field": "questionImageRoot",
+      "matchesCanonicalMaterials": true,
+      "directoryExists": true
+    },
+    {
+      "field": "outputDir",
+      "matchesCanonicalMaterials": true,
+      "directoryExists": true
+    }
+  ],
+  "staticStoredImageReferences": {
+    "uniqueReferences": 183,
+    "missing": 178,
+    "outsideConfiguredRoots": 0
+  }
+}
