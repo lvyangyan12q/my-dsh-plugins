@@ -49,3 +49,11 @@ The application registers its own `kaogong/knowledge` display source. Knowledge 
 Lecture, committed-round review and classroom continuation prepare visible tasks for the existing `kaogong/default` teacher or counselor. Preparation neither ensures a Session nor sends a native command. Users can edit the task and each evidence chunk, remove evidence, or cancel. Explicit send keeps the declared `kaogong-teach` provider/body preflight and targets the original native role scope. Classroom continuation rechecks the saved binding before sending instead of creating a replacement during preparation.
 
 Review reserves the durable round only when explicitly sent, so competing windows cannot both send it. An admission failure keeps the original prepared task retryable; a refreshed uncertain reservation requires inspecting the counselor conversation. Actual admission clears the prepared task before completion bookkeeping. A local delivery marker suppresses repeat sends if completion storage fails; the recovery button retries only the Host completion operation. Lecture and review do not automatically complete lessons or check off the plan.
+
+### 核验过的练习图示补充
+
+可在持久 `questionImageRoot` 的 `verified/associations.json` 保存版本 1 的本地核验索引。每条 `associations` 记录包含 `questionId`、原题 `stemSha256`、`verified/` 内的图片 `asset` 与 `assetSha256`、核验来源 `sourcePdfSha256` 和从 1 开始的 `sourcePage`。图片文件名只允许字母、数字、下划线和连字符；不支持路径穿越、外部链接或 SVG。
+
+插件启动时核对索引、图片哈希与实际路径；展示时再核对题目身份和原文哈希。来源信息由本地核验者登记，并非自动 PDF 内容认证。索引缺失时保持原题；索引错误时保留原题并记录固定错误说明。图片或索引更新后需重新加载插件。
+
+补充图片只进入练习和复盘展示，不改原题文本、选项、答案、既有练习快照或成绩。修改资料根目录后，不再沿用旧根目录的关联。私有索引和图示保留在资料目录，不进入插件发行包或公共仓库。

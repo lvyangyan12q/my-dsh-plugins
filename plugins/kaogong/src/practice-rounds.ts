@@ -22,7 +22,7 @@ function optionKey(option: string) { return /^\s*([A-Za-z])(?:[.、)\s]|$)/.exec
 /** One application command queue, drained before domains close. No cross-domain transaction is assumed. */
 export class PracticeRounds {
   private tail: Promise<unknown> = Promise.resolve()
-  constructor(private rounds: KvTable<string, PracticeRound>, private bank: KvTable<string, BankQuestionRecord>, private notebook: KvTable<string, QuestionRecord>) {}
+  constructor(private rounds: KvTable<string, PracticeRound>, private bank: KvTable<string, BankQuestionRecord>, private notebook: KvTable<string, QuestionRecord>, private materialStem: (id: string, stem: string) => string = (_id, stem) => stem) {}
   drain() { return this.tail }
   notebookCommand<T>(command: () => Promise<T>): Promise<T> { return this.run(command) }
   private run<T>(command: () => Promise<T>): Promise<T> {
@@ -67,7 +67,7 @@ export class PracticeRounds {
     const results = round.questions.map((q, index) => {
       const userAnswer = round.score!.answers[index]!.answer
       const correct = userAnswer !== '' && userAnswer.trim() === q.correctAnswer.trim()
-      return { id: q.id, subject: q.subject, knowledgePoint: q.knowledgePoint, stem: q.stem, options: q.options, source: q.source, userAnswer,
+      return { id: q.id, subject: q.subject, knowledgePoint: q.knowledgePoint, stem: this.materialStem(q.id, q.stem), options: q.options, source: q.source, userAnswer,
         correct, correctAnswer: q.correctAnswer, explanation: q.explanation }
     })
     const correctCount = results.filter(row => row.correct).length
@@ -76,7 +76,7 @@ export class PracticeRounds {
   }
   private view(id: string, round: PracticeRound) {
     return { roundId: id, context: round.context, reason: round.reason, totalAvailable: round.totalAvailable, returned: round.questions.length, cycled: round.cycled,
-      questions: round.questions.map(({ id, subject, knowledgePoint, stem, options, difficulty, source }) => ({ id, subject, knowledgePoint, stem, options, difficulty, source })),
+      questions: round.questions.map(({ id, subject, knowledgePoint, stem, options, difficulty, source }) => ({ id, subject, knowledgePoint, stem: this.materialStem(id, stem), options, difficulty, source })),
       result: round.score ? this.result(id, round) : null, reflections: round.reflections }
   }
   /** Only the stored snapshot is scored; all membership checks precede the first write. */

@@ -22,7 +22,7 @@ const subject = '行测-资料分析'
 const context = { subject, title: '增长率', limit: 10 }
 const bankRow = (n = 0) => ({ subject, knowledgePoint: '增长率', questionType: '单选', stem: `材料\n<table><tr><td>${n}</td></tr></table>\n![材料](题目_images/verified/资料600-2024-jiangsu-17.png)\n题干${n}`,
   options: ['A. 10%', 'B. 20%'], correctAnswer: 'B', explanation: 'original explanation', difficulty: 'easy', source: 'synthetic fixture', origin: 'local', reviewStatus: 'approved', reviewNotes: '', tags: [], createdAt: '2020-01-01', reviewedAt: '' })
-async function boot(root) {
+async function boot(root, materialStem) {
   const ctx = new Context(); await ctx.plugin(Storage)
   const backend = new JsonStorageBackend(root)
   ctx.storage.backend.register('json', backend)
@@ -31,7 +31,7 @@ async function boot(root) {
   const rounds = await facility.open(practiceDomainSpec), bank = await facility.open(bankDomainSpec), notebook = await facility.open(notebookDomainSpec)
   const table = notebook.table('questions')
   return { ctx, facility, bank: bank.table('questions'), notebook: table, rounds: rounds.table('rounds'),
-    service: new PracticeRounds(rounds.table('rounds'), bank.table('questions'), table),
+    service: new PracticeRounds(rounds.table('rounds'), bank.table('questions'), table, materialStem),
     close: async () => { await Promise.all([rounds.close(), bank.close(), notebook.close()]); await backend.close(); await ctx.fiber.dispose() } }
 }
 const answers = (round, answer = 'A') => round.questions.map(row => ({ id: row.id, answer }))
@@ -245,4 +245,23 @@ test('explicit knowledge point never silently issues unrelated subject questions
     const general = await app.service.start(context)
     assert.equal(general.returned, 2)
   } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('verified display supplements preserve bank text and immutable grade snapshots', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-material-projection-'))
+  const raw = bankRow(), image = '\n![核验图示](题目_images/verified/diagram.jpg)'
+  const app = await boot(root, (id, stem) => id === 'with-material' ? stem + image : stem)
+  try {
+    await app.bank.put('with-material', raw)
+    const round = await app.service.start(context)
+    assert.ok(round.questions[0].stem.endsWith(image))
+    assert.equal(app.bank.get('with-material').stem, raw.stem)
+    assert.equal(app.rounds.get(round.roundId).questions[0].stem, raw.stem)
+    const score = await app.service.submit(round.roundId, answers(round, 'B'))
+    assert.equal(score.correctCount, 1)
+    assert.ok(score.results[0].stem.endsWith(image))
+    assert.equal(app.bank.get('with-material').correctAnswer, raw.correctAnswer)
+    assert.deepEqual(app.bank.get('with-material').options, raw.options)
+    assert.equal((await app.service.read(round.roundId)).questions[0].stem, raw.stem + image)
+  } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
 })

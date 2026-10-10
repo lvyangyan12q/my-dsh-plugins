@@ -36,6 +36,7 @@ import { TAXONOMY, ERROR_REASONS, renderTaxonomy } from './taxonomy.ts'
 import { notebookDomainSpec, progressDomainSpec, bankDomainSpec, knowledgeDomainSpec, practiceDomainSpec, lessonDomainSpec } from './domain.ts'
 import type { QuestionRecord, PlanConfig, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './domain.ts'
 import { PracticeRounds, PracticeError } from './practice-rounds.ts'
+import { loadVerifiedPracticeMaterials } from './verified-practice-materials.ts'
 import { Lessons } from './lessons.ts'
 import { lessonCreate, lessonCommand, lessonLink, lessonSummaryInput, lessonConfirm } from './lesson-schema.ts'
 import type { Lesson } from './lesson-schema.ts'
@@ -294,7 +295,12 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   const days = progress.table('days')
   const bankQuestions = bank.table('questions')
   const knowledgeEntries = knowledge.table('entries')
-  const practice = new PracticeRounds(practiceDomain.table('rounds'), bankQuestions, questions)
+  const materialRoot = current().questionImageRoot
+  let materialStem: (id: string, stem: string) => string = (_id, stem) => stem
+  try { materialStem = await loadVerifiedPracticeMaterials(materialRoot) }
+  catch { ctx.logger.warn('kaogong: Verified material index unavailable; original questions retained') }
+  const practice = new PracticeRounds(practiceDomain.table('rounds'), bankQuestions, questions,
+    (id, stem) => current().questionImageRoot === materialRoot ? materialStem(id, stem) : stem)
   let readBinding: (key: Lesson['roleKey']) => ReturnType<import('@deepseek-ai/dsh-personal-workbench').PersonalWorkbenchBindings['read']> = async () => {
     throw new PracticeError('课堂角色服务不可用；任务和练习仍可使用', 503)
   }
