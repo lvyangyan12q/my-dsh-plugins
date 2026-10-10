@@ -2,6 +2,7 @@ import { workbenchSkillNames } from './workbench-skill-api.ts'
 import type { PersonalWorkbenchRoles, RoleBindingKey } from './role-binding-api.ts'
 import type { PersonalWorkbenchTasks, PreparedTask, TaskState, TaskHooks } from './task-api.ts'
 import { roleKey } from './role-client.ts'
+import { loadPreparedTasks, savePreparedTasks, type TaskStorage } from './task-preferences.ts'
 /** Preparation is local and side effect free; only send enters the native command boundary. */
 export class PreparedTasks implements PersonalWorkbenchTasks {
  private state: ReadonlyMap<string, TaskState> = new Map()
@@ -9,7 +10,9 @@ export class PreparedTasks implements PersonalWorkbenchTasks {
  private afterSend=new Map<string,()=>void|Promise<void>>()
  private onDiscard=new Map<string,()=>void|Promise<void>>()
  private beforeSend=new Map<string,()=>void|Promise<void>>()
- constructor(private readonly roles: Pick<PersonalWorkbenchRoles, 'send'> & Partial<Pick<PersonalWorkbenchRoles,'sendTeaching'>>) {}
+ constructor(private readonly roles: Pick<PersonalWorkbenchRoles, 'send'> & Partial<Pick<PersonalWorkbenchRoles,'sendTeaching'>>, private readonly storage?: TaskStorage) {
+  this.state = new Map(loadPreparedTasks(storage).map(row => [roleKey(row.prepared.key), { prepared: row.prepared, busy: false, error: row.recoveryRequired ? 'Execution state requires explicit task preparation again before sending' : null, recoveryRequired: row.recoveryRequired }]))
+ }
  getSnapshot = () => this.state
  subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
  prepare = (prepared: PreparedTask,options?:TaskHooks) => {
@@ -33,15 +36,16 @@ export class PreparedTasks implements PersonalWorkbenchTasks {
  send = async (key: RoleBindingKey) => {
   const name=roleKey(key), row=this.state.get(name)
   if(!row || row.busy || !row.prepared.task.trim())throw new Error('Prepared task unavailable')
+  if(row.recoveryRequired)throw new Error('Execution state requires explicit task preparation again before sending')
   const afterSend=this.afterSend.get(name)
   this.put(name,{...row,busy:true,error:null})
   try { const beforeSend=this.beforeSend.get(name); if(beforeSend)await beforeSend(); if(row.prepared.teaching){if(!this.roles.sendTeaching)throw new Error('Trusted teaching service unavailable');await this.roles.sendTeaching(row.prepared.key,preparedText(row.prepared))}else await this.roles.send(row.prepared.key, preparedText(row.prepared)); const next=new Map(this.state);next.delete(name);this.afterSend.delete(name);this.beforeSend.delete(name);this.onDiscard.delete(name);this.publish(next) }
   catch(error) { this.put(name,{...row,busy:false,error:error instanceof Error?error.message:'Task failed'}); throw error }
   await afterSend?.()
  }
- private edit(key: RoleBindingKey, update:(p:PreparedTask)=>PreparedTask) { const name=roleKey(key),row=this.state.get(name);if(!row || row.busy)throw new Error('Prepared task unavailable');this.put(name,{...row,prepared:update(row.prepared),error:null}) }
+ private edit(key: RoleBindingKey, update:(p:PreparedTask)=>PreparedTask) { const name=roleKey(key),row=this.state.get(name);if(!row || row.busy)throw new Error('Prepared task unavailable');this.put(name,{...row,prepared:update(row.prepared),error:row.recoveryRequired ? row.error : null}) }
  private put(key:string,row:TaskState) { const next=new Map(this.state);next.set(key,row);this.publish(next) }
- private publish(next:ReadonlyMap<string,TaskState>) { this.state=next;for(const listener of this.listeners)listener() }
+ private publish(next:ReadonlyMap<string,TaskState>) { this.state=next;savePreparedTasks(this.storage,[...next].map(([key,row])=>({prepared:row.prepared,recoveryRequired:!!row.recoveryRequired || row.busy || !!row.prepared.generationRequestId || this.beforeSend.has(key) || this.afterSend.has(key) || this.onDiscard.has(key)})));for(const listener of this.listeners)listener() }
 }
 /** Context is user-supplied evidence with explicit provenance, never system instructions. */
 export function preparedText(prepared:PreparedTask):string {

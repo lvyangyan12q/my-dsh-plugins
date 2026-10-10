@@ -6,6 +6,7 @@ import type { RoleBindingKey } from './role-binding-api.ts'
 import { registerRecipeModuleRenderer } from './recipe-view.tsx'
 import { roleKey } from './role-client.ts'
 import { PreparedTasks } from './task-client.ts'
+import { browserTaskStorage } from './task-preferences.ts'
 import { taskStyles } from './task-styles.ts'
 const emptyStates:ReadonlyMap<string,import('./role-binding-api.ts').RoleViewState>=new Map()
 const emptySubscribe=()=>()=>{}
@@ -41,7 +42,7 @@ function TaskEditor({tasks,bindingKey,label,t,roles}:{tasks:PreparedTasks|import
    {state.error&&<p className="pwb-task-error" role="alert">{state.error}</p>}
   </div>
   <div className="pwb-task-actions">
-   <button type="button" data-pwb-button data-variant="primary" disabled={!prepared.task.trim()||!!roleState?.error||roleState?.busy} onClick={()=>{void tasks.send(bindingKey).catch(()=>{})}}>{t('taskSend')}</button>
+   <button type="button" data-pwb-button data-variant="primary" disabled={!prepared.task.trim()||state.recoveryRequired||!!roleState?.error||roleState?.busy} onClick={()=>{void tasks.send(bindingKey).catch(()=>{})}}>{t('taskSend')}</button>
    <button type="button" data-pwb-button onClick={()=>{void tasks.discard(bindingKey).catch(()=>{})}}>{t('taskDiscard')}</button>
   </div>
  </fieldset></>
@@ -55,5 +56,5 @@ function RecipeRoleChat({ctx,recipe,module,appId,instanceId,preview,taskEditorHo
 export function installTasks(ctx:Context) {
  ctx.effect(()=>registerRecipeModuleRenderer('role-chat',RecipeRoleChat),'recipe role renderer')
  ctx.effect(()=>registerRecipeModuleContextProvider('role-chat',()=>({phase:'ready',context:[]})),'role chat context')
- ctx.inject(['personalWorkbenchRoles'],child=>child.effect(()=>child.reflect.provide('personalWorkbenchTasks',new PreparedTasks(child.personalWorkbenchRoles)),'prepared tasks'))
+ ctx.inject(['personalWorkbenchRoles'],child=>child.effect(()=>child.reflect.provide('personalWorkbenchTasks',new PreparedTasks(child.personalWorkbenchRoles,browserTaskStorage())),'prepared tasks'))
 }
