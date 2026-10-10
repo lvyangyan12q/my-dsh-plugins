@@ -15,7 +15,7 @@ export function safePracticeQuestion(question: BankQuestion, verifiedFigure = fa
   const text = [question.stem, ...question.options, question.source].join('\n')
   if (question.options.some(option => /SKA674|公考最新资料[、，]更新进度微信|[（(]饼图[）)]/.test(option))) return false
   if (!verifiedFigure && /!\[[^\]]*\]\((?:[A-Za-z]:[\\/]|(?:\.\.?[\\/])?题目_images[\\/](?!verified[\\/]))/u.test(question.stem)) return false
-  if (!verifiedFigure && /【卡片图\s*[:：]|[（(]图(?:示)?\s*[:：]|\[图\s*[:：]/u.test(question.stem)) return false
+  if (!verifiedFigure && /【卡片图\s*[:：]|[（(]图(?:示)?\s*[:：]|[\[［]图\s*[:：]/u.test(question.stem)) return false
   if (/花生批注\s*[:：]/.test(text)) return false
   if (/答案|解析|(?:answer|solution|explanation)\s*[:：]|(?:^|\n)\s*\d+[.、]\s*[A-D](?:\s+\d+[.、]\s*[A-D])+/im.test(text)) return false
   return question.options.length > 0 && question.options.some(option => optionKey(option) === question.correctAnswer.trim())
