@@ -21,3 +21,7 @@ for (const [pkg, commands] of [
   for (const command of commands) await runNode(command, { cwd: resolve(root, 'plugins', pkg), env })
   console.log(`${pkg}: clean Host/Client build, declarations and source consumers passed`)
 }
+
+// Use the actual browser module table so Node-installed Host dependencies cannot mask a Client require miss.
+await runNode([resolve(root, 'node_modules/tsx/dist/cli.mjs'), 'scripts/check-client-module-artifacts.mjs'], { cwd: root, env })
+console.log('Official Client factory resolution passed, integrated and standalone; entry activation and rendering remain separate browser gates')
