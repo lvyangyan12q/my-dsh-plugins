@@ -1,6 +1,8 @@
 import {dataModuleTypes} from './content-catalog.ts'
 /** Built-in template modules share one skin; installed custom modules and native chat remain owned by their plugins. */
 export const recipePageStyles=`
+.pwb-recipe-canvas{container:pwb-page / inline-size}
+@container pwb-page (max-width:700px){.pwb-recipe-page{grid-template-columns:minmax(0,1fr)!important}.pwb-column-divider,.pwb-recipe-resize{display:none!important}.pwb-recipe-page[data-conversation-only=true]{grid-auto-rows:minmax(440px,auto)!important;align-content:start!important}}
 @media(max-width:700px){.pwb-recipe-page{grid-template-columns:minmax(0,1fr)!important}.pwb-column-divider,.pwb-recipe-resize{display:none!important}}
 .pwb-recipe-resize{position:relative;flex-shrink:0;height:28px;margin:0 16px 8px;border-bottom:1px solid var(--pwb-line,#d7d0c5);font:12px/28px system-ui;color:var(--pwb-muted,#736c62)}
 .pwb-recipe-page{padding:16px;color:var(--pwb-ink,#2e2b26);font:13px/1.5 system-ui,sans-serif}
