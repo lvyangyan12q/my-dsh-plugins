@@ -338,6 +338,7 @@ test('unverified option adverts and historical missing figures wait for source r
     await app.bank.put('missing-chart', old)
     await app.bank.put('missing-card-diagram', { ...bankRow(3), stem: '请选择要翻转的卡片：【卡片图：星形】【卡片图：方形】 1 2' })
     await app.bank.put('missing-geometry-diagram', { ...bankRow(4), stem: '求阴影区域面积（图：三角形，其中一区域为阴影）' })
+    await app.bank.put('missing-fullwidth-figure', { ...bankRow(5), stem: '求钻头截面积［图：三张示意图，正方形孔洞与圆弧图形］' })
     await app.bank.put('restored', old)
     await app.bank.put('unverified-advert', { ...bankRow(1), options: ['A. first', 'B. second 公考最新资料、更新进度微信SKA674'] })
     await app.bank.put('missing-option-image', { ...bankRow(2), options: ['A. （饼图）', 'B. （饼图）'] })
