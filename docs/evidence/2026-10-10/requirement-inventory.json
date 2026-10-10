@@ -650,10 +650,11 @@
       "section": "Implementation Decisions",
       "number": 18,
       "requirementSha256": "59bbaed5620f9596f3867699be5c4391330e1f8a558f296a473f73c08e94fadf",
-      "evidenceStatus": "partial: original practice/statistics/plan/knowledge pure regression files plus MinerU and material repair remain byte-equivalent after newline normalization to c44d9af and all their tests pass in the clean archive run. Existing views preserve practice/results/material/reflection across transfer. Complete real question-bank and original document/image fidelity remains unproven. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven.",
+      "evidenceStatus": "partial: original practice/statistics/plan/knowledge pure regression files plus MinerU and material repair remain byte-equivalent after newline normalization to c44d9af and all their tests pass in the clean archive run. Existing views preserve practice/results/material/reflection across transfer. Complete real question-bank and original document/image fidelity remains unproven. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven. Historical asset gap subsequently repaired: 149 analysis600 and 29 analysis1200 page images restored from calibrated source PDFs, all 183 stored image references now resolve; business hashes unchanged. Full analysis pages remain excluded from exercise stems; safe material-only crops and runtime image acceptance are separate.",
       "evidencePaths": [
         "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json",
-        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json"
+        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
+        "docs/evidence/2026-10-10/historical-analysis-page-restoration.json"
       ]
     },
     {
@@ -810,9 +811,10 @@
       "section": "Testing Decisions",
       "number": 10,
       "requirementSha256": "a06a0cf73baa7a8670cee3144eca2547cb2d782c5d2f9e882c13efc8da091f0d",
-      "evidenceStatus": "partial: actual historical business-record preservation checked. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven.",
+      "evidenceStatus": "partial: actual historical business-record preservation checked. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven. Historical asset gap subsequently repaired: 149 analysis600 and 29 analysis1200 page images restored from calibrated source PDFs, all 183 stored image references now resolve; business hashes unchanged. Full analysis pages remain excluded from exercise stems; safe material-only crops and runtime image acceptance are separate.",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json"
+        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
+        "docs/evidence/2026-10-10/historical-analysis-page-restoration.json"
       ]
     },
     {
