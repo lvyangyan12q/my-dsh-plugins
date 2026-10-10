@@ -8,7 +8,7 @@ interface WindowPreference extends Geometry {
   restoreMaximized: boolean
 }
 interface AppPreference { favorite: boolean; hidden: boolean; order: number }
-interface Preferences { version: 1; visible: boolean; windows: WindowPreference[]; apps: Record<string, AppPreference> }
+interface Preferences { version: 1; focused: string | null; visible: boolean; windows: WindowPreference[]; apps: Record<string, AppPreference> }
 export interface WorkbenchSnapshot extends Preferences {
   readonly lifecycle: Readonly<Record<string, AppLifecycleState>>
   readonly lifecycleReady: boolean
@@ -41,7 +41,7 @@ export function constrainGeometry(value: Geometry, width: number, height: number
 }
 
 function readPreferences(storage?: PreferenceStorage): Preferences {
-  const empty: Preferences = { version: 1, visible: false, windows: [], apps: Object.create(null) }
+  const empty: Preferences = { version: 1, focused: null, visible: false, windows: [], apps: Object.create(null) }
   if (!storage) return empty
   const raw = storage.getItem(storageKey)
   if (!raw) return empty
@@ -70,7 +70,10 @@ function readPreferences(storage?: PreferenceStorage): Preferences {
       || !('order' in row) || typeof row.order !== 'number' || !Number.isFinite(row.order)) continue
     empty.apps[id] = { favorite: row.favorite, hidden: row.hidden, order: row.order }
   }
-  return { ...empty, visible: value.visible, windows }
+  const focused = 'focused' in value && typeof value.focused === 'string'
+    && windows.some(row => windowKey(row.appId, row.instanceId) === value.focused && row.mode !== 'closed' && row.mode !== 'minimized')
+    ? value.focused : null
+  return { ...empty, visible: value.visible, windows, focused }
 }
 
 /** Registry and presentation lifecycle. Has no Session service or model dependency. */
@@ -83,8 +86,8 @@ export class Workbench implements PersonalWorkbench {
     let preferences: Preferences
     let storageFailed = false
     try { preferences = readPreferences(storage) }
-    catch (_error) { preferences = { version: 1, visible: false, windows: [], apps: Object.create(null) }; storageFailed = true }
-    this.snapshot = { ...preferences, lifecycle: {}, lifecycleReady: !lifecycleLoader, lifecycleError: null, catalogTab: 'applications', definitions: [], focused: null, focusRevision: 0, storageFailed }
+    catch (_error) { preferences = { version: 1, focused: null, visible: false, windows: [], apps: Object.create(null) }; storageFailed = true }
+    this.snapshot = { ...preferences, lifecycle: {}, lifecycleReady: !lifecycleLoader, lifecycleError: null, catalogTab: 'applications', definitions: [], focusRevision: 0, storageFailed }
   }
   private loading?: Promise<void>
   readonly loadLifecycle = (): Promise<void> => {
@@ -190,7 +193,7 @@ export class Workbench implements PersonalWorkbench {
     if (this.disposed) return
     this.snapshot = { ...this.snapshot, ...patch }
     try {
-      this.storage?.setItem(storageKey, JSON.stringify({ version: 1, visible: this.snapshot.visible,
+      this.storage?.setItem(storageKey, JSON.stringify({ version: 1, focused: this.snapshot.focused, visible: this.snapshot.visible,
         windows: this.snapshot.windows, apps: this.snapshot.apps }))
     } catch (_error) { this.snapshot = { ...this.snapshot, storageFailed: true } }
     for (const listener of [...this.listeners]) {
