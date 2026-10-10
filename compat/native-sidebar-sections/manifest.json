@@ -61,5 +61,61 @@
       "before": "ee0c525a9df07a4e1ba40133042b75682cdc03ce940511f40507465904ebbf58",
       "after": "6e052e4bfa51b456ccfd4ee952418936862af0b7741321aaa24510e0764f553f"
     }
+  ],
+  "reviewedCombinations": [
+    {
+      "id": "retirement-with-sections-hooks-v1",
+      "sourceCommit": "d6a3a72164447bd8717db2ecdc66962a7800985a",
+      "files": [
+        {
+          "path": "packages/client/ui-sidebar/src/client/contract/slots.ts",
+          "after": "387d740e8182f5a2abeead6ee87d8bfb39350aaf3232043ce674b8c2b4ee4d75"
+        },
+        {
+          "path": "packages/client/ui-sidebar/src/client/index.ts",
+          "after": "1842a6ed7d7929956ebd71e88a5f300d96e7a0719076301faeb538af8cc1f17b"
+        },
+        {
+          "path": "packages/client/ui-sidebar/src/client/SidebarRoot.tsx",
+          "after": "23c060dce8216050872319ed36ee800ed1aca2efc8747a0f6f5864b3c8c35afc"
+        },
+        {
+          "path": "packages/client/ui-sidebar/tests/apply.client.spec.tsx",
+          "after": "158fe84403bf643eff89f6784203d0ce0927e23209af13cb6e65aea74cef4b2d"
+        },
+        {
+          "path": "packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx",
+          "after": "65cb8a98b0e6dc57ec2c3e7de8f32fa4046b3ed8b80ec048f8c5fc2898d11b3d"
+        },
+        {
+          "path": "packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx",
+          "after": "9b8390e417a169e8d8a7729256923e2415ec8642b0ae495745d24fd85688bc85"
+        },
+        {
+          "path": "packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap",
+          "after": "7b4fb5f2c5c886836244b1a844472dbb52cb19692e9f77a0e03c68503d8d6856"
+        },
+        {
+          "path": "packages/client/ui-sidebar/README.md",
+          "after": "ab243c4f660936986235ee7135abe08f544a93d020386e28501981f3ca2cde01"
+        },
+        {
+          "path": "packages/client/ui-sidebar/README.zh.md",
+          "after": "387c68f067e94b32fc66fb3b6642cb4671a7635d312a98903139c1e3d0ee9253"
+        },
+        {
+          "path": "packages/client/ui-sidebar/README.i18n.yaml",
+          "after": "0dbbfb2ccaa19d74071527e76fd94273c42fb519e4c16ca761f277928e12589e"
+        },
+        {
+          "path": "docs/subsystems/slots.md",
+          "after": "cd50dadb7b38c3fd710860476b1589dec34f198e2709724bd93519a246ff8400"
+        },
+        {
+          "path": "docs/subsystems/slots.zh.md",
+          "after": "6e052e4bfa51b456ccfd4ee952418936862af0b7741321aaa24510e0764f553f"
+        }
+      ]
+    }
   ]
 }

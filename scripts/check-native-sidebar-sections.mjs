@@ -12,12 +12,16 @@ const directory = resolve(root, 'compat/native-sidebar-sections')
 const manifest = JSON.parse(await readFile(resolve(directory, 'manifest.json'), 'utf8'))
 const allowed = new Set(["packages/client/ui-sidebar/src/client/contract/slots.ts","packages/client/ui-sidebar/src/client/index.ts","packages/client/ui-sidebar/src/client/SidebarRoot.tsx","packages/client/ui-sidebar/tests/apply.client.spec.tsx","packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx","packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx","packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap","packages/client/ui-sidebar/README.md","packages/client/ui-sidebar/README.zh.md","packages/client/ui-sidebar/README.i18n.yaml","docs/subsystems/slots.md","docs/subsystems/slots.zh.md"])
 if (manifest.files.length !== allowed.size || new Set(manifest.files.map(row => row.path)).size !== allowed.size || manifest.files.some(row => !allowed.has(row.path))) throw new Error('Unexpected compatibility patch file set')
+const combinations = [manifest.files, ...(manifest.reviewedCombinations ?? []).map(row => row.files)]
+for (const files of combinations) {
+  if (files.length !== allowed.size || new Set(files.map(row => row.path)).size !== allowed.size || files.some(row => !allowed.has(row.path) || !/^[a-f0-9]{64}$/.test(row.after))) throw new Error('Unexpected reviewed compatibility combination')
+}
 const hash = text => createHash('sha256').update(text.replaceAll('\r\n','\n')).digest('hex')
 async function state() {
   return Promise.all(manifest.files.map(async row => ({ ...row, actual: hash(await readFile(resolve(source,row.path),'utf8')) })))
 }
 const rows = await state()
-if (rows.every(row => row.actual === row.after)) {
+if (combinations.some(files => rows.every(row => row.actual === files.find(expected => expected.path === row.path).after))) {
   console.log('Native sidebar sections source adaptation verified; build the native client before runtime verification')
 } else {
   if (!process.argv.includes('--apply')) throw new Error('Native sidebar sections adaptation missing; inspect compat/native-sidebar-sections/README.md and explicitly run this script with --apply')
