@@ -201,3 +201,17 @@ test('generated website and file references require user-supplied inputs; empty 
   }finally{await f.close()}
  }
 })
+test('native generation schema requires the trusted selected workspace while generic recipes keep it optional',async()=>{
+ const {recipeSchema}=await import('../src/recipe-schema.ts');const {z}=await import('zod');assert.equal(z.toJSONSchema(recipeSchema).required.includes('workspace'),false);
+ for(const selected of [true,false]){
+  let received;
+  const f=await fixture([options=>{
+   const prompt=options.messages.flatMap(message=>message.content??[]).find(block=>block.type==='text'&&block.text.includes('"task":"Return exactly one JSON application recipe.'))?.text;
+   const input=JSON.parse(prompt.slice(prompt.indexOf('{')));
+   received=input;
+   return textResponse(JSON.stringify({...recipe(),...(selected?{workspace:input.target.workspace}:{})}));
+  }]);
+  try{if(selected)f.ctx.workspaceRegistry.list=()=>[{path:f.root,status:async()=>'ok'}];const done=await f.generation.settled(f.start().id);assert.equal(received.schema.required.includes('workspace'),selected,'Model-facing schema must agree with the selected target workspace contract');if(selected)assert.equal(received.schema.properties.workspace.const,received.target.workspace);assert.equal(done.status,'completed',done.error);assert.equal(done.record.draft.workspace,selected?f.root:undefined)}finally{await f.close()}
+ }
+ assert.equal(z.toJSONSchema(recipeSchema).required.includes('workspace'),false);
+})
