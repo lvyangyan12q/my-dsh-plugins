@@ -1,77 +1,68 @@
 {
-  "date": "2026-10-11",
-  "scope": "Partial real installed DSH acceptance; no completion ticket closed",
-  "environment": {
-    "ownedIsolatedPort": 3089,
-    "formal3080Modified": false,
-    "remotePushedDuringAcceptance": false,
-    "realModelConfiguredByUser": true
-  },
-  "generation": {
-    "sourceCommit": "4d66ed760e0988821e0657bef65bda5156c572c5",
-    "realNativeModelGenerated": true,
+  "scope": "Partial real installed DSH acceptance; all completion tickets remain open pending full criteria",
+  "port": 3089,
+  "formal3080Modified": false,
+  "remotePushed": false,
+  "realModelConfiguredByUser": true,
+  "generationSchemaSourceCommit": "4d66ed760e0988821e0657bef65bda5156c572c5",
+  "generationSchemaAcceptance": {
+    "nativeModelGenerated": true,
     "draftSavedWithoutActivation": true,
     "pages": 2,
-    "moduleTypes": [
+    "modules": [
       "website",
       "resources",
       "custom-file"
     ],
     "previewThenExplicitActivation": true,
-    "actualWebsiteIframeRendered": true,
-    "resourceModuleListedExistingFiles": true,
-    "localHtmlContentRendered": true,
+    "websiteIframeRendered": true,
+    "resourcesListedExistingFiles": true,
+    "localHtmlHeadingRendered": "Static assets",
     "coldRestartRetainedActivatedApplicationAndSelectedPage": true
   },
   "nativeExecution": {
     "realStopObservedAfterCloseAndReopenRunningApplication": true,
+    "nativeChatOutcome": "已停止",
     "coldRestartPreservedRoleSessionFingerprint": "0f1e622112d35453b4a57a86057085caeb67227072ac62320dbee31d31bb388f",
     "realKaogongTeachSkillLoaded": true,
     "realKaogongKnowledgeSearchAndRead": true,
     "defaultTeacherCompletedExplanation": true,
     "subjectTeacherReceivedExplicitPreparedLessonTaskAndWaitedForLearner": true,
+    "nativeApprovalStillUnverified": false,
     "NativeQuestionAnsweredAndToolTaskResumed": true,
     "ReadOnlyWriteDeniedThenNativeAllowOnceSucceeded": true
   },
-  "generationRecovery": {
-    "sourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
+  "generationRecoverySourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
+  "generationRecoveryAcceptance": {
     "realTwentyPageDraftCompletedAcrossBrowserRefresh": true,
     "requirementAndNativeEntryRestored": true,
     "realRunningGenerationInterruptedByOwnedHostStop": true,
     "coldRestartStatus": "failed",
+    "coldRestartMessage": "Generation interrupted by Host restart. Review the preserved native Session before explicitly starting again.",
     "nativeEntryPreserved": true,
     "explicitRetryEnabled": true,
-    "automaticReplayEvidence": "Visible UI retains failed interruption; native request counts have not yet been reconciled, so no replay absence is claimed"
-  },
-  "moduleGeneration": {
-    "sourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
-    "explicitPreparedTaskSent": true,
-    "packagedModuleSkillAndTemplateUsed": true,
-    "nativeWriteToolCreatedScopedHtml": true,
-    "actualIframeContentRendered": true,
-    "actualStartPausedTimer": true,
-    "nativeTrajectoryIncludesRequestToolInputAndResult": true,
-    "coldRestartArtifactVerified": true,
-    "coldRestartNativeHistoryVisible": true,
-    "stableRoleSessionFingerprint": "7026cddde5c6ada0ad41844cf2f7ff8bd42c7cd20f7e41f46c9139c1e82cea14"
+    "noAutomaticModelReplay": "UI retains failed outcome rather than starting a new job; native request count still to be reconciled"
   },
   "kaogongPartial": {
-    "installedSourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
     "historicalDataCopiedToOwnedProfileOnly": true,
-    "historicalImageFileCount": 411,
-    "initialPracticeAttempt": {
-      "actualPartialSubmissionAndReasonSummarySaved": true,
-      "practiceClosureAccepted": false,
-      "reason": "One incorrect answer and nine unanswered after browser radio automation failed"
-    },
-    "unmatchedPracticeInstalledRetest": {
+    "historicalImageFilesCopied": 411,
+    "lessonCreated": true,
+    "realPracticeSubmissionAndReasonSummarySaved": true,
+    "practiceAnswers": "one incorrect answer and nine unanswered after browser radio automation failed; not accepted as full practice closure",
+    "lessonHomeworkNotCompleted": true,
+    "foundIssues": [
+      "no-match practice remains preparing",
+      "pre-answer option contains explanation annotation"
+    ],
+    "fixesMergedButInstalledRetestPending": true,
+    "UnmatchedPracticeInstalledRetest": {
       "SourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
       "LoadingEnded": true,
       "RetryVisible": true,
       "BroadenOnlyByExplicitClick": true,
       "OriginalLessonNotModified": true
     },
-    "subsequentFullPractice": {
+    "SubsequentFullPractice": {
       "ActualAnswers": 10,
       "Unanswered": 0,
       "Correct": 3,
@@ -81,7 +72,7 @@
       "SummaryVisible": true,
       "OriginalRestrictedLessonNotFalselyCompleted": true
     },
-    "genericLessonClosure": {
+    "GenericLessonClosure": {
       "AssociatedActualAnsweredRound": true,
       "Correct": 3,
       "Total": 10,
@@ -93,15 +84,25 @@
       "ColdRestartPending": false,
       "ColdRestartCompletedLessonNotesAndOriginalPendingPreserved": true
     },
-    "counselorReview": {
+    "CounselorReview": {
       "PreparedFromActualRound": true,
       "ExplicitSend": true,
       "NativeModelCompleted": true,
-      "NoDuplicateSubmission": true
+      "NoDuplicateSubmission": true,
+      "ContentConsistencyFailure": "One explanation contradicted its source option; remediation and real retry pending",
+      "RealGuidanceRetry": {
+        "InstalledSource": "e9897a74462242e02d6589c1ca040b060ae90d29",
+        "NativeTeachSkillExplicitlyInvoked": true,
+        "ModelCorrectedRomanSet": "I,III -> B",
+        "CorrectOriginalOptionTextQuoted": true,
+        "RoundCounts": "10 = 3 correct + 7 incorrect + 0 unanswered",
+        "RoundAndCumulativeSeparated": true,
+        "OriginalScoreNotChanged": true,
+        "OriginalNarrativeFailureRemainsInHistory": true,
+        "DoesNotGuaranteeAllModelAnswers": true
+      }
     },
-    "counselorExplanationConsistencyPassed": false,
-    "counselorExplanationFailure": "Earlier explanation contradicted its source option; corrected follow-up is retained separately and does not erase prior failure",
-    "headteacherPlan": {
+    "HeadteacherPlan": {
       "NativePlanViewProgressAndErrorsCalled": true,
       "ExplicitUserAuthorizedPlanSet": true,
       "NativePlanSetCalled": true,
@@ -111,91 +112,52 @@
       "ModelNarrativeConfusesRoundAndCumulative": true,
       "ColdRestartPending": false,
       "ColdRestartNativePlanHistoryPreserved": true
-    },
-    "guidanceFix": {
-      "sourceCommit": "e9897a74462242e02d6589c1ca040b060ae90d29",
-      "actualInstalledRetest": true,
-      "scope": "Observed counselor correction only; no guarantee for every future explanation"
-    },
-    "latestMaterialSourceFixInstalledRetest": false,
-    "counselorGuidanceRetry": {
-      "InstalledSource": "e9897a74462242e02d6589c1ca040b060ae90d29",
-      "NativeTeachSkillExplicitlyInvoked": true,
-      "RoundAndCumulativeSeparated": true,
-      "OriginalScoreNotChanged": true,
-      "OriginalNarrativeFailureRemainsInHistory": true,
-      "DoesNotGuaranteeAllModelAnswers": true,
-      "sourceOptionConsistencyCorrectedForObservedExample": true,
-      "roundCounts": {
-        "total": 10,
-        "correct": 3,
-        "incorrect": 7,
-        "unanswered": 0
-      }
     }
   },
-  "latestVerifiedCleanGate": {
-    "sourceCommit": "e9897a74462242e02d6589c1ca040b060ae90d29",
-    "tests": 347,
-    "passed": 347,
-    "failed": 0,
+  "latestFullGateAtRecoveryCommit": {
+    "tests": 338,
+    "passed": 338,
     "skipped": 0,
-    "officialOfflineArchiveInstall": true,
-    "installedBytes": true,
-    "installedClientFactories": true,
-    "standaloneClientFactory": true,
-    "installedConsumers": true,
-    "authenticatedLifecycle": true,
-    "installedHtmlAssets": true,
-    "coldRestart": true,
-    "readingUninstallReinstall": true,
-    "compatibilityExemptions": 0,
-    "modelCalls": 0
+    "officialArchiveAndColdLifecyclePassed": true,
+    "modelCallsInGate": 0
   },
-  "limits": [
-    "Historical Kaogong actual practice/unmatched observations were installed c966; source-pinned guidance correction and cold continuation used installed e989.",
-    "Current merged role-choice and figure eligibility product fixes await installed and full-gate acceptance.",
-    "Reading native result entry passed on installed 6f3e471 with prior cold model history and preserved fold/reopen draft; full Reading instance/lifecycle still pending.",
-    "Full manual authoring, complete role replacement and historical conversation/material coverage still require installed acceptance.",
-    "The original restricted lesson remains unfinished; generic lesson closure does not imply its completion or long-term mastery.",
-    "Earlier incorrect counselor/plan narratives remain in history; one corrected follow-up is not a guarantee of all model answers.",
-    "Physical Chinese IME, full compatibility/upgrade/rollback and dormant/PWB-own unload matrices remain open.",
-    "The e989 clean gate uses synthetic fixtures and zero model calls, and does not cover later merged product fixes.",
-    "Raw request/content/tool paths, native Session IDs, credentials, screenshots and historical materials are excluded."
-  ],
-  "previousVerifiedCleanGate": {
-    "sourceCommit": "29b051712892b217ccc480889a5c745bd29bc27f",
-    "tests": 347,
-    "passed": 347,
-    "failed": 0,
-    "skipped": 0,
-    "officialOfflineArchiveInstall": true,
-    "installedBytes": true,
-    "installedClientFactories": true,
-    "standaloneClientFactory": true,
-    "installedConsumers": true,
-    "authenticatedLifecycle": true,
-    "installedHtmlAssets": true,
-    "coldRestart": true,
-    "readingUninstallReinstall": true,
-    "compatibilityExemptions": 0,
-    "modelCalls": 0
+  "ModuleGeneration": {
+    "SourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
+    "ExplicitPreparedTaskSent": true,
+    "PackagedModuleSkillAndTemplateUsed": true,
+    "NativeWriteToolCreatedScopedHtml": true,
+    "ActualIframeTitle": "专注学习",
+    "ActualStartPausedTimer": true,
+    "NativeTrajectoryIncludesRequestToolInputAndResult": true,
+    "ColdRestartArtifactPending": false,
+    "ColdRestartArtifactRendered": true,
+    "ColdRestartNativeHistoryVisible": true,
+    "StableRoleSessionFingerprint": "7026cddde5c6ada0ad41844cf2f7ff8bd42c7cd20f7e41f46c9139c1e82cea14"
   },
-  "readingPartial": {
+  "LatestCommittedGate": {
+    "SourceCommit": "29b051712892b217ccc480889a5c745bd29bc27f",
+    "Tests": 347,
+    "Passed": 347,
+    "Failed": 0,
+    "Skipped": 0,
+    "OfficialReleaseStillRunning": false,
+    "OfficialReleasePassed": true
+  },
+  "ReadingPartial": {
     "SourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
     "InitialExampleRecords": 3,
     "InitialMinutes": 210,
     "CategoryAndStatusFilterMatched": 1,
     "MatchedMinutes": 120,
+    "SelectedWaldenDetailRendered": true,
     "NoMatchClearedDetailListAndStatistics": true,
     "RuntimeRoleConfigurationSavedPreviewedExplicitlyActivated": true,
     "PreparedTaskContainedExactSelectedRecordAndFilters": true,
+    "NativeSendPending": false,
+    "ColdRecoveryPending": true,
     "NativeModelTaskCompleted": true,
     "ApplicationNativeResultEntryMissing": false,
-    "ColdRecoveryPending": true,
-    "selectedRecordDetailRendered": true,
-    "newNativeResultEntryInstalledRetest": true,
-    "applicationNativeResult": {
+    "ApplicationNativeResult": {
       "InstalledWorkbenchSource": "6f3e471576aad4b55b817cbe0c6f5a4a4add99b5",
       "ActualModelResultVisible": true,
       "NativeTitleChatAndTrajectoryVisible": true,
@@ -210,12 +172,13 @@
       "FullReadingInstanceAndLifecycleStillPending": true
     }
   },
-  "documentImageRecovery": {
-    "ownedReferencedAssetCount": 3097,
-    "hashVerified": true,
-    "liveOwnedConfigOnly": true,
-    "modelAndCredentialPreserved": true,
-    "authenticatedBrowser": {
+  "DocumentImageRecovery": {
+    "OwnedReferencedAssets": 3097,
+    "HashVerified": true,
+    "ModelAndCredentialPreserved": true,
+    "LiveOwnedConfigOnly": true,
+    "AuthenticatedBrowserRetestPending": false,
+    "AuthenticatedBrowser": {
       "Http200Images": 6,
       "ActualLazyImagesLoaded": 6,
       "NaturalWidths": [
@@ -229,13 +192,13 @@
       "ExistingUnsubmittedPracticeRecoveredAfterBrowserRefresh": true
     }
   },
-  "latestColdConfig": {
+  "TeachingGuidanceInstalledSource": "e9897a74462242e02d6589c1ca040b060ae90d29",
+  "LatestColdConfig": {
     "CurrentUserCredentialPreserved": true,
     "CurrentModelAndMaterialPatchPreserved": true,
-    "NativeCounselorCorrectionHistoryPreserved": true,
-    "scope": "Byte preservation of current authorized model/material configuration; not a claim of returning to pre-configuration bytes"
+    "NativeCounselorCorrectionHistoryPreserved": true
   },
-  "manualAuthoringPartial": {
+  "ManualAuthoringPartial": {
     "InstalledWorkbenchSource": "6f3e471576aad4b55b817cbe0c6f5a4a4add99b5",
     "ModuleFirstUi": true,
     "ContentTypes": [
@@ -248,6 +211,14 @@
     "InvalidNonScriptUrlPreviewRejectedWithModuleIdentity": true,
     "InvalidPreviewActivationDisabled": true,
     "SavedDraftPreviewAndExplicitActivation": true,
+    "ActualLocalHtmlHeading": "Static assets",
+    "ActualResourcesListed": [
+      "icon.svg",
+      "index.html",
+      "main.js",
+      "theme.css"
+    ],
+    "ActualAnimationIframeTitle": "动画模块验收",
     "AnimationAuxiliaryServerTimeoutRecoveredByOwnedProcessRestart": true,
     "NativeTitleChatTrajectoryComposerVisible": true,
     "AddedAndRenamedSecondPage": true,
@@ -266,11 +237,109 @@
     "RuntimeRemainedTwoPagesAfterInvalidDraftSave": true,
     "RuntimeVersionRemainedOne": true,
     "SubsequentValidRuntimeEditAndColdRestartPending": true,
-    "FullTicketStillOpen": true,
-    "actualLocalHtmlRendered": true,
-    "actualResourceFilesListed": true,
-    "actualAnimationIframeRendered": true,
-    "activeWindowFixSourceCommit": "3bd801eb8668987db2911acbc5182a4ab6ec7ee2",
-    "activeWindowFixInstalled": false
+    "FullTicketStillOpen": true
+  },
+  "ManualAuthoringContinuation": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "actualBrowserReloadDirectlyRestoredFocusedWindow": true,
+    "selectedPageSplit55AndUnsentNativeDraftRestored": true,
+    "concurrentRecipeEditorDetectedStaleRevisionAndRejectedSave": true,
+    "refreshedEditorSavedValidOriginalTwoPages": true,
+    "previewThenExplicitActivationOfVersionTwo": true,
+    "runtimeWebsiteTitle": "参考网站 · 修改验收",
+    "narrowViewport480NativeComposerWithinDocument": true,
+    "coldRestartOfVersionTwoPending": false,
+    "coldRestartRetainedSelectedPageSplit55AndNativeUnsentDraft": true,
+    "coldRestartRetainedModifiedWebsiteTitleAndAllFourContentTypes": true
+  },
+  "NativePageAnnotationContinuation": {
+    "arbitraryCanvasPoint": {
+      "x": 820,
+      "y": 507,
+      "width": 0,
+      "height": 0
+    },
+    "targetPage": "home",
+    "targetModule": null,
+    "existingBuilderRoleExplicitlySelected": true,
+    "taskPreparedWithoutAutomaticSend": true,
+    "explicitNativeSendLoadedWorkbenchPageAdjustSkill": true,
+    "modelFirstEditRejectedBecauseFileNotRead": true,
+    "modelReadThenEditedExistingArtifactSuccessfully": true,
+    "actualRenderedTitle": "专注学习 · 已调整",
+    "timerControlsWorkedAfterAdjustment": true,
+    "annotationHistoryRetained": true,
+    "subsequentLongNativeResponseRunningAcrossCloseReopen": true,
+    "nativeStopOutcome": "已停止",
+    "coldRestartOfAdjustedArtifactPending": false,
+    "coldRestartRestoredAdjustedIframeTitleAndTimerControls": true,
+    "savedHistoryEditFeatureNotYetInstalled": true
+  },
+  "ApprovedMaterialBrowserContinuation": {
+    "indexesReloadedThroughNativePluginDisableEnable": true,
+    "previousUnsubmittedRoundRestored": true,
+    "verifiedOriginalQuestionImagesActuallyLoaded": [
+      {
+        "questionId": "sha256:e7b88392bc22527413fd91a8e190065a47c5b17b74cf9252aa23a3494d72fce3",
+        "pdfPage": 49,
+        "naturalWidth": 990,
+        "naturalHeight": 352
+      },
+      {
+        "questionId": "sha256:3e69fe237d33f037a6f7d481f3d395bd6808ccf28d08f9aa658d2c299767f3ce",
+        "pdfPage": 105,
+        "naturalWidth": 980,
+        "naturalHeight": 382
+      }
+    ],
+    "all57ActualBrowserCoverageClaimed": false,
+    "unrelatedTailAnnotationsStillUnderReview": true,
+    "answerConflictRequiresUserDecision": true
+  },
+  "RoleReplacementContinuation": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "sameCurrentSessionAcrossLessonAndReviewPages": "sha256:7e5f76f18a41800dfcec257d2ec68d5788715c5075b9d39cbe82bf9075b0e5e0",
+    "explicitNativeBrowserConfirmShown": true,
+    "dismissPreservedCurrentBindingAndHistory": true,
+    "acceptCreatedNewCurrentSession": "sha256:8700954795366cefb90fb89c102b873aa84ceb2a221ad3254d13eeb999ef7573",
+    "priorCurrentSessionAddedToHistory": true,
+    "priorHistoricalSessionStillListed": "sha256:ddb972fdfc0d76c83ccff0c252038a3d345b8e72f422eed7bd847598c5c1e039",
+    "priorCurrentOpenedInsideApplicationWithOriginalMessageAndMissingCredentialError": true,
+    "noModelSendInThisReplacementCheck": true,
+    "newCurrentColdRecoveryPending": false,
+    "actualBrowserColdRestoredCurrentAndBothHistoricalSessionIds": true
+  },
+  "ExplicitGenerationCancellation": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "requirementTypedInActualApplicationEditor": true,
+    "nativeModelStartedThenExplicitCancelClicked": true,
+    "browserJobOutcome": "生成已取消",
+    "nativeHistoryOpenedAndStopOutcomeObserved": "已停止",
+    "nativeHistoryReportedOneRoundOneStep": true,
+    "persistedJobStatus": "cancelled",
+    "originalNativeSessionIdentityRetained": "sha256:1fbf3758d55dccc637a561ed6e810d8d151effb4452be5f7972012488db5773e",
+    "savedRecipeAbsentForCancelledTarget": true,
+    "existingRuntimeBrowserRecheckPending": false,
+    "coldCancelledStatusRecoveryPending": false,
+    "actualBrowserColdRestoredCancelledStatusRequirementAndNativeHistoryEntry": true
+  },
+  "LatestOwnedColdContinuation": {
+    "stoppedOnlyVerifiedOwned3089Process": true,
+    "persistentDomainFiles": 17,
+    "changedDomainFiles": [],
+    "userConfiguredCredentialsAndPluginPatchExactHashPreserved": true,
+    "actualBrowserRestoredFocusedAiApplicationAndSelectedStaticPage": true,
+    "actualBrowserManualRuntimeRestoredPageSplit55AndUnsentDraft": true,
+    "actualBrowserManualWebsiteTitleAndLocalContentRestored": true,
+    "actualBrowserAdjustedWidgetTitleAndTimerControlsRestored": true,
+    "nativeCancelledGenerationStillShownAsStopped": true,
+    "roleReplacementAndEditorCancelledJobBrowserRecheckPending": false,
+    "actualBrowserNewRoleSessionAndBothHistoricalIdsRestored": true,
+    "actualBrowserCancelledEditorRestoredRequirementStatusAndNativeHistoryEntry": true
+  },
+  "sanitization": {
+    "localPaths": "owned-workspace",
+    "nativeSessionAndQuestionIdentities": "SHA-256 fingerprints",
+    "rawCredentialsAndMaterialsIncluded": false
   }
 }
