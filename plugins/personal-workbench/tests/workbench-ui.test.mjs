@@ -237,8 +237,12 @@ test('application status refresh updates unchanged running recipe dependency pro
   await f.click('Exercise');await f.click('Enter answer');const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]');
   await f.click('workspace');available=false;await f.click('refreshApps');
   assert.equal(f.service.getSnapshot().definitions.find(row=>row.id===recipe.appId).dependencies.find(row=>row.id==='agent:analyst').available,false,'refresh must update actual recipe dependency projection');
+  const card=[...f.dom.window.document.querySelectorAll('.pwb-app')].find(row=>row.querySelector('.pwb-open')?.textContent===recipe.name);
+  assert.equal(card.querySelector('details').open,false);
+  assert.match(card.querySelector('[role="status"]')?.textContent??'',/Unavailable Agent: my-dsh\.analyst/,'missing dependency must be visible without expanding configuration');
   assert.equal(draft.isConnected,true);assert.equal(draft.value,'retained answer');assert.equal(f.counts().unmounts,0);
   available=true;await f.click('refreshApps');assert.equal(f.service.getSnapshot().definitions.find(row=>row.id===recipe.appId).dependencies.find(row=>row.id==='agent:analyst').available,true);
+  assert.equal(card.querySelector('[role="status"]'),null,'recovered dependency warning must clear');
  }finally{await f.dispose()}
 })
 
