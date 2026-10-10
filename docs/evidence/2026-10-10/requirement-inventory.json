@@ -122,7 +122,10 @@
       "section": "User Stories",
       "number": 10,
       "requirementSha256": "a271824f27098a8cde6db41d35b54859d5e524539035a9ba61cfd1dc813bcecf",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: application minimize and explicit instance restore proven in actual installed3089; mounted page/draft and same Session retained, minimized state survives reload. Maximize and full close/restore window scope still require separate proof.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-minimize-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:11",

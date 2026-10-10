@@ -1,0 +1,199 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "849d095ba62b5250a1e81e56ff25456c006d012c",
+  "archiveSha256": "c4b73c147c2ee09ed6617bc68078de38b5a352143b105f5896cc6253db3e40fa",
+  "installedBytesVerified": true,
+  "tests": {
+    "pass": 300,
+    "fail": 0,
+    "skipped": 0
+  },
+  "releaseVerdict": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "c4b73c147c2ee09ed6617bc68078de38b5a352143b105f5896cc6253db3e40fa",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "userFilesPreserved": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "scope": "Actual isolated3089 application minimize, explicit instance restore, selected page/focus/draft retention and minimized-state reload recovery. Same Session ID retained. No running model/IME/maximum-window acceptance or formal3080 refresh claimed.",
+  "observations": {
+    "minimizeBefore": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"appMounted\":true,\"appHidden\":false,\"page\":\"复习页面\",\"drafts\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"],\"historyDialogs\":0,\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"restoreButtons\":[],\"focus\":\"发消息或创建任务, / 调用指令, @ 文件或对话\"}\n```"
+        }
+      ]
+    },
+    "minimizeAfter": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"appMounted\":true,\"appHidden\":true,\"page\":\"复习页面\",\"drafts\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"],\"historyDialogs\":0,\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"restoreButtons\":[{\"label\":\"还原: 跨页角色验收 · default\",\"visible\":true}],\"focus\":\"工作台\"}\n```"
+        }
+      ]
+    },
+    "minimizeRestored": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"appMounted\":true,\"appHidden\":false,\"page\":\"复习页面\",\"drafts\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"],\"historyDialogs\":0,\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"restoreButtons\":[],\"focus\":\"跨页角色验收 · default\"}\n```"
+        }
+      ]
+    },
+    "minimizeReloaded": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"appMounted\":true,\"appHidden\":true,\"page\":\"复习页面\",\"drafts\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"],\"historyDialogs\":0,\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"restoreButtons\":[{\"label\":\"还原: 跨页角色验收 · default\",\"visible\":true}],\"focus\":null}\n```"
+        }
+      ]
+    },
+    "minimizeReloadRestored": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"appMounted\":true,\"appHidden\":false,\"page\":\"复习页面\",\"drafts\":[\"Agent 切换保护验收：保留这段未发送草稿。\\n\\n\\n\\n\\n📌 工作台画布标注\\n\\n{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}\\n\\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"],\"historyDialogs\":0,\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"restoreButtons\":[],\"focus\":\"跨页角色验收 · default\"}\n```"
+        }
+      ]
+    },
+    "minimizeBinding": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"binding\":{\"binding\":{\"version\":1,\"key\":{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"roleId\":\"analyst\"},\"sessionId\":\"918c1824-d28a-42fa-b413-fe581b359157\",\"presetId\":\"my-dsh.agent-change-acceptance\",\"phase\":\"ready\",\"previousSessionIds\":[\"efd2c984-c376-4bc6-a236-6f85988345f2\"],\"creation\":{\"cwd\":\"D:\\\\programming\\\\workspace\\\\my-dsh\\\\.scratch\\\\committed-sidebar-source-1791575691476\\\\.scratch\\\\platform-release-1791575744854\\\\workspace\"}}},\"drafts\":[{\"text\":\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\",\"inDialog\":false}],\"dialogs\":[],\"alerts\":[]}\n```"
+        }
+      ]
+    }
+  },
+  "parsed": {
+    "minimizeBefore": {
+      "appMounted": true,
+      "appHidden": false,
+      "page": "复习页面",
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。"
+      ],
+      "historyDialogs": 0,
+      "roleKey": "[\"cross-page-proof\",\"default\",\"analyst\",null]",
+      "restoreButtons": [],
+      "focus": "发消息或创建任务, / 调用指令, @ 文件或对话"
+    },
+    "minimizeAfter": {
+      "appMounted": true,
+      "appHidden": true,
+      "page": "复习页面",
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。"
+      ],
+      "historyDialogs": 0,
+      "roleKey": "[\"cross-page-proof\",\"default\",\"analyst\",null]",
+      "restoreButtons": [
+        {
+          "label": "还原: 跨页角色验收 · default",
+          "visible": true
+        }
+      ],
+      "focus": "工作台"
+    },
+    "minimizeRestored": {
+      "appMounted": true,
+      "appHidden": false,
+      "page": "复习页面",
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。"
+      ],
+      "historyDialogs": 0,
+      "roleKey": "[\"cross-page-proof\",\"default\",\"analyst\",null]",
+      "restoreButtons": [],
+      "focus": "跨页角色验收 · default"
+    },
+    "minimizeReloaded": {
+      "appMounted": true,
+      "appHidden": true,
+      "page": "复习页面",
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。"
+      ],
+      "historyDialogs": 0,
+      "roleKey": "[\"cross-page-proof\",\"default\",\"analyst\",null]",
+      "restoreButtons": [
+        {
+          "label": "还原: 跨页角色验收 · default",
+          "visible": true
+        }
+      ],
+      "focus": null
+    },
+    "minimizeReloadRestored": {
+      "appMounted": true,
+      "appHidden": false,
+      "page": "复习页面",
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。\n\n\n\n\n📌 工作台画布标注\n\n{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}\n\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。"
+      ],
+      "historyDialogs": 0,
+      "roleKey": "[\"cross-page-proof\",\"default\",\"analyst\",null]",
+      "restoreButtons": [],
+      "focus": "跨页角色验收 · default"
+    },
+    "minimizeBinding": {
+      "binding": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "drafts": [
+        {
+          "text": "Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。",
+          "inDialog": false
+        }
+      ],
+      "dialogs": [],
+      "alerts": []
+    }
+  },
+  "checks": {
+    "beforeReview": true,
+    "minimizedMountedHidden": true,
+    "explicitRestoreAvailable": true,
+    "sameDraft": true,
+    "restoredPage": true,
+    "restoredFocus": true,
+    "reloadMinimized": true,
+    "reloadRestoredPage": true,
+    "reloadSameDraftText": true,
+    "sameSession": true
+  }
+}
