@@ -53,6 +53,18 @@ test('actual preset registry activates application personas in independent scope
         const skill = await ctx.skills.get('kaogong-teach', { scope: lease.key })
         assert.match(skill?.content ?? '', /教学阶段与推进条件/)
         assert.equal(skill?.source, 'bundled')
+        assert.match(skill.content,/本轮.*累计/);assert.match(skill.content,/userAnswer.*为空.*未答.*correct=false.*错题/);assert.match(skill.content,/分母.*跳过/);
+        if(preset.id==='kaogong.class-advisor.v1')assert.match(preset.plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix,/本轮.*累计/);
+        // Test the actual acquired native scope, not an unused role file.
+        if(preset.id.includes('teacher')||preset.id==='kaogong.counselor.v1'){
+          const prefix=preset.plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix
+          assert.match(prefix,/自编示例.*材料原题/);assert.ok(assembly.sections.some(section=>section.text?.includes('来源与答案核对')),'Source/answer guard must be in actual assembled native persona')
+          assert.match(prefix,/标准答案.*原选项/)
+          assert.match(prefix,/无法确定.*明确说明/)
+          assert.match(skill.content,/题目 ID.*原题干.*原选项.*实际作答.*Host 标准答案/)
+          assert.match(skill.content,/Ⅰ、Ⅱ、Ⅲ.*逐项.*必然/)
+          assert.match(skill.content,/无法确定.*暂停.*不改写.*成绩/)
+        }
       } finally { await lease[Symbol.asyncDispose]() }
     }
     assert.equal((await ctx.systemPrompt.assemble()).sections.find(row => row.name === 'deployment:persona-prefix')?.text, 'UNCHANGED DEPLOYMENT GUARD')
