@@ -863,9 +863,10 @@
       "section": "User Stories",
       "number": 4,
       "requirementSha256": "2cb445857783945cf8ae478bed303bb5078da72617e94b142d08e4566ce9627e",
-      "evidenceStatus": "partial: actual editable form name changes and explicit save/preview/activation asserted in clean Client tests; complete current rendered name/description editing not separately observed",
+      "evidenceStatus": "satisfied for direct application name and description editing: actual installed Client created a split draft, edited both fields, saved and reselected it; application/module identities preserved and no implicit activation. Full AI generation-to-runtime chain is separate and unproven.",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/manual-description-canvas-browser.json"
       ]
     },
     {
