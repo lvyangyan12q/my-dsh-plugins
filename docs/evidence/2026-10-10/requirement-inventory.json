@@ -328,10 +328,11 @@
       "section": "User Stories",
       "number": 25,
       "requirementSha256": "3044c8262cda0542b024b591048bf091bbad7d9593a08f0c2c06fc6d98394b97",
-      "evidenceStatus": "satisfied for persistent classroom homework/completion/summary: actual form creation, real existing submitted round/reflections, explicit learner confirmation, cold Host restart and visible classroom recovery; model-generated teaching and the full teaching chain remain separate unmet requirements",
+      "evidenceStatus": "partial: actual installed UI classroom goal, learner summary, committed ten-question practice, explicit completion and idempotent confirmation preserve the same record after browser reload and Host cold restart; independent original bank scoring matches. This browser run disables required reflections; default reflection-required completion and broader teaching linkage remain open.",
       "evidencePaths": [
         "docs/evidence/2026-10-10/lesson-persistence-verification.json",
-        "docs/evidence/2026-10-10/kaogong-practice-browser.json"
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+        "docs/evidence/2026-10-10/classroom-homework-persistence-browser.json"
       ]
     },
     {
@@ -846,7 +847,10 @@
       "section": "Testing Decisions",
       "number": 8,
       "requirementSha256": "e55649dc56706ddba35a9b09f7e442152b629befc94188b36456449488944eda",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual installed UI classroom goal, learner summary, committed ten-question practice, explicit completion and idempotent confirmation preserve the same record after browser reload and Host cold restart; independent original bank scoring matches. This browser run disables required reflections; default reflection-required completion and broader teaching linkage remain open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/classroom-homework-persistence-browser.json"
+      ]
     },
     {
       "id": "workbench:Testing Decisions:9",
