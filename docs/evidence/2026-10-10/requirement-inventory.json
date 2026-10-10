@@ -273,7 +273,8 @@
       "requirementSha256": "0792e427aca1e626d47984cf04b0bb47e235d3cc31b54289627fdfc1631407e5",
       "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/formal-cross-page-material.json"
+        "docs/evidence/2026-10-10/formal-cross-page-material.json",
+        "docs/evidence/2026-10-10/verified-practice-diagram-browser.json"
       ]
     },
     {
@@ -386,9 +387,10 @@
       "section": "User Stories",
       "number": 30,
       "requirementSha256": "6198b58a15b143e2128f1d674f6d86155a1aa6d4af4e7d2be1cb283c1fe56c62",
-      "evidenceStatus": "partial: actual historical backup restored into isolated installed DSH; all 3994 bank, 72 knowledge, 8 old notebook and 216 plan records preserve identity and fields; ten-question UI scoring, next round and cold recovery verified; owned state rolled back and formal data unchanged. Full original question/material fidelity remains incomplete: actual sample contains missing diagram placeholder and footer-contaminated options.",
+      "evidenceStatus": "partial: actual historical backup restored into isolated installed DSH; all 3994 bank, 72 knowledge, 8 old notebook and 216 plan records preserve identity and fields; ten-question UI scoring, next round and cold recovery verified; owned state rolled back and formal data unchanged. Full original question/material fidelity remains incomplete: actual sample contains missing diagram placeholder and footer-contaminated options. One missing diagram now restored through a private verified association and confirmed in installed browser; broader material fidelity remains partial.",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json",
+        "docs/evidence/2026-10-10/verified-practice-diagram-browser.json"
       ]
     },
     {

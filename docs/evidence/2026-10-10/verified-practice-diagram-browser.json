@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "0d80eb923d5241c828eaecfb32705948bcff1492",
+  "archiveSha256": "553cc65b29af8f237026f4e165cc4f2ceccf0559f43fa4e4a23c0f2ff0c98492",
+  "officialCliInstall": true,
+  "installedBytesVerified": true,
+  "host": "owned isolated DSH 3089",
+  "method": "Manually match the original PDF page and extracted material-only image; issue actual historical-bank practice through public API and select it in the installed application; decode and hash its rendered image. No model calls or CSS injection.",
+  "provenance": {
+    "date": "2026-10-10",
+    "sourcePdfSha256": "f3df60f2b12c91662beb41e52604d1aa4ed31cd19c1b662894731d6e0390cb05",
+    "sourcePage": 83,
+    "sourcePageCount": 127,
+    "sourceImageSha256": "1b7379a9a6868c94dc0ebb2b44ba21603715f8a62f1a4f4c8d5583431c9097c7",
+    "sourceImageBytes": 6244,
+    "originalStemSha256": "f432b90a9f69acbe34eaefffa76aa5decca928a8b14322abca552b7e0cc0c0e0",
+    "manualPdfPageAndImageVisualMatch": true,
+    "materialOnlyImage": true,
+    "containsAnswerOrExplanation": false,
+    "sourceQuestionMatchCount": 1,
+    "privateIndexEntryCount": 1,
+    "privateAssetCopyExactBytes": true,
+    "originalBankFileUnchanged": true,
+    "privateImageAndIndexExcludedFromRemote": true
+  },
+  "browser": {
+    "roundCount": 3,
+    "questionGroups": 10,
+    "totalAvailable": 51,
+    "selectedIssuedRound": true,
+    "originalPlaceholderRetained": true,
+    "imageLoaded": true,
+    "naturalWidth": 192,
+    "naturalHeight": 196,
+    "httpStatus": 200,
+    "contentType": "image/jpeg",
+    "renderedImageSha256": "1b7379a9a6868c94dc0ebb2b44ba21603715f8a62f1a4f4c8d5583431c9097c7",
+    "renderedSourcePage": 83,
+    "answersVisibleBeforeSubmit": false
+  },
+  "rollback": {
+    "sixOwnedBusinessDomainsRestored": true,
+    "formalBusinessHashesUnchanged": true,
+    "configurationRestored": true
+  },
+  "tests": {
+    "passed": 315,
+    "failed": 0,
+    "skipped": 0,
+    "coverage": "Exact original-stem association, asset hash, duplicate/traversal/junction rejection; real StorageDomain practice projection preserves bank and stored snapshot, options and scoring."
+  },
+  "limits": [
+    "Exactly one manually verified source diagram is associated; other missing diagrams and footer-contaminated options remain unresolved.",
+    "Source PDF hash records manually verified provenance; runtime does not authenticate or parse the PDF.",
+    "Asset validation happens on plugin startup; changed assets/index require reload.",
+    "Private PDFs, images, association index, question identifiers, source text and screenshots are excluded from remote delivery.",
+    "Real teaching, streaming, permission, Stop, AI application generation and physical IME remain unverified."
+  ]
+}
