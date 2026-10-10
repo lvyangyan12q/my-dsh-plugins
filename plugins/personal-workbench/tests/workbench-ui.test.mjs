@@ -210,6 +210,11 @@ test('manual recipe form creates stable draft identity and allows layout/modules
  const f=await fixture();try{await act(async()=>f.service.openWorkspace());await f.click('recipeCreate');const document=f.dom.window.document;
  const name=document.querySelector('input[aria-label="recipeName"]');assert.ok(name);assert.equal(name.value,'recipeNewName')
  const textarea=document.querySelector('textarea[aria-label="recipeConfiguration"]');const original=JSON.parse(textarea.value);assert.match(original.appId,/^app\./)
+ const description=document.querySelector('textarea[aria-label="recipeDescription"]');assert.ok(description,'Application description needs a direct form field, without editing JSON')
+ assert.equal(description.maxLength,2000)
+ await act(async()=>{Object.getOwnPropertyDescriptor(f.dom.window.HTMLTextAreaElement.prototype,'value').set.call(description,'Resource application purpose');description.dispatchEvent(new f.dom.window.Event('input',{bubbles:true}))})
+ assert.equal(JSON.parse(textarea.value).description,'Resource application purpose');assert.equal(JSON.parse(textarea.value).appId,original.appId)
+ assert.equal(JSON.parse(textarea.value).pages[0].modules.length,original.pages[0].modules.length)
  await f.click('canvasPageSettings');const layout=document.querySelector('select[aria-label="recipeLayout: home"]');await act(async()=>{layout.value='stack';layout.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))});assert.equal(JSON.parse(textarea.value).pages[0].layout,'stack')
  const firstId=original.pages[0].modules[0].id;const choose=document.querySelector('button[aria-label="recipeModulestats: '+firstId+'"]');assert.ok(choose);await act(async()=>choose.click());const details=document.querySelector('select[aria-label^="moduleType:"]');await act(async()=>{details.value='detail';details.dispatchEvent(new f.dom.window.Event('change',{bubbles:true}))});assert.ok(JSON.parse(textarea.value).pages[0].modules.some(module=>module.type==='detail'))
  await f.click('recipeAddPage');const current=JSON.parse(textarea.value);assert.equal(current.pages.length,2);assert.equal(current.appId,original.appId);assert.ok(document.querySelector('[aria-label="canvasTitle"]'));assert.equal(f.button('recipePreview').disabled,true);assert.equal(f.button('recipeActivate').disabled,true)
