@@ -6,7 +6,7 @@ The upstream DSH `0.2.0-rc.2` package does **not** promise durable retirement of
 
 ## Source and safe build
 
-The patch base is native DSH commit `639ed015397290b3745d163aafe02ffee4aa3f84`; reviewed implementation tip is `b8dba0ee9cc4da8ef9037f721da08622ac0c451a`. It introduces no dependency, Host API, Session format or native-menu change. The native commit's automatic third-party notice URL refresh is intentionally outside this source patch; the target repository's existing generator owns notices.
+The patch base is native DSH commit `639ed015397290b3745d163aafe02ffee4aa3f84`; reviewed implementation tip is `eba13b0343efcdf35246ecde7b82fc0e46c3f69c`. It introduces no dependency, Host API, Session format or native-menu change. The native commit's automatic third-party notice URL refresh is intentionally outside this source patch; the target repository's existing generator owns notices.
 
 Use a separate clean DSH checkout or archive and isolated dependency/artifact directories. Never apply or build in a user's dirty checkout or on the formal running profile. Before applying, run `git apply --check /path/to/dsh-sidebar-retirement-v1.patch` from that clean checkout; then apply the same patch and review the diff. Later native baselines require normal conflict review rather than forced application.
 
@@ -23,3 +23,5 @@ Workbench stores bounded versioned cleanup intent under its own browser key, rea
 Native sidebar package: 263 tests passed, including real native apply disposal, dormant/live/released/floating layouts, persistence rejection, close refusal, undo/redo, and same-kind re-registration. Plugin adapter: source seam and built factory with real Cordis owner/provider lifecycle tested against the declared additive public service; the old built native runtime remains the compatibility fixture. These checks do not replace the actual new-core installed browser acceptance or full repository build/type/GUI gates. Validate both plugin disable orders, dormant records, refresh/restart, unrelated File/Guide tabs, retained conversation state, and re-enable on the isolated runtime before completing ticket 01.
 
 The reviewed tip also types the Storage read-back test receiver explicitly (`this: Storage`), retaining the six retirement assertions. This corrects the clean Client TS2683 diagnostic; full isolated native build/type gates are separate from the plugin checks.
+
+Latest native tip includes the focused sidebar lint corrections without changing public retirement semantics. The native Win32 suite reports six declared platform skips; these are native-suite limitations, not Workbench compatibility exemptions or a plugin pass claim. The complete isolated official native build/gates remain pending the runtime worker's result.

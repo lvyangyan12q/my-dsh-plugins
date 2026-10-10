@@ -321,7 +321,7 @@ index 7335573d977849b7e809e6c71ebce925ad761eca..1b9b5810fe09dfb499bdf7912c482cec
 +  }
 +}
 diff --git a/packages/client/ui-sidebar-right/src/client/service.ts b/packages/client/ui-sidebar-right/src/client/service.ts
-index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068c27a1fb6 100644
+index c4bfc1252b03839888e054317aa6968025367c55..1e25bac257dfcffda11c0c6622e153ae1eae658f 100644
 --- a/packages/client/ui-sidebar-right/src/client/service.ts
 +++ b/packages/client/ui-sidebar-right/src/client/service.ts
 @@ -33,6 +33,8 @@
@@ -397,7 +397,7 @@ index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068
    /** Open tab metadata across saved and adopted Sessions, independent of visible seats. */
    readonly openTabs: SidebarTabInventory['source']
    /** The on-screen Session; see {@link ISidebarRight.mounted}. */
-@@ -268,6 +295,76 @@ export class SidebarRightController implements ISidebarRight {
+@@ -268,6 +295,77 @@ export class SidebarRightController implements ISidebarRight {
    private readonly rooms: ReadonlyMap<SessionId, RoomRule>
    private readonly closeHandlers = new Map<string, SidebarRightCloseHandler>()
  
@@ -420,9 +420,10 @@ index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068
 +    }
 +  }
 +  private retireKind(kind: string): SidebarRightRetirementResult {
++    const isDisposed = () => this.disposed
 +    const records: SidebarRightRetirementResult['records'][number][] = [], saved = savedSidebarSessions(), sessions = new Set<SessionId>([...this.adopted.keys(), ...(saved ?? []).map(id => id as SessionId)])
 +    for (const sessionId of sessions) {
-+      if (this.disposed) break
++      if (isDisposed()) break
 +      const store = this.adopted.get(sessionId)?.store, inspection = store ? undefined : inspectSidebarLayout(sessionId)
 +      let current = store?.getSnapshot().bySession[sessionId] ?? (inspection?.outcome === 'ready' ? inspection.surface : undefined)
 +      if (!current) {
@@ -445,7 +446,7 @@ index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068
 +          records.push({ sessionId, tabId: tab.id, outcome: 'blocked' })
 +          continue
 +        }
-+        if (this.disposed) {
++        if (isDisposed()) {
 +          records.push({ sessionId, tabId: tab.id, outcome: 'blocked' })
 +          break
 +        }
@@ -474,7 +475,7 @@ index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068
    /**
     * Register resource cleanup before explicit removal. Failure preserves the tab.
     * @param kind - tab kind owned by the registering plugin.
-@@ -302,6 +399,7 @@ export class SidebarRightController implements ISidebarRight {
+@@ -302,6 +400,7 @@ export class SidebarRightController implements ISidebarRight {
      this.rooms = sessions.rooms
      this.mounted = sessions.onScreen
      this.openTabs = sessions.openTabs
@@ -482,7 +483,7 @@ index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068
      this.tabDomain = new TabDomain(this, pin)
    }
  
-@@ -429,15 +527,17 @@ export class SidebarRightController implements ISidebarRight {
+@@ -429,15 +528,17 @@ export class SidebarRightController implements ISidebarRight {
        && dockPaneIds(surface.layout).length < 2
        && this.mounted.getSnapshot() === sessionId
        && this.canSplitPane(sessionId, target.id)
@@ -509,7 +510,7 @@ index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068
      const layout = surface?.layout
      const replaced = placement.replaceTab === undefined ? undefined : layout?.tabs[placement.replaceTab]
      const revealed = layout === undefined || placement.revealIfOpened === false
-@@ -519,8 +619,10 @@ export class SidebarRightController implements ISidebarRight {
+@@ -519,8 +620,10 @@ export class SidebarRightController implements ISidebarRight {
      const pane = getPane(layout, activeDockPaneId(layout))
      const tabId = pane.activeTabId
      const held = tabId === undefined ? undefined : this.tabDomain.occurrence(sessionId, { id: tabId })
@@ -523,7 +524,7 @@ index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068
  
    /**
 diff --git a/packages/client/ui-sidebar-right/src/client/stores.ts b/packages/client/ui-sidebar-right/src/client/stores.ts
-index 9478980de685cd31f1ee28f9f6b00cbda2b6c698..b4878dbd6607056a8876b75e3420c4b75a6faf85 100644
+index 9478980de685cd31f1ee28f9f6b00cbda2b6c698..e8b5e8c145ba86e61162ff0069b8501ba0de26bc 100644
 --- a/packages/client/ui-sidebar-right/src/client/stores.ts
 +++ b/packages/client/ui-sidebar-right/src/client/stores.ts
 @@ -32,7 +32,7 @@ import type {
@@ -631,7 +632,7 @@ index 9478980de685cd31f1ee28f9f6b00cbda2b6c698..b4878dbd6607056a8876b75e3420c4b7
 +export function sidebarHistoryLayouts(value: SurfaceState): readonly LayoutState[] {
 +  if (value.retirementLayouts)
 +    return value.retirementLayouts
-+  const layouts: LayoutState[] = new Array(value.history.entries.length + 1)
++  const layouts: LayoutState[] = new Array<LayoutState>(value.history.entries.length + 1)
 +  layouts[value.history.cursor] = value.layout
 +  for (let index = value.history.cursor - 1; index >= 0; index--) {
 +    const entry = value.history.entries[index]
@@ -713,7 +714,7 @@ index fa83737536da092da3db429e94f8660fc1e4e038..83e84863dbfe1ef90e7ecf475b68ed41
      expect(instance.getSnapshot().bySession[SESSION]?.layout.tabs[guide.id]).toBeDefined()
 diff --git a/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts b/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..7d144f926da449e2101ed6193af14e07bb009278
+index 0000000000000000000000000000000000000000..facdbc3c90a353e2392543a429a7da45b3244052
 --- /dev/null
 +++ b/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts
 @@ -0,0 +1,166 @@
@@ -735,7 +736,7 @@ index 0000000000000000000000000000000000000000..7d144f926da449e2101ed6193af14e07
 +  const controls = createSidebarRightController(tabs, vi.fn(), {
 +    autoFullscreen: () => false,
 +    openWithFocus: () => { throw Error('No navigation') },
-+    closeWithFocus: (_id, _pane, close) => close(),
++    closeWithFocus: (_id, _pane, close) => { close() },
 +  })
 +  return { ...controls, ctx, tabs, unregisterOwned }
 +}
@@ -854,7 +855,7 @@ index 0000000000000000000000000000000000000000..7d144f926da449e2101ed6193af14e07
 +    const before = store.getSnapshot()
 +    const other = createSidebarRightStore(seed).create('later')
 +    other.actions.openContent('later', { kind: 'owned', contentId: 'later', title: 'Later' }, () => {})
-+    const handler = vi.fn(() => f.dispose())
++    const handler = vi.fn(() => { f.dispose() })
 +    f.controller.registerCloseHandler('owned', handler)
 +    expect(f.controller.retireTabsByKind('owned').outcome).toBe('service-unavailable')
 +    expect(store.getSnapshot()).toBe(before)
@@ -870,7 +871,7 @@ index 0000000000000000000000000000000000000000..7d144f926da449e2101ed6193af14e07
 +  store.actions.openContent(session, { kind: 'owned', contentId: 'owned', title: 'Owned' }, () => { })
 +  const f = setup()
 +  f.adopt(session, store)
-+  const before = store.getSnapshot(), raw = localStorage.getItem(sidebarPersistence + '.' + session), get = Storage.prototype.getItem
++  const before = store.getSnapshot(), raw = localStorage.getItem(sidebarPersistence + '.' + session), get = Storage.prototype.getItem.bind(localStorage)
 +  let checks = 0
 +  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key) { if (key === sidebarPersistence + '.' + session && ++checks === 2)
 +    return 'different bytes'; return get.call(this, key) })
