@@ -15,7 +15,7 @@ export function revealAnnotationComposer(canvas:HTMLElement,key:RoleBindingKey,s
    const role=[...canvas.querySelectorAll<HTMLElement>('[data-pwb-role-key]')].find(node=>node.dataset.pwbRoleKey===roleKey(key))
    if(role){for(let node:HTMLElement|null=role;node&&node!==canvas;node=node.parentElement)if(node.tagName==='DETAILS'){const details=node as HTMLDetailsElement;if(!details.open){details.open=true;details.dispatchEvent(new view.Event('pwb-reveal-role'))}}}
    if(role&&role!==revealed){revealed=role;role.dispatchEvent(new view.Event('pwb-reveal-role'))}
-   const editor=role?[...role.querySelectorAll('[role="textbox"][contenteditable="true"]')].find(node=>!node.closest('dialog'))??null:null
+   const editor=role?[...role.querySelectorAll('[role="textbox"][contenteditable="true"]')].find(node=>{const dialog=node.closest('dialog');return !dialog||!role.contains(dialog)})??null:null
    stable=editor&&editor===ready?stable+1:0;ready=editor
    // Let native mount effects hydrate/persist the editor before reading its draft.
    if(editor&&stable>=2){role?.scrollIntoView?.({block:'nearest'});finish();return}
