@@ -515,6 +515,66 @@
     "changedDomainFiles": [],
     "credentialAndPatchHashesPreserved": true
   },
+  "NarrowNativeKeyboardDraft": {
+    "viewport": {
+      "width": 480,
+      "height": 900
+    },
+    "role": "class-advisor",
+    "draft": "班主任窄屏恢复验收草稿，不发送。\n第二行",
+    "typedViaChromeAutomation": true,
+    "shiftEnterCreatedNewline": true,
+    "backspaceRemovedFinalX": true,
+    "modelNotStarted": true,
+    "actualReloadRestoredDraft": true,
+    "studyDialogRestored": true,
+    "roleConversationRestored": true,
+    "nativeTurnCount": 2,
+    "nativeRequestCount": 6,
+    "physicalChineseImeTested": false
+  },
+  "ActualGenerationNativeJournalReconciliation": {
+    "readOnly": true,
+    "allConcatenatedZstdFramesDecoded": true,
+    "afterActualBrowserReloadAndHostColdRecovery": true,
+    "scopedJobs": [
+      {
+        "status": "completed",
+        "sessionIdentitySha256": "a42569def032aeb1f398adc24b19d3cfb2dc1c1ef6d1091c93c3b32b863017ac",
+        "hasSavedRecipe": true,
+        "hostInterruptionOutcome": false,
+        "completeFrames": 6,
+        "eventCount": 17,
+        "nativeRequestCount": 1,
+        "nativeTurnCount": 1,
+        "journalSha256": "069e31195404536e2843e334fcf1876023b0eb8c347cffa11a1f0a83782450cf"
+      },
+      {
+        "status": "failed",
+        "sessionIdentitySha256": "868f55f04ee5dc501264f7a8f41a5de0a353ace4513300a69ca2aa40dc2b8556",
+        "hasSavedRecipe": false,
+        "hostInterruptionOutcome": true,
+        "completeFrames": 7,
+        "eventCount": 17,
+        "nativeRequestCount": 1,
+        "nativeTurnCount": 1,
+        "journalSha256": "624a9f18a6ae6d1232f6c7a228bb30a0c8a28da0ff008934398a5e50d382366e"
+      },
+      {
+        "status": "cancelled",
+        "sessionIdentitySha256": "1fbf3758d55dccc637a561ed6e810d8d151effb4452be5f7972012488db5773e",
+        "hasSavedRecipe": false,
+        "hostInterruptionOutcome": false,
+        "completeFrames": 7,
+        "eventCount": 18,
+        "nativeRequestCount": 1,
+        "nativeTurnCount": 1,
+        "journalSha256": "3b71e50d5681bd10de5e1fc5043b12cbc791ee4350eaed2b1353bc2711fb8a78"
+      }
+    ],
+    "eachKnownOriginallyStartedOnceAndCurrentlyOneRequest": true,
+    "allOtherSessionsOrServerHttpRequestsClaimed": false
+  },
   "sanitization": {
     "localPaths": "owned-workspace",
     "nativeSessionAndQuestionIdentities": "SHA-256 fingerprints",
