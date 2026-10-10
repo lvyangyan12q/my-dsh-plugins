@@ -30,7 +30,7 @@ import { installRoleClient } from './role-view.tsx'
 export type { RoleBindingKey, RoleBinding, PersonalWorkbenchRoles, TeachingEvidence } from './role-binding-api.ts'
 export type { ManagementCatalog, ManagedRole, ManagedSkill, SkillAssignment, ManagementRequest } from './management-api.ts'
 
-export type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppPage, WorkbenchAppProps,
+export type { PersonalWorkbench, WorkbenchAppRegistration, WorkbenchAppDefinition, WorkbenchAppPage, WorkbenchAppProps,
   WorkbenchAppOwner, WorkbenchAppId, WorkbenchInstanceId, WorkbenchIcon } from './workbench-api.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {

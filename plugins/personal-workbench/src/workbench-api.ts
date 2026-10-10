@@ -37,13 +37,26 @@ export interface WorkbenchAppOwner {
 /** Compose this with the app's own injected/locale/render shares. */
 export type WorkbenchAppProps = PropsRuntime<'personal-workbench.app'>
 
+/** Owned application metadata registration. Normal disposal permanently retires its windows,
+ * including after suspension; stale disposal cannot retire a newer registration.
+ */
+export interface WorkbenchAppRegistration {
+  (): void
+  /** Temporarily withdraw the live renderer without closing persisted windows.
+   * Use only while the application remains installed and enabled, such as a slot/HMR withdrawal.
+   */
+  suspend(): void
+  /** Update this registration's metadata without changing its stable application identity. */
+  update(definition: WorkbenchAppDefinition): void
+}
+
 /** Optional client integration; behavior is reached through Cordis, never a value import. */
 export interface PersonalWorkbench {
   /** Register installed metadata. Duplicate IDs throw; disposal retires its windows.
    * @param definition - current installed application definition.
    * @returns idempotent registration disposer; wrap in the registering plugin's effect.
    */
-  registerApp(definition: WorkbenchAppDefinition): () => void
+  registerApp(definition: WorkbenchAppDefinition): WorkbenchAppRegistration
   /** Open or focus one instance. Missing registrations throw; performs no model calls.
    * @param appId - registered application ID.
    * @param instanceId - stable application-owned ID, defaults to `default`.
