@@ -600,7 +600,11 @@
       "section": "Implementation Decisions",
       "number": 14,
       "requirementSha256": "b2e9172f7218c4adb2d39c4892ce9c17ce6b2c244bdbd5a6d945371b4052e2bb",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: current tested code and exact passing lifecycle cases establish independent UI/command holds and persisted reopen; official Client reference contract has no Host Agent ownership; actual running provider task through close/reopen and status restoration remains unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-view-lifetime-contract.json",
+        "docs/evidence/2026-10-10/owned-keyboard-annotation-browser.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:15",
