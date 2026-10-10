@@ -30,7 +30,7 @@ export function DisplayModule({ type, store, t, renderDetail,config={} }: { type
   if(type==='chart'||type==='map')return <DataVisual type={type} config={config} records={records} selectedId={state.selectedId} select={store.select} t={t}/>
   if (type === 'stats') return <dl aria-busy={state.phase === 'loading'} className="pwb-display-stats" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>{state.data.stats.map(stat => {
    const value = aggregateStatistic(records, stat)
-    return <div key={stat.id}><dt>{stat.label}</dt><dd data-stat={stat.id}>{value}</dd></div>
+    return <div key={stat.id}><dt>{stat.label}</dt><dd data-stat={stat.id} role={Number.isFinite(value) ? undefined : 'status'}>{Number.isFinite(value) ? value : t('displayStatisticOutOfRange')}</dd></div>
   })}</dl>
   if (type === 'list') return <ul className="pwb-display-list" aria-busy={state.phase === 'loading'}>{records.map(record => <li key={record.id}><button data-pwb-button aria-pressed={state.selectedId === record.id} onClick={() => store.select(record.id)}>{record.title}</button>{record.subtitle && <span> · {record.subtitle}</span>}</li>)}</ul>
   const record = records.find(record => record.id === state.selectedId)

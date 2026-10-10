@@ -4,7 +4,12 @@ export function aggregateStatistic(records: readonly DisplayRecord[], stat: Disp
  if (stat.operation === 'count') return records.length
  const numbers = records.map(record => record.fields[stat.field ?? '']).filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
  const sum = numbers.reduce((total, value) => total + value, 0)
- if (stat.operation === 'sum') return sum
+ if (stat.operation === 'sum') {
+  if (Number.isFinite(sum)) return sum
+  // Intermediate overflow can cancel out even when the final total is representable.
+  const scale = numbers.reduce((maximum, value) => Math.max(maximum, Math.abs(value)), 0)
+  return numbers.reduce((total, value) => total + value / scale, 0) * scale
+ }
  if (!numbers.length) return 0
  let mean = sum / numbers.length
  if (!Number.isFinite(sum)) {

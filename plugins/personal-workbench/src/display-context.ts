@@ -21,11 +21,12 @@ export function displayModuleContext(props: RecipeModuleProps, store: DisplaySto
  if(module.type==='chart'||module.type==='map')context.push(chunk('mapping','displayFieldMapping',{type:module.type,...Object.fromEntries((module.type==='chart'?['valueField']:['latitudeField','longitudeField']).map(field=>[field,bounded(String(module.config[field]??''),120)]))}))
  if (selected) context.push(chunk('selection', 'taskSelectedRecord', recordContext(selected)))
  if (module.type === 'stats') {
-  const statistics = state.data.stats.slice(0, 10).map(stat => {
+  const statistics = []
+  for (const stat of state.data.stats.slice(0, 10)) {
    const value = aggregateStatistic(records, stat)
-   if (!Number.isFinite(value)) throw new Error(t('taskContextUnavailable'))
-   return { id: bounded(stat.id, 60), label: bounded(stat.label, 100), operation: stat.operation, field: stat.field ? bounded(stat.field, 60) : undefined, value }
-  })
+   if (!Number.isFinite(value)) return { phase: 'unavailable', reason: t('displayStatisticOutOfRange') + ': ' + stat.label }
+   statistics.push({ id: bounded(stat.id, 60), label: bounded(stat.label, 100), operation: stat.operation, field: stat.field ? bounded(stat.field, 60) : undefined, value })
+  }
   context.push(chunk('statistics', 'taskCurrentStatistics', { statistics, omittedStatistics: Math.max(0, state.data.stats.length - 10) }))
  } else if (!selected && module.type !== 'filter') {
   if (!records.length) return { phase: 'unavailable', reason: t(state.data.records.length ? 'displayNoMatches' : 'displayEmpty') }
