@@ -558,7 +558,10 @@
       "section": "Implementation Decisions",
       "number": 12,
       "requirementSha256": "49b61f10a8c6dffc8ba13d2428cd81e77500ef0fcf1e669ffccaf298056a4536",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual RoleBindings contract proves stable app/instance/role/subject identity, same-preset isolation, concurrent creation deduplication and per-key replacement/reconstruction; real native conversation and disk persistence acceptance remain separate gates",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/role-key-isolation-contract.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:13",
@@ -1226,7 +1229,10 @@
       "section": "Implementation Decisions",
       "number": 8,
       "requirementSha256": "103d3d1365f48d8a21ec9bc587b45ec523068308b3c2bd6a4e592c8cbc2e1e3d",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual RoleBindings contract proves stable app/instance/role/subject identity, same-preset isolation, concurrent creation deduplication and per-key replacement/reconstruction; real native conversation and disk persistence acceptance remain separate gates",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/role-key-isolation-contract.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:9",

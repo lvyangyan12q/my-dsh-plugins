@@ -146,3 +146,58 @@ test('legacy ready record is explicitly preserved, never copied to subjects; new
   assert.throws(() => owner.registerRole({ key: subject, presetId: 'fixed-preset', creation: { cwd: 'relative' } }), /absolute/)
   await owner.dispose()
 })
+
+test('shared Agent keeps application, instance and delimiter-bearing role keys isolated across replacement and restart', async () => {
+  const rows = new Map<string, RoleBinding>(), created: RoleBinding[] = []
+  let sequence = 0
+  const keys: RoleBindingKey[] = [
+    key,
+    { ...key, appId: 'reading-statistics' },
+    { ...key, instanceId: 'second' },
+    { ...key, appId: 'app:one', instanceId: 'two' },
+    { ...key, appId: 'app', instanceId: 'one:two' },
+    { ...key, roleId: 'teacher:math' },
+    { ...key, subject: 'math' },
+  ]
+  const authority = {
+    validate: async () => {},
+    create: async (row: RoleBinding) => {
+      assert.equal(rows.get(bindingKey(row.key))?.sessionId, row.sessionId, 'each key owns its durable intent')
+      created.push(structuredClone(row))
+      return row.sessionId
+    },
+  }
+  const owner = () => {
+    const service = new RoleBindings({ get: name => rows.get(name), put: async (name, row) => { rows.set(name, structuredClone(row)) } }, authority,
+      () => `isolated-${++sequence}` as SessionId)
+    keys.forEach(key => service.registerRole({ key, presetId: 'shared-agent', creation: { cwd: 'C:/learning' } }))
+    return service
+  }
+  const first = owner()
+  try {
+    const batches = await Promise.all(keys.map(key => Promise.all(Array.from({ length: 4 }, () => first.ensure(key)))))
+    assert.equal(created.length, keys.length)
+    assert.equal(rows.size, keys.length)
+    const identities = batches.map(batch => batch[0]!.sessionId)
+    assert.equal(new Set(identities).size, keys.length)
+    batches.forEach((batch, index) => assert.ok(batch.every(row => row.sessionId === identities[index] && row.presetId === 'shared-agent')))
+    const original = await Promise.all(keys.map(key => first.read(key)))
+    const replaced = await first.replace(keys[0]!, identities[0]!)
+    assert.notEqual(replaced.sessionId, identities[0])
+    assert.deepEqual(replaced.previousSessionIds, [identities[0]])
+    for (let index = 1; index < keys.length; index++) assert.deepEqual(await first.read(keys[index]!), original[index])
+    await assert.rejects(first.replace(keys[1]!, replaced.sessionId), /changed/)
+    assert.equal(created.length, keys.length + 1)
+  } finally { await first.dispose() }
+  const stored = structuredClone([...rows.entries()]), commandCount = created.length
+  const restarted = owner()
+  try {
+    for (const [name, record] of stored) {
+      assert.equal(bindingKey(record.key), name)
+      assert.deepEqual(await restarted.read(record.key), record)
+      assert.deepEqual(await restarted.ensure(record.key), record)
+    }
+    assert.equal(created.length, commandCount, 'restart and read must not issue native creation commands')
+    assert.deepEqual([...rows.entries()], stored, 'reopening preserves each key and its own history')
+  } finally { await restarted.dispose() }
+})
