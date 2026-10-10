@@ -238,6 +238,10 @@ test('application status refresh updates unchanged running recipe dependency pro
   await f.click('workspace');available=false;await f.click('refreshApps');
   assert.equal(f.service.getSnapshot().definitions.find(row=>row.id===recipe.appId).dependencies.find(row=>row.id==='agent:analyst').available,false,'refresh must update actual recipe dependency projection');
   const card=[...f.dom.window.document.querySelectorAll('.pwb-app')].find(row=>row.querySelector('.pwb-open')?.textContent===recipe.name);
+  assert.match(card.querySelector('.pwb-meta').textContent,/appRecipeSource/, 'saved recipes need an explicit origin label instead of only Workbench');
+  const pluginCard=[...f.dom.window.document.querySelectorAll('.pwb-app')].find(row=>row.querySelector('.pwb-open')?.textContent==='Exercise');
+  assert.match(pluginCard.querySelector('.pwb-meta').textContent,/UI test registration/);
+  assert.doesNotMatch(pluginCard.querySelector('.pwb-meta').textContent,/appRecipeSource/, 'legacy plugin registrations must not be relabeled as user recipes');
   assert.equal(card.querySelector('details').open,false);
   assert.match(card.querySelector('[role="status"]')?.textContent??'',/Unavailable Agent: my-dsh\.analyst/,'missing dependency must be visible without expanding configuration');
   assert.equal(draft.isConnected,true);assert.equal(draft.value,'retained answer');assert.equal(f.counts().unmounts,0);

@@ -15,6 +15,8 @@ export interface WorkbenchAppDefinition {
   readonly name: string
   readonly icon: WorkbenchIcon
   readonly source: string
+  /** Registration provenance only; not a trust, verification or installation badge. Omitted for existing plugin registrations. */
+  readonly sourceKind?: 'recipe'
   readonly pages: readonly WorkbenchAppPage[]
   readonly defaultLayout: { readonly width: number; readonly height: number; readonly pageId: string }
   readonly roles?: readonly { readonly id: string; readonly name: string }[]

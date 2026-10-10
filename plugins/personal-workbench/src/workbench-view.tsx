@@ -159,7 +159,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
       <label className="pwb-hidden"><input type="checkbox" checked={showHidden} onChange={e => setShowHidden(e.target.checked)} />{t('showHidden')}</label>
       <div className="pwb-app-grid">{apps.map(row => <section key={row.id} className="pwb-app">
         <button data-pwb-button type="button" className="pwb-open" disabled={!state.lifecycleReady || state.lifecycle[row.id]?.enabled===false} onClick={() => openApp(row.id)}><AppIcon icon={row.icon} /><span>{row.name}</span></button>
-        <div className="pwb-meta">{row.source} · {row.version} · {t(state.lifecycle[row.id]?.enabled===false?'appDisabled':'appEnabled')}</div>
+        <div className="pwb-meta">{row.sourceKind==='recipe'?t('appRecipeSource'):row.source} · {row.version} · {t(state.lifecycle[row.id]?.enabled===false?'appDisabled':'appEnabled')}</div>
         {row.dependencies?.some(dependency=>!dependency.available) && <p className="pwb-notice" role="status">{t('appMissingDependencies')}: {row.dependencies.filter(dependency=>!dependency.available).map(dependency=>dependency.reason||dependency.id).join('; ')}</p>}
         <details><summary>{t('appConfiguration')}</summary><p>{t('appIdentity')}: {row.id}</p><p>{t('pages')}: {row.pages.map(page=>page.label).join(', ')}</p><p>{t('appRoles')}: {row.roles?.map(role=>role.name).join(', ')||t('appNone')}</p><p>{t('appDependencies')}: {row.dependencies?.map(dep=>dep.id+(dep.available?'':' — '+dep.reason)).join(', ')||t('appNone')}</p></details>
         {setAppEnabled && <button data-pwb-button type="button" disabled={!state.lifecycleReady || pendingApp!==null} onClick={async()=>{
