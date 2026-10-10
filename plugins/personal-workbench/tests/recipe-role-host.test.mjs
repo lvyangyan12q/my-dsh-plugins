@@ -40,7 +40,7 @@ test('real Host persistence restores instance roles and exact native bindings; e
   const other={...key,instanceId:'second'};await first.owner.service.register(other);const separate=await first.bindings.ensure(other);assert.notEqual(separate.sessionId,old.sessionId);assert.equal(old.creation.cwd,root)
   await first.close();first=undefined;second=await fixture(root,native);assert.equal(second.bindings.listRoles().length,2);assert.equal((await second.bindings.read(key)).sessionId,old.sessionId);assert.equal(native.created.length,2)
   await second.recipes.service.save(recipe(2,'my-dsh.editor'),2);await second.recipes.service.activate(key.appId,3);await second.owner.service.register(key);assert.equal(native.created.length,2,'Agent config and declaration update do not create a Session')
-  await second.owner.service.register(key,true);const replaced=await second.bindings.ensure(key);assert.equal(replaced.presetId,'my-dsh.editor');assert.notEqual(replaced.sessionId,old.sessionId);assert.deepEqual(replaced.previousSessionIds,[old.sessionId]);assert.equal(native.headers.get(old.sessionId),'my-dsh.analyst');assert.equal((await second.bindings.read(other)).sessionId,separate.sessionId)
+  await second.owner.service.register(key,true);await assert.rejects(second.bindings.ensure(key),/preset unavailable/);const replaced=await second.bindings.replace(key,old.sessionId);assert.equal(replaced.presetId,'my-dsh.editor');assert.notEqual(replaced.sessionId,old.sessionId);assert.deepEqual(replaced.previousSessionIds,[old.sessionId]);assert.equal(native.headers.get(old.sessionId),'my-dsh.analyst');assert.equal((await second.bindings.read(other)).sessionId,separate.sessionId)
   const agentOnly=recipe(3,'my-dsh.editor');agentOnly.roles[0].skillNames=[];await second.recipes.service.save(agentOnly,4);await second.recipes.service.activate(key.appId,5);await second.owner.service.register(key);assert.deepEqual(second.bindings.definition(key).skillNames,[])
   second.disable(true);await assert.rejects(second.owner.service.register(key),/disabled/);await assert.rejects(second.bindings.ensure(key),/disabled/)
   second.disable(false);second.missing(true);assert.equal((await second.recipes.service.dependencies(second.recipes.service.list()[0].running)).find(dep=>dep.id==='agent:'+key.roleId)?.available,false);await assert.rejects(second.bindings.ensure(key),/Unavailable Agent/);second.missing(false)
@@ -106,3 +106,17 @@ test('platform module builder and packaged workbench Skills remain available wit
  const root=await mkdtemp(join(tmpdir(),'recipe-platform-builder-')),native={headers:new Map(),created:[]},f=await fixture(root,native);
  try{privateCapabilities(f);const draft=recipe(1,'personal-workbench.module-builder.v1');draft.roles[0].skillNames=['workbench-module-generate','workbench-page-adjust'];await f.recipes.service.save(draft,0);await f.recipes.service.activate(key.appId,1);await f.owner.service.register(key);const binding=await f.bindings.ensure(key);assert.equal(binding.presetId,draft.roles[0].presetId);assert.equal(native.created.length,1)}finally{await f.close();await rm(root,{recursive:true,force:true})}
 });
+
+test('activating a changed role Agent cannot replace a live binding through ordinary ensure admission',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'recipe-agent-confirmation-')),native={headers:new Map(),created:[]};let f;
+ try{
+ f=await fixture(root,native);await f.recipes.service.save(recipe(),0);await f.recipes.service.activate(key.appId,1);await f.owner.service.register(key);const old=await f.bindings.ensure(key);
+ await f.recipes.service.save(recipe(2,'my-dsh.editor'),2);await f.recipes.service.activate(key.appId,3);
+ await f.owner.service.register(key,true);
+ assert.equal(native.created.length,1,'Opening or sending cannot accept a changed Agent on behalf of the user');
+ assert.deepEqual(await f.bindings.read(key),old);
+ await assert.rejects(f.bindings.ensure(key),/preset unavailable/);
+ const replaced=await f.bindings.replace(key,old.sessionId);assert.equal(replaced.presetId,'my-dsh.editor');assert.deepEqual(replaced.previousSessionIds,[old.sessionId]);assert.equal(native.headers.get(old.sessionId),'my-dsh.analyst');assert.equal(native.created.length,2);
+ await f.close();f=await fixture(root,native);await f.owner.service.register(key);assert.equal((await f.bindings.ensure(key)).sessionId,replaced.sessionId);assert.equal(native.created.length,2);
+ }finally{await f?.close();await rm(root,{recursive:true,force:true})}
+})

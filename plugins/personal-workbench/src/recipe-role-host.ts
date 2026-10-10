@@ -26,12 +26,12 @@ export async function installRecipeRoles(ctx:Context) {
  }
  const service:RecipeRoles={workspace:(appId,instanceId)=>{
   const task=tail.catch(()=>{}).then(async()=>{const recipe=running(appId);if(closed||!recipe)throw new Error('Recipe unavailable');enabled(appId);const id=JSON.stringify([appId,instanceId]);let row=instances.get(id);if(!row){const cwd=await selectRecipeWorkspace(ctx,recipe.workspace);row={appId,instanceId,cwd};await instances.put(id,row)}checkInstanceWorkspace(recipe.workspace,row.cwd);return row.cwd});tail=task.then(()=>{},()=>{});return task
- },register:(key,explicitEnsure=false)=>{
+ },register:(key)=>{
   const task=tail.catch(()=>{}).then(async()=>{if(closed)throw new Error('Recipe roles unavailable');const recipe=running(key.appId);if(!recipe)return;enabled(key.appId);if(key.subject!==undefined||!recipe.roles.some(r=>r.id===key.roleId))throw new Error('Recipe role unavailable');const id=JSON.stringify([key.appId,key.instanceId]);let row=instances.get(id)
    if(!row){const cwd=await selectRecipeWorkspace(ctx,recipe.workspace);row={appId:key.appId,instanceId:key.instanceId,cwd};await instances.put(id,row)}
    checkInstanceWorkspace(recipe.workspace,row.cwd);sync(row)
-   const saved=await ctx.personalWorkbenchBindings.read(key),role=recipe.roles.find(r=>r.id===key.roleId)!
-   if(explicitEnsure&&saved&&saved.presetId!==role.presetId&&!saved.selectedPreset){if(!ctx.personalWorkbenchBindings.setPreset)throw new Error('Role Agent replacement unavailable');await ctx.personalWorkbenchBindings.setPreset(key,role.presetId,saved.sessionId)}
+   // A changed declaration must never replace a live Session during open/send admission.
+   // The existing confirmed replace command adopts the new definition and retains history.
   });tail=task;return task
  },validate:async definition=>{
   const recipe=running(definition.key.appId);if(!recipe)return
