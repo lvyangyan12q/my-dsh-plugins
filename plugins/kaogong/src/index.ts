@@ -571,6 +571,19 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     },
     presentCall: args => ({ card: 'generic', title: '读取课堂记录', kind: 'other', rawInput: args }),
   }))
+  ctx.tools.register(defineTool({
+    name: 'kaogong_practice_read', description: '只读核对真实已提交单轮成绩、原题快照与作答。省略 roundId 按保存的提交顺序读取最近完成轮；可按 subject 限定。不是累计统计，不补交、不恢复错题投影、不修改成绩或计划。',
+    parameters: { roundId: { type: 'string', description: '已知真实轮次 ID；省略可直接读取最近已完成轮，无需让用户提供 ID。' }, subject: { type: 'string', description: '可选：仅读取该科目最近已完成轮。' } },
+    output: { schema: { type: 'object', additionalProperties: false, properties: { summary: { type: 'string', required: true } } }, render: (_args, value) => [{ type: 'text', text: value.summary }] },
+    async execute(args) {
+      const source = await practice.readCompleted(args.roundId ? roundIdWire.parse(args.roundId) : undefined, args.subject)
+      if (!source) return { summary: JSON.stringify({ scope: 'single-round', round: null, reason: '没有匹配的已提交轮次；不以累计统计推造单轮成绩' }) }
+      const result = source.round.result!
+      const counts = { total: result.totalCount, correct: result.correctCount, incorrect: result.results.filter(row => row.userAnswer !== '' && !row.correct).length, unanswered: result.results.filter(row => row.userAnswer === '').length }
+      return { summary: JSON.stringify({ scope: 'single-round', selection: args.roundId ? 'explicit-round' : 'latest-submitted', submittedAt: source.submittedAt, counts, round: source.round }) }
+    },
+    presentCall: args => ({ card: 'generic', title: '只读核对已完成练习轮次', kind: 'other', rawInput: args }),
+  }))
   registerProgressTools(ctx, planConfig, days, questions, topN)
   registerBankTools(ctx, bankQuestions, questions, practice)
   registerKnowledgeTools(ctx, knowledgeEntries)

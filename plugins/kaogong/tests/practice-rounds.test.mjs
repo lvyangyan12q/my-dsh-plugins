@@ -354,3 +354,25 @@ test('unverified option adverts and historical missing figures wait for source r
     await assert.rejects(app.service.start(context), /图表.*核验.*修复/)
   } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
 })
+
+test('public readonly practice tool distinguishes latest completed round from cumulative notebook without writes', async () => {
+ const root=await mkdtemp(join(tmpdir(),'practice-read-tool-')),ctx=new Context();await ctx.plugin(Storage)
+ const backend=new JsonStorageBackend(root);ctx.storage.backend.register('json',backend);const facility=new DomainFacility(ctx,{backend:'json'});ctx.storage.mount('domain',facility)
+ const routes=new Map(),tools=new Map(),disposers=[],domains=new Map()
+ const host={storageDomain:{async open(spec){const d=await facility.open(spec);domains.set(spec.name,d);return d}},inject(){},logger:{warn(){}},effect(run){const d=run();if(typeof d==='function')disposers.push(d)},connection:{requestRejection:()=>undefined},webServer:{register(r){routes.set(r.path,r.handler);return()=>routes.delete(r.path)}},tools:{register(t){tools.set(t.name,t)}}}
+ const request=async(action,body)=>{const req=Readable.from([JSON.stringify(body)]);req.method='POST';req.headers={'content-type':'application/json'};let code,value;await routes.get('/api/kaogong/practice/'+action)(req,{writeHead(s){code=s},end(b){value=JSON.parse(b)}});assert.equal(code,200);return value}
+ try{await apply(host,resolveConfig({Config},{mineru:{outputDir:root}}));const read=tools.get('kaogong_practice_read');assert.ok(read,'Native roles need a readonly completed-round source, not only cumulative errors')
+ assert.equal(JSON.parse((await read.execute({})).summary).round,null)
+ for(let i=0;i<20;i++)await tools.get('kaogong_bank_add').execute({...bankRow(i),origin:'local'})
+ const first=await request('start',context);await request('submit',{roundId:first.roundId,answers:first.questions.map((q,i)=>({id:q.id,answer:i===0?'A':''}))})
+ const second=await request('start',{...context,previousRoundId:first.roundId});await request('submit',{roundId:second.roundId,answers:second.questions.map((q,i)=>({id:q.id,answer:i<3?'B':'A'}))})
+ const open=await request('start',{...context,previousRoundId:second.roundId})
+ const tableSnapshot=()=>JSON.stringify([domains.get(practiceDomainSpec.name).table('rounds').entries(),domains.get(notebookDomainSpec.name).table('questions').entries(),domains.get(bankDomainSpec.name).table('questions').entries()].map(rows=>[...rows]))
+ const before=tableSnapshot(),latest=JSON.parse((await read.execute({})).summary)
+ assert.equal(latest.round.roundId,second.roundId);assert.equal(latest.scope,'single-round');assert.deepEqual(latest.counts,{total:10,correct:3,incorrect:7,unanswered:0});assert.equal(latest.round.result.accuracyRate,.3)
+ const older=JSON.parse((await read.execute({roundId:first.roundId})).summary);assert.deepEqual(older.counts,{total:10,correct:0,incorrect:1,unanswered:9})
+ const cumulative=await tools.get('kaogong_list_questions').execute({limit:30});assert.equal(cumulative.total,20);assert.deepEqual({correct:cumulative.questions.filter(q=>q.result==='correct').length,incorrect:cumulative.questions.filter(q=>q.result==='wrong').length,unanswered:cumulative.questions.filter(q=>q.result==='skipped').length},{correct:3,incorrect:8,unanswered:9})
+ await assert.rejects(read.execute({roundId:open.roundId}),/尚未提交/);assert.equal(JSON.parse((await read.execute({subject:'no records'})).summary).round,null)
+ assert.equal(tableSnapshot(),before,'Readonly lookup must not repair projections or rewrite score/bank/notebook')
+ }finally{for(const d of disposers.reverse())await d();await backend.close();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}
+})
