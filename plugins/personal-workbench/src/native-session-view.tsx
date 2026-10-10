@@ -8,8 +8,11 @@ export function renderNativeSession({ renderFactorySlot, failure, unavailable }:
   const content = renderFactorySlot('conversation.content', { variant: 'embedded', phase: 'active', hero: false }, { fallback: unavailable })
   // Both surfaces are bounded flex seats: long messages cannot push the native
   // composer below a clipped application pane or independent study window.
+  // Native chrome extends its corner controls 16px into the outer header's
+  // trailing padding. Embedded seats reserve that same space without changing
+  // native controls or relying on their private CSS module selectors.
   return <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
-    <div className="pwb-native-header-seat" style={{ flexShrink: 0, minWidth: 0, overflowX: 'auto', overflowY: 'hidden' }}>{renderFactorySlot('conversation.session.chrome', { hideChrome: false }, { fallback: <p role="alert">原生会话标题栏不可用，请检查 DSH 会话组件版本。</p> })}</div>
+    <div className="pwb-native-header-seat" style={{ flexShrink: 0, minWidth: 0, boxSizing: 'border-box', paddingInlineEnd: 16, overflowX: 'auto', overflowY: 'hidden' }}>{renderFactorySlot('conversation.session.chrome', { hideChrome: false }, { fallback: <p role="alert">原生会话标题栏不可用，请检查 DSH 会话组件版本。</p> })}</div>
     {failure && <p role="alert" style={{ flexShrink: 0, maxHeight: '25%', overflow: 'auto', overflowWrap: 'anywhere', margin: 0, padding: '8px 10px' }}>{failure}</p>}
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>{content}</div>
   </div>
