@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "56c595246059fd82609b6b2c13361abee4f8410e",
+  "reviewedHead": "d2eacbc766d28bd48671ee8ffc31f612e8a577fa",
+  "archiveSha256": "b91ad8ef2fce994ac0361b22a1103113c495a8628885415250c517653815f0d3",
+  "installedBytesVerified": true,
+  "host": "owned isolated DSH 3089",
+  "method": "Actual native application entry, maximize/minimize/restore controls, page clicks, browser reload, divider keyboard input and Escape; no injected event or CSS fixture.",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "windowModeSequence": [
+    "normal",
+    "maximized",
+    "minimized",
+    "maximized",
+    "normal"
+  ],
+  "pageDuringModeChanges": "materials",
+  "singleApplicationWindow": true,
+  "refresh": {
+    "automaticWorkspaceVisible": false,
+    "explicitEntryRequired": true,
+    "restoredVisiblePage": "讲义",
+    "restoredMode": "normal",
+    "restoredBounds": {
+      "x": 280,
+      "y": 0,
+      "width": 1000,
+      "height": 900
+    },
+    "focusedInApplication": true
+  },
+  "learningWindow": {
+    "studyPageBeforeSwitch": "讲义",
+    "studyPageAfterSwitch": "练习",
+    "dataAnalysisTeacherVisibleAfterSwitch": true,
+    "nativeUnsentDraftRetainedAfterPageSwitch": true,
+    "dividerArrowRight": {
+      "before": 60,
+      "after": 62,
+      "saved": 62
+    },
+    "escapeClosesWindow": true,
+    "focusReturnedTo": "打开学习窗口",
+    "renderedDividerAfterReload": 62,
+    "explicitTeacherSelectionAfterReload": true,
+    "nativeUnsentDraftRetainedAfterReload": true,
+    "dividerRestoredToOriginal60": true
+  },
+  "limits": [
+    "No model Send action; running-session Stop/permission/streaming and complete teaching history remain unverified.",
+    "Fixed native-center layout is measured; no claim of editable floating-window dimensions.",
+    "Browser reload preserves the outer application page and divider after explicit reopen; independent inner page/subject/pane are not certified as automatically restored.",
+    "Original data, raw screenshots and conversation text are excluded from remote evidence.",
+    "Full keyboard focus-trap and application combinations remain unverified."
+  ]
+}

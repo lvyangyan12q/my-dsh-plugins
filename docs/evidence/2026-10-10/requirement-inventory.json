@@ -145,7 +145,8 @@
       "evidenceStatus": "partial: reversible center-column focus maximization, minimize/restore, close/reopen and native draft/page preservation verified; screenshot acceptance and the full original window/native-runtime matrix remain open",
       "evidencePaths": [
         "docs/evidence/2026-10-10/application-minimize-browser.json",
-        "docs/evidence/2026-10-10/focus-maximization-verification.json"
+        "docs/evidence/2026-10-10/focus-maximization-verification.json",
+        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json"
       ]
     },
     {
@@ -175,6 +176,9 @@
       "evidence": [
         "docs/evidence/2026-10-10/formal-layout-refresh.json",
         "plugins/personal-workbench/tests/runtime-layout.test.mjs"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json"
       ]
     },
     {
@@ -191,6 +195,9 @@
           "scope": "explicit entry focus, same material and idle role nodes, same role session IDs and exact draft hashes",
           "limits": "not running Agent close, reload-layout or independent Host study-data persistence proof"
         }
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json"
       ]
     },
     {
