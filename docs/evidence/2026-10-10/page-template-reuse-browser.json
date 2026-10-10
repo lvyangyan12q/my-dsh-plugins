@@ -1,0 +1,1458 @@
+{
+  "implementationCommit": "8a03b1b34e4ff124a4504241be1020d30b661ae2",
+  "url": "http://127.0.0.1:3089/",
+  "date": "2026-10-10",
+  "method": "Actual browser save page template, choose destination draft, rebind reviewer, confirm workspace, add new page, increment version via UI, save, preview, explicitly activate, open page; read-only catalog/templates/role API",
+  "checks": {
+    "sourceUnchanged": true,
+    "runningUnchangedBeforeActivation": true,
+    "originalPagesPreserved": true,
+    "rolesPreserved": true,
+    "reboundRole": true,
+    "newPageId": true
+  },
+  "observations": {
+    "before": {
+      "source": {
+        "appId": "cross-page-proof",
+        "revision": 8,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "destination": {
+        "appId": "handoff-proof",
+        "revision": 2,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 1,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 1,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "templates": [],
+      "alerts": []
+    },
+    "savedTemplate": {
+      "source": {
+        "appId": "cross-page-proof",
+        "revision": 8,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "destination": {
+        "appId": "handoff-proof",
+        "revision": 2,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 1,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 1,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "templates": [
+        {
+          "id": "template.c9005048-ad5b-4b5c-bc1a-cc1722fe6c80",
+          "label": "课堂会话模板验收 20261010",
+          "page": {
+            "id": "template-page",
+            "label": "学习页面",
+            "layout": "stack",
+            "modules": [
+              {
+                "id": "slot.0",
+                "title": "学习对话",
+                "type": "role-chat",
+                "config": {
+                  "requiresRole": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "alerts": []
+    },
+    "draftSaved": {
+      "source": {
+        "appId": "cross-page-proof",
+        "revision": 8,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "destination": {
+        "appId": "handoff-proof",
+        "revision": 3,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 2,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "page.33b74d82-0d54-4d5b-ad77-929ff511e9fa",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "module.4c392cd5-a46d-42e1-a731-1a0ece030f67",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "reviewer",
+                  "config": {
+                    "requiresRole": true
+                  }
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 1,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "templates": [
+        {
+          "id": "template.c9005048-ad5b-4b5c-bc1a-cc1722fe6c80",
+          "label": "课堂会话模板验收 20261010",
+          "page": {
+            "id": "template-page",
+            "label": "学习页面",
+            "layout": "stack",
+            "modules": [
+              {
+                "id": "slot.0",
+                "title": "学习对话",
+                "type": "role-chat",
+                "config": {
+                  "requiresRole": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "alerts": []
+    },
+    "previewed": {
+      "source": {
+        "appId": "cross-page-proof",
+        "revision": 8,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "destination": {
+        "appId": "handoff-proof",
+        "revision": 3,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 2,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "page.33b74d82-0d54-4d5b-ad77-929ff511e9fa",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "module.4c392cd5-a46d-42e1-a731-1a0ece030f67",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "reviewer",
+                  "config": {
+                    "requiresRole": true
+                  }
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 1,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "templates": [
+        {
+          "id": "template.c9005048-ad5b-4b5c-bc1a-cc1722fe6c80",
+          "label": "课堂会话模板验收 20261010",
+          "page": {
+            "id": "template-page",
+            "label": "学习页面",
+            "layout": "stack",
+            "modules": [
+              {
+                "id": "slot.0",
+                "title": "学习对话",
+                "type": "role-chat",
+                "config": {
+                  "requiresRole": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "alerts": []
+    },
+    "activated": {
+      "source": {
+        "appId": "cross-page-proof",
+        "revision": 8,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "cross-page-proof",
+          "version": 4,
+          "name": "跨页角色验收",
+          "description": "Isolated native role continuity proof",
+          "pages": [
+            {
+              "id": "lesson",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "lesson-chat",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "review",
+              "label": "复习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-chat",
+                  "type": "role-chat",
+                  "title": "复习对话",
+                  "roleId": "analyst",
+                  "config": {}
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "跨页角色",
+              "presetId": "my-dsh.agent-change-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "destination": {
+        "appId": "handoff-proof",
+        "revision": 4,
+        "draft": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 2,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "page.33b74d82-0d54-4d5b-ad77-929ff511e9fa",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "module.4c392cd5-a46d-42e1-a731-1a0ece030f67",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "reviewer",
+                  "config": {
+                    "requiresRole": true
+                  }
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        },
+        "running": {
+          "schemaVersion": 1,
+          "workspace": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace",
+          "appId": "handoff-proof",
+          "version": 2,
+          "name": "模块任务交接验收",
+          "description": "Isolated preparation only",
+          "pages": [
+            {
+              "id": "home",
+              "label": "任务页面",
+              "layout": "grid",
+              "modules": [
+                {
+                  "id": "analysis",
+                  "type": "role-chat",
+                  "title": "分析模块",
+                  "roleId": "analyst",
+                  "config": {
+                    "taskPrompt": "分析已选择的学习内容。",
+                    "taskContext": "分析素材：只需判断学习重点。"
+                  }
+                },
+                {
+                  "id": "review",
+                  "type": "role-chat",
+                  "title": "复核模块",
+                  "roleId": "reviewer",
+                  "config": {
+                    "taskPrompt": "复核这些统计结果，并标出需要核对的项。",
+                    "taskContext": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "label": "复核详情页",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "review-details",
+                  "type": "role-chat",
+                  "title": "复核详情对话",
+                  "roleId": "reviewer",
+                  "config": {}
+                }
+              ]
+            },
+            {
+              "id": "page.33b74d82-0d54-4d5b-ad77-929ff511e9fa",
+              "label": "学习页面",
+              "layout": "stack",
+              "modules": [
+                {
+                  "id": "module.4c392cd5-a46d-42e1-a731-1a0ece030f67",
+                  "type": "role-chat",
+                  "title": "学习对话",
+                  "roleId": "reviewer",
+                  "config": {
+                    "requiresRole": true
+                  }
+                }
+              ]
+            }
+          ],
+          "connections": [],
+          "roles": [
+            {
+              "id": "analyst",
+              "name": "分析角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            },
+            {
+              "id": "reviewer",
+              "name": "复核角色",
+              "presetId": "my-dsh.dependency-lifecycle-acceptance",
+              "skillNames": [
+                "dependency-lifecycle-acceptance-skill"
+              ]
+            }
+          ]
+        }
+      },
+      "templates": [
+        {
+          "id": "template.c9005048-ad5b-4b5c-bc1a-cc1722fe6c80",
+          "label": "课堂会话模板验收 20261010",
+          "page": {
+            "id": "template-page",
+            "label": "学习页面",
+            "layout": "stack",
+            "modules": [
+              {
+                "id": "slot.0",
+                "title": "学习对话",
+                "type": "role-chat",
+                "config": {
+                  "requiresRole": true
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "alerts": []
+    }
+  },
+  "bindings": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Script ran on page and returned:\n```json\n{\"analyst\":{\"status\":200,\"body\":{\"binding\":null}},\"reviewer\":{\"status\":200,\"body\":{\"binding\":null}}}\n```"
+      }
+    ]
+  },
+  "snapshots": {
+    "selected": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Successfully filled out the element\n## Latest page snapshot\nuid=362_0 RootWebArea \"DSH 本地构建\" url=\"http://127.0.0.1:3089/\"\n  uid=363_0 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=363_1 button \"收起侧边栏\" keyshortcuts=\"Control+Alt+B\"\n  uid=363_2 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=363_3 navigation \"全局面板\"\n    uid=363_4 button \"插件\"\n  uid=363_5 StaticText \"工作区\"\n  uid=363_6 button \"搜索会话\" expandable keyshortcuts=\"Control+Alt+K\"\n  uid=363_7 textbox \"搜索会话名称\"\n  uid=363_8 button \"视图选项\"\n  uid=363_9 button \"添加工作区\" keyshortcuts=\"Control+Alt+O\"\n  uid=363_10 tree \"会话\" orientation=\"vertical\"\n    uid=363_11 treeitem \"workspace\" expandable expanded level=\"1\" selectable\n    uid=363_12 treeitem \"未分组\" expandable expanded level=\"1\" selectable\n    uid=363_13 treeitem \"新会话\" level=\"1\" selectable selected\n  uid=363_14 navigation \"目录\"\n    uid=363_15 button \"工作台\" description=\"工作台\"\n    uid=363_16 button \"应用\" expandable expanded\n    uid=363_17 button \"标注闭环验收\"\n    uid=363_18 button \"考公学习\"\n    uid=363_19 button \"跨页角色验收\"\n    uid=363_20 button \"模块任务交接验收\"\n    uid=363_21 button \"缺失会话恢复验收\"\n    uid=363_22 button \"阅读统计 / Reading statistics\"\n    uid=363_23 button \"HTML assets\"\n    uid=363_24 button \"Agent\"\n    uid=363_25 button \"Skills\"\n  uid=363_26 region \"隔离实例验收入口\"\n    uid=363_27 button \"验收实例 default\"\n    uid=363_28 button \"验收实例 second\"\n  uid=363_29 button \"设置\" expandable haspopup=\"dialog\" keyshortcuts=\"Control+Alt+,\"\n  uid=363_30 banner\n    uid=363_31 button \"打开右侧边栏\" keyshortcuts=\"Control+Shift+B\"\n  uid=363_32 StaticText \"探索未至之境\"\n  uid=363_33 StaticText \"预览版\"\n  uid=363_34 button \"选择工作区\" expandable haspopup=\"menu\"\n  uid=363_35 button \"Lifecycle acceptance\" description=\"选择新任务使用的 Agent 预设\" expandable haspopup=\"menu\"\n  uid=363_36 textbox \"选择工作区\" haspopup=\"menu\" multiline\n  uid=363_37 button \"添加文件或调用指令\" disableable disabled expandable haspopup=\"listbox\"\n  uid=363_38 button \"访问模式，当前：工作区内修改\" disableable disabled\n  uid=363_39 button \"选择模型，当前 DeepSeek-V41-Flash，推理等级 High\" description=\"DeepSeek-V41-Flash · High\" disableable disabled expandable haspopup=\"menu\"\n  uid=363_40 button \"发送消息\" disableable disabled\n  uid=363_41 region \"工作台\"\n    uid=363_42 banner\n      uid=363_43 StaticText \"工作台\"\n      uid=363_44 button \"关闭工作台\" description=\"关闭工作台\"\n    uid=363_45 region \"应用\"\n      uid=363_46 button \"刷新应用状态\"\n      uid=363_47 DisclosureTriangle \"应用配方\" expandable expanded\n      uid=364_0 StaticText \"编辑并保存草稿，预览后显式启用。修改运行配方前请递增版本号。\"\n      uid=364_7 button \"创建草稿\"\n      uid=364_8 combobox \"选择草稿\" expandable haspopup=\"menu\" value=\"模块任务交接验收 · 2\"\n        uid=364_9 option \"选择草稿\" selectable value=\"选择草稿\"\n        uid=364_10 option \"阅读统计 / Reading statistics · 10\" selectable value=\"阅读统计 / Reading statistics · 10\"\n        uid=364_11 option \"HTML assets · 2\" selectable value=\"HTML assets · 2\"\n        uid=364_12 option \"标注闭环验收 · 3\" selectable value=\"标注闭环验收 · 3\"\n        uid=364_13 option \"缺失会话恢复验收 · 2\" selectable value=\"缺失会话恢复验收 · 2\"\n        uid=364_14 option \"跨页角色验收 · 8\" selectable value=\"跨页角色验收 · 8\"\n        uid=364_15 option \"模块任务交接验收 · 2\" selectable selected value=\"模块任务交接验收 · 2\"\n      uid=364_16 DisclosureTriangle \"已安装应用模板\" expandable\n      uid=364_17 DisclosureTriangle \"AI 生成应用\" expandable\n      uid=365_0 StaticText \"应用名称\"\n      uid=365_1 textbox \"应用名称\" value=\"模块任务交接验收\"\n      uid=365_2 StaticText \"工作区边界\"\n      uid=365_3 combobox \"工作区边界\" expandable haspopup=\"menu\" value=\"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace · 数据来源不可用\"\n        uid=365_4 option \"默认可信工作目录\" selectable value=\"默认可信工作目录\"\n        uid=365_5 option \"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace · 数据来源不可用\" selectable selected value=\"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace · 数据来源不可用\"\n        uid=365_6 option \"D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace\" selectable value=\"D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace\"\n      uid=365_7 StaticText \"实例首次运行时固定工作目录。更换目录请使用新实例，已有会话和资料不会迁移。\"\n      uid=369_0 region \"应用画布\"\n        uid=369_1 navigation \"应用页面\"\n          uid=369_2 button \"任务页面\" pressed\n          uid=369_3 button \"复核详情页\"\n          uid=369_4 button \"添加页面\"\n        uid=369_5 button \"页面设置\" expandable\n        uid=369_6 DisclosureTriangle \"页面模板\" expandable expanded focusable focused\n        uid=370_0 StaticText \"保存布局和展示字段，不复制网址、文件路径、任务、数据绑定或私有角色。\"\n        uid=370_1 StaticText \"模板名称\"\n        uid=370_2 textbox \"模板名称\" value=\"任务页面\"\n        uid=370_3 button \"将当前页面保存为模板\"\n        uid=370_4 StaticText \"选择页面模板\"\n        uid=370_5 combobox \"选择页面模板\" expandable haspopup=\"menu\" value=\"课堂会话模板验收 20261010\"\n          uid=370_6 option \"选择页面模板\" selectable value=\"选择页面模板\"\n          uid=370_7 option \"课堂会话模板验收 20261010\" selectable selected value=\"课堂会话模板验收 20261010\"\n        uid=371_0 StaticText \"确认目标应用绑定\"\n        uid=371_1 StaticText \"工作区边界\"\n        uid=371_2 StaticText \": \"\n        uid=371_3 StaticText \"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace\"\n        uid=371_4 checkbox \"确认使用当前应用的工作目录\"\n        uid=371_5 StaticText \"确认使用当前应用的工作目录\"\n        uid=371_6 StaticText \"学习对话\"\n        uid=371_7 StaticText \"目标角色\"\n        uid=371_8 combobox \"目标角色: slot.0\" expandable haspopup=\"menu\" value=\"稍后在模块内配置\"\n          uid=371_9 option \"稍后在模块内配置\" selectable selected value=\"稍后在模块内配置\"\n          uid=371_10 option \"分析角色\" selectable value=\"分析角色\"\n          uid=371_11 option \"复核角色\" selectable value=\"复核角色\"\n        uid=371_12 StaticText \"缺失的数据、角色、网址及文件设置须补齐后再预览和启用。原页面保留。\"\n        uid=371_13 button \"添加为新的页面\" disableable disabled\n        uid=369_7 StaticText \"直接在各模块配置内容。保存草稿、预览后，再显式启用。\"\n        uid=369_8 separator \"调整列宽\" orientation=\"vertical\" value=\"50\" valuemax=\"80\" valuemin=\"20\" valuetext=\"\"\n        uid=369_9 sectionheader\n          uid=369_10 StaticText \"分析模块\"\n          uid=369_11 button \"向前移动: analysis\" description=\"向前移动\" disableable disabled\n          uid=369_12 button \"向后移动: analysis\" description=\"向后移动\"\n          uid=369_13 button \"更换内容: analysis\" description=\"更换内容\"\n          uid=369_14 button \"设置: analysis\" description=\"设置\" expandable\n          uid=369_15 button \"放大模块: analysis\" description=\"放大模块\"\n          uid=369_16 button \"删除模块: analysis\" description=\"删除模块\"\n        uid=369_17 StaticText \"DSH 对话\"\n        uid=369_18 StaticText \"在这个模块内配置内容\"\n        uid=369_19 StaticText \"目标角色\"\n        uid=369_20 StaticText \": \"\n        uid=369_21 StaticText \"分析角色\"\n        uid=369_22 sectionheader\n          uid=369_23 StaticText \"复核模块\"\n          uid=369_24 button \"向前移动: review\" description=\"向前移动\"\n          uid=369_25 button \"向后移动: review\" description=\"向后移动\" disableable disabled\n          uid=369_26 button \"更换内容: review\" description=\"更换内容\"\n          uid=369_27 button \"设置: review\" description=\"设置\" expandable\n          uid=369_28 button \"放大模块: review\" description=\"放大模块\"\n          uid=369_29 button \"删除模块: review\" description=\"删除模块\"\n        uid=369_30 StaticText \"DSH 对话\"\n        uid=369_31 StaticText \"在这个模块内配置内容\"\n        uid=369_32 StaticText \"目标角色\"\n        uid=369_33 StaticText \": \"\n        uid=369_34 StaticText \"复核角色\"\n        uid=369_35 button \"添加模块\"\n      uid=365_30 DisclosureTriangle \"高级配方配置\" expandable\n      uid=365_31 navigation \"步骤导航\"\n        uid=365_32 button \"保存草稿\"\n        uid=365_33 button \"预览草稿\"\n        uid=365_34 button \"启用草稿\" disableable disabled\n        uid=365_35 status atomic live=\"polite\" relevant=\"additions text\"\n          uid=365_36 StaticText \"草稿已保存\"\n      uid=363_48 searchbox \"搜索应用\"\n      uid=363_49 checkbox \"显示已隐藏\"\n      uid=363_50 button \"标注闭环验收\"\n      uid=363_51 StaticText \"Workbench\"\n      uid=363_52 StaticText \" · \"\n      uid=363_53 StaticText \"1\"\n      uid=363_54 StaticText \" · \"\n      uid=363_55 StaticText \"已启用\"\n      uid=363_56 DisclosureTriangle \"应用配置\" expandable\n      uid=363_57 button \"停用应用: 标注闭环验收\"\n      uid=363_58 button \"收藏: 标注闭环验收\"\n      uid=363_59 button \"隐藏应用: 标注闭环验收\"\n      uid=363_60 button \"上移: 标注闭环验收\" description=\"上移\" disableable disabled\n      uid=363_61 button \"下移: 标注闭环验收\" description=\"下移\"\n      uid=363_62 button \"考公学习\"\n      uid=363_63 StaticText \"@deepseek-ai/dsh-tool-kaogong\"\n      uid=363_64 StaticText \" · \"\n      uid=363_65 StaticText \"0.1.0\"\n      uid=363_66 StaticText \" · \"\n      uid=363_67 StaticText \"已启用\"\n      uid=363_68 DisclosureTriangle \"应用配置\" expandable\n      uid=363_69 button \"停用应用: 考公学习\"\n      uid=363_70 button \"收藏: 考公学习\"\n      uid=363_71 button \"隐藏应用: 考公学习\"\n      uid=363_72 button \"上移: 考公学习\" description=\"上移\"\n      uid=363_73 button \"下移: 考公学习\" description=\"下移\"\n      uid=363_74 button \"跨页角色验收\"\n      uid=363_75 StaticText \"Workbench\"\n      uid=363_76 StaticText \" · \"\n      uid=363_77 StaticText \"4\"\n      uid=363_78 StaticText \" · \"\n      uid=363_79 StaticText \"已启用\"\n      uid=363_80 DisclosureTriangle \"应用配置\" expandable\n      uid=363_81 button \"停用应用: 跨页角色验收\"\n      uid=363_82 button \"收藏: 跨页角色验收\"\n      uid=363_83 button \"隐藏应用: 跨页角色验收\"\n      uid=363_84 button \"上移: 跨页角色验收\" description=\"上移\"\n      uid=363_85 button \"下移: 跨页角色验收\" description=\"下移\"\n      uid=363_86 button \"模块任务交接验收\"\n      uid=363_87 StaticText \"Workbench\"\n      uid=363_88 StaticText \" · \"\n      uid=363_89 StaticText \"1\"\n      uid=363_90 StaticText \" · \"\n      uid=363_91 StaticText \"已启用\"\n      uid=363_92 DisclosureTriangle \"应用配置\" expandable\n      uid=363_93 button \"停用应用: 模块任务交接验收\"\n      uid=363_94 button \"收藏: 模块任务交接验收\"\n      uid=363_95 button \"隐藏应用: 模块任务交接验收\"\n      uid=363_96 button \"上移: 模块任务交接验收\" description=\"上移\"\n      uid=363_97 button \"下移: 模块任务交接验收\" description=\"下移\"\n      uid=363_98 button \"缺失会话恢复验收\"\n      uid=363_99 StaticText \"Workbench\"\n      uid=363_100 StaticText \" · \"\n      uid=363_101 StaticText \"1\"\n      uid=363_102 StaticText \" · \"\n      uid=363_103 StaticText \"已启用\"\n      uid=363_104 DisclosureTriangle \"应用配置\" expandable\n      uid=363_105 button \"停用应用: 缺失会话恢复验收\"\n      uid=363_106 button \"收藏: 缺失会话恢复验收\"\n      uid=363_107 button \"隐藏应用: 缺失会话恢复验收\"\n      uid=363_108 button \"上移: 缺失会话恢复验收\" description=\"上移\"\n      uid=363_109 button \"下移: 缺失会话恢复验收\" description=\"下移\"\n      uid=363_110 button \"阅读统计 / Reading statistics\"\n      uid=363_111 StaticText \"Workbench\"\n      uid=363_112 StaticText \" · \"\n      uid=363_113 StaticText \"3\"\n      uid=363_114 StaticText \" · \"\n      uid=363_115 StaticText \"已启用\"\n      uid=363_116 DisclosureTriangle \"应用配置\" expandable\n      uid=363_117 button \"停用应用: 阅读统计 / Reading statistics\"\n      uid=363_118 button \"收藏: 阅读统计 / Reading statistics\"\n      uid=363_119 button \"隐藏应用: 阅读统计 / Reading statistics\"\n      uid=363_120 button \"上移: 阅读统计 / Reading statistics\" description=\"上移\"\n      uid=363_121 button \"下移: 阅读统计 / Reading statistics\" description=\"下移\"\n      uid=363_122 button \"HTML assets\"\n      uid=363_123 StaticText \"Workbench\"\n      uid=363_124 StaticText \" · \"\n      uid=363_125 StaticText \"1\"\n      uid=363_126 StaticText \" · \"\n      uid=363_127 StaticText \"已启用\"\n      uid=363_128 DisclosureTriangle \"应用配置\" expandable\n      uid=363_129 button \"停用应用: HTML assets\"\n      uid=363_130 button \"收藏: HTML assets\"\n      uid=363_131 button \"隐藏应用: HTML assets\"\n      uid=363_132 button \"上移: HTML assets\" description=\"上移\"\n      uid=363_133 button \"下移: HTML assets\" description=\"下移\" disableable disabled\n"
+        }
+      ]
+    },
+    "added": {
+      "content": [
+        {
+          "type": "text",
+          "text": "## Latest page snapshot\nuid=362_0 RootWebArea \"DSH 本地构建\" url=\"http://127.0.0.1:3089/\"\n  uid=363_0 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=363_1 button \"收起侧边栏\" keyshortcuts=\"Control+Alt+B\"\n  uid=363_2 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=363_3 navigation \"全局面板\"\n    uid=363_4 button \"插件\"\n  uid=363_5 StaticText \"工作区\"\n  uid=363_6 button \"搜索会话\" expandable keyshortcuts=\"Control+Alt+K\"\n  uid=363_7 textbox \"搜索会话名称\"\n  uid=363_8 button \"视图选项\"\n  uid=363_9 button \"添加工作区\" keyshortcuts=\"Control+Alt+O\"\n  uid=363_10 tree \"会话\" orientation=\"vertical\"\n    uid=363_11 treeitem \"workspace\" expandable expanded level=\"1\" selectable\n    uid=363_12 treeitem \"未分组\" expandable expanded level=\"1\" selectable\n    uid=363_13 treeitem \"新会话\" level=\"1\" selectable selected\n  uid=363_14 navigation \"目录\"\n    uid=363_15 button \"工作台\" description=\"工作台\"\n    uid=363_16 button \"应用\" expandable expanded\n    uid=363_17 button \"标注闭环验收\"\n    uid=363_18 button \"考公学习\"\n    uid=363_19 button \"跨页角色验收\"\n    uid=363_20 button \"模块任务交接验收\"\n    uid=363_21 button \"缺失会话恢复验收\"\n    uid=363_22 button \"阅读统计 / Reading statistics\"\n    uid=363_23 button \"HTML assets\"\n    uid=363_24 button \"Agent\"\n    uid=363_25 button \"Skills\"\n  uid=363_26 region \"隔离实例验收入口\"\n    uid=363_27 button \"验收实例 default\"\n    uid=363_28 button \"验收实例 second\"\n  uid=363_29 button \"设置\" expandable haspopup=\"dialog\" keyshortcuts=\"Control+Alt+,\"\n  uid=363_30 banner\n    uid=363_31 button \"打开右侧边栏\" keyshortcuts=\"Control+Shift+B\"\n  uid=363_32 StaticText \"探索未至之境\"\n  uid=363_33 StaticText \"预览版\"\n  uid=363_34 button \"选择工作区\" expandable haspopup=\"menu\"\n  uid=363_35 button \"Lifecycle acceptance\" description=\"选择新任务使用的 Agent 预设\" expandable haspopup=\"menu\"\n  uid=363_36 textbox \"选择工作区\" haspopup=\"menu\" multiline\n  uid=363_37 button \"添加文件或调用指令\" disableable disabled expandable haspopup=\"listbox\"\n  uid=363_38 button \"访问模式，当前：工作区内修改\" disableable disabled\n  uid=363_39 button \"选择模型，当前 DeepSeek-V41-Flash，推理等级 High\" description=\"DeepSeek-V41-Flash · High\" disableable disabled expandable haspopup=\"menu\"\n  uid=363_40 button \"发送消息\" disableable disabled\n  uid=363_41 region \"工作台\"\n    uid=363_42 banner\n      uid=363_43 StaticText \"工作台\"\n      uid=363_44 button \"关闭工作台\" description=\"关闭工作台\"\n    uid=363_45 region \"应用\"\n      uid=363_46 button \"刷新应用状态\"\n      uid=363_47 DisclosureTriangle \"应用配方\" expandable expanded\n      uid=364_0 StaticText \"编辑并保存草稿，预览后显式启用。修改运行配方前请递增版本号。\"\n      uid=364_7 button \"创建草稿\"\n      uid=364_8 combobox \"选择草稿\" expandable haspopup=\"menu\" value=\"模块任务交接验收 · 2\"\n        uid=364_9 option \"选择草稿\" selectable value=\"选择草稿\"\n        uid=364_10 option \"阅读统计 / Reading statistics · 10\" selectable value=\"阅读统计 / Reading statistics · 10\"\n        uid=364_11 option \"HTML assets · 2\" selectable value=\"HTML assets · 2\"\n        uid=364_12 option \"标注闭环验收 · 3\" selectable value=\"标注闭环验收 · 3\"\n        uid=364_13 option \"缺失会话恢复验收 · 2\" selectable value=\"缺失会话恢复验收 · 2\"\n        uid=364_14 option \"跨页角色验收 · 8\" selectable value=\"跨页角色验收 · 8\"\n        uid=364_15 option \"模块任务交接验收 · 2\" selectable selected value=\"模块任务交接验收 · 2\"\n      uid=364_16 DisclosureTriangle \"已安装应用模板\" expandable\n      uid=364_17 DisclosureTriangle \"AI 生成应用\" expandable\n      uid=365_0 StaticText \"应用名称\"\n      uid=365_1 textbox \"应用名称\" value=\"模块任务交接验收\"\n      uid=365_2 StaticText \"工作区边界\"\n      uid=365_3 combobox \"工作区边界\" expandable haspopup=\"menu\" value=\"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace · 数据来源不可用\"\n        uid=365_4 option \"默认可信工作目录\" selectable value=\"默认可信工作目录\"\n        uid=365_5 option \"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace · 数据来源不可用\" selectable selected value=\"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace · 数据来源不可用\"\n        uid=365_6 option \"D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace\" selectable value=\"D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace\"\n      uid=365_7 StaticText \"实例首次运行时固定工作目录。更换目录请使用新实例，已有会话和资料不会迁移。\"\n      uid=369_0 region \"应用画布\"\n        uid=369_1 navigation \"应用页面\"\n          uid=369_2 button \"任务页面\"\n          uid=369_3 button \"复核详情页\"\n          uid=372_0 button \"学习页面\" pressed\n          uid=369_4 button \"添加页面\"\n        uid=369_5 button \"页面设置\" expandable\n        uid=372_1 DisclosureTriangle \"页面模板\" expandable\n        uid=369_7 StaticText \"直接在各模块配置内容。保存草稿、预览后，再显式启用。\"\n        uid=372_2 sectionheader\n          uid=372_3 StaticText \"学习对话\"\n          uid=372_4 button \"向前移动: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\" description=\"向前移动\" disableable disabled\n          uid=372_5 button \"向后移动: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\" description=\"向后移动\" disableable disabled\n          uid=372_6 button \"更换内容: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\" description=\"更换内容\"\n          uid=372_7 button \"设置: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\" description=\"设置\" expandable\n          uid=372_8 button \"放大模块: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\" description=\"放大模块\"\n          uid=372_9 button \"删除模块: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\" description=\"删除模块\"\n        uid=372_10 StaticText \"DSH 对话\"\n        uid=372_11 StaticText \"在这个模块内配置内容\"\n        uid=372_12 StaticText \"目标角色\"\n        uid=372_13 StaticText \": \"\n        uid=372_14 StaticText \"复核角色\"\n        uid=369_35 button \"添加模块\"\n      uid=365_30 DisclosureTriangle \"高级配方配置\" expandable expanded focusable focused\n      uid=372_15 StaticText \"说明\"\n      uid=372_16 textbox \"说明\" value=\"Isolated preparation only\"\n      uid=372_17 StaticText \"版本\"\n      uid=372_18 spinbutton \"版本\" value=\"1\" valuemax=\"0\" valuemin=\"1\" valuetext=\"1\"\n      uid=372_19 DisclosureTriangle \"数据连接\" expandable\n      uid=372_20 DisclosureTriangle \"角色与任务\" expandable\n      uid=372_21 StaticText \"配方配置\"\n      uid=372_22 textbox \"配方配置\" multiline value=\"{\n  \"schemaVersion\": 1,\n  \"workspace\": \"D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854/workspace\",\n  \"appId\": \"handoff-proof\",\n  \"version\": 1,\n  \"name\": \"模块任务交接验收\",\n  \"description\": \"Isolated preparation only\",\n  \"pages\": [\n    {\n      \"id\": \"home\",\n      \"label\": \"任务页面\",\n      \"layout\": \"grid\",\n      \"modules\": [\n        {\n          \"id\": \"analysis\",\n          \"type\": \"role-chat\",\n          \"title\": \"分析模块\",\n          \"roleId\": \"analyst\",\n          \"config\": {\n            \"taskPrompt\": \"分析已选择的学习内容。\",\n            \"taskContext\": \"分析素材：只需判断学习重点。\"\n          }\n        },\n        {\n          \"id\": \"review\",\n          \"type\": \"role-chat\",\n          \"title\": \"复核模块\",\n          \"roleId\": \"reviewer\",\n          \"config\": {\n            \"taskPrompt\": \"复核这些统计结果，并标出需要核对的项。\",\n            \"taskContext\": \"复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。\"\n          }\n        }\n      ]\n    },\n    {\n      \"id\": \"details\",\n      \"label\": \"复核详情页\",\n      \"layout\": \"stack\",\n      \"modules\": [\n        {\n          \"id\": \"review-details\",\n          \"type\": \"role-chat\",\n          \"title\": \"复核详情对话\",\n          \"roleId\": \"reviewer\",\n          \"config\": {}\n        }\n      ]\n    },\n    {\n      \"id\": \"page.33b74d82-0d54-4d5b-ad77-929ff511e9fa\",\n      \"label\": \"学习页面\",\n      \"layout\": \"stack\",\n      \"modules\": [\n        {\n          \"id\": \"module.4c392cd5-a46d-42e1-a731-1a0ece030f67\",\n          \"title\": \"学习对话\",\n          \"type\": \"role-chat\",\n          \"config\": {\n            \"requiresRole\": true\n          },\n          \"roleId\": \"reviewer\"\n        }\n      ]\n    }\n  ],\n  \"connections\": [],\n  \"roles\": [\n    {\n      \"id\": \"analyst\",\n      \"name\": \"分析角色\",\n      \"presetId\": \"my-dsh.dependency-lifecycle-acceptance\",\n      \"skillNames\": [\n        \"dependency-lifecycle-acceptance-skill\"\n      ]\n    },\n    {\n      \"id\": \"reviewer\",\n      \"name\": \"复核角色\",\n      \"presetId\": \"my-dsh.dependency-lifecycle-acceptance\",\n      \"skillNames\": [\n        \"dependency-lifecycle-acceptance-skill\"\n      ]\n    }\n  ]\n}\"\n      uid=365_31 navigation \"步骤导航\"\n        uid=365_32 button \"保存草稿\"\n        uid=365_33 button \"预览草稿\" disableable disabled\n        uid=365_34 button \"启用草稿\" disableable disabled\n        uid=365_35 status atomic live=\"polite\" relevant=\"additions text\"\n          uid=365_36 StaticText \"尚未保存的修改\"\n      uid=363_48 searchbox \"搜索应用\"\n      uid=363_49 checkbox \"显示已隐藏\"\n      uid=363_50 button \"标注闭环验收\"\n      uid=363_51 StaticText \"Workbench\"\n      uid=363_52 StaticText \" · \"\n      uid=363_53 StaticText \"1\"\n      uid=363_54 StaticText \" · \"\n      uid=363_55 StaticText \"已启用\"\n      uid=363_56 DisclosureTriangle \"应用配置\" expandable\n      uid=363_57 button \"停用应用: 标注闭环验收\"\n      uid=363_58 button \"收藏: 标注闭环验收\"\n      uid=363_59 button \"隐藏应用: 标注闭环验收\"\n      uid=363_60 button \"上移: 标注闭环验收\" description=\"上移\" disableable disabled\n      uid=363_61 button \"下移: 标注闭环验收\" description=\"下移\"\n      uid=363_62 button \"考公学习\"\n      uid=363_63 StaticText \"@deepseek-ai/dsh-tool-kaogong\"\n      uid=363_64 StaticText \" · \"\n      uid=363_65 StaticText \"0.1.0\"\n      uid=363_66 StaticText \" · \"\n      uid=363_67 StaticText \"已启用\"\n      uid=363_68 DisclosureTriangle \"应用配置\" expandable\n      uid=363_69 button \"停用应用: 考公学习\"\n      uid=363_70 button \"收藏: 考公学习\"\n      uid=363_71 button \"隐藏应用: 考公学习\"\n      uid=363_72 button \"上移: 考公学习\" description=\"上移\"\n      uid=363_73 button \"下移: 考公学习\" description=\"下移\"\n      uid=363_74 button \"跨页角色验收\"\n      uid=363_75 StaticText \"Workbench\"\n      uid=363_76 StaticText \" · \"\n      uid=363_77 StaticText \"4\"\n      uid=363_78 StaticText \" · \"\n      uid=363_79 StaticText \"已启用\"\n      uid=363_80 DisclosureTriangle \"应用配置\" expandable\n      uid=363_81 button \"停用应用: 跨页角色验收\"\n      uid=363_82 button \"收藏: 跨页角色验收\"\n      uid=363_83 button \"隐藏应用: 跨页角色验收\"\n      uid=363_84 button \"上移: 跨页角色验收\" description=\"上移\"\n      uid=363_85 button \"下移: 跨页角色验收\" description=\"下移\"\n      uid=363_86 button \"模块任务交接验收\"\n      uid=363_87 StaticText \"Workbench\"\n      uid=363_88 StaticText \" · \"\n      uid=363_89 StaticText \"1\"\n      uid=363_90 StaticText \" · \"\n      uid=363_91 StaticText \"已启用\"\n      uid=363_92 DisclosureTriangle \"应用配置\" expandable\n      uid=363_93 button \"停用应用: 模块任务交接验收\"\n      uid=363_94 button \"收藏: 模块任务交接验收\"\n      uid=363_95 button \"隐藏应用: 模块任务交接验收\"\n      uid=363_96 button \"上移: 模块任务交接验收\" description=\"上移\"\n      uid=363_97 button \"下移: 模块任务交接验收\" description=\"下移\"\n      uid=363_98 button \"缺失会话恢复验收\"\n      uid=363_99 StaticText \"Workbench\"\n      uid=363_100 StaticText \" · \"\n      uid=363_101 StaticText \"1\"\n      uid=363_102 StaticText \" · \"\n      uid=363_103 StaticText \"已启用\"\n      uid=363_104 DisclosureTriangle \"应用配置\" expandable\n      uid=363_105 button \"停用应用: 缺失会话恢复验收\"\n      uid=363_106 button \"收藏: 缺失会话恢复验收\"\n      uid=363_107 button \"隐藏应用: 缺失会话恢复验收\"\n      uid=363_108 button \"上移: 缺失会话恢复验收\" description=\"上移\"\n      uid=363_109 button \"下移: 缺失会话恢复验收\" description=\"下移\"\n      uid=363_110 button \"阅读统计 / Reading statistics\"\n      uid=363_111 StaticText \"Workbench\"\n      uid=363_112 StaticText \" · \"\n      uid=363_113 StaticText \"3\"\n      uid=363_114 StaticText \" · \"\n      uid=363_115 StaticText \"已启用\"\n      uid=363_116 DisclosureTriangle \"应用配置\" expandable\n      uid=363_117 button \"停用应用: 阅读统计 / Reading statistics\"\n      uid=363_118 button \"收藏: 阅读统计 / Reading statistics\"\n      uid=363_119 button \"隐藏应用: 阅读统计 / Reading statistics\"\n      uid=363_120 button \"上移: 阅读统计 / Reading statistics\" description=\"上移\"\n      uid=363_121 button \"下移: 阅读统计 / Reading statistics\" description=\"下移\"\n      uid=363_122 button \"HTML assets\"\n      uid=363_123 StaticText \"Workbench\"\n      uid=363_124 StaticText \" · \"\n      uid=363_125 StaticText \"1\"\n      uid=363_126 StaticText \" · \"\n      uid=363_127 StaticText \"已启用\"\n      uid=363_128 DisclosureTriangle \"应用配置\" expandable\n      uid=363_129 button \"停用应用: HTML assets\"\n      uid=363_130 button \"收藏: HTML assets\"\n      uid=363_131 button \"隐藏应用: HTML assets\"\n      uid=363_132 button \"上移: HTML assets\" description=\"上移\"\n      uid=363_133 button \"下移: HTML assets\" description=\"下移\" disableable disabled\n"
+        }
+      ]
+    },
+    "runtime": {
+      "content": [
+        {
+          "type": "text",
+          "text": "## Latest page snapshot\nuid=362_0 RootWebArea \"DSH 本地构建\" url=\"http://127.0.0.1:3089/\"\n  uid=363_0 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=363_1 button \"收起侧边栏\" keyshortcuts=\"Control+Alt+B\"\n  uid=363_2 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=363_3 navigation \"全局面板\"\n    uid=363_4 button \"插件\"\n  uid=363_5 StaticText \"工作区\"\n  uid=363_6 button \"搜索会话\" expandable keyshortcuts=\"Control+Alt+K\"\n  uid=363_7 textbox \"搜索会话名称\"\n  uid=363_8 button \"视图选项\"\n  uid=363_9 button \"添加工作区\" keyshortcuts=\"Control+Alt+O\"\n  uid=363_10 tree \"会话\" orientation=\"vertical\"\n    uid=363_11 treeitem \"workspace\" expandable expanded level=\"1\" selectable\n    uid=363_12 treeitem \"未分组\" expandable expanded level=\"1\" selectable\n    uid=363_13 treeitem \"新会话\" level=\"1\" selectable selected\n  uid=363_14 navigation \"目录\"\n    uid=363_15 button \"工作台\" description=\"工作台\"\n    uid=363_16 button \"应用\" expandable expanded\n    uid=363_17 button \"标注闭环验收\"\n    uid=363_18 button \"考公学习\"\n    uid=363_19 button \"跨页角色验收\"\n    uid=363_20 button \"模块任务交接验收\"\n    uid=363_21 button \"缺失会话恢复验收\"\n    uid=363_22 button \"阅读统计 / Reading statistics\"\n    uid=363_23 button \"HTML assets\"\n    uid=363_24 button \"Agent\"\n    uid=363_25 button \"Skills\"\n  uid=363_26 region \"隔离实例验收入口\"\n    uid=363_27 button \"验收实例 default\"\n    uid=363_28 button \"验收实例 second\"\n  uid=363_29 button \"设置\" expandable haspopup=\"dialog\" keyshortcuts=\"Control+Alt+,\"\n  uid=363_30 banner\n    uid=363_31 button \"打开右侧边栏\" keyshortcuts=\"Control+Shift+B\"\n  uid=363_32 StaticText \"探索未至之境\"\n  uid=363_33 StaticText \"预览版\"\n  uid=363_34 button \"选择工作区\" expandable haspopup=\"menu\"\n  uid=363_35 button \"Lifecycle acceptance\" description=\"选择新任务使用的 Agent 预设\" expandable haspopup=\"menu\"\n  uid=363_36 textbox \"选择工作区\" haspopup=\"menu\" multiline\n  uid=363_37 button \"添加文件或调用指令\" disableable disabled expandable haspopup=\"listbox\"\n  uid=363_38 button \"访问模式，当前：工作区内修改\" disableable disabled\n  uid=363_39 button \"选择模型，当前 DeepSeek-V41-Flash，推理等级 High\" description=\"DeepSeek-V41-Flash · High\" disableable disabled expandable haspopup=\"menu\"\n  uid=363_40 button \"发送消息\" disableable disabled\n  uid=363_41 region \"模块任务交接验收\"\n    uid=363_42 banner\n      uid=363_43 StaticText \"模块任务交接验收\"\n      uid=363_44 button \"关闭工作台\" description=\"关闭工作台\"\n    uid=373_0 region \"模块任务交接验收 · default\"\n      uid=373_1 tab \"任务页面\" selectable\n      uid=373_2 tab \"复核详情页\" selectable\n      uid=373_3 tab \"学习页面\" focusable focused selectable selected\n      uid=374_0 button \"标注画布\"\n      uid=374_1 button \"标注记录 (0)\" expandable\n      uid=374_2 heading \"学习对话\" level=\"3\"\n      uid=374_3 button \"更换内容: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\"\n      uid=374_4 button \"设置: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\"\n      uid=374_5 button \"放大模块: module.4c392cd5-a46d-42e1-a731-1a0ece030f67\"\n      uid=374_6 region \"持续角色会话\"\n        uid=374_7 StaticText \"复核角色\"\n        uid=374_8 button \"创建复核角色\"\n        uid=374_9 button \"绑定已有会话\"\n        uid=374_10 StaticText \"点击创建，开始与角色对话。\"\n"
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Source fixture has one role-chat module; no map/data-binding or private URL/PDF stripping browser acceptance in this run",
+    "No create role or send action; no completed model conversation tested",
+    "Workspace has a slash/backslash false unavailable label in builder; successful preview/activation does not resolve this display defect",
+    "Formal 3080 was not restarted or browser-tested in this run"
+  ],
+  "installedArchiveSha256": "b8fad3c8bee8ca636adf75cddf5ddc7002caf1f5b7f1e9db4737f7073ca37dbc",
+  "installedBytesEqual": true,
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  }
+}
