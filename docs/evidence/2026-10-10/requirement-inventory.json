@@ -888,7 +888,10 @@
       "section": "User Stories",
       "number": 6,
       "requirementSha256": "8556b26417ca9d58fcddb6421e9d5ccd08af73f4c0ebe8900b0929080e5d8249",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for composition of public stats/list/detail/filter modules: the actual reading adapter and built RecipeEditor create a template draft, configure its module connection within the canvas, preview filtered stats and explicitly activate it; actual browser data preview is independently recorded. Arbitrary custom applications are not certified.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:7",
@@ -897,7 +900,10 @@
       "section": "User Stories",
       "number": 7,
       "requirementSha256": "75d4e02f9bb10d6fb3df5272439aac969deda887f9d16ee16efebe4289169bb0",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for supported specialized component registration interface: public Host registerModule and built Client registerRecipeModuleRenderer render a specialized module, report withdrawal, retain running recipe and recover on re-registration. No arbitrary third-party plugin deployment claim.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:8",
@@ -1046,7 +1052,10 @@
       "section": "User Stories",
       "number": 18,
       "requirementSha256": "8442b37a404d1176d883a2565c8316780c3c86f5deb22d488c09a952ceac25d9",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual Reading business Host uses its own storage domain; multiple instances persist independently, preview is read-only, and default private cross-application sources are rejected. Migration/isolation of every business application remains separate.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:19",
@@ -1055,7 +1064,10 @@
       "section": "User Stories",
       "number": 19,
       "requirementSha256": "29276659e3c99af09d6cf639e96ad1fa92ad893b5595e4bfec961793e11d5b4b",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial within first-release scope: declared owned connections expose source application/resource, canvas connection editing and dependency availability are verified. Real cross-application source authorization is explicitly deferred in canonical platform-spec.md Further Notes; it is not implemented or counted complete.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
     },
     {
       "id": "platform:User Stories:20",

@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-10",
+  "testedImplementationCommit": "2ff0e68451be420a5310cab0618fea07e7c5b00c",
+  "method": "Inspect public registration interfaces and all relevant assertions, confirm normalized current files match the clean archive source, and match each executed passing case in its complete 306-test log. No new execution or native third-party plugin browser run is claimed.",
+  "files": [
+    {
+      "path": "plugins/personal-workbench/src/recipe-api.ts",
+      "normalizedSha256": "6b1122c374025a29e34af1de8cf99bb6e2b4c9503e269630d2e9f3d1cdd02b13",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/src/recipe-host.ts",
+      "normalizedSha256": "c893080cab089ece4a474b6c4b3c686788eee11424e68ff8b72aadf23b4cd302",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/src/recipe-view.tsx",
+      "normalizedSha256": "ebf0b9b79fee9bdc89f401e9cedf442a72f2dca730f0e821b18f6f1e5eec9335",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/src/recipe-client.tsx",
+      "normalizedSha256": "d7527f7ebb3af331da7e3e5eeab85983ed496fa74d0ad3c40cd74182c7cbff6c",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/src/display-api.ts",
+      "normalizedSha256": "5ebe8231a7fa7613895aca42480c05f96bbfdbcc071ffba5c826584743f8dc58",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/src/display-view.tsx",
+      "normalizedSha256": "1e324dd42c124732aa44fe9e013cbe48fed3d53e7721985d52078f9781418d60",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/src/recipe-connections.tsx",
+      "normalizedSha256": "7a99166b9cd8646a2702cb3dc0ea337697db34bd501829cf39bd2ec776ef5ea7",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/src/client.tsx",
+      "normalizedSha256": "c410097c548f711bc160588c12814a1843bd01e3570fa23b55423b41beddc430",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/tests/recipe-client.test.mjs",
+      "normalizedSha256": "e17b58889b5f17b376a429b4f38641cc7da395b873b0342d9325bee26eb27b21",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/personal-workbench/tests/recipe-host.test.mjs",
+      "normalizedSha256": "6b9d22fa23a06090f83da8f9a1d377ae93cea1cce727b572ae12ef76ec25d274",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/reading-statistics/src/reading-host.ts",
+      "normalizedSha256": "166bf657a29ad3d8efe8bdb2b20410d89f4e71030c521d613526104509cf8120",
+      "matchesTestedArchiveSource": true
+    },
+    {
+      "path": "plugins/reading-statistics/tests/reading-platform.test.mjs",
+      "normalizedSha256": "3de3812507ac6427977e81812b724f70997d5a80aab3c6094a68a751e7333b84",
+      "matchesTestedArchiveSource": true
+    }
+  ],
+  "executedCases": [
+    "built Client installs real recipe app registration and keyed runtime; draft/preview do not replace running app",
+    "only owned installed data sources activate and withdrawing a plugin preserves running recipe",
+    "catalog reports real withdrawn Host modules and owned sources without changing the running recipe",
+    "reading domain persists own instances; previews are read-only and unavailable connections refuse activation",
+    "built reading adapter and public renderer share filters/selection, isolate instances and expose loading/empty/failure without AI",
+    "ordinary template and connection form save a draft, preview without replacing running app, explicitly activate, disable and restore after restart"
+  ],
+  "fullTestLogSha256": "005e73af6da2fe0504c8b8bc872794acb605c3ebfc969b90528b59d2758d6e24",
+  "findings": {
+    "specializedModuleHostRegistration": true,
+    "specializedModuleBuiltClientRendering": true,
+    "withdrawalExplainsUnavailableDependency": true,
+    "runningRecipePreservedOnWithdrawal": true,
+    "restorationMakesDependencyAvailable": true,
+    "ordinaryTemplateComposesPublicDisplayModules": true,
+    "moduleConnectionEditedWithinCanvas": true,
+    "declaredOwnedSourceFiltersSelectionAndPreview": true,
+    "readingBusinessRecordsPersistInOwnDomain": true,
+    "readingInstancesRemainSeparate": true,
+    "previewDoesNotWriteBusinessRecords": true,
+    "undeclaredOrForeignSourceUnavailable": true
+  },
+  "scope": {
+    "crossApplicationRealSourceAuthorization": "Explicitly deferred by the canonical platform spec Further Notes; current Host/Client reject foreign private sources. This receipt does not claim the future authorization feature is implemented."
+  },
+  "limits": [
+    "Host fixtures use actual official storage and public services; specialized Client registration uses the built public API with a controlled catalog transport.",
+    "Reading application composition uses built Client and actual business Host services; real browser data preview is recorded separately.",
+    "No real model, completed conversation, physical IME or arbitrary third-party packaged plugin acceptance.",
+    "No claim that all business applications have undergone migration/isolation acceptance."
+  ]
+}
