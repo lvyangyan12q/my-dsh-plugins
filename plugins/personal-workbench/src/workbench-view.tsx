@@ -134,7 +134,8 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
       if (event.key === 'Escape' && event.target === root.current) { event.preventDefault(); closeWorkspace() }
       if (event.key === 'F6' && event.ctrlKey && opened.length) {
         const index = opened.findIndex(row => windowKey(row.appId, row.instanceId) === state.focused)
-        const next = opened[(index + (event.shiftKey ? opened.length - 1 : 1)) % opened.length]
+        const next = opened[index < 0 ? (event.shiftKey ? opened.length - 1 : 0)
+          : (index + (event.shiftKey ? opened.length - 1 : 1)) % opened.length]
         event.preventDefault(); focusWindow(windowKey(next.appId, next.instanceId))
       }
     }}>
