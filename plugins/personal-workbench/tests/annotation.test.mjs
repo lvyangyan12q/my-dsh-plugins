@@ -1,0 +1,94 @@
+import assert from 'node:assert/strict'
+import {test} from 'node:test'
+import {JSDOM} from 'jsdom'
+import {captureAnnotation,annotationText} from '../src/annotation.ts'
+import {installAnnotations} from '../src/annotation-client.ts'
+const key={appId:'app.test',instanceId:'default',roleId:'maker'}, recipe={appId:key.appId,version:2,pages:[{id:'home',label:'Home',modules:[{id:'web',title:'Website'}]}]}
+const rect=(left,top,width,height)=>({left,top,width,height,right:left+width,bottom:top+height})
+test('annotation captures an arbitrary background or selected pane without copying composer or iframe content',()=>{
+ const dom=new JSDOM('<div id="canvas"><section data-module-id="web"><span>Visible heading</span><textarea>Private draft</textarea><div contenteditable>Private editor</div><div hidden>Hidden</div><iframe></iframe></section><aside data-pwb-annotation-ui>Annotation controls</aside></div>'),canvas=dom.window.document.getElementById('canvas')
+ canvas.getBoundingClientRect=()=>rect(100,50,800,600)
+ for(const element of canvas.querySelectorAll('*'))element.getBoundingClientRect=()=>rect(120,100,150,80)
+ const hidden=dom.window.document.createElement('div');hidden.hidden=true;hidden.innerHTML='<i></i>'.repeat(600);canvas.prepend(hidden)
+ const selected=captureAnnotation(canvas,{x:110,y:95},{x:300,y:220},recipe.pages[0])
+ assert.equal(selected.moduleId,'web');assert.deepEqual(selected.box,{x:10,y:45,width:190,height:125});assert.equal(selected.text,'Visible heading');assert.equal(selected.limited,true)
+ const background=captureAnnotation(canvas,{x:800,y:500},{x:800,y:500},recipe.pages[0]);assert.equal(background.moduleId,null);assert.equal(background.text,'')
+ const text=annotationText(recipe,'default','home',selected,'Change the heading / enlarge text');assert.ok(text.includes('app.test'));assert.ok(text.includes('not readable'));assert.ok(!text.includes('Private draft'));assert.throws(()=>annotationText(recipe,'default','home',selected,''));dom.window.close()
+})
+function bridge({phase='plain',scopeMissing=false,bailResult=true,opening,unconfirmed=false,attachmentRefused=false}={}){
+ let service;const calls=[], state={phase,draft:'prefix @report suffix',draftRev:7,occurrences:[{offset:7,length:7}],attachmentIds:['existing-file']},input={state:{getSnapshot:()=>({...state})},focus:()=>calls.push(['focus']),addAttachments:ids=>{calls.push(['addAttachments',ids]);if(attachmentRefused)return false;state.attachmentIds=[...state.attachmentIds,...ids];return true},removeAttachment:id=>{calls.push(['removeAttachment',id]);state.attachmentIds=state.attachmentIds.filter(value=>value!==id);return true}}
+ const roles={open:async()=>{calls.push(['open']);await opening},view:{getSnapshot:()=>new Map([[JSON.stringify(['app.test','default','maker',null]),{binding:{phase:'ready',sessionId:'owned-session'},window:{phase:'open'}}]])}}
+ const scope={bail:(address,event,payload)=>{assert.equal(address,scope);calls.push([event,payload]);if(bailResult&&!unconfirmed)Object.assign(state,{draft:state.draft+payload.text,draftRev:state.draftRev+1});return bailResult}}
+ const child={personalWorkbenchRoles:roles,sessions:{scope:id=>{calls.push(['scope',id]);return scopeMissing?undefined:scope}},conversation:{stageImages:(id,files)=>{calls.push(['createDrafts',id,files]);if(attachmentRefused){calls.push(['releaseDraftAttachments',['annotation-image']]);throw Error('Native draft refused images')}input.addAttachments(['annotation-image']);return()=>{input.removeAttachment('annotation-image');calls.push(['releaseDraftAttachments',['annotation-image']])}},input:{for:s=>{assert.equal(s,scope);return input}}},effect:fn=>fn(),reflect:{provide:(_name,value)=>{service=value}}}
+ installAnnotations({inject:(_services,fn)=>fn(child)});return {service,calls,state}
+}
+test('native annotation appends with draft revision and compact file chip span, focusing without submitting or replacing input',async()=>{
+ const f=bridge(),original=f.state.draft;assert.equal(await f.service.append(key,'Annotation'),'owned-session')
+ const insertion=f.calls.find(call=>call[0]==='slash/input-insert-text');assert.deepEqual(insertion[1],{text:'\n\nAnnotation',span:{start:original.length-6,end:original.length-6,draftRev:7}})
+ assert.deepEqual(f.calls.map(call=>call[0]),['open','scope','slash/input-insert-text','focus']);assert.equal(f.state.draft,'prefix @report suffix\n\nAnnotation');assert.deepEqual(f.state.occurrences,[{offset:7,length:7}])
+})
+test('native annotation refuses unavailable scopes, busy or concurrently changed drafts',async()=>{
+ await assert.rejects(bridge({scopeMissing:true}).service.append(key,'Annotation'),/unavailable/)
+ const busy=bridge({phase:'submitting'});await assert.rejects(busy.service.append(key,'Annotation'),/busy/);assert.ok(!busy.calls.some(c=>c[0]==='slash/input-insert-text'))
+ await assert.rejects(bridge({bailResult:false}).service.append(key,'Annotation'),/changed/)
+ await assert.rejects(bridge({unconfirmed:true}).service.append(key,'Annotation'),/not confirmed/)
+})
+test('switching or closing an application while opening its conversation cancels insertion',async()=>{
+ let resolve;const opening=new Promise(done=>resolve=done),f=bridge({opening}),controller=new AbortController(),pending=f.service.append(key,'Annotation',controller.signal);controller.abort();resolve()
+ await assert.rejects(pending,{name:'AbortError'});assert.ok(!f.calls.some(c=>c[0]==='scope'||c[0]==='slash/input-insert-text'))
+})
+
+test('focused top module owns the annotation and covered module text is excluded',()=>{
+ const dom=new JSDOM('<div id="canvas"><section data-module-id="a"><b>Covered A</b><iframe></iframe></section><section data-module-id="z" data-module-focused="true"><b>Visible Z</b></section></div>'),canvas=dom.window.document.getElementById('canvas');canvas.getBoundingClientRect=()=>rect(0,0,800,600);for(const element of canvas.querySelectorAll('*'))element.getBoundingClientRect=()=>rect(0,44,800,556)
+ const page={label:'Page',modules:[{id:'a',title:'A'},{id:'z',title:'Z'}]},capture=captureAnnotation(canvas,{x:100,y:100},{x:100,y:100},page);assert.equal(capture.moduleId,'z');assert.equal(capture.text,'Visible Z');assert.equal(capture.limited,false);dom.window.close()
+})
+
+test('annotation waits for native composer hydration and cancels before editing if its page closes',async()=>{
+ let release;const ready=new Promise(resolve=>release=resolve),f=bridge(),controller=new AbortController();let revealing=false
+ const append=f.service.append(key,'Annotation',controller.signal,()=>{revealing=true;return ready})
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(revealing,true);assert.ok(!f.calls.some(call=>call[0]==='slash/input-insert-text'));controller.abort();release();await assert.rejects(append,{name:'AbortError'});assert.equal(f.state.draft,'prefix @report suffix')
+ const next=bridge();await next.service.append(key,'Annotation',undefined,async()=>{assert.ok(!next.calls.some(call=>call[0]==='slash/input-insert-text'))});assert.match(next.state.draft,/Annotation/)
+})
+
+test('native Cordis dispatch addresses the target session even when another composer listener was registered first',async()=>{
+ const {Context}=await import('@deepseek-ai/cordis'),root=new Context(),other=root.extend(),target=root.extend();let service
+ target[Context.filter]=listener=>listener===target
+ const own={phase:'plain',draft:'own draft',draftRev:1,occurrences:[]},unrelated={draft:'unrelated draft'}
+ other.on('slash/input-insert-text',payload=>{unrelated.draft+=payload.text;return true})
+ target.on('slash/input-insert-text',payload=>{own.draft+=payload.text;own.draftRev++;return true})
+ const child={personalWorkbenchRoles:{open:async()=>{},view:{getSnapshot:()=>new Map([[JSON.stringify(['app.test','default','maker',null]),{binding:{phase:'ready',sessionId:'target'},window:{phase:'open'}}]])}},sessions:{scope:()=>target},conversation:{input:{for:()=>({state:{getSnapshot:()=>({...own})},focus:()=>{}})}},effect:fn=>fn(),reflect:{provide:(_name,value)=>{service=value}}}
+ try{installAnnotations({inject:(_services,fn)=>fn(child)});await service.append(key,'Scoped requirement');assert.equal(unrelated.draft,'unrelated draft');assert.equal(own.draft,'own draft\n\nScoped requirement')}finally{await root.fiber.dispose()}
+})
+
+test('stored coordinates render only on the matching module geometry and scroll position',async()=>{
+ const {annotationPositionMatches}=await import('../src/annotation.ts')
+ const dom=new JSDOM('<div id="canvas"><div class="pwb-recipe-page"><section data-module-id="web">Title</section></div></div>'),canvas=dom.window.document.getElementById('canvas'),module=canvas.querySelector('section'),page=canvas.querySelector('.pwb-recipe-page')
+ canvas.getBoundingClientRect=()=>rect(0,0,800,600);module.getBoundingClientRect=()=>rect(0,44,400,500)
+ const mark=captureAnnotation(canvas,{x:100,y:100},{x:200,y:200},recipe.pages[0])
+ assert.equal(annotationPositionMatches(canvas,mark),true)
+ page.scrollTop=20;assert.equal(annotationPositionMatches(canvas,mark),false);page.scrollTop=0
+ module.getBoundingClientRect=()=>rect(400,44,400,500);assert.equal(annotationPositionMatches(canvas,mark),false)
+ module.getBoundingClientRect=()=>rect(0,44,400,500);assert.equal(annotationPositionMatches(canvas,mark),true)
+ module.dataset.moduleFocused='true';assert.equal(annotationPositionMatches(canvas,mark),false);dom.window.close()
+})
+
+
+test('a screenshot is appended to the exact native draft without replacing its file chip, text or existing attachments',async()=>{
+ const f=bridge(),image=new File(['image fixture'],'selected-region.png',{type:'image/png'}),original=f.state.draft
+ await f.service.append(key,'Visual annotation',undefined,undefined,image)
+ assert.equal(f.calls.find(c=>c[0]==='createDrafts')[1],'owned-session');assert.equal(f.calls.find(c=>c[0]==='createDrafts')[2][0],image)
+ assert.deepEqual(f.state.attachmentIds,['existing-file','annotation-image']);assert.equal(f.state.draft,original+'\n\nVisual annotation');assert.deepEqual(f.state.occurrences,[{offset:7,length:7}]);assert.ok(!f.calls.some(c=>c[0]==='releaseDraftAttachments'))
+ const selected={moduleId:'web',moduleTitle:'Website',box:{x:1,y:2,width:10,height:20},canvas:{width:800,height:600,scrollX:0,scrollY:0},text:'',limited:true}
+ assert.match(annotationText(recipe,'default','home',selected,'Fix the title',image),/user-attached image; not an automatic canvas capture/)
+})
+test('refused screenshot admission or text insertion releases only this annotation image and preserves the original draft',async()=>{
+ for(const options of [{attachmentRefused:true},{bailResult:false}]){
+  const f=bridge(options),image=new File(['png'],'region.png',{type:'image/png'}),original=f.state.draft
+  await assert.rejects(f.service.append(key,'Visual annotation',undefined,undefined,image));assert.equal(f.state.draft,original);assert.deepEqual(f.state.attachmentIds,['existing-file']);assert.deepEqual(f.calls.find(c=>c[0]==='releaseDraftAttachments')[1],['annotation-image'])
+ }
+})
+test('unsupported or oversized screenshots are refused before touching a role or native draft',async()=>{
+ for(const image of [new File(['svg'],'image.svg',{type:'image/svg+xml'}),new File([],'empty.png',{type:'image/png'}),new File([new Uint8Array(8*1024*1024+1)],'large.png',{type:'image/png'})]){
+ const f=bridge();await assert.rejects(f.service.append(key,'Request',undefined,undefined,image));assert.deepEqual(f.calls,[])
+ }
+})

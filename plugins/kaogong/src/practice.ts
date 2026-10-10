@@ -53,7 +53,7 @@ export function selectPractice(bank: BankQuestion[], notebook: Question[], opts:
 
   if (opts.knowledgePoint) {
     targets = [opts.knowledgePoint]
-    pool = drawable.filter(q => q.knowledgePoint === opts.knowledgePoint)
+    pool = drawable.filter(q => q.knowledgePoint === opts.knowledgePoint && (!opts.subject || q.subject === opts.subject))
     reason = '专项训练：' + opts.knowledgePoint
   } else if (opts.subject) {
     pool = drawable.filter(q => q.subject === opts.subject)

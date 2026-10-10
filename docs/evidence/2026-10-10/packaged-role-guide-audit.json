@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "94b7820f771840301270cb8fc8a5b26fe8697a3a",
+  "problem": "Role README still prescribed the obsolete subagent/roles-cordis installation and global Skill root copying, although current presets use installation-relative packaged roots.",
+  "documentationRepair": "Describe current official scoped preset registration, durable identities, explicit handoff, installation-relative persona/Skill roots, retained default teacher and legacy configuration preservation.",
+  "installedResources": [
+    {
+      "path": "roles/personas/老师.md",
+      "sha256": "0617714a59440c10ca3de222a26e23adcac97cf3e1d2606dfd479714fa7cf1b5",
+      "installedBytesEqual": true
+    },
+    {
+      "path": "roles/personas/班主任.md",
+      "sha256": "9b01e9eddd613428a2708d266a9d8e030aaf31db27e3bf4f40336f4a25fea853",
+      "installedBytesEqual": true
+    },
+    {
+      "path": "roles/personas/辅导员.md",
+      "sha256": "987ccf66555512003426aa8ff9d40628865d7050a9c8a63ed68b17d545375176",
+      "installedBytesEqual": true
+    },
+    {
+      "path": "roles/skills/kaogong-teach/SKILL.md",
+      "sha256": "766b4a74c82f02eeb285e7b08b285867da64e7b8e96b166500f2d74a8a6d6f23",
+      "installedBytesEqual": true
+    }
+  ],
+  "passingRealRegistryTests": [
+    "actual preset registry activates application personas in independent scopes without overriding deployment or model calls",
+    "missing actual Skill blocks allocation; preset declares only trusted package roots and non-complete scoped persona",
+    "ready missing or preset-changed Sessions keep their binding and never recreate on read/ensure"
+  ],
+  "limits": [
+    "Native preset registry tests use the current source with the official runtime; installed byte equality is separate evidence, not an installed actual model turn.",
+    "Keeping the legacy preset ID is not proof of every historical deployment migration.",
+    "No model calls, no formal business data changes, and no deletion of old configuration or resources."
+  ]
+}

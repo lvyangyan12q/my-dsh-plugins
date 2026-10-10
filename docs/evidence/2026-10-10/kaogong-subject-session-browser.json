@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-10",
+  "initialWorkbenchSource": "46ec21c9f3c43818c1a420be41264871f589434e",
+  "afterManagedLibrarySource": "9d56163c1bc8f660e85611872d97803672fc6c2a",
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual teacher subject selection, explicit creation, native draft fill, switching subjects, learning window close/reopen, owned Host cold restart and browser reload, explicit subject selection and native draft readback",
+  "observations": {
+    "subjects": [
+      "行测-资料分析",
+      "行测-判断推理"
+    ],
+    "presets": [
+      "kaogong.teacher.data-analysis.v1",
+      "kaogong.teacher.reasoning.v1"
+    ],
+    "distinctOriginalSessions": true,
+    "bothBindingsReady": true,
+    "nativeConversationAndTraceTabsVisible": true,
+    "draftsDistinct": true,
+    "switchingRestoresEachDraft": true,
+    "otherSubjectDraftAbsent": true,
+    "learningWindowCloseReopenPreservesCurrentDraft": true,
+    "coldRestartPreservesOriginalSessionIds": true,
+    "coldRestartAndExplicitSubjectSelectionRestoreBothDrafts": true,
+    "managementUpgradePreservesOriginalSessionIds": true,
+    "alerts": 0,
+    "modelMessagesSent": 0
+  },
+  "limits": [
+    "Completed historical teaching messages were not exercised; these are real native Sessions with unsent drafts.",
+    "After reload, learning window was manually reopened and subjects manually selected; automatic selected-subject restoration is not claimed.",
+    "Provider running/permissions/Stop/streaming and full six-subject matrix remain unverified.",
+    "Only two isolated native Sessions were explicitly created; formal 3080 and business data untouched."
+  ]
+}

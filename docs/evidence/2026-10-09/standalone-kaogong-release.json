@@ -1,0 +1,18 @@
+{
+  "officialOfflineArchiveInstall": true,
+  "dependencyMode": "existing public dependency links; products installed from exact archives",
+  "compatibilityExemptions": 0,
+  "installedBytes": true,
+  "installedConsumers": true,
+  "authenticatedLifecycle": true,
+  "installedHtmlAssets": true,
+  "coldRestart": true,
+  "readingUninstallReinstall": true,
+  "fixture": "public synthetic reading records",
+  "modelCalls": 0,
+  "archives": [
+    "4bbd09a73e9fdc7c2591661da8ae16401209611b5961ec36dd1bd41a29c97424",
+    "7819c40f17c85526c2eb5d71404de60e2b4838ce66ce5265601b96ea73343883",
+    "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+  ]
+}

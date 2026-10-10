@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-10",
+  "baseline": "c44d9af1a39cf62df39e684b0b7ad9b252d331b1",
+  "reviewTarget": "30205b9544ffc8da87a355c5b44653b996d218ea",
+  "implementationCommit": "94b7820f771840301270cb8fc8a5b26fe8697a3a",
+  "problem": "Changing a retained history panel session identity briefly rendered the previous native Session under the new heading before passive effects updated its owner.",
+  "repair": "Keep session identity in history view state; render native history and retry only for the requested identity. Preserve normal owner cleanup.",
+  "regression": {
+    "boundary": "built registered Client component and native SessionProvider rendering",
+    "red": "A new history identity must never render the previous native conversation, even before passive effects run",
+    "green": true,
+    "exactPriorReferencesReleased": true,
+    "retryIndependentlyTested": false
+  },
+  "validation": {
+    "cleanCommitBuild": "all three plugins, Host/Client/declarations/source consumers passed",
+    "tests": 305,
+    "pass": 305,
+    "fail": 0,
+    "skipped": 0,
+    "logSha256": "027b94e4504bd57653e43c48edbecb1be16e32fb0908cf33be116e202efe8375",
+    "logBytes": 36177,
+    "archiveInstallation": true,
+    "authenticatedLifecycle": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "scopedHtmlAssets": true,
+    "modelCalls": 0,
+    "userManagementFilesUnchanged": true
+  },
+  "limits": [
+    "Bounded Standards review inspected 13 relevant files/sections; bounded Spec review approximately 17. Not an exhaustive review of all 296 changed files.",
+    "Original 123 requirement texts still match; 28 referenced evidence files exist at reviewed HEAD. 47 satisfied within their stated scopes, 16 partial, 60 require individual proof.",
+    "Real model teaching/approval/question/Stop, physical IME and remaining original acceptance gates are not established by this repair.",
+    "Current tests exercise the built public Client boundary; no new real-browser history-switch acceptance is claimed."
+  ]
+}

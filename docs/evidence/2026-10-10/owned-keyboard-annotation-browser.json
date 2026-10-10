@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "0b74885c64b2edf813f1e2740ccb8e09ed52854d",
+  "reviewedHead": "585bb462e89637a48076c782e0da74d321abd477",
+  "url": "http://127.0.0.1:3089/",
+  "installedArchiveSha256": "57655e826e0f77c936ef5743b89c75aa683adee1bcccb75a289e1e6fb5882971",
+  "method": "Actual Chrome DevTools click and keyboard actions in the existing isolated installed DSH profile, plus read-only DOM observations.",
+  "checks": {
+    "shiftTabReachedCloseButton": true,
+    "enterClosedWorkspace": true,
+    "exitFocusReturnedToOriginalAppEntry": true,
+    "enterReopenedApp": true,
+    "existingDraftPreservedAfterReopen": true,
+    "secondApplicationOpened": true,
+    "multipleAppKeyboardSwitchReturned": true,
+    "existingDraftPreservedAfterSwitch": true,
+    "annotationOverlayOpened": true,
+    "escapeReturnedAnnotationStartButton": true,
+    "twoAnnotationRecordsPreserved": true,
+    "existingDraftPreservedAfterCancel": true,
+    "nativeConversationAndTrajectoryTabsPresent": true,
+    "focusNotHidden": true,
+    "nativeSessionTreeAndNewSessionButtonsPresent": true
+  },
+  "limits": [
+    "No native Send action was issued; model route configuration was skipped, and the owned Host denies outbound connections.",
+    "Recent fetch/xhr path inspection found no suspected message/turn/send endpoint; this is not a claim of complete websocket tracing.",
+    "Browser keyboard actions do not prove physical IME behavior.",
+    "External disable/withdraw focus regression is established by the earlier built Client test; this browser run did not issue an external disable request.",
+    "No new screenshots, model teaching, permission/Stop/streaming or complete original release matrix are claimed.",
+    "Raw draft text, Session IDs and browser captures are omitted from this receipt."
+  ]
+}

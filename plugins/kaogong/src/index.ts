@@ -1,3 +1,4 @@
+import type {} from '@deepseek-ai/dsh-personal-workbench'
 /**
  * DeepSeek Harness plugin: the kaogong (考公) learning suite for the
  * 武汉市公务员考试. Durable state lives in storage-domain domains
@@ -12,10 +13,11 @@
  * @module kaogong
  */
 
-import type { Context } from '@deepseek-ai/cordis'
+import type { Context, Volatile } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-host-webserver'
+import type {} from '@deepseek-ai/dsh-client-connection'
 import type {} from '@deepseek-ai/dsh-settings'
-import { Mineru } from './mineru.ts'
+import { Mineru, safeAsset } from './mineru.ts'
 import { importMineruKnowledge } from './knowledge-import.ts'
 import { migrateMaterials, MATERIAL_MIGRATION_TAG } from './material-migration.ts'
 import type { MineruConfig } from './mineru.ts'
@@ -23,7 +25,7 @@ import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { KvTable, DomainGlobal } from '@deepseek-ai/dsh-storage-domain'
 import { randomUUID } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
+import { readFile, realpath } from 'node:fs/promises'
 import { extname, isAbsolute, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { analyzeQuestions, summarizeQuestions } from './analyze.ts'
@@ -31,31 +33,42 @@ import type { AnalysisResult } from './analyze.ts'
 import { generatePlan, daysToExam, isValidIsoDate } from './schedule.ts'
 import type { DayPlan } from './schedule.ts'
 import { TAXONOMY, ERROR_REASONS, renderTaxonomy } from './taxonomy.ts'
-import { notebookDomainSpec, progressDomainSpec, bankDomainSpec, knowledgeDomainSpec } from './domain.ts'
+import { notebookDomainSpec, progressDomainSpec, bankDomainSpec, knowledgeDomainSpec, practiceDomainSpec, lessonDomainSpec } from './domain.ts'
 import type { QuestionRecord, PlanConfig, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './domain.ts'
-import { selectPractice } from './practice.ts'
+import { PracticeRounds, PracticeError } from './practice-rounds.ts'
+import { loadVerifiedPracticeMaterials } from './verified-practice-materials.ts'
+import { Lessons } from './lessons.ts'
+import { lessonCreate, lessonCommand, lessonLink, lessonSummaryInput, lessonConfirm } from './lesson-schema.ts'
+import type { Lesson } from './lesson-schema.ts'
+import { z as wire } from 'zod'
 import { searchKnowledge, knowledgeExcerpt } from './knowledge.ts'
 import type { Question, AttemptResult, BankQuestion, KnowledgeEntry, BankReviewStatus } from './types.ts'
 import { KNOWLEDGE_KINDS } from './types.ts'
 
 export const name = 'kaogong'
-export const inject = ['tools', 'storageDomain', 'webServer']
+export const inject = ['tools', 'storageDomain', 'webServer', 'connection']
 
 /** Plugin configuration, validated by the schemastery schema below. */
 export interface Config {
+  /** Explicit absolute location for new role Sessions; persisted before creation. */
+  roleCwd?: string
+  /** Existing image directory, independent of the installed package; no automatic copying. */
+  questionImageRoot: Volatile<string | undefined>
   /** Number of weak knowledge points to surface in summaries. */
   topN?: number
-  mineru?: MineruConfig
+  mineru: Volatile<MineruConfig | undefined>
 }
 
 /** Schemastery schema for {@link Config}. */
-export const Config: z<Config> = z.object({
+export const Config = z.object({
+  roleCwd: z.string().description('角色课堂新会话的绝对工作目录；留空不创建新会话，已有课堂仍可恢复'),
+  questionImageRoot: z.string().description('历史题目图片的持久绝对目录；留空仅提供随包的两张已核验图片').volatile(),
   topN: z.natural().min(1).default(8),
   mineru: z.object({
     token: z.string().role('secret').description('MinerU API token；仅服务端使用，留空读取 MINERU_TOKEN'),
     model: z.union(['vlm', 'pipeline']).default('vlm'),
-    outputDir: z.string().description('解析结果目录；留空使用插件 storage/mineru，修改后旧结果仍在原目录'),
-  }),
+    outputDir: z.string().description('持久解析结果绝对目录；必须明确配置，旧结果保留在原目录，不自动迁移'),
+  }).volatile(),
 })
 
 const DEFAULT_TOP_N = 8
@@ -110,26 +123,23 @@ function sendJson(res: import('node:http').ServerResponse, status: number, value
   res.end(body)
 }
 
-function isWithinQuestionImageRoot(path: string): boolean {
-  const pathFromRoot = relative(QUESTION_IMAGE_ROOT, path)
+function isWithinQuestionImageRoot(root: string, path: string): boolean {
+  const pathFromRoot = relative(root, path)
   return pathFromRoot !== '' && !pathFromRoot.startsWith('..') && !isAbsolute(pathFromRoot)
 }
 
 /** Resolve an image asset while accepting both historical flat and current folder paths. */
-function resolveQuestionImage(asset: string): string | undefined {
-  const normalized = asset.replaceAll('\\', '/').replace(/^\/+/, '')
-  if (!normalized.startsWith('verified/') || normalized.includes('\0')) return undefined
-
-  const direct = resolve(QUESTION_IMAGE_ROOT, normalized)
-  if (isWithinQuestionImageRoot(direct)) return direct
-  return undefined
-}
-
-async function readQuestionImage(asset: string): Promise<{ body: Buffer; contentType: string } | undefined> {
-  const direct = resolveQuestionImage(asset)
-  if (direct === undefined) return undefined
+async function readQuestionImage(asset: string, historicalRoot?: string): Promise<{ body: Buffer; contentType: string } | undefined> {
   try {
-    return { body: await readFile(direct), contentType: IMAGE_CONTENT_TYPES[extname(direct).toLowerCase()] ?? 'application/octet-stream' }
+    safeAsset(asset)
+    const contentType = IMAGE_CONTENT_TYPES[extname(asset).toLowerCase()]
+    if (!contentType) return undefined
+    const bundled = VERIFIED_MATERIAL_IMAGES.some(row => row.asset === asset)
+    if (!bundled && (!historicalRoot || !isAbsolute(historicalRoot))) return undefined
+    const root = await realpath(bundled ? QUESTION_IMAGE_ROOT : historicalRoot!)
+    const direct = await realpath(resolve(root, asset))
+    if (!isWithinQuestionImageRoot(root, direct)) return undefined
+    return { body: await readFile(direct), contentType }
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return undefined
     throw error
@@ -140,24 +150,27 @@ async function serveQuestionImage(
   req: import('node:http').IncomingMessage,
   res: import('node:http').ServerResponse,
   asset: string,
+  historicalRoot?: string,
 ): Promise<void> {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     sendJson(res, 405, { error: 'method not allowed' })
     return
   }
   try {
-    const image = await readQuestionImage(asset)
+    const image = await readQuestionImage(asset, historicalRoot)
     if (image === undefined) {
-      sendJson(res, 404, { error: 'material image not found' })
+      const missingRoot = (!historicalRoot || !isAbsolute(historicalRoot)) && !VERIFIED_MATERIAL_IMAGES.some(row => row.asset === asset)
+      sendJson(res, missingRoot ? 503 : 404, { error: missingRoot ? 'Historical image root is not configured' : 'material image not found' })
       return
     }
     res.writeHead(200, {
       'content-type': image.contentType,
       'cache-control': 'private, max-age=86400',
+      'x-content-type-options': 'nosniff',
     })
     res.end(req.method === 'HEAD' ? undefined : image.body)
-  } catch (error) {
-    sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
+  } catch {
+    sendJson(res, 400, { error: 'Invalid or unavailable material image' })
   }
 }
 
@@ -235,60 +248,9 @@ function allKnowledgeEntries(entries: KvTable<string, KnowledgeEntryRecord>): Kn
   return out
 }
 
-type PracticeSubmission = { id: string; answer: string }
-
-/** Grade one practice set and persist its results to the wrong-answer notebook. */
-async function gradePractice(
-  bankQuestions: KvTable<string, BankQuestionRecord>,
-  notebookQuestions: KvTable<string, QuestionRecord>,
-  answers: readonly PracticeSubmission[],
-) {
-  const submittedIds = new Set<string>()
-  for (const submission of answers) {
-    if (!submission.id || submittedIds.has(submission.id)) throw new Error(`invalid or duplicate question id: ${submission.id}`)
-    submittedIds.add(submission.id)
-    if (bankQuestions.get(submission.id) === undefined) throw new Error(`question not found: ${submission.id}`)
-  }
-
-  const results: { id: string; subject: string; knowledgePoint: string; correct: boolean; correctAnswer: string; explanation: string }[] = []
-  let correctCount = 0
-  const now = new Date().toISOString()
-  for (const submission of answers) {
-    const bank = bankQuestions.get(submission.id)
-    if (bank === undefined) throw new Error(`question not found: ${submission.id}`)
-    const answer = submission.answer.trim()
-    const correct = answer === bank.correctAnswer.trim()
-    if (correct) correctCount++
-
-    const existing = notebookQuestions.get(submission.id)
-    await notebookQuestions.put(submission.id, {
-      subject: bank.subject,
-      knowledgePoint: bank.knowledgePoint,
-      questionType: bank.questionType,
-      stem: bank.stem,
-      options: bank.options,
-      correctAnswer: bank.correctAnswer,
-      userAnswer: answer,
-      result: correct ? 'correct' : 'wrong',
-      errorReason: '',
-      notes: '',
-      source: bank.source,
-      tags: bank.tags,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    })
-    results.push({
-      id: submission.id,
-      subject: bank.subject,
-      knowledgePoint: bank.knowledgePoint,
-      correct,
-      correctAnswer: bank.correctAnswer,
-      explanation: bank.explanation,
-    })
-  }
-  const totalCount = results.length
-  return { totalCount, correctCount, accuracyRate: totalCount === 0 ? 0 : correctCount / totalCount, results }
-}
+const roundIdWire = wire.string().uuid()
+const answersWire = wire.array(wire.object({ id: wire.string().min(1).max(200), answer: wire.string().max(2000) }).strict()).min(1).max(10)
+const reflectionWire = wire.array(wire.object({ id: wire.string().min(1).max(200), errorReason: wire.string().max(100), notes: wire.string().max(8000).optional() }).strict()).max(10)
 
 /** Build a module-scoped wrong-answer summary for the dashboard. */
 function summarizeModule(notebookQuestions: KvTable<string, QuestionRecord>, subject: string, topN: number) {
@@ -304,33 +266,64 @@ function summarizeModule(notebookQuestions: KvTable<string, QuestionRecord>, sub
  * @param config - deployment configuration.
  */
 export async function apply(ctx: Context, config: Config): Promise<void> {
-  let current = () => config
-  ctx.inject(['settings'], settingsCtx => {
-    settingsCtx.settings.installSection(ctx, 'kaogong', Config, config, {
-      setSource: source => { current = source },
-      onChange: () => {},
-    })
+  ctx.inject(['personalWorkbenchRecipes'], child => child.effect(() => child.personalWorkbenchRecipes.reserveAppId('kaogong'), 'code-owned application identity'))
+  ctx.inject(['personalWorkbenchBindings', 'agentPresets'], child => {
+    child.effect(async function* () {
+      try {
+        const { installKaogongRoles } = await import('./role-definitions.ts')
+        const dispose = await installKaogongRoles(child, config.roleCwd)
+        yield dispose
+      } catch (error) { child.logger('kaogong.roles').warn('Role registration unavailable: %s', error) }
+    }, 'kaogong: optional role declarations')
   })
-  const mineru = new Mineru(() => current().mineru ?? {}, fileURLToPath(new URL('../storage/mineru/', import.meta.url)))
+  const current = () => ({ mineru: config.mineru.get(), questionImageRoot: config.questionImageRoot.get() })
+  ctx.inject(['settings'], settingsCtx => {
+    settingsCtx.effect(() => settingsCtx.settings.configure({ auto: true }, ctx.fiber))
+  })
+  const mineru = new Mineru(() => current().mineru ?? {})
+  const hasDocumentRoot = () => !!current().mineru?.outputDir && isAbsolute(current().mineru!.outputDir!)
   const topN = config.topN ?? DEFAULT_TOP_N
   const notebook = await ctx.storageDomain.open(notebookDomainSpec)
   const progress = await ctx.storageDomain.open(progressDomainSpec)
   const bank = await ctx.storageDomain.open(bankDomainSpec)
   const knowledge = await ctx.storageDomain.open(knowledgeDomainSpec)
-  ctx.effect(() => () => Promise.all([notebook.close(), progress.close(), bank.close(), knowledge.close()]), 'kaogong.domainClose')
+  const practiceDomain = await ctx.storageDomain.open(practiceDomainSpec)
+  const lessonDomain = await ctx.storageDomain.open(lessonDomainSpec)
 
   const questions = notebook.table('questions')
   const planConfig = progress.global
   const days = progress.table('days')
   const bankQuestions = bank.table('questions')
   const knowledgeEntries = knowledge.table('entries')
+  const materialRoot = current().questionImageRoot
+  let materialStem: (id: string, stem: string) => string = (_id, stem) => stem
+  try { materialStem = await loadVerifiedPracticeMaterials(materialRoot) }
+  catch { ctx.logger.warn('kaogong: Verified material index unavailable; original questions retained') }
+  const practice = new PracticeRounds(practiceDomain.table('rounds'), bankQuestions, questions,
+    (id, stem) => current().questionImageRoot === materialRoot ? materialStem(id, stem) : stem)
+  let readBinding: (key: Lesson['roleKey']) => ReturnType<import('@deepseek-ai/dsh-personal-workbench').PersonalWorkbenchBindings['read']> = async () => {
+    throw new PracticeError('课堂角色服务不可用；任务和练习仍可使用', 503)
+  }
+  ctx.inject(['personalWorkbenchBindings'], child => {
+    child.effect(() => {
+      readBinding = key => child.personalWorkbenchBindings.read(key)
+      return () => { readBinding = async () => { throw new PracticeError('课堂角色服务不可用', 503) } }
+    }, 'kaogong.lessonBindings')
+  })
+  const lessons = new Lessons(lessonDomain.table('lessons'), knowledgeEntries, practice, key => readBinding(key), lessonDomain.global)
+  ctx.effect(() => async () => {
+    await lessons.close()
+    await practice.drain()
+    await Promise.all([notebook.close(), progress.close(), bank.close(), knowledge.close(), practiceDomain.close(), lessonDomain.close()])
+  }, 'kaogong.domainClose')
+  await practice.recover()
 
   registerMineruTools(ctx, mineru, knowledgeEntries)
   // Only import completed local artifacts, using the storage-domain writer.
   let importing = false
   let disposed = false
   const syncKnowledge = async () => {
-    if (importing || disposed) return
+    if (importing || disposed || !hasDocumentRoot()) return
     importing = true
     try { await importMineruKnowledge(mineru, knowledgeEntries) }
     catch { ctx.logger.warn('kaogong: MinerU knowledge sync failed; original entries retained') }
@@ -354,13 +347,16 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       }
       const keyword = params.get('q') ?? ''
       const matched = searchKnowledge(allKnowledgeEntries(knowledgeEntries), { keyword })
-      sendJson(res, 200, { entries: matched.map(({ content, ...entry }) => ({ ...entry, content: content.slice(0, 180) })) })
+      sendJson(res, 200, { entries: matched.map(({ content, ...entry }) => ({ ...entry, content: params.get('display') === '1' ? content : content.slice(0, 180) })) })
     },
   }), 'kaogong.knowledgeRoute')
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
     path: '/api/kaogong/document-image',
     handler: async (req, res) => {
+      const denial = ctx.connection.requestRejection(req)
+      if (denial !== undefined) { sendJson(res, denial, { error: 'Image access denied' }); return }
+      if (!hasDocumentRoot()) { sendJson(res, 503, { error: 'Durable absolute document outputDir is not configured' }); return }
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); res.end(); return }
       const params = new URL(req.url ?? '', 'http://localhost').searchParams
       const asset = params.get('asset') ?? ''
@@ -372,15 +368,17 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     },
   }), 'kaogong.documentImageRoute')
 
-  await migrateMaterials(mineru.root(), bankQuestions)
+  if (hasDocumentRoot()) await migrateMaterials(mineru.root(), bankQuestions)
   await applyVerifiedMaterialImages(bankQuestions)
 
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact',
     path: '/api/kaogong/material-image',
     handler: async (req, res) => {
+      const denial = ctx.connection.requestRejection(req)
+      if (denial !== undefined) { sendJson(res, denial, { error: 'Image access denied' }); return }
       const asset = new URL(req.url ?? '', 'http://localhost').searchParams.get('asset') ?? ''
-      await serveQuestionImage(req, res, asset)
+      await serveQuestionImage(req, res, asset, current().questionImageRoot)
     },
   }), 'kaogong.materialImageRoute')
 
@@ -389,9 +387,11 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     kind: 'prefix',
     path: '/%E9%A2%98%E7%9B%AE_images/verified',
     handler: async (req, res) => {
+      const denial = ctx.connection.requestRejection(req)
+      if (denial !== undefined) { sendJson(res, denial, { error: 'Image access denied' }); return }
       const pathname = decodeURIComponent(new URL(req.url ?? '', 'http://localhost').pathname)
       const asset = pathname.slice('/题目_images/'.length)
-      await serveQuestionImage(req, res, asset)
+      await serveQuestionImage(req, res, asset, current().questionImageRoot)
     },
   }), 'kaogong.verifiedMaterialCompatibilityRoute')
 
@@ -410,7 +410,8 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
           if (day.items.length > 0 && day.items.every(item => item.done)) pastDone++
         }
       }
-      const analysis = analyzeQuestions(allQuestions(questions))
+      const notebookQuestions = allQuestions(questions)
+      const analysis = analyzeQuestions(notebookQuestions)
       const weakPoints = analysis.byKnowledgePoint
         .filter(point => point.wrongCount > 0)
         .slice(0, topN)
@@ -435,12 +436,13 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       const bySubject = new Map(analysis.bySubject.map(stat => [stat.subject, stat]))
       const modules = TAXONOMY.map(entry => {
         const stat = bySubject.get(entry.subject)
+        const answered = notebookQuestions.filter(question => question.subject === entry.subject && (question.result === 'correct' || question.result === 'wrong'))
         return {
           subject: entry.subject,
           availableCount: allBankQuestions(bankQuestions).filter(question => question.subject === entry.subject && question.reviewStatus === 'approved').length,
           practicedCount: stat?.totalCount ?? 0,
           wrongCount: stat?.wrongCount ?? 0,
-          accuracyRate: stat === undefined || stat.totalCount === 0 ? 0 : 1 - stat.errorRate,
+          accuracyRate: answered.length === 0 ? 0 : answered.filter(question => question.result === 'correct').length / answered.length,
         }
       })
       const todayPlan = days.get(today)
@@ -494,133 +496,84 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     },
   }), 'kaogong.planDoneRoute')
 
-  ctx.effect(() => ctx.webServer.register({
-    kind: 'exact',
-    path: '/api/kaogong/practice/start',
-    handler: async (req, res) => {
-      if (req.method !== 'POST') {
-        sendJson(res, 405, { error: 'method not allowed' })
-        return
-      }
-      try {
-        const body = await readJson(req)
-        const subject = typeof body.subject === 'string' ? body.subject.trim() : ''
-        const knowledgePoint = typeof body.knowledgePoint === 'string' ? body.knowledgePoint.trim() : ''
-        const excludeIds = Array.isArray(body.excludeIds)
-          ? body.excludeIds.map(value => {
-            if (typeof value !== 'string' || !value.trim()) throw new Error('invalid excludeIds')
-            return value
-          })
-          : []
-        if (excludeIds.length > 500) throw new Error('too many excluded questions')
-        const requestedLimit = typeof body.limit === 'number' ? body.limit : 10
-        const limit = Math.min(20, Math.max(1, Math.floor(requestedLimit)))
-        const bank = allBankQuestions(bankQuestions)
-        const notebook = allQuestions(questions)
-        const optionSets = knowledgePoint
-          ? [{ limit, ...(subject ? { subject } : {}), knowledgePoint, excludeIds }, { limit, ...(subject ? { subject } : {}), excludeIds }]
-          : [{ limit, ...(subject ? { subject } : {}), excludeIds }]
-        const selections = optionSets.map(options => selectPractice(bank, notebook, options))
-        let selection = selections.find(candidate => candidate.selected.length > 0) ?? selections[0]!
-        let cycled = false
-        if (selection.selected.length === 0 && excludeIds.length > 0) {
-          const retrySets = knowledgePoint
-            ? [{ limit, ...(subject ? { subject } : {}), knowledgePoint }, { limit, ...(subject ? { subject } : {}) }]
-            : [{ limit, ...(subject ? { subject } : {}) }]
-          const retried = retrySets.map(options => selectPractice(bank, notebook, options))
-          selection = retried.find(candidate => candidate.selected.length > 0) ?? retried[0]!
-          cycled = selection.selected.length > 0
-        }
-        sendJson(res, 200, {
-          reason: selection.reason,
-          totalAvailable: selection.totalAvailable,
-          returned: selection.selected.length,
-          cycled,
-          targets: selection.targets,
-          questions: selection.selected.map(question => ({
-            id: question.id,
-            subject: question.subject,
-            knowledgePoint: question.knowledgePoint,
-            stem: question.stem,
-            options: question.options,
-            difficulty: question.difficulty,
-          })),
-        })
-      } catch (error) {
-        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
-      }
-    },
-  }), 'kaogong.practiceStartRoute')
+  const practiceRoute = (path: string, command: (body: Record<string, unknown>) => Promise<unknown>) => {
+    ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/kaogong/practice/' + path,
+      handler: async (req, res) => {
+        const rejection = ctx.connection.requestRejection(req)
+        if (rejection !== undefined) { sendJson(res, rejection, { error: 'Authenticated same-origin request required' }); return }
+        if (req.method !== 'POST') { sendJson(res, 405, { error: 'method not allowed' }); return }
+        if (!req.headers['content-type']?.startsWith('application/json')) { sendJson(res, 415, { error: 'JSON required' }); return }
+        try { sendJson(res, 200, await command(await readJson(req))) }
+        catch (error) { sendJson(res, error instanceof PracticeError ? error.status : 400, { error: error instanceof Error ? error.message : String(error) }) }
+      },
+    }), 'kaogong.practice.' + path)
+  }
+  practiceRoute('start', async body => {
+    const input = wire.object({
+      subject: wire.string().min(1).max(100), title: wire.string().max(300).optional(),
+      knowledgePoint: wire.string().max(200).optional(), planIndex: wire.number().int().nonnegative().optional(),
+      previousRoundId: roundIdWire.optional(),
+    }).parse(body)
+    if (!TAXONOMY.some(row => row.subject === input.subject)) throw new PracticeError('invalid practice subject')
+    return practice.start({ subject: input.subject, title: input.title ?? '模块练习', limit: 10,
+      ...(input.knowledgePoint ? { knowledgePoint: input.knowledgePoint } : {}), ...(input.planIndex !== undefined ? { planIndex: input.planIndex } : {}) }, input.previousRoundId)
+  })
+  practiceRoute('submit', async body => {
+    const input = wire.object({ roundId: roundIdWire, answers: answersWire }).strict().parse(body)
+    return practice.submit(input.roundId, input.answers)
+  })
+  practiceRoute('read', async body => practice.read(roundIdWire.parse(body.roundId)))
+  practiceRoute('history', async () => ({ rounds: practice.history() }))
+  practiceRoute('reflection', async body => {
+    const input = wire.object({ roundId: roundIdWire, entries: reflectionWire }).strict().parse(body)
+    const result = await practice.reflect(input.roundId, input.entries)
+    const round = await practice.read(input.roundId)
+    return { result, subject: round.context.subject, summary: summarizeModule(questions, round.context.subject, topN) }
+  })
+  practiceRoute('review', async body => {
+    const input = wire.object({ roundId: roundIdWire, action: wire.enum(['claim', 'complete']) }).strict().parse(body)
+    return practice.review(input.roundId, input.action)
+  })
 
-  ctx.effect(() => ctx.webServer.register({
-    kind: 'exact',
-    path: '/api/kaogong/practice/submit',
-    handler: async (req, res) => {
-      if (req.method !== 'POST') {
-        sendJson(res, 405, { error: 'method not allowed' })
-        return
-      }
-      try {
-        const body = await readJson(req)
-        if (!Array.isArray(body.answers)) throw new Error('answers must be an array')
-        const answers = body.answers.map((value): PracticeSubmission => {
-          if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid answer')
-          const item = value as Record<string, unknown>
-          if (typeof item.id !== 'string' || typeof item.answer !== 'string') throw new Error('invalid answer')
-          return { id: item.id, answer: item.answer }
-        })
-        sendJson(res, 200, await gradePractice(bankQuestions, questions, answers))
-      } catch (error) {
-        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
-      }
+  registerNotebookTools(ctx, questions, topN, practice)
+  const lessonRoute = (action: string, command: (input: unknown) => Promise<unknown>) => {
+    ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/api/kaogong/lesson/' + action,
+      handler: async (req, res) => {
+        const rejection = ctx.connection.requestRejection(req)
+        if (rejection !== undefined) { sendJson(res, rejection, { error: 'Authenticated same-origin request required' }); return }
+        if (req.method !== 'POST') { sendJson(res, 405, { error: 'method not allowed' }); return }
+        if (!req.headers['content-type']?.startsWith('application/json')) { sendJson(res, 415, { error: 'JSON required' }); return }
+        try { sendJson(res, 200, await command(await readJson(req))) }
+        catch (error) { sendJson(res, error instanceof PracticeError ? error.status : 400, { error: error instanceof PracticeError ? error.message : '课堂请求无效或保存失败' }) }
+      },
+    }), 'kaogong.lesson.' + action)
+  }
+  lessonRoute('create', input => lessons.create(lessonCreate.parse(input)))
+  lessonRoute('list', input => { wire.object({}).strict().parse(input); return lessons.list() })
+  lessonRoute('read', input => lessons.read(lessonCommand.parse(input).lessonId))
+  lessonRoute('current', input => { wire.object({}).strict().parse(input); return lessons.current() })
+  lessonRoute('select', input => lessons.select(lessonCommand.parse(input).lessonId))
+  lessonRoute('prepare', input => lessons.prepare(lessonCommand.parse(input).lessonId))
+  lessonRoute('link', input => { const args = lessonLink.parse(input); return lessons.link(args.lessonId, args.roundId) })
+  lessonRoute('summary', input => { const args = lessonSummaryInput.parse(input); return lessons.saveSummary(args.lessonId, args.notes) })
+  lessonRoute('confirm', input => { const args = lessonConfirm.parse(input); return lessons.confirm(args.lessonId, args.confirmed) })
+  ctx.tools.register(defineTool({
+    name: 'kaogong_lesson_read', description: '读取持久课堂与最小摘要；不复制会话历史、不修改完成状态。省略 lessonId 返回课堂列表。',
+    parameters: { lessonId: { type: 'string', description: '真实课堂 ID；省略则列出课堂。' } },
+    output: { schema: { type: 'object', additionalProperties: false, properties: { summary: { type: 'string', required: true } } },
+      render: (_args, value) => [{ type: 'text', text: value.summary }] },
+    async execute(args) {
+      return { summary: args.lessonId ? (await lessons.read(wire.string().uuid().parse(args.lessonId))).summary : JSON.stringify(await lessons.list()) }
     },
-  }), 'kaogong.practiceSubmitRoute')
-
-  ctx.effect(() => ctx.webServer.register({
-    kind: 'exact',
-    path: '/api/kaogong/practice/reflection',
-    handler: async (req, res) => {
-      if (req.method !== 'POST') {
-        sendJson(res, 405, { error: 'method not allowed' })
-        return
-      }
-      try {
-        const body = await readJson(req)
-        const subject = typeof body.subject === 'string' ? body.subject.trim() : ''
-        if (!subject || !Array.isArray(body.entries)) throw new Error('invalid reflection')
-        const updatedIds = new Set<string>()
-        for (const value of body.entries) {
-          if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid reflection entry')
-          const entry = value as Record<string, unknown>
-          if (typeof entry.id !== 'string' || typeof entry.errorReason !== 'string') throw new Error('invalid reflection entry')
-          const errorReason = entry.errorReason.trim()
-          if (!ERROR_REASONS.includes(errorReason as typeof ERROR_REASONS[number])) throw new Error('invalid error reason')
-          if (updatedIds.has(entry.id)) throw new Error('duplicate reflection question')
-          updatedIds.add(entry.id)
-          const existing = questions.get(entry.id)
-          if (existing === undefined || existing.subject !== subject || existing.result !== 'wrong') throw new Error('wrong question not found')
-          await questions.put(entry.id, {
-            ...existing,
-            errorReason,
-            notes: typeof entry.notes === 'string' ? entry.notes.trim() : existing.notes,
-            updatedAt: new Date().toISOString(),
-          })
-        }
-        sendJson(res, 200, { subject, summary: summarizeModule(questions, subject, topN) })
-      } catch (error) {
-        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
-      }
-    },
-  }), 'kaogong.practiceReflectionRoute')
-
-  registerNotebookTools(ctx, questions, topN)
+    presentCall: args => ({ card: 'generic', title: '读取课堂记录', kind: 'other', rawInput: args }),
+  }))
   registerProgressTools(ctx, planConfig, days, questions, topN)
-  registerBankTools(ctx, bankQuestions, questions)
+  registerBankTools(ctx, bankQuestions, questions, practice)
   registerKnowledgeTools(ctx, knowledgeEntries)
 }
 
 /** Register the six wrong-answer-notebook tools. */
-function registerNotebookTools(ctx: Context, questions: KvTable<string, QuestionRecord>, topN: number): void {
+function registerNotebookTools(ctx: Context, questions: KvTable<string, QuestionRecord>, topN: number, practice: PracticeRounds): void {
   ctx.tools.register(defineTool({
     name: 'kaogong_record_question',
     description:
@@ -662,7 +615,7 @@ function registerNotebookTools(ctx: Context, questions: KvTable<string, Question
           + '当前题库共 ' + value.totalQuestions + ' 题，其中错题 ' + value.totalWrong + ' 题。',
       }],
     },
-    async execute(args) {
+    execute: args => practice.notebookCommand(async () => {
       const subject = args.subject.trim()
       const knowledgePoint = args.knowledgePoint.trim()
       const stem = args.stem.trim()
@@ -682,6 +635,7 @@ function registerNotebookTools(ctx: Context, questions: KvTable<string, Question
         ? existing.result
         : deriveResult(undefined, userAnswer, correctAnswer))
       const record: QuestionRecord = {
+        ...existing,
         subject,
         knowledgePoint,
         questionType: args.questionType === undefined ? existing?.questionType ?? '' : args.questionType.trim(),
@@ -707,7 +661,7 @@ function registerNotebookTools(ctx: Context, questions: KvTable<string, Question
         totalQuestions: questions.size,
         totalWrong: countWrong(questions),
       }
-    },
+    }),
     presentCall: args => ({ card: 'generic', title: '记录题目', kind: 'other', rawInput: { subject: args.subject, knowledgePoint: args.knowledgePoint, result: args.result } }),
   }))
 
@@ -984,8 +938,10 @@ function registerNotebookTools(ctx: Context, questions: KvTable<string, Question
       }],
     },
     async execute(args) {
-      const deleted = await questions.delete(args.id)
-      return { deleted, id: args.id }
+      return practice.notebookCommand(async () => {
+        const deleted = await questions.delete(args.id)
+        return { deleted, id: args.id }
+      })
     },
     presentCall: args => ({ card: 'generic', title: '删除题目', kind: 'other', rawInput: args }),
   }))
@@ -1313,6 +1269,7 @@ function registerBankTools(
   ctx: Context,
   bankQuestions: KvTable<string, BankQuestionRecord>,
   notebookQuestions: KvTable<string, QuestionRecord>,
+  practice: PracticeRounds,
 ): void {
   ctx.tools.register(defineTool({
     name: 'kaogong_bank_add',
@@ -1557,6 +1514,7 @@ function registerBankTools(
       weak: { type: 'boolean', description: 'true 时按错题本薄弱考点抽题（错题巩固）。' },
       difficulty: { type: 'string', enum: ['easy', 'medium', 'hard'], description: '难度过滤。' },
       limit: { type: 'integer', description: '题目数量，默认 10。' },
+      previousRoundId: { type: 'string', description: '已提交的上一轮 ID；继续同一模块循环练习。' },
     },
     output: {
       schema: {
@@ -1564,6 +1522,7 @@ function registerBankTools(
         additionalProperties: false,
         properties: {
           reason: { type: 'string', required: true },
+          roundId: { type: 'string', required: true },
           totalAvailable: { type: 'integer', required: true },
           returned: { type: 'integer', required: true },
           targets: { type: 'array', required: true, items: { type: 'string' } },
@@ -1595,34 +1554,15 @@ function registerBankTools(
           for (const option of q.options) lines.push('  ' + option)
         })
         lines.push('')
-        lines.push('作答后调用 kaogong_practice_submit 提交 [{id, answer}]，系统会判分并把结果记入错题本。')
+        lines.push('作答后调用 kaogong_practice_submit，roundId=' + value.roundId + '，提交完整 answers [{id, answer}]。')
         return [{ type: 'text', text: lines.join('\n') }]
       },
     },
     async execute(args) {
-      const bank = allBankQuestions(bankQuestions)
-      const notebook = allQuestions(notebookQuestions)
-      const selection = selectPractice(bank, notebook, {
-        limit: args.limit && args.limit > 0 ? args.limit : 10,
-        ...(args.subject ? { subject: args.subject } : {}),
-        ...(args.knowledgePoint ? { knowledgePoint: args.knowledgePoint } : {}),
-        ...(args.weak ? { weak: true } : {}),
-        ...(args.difficulty ? { difficulty: args.difficulty } : {}),
-      })
-      return {
-        reason: selection.reason,
-        totalAvailable: selection.totalAvailable,
-        returned: selection.selected.length,
-        targets: selection.targets,
-        questions: selection.selected.map(q => ({
-          id: q.id,
-          subject: q.subject,
-          knowledgePoint: q.knowledgePoint,
-          stem: q.stem,
-          options: q.options,
-          difficulty: q.difficulty,
-        })),
-      }
+      const value = await practice.start({ subject: args.subject ?? '', title: args.knowledgePoint ?? '专项训练', limit: 10,
+        ...(args.knowledgePoint ? { knowledgePoint: args.knowledgePoint } : {}) }, args.previousRoundId, args.weak, args.difficulty)
+      return { roundId: value.roundId, reason: value.reason, totalAvailable: value.totalAvailable, returned: value.returned, targets: args.knowledgePoint ? [args.knowledgePoint] : [],
+        questions: value.questions.map(({ id, subject, knowledgePoint, stem, options, difficulty }) => ({ id, subject, knowledgePoint, stem, options, difficulty })) }
     },
     presentCall: args => ({ card: 'generic', title: '专项训练', kind: 'other', rawInput: args }),
   }))
@@ -1633,6 +1573,7 @@ function registerBankTools(
       '提交专项训练的作答并判分：逐题对比正确答案、给出解析，并把结果（对/错）记入错题本，'
       + '用于后续归纳问题点。',
     parameters: {
+      roundId: { type: 'string', required: true, description: '已签发的练习轮次 ID（来自 kaogong_practice）。' },
       answers: {
         type: 'array',
         required: true,
@@ -1653,6 +1594,8 @@ function registerBankTools(
         additionalProperties: false,
         properties: {
           totalCount: { type: 'integer', required: true },
+          roundId: { type: 'string', required: true },
+          projection: { type: 'string', required: true, enum: ['complete', 'pending'] },
           correctCount: { type: 'integer', required: true },
           accuracyRate: { type: 'number', required: true },
           results: {
@@ -1674,7 +1617,7 @@ function registerBankTools(
         },
       },
       render: (_args, value) => {
-        const lines = ['判分完成：' + value.correctCount + '/' + value.totalCount + ' 对（正确率 ' + pctText(value.accuracyRate) + '），已记入错题本。']
+        const lines = ['判分完成：' + value.correctCount + '/' + value.totalCount + ' 对（正确率 ' + pctText(value.accuracyRate) + '），成绩已保存。' + (value.projection === 'pending' ? '错题本同步待恢复。' : '已同步错题本。')]
         for (const r of value.results) {
           lines.push((r.correct ? '✅' : '❌') + ' ' + r.id + ' 【' + r.subject + '】' + r.knowledgePoint)
           lines.push('   正确答案：' + r.correctAnswer + (r.explanation ? '；解析：' + r.explanation : ''))
@@ -1683,51 +1626,9 @@ function registerBankTools(
       },
     },
     async execute(args) {
-      const submittedIds = new Set<string>()
-      for (const submission of args.answers) {
-        if (submittedIds.has(submission.id)) throw new Error('answers 不能包含重复题目：' + submission.id)
-        submittedIds.add(submission.id)
-        if (bankQuestions.get(submission.id) === undefined) throw new Error('题目不存在：' + submission.id)
-      }
-      const results: { id: string; subject: string; knowledgePoint: string; correct: boolean; correctAnswer: string; explanation: string }[] = []
-      let correctCount = 0
-      const now = new Date().toISOString()
-
-      for (const submission of args.answers) {
-        const bank = bankQuestions.get(submission.id)
-        if (bank === undefined) throw new Error('题目不存在：' + submission.id)
-        const correct = submission.answer.trim() === bank.correctAnswer.trim()
-        if (correct) correctCount++
-
-        const existing = notebookQuestions.get(submission.id)
-        await notebookQuestions.put(submission.id, {
-          subject: bank.subject,
-          knowledgePoint: bank.knowledgePoint,
-          questionType: bank.questionType,
-          stem: bank.stem,
-          options: bank.options,
-          correctAnswer: bank.correctAnswer,
-          userAnswer: submission.answer.trim(),
-          result: correct ? 'correct' : 'wrong',
-          errorReason: '',
-          notes: '',
-          source: bank.source,
-          tags: bank.tags,
-          createdAt: existing?.createdAt ?? now,
-          updatedAt: now,
-        })
-        results.push({
-          id: submission.id,
-          subject: bank.subject,
-          knowledgePoint: bank.knowledgePoint,
-          correct,
-          correctAnswer: bank.correctAnswer,
-          explanation: bank.explanation,
-        })
-      }
-
-      const total = results.length
-      return { totalCount: total, correctCount, accuracyRate: total === 0 ? 0 : correctCount / total, results }
+      const value = await practice.submit(roundIdWire.parse(args.roundId), answersWire.parse(args.answers))
+      return { roundId: value.roundId, projection: value.projection, totalCount: value.totalCount, correctCount: value.correctCount, accuracyRate: value.accuracyRate,
+        results: value.results.map(({ id, subject, knowledgePoint, correct, correctAnswer, explanation }) => ({ id, subject, knowledgePoint, correct, correctAnswer, explanation })) }
     },
     presentCall: args => ({ card: 'generic', title: '提交作答', kind: 'other', rawInput: args }),
   }))

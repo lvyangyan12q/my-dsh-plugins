@@ -1,0 +1,304 @@
+diff --git a/docs/subsystems/slots.md b/docs/subsystems/slots.md
+index 13b47b7460..3f8df78923 100644
+--- a/docs/subsystems/slots.md
++++ b/docs/subsystems/slots.md
+@@ -118,0 +119 @@ root
++│  ├─ sidebar.sections
+diff --git a/docs/subsystems/slots.zh.md b/docs/subsystems/slots.zh.md
+index 42bf724545..ba50d65187 100644
+--- a/docs/subsystems/slots.zh.md
++++ b/docs/subsystems/slots.zh.md
+@@ -118,0 +119 @@ root
++│  ├─ sidebar.sections
+diff --git a/packages/client/ui-sidebar/README.i18n.yaml b/packages/client/ui-sidebar/README.i18n.yaml
+index b1ffa3bf3e..336d17ae68 100644
+--- a/packages/client/ui-sidebar/README.i18n.yaml
++++ b/packages/client/ui-sidebar/README.i18n.yaml
+@@ -25,0 +26,3 @@
++/deepseek-ai-dsh-client-ui-sidebar/use-this-package/plugin-sections:
++  en: a5212713706dccbe
++  zh: 671ba27bd20dec13
+diff --git a/packages/client/ui-sidebar/README.md b/packages/client/ui-sidebar/README.md
+index 0314df8089..80eb51ddf1 100644
+--- a/packages/client/ui-sidebar/README.md
++++ b/packages/client/ui-sidebar/README.md
+@@ -39,0 +40,4 @@ Plugins add an icon component to the root-scoped `sidebar.panellist` list with a
++### Plugin sections
++
++Plugins register root-scoped list entries in `sidebar.sections` after native Workspace browsing and before the footer. Each entry receives `wide` and `expandSidebar`, owns its section layout, and is removed when its registration is disposed. This seat adds navigation without replacing native Workspace, panel, footer-action or Settings entries. With no occupants, it renders no content or spacing.
++
+diff --git a/packages/client/ui-sidebar/README.zh.md b/packages/client/ui-sidebar/README.zh.md
+index 3255915dcb..296ccdbad1 100644
+--- a/packages/client/ui-sidebar/README.zh.md
++++ b/packages/client/ui-sidebar/README.zh.md
+@@ -39,0 +40,4 @@ dsh Web 客户端的侧边栏让用户识别当前构建、启动新会话、将
++### 插件区域
++
++插件在根作用域列表槽 `sidebar.sections` 注册区域，位置在原生工作区浏览区之后、底栏之前。每个区域接收 `wide` 和 `expandSidebar`，自行负责区域布局，并在注册释放时移除。该槽添加导航入口，保留原生工作区、主面板、底栏动作和设置入口。没有注册时不显示内容或间距。
++
+diff --git a/packages/client/ui-sidebar/src/client/SidebarRoot.tsx b/packages/client/ui-sidebar/src/client/SidebarRoot.tsx
+index 46c019305f..4f010218b7 100644
+--- a/packages/client/ui-sidebar/src/client/SidebarRoot.tsx
++++ b/packages/client/ui-sidebar/src/client/SidebarRoot.tsx
+@@ -303,0 +304,5 @@ export function SidebarRoot({
++      {renderSlot('sidebar.sections', {
++        wide,
++        expandSidebar: () => { if (collapsed) toggleSidebar() },
++      })}
++
+diff --git a/packages/client/ui-sidebar/src/client/contract/slots.ts b/packages/client/ui-sidebar/src/client/contract/slots.ts
+index c6ba475fec..055cc55228 100644
+--- a/packages/client/ui-sidebar/src/client/contract/slots.ts
++++ b/packages/client/ui-sidebar/src/client/contract/slots.ts
+@@ -48,0 +49,3 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
++    /** Additive plugin sections after native workspace browsing and before the foot.
++     * Occupants own their section layout; no native menu or footer is replaced. */
++    'sidebar.sections': { kind: 'list'; scope: 'root'; owner: SidebarSectionOwnerProps }
+@@ -144,0 +148 @@ export type SidebarRootComponentProps =
++    | 'sidebar.sections'
+diff --git a/packages/client/ui-sidebar/src/client/index.ts b/packages/client/ui-sidebar/src/client/index.ts
+index 3cd24cfc12..63ea81f925 100644
+--- a/packages/client/ui-sidebar/src/client/index.ts
++++ b/packages/client/ui-sidebar/src/client/index.ts
+@@ -85,0 +86 @@ export function apply(ctx: ClientContext): void {
++      'sidebar.sections': { kind: 'list', scope: 'root' },
+diff --git a/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap b/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap
+index 652e9f6b39..2e7c508336 100644
+--- a/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap
++++ b/packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap
+@@ -2,0 +3,160 @@
++exports[`sidebar shell snapshots > composes independent plugin sections without replacing the native foot 1`] = `
++<div
++  data-slot="sidebar"
++  style="display: contents;"
++>
++  <div
++    class="root quietBars"
++    style="width: 300px;"
++  >
++    <div
++      class="logoRow"
++      data-window-drag="true"
++    >
++      <button
++        aria-label="New session"
++        class="brand wide"
++        type="button"
++      >
++        <span
++          aria-hidden="true"
++          class="brandIdentity"
++        >
++          <span
++            class="brandMark"
++          >
++            <div
++              data-slot="sidebar.brand.mark"
++              style="display: contents;"
++            >
++              <svg
++                aria-hidden="true"
++                data-content="965fe321"
++                fill="none"
++                height="17.6580310880829"
++                viewBox="0 0 23.16 17.04"
++                width="24"
++              />
++            </div>
++          </span>
++          <span
++            class="brandName"
++          >
++            <div
++              data-slot="sidebar.brand.name"
++              style="display: contents;"
++            >
++              <span
++                class="localBuildBrand"
++              >
++                <span
++                  class="localBuildTitle"
++                >
++                  DSH Local Build
++                </span>
++                <span
++                  class="buildVersion"
++                >
++                  1.2.3-rc.4-abc1234-dirty
++                </span>
++              </span>
++            </div>
++          </span>
++        </span>
++      </button>
++      <button
++        aria-label="Collapse sidebar"
++        class="iconButton toggle"
++        type="button"
++      >
++        <svg
++          aria-hidden="true"
++          class="panelIcon"
++          data-content="88020f34"
++          fill="none"
++          height="16"
++          stroke-width="1"
++          viewBox="0 0 16 16"
++          width="16"
++          xmlns="http://www.w3.org/2000/svg"
++        />
++      </button>
++    </div>
++    <button
++      aria-label="New session"
++      class="newSession"
++      type="button"
++    >
++      <span
++        class="newSessionLabelMask"
++      >
++        <span
++          class="newSessionContent"
++        >
++          <svg
++            aria-hidden="true"
++            data-content="47b5e433"
++            fill="none"
++            height="14"
++            stroke-width="1.3"
++            viewBox="0 0 16 16"
++            width="14"
++            xmlns="http://www.w3.org/2000/svg"
++          />
++          <span
++            class="newSessionLabel wide"
++          >
++            New Session
++          </span>
++        </span>
++      </span>
++    </button>
++    <div
++      class="regionArea"
++    >
++      <div
++        data-slot="sidebar.workspaces"
++        style="display: contents;"
++      />
++    </div>
++    <div
++      data-slot="sidebar.sections"
++      style="display: contents;"
++    >
++      <nav
++        aria-label="Fixture extension"
++        data-wide="true"
++      >
++        Fixture section
++      </nav>
++    </div>
++    <div
++      class="footArea"
++    >
++      <div
++        class="footerActions"
++      >
++        <div
++          data-slot="sidebar.footer.action"
++          style="display: contents;"
++        >
++          <button
++            data-wide="true"
++          >
++            Fixture footer
++          </button>
++        </div>
++      </div>
++      <div
++        class="settingsArea"
++      >
++        <div
++          data-slot="sidebar.settings"
++          style="display: contents;"
++        />
++      </div>
++    </div>
++  </div>
++</div>
++`;
++
+@@ -69,0 +230,4 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded
++    <div
++      data-slot="sidebar.sections"
++      style="display: contents;"
++    />
+@@ -212,0 +377,4 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded
++    <div
++      data-slot="sidebar.sections"
++      style="display: contents;"
++    />
+@@ -321,0 +490,4 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
++    <div
++      data-slot="sidebar.sections"
++      style="display: contents;"
++    />
+@@ -464,0 +637,4 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, capsul
++    <div
++      data-slot="sidebar.sections"
++      style="display: contents;"
++    />
+@@ -607,0 +784,4 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
++    <div
++      data-slot="sidebar.sections"
++      style="display: contents;"
++    />
+diff --git a/packages/client/ui-sidebar/tests/apply.client.spec.tsx b/packages/client/ui-sidebar/tests/apply.client.spec.tsx
+index 19be12019f..2b04a3c510 100644
+--- a/packages/client/ui-sidebar/tests/apply.client.spec.tsx
++++ b/packages/client/ui-sidebar/tests/apply.client.spec.tsx
+@@ -71,0 +72 @@ describe('ui-sidebar apply', () => {
++    expect(b.slots.spec('sidebar.sections')).toEqual({ kind: 'list', scope: 'root' })
+diff --git a/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx b/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
+index f2407246f8..b2d64cd433 100644
+--- a/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
++++ b/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
+@@ -64,0 +65 @@ function mountShell({ collapsed = false, width = 300, shortcuts = [] }: {
++        if (key === 'sidebar.sections') return <div data-testid="extension-section" data-wide={owner.wide} />
+@@ -101,0 +103,17 @@ describe('SidebarRoot shell', () => {
++  it('places additive plugin sections after native browsing while retaining native footer and settings', () => {
++    const b = mountShell()
++    const region = screen.getByTestId('region'), extension = screen.getByTestId('extension-section'), footer = screen.getByTestId('footer-action-seat'), settings = screen.getByTestId('settings-seat')
++    expect(region.compareDocumentPosition(extension) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
++    expect(extension.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
++    expect(footer.compareDocumentPosition(settings) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
++    expect(footer.parentElement?.contains(extension)).toBe(false)
++    expect(extension.getAttribute('data-wide')).toBe('true')
++    expect(screen.getAllByRole('button', {name: 'New session'})).toHaveLength(2)
++    expect(b.regionOwner().wide).toBe(true)
++  })
++  it('passes collapsed rail state to additive plugin sections', () => {
++    mountShell({collapsed:true})
++    expect(screen.getByTestId('extension-section').getAttribute('data-wide')).toBe('false')
++    expect(screen.getByTestId('footer-action-seat').getAttribute('data-wide')).toBe('false')
++    expect(screen.getByTestId('settings-seat').getAttribute('data-wide')).toBe('false')
++  })
+diff --git a/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx b/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
+index 1b7ef3003e..e2668dd0f8 100644
+--- a/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
++++ b/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
+@@ -56,0 +57,15 @@ describe('sidebar shell snapshots', () => {
++  it('composes independent plugin sections without replacing the native foot', async () => {
++    const {runtime} = await bench({locale:'en'})
++    const section = runtime.ctx.slots.register({name:'sidebar.sections',id:'fixture-extension'}, ({wide}) => <nav aria-label="Fixture extension" data-wide={wide}>Fixture section</nav>)
++    const footer = runtime.ctx.slots.register({name:'sidebar.footer.action',id:'fixture-native-footer'}, ({wide}) => <button data-wide={wide}>Fixture footer</button>)
++    try{
++      const slot = runtime.renderSlot('sidebar',{collapsed:false,width:300})
++      const nativeButton=slot.view.getAllByRole('button',{name:'New session'})[0], footerButton=slot.view.getByRole('button',{name:'Fixture footer'})
++      expect(slot.container).toMatchSnapshot()
++      expect(slot.view.getByRole('navigation',{name:'Fixture extension'}).getAttribute('data-wide')).toBe('true')
++      await act(async () => {section()})
++      await waitFor(() => expect(slot.view.queryByRole('navigation',{name:'Fixture extension'})).toBeNull())
++      expect(slot.view.getByRole('button',{name:'Fixture footer'})).toBe(footerButton)
++      expect(slot.view.getAllByRole('button',{name:'New session'})[0]).toBe(nativeButton)
++    }finally{section();footer();await runtime.dispose()}
++  })

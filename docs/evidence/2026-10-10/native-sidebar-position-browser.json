@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "67beabfc8aaf2606779c3777ef1aad85dac8c94a",
+  "installedArchiveSha256": "54d5d71131b20985d7f0615d1cb4298d5e00bb34b636f143ac2cff322aabebbf",
+  "method": "Actual Chrome DevTools viewport changes and read-only DOM rectangle/hit-target observations in owned DSH 3089",
+  "environment": {
+    "betterSidebarVersion": "0.24.1",
+    "workbenchOfficialArchiveInstall": true,
+    "allPackagedBytesVerified": true
+  },
+  "before": {
+    "viewportWidth": 768,
+    "centerLeft": 56,
+    "workspaceLeft": 280,
+    "centerWidth": 400,
+    "workspaceWidth": 400,
+    "nativeRightTabCloseOccluded": true
+  },
+  "after": [
+    {
+      "viewportWidth": 1024,
+      "centerLeft": 280,
+      "workspaceLeft": 280,
+      "width": 400,
+      "aligned": true,
+      "nativeTabCloseUnoccluded": true,
+      "nativeNewTabUnoccluded": true,
+      "workspaceCloseUnoccluded": true
+    },
+    {
+      "viewportWidth": 768,
+      "centerLeft": 56,
+      "workspaceLeft": 56,
+      "width": 400,
+      "aligned": true,
+      "nativeTabCloseUnoccluded": true,
+      "nativeNewTabUnoccluded": true,
+      "workspaceCloseUnoccluded": true
+    },
+    {
+      "viewportWidth": 1920,
+      "centerLeft": 280,
+      "workspaceLeft": 280,
+      "width": 776,
+      "aligned": true,
+      "nativeTabCloseUnoccluded": true,
+      "nativeNewTabUnoccluded": true,
+      "workspaceCloseUnoccluded": true
+    }
+  ],
+  "tests": {
+    "committedCleanSource": {
+      "tests": 307,
+      "passed": 307,
+      "failed": 0,
+      "skipped": 0
+    },
+    "localIncludingUserChanges": {
+      "tests": 308,
+      "passed": 308,
+      "failed": 0,
+      "skipped": 0
+    },
+    "allThreeBuildsPassed": true
+  },
+  "formalDiskSync": {
+    "sameSourceRoot": true,
+    "clientBytesMatch": true,
+    "clientSha256": "9ea87853baa072522e50a2ca517bbb7a9e48810271b9c0db870e96f8193a7fa0",
+    "existingUserManagementFilesUnchanged": true,
+    "formalHostRestarted": false,
+    "formalBrowserReloaded": false
+  },
+  "limits": [
+    "The formal 3080 disk links contain the build; current already-open browser code is not certified as refreshed.",
+    "Responsive toolbar geometry is proven at these desktop viewport sizes; complete teaching/chat/IME and all layout/content combinations are not proven.",
+    "No model calls, formal business writes, raw screenshots, credentials, drafts or Session IDs are included."
+  ]
+}

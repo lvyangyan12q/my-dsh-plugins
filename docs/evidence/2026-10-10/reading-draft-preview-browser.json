@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "0b74885c64b2edf813f1e2740ccb8e09ed52854d",
+  "reviewedHead": "9204c3666446da8b119b5acfa4d1f6e2ad286260",
+  "url": "http://127.0.0.1:3089/",
+  "installedArchiveSha256": "57655e826e0f77c936ef5743b89c75aa683adee1bcccb75a289e1e6fb5882971",
+  "method": "Actual installed DSH UI: open recipe editor, choose existing Reading draft, click Preview, filter Science, select a book, switch to Literature, open running app. Read-only authenticated catalogue/data API comparisons before and after.",
+  "checks": {
+    "previewRendered": true,
+    "initialData": true,
+    "scienceFilter": true,
+    "scienceSelectionDetails": true,
+    "literatureFilter": true,
+    "filteredSelectionCleared": true,
+    "recipeRevisionUnchanged": true,
+    "runningVersionUnchanged": true,
+    "businessDataUnchanged": true,
+    "runningFilterIndependent": true,
+    "runningHasNoPreview": true
+  },
+  "observations": {
+    "initial": {
+      "books": 3,
+      "minutes": 210,
+      "average": 70
+    },
+    "science": {
+      "books": 1,
+      "minutes": 60,
+      "average": 60,
+      "details": true
+    },
+    "literature": {
+      "books": 2,
+      "minutes": 150,
+      "average": 75,
+      "detailsCleared": true
+    },
+    "running": {
+      "books": 3,
+      "minutes": 210,
+      "average": 70,
+      "filter": ""
+    },
+    "recipeRevision": 10,
+    "draftVersion": 3,
+    "runningVersion": 3
+  },
+  "limits": [
+    "No Save, Activate, AI Generate, Send or business write action was issued.",
+    "This proves a data-connected existing draft preview; real AI-generation-to-activation acceptance remains separate and incomplete.",
+    "No screenshots, original draft text, Session IDs or business record contents are exported."
+  ]
+}

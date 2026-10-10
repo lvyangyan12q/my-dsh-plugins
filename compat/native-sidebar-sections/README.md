@@ -1,0 +1,7 @@
+# Native sidebar plugin sections
+
+The generic root list slot `sidebar.sections` renders after native Workspace browsing and before the existing footer. Occupants receive `wide` and `expandSidebar`, own their layout and are removed with their registration. Native Workspace, global panels, Settings, footer actions and CSS retain their original owners and behavior. Workbench registers its application/Agent/Skill navigation here; Better Sidebar and the upstream Worktable keep their own registrations.
+
+Set DSH_SOURCE to the absolute reviewed rc.2 source checkout and run `node scripts/check-native-sidebar-sections.mjs --apply`, then rebuild its sidebar types and Client bundle. The fixed twelve-file manifest includes public types, declarations, renderer, behavior/snapshot tests and paired documentation. It accepts only the reviewed baseline or the exact adapted state, backs up originals and rejects any other local changes. Verification is idempotent. `build-release.mjs` verifies this adaptation without applying it silently. An unadapted host cannot display the full plugin section; there is no fallback that rewrites native private CSS classes.
+
+The actual native sidebar regression suite covers expanded/collapsed section state, placement outside the footer and section disposal retaining the same native New Session/footer DOM nodes. The Workbench real SlotRegistry test covers load/unload/reload, preserving native footer registration and avoiding Session acquisition. These checks do not replace the full live teaching/sidebar/model matrix.

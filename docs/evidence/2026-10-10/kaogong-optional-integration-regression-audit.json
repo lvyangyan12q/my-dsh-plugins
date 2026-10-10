@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-10",
+  "testedImplementationCommit": "2ff0e68451be420a5310cab0618fea07e7c5b00c",
+  "regressionBaseline": "c44d9af1a39cf62df39e684b0b7ad9b252d331b1",
+  "method": "Inspect public Client and actual official Cordis keyed-slot lifecycle tests and their assertions; normalized source matches the already-tested clean archive; verify every named case in the complete 306-test execution log. No new execution is claimed.",
+  "files": [
+    {
+      "path": "plugins/kaogong/tests/core.test.ts",
+      "normalizedSha256": "e356d2e9ab68476619422bd8fd2af2a197879a57917e2dca978d4b31d9a83941",
+      "matchesTestedCleanSource": true
+    },
+    {
+      "path": "plugins/kaogong/tests/mineru.test.ts",
+      "normalizedSha256": "0473412e4c9b931325a4eb01daec9ce918577b00020e55dda153b4a76cb3290f",
+      "matchesTestedCleanSource": true
+    },
+    {
+      "path": "plugins/kaogong/tests/material-repair.test.ts",
+      "normalizedSha256": "edfa541dc40079b4e2fd2ac33ff11056797422526e1521ffa426255361788a08",
+      "matchesTestedCleanSource": true
+    },
+    {
+      "path": "plugins/kaogong/tests/views.test.mjs",
+      "normalizedSha256": "fab40550bddba6b19a59e597fac34e805a222fab346b6fccbbaf674b98d555af",
+      "matchesTestedCleanSource": true
+    },
+    {
+      "path": "plugins/kaogong/src/client.tsx",
+      "normalizedSha256": "0732239848aa42827b6e4b0b8ee40b0c5734d56c8b7d0657b32f87ee0fc2f112",
+      "matchesTestedCleanSource": true
+    },
+    {
+      "path": "plugins/kaogong/src/optional-workbench-client.ts",
+      "normalizedSha256": "d1ccaf1d3427294d337d668e34cb8648f54589fffefbba3e5c819696e9f1ddb1",
+      "matchesTestedCleanSource": true
+    },
+    {
+      "path": "plugins/kaogong/src/view-state.tsx",
+      "normalizedSha256": "dd03a511b54738d518dd6368507193baa91e33544f9846b0b9e5e6750e325c9b",
+      "matchesTestedCleanSource": true
+    },
+    {
+      "path": "plugins/kaogong/src/domain.ts",
+      "normalizedSha256": "763eaa8929ed834a2b16af857a1f31ed6360aa9829eeb9767ecd833a592f83e2",
+      "matchesTestedCleanSource": true
+    }
+  ],
+  "originalRegressionFilesUnchanged": true,
+  "regressionCases": [
+    "analyzeQuestions: 聚合、正确率（不含跳过）、按错题数排序",
+    "summarizeQuestions: 薄弱点排序、建议与叙述",
+    "generatePlan: 倒排阶段与总天数",
+    "generatePlan: 考试日期必须晚于今天",
+    "daysToExam / addDays",
+    "selectPractice: weak 模式按薄弱考点抽题",
+    "selectPractice: 指定考点与 limit 截断",
+    "selectPractice: 连续练习优先排除已见题目",
+    "selectPractice: 只抽取已通过审查（approved）的题",
+    "flattenTaxonomy: 覆盖全部科目且命名含连字符",
+    "renderTaxonomy: 非空且含科目",
+    "searchKnowledge: 按科目/考点/类型过滤",
+    "searchKnowledge: 关键词加权排序（标题优先）",
+    "searchKnowledge: 无命中关键词返回空",
+    "document assets reject traversal and missing images",
+    "upload, poll, restore archive and resume without uploading again",
+    "remote errors do not expose credentials or response body",
+    "material parser retains full charts/tables and excludes other questions and annotations",
+    "matching requires all four options, stem, material evidence and a unique candidate",
+    "migration backs up before writes, preserves IDs/options/answers and pauses unmatched rows",
+    "migration refuses stale snapshots before any writes"
+  ],
+  "integrationCases": [
+    "real Cordis optional provider and official keyed slots dispose, reappear and hot reload without duplicates",
+    "default instance preserves draft, reader, results and reflection through pages, close and service replacement",
+    "standalone built client opens knowledge and practice without a Workbench factory",
+    "optional Workbench integration does not conceal an installed factory failure"
+  ],
+  "fullTestLogSha256": "005e73af6da2fe0504c8b8bc872794acb605c3ebfc969b90528b59d2758d6e24",
+  "findings": {
+    "optionalProviderAppearsAndWithdraws": true,
+    "exactlyOneKeyedApplicationRegistrationAfterReload": true,
+    "standaloneSidebarEntryRemains": true,
+    "noImplicitApplicationOpenDuringLifecycle": true,
+    "defaultInstanceTransfersExistingViewState": true,
+    "practiceSubmissionNotRepeatedOnTransfer": true,
+    "readerAndReflectionRetained": true,
+    "standaloneWithoutWorkbenchFactoryWorks": true,
+    "installedFactoryFailureNotHidden": true,
+    "nonDefaultKaogongInstanceExplicitlyRejected": true
+  },
+  "limits": [
+    "Business requests in the built-view tests use controlled public transport fixtures; this is not real-provider teaching acceptance.",
+    "The original regression files are unchanged since the agreed baseline; this does not prove all original documents, bank records or PDF assets match their sources.",
+    "Default-instance view transfer is verified; arbitrary old deployment data migration and full backup/restore remain unproven.",
+    "Full Better Sidebar teaching/streaming/permission/Stop matrix is separate and incomplete."
+  ]
+}

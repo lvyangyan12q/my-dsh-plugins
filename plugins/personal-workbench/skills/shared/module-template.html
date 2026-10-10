@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模块页面模板</title>
+<style>
+:root{color-scheme:light dark;--bg:#faf8f4;--surface:#fffdf9;--text:#302e2b;--muted:#777168;--border:#ded8ce;--accent:#a64d34;--soft:#f3e5dc;font:15px/1.6 system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{padding:20px;max-width:1100px;margin:auto}header{margin-bottom:20px}h1,h2,p{margin:0 0 10px}h1{font-size:24px}h2{font-size:17px}.muted,small{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px}.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;min-width:0;overflow-wrap:anywhere}.value{font-size:28px;font-weight:650}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0}label{display:grid;gap:5px;min-width:0}input,select,textarea,button{font:inherit;border:1px solid var(--border);border-radius:7px;padding:8px 12px;background:var(--surface);color:var(--text);max-width:100%}button{cursor:pointer;font-weight:600}button.primary{background:var(--accent);color:white;border-color:var(--accent)}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:3px solid var(--accent);outline-offset:2px}.state{padding:14px;background:var(--soft);border-radius:8px}.error{color:#a02525}table{width:100%;border-collapse:collapse}td,th{padding:10px;text-align:left;border-bottom:1px solid var(--border)}.table-wrap{overflow:auto}
+@media(prefers-color-scheme:dark){:root{--bg:#242320;--surface:#302e2a;--text:#ede6dd;--muted:#b8afa4;--border:#504a43;--accent:#bc6d51;--soft:#40312b}}@media(max-width:480px){main{padding:12px}h1{font-size:20px}.toolbar>*{flex:1 1 100%}}
+</style>
+<main>
+<header><h1>页面标题</h1><p class="muted">页面说明与真实数据来源</p></header>
+<section class="grid" aria-label="统计卡片"><article class="card"><h2>指标名称</h2><p class="value">—</p><small>等待连接真实数据</small></article></section>
+<form class="toolbar" onsubmit="return false"><label>筛选条件<select aria-label="筛选条件"><option>全部</option></select></label><label>搜索<input type="search" placeholder="输入关键词"></label><button class="primary" type="button">查询</button><button type="reset">重置</button></form>
+<section class="card"><h2>内容</h2><p class="state" role="status">暂无数据，连接数据后显示内容。</p></section>
+</main>
+</html>

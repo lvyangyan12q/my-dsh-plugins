@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "d0103bec87eae2930579ab64877fb36be0ef6d61",
+  "method": "Real native DSH 3089 clicks; read-only page measurements; minimize/restore, reload/reopen, explicit unmaximize; no model send",
+  "design": "Maximize within the existing fixed center column by reducing workbench chrome; native sidebars remain in place.",
+  "verification": {
+    "normalContentHeight": 834,
+    "maximizedContentHeight": 902,
+    "extraContentHeight": 68,
+    "nativeNavigationBoundsUnchanged": true,
+    "nativeConversationAndTrajectoryTabsRemain": true,
+    "currentNativeDraftRetainedNormalized": true,
+    "selectedPageRetained": true,
+    "minimizeRestoreKeepsMaximization": true,
+    "reloadReopenKeepsMaximization": true,
+    "explicitRestoreRecoversOriginalContentSize": true,
+    "applicationInstancesNotDuplicatedByUiRegression": true
+  },
+  "tests": {
+    "focusedUiTests": 10,
+    "totalTests": 304,
+    "pass": 304,
+    "fail": 0,
+    "skipped": 0,
+    "red": "Missing visible button: maximize: Exercise",
+    "green": "maximize, minimize and restore keep the same page and draft while releasing page-navigation space"
+  },
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "f140c26e2490326ef83f311245bad4dc72926481d1b5dec72a3c31df8970f128",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "preservedUserManagementFiles": [
+    "plugins/personal-workbench/src/capability-host.ts",
+    "plugins/personal-workbench/src/management-view.tsx",
+    "plugins/personal-workbench/tests/capability-host.test.mjs",
+    "plugins/personal-workbench/tests/management-ui.test.mjs"
+  ],
+  "limits": [
+    "No model execution, permissions, questions, Stop or physical IME verification is claimed.",
+    "Screenshot tool did not return; its execution cell was explicitly terminated. This receipt contains no visual screenshot acceptance.",
+    "This implements reversible focus maximization inside the preserved native center column, not browser or OS fullscreen.",
+    "No screenshots, browser drafts, Session IDs or raw browser payload are included."
+  ]
+}

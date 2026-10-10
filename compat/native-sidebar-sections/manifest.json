@@ -1,0 +1,65 @@
+{
+  "baseCommit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+  "files": [
+    {
+      "path": "packages/client/ui-sidebar/src/client/contract/slots.ts",
+      "before": "569396d1337d548ce6975c27ccc7282429c0e2ea57fdb3994ba162e013178d2d",
+      "after": "387d740e8182f5a2abeead6ee87d8bfb39350aaf3232043ce674b8c2b4ee4d75"
+    },
+    {
+      "path": "packages/client/ui-sidebar/src/client/index.ts",
+      "before": "05e1c2072f6961c64d95b1d5ac775e7d6b2b9cbe52e997a34fcb4e12b24a60cf",
+      "after": "1842a6ed7d7929956ebd71e88a5f300d96e7a0719076301faeb538af8cc1f17b"
+    },
+    {
+      "path": "packages/client/ui-sidebar/src/client/SidebarRoot.tsx",
+      "before": "51d95e300ed74cdfdeb2c7f7daa8b32324af95071787c0e6d3905b450c9e4951",
+      "after": "23c060dce8216050872319ed36ee800ed1aca2efc8747a0f6f5864b3c8c35afc"
+    },
+    {
+      "path": "packages/client/ui-sidebar/tests/apply.client.spec.tsx",
+      "before": "f49c7cb92c11008ca4c98cfe8017a6c23878adbccffe2068fe7b43f1b66b015e",
+      "after": "158fe84403bf643eff89f6784203d0ce0927e23209af13cb6e65aea74cef4b2d"
+    },
+    {
+      "path": "packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx",
+      "before": "80b287274fab5f03eda017908fcef6d8538432218f2f2a2589a212606a2e2d59",
+      "after": "bef7bce4ccf173ee85b5f1e950c2b5554bd6ef4ee8b53fff41b6d46b12252694"
+    },
+    {
+      "path": "packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx",
+      "before": "b25bdbc89b8f06e19a6872693c6ea2a89012a7a8fdc895008f8a5e199fe1277b",
+      "after": "a85a14325b5d9e5f3b838eb4ea70a83b76eced1d61c5902e70a41dbdfbc30a65"
+    },
+    {
+      "path": "packages/client/ui-sidebar/tests/__snapshots__/sidebar-snapshot.client.spec.tsx.snap",
+      "before": "7ccdf1f54bef3c3e020d8ce09a847595d7463da96af40dba6d7f22bbc92b2817",
+      "after": "7b4fb5f2c5c886836244b1a844472dbb52cb19692e9f77a0e03c68503d8d6856"
+    },
+    {
+      "path": "packages/client/ui-sidebar/README.md",
+      "before": "b7d23797b7cdfea9935d9409490c2cc364d558690098e0e80b96408f1b72922f",
+      "after": "ab243c4f660936986235ee7135abe08f544a93d020386e28501981f3ca2cde01"
+    },
+    {
+      "path": "packages/client/ui-sidebar/README.zh.md",
+      "before": "55dfe84c08df6d4190d80434260339eaac496571653693dfc7d6daa9b9181611",
+      "after": "387c68f067e94b32fc66fb3b6642cb4671a7635d312a98903139c1e3d0ee9253"
+    },
+    {
+      "path": "packages/client/ui-sidebar/README.i18n.yaml",
+      "before": "6089766a8e9f94f5ba06e1f921a7a6530b31caa159fdbc547304e68c5417eafc",
+      "after": "0dbbfb2ccaa19d74071527e76fd94273c42fb519e4c16ca761f277928e12589e"
+    },
+    {
+      "path": "docs/subsystems/slots.md",
+      "before": "77dfedb420f10ebd40de0fada2112aa12b8f627a93d8a0509ae4208fd05c1527",
+      "after": "cd50dadb7b38c3fd710860476b1589dec34f198e2709724bd93519a246ff8400"
+    },
+    {
+      "path": "docs/subsystems/slots.zh.md",
+      "before": "ee0c525a9df07a4e1ba40133042b75682cdc03ce940511f40507465904ebbf58",
+      "after": "6e052e4bfa51b456ccfd4ee952418936862af0b7741321aaa24510e0764f553f"
+    }
+  ]
+}

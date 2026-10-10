@@ -6,9 +6,13 @@
  */
 
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
+import type { DomainGlobalSpec } from '@deepseek-ai/dsh-storage-domain'
 import { TAXONOMY } from './taxonomy.ts'
-import { questionRecord, planConfig, dayPlan, bankQuestion, knowledgeEntry } from './schemas.ts'
-import type { QuestionRecord, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './schemas.ts'
+import { lessonRecord, lessonSelection } from './lesson-schema.ts'
+import type { Lesson, LessonSelection } from './lesson-schema.ts'
+import { questionRecord, planConfig, dayPlan, bankQuestion, knowledgeEntry, practiceRound } from './schemas.ts'
+import type { PracticeRound } from './schemas.ts'
+import type { QuestionRecord, PlanConfig, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './schemas.ts'
 
 export { questionRecord, planConfig, dayItem, dayPlan, bankQuestion, knowledgeEntry } from './schemas.ts'
 export type { QuestionRecord, PlanConfig, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './schemas.ts'
@@ -26,13 +30,14 @@ export function defaultSubjects(): { name: string; weight: number }[] {
 }
 
 /** The study plan/progress domain: a global plan config + a `days` table keyed by date. */
+const progressGlobal: DomainGlobalSpec<PlanConfig> = {
+  schema: planConfig,
+  initial: { examDate: '2027-03-01', dailyModules: 2, subjects: defaultSubjects() },
+}
 export const progressDomainSpec = defineDomain({
   name: 'kaogong_progress',
   version: 1,
-  global: {
-    schema: planConfig,
-    initial: { examDate: '2027-03-01', dailyModules: 2, subjects: defaultSubjects() },
-  },
+  global: progressGlobal,
   tables: { days: domainTable<string, DayPlanRecord>(dayPlan) },
 })
 
@@ -48,4 +53,20 @@ export const knowledgeDomainSpec = defineDomain({
   name: 'kaogong_knowledge',
   version: 1,
   tables: { entries: domainTable<string, KnowledgeEntryRecord>(knowledgeEntry) },
+})
+
+/** Additive default-instance practice history; existing domains keep their versions. */
+export const practiceDomainSpec = defineDomain({
+  name: 'kaogong_practice', version: 1,
+  tables: { rounds: domainTable<string, PracticeRound>(practiceRound) },
+})
+
+/** Additive classroom aggregates for the existing default instance; legacy domains are untouched. */
+const lessonGlobal: DomainGlobalSpec<LessonSelection> = {
+  schema: lessonSelection, initial: { instanceId: 'default', activeLessonId: null },
+}
+export const lessonDomainSpec = defineDomain({
+  name: 'kaogong_lessons', version: 1,
+  global: lessonGlobal,
+  tables: { lessons: domainTable<string, Lesson>(lessonRecord) },
 })

@@ -1,0 +1,258 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "b92175c3b49b65fd6a3f17e6fa8dad566efdecb4",
+  "environment": "Owned 3089 DSH profile only; Better Sidebar 0.24.1 installed through official CLI. Historical business domains copied only for isolated read-only acceptance, then restored.",
+  "beforeFix": {
+    "workbenchSourceCommit": "56c595246059fd82609b6b2c13361abee4f8410e",
+    "kaogongSourceCommit": "7c332c2595fab730712d5f101cf31ff48fe04a43",
+    "compatible": {
+      "nativeAndCatalogEntryShareSameMountedApp": true,
+      "selectedPagePreserved": true,
+      "appWindowCount": 1,
+      "catalogCount": 1,
+      "nativeSessionTreeRetained": true
+    },
+    "disabled": {
+      "nativeKaogongEntryAvailable": true,
+      "appWindowCount": 1,
+      "catalogCount": 0,
+      "residualWorkbenchTabs": 1,
+      "existingTeacherAssociationReadable": true,
+      "nativeSessionTreeRetained": true
+    },
+    "afterBrowserReload": {
+      "residualWorkbenchTabs": 1,
+      "missingRendererFallbackVisible": true
+    },
+    "reenabled": {
+      "catalogReturned": true,
+      "noBusinessMutation": true
+    }
+  },
+  "historicalBusinessVerification": [
+    {
+      "stage": "compatible",
+      "domains": [
+        {
+          "domain": "kaogong_bank",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "questions",
+              "historicalCount": 3994,
+              "currentCount": 3994,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_knowledge",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "entries",
+              "historicalCount": 72,
+              "currentCount": 72,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_notebook",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "questions",
+              "historicalCount": 8,
+              "currentCount": 8,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_progress",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "days",
+              "historicalCount": 216,
+              "currentCount": 216,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        }
+      ],
+      "formalBusinessHashesUnchanged": true
+    },
+    {
+      "stage": "disabled",
+      "domains": [
+        {
+          "domain": "kaogong_bank",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "questions",
+              "historicalCount": 3994,
+              "currentCount": 3994,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_knowledge",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "entries",
+              "historicalCount": 72,
+              "currentCount": 72,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_notebook",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "questions",
+              "historicalCount": 8,
+              "currentCount": 8,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_progress",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "days",
+              "historicalCount": 216,
+              "currentCount": 216,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        }
+      ],
+      "formalBusinessHashesUnchanged": true
+    },
+    {
+      "stage": "restored",
+      "domains": [
+        {
+          "domain": "kaogong_bank",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "questions",
+              "historicalCount": 3994,
+              "currentCount": 3994,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_knowledge",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "entries",
+              "historicalCount": 72,
+              "currentCount": 72,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_notebook",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "questions",
+              "historicalCount": 8,
+              "currentCount": 8,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        },
+        {
+          "domain": "kaogong_progress",
+          "globalUnchanged": true,
+          "tables": [
+            {
+              "table": "days",
+              "historicalCount": 216,
+              "currentCount": 216,
+              "missing": 0,
+              "changed": 0
+            }
+          ]
+        }
+      ],
+      "formalBusinessHashesUnchanged": true
+    }
+  ],
+  "rollback": {
+    "sixOwnedBusinessDomainsRestored": true,
+    "formalBusinessHashesUnchanged": true,
+    "configurationRestored": true
+  },
+  "adapterCorrection": {
+    "description": "Record actual native tab IDs from public component props, including hidden/restored tabs; onOpen supplies a synthetic type ID and native tabs are not in bottomSplits.",
+    "regressionCommand": "DSH_SOURCE=<built official runtime> node --import tsx --test plugins/personal-workbench/tests/better-sidebar.test.ts",
+    "before": {
+      "passed": 0,
+      "failed": 1,
+      "error": "Unload closes the real native tab, not only the synthetic onOpen id"
+    },
+    "after": {
+      "passed": 1,
+      "failed": 0,
+      "unrelatedNativeTabPreserved": true
+    }
+  },
+  "installedCorrection": {
+    "archiveSha256": "70d6bd1ebd7236e04d8e98be12af2453d646d73fc59ccdb1493c54bf132d5c6b",
+    "officialCliInstall": true,
+    "allInstalledFilesVerified": true,
+    "actualBrowserHotDisablePassed": false,
+    "residualWorkbenchTabs": 1
+  },
+  "unresolved": {
+    "id": "better-sidebar-native-unload-residue",
+    "status": "open",
+    "symptom": "Native right Sidebar retains one unavailable Workbench catalog tab after disabling Better Sidebar from the native global plugin panel.",
+    "confirmedContractFacts": [
+      "Better Sidebar onOpen emits a synthetic tab ID, not the actual native tab ID.",
+      "Better Sidebar 0.24.1 NativeTabAdapter drops its record when its view unmounts.",
+      "closeTab routes to the native surface only when that surface retains the matching record; otherwise it falls back to the separate bottom store."
+    ],
+    "conclusion": "Capturing real IDs fixes a local adapter gap but does not establish actual provider-unload cleanup. The public Better Sidebar lifecycle seam still needs integration work; no native private controller or DOM workaround used."
+  },
+  "fullRegression": {
+    "tests": 320,
+    "passed": 320,
+    "failed": 0,
+    "skipped": 0
+  },
+  "modelCalls": 0,
+  "limits": [
+    "Read-only compatibility/data/navigation matrix only; no teacher message or model generation.",
+    "The actual hot-disable gate remains failed despite the focused ID regression passing.",
+    "No claim that the full original Better Sidebar teaching/streaming/permission/Stop/IME matrix is complete.",
+    "No private config, credentials, Session IDs, full questions, PDFs, source images or raw screenshots published."
+  ]
+}

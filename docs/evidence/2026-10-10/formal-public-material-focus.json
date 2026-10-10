@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-10",
+  "baseline": "cffb21db610468113bb8b8b6d63ea5fd812d4726",
+  "sourceFingerprints": {
+    "plugins/kaogong/src/knowledge-reader.tsx": "1320e288b8cdc68f58b8ff5d2eaee4e5350142366fea377c3ac2c51193e2efc1",
+    "plugins/kaogong/tests/views.test.mjs": "964d50675d60a428e285e8dea0eb16e1de95b76b70cd3c8d0b02006fdba501f5"
+  },
+  "browser": {
+    "url": "http://127.0.0.1:3080/",
+    "separateAcceptanceTab": true,
+    "before": {
+      "afterReturnFocus": "BODY",
+      "EscapeClosesStudy": false
+    },
+    "after": {
+      "afterReturnFocus": "INPUT 搜索知识库",
+      "focusInsideStudy": true,
+      "EscapeClosesStudy": true,
+      "focusReturnsTo": "打开学习窗口 button",
+      "reopenViewport": 480,
+      "bodyScrollWidth": 480,
+      "studyWidth": 424,
+      "contentWidth": 422,
+      "selectedRecordCleared": true
+    },
+    "modelMessagesSent": 0,
+    "studyRecordsWritten": 0,
+    "screenshot": {
+      "success": false,
+      "error": "Page.captureScreenshot timed out",
+      "newImageArtifact": false
+    }
+  },
+  "regression": {
+    "builtPublicWorkbenchPath": true,
+    "red": "public return must focus the retained search",
+    "green": true,
+    "checks": [
+      "search focus",
+      "selection cleared",
+      "Escape closes inner study",
+      "launcher focus restored",
+      "no practice start/submit"
+    ]
+  },
+  "tests": {
+    "localIntegrated": 289,
+    "passed": 289,
+    "failed": 0,
+    "remoteOnlyNotVerified": true
+  },
+  "threePluginBuilds": true,
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "6ca0c0455b74dd00da59e3fac1eb1e5035450d3b89391347ee55a5fa2200f485",
+      "6ade6644691999ff02f8534506abd32a7480fa8e635ab597bf59958b4d9994eb",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "review": {
+    "standards": "no actionable incremental issue",
+    "spec": "no actionable incremental issue"
+  },
+  "limits": [
+    "Completes this explicit return path only",
+    "Not proof of all errors, IME or role running close/Stop",
+    "No new formal screenshot",
+    "Whole scope remains incomplete"
+  ]
+}

@@ -1,77 +1,31 @@
-# 角色层：班主任 + 任课老师 / 辅导员
+# 考公持续角色与教学规则
 
-## 持续课堂规则
+当前角色由考公插件通过 DSH 官方 Agent 预设注册表接入工作台。工作台保存应用实例、角色及科目对应的原生会话关联，DSH 保存会话历史；考公插件保存课堂、练习、计划和资料。
 
-`skills/kaogong-teach/SKILL.md` 是教学流程的唯一详细规则源。老师和辅导员在教学前加载；班主任委派时传递完整规则及课堂上下文，不能只传一句角色名称。
+## 安装与角色来源
 
-流程：诊断 → 讲解与例题 → 随堂练习 → 反馈 → 课后任务 → 总结 → 待复习。提问后等待真实作答；同一教师持续负责一节课。
+按 [插件安装说明](../README.md) 安装构建后的考公和工作台插件，并在宿主配置中设置已有的绝对 `roleCwd`。角色注册需要工作台角色关联服务和 DSH 预设注册服务。缺少可用规则或 Skill 时，创建失败并显示原因，不回退为其他老师。
 
-当前用 `kaogong_knowledge_add` 将课堂保存为带 `kaogong-classroom` 标签的笔记，后续按返回ID更新。进入新对话用知识库搜索并读取原记录再继续。记录保留目标、当前阶段、资料引用、题目ID、真实作答证据和未完成任务。
+插件提供班主任、辅导员、六个科目任课老师，以及保留旧课堂关联的默认老师。人设来自本包 `roles/personas/`；详细教学规则来自 `roles/skills/kaogong-teach/SKILL.md`。路径按安装位置解析，不依赖开发仓库路径，也不需要复制或软链到宿主的全局 Skills 目录。
 
-这属于角色行为约定，不是插件后端强制状态机，也没有自动复习通知。面板入口仍需用户粘贴发送复制的提示。仅更新这些文件不会让运行中的代理自动加载新角色；需确认技能扫描目录及角色接线，并开始新对话。
+各预设使用官方 persona、Skill 文件提供方、Skill 工具和用户提问工具。教学 Skill 提供方为 `kaogong-packaged-teaching`，只扫描本包提供的目录。角色的人设不替代整个宿主运行上下文；角色接入不修改部署默认人设。
 
-这一层不写插件代码，用「人设（persona）+ 工具 + subagent 委派」把上面 18 个工具组织成可用的学习助手。
-按「先少后多」的决策：**1 个班主任（主 agent）+ 按需拉起的老师/辅导员（subagent）**，不常驻 12 个 agent。
+## 使用与发送
 
-## 文件
+在考公页面显式创建或打开相应角色。同一实例、同一科目的老师沿用关联会话；科目不同的老师分别关联。打开页面或注册预设不会创建教学任务或调用模型。
 
-```
-roles/
-  cordis.yml                  # 角色层接线（subagent + 班主任主 agent）
-  personas/
-    班主任.md                 # 班主任人设（协调 + 派活）
-    老师.md                   # 任课老师人设模板（{科目} 占位）
-    辅导员.md                 # 辅导员人设模板（{科目} 占位）
-  skills/
-    kaogong-teach/SKILL.md    # 各科讲授法 skill
-```
+课堂动作先准备目标角色和来源上下文。用户查看、编辑或移除资料后，显式发送到原生会话；仅准备任务或切换页面不会发送。Skill 预检可读只证明已安装内容可读取，不能当作实际模型回合已加载规则的证据。
 
-## 怎么接
+教学流程由实际 Skill 描述：诊断、讲解与例题、随堂练习、反馈、课后任务、总结和待复习。提问后等待真实作答，保留题目 ID、资料引用及未完成事项。练习成绩和课堂确认以真实记录为依据，不因讲解完成或打开页面自动打卡。
 
-也可以用脚本一键做前两步：`node scripts/install.mjs --dsh ../deepseek-harness --dry-run`。手动做法：把两段合并进你现有的 `cordis.yml`：
+## 旧配置和资料
 
-1. 存储栈 + kaogong 插件（`cordis.example.yml`）。
-2. 角色层（`roles/cordis.yml`）。
+`roles/cordis.yml` 保留为旧版配置记录，当前安装不加载或打包它。不要把其中旧 subagent 接线合并到现有宿主配置。现有默认老师预设 ID `personal-workbench.kaogong-teacher.v1` 继续保留，不把其旧会话默认为某个新科目。
 
-`roles/cordis.yml` 做了两件事：挂 `subagent`/`tool-subagent`（班主任能派活），并把主 agent 设为
-「班主任」（persona 内联在文件里，与 `roles/personas/班主任.md` 同内容）。
+保留原生会话历史、业务存储、旧资料及明确配置的图片和 MinerU 结果路径。换 Agent 会保留旧关联用于查看历史；会话不可访问时需由用户选择恢复或新建。旧配置文件保留不等于任意旧部署已完成自动迁移；实际部署仍需按 [保留步骤](../../../README.md#existing-manual-installation) 核对。
 
-## 工作流
+## 验证边界
 
-```
-你：「我今天学什么？」
-班主任：kaogong_plan_view → 报今日任务（基础期学某考点）
-你：「学图形推理吧」
-班主任：read roles/personas/老师.md → subagent(prompt = 老师人设 + 行测-判断推理 图形推理)
-老师子代理：kaogong_taxonomy + kaogong_knowledge_search 备课 → 讲考点 → kaogong_practice 随堂检测
-你：「做完题了」
-班主任/辅导员：kaogong_practice_submit 判分 → 讲错题 → 记入错题本
-你：「我最近问题在哪？」
-班主任：kaogong_analyze_errors + kaogong_summarize_weaknesses → 报薄弱点 + 建议
-```
+现有实际 DSH 预设注册测试验证了九个独立角色范围、人设、原生提问工具和 bundled 教学 Skill 的可读内容。离线发布验收核对安装包中的人设及教学 Skill 字节，并验证 Host 启动和持久恢复。
 
-老师/辅导员都是 subagent，人设模板放在 `roles/personas/`，班主任用 read 工具读出来、把 `{科目}` 替换后写进 subagent 的 prompt。
-
-## 各科讲授法 skill
-
-`roles/skills/kaogong-teach/SKILL.md` 是「各科怎么讲」的方法论。老师讲课时可通过 `skill` 工具加载它；
-把它所在的 `roles/skills` 目录加进 skill 提供方的扫描根即可（本仓库默认扫描 `<dshHome>/skills`，
-可把该目录软链/拷贝过去，或在组合里配置 `dsh-skill-filesystem` 的根目录）。
-
-## 验证清单（这层是配置，需要 boot 后确认）
-
-与前面插件层的纯函数/typecheck 不同，角色层必须在真实 DSH 运行时里验证。boot 后请依次确认：
-
-1. 班主任 agent 能 `kaogong_plan_set` 生成计划、`kaogong_plan_view` 看今日任务。
-2. 班主任能用 `subagent` 拉起老师子代理，子代理能调用 `kaogong_taxonomy`/`kaogong_knowledge_search`。
-3. 练习闭环：`kaogong_practice` → 用户作答 → `kaogong_practice_submit` 判分 → `kaogong_analyze_errors` 能看到新增错题。
-4. 数据持久化：重启后 `kaogong_plan_view`/`kaogong_list_questions` 仍能读到之前的数据（storage-json 落盘）。
-5. 讲授法 skill 能被 `skill` 工具加载。
-
-若第 1 步就失败，先查存储栈三件套（storage / storage-json / storage-domain）是否都在组合里且 backend 名一致。
-
-## 后续：更细的工具隔离（可选）
-
-当前所有角色共用全部 18 个工具，靠人设约定各司其职。若要严格隔离（班主任只见进度/计划，老师只见知识库/题库），
-可改用 DSH 的 preset：每个角色一个 preset 目录（内含 `agent.cordis.yml`），在其 scope 里注册该角色专用的工具与 persona，
-agent 通过 `dsh-agent-presets` 加入对应 preset。需要时我可以再搭这一版。
+这些检查没有真实模型请求，不能替代完整教学、提问、工具审批、停止及流式消息的运行验收。需要可调用模型后完成这些验收，才可宣布整体验收通过。

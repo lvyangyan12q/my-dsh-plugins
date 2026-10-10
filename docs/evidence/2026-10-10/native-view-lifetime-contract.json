@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-10",
+  "reviewedHead": "0f0d48968d0c87a88197da94d8f44f0feb321f8b",
+  "testedImplementationCommit": "0b74885c64b2edf813f1e2740ccb8e09ed52854d",
+  "requirement": "workbench:Implementation Decisions:14",
+  "sources": [
+    {
+      "path": "plugins/personal-workbench/src/teacher-window.ts",
+      "normalizedSha256": "1e53c489895f348b5ec78e8a0ce38a2580f8fa2baa9f4c1cb6520ec3e74d1460"
+    },
+    {
+      "path": "plugins/personal-workbench/src/role-client.ts",
+      "normalizedSha256": "ed85abc435cb92d18ecfdab05ce19130e5d05843bb25f2d1345302c0a1f25469"
+    },
+    {
+      "path": "plugins/personal-workbench/src/role-view.tsx",
+      "normalizedSha256": "bf900f3464808f24d2ad36c00f2dd3e59fdb3eb44899cc6f990759b277f9aa38"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/teacher-window.test.ts",
+      "normalizedSha256": "bfc22763a4fa292eef3e9ca3cf6960f4730fd87950f9442d7310c326e7212365"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/role-client.test.mjs",
+      "normalizedSha256": "946a0359f4042748bf62cf26cd3473b3794af968451f51213afe1d09287cadcc"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/role-client-cordis.test.mjs",
+      "normalizedSha256": "fb02a3829f1e3227808de76d105be5753c0d6b40645620aa78b0ba26aa3244c2"
+    }
+  ],
+  "nativeSources": [
+    {
+      "path": "packages/api/session-controller/src/client/contract/sessions.ts",
+      "normalizedSha256": "1b071e9f1d19b409cfe59284a22047205866d34515a8dc411d4d714d6a3f7b3a"
+    },
+    {
+      "path": "packages/api/session-controller/src/client/sessions/session.ts",
+      "normalizedSha256": "507260418c1d9666756fa43839bf15489d1114c0ea8da850f2be0869459538f5"
+    }
+  ],
+  "passingCases": [
+    "real Cordis session scope declares conversation dependency and retains exact command lease through send",
+    "closing the UI during send releases only its UI hold; command hold lasts through send settlement",
+    "close withdraws the provider before releasing its committed reference",
+    "close/reopen and a new owner read the same durable host association"
+  ],
+  "fullLogSha256": "9fc55cba1bb6785f9b1dceddd74a251d6b5ff1de9375e1d191491d9115e1ada3",
+  "observedContract": [
+    "TeacherWindow closes the render target before releasing committed references; close cancels its own pending association/history acquisition.",
+    "RoleClient native send uses an exact independent sessions.using command reference, holds the declared conversation scope through send settlement and then releases that command reference.",
+    "Role view status reads official per-session status facts; activation reopens the persisted role without ensure/replacement.",
+    "Official SessionReference contract defines independent Client ownership without Host Agent lifetime ownership. The inspected native Session.dispose source clears local inbox/history/stream state and does not call the explicit task-cancel method."
+  ],
+  "limits": [
+    "The command tests use fixture sends; the Cordis case tests the actual scope/dependency machinery with a waiting Conversation service, not a real provider turn.",
+    "The native sources above are inspected current runtime sources, not evidence that the Host ran a live provider task through close/reopen.",
+    "The existing installed-browser keyboard receipt verifies same draft/annotations across close/reopen but has no live model task.",
+    "Actual running-task close/reopen, status recovery and Stop/permission/question behavior remain unverified until an authorized usable model route exists.",
+    "This contract audit does not satisfy the entire original lifecycle or full release requirement."
+  ]
+}

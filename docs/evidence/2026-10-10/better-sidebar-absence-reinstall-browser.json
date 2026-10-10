@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "b5eb13efe9f0d59db646d8ac4b492b1a7809b7dc",
+  "installedArchiveSha256": "d1f93c913cca32d23b4cb94941aa2283154d6ce32c3b0216ea197fbf2314f1e7",
+  "environment": {
+    "ownedHostPort": 3089,
+    "betterSidebarVersion": "0.24.1",
+    "workbenchAllPackagedBytesVerified": true,
+    "betterSidebarOfficialCliLocalLinkReinstall": true
+  },
+  "method": "Official CLI removal and reinstall in owned isolated profile; actual Chrome DevTools public UI clicks, refresh and read-only DOM checks; SHA-256 comparison of the eight existing owned business-domain files",
+  "withoutAdapter": {
+    "dependencyAndProfileBundleAbsent": true,
+    "optionalCatalogAbsent": true,
+    "nativeStaleTabUsedUnavailableViewer": true,
+    "nativeStaleTabClosedUsingPublicButton": true,
+    "ordinarySidebarOpenedReadingDefault": true,
+    "readingStatistics": {
+      "unfiltered": {
+        "books": 3,
+        "minutes": 210,
+        "averageMinutes": 70
+      },
+      "scienceFilter": {
+        "books": 1,
+        "minutes": 60,
+        "averageMinutes": 60
+      }
+    },
+    "readingFilterAndSelectedDetailPreservedAcrossCloseReopen": true,
+    "ordinarySidebarOpenedKaogongDefault": true,
+    "kaogongPracticePageRestoredAfterBrowserRefresh": true,
+    "oneVisibleWorkspace": true,
+    "nativeMenusAndSessionTreePreserved": true
+  },
+  "afterReinstall": {
+    "catalogRestored": true,
+    "kaogongDefaultOpenedFromCatalog": true,
+    "oneWorkbenchTab": true,
+    "oneVisibleWorkspace": true
+  },
+  "dataPreservation": {
+    "existingDomainFileCount": 8,
+    "allBytesUnchangedAfterRemoval": true,
+    "allBytesUnchangedAfterNoAdapterBrowserFlow": true,
+    "allBytesUnchangedAfterReinstallAndBrowserOpen": true,
+    "domains": [
+      "my_dsh_capabilities.json",
+      "personal_workbench_annotations.json",
+      "personal_workbench_apps.json",
+      "personal_workbench_page_templates.json",
+      "personal_workbench_recipe_instances.json",
+      "personal_workbench_recipes.json",
+      "personal_workbench_role_bindings.json",
+      "reading_statistics.json"
+    ]
+  },
+  "limits": [
+    "No real-model teaching, streaming, authorization, Stop or complete release matrix is claimed.",
+    "Kaogong business data in this isolated profile is empty; this is not a real-data migration or teaching proof.",
+    "The persisted native tab retained an unavailable viewer after a cold uninstall and was closed through its public button; no automatic stale native-tab cleanup is claimed.",
+    "Browser state was reset by an external interruption before the final reinstalled-entry check; that check used a fresh isolated browser context.",
+    "Better Sidebar was reinstalled by official CLI local link to the existing 0.24.1 package, not fetched from a registry.",
+    "Formal 3080 was not restarted or modified; raw records, drafts, screenshots, credentials and Session IDs are omitted."
+  ]
+}

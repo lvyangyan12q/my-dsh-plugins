@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "2d06641c802475b807130f5f100e0b6ebbfbb7c3",
+  "reviewedHead": "2d06641c802475b807130f5f100e0b6ebbfbb7c3",
+  "method": "Executed scripts/check-platform-release.mjs from a clean git archive, after complete three-plugin build, official Client factory resolution and 328 passing tests; repeated module resolution on exact installed artifacts",
+  "verdict": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedClientFactories": true,
+    "standaloneClientFactory": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "daf6f724d0ffcbcdbb1b7d2e55cc858fe678ce4d3b34c45260ebac153ff04bfb",
+      "ce3b1524a705d16a66d6f62993e3956fd0022338d98e476f4e7c018568c84f20",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "limits": [
+    "Native DSH runtime and third-party dependency anchors are local built public package links; all three product packages are installed from inspected archives.",
+    "Synthetic Reading fixtures prove data lifecycle and recovery; this is not a historical user deployment migration replay.",
+    "Model calls are deliberately blocked; real teaching, permission, Stop, streaming and AI application generation remain unverified.",
+    "Public installed-type consumers and HTML asset access checks do not certify every responsive layout, physical IME or teaching compatibility combination.",
+    "User-authorized management modifications are included; private screenshots and unrelated local audit edits remain outside remote delivery."
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-10",
+  "testedImplementation": "d0103bec87eae2930579ab64877fb36be0ef6d61",
+  "method": "Read precise original stories and public behavioral assertions; match latest clean-source passed test names and source hashes; inspect existing actual native browser environment and restoration checks.",
+  "sources": [
+    {
+      "path": "plugins/personal-workbench/src/workbench-view.tsx",
+      "normalizedSha256": "cae011fda8ea87e014942036e94b288071256f7d454d457ff7fbe072c3cd8967"
+    },
+    {
+      "path": "plugins/personal-workbench/src/workbench.ts",
+      "normalizedSha256": "d7d841f698c5600418f549d129fcf998f795afb1a09fecd30f1fbaf15a739b46"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/workbench-ui.test.mjs",
+      "normalizedSha256": "1e8482818ffc79cc403d591a73cf03d8941156ba2fdaef2d3bcf8e4bfbd7faad"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/workbench.test.ts",
+      "normalizedSha256": "f17c8e506ee98af6fc4f0f55403f7bdcd76befd3a227445289bd7d5c80521ed9"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+      "normalizedSha256": "77ebf074ecc948adf981eadf7e83f40ba3ca4049430746ff4e2c4fa4a4f040b0"
+    }
+  ],
+  "passedTests": [
+    "built plugin and optional consumer clean up and reactivate through real Cordis and official SlotRegistry",
+    "Agent and Skills open independent root panels and project drafts remain mounted",
+    "same instance focus, minimize/maximize/close/reopen and refresh preserve page and geometry preferences",
+    "minimize and explicit restore retain the same application instance, page and draft"
+  ],
+  "testLogSha256": "ce138b7596a0f9a4bfac07600660f26c64536e5e841399d258bb93ed9896e62d",
+  "priorBrowserEvidence": [
+    {
+      "path": "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+      "sourceCommit": "f2ee7ba30cc78ff2a95fe9e2cfe292acc7df797e",
+      "installedBytesEqual": true,
+      "noBetterSidebar": true
+    },
+    {
+      "path": "docs/evidence/2026-10-10/application-minimize-browser.json",
+      "sourceCommit": "849d095ba62b5250a1e81e56ff25456c006d012c",
+      "checks": {
+        "beforeReview": true,
+        "minimizedMountedHidden": true,
+        "explicitRestoreAvailable": true,
+        "sameDraft": true,
+        "restoredPage": true,
+        "restoredFocus": true,
+        "reloadMinimized": true,
+        "reloadRestoredPage": true,
+        "reloadSameDraftText": true,
+        "sameSession": true
+      }
+    }
+  ],
+  "decisions": [
+    {
+      "id": "workbench:User Stories:2",
+      "status": "satisfied for ordinary native sidebar use without Better Sidebar",
+      "proof": "Actual no-Better-Sidebar native browser practice environment opens and uses the app. Current built plugin installs and opens its app via official SlotRegistry without any Better Sidebar service, retains the native footer and reactivates cleanly."
+    },
+    {
+      "id": "workbench:User Stories:5",
+      "status": "satisfied for distinct applications, Agent and Skills navigation categories",
+      "proof": "Current launcher exposes the application hierarchy separately from Agent and Skills. Built Client interaction opens independently labelled management panels, retains the project draft and returns to the same app. This does not certify every ownership or role-assignment policy."
+    },
+    {
+      "id": "workbench:User Stories:9",
+      "status": "satisfied for reopening and focusing one existing application instance",
+      "proof": "Repeated public openApp retains exactly one window and increases its focus revision. Built UI reopen/restore preserves one mounted application and no Session acquisition. Existing real native minimize/reopen checks preserve the same Session and draft after restoration and reload."
+    }
+  ],
+  "limits": [
+    "No new browser run or test run is claimed by this audit.",
+    "Prior browser records retain their original commits; current source behavior is separately backed by the 304-test clean-source run.",
+    "Supported Better Sidebar Tab integration has contract coverage but its full native teaching environment matrix is still unverified.",
+    "This audit does not certify ownership details, teaching, permissions, questions, Stop, screenshots or physical IME."
+  ]
+}

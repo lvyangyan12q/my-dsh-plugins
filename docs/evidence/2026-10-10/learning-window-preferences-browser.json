@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "7c332c2595fab730712d5f101cf31ff48fe04a43",
+  "archiveSha256": "f8642061f85ed52a6f8d9d62a317fac7ba780d943f0976ffc7c09600679c9b86",
+  "officialCliInstall": true,
+  "installedBytesVerified": true,
+  "host": "owned isolated DSH 3089",
+  "reproduction": {
+    "priorInstalledCode": "0d80eb9",
+    "beforeRefresh": {
+      "studyOpen": true,
+      "page": "errors",
+      "subject": "行测-判断推理"
+    },
+    "afterExplicitReopen": {
+      "studyOpen": false
+    },
+    "passed": false
+  },
+  "method": "Actual native application selection, narrow study page/subject/pane changes, browser reload and explicit application reopen; read-only public native role binding compared by SHA256. Rendered screenshot inspected locally without uploading it.",
+  "browser": {
+    "before": {
+      "status": 200,
+      "phase": "ready",
+      "existingSessionFingerprint": "997b58e666a59309a0857de4c92f6c2d695418af00c0402455ec9028609cc6f0",
+      "originalPreferenceAbsent": true,
+      "viewport": {
+        "width": 600,
+        "height": 768
+      }
+    },
+    "selection": {
+      "studyOpen": true,
+      "page": "错题",
+      "pane": "conversation",
+      "subject": "行测-判断推理",
+      "saved": {
+        "version": 1,
+        "studyOpen": true,
+        "page": "errors",
+        "pane": "conversation",
+        "role": {
+          "roleId": "teacher",
+          "subject": "行测-判断推理"
+        }
+      },
+      "nativeTabs": [
+        "对话",
+        "轨迹"
+      ],
+      "nativeComposerCount": 1
+    },
+    "after": {
+      "studyOpen": true,
+      "page": "错题",
+      "pane": "conversation",
+      "subject": "行测-判断推理",
+      "status": 200,
+      "phase": "ready",
+      "sessionFingerprint": "997b58e666a59309a0857de4c92f6c2d695418af00c0402455ec9028609cc6f0",
+      "nativeTabs": [
+        "对话",
+        "轨迹"
+      ],
+      "nativeComposerCount": 1,
+      "windowCount": 1
+    },
+    "desktop": {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "studyOpen": true,
+      "subject": "行测-判断推理",
+      "contentVisible": true,
+      "roleVisible": true,
+      "pane": "conversation",
+      "page": "错题",
+      "windowCount": 1
+    },
+    "closed": {
+      "closedAfterReload": true,
+      "savedPage": "errors",
+      "savedPane": "conversation",
+      "savedSubject": "行测-判断推理",
+      "normalStatisticsVisible": true,
+      "originalAbsentPreferenceRestored": true
+    }
+  },
+  "regression": {
+    "beforeFix": "Built Client UI test with fresh KaogongViewState cannot find the independent study dialog",
+    "afterFix": "Fresh owner restores study dialog, errors page, reasoning subject, conversation pane and selected role view; malformed or foreign snapshots rejected and disabled/full storage navigation retained",
+    "totalTests": 318,
+    "passed": 318,
+    "failed": 0,
+    "skipped": 0
+  },
+  "clientBootRegression": {
+    "observed": "Intermediate preference implementation imported unavailable Client zod external and prevented plugin activation",
+    "fixed": "Dependency-free strict validation; actual official Client boot recovered before final acceptance"
+  },
+  "storageBoundary": {
+    "key": "kaogong/default/learning-view/v1",
+    "version": 1,
+    "presentationOnly": true,
+    "sessionIdsStored": false,
+    "conversationTextStored": false,
+    "businessEvidenceStored": false
+  },
+  "modelCalls": 0,
+  "limits": [
+    "Outer workbench must be explicitly reopened after browser reload; no automatic outer window opening claimed.",
+    "Only the selected reasoning teacher and these page/pane transitions were exercised; full role, running provider, permission, Stop and physical IME matrices remain open.",
+    "This run does not certify restoration of completed teaching messages or unsaved attachment drafts.",
+    "Original user data, raw screenshots and native Session identifiers are excluded from remote delivery.",
+    "Formal 3080 linked build contains these bytes; its currently loaded browser version has not been certified or restarted."
+  ]
+}

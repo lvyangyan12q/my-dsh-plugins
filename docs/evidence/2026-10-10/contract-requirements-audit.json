@@ -1,0 +1,202 @@
+{
+  "auditedHead": "815fa5fed9cd8a7ab1554e659e380f1d8a4d9349",
+  "testedImplementation": "fa100cb18ec6eab3074d2824f751087edc2ed88e",
+  "testLogSha256": "311600c0765480701088d4fd135e3df05b7ad49dc0921a97bbacab5917794c04",
+  "method": "Read actual contracts and assertions, match exact passed remote-only tests, verify current text equals clean tested commit after CRLF normalization with both raw hashes retained, check canonical requirement text hash",
+  "groups": {
+    "registry": {
+      "files": [
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs"
+      ],
+      "tests": [
+        "registration uniqueness, observable publication and idempotent cleanup survive replacement",
+        "built plugin and optional consumer clean up and reactivate through real Cordis and official SlotRegistry"
+      ],
+      "proof": "Registration returns idempotent cleanup, rejects duplicate identities and publishes stable metadata. Actual Cordis/SlotRegistry disposal removes application, overlay and sidebar entries; reload has one entry and no Session acquisition.",
+      "hashes": {
+        "plugins/personal-workbench/src/workbench-api.ts": {
+          "currentBytes": "8140a6256cefffbb140b8cddec17a163eb48560f31377112373db9637c96a1a1",
+          "testedArchiveBytes": "8140a6256cefffbb140b8cddec17a163eb48560f31377112373db9637c96a1a1",
+          "normalizedText": "03dbbadc1321d4ab060adaa0314cdcf91895b3f6b24b3a3ae6ca91d8a29caa0a"
+        },
+        "plugins/personal-workbench/src/workbench.ts": {
+          "currentBytes": "c74b194bd904428522c113a1a4b59c23d3829dc7c5ae34cb0fe877ca227635b5",
+          "testedArchiveBytes": "9a0fb9206491a6f532c9e2a0d2726b57123138b514f122ec088e9bc8a706067f",
+          "normalizedText": "d7d841f698c5600418f549d129fcf998f795afb1a09fecd30f1fbaf15a739b46"
+        },
+        "plugins/personal-workbench/tests/workbench.test.ts": {
+          "currentBytes": "10982a898c53c7373049f5f54278fceadef40faf5fd330281924c37182faaf29",
+          "testedArchiveBytes": "dae5c64e7ea8497ab1d8db122497cc8edb2083774ea1d1b5720b3ae0ce55f126",
+          "normalizedText": "f17c8e506ee98af6fc4f0f55403f7bdcd76befd3a227445289bd7d5c80521ed9"
+        },
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs": {
+          "currentBytes": "d9756413e8cf00fa7cfa95b547cd709c7e37f8476a647c7b4892960310ad79f3",
+          "testedArchiveBytes": "d9756413e8cf00fa7cfa95b547cd709c7e37f8476a647c7b4892960310ad79f3",
+          "normalizedText": "b3df1f3058e3d27ea90701f399f4add3376e493859370d179e4fa531742c6611"
+        }
+      }
+    },
+    "sidebar": {
+      "files": [
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts"
+      ],
+      "tests": [
+        "built optional adapter shares the owner and cleans scopes across absent, unsupported, unload and reload with real Cordis"
+      ],
+      "proof": "Built optional adapter uses the same Workbench owner; repeated opening preserves one window, page and geometry. Disposal balances descriptors/listeners and ignores stale callbacks. Unsupported version/features show sidebarUnsupported while primary workspace still opens.",
+      "hashes": {
+        "plugins/personal-workbench/tests/better-sidebar.test.ts": {
+          "currentBytes": "e00c4749b33249dda2ef3c0dcb9828a530a31bd18c3e01cb69fe5812c8044229",
+          "testedArchiveBytes": "e9ec9136a3dee5456003ca5041d0b105d3c487934771a155dfcbf17f783b49eb",
+          "normalizedText": "e00c4749b33249dda2ef3c0dcb9828a530a31bd18c3e01cb69fe5812c8044229"
+        },
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts": {
+          "currentBytes": "b97db450d63f3c5fb42e06c8b61ddf370245bb627f793df0cc674872ecae3a7e",
+          "testedArchiveBytes": "b97db450d63f3c5fb42e06c8b61ddf370245bb627f793df0cc674872ecae3a7e",
+          "normalizedText": "730d5ebe9ad5247ae4862a60dec779d6e585de773823dcaeab7e53ad1d689b95"
+        }
+      }
+    },
+    "recipe": {
+      "files": [
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs"
+      ],
+      "tests": [
+        "durable drafts, isolated preview, CAS activation and invalid replacement preserve running version",
+        "only owned installed data sources activate and withdrawing a plugin preserves running recipe",
+        "Host route rejects unauthenticated, oversized, unsupported schema and embedded data/code"
+      ],
+      "proof": "Actual DomainFacility/JSON Host rejects code/data in scalar recipes. Save/preview do not publish; activation uses CAS; invalid module, role or connection cannot replace running version. Installed archive receipt separately proves authenticated lifecycle and cold restart.",
+      "hashes": {
+        "plugins/personal-workbench/src/recipe-api.ts": {
+          "currentBytes": "588fb44254bdea7d23d25477c612e948c40798357d519ba85ce976a65c64b272",
+          "testedArchiveBytes": "ba2bfd3eee1181dd32dba145d73ee0f932317276953c3fed83497f2d2be0059e",
+          "normalizedText": "04896106c60740ae6b4696d5e04b88d139c41471f702761b0f1850cad0d6812f"
+        },
+        "plugins/personal-workbench/tests/recipe-host.test.mjs": {
+          "currentBytes": "1cb84252fbe9a12c603f90fd8e296a143b7cfeeca66ffee9e34bcee2d204a447",
+          "testedArchiveBytes": "413487a87b52388a0e48bbf8aaab59536b83c26bd03e4e542212766c71719305",
+          "normalizedText": "4211f08b5244ee75df3121cc2a8997791426b2e5e6e517e1a9aff053c88b8fef"
+        }
+      }
+    },
+    "availability": {
+      "files": [
+        "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs",
+        "plugins/personal-workbench/tests/app-lifecycle-client.test.ts",
+        "plugins/personal-workbench/tests/workbench-ui.test.mjs"
+      ],
+      "tests": [
+        "real Host persists availability, rejects stale writes, and restore never touches app data or Sessions",
+        "before Host readiness opens are gated and disabled apps remain gated after refresh",
+        "application availability disables entry without deleting mounted draft or role owner"
+      ],
+      "proof": "Actual Host stores only enable state and revisions; Client gates opens before readiness and while disabled. Mounted draft/role owner remains. Archive lifecycle and Reading reinstall preserve exact own data and running version.",
+      "hashes": {
+        "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs": {
+          "currentBytes": "95de89f502021d85a5cce3d036c3184e33f1d6da71c7c328aba450ad312ec9e8",
+          "testedArchiveBytes": "95de89f502021d85a5cce3d036c3184e33f1d6da71c7c328aba450ad312ec9e8",
+          "normalizedText": "7a229cc7789a6c497e1e51e07dfc1154734017794d71fd6c3578f8667ab540f8"
+        },
+        "plugins/personal-workbench/tests/app-lifecycle-client.test.ts": {
+          "currentBytes": "22d5184784ce9676b08f0c34826ac451e494b6a5fb370558758575288f231edf",
+          "testedArchiveBytes": "22d5184784ce9676b08f0c34826ac451e494b6a5fb370558758575288f231edf",
+          "normalizedText": "e7b16b08f32f2db7f617e4eee52acc276db7a9df9ebe7e4bb45f324583340080"
+        },
+        "plugins/personal-workbench/tests/workbench-ui.test.mjs": {
+          "currentBytes": "2ecdf473a5f9f868e41f8c91164b7f0d0b102a92c1c908d4ea77eb52ee258abe",
+          "testedArchiveBytes": "c23213bfb83ecf77075599432a46900adebc349880a1b35eec17276c4952b290",
+          "normalizedText": "2ecdf473a5f9f868e41f8c91164b7f0d0b102a92c1c908d4ea77eb52ee258abe"
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "workbench:User Stories:4",
+      "group": "sidebar",
+      "status": "satisfied at shared catalog/state contract; full teaching workflow in all sidebar environments remains a separate gate"
+    },
+    {
+      "id": "workbench:User Stories:33",
+      "group": "registry",
+      "status": "satisfied: public declaration and supported slot registration, exercised by optional consumer and installed Kaogong/Reading"
+    },
+    {
+      "id": "workbench:User Stories:34",
+      "group": "registry",
+      "status": "satisfied: built-plugin dispose/reactivate through actual Cordis/SlotRegistry removes old registration and avoids duplicate entries"
+    },
+    {
+      "id": "workbench:User Stories:35",
+      "group": "sidebar",
+      "status": "satisfied for optional Better Sidebar incompatibility: explicit unsupported reason and working primary entry; no broad version support claim"
+    },
+    {
+      "id": "workbench:Implementation Decisions:4",
+      "group": "registry",
+      "status": "satisfied: stable registration fields, duplicate rejection, cleanup and zero Session acquisition"
+    },
+    {
+      "id": "workbench:Implementation Decisions:5",
+      "group": "registry",
+      "status": "satisfied: persisted state contains stable preferences, not installed definitions or React content"
+    },
+    {
+      "id": "workbench:Implementation Decisions:8",
+      "group": "sidebar",
+      "status": "satisfied: absent provider has no registration; unsupported provider keeps primary entry; real Cordis disposal tested"
+    },
+    {
+      "id": "workbench:Implementation Decisions:9",
+      "group": "sidebar",
+      "status": "satisfied: catalog delegates to the same owner and never borrows Sidebar Session state"
+    },
+    {
+      "id": "platform:User Stories:9",
+      "group": "recipe",
+      "status": "satisfied: explicit activation is the only publication step; generated/saved/previewed drafts retain running version"
+    },
+    {
+      "id": "platform:User Stories:12",
+      "group": "availability",
+      "status": "satisfied: disabled and readiness-pending applications cannot open, including after preference reload"
+    },
+    {
+      "id": "platform:User Stories:28",
+      "group": "recipe",
+      "status": "partial: explicit Host module/role/connection failures preserve old running version; capability-specific rendered recovery remains separately indexed"
+    },
+    {
+      "id": "platform:Implementation Decisions:3",
+      "group": "recipe",
+      "status": "satisfied for scalar recipe contract: stable declared identities and no executable/business data payload; credential handling audit remains separate"
+    },
+    {
+      "id": "platform:Implementation Decisions:6",
+      "group": "recipe",
+      "status": "satisfied for first-release owned-data connection contract; real external cross-app authorization remains out of scope"
+    },
+    {
+      "id": "platform:Implementation Decisions:11",
+      "group": "recipe",
+      "status": "satisfied: distinct draft/preview/running state, validated references, CAS, failure retains old running version"
+    },
+    {
+      "id": "platform:Implementation Decisions:12",
+      "group": "availability",
+      "status": "satisfied: disabling changes availability only; exact Reading data and running recipe survive restore and reinstall"
+    }
+  ],
+  "limits": [
+    "These contract-level requirements do not certify the broader native UI, model, physical IME or three-environment teaching gates",
+    "Actual archived install uses existing public development dependency anchors",
+    "No new code changes or test suite rerun; tests are the observed 288/288 exact remote implementation run"
+  ],
+  "userFilesPreserved": true
+}

@@ -1,0 +1,157 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "44b23deed59022195a7315b8dcd3f631bcefd99d",
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual native draft entry, module role settings Agent selection, save/preview/activate; reverse via same UI; read-only DOM and public role/catalog API observations",
+  "observations": {
+    "before": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.agent-change-acceptance",
+      "runningVersion": 2,
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。"
+      ],
+      "alerts": []
+    },
+    "saved": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.agent-change-acceptance",
+      "runningVersion": 2,
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。"
+      ],
+      "alerts": []
+    },
+    "activated": {
+      "status": 409,
+      "body": {
+        "error": "Recorded role preset unavailable",
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.dependency-lifecycle-acceptance",
+      "runningVersion": 3,
+      "drafts": [],
+      "alerts": [
+        "当前角色已更换 Agent，原会话仍保留。请在“更多”中查看历史，或明确新建角色会话后继续。"
+      ]
+    },
+    "restored": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.agent-change-acceptance",
+      "runningVersion": 4,
+      "drafts": [
+        "Agent 切换保护验收：保留这段未发送草稿。"
+      ],
+      "alerts": []
+    }
+  },
+  "installedArchiveSha256": "fdb95cec47a947658bcc7b77a4753078d55ca56297bd6110cfd831c50aa70449",
+  "installedBytesEqual": true,
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "cleanChecks": {
+    "testsPassed": 295,
+    "testsLogSha256": "cf29bdd75227457c016ffd32c1ff677eadcfed7ee842a48aba2c0c9427689562",
+    "releaseVerdictSha256": "ea58e905f1a0a59c79b4ba5f7b932f7a800f238605169db7f5d113a60d105f3e",
+    "releaseVerdict": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "fdb95cec47a947658bcc7b77a4753078d55ca56297bd6110cfd831c50aa70449",
+        "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    }
+  },
+  "limits": [
+    "No model messages sent; full teaching/permission/Stop/IME gates remain open",
+    "Old zero-turn history native workspace chooser limitation remains separately recorded",
+    "This mismatch guard compares running role preset identity; unrelated permission/model/Skill changes need their own acceptance"
+  ]
+}

@@ -1,0 +1,356 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "b7ba8f76dc0be479480aba3802fd9f129daa8356",
+  "bug": "Refresh application status refreshed lifecycle only; changed running recipe and Agent/Skill dependencies remained stale",
+  "fix": "Refresh lifecycle and recipe dependency catalogs together, preserve existing registration and view, report rejection using existing error UI",
+  "regression": {
+    "initialFailure": "true !== false: refresh must update actual recipe dependency projection",
+    "targetedPassed": 7,
+    "scope": "same running version availability false/true and preserved existing draft input DOM/content/mounts"
+  },
+  "cleanSource": {
+    "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791577064169",
+    "threeBuilds": true,
+    "tests": 293,
+    "passed": 293,
+    "failed": 0,
+    "skipped": 0,
+    "testRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791577064169/.scratch/platform-tests-1791577107072",
+    "logSha256": "c9222fa20777bc1211c051b244cca6153d7e8afbbc71ebcdef57b72333260b64",
+    "releaseRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791577064169/.scratch/platform-release-1791577118188",
+    "releaseVerdictSha256": "6c551d34b3d39dcb0eff4c27ff68e844489c7d748799f2afec2788b5f7c2c7e0",
+    "release": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "694f2c63b055916fce8b9efb5d08958d0601fe8270146e0c64e0c067dcb6864d",
+        "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    }
+  },
+  "installedBrowser": {
+    "profileRoot": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854",
+    "url": "http://127.0.0.1:3089/",
+    "sourceArchiveSha256": "694f2c63b055916fce8b9efb5d08958d0601fe8270146e0c64e0c067dcb6864d",
+    "installedBytesEqual": true,
+    "phases": {
+      "seed": {
+        "mode": "seed",
+        "runningVersion": 3,
+        "revision": 10,
+        "role": {
+          "id": "lifecycle-role",
+          "name": "Lifecycle acceptance",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "skillNames": [
+            "dependency-lifecycle-acceptance-skill"
+          ]
+        },
+        "dependencies": [
+          {
+            "id": "filter",
+            "available": true
+          },
+          {
+            "id": "stats",
+            "available": true
+          },
+          {
+            "id": "list",
+            "available": true
+          },
+          {
+            "id": "detail",
+            "available": true
+          },
+          {
+            "id": "connection:reading-data",
+            "available": true
+          },
+          {
+            "id": "agent:lifecycle-role",
+            "available": true
+          },
+          {
+            "id": "skill:lifecycle-role:dependency-lifecycle-acceptance-skill",
+            "available": true
+          }
+        ],
+        "recordIds": [
+          "walden",
+          "origin",
+          "pride"
+        ],
+        "records": 3,
+        "totalMinutes": 210
+      },
+      "agent-off": {
+        "mode": "agent-off",
+        "runningVersion": 3,
+        "revision": 10,
+        "role": {
+          "id": "lifecycle-role",
+          "name": "Lifecycle acceptance",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "skillNames": [
+            "dependency-lifecycle-acceptance-skill"
+          ]
+        },
+        "dependencies": [
+          {
+            "id": "filter",
+            "available": true
+          },
+          {
+            "id": "stats",
+            "available": true
+          },
+          {
+            "id": "list",
+            "available": true
+          },
+          {
+            "id": "detail",
+            "available": true
+          },
+          {
+            "id": "connection:reading-data",
+            "available": true
+          },
+          {
+            "id": "agent:lifecycle-role",
+            "available": false,
+            "reason": "Unavailable Agent: my-dsh.dependency-lifecycle-acceptance"
+          },
+          {
+            "id": "skill:lifecycle-role:dependency-lifecycle-acceptance-skill",
+            "available": false,
+            "reason": "Unavailable Skill: dependency-lifecycle-acceptance-skill"
+          }
+        ],
+        "recordIds": [
+          "walden",
+          "origin",
+          "pride"
+        ],
+        "records": 3,
+        "totalMinutes": 210
+      },
+      "agent-on": {
+        "mode": "agent-on",
+        "runningVersion": 3,
+        "revision": 10,
+        "role": {
+          "id": "lifecycle-role",
+          "name": "Lifecycle acceptance",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "skillNames": [
+            "dependency-lifecycle-acceptance-skill"
+          ]
+        },
+        "dependencies": [
+          {
+            "id": "filter",
+            "available": true
+          },
+          {
+            "id": "stats",
+            "available": true
+          },
+          {
+            "id": "list",
+            "available": true
+          },
+          {
+            "id": "detail",
+            "available": true
+          },
+          {
+            "id": "connection:reading-data",
+            "available": true
+          },
+          {
+            "id": "agent:lifecycle-role",
+            "available": true
+          },
+          {
+            "id": "skill:lifecycle-role:dependency-lifecycle-acceptance-skill",
+            "available": true
+          }
+        ],
+        "recordIds": [
+          "walden",
+          "origin",
+          "pride"
+        ],
+        "records": 3,
+        "totalMinutes": 210
+      },
+      "skill-off": {
+        "mode": "skill-off",
+        "runningVersion": 3,
+        "revision": 10,
+        "role": {
+          "id": "lifecycle-role",
+          "name": "Lifecycle acceptance",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "skillNames": [
+            "dependency-lifecycle-acceptance-skill"
+          ]
+        },
+        "dependencies": [
+          {
+            "id": "filter",
+            "available": true
+          },
+          {
+            "id": "stats",
+            "available": true
+          },
+          {
+            "id": "list",
+            "available": true
+          },
+          {
+            "id": "detail",
+            "available": true
+          },
+          {
+            "id": "connection:reading-data",
+            "available": true
+          },
+          {
+            "id": "agent:lifecycle-role",
+            "available": true
+          },
+          {
+            "id": "skill:lifecycle-role:dependency-lifecycle-acceptance-skill",
+            "available": false,
+            "reason": "Unavailable Skill: dependency-lifecycle-acceptance-skill"
+          }
+        ],
+        "recordIds": [
+          "walden",
+          "origin",
+          "pride"
+        ],
+        "records": 3,
+        "totalMinutes": 210
+      },
+      "skill-on": {
+        "mode": "skill-on",
+        "runningVersion": 3,
+        "revision": 10,
+        "role": {
+          "id": "lifecycle-role",
+          "name": "Lifecycle acceptance",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "skillNames": [
+            "dependency-lifecycle-acceptance-skill"
+          ]
+        },
+        "dependencies": [
+          {
+            "id": "filter",
+            "available": true
+          },
+          {
+            "id": "stats",
+            "available": true
+          },
+          {
+            "id": "list",
+            "available": true
+          },
+          {
+            "id": "detail",
+            "available": true
+          },
+          {
+            "id": "connection:reading-data",
+            "available": true
+          },
+          {
+            "id": "agent:lifecycle-role",
+            "available": true
+          },
+          {
+            "id": "skill:lifecycle-role:dependency-lifecycle-acceptance-skill",
+            "available": true
+          }
+        ],
+        "recordIds": [
+          "walden",
+          "origin",
+          "pride"
+        ],
+        "records": 3,
+        "totalMinutes": 210
+      }
+    },
+    "browser": {
+      "agentOff": {
+        "details": [
+          "应用配置应用标识: reading-statistics页面: 阅读 / Reading角色: Lifecycle acceptance依赖: filter, stats, list, detail, connection:reading-data, agent:lifecycle-role — Unavailable Agent: my-dsh.dependency-lifecycle-acceptance, skill:lifecycle-role:dependency-lifecycle-acceptance-skill — Unavailable Skill: dependency-lifecycle-acceptance-skill"
+        ]
+      },
+      "agentOn": {
+        "details": [
+          "应用配置应用标识: reading-statistics页面: 阅读 / Reading角色: Lifecycle acceptance依赖: filter, stats, list, detail, connection:reading-data, agent:lifecycle-role, skill:lifecycle-role:dependency-lifecycle-acceptance-skill"
+        ]
+      },
+      "opened": {
+        "opened": true,
+        "version": "3",
+        "records": [
+          "Walden / 瓦尔登湖",
+          "On the Origin of Species / 物种起源",
+          "Pride and Prejudice / 傲慢与偏见"
+        ]
+      },
+      "skillOff": {
+        "details": [
+          "应用配置应用标识: reading-statistics页面: 阅读 / Reading角色: Lifecycle acceptance依赖: filter, stats, list, detail, connection:reading-data, agent:lifecycle-role, skill:lifecycle-role:dependency-lifecycle-acceptance-skill — Unavailable Skill: dependency-lifecycle-acceptance-skill"
+        ],
+        "retained": true,
+        "version": "3"
+      },
+      "skillOn": {
+        "details": [
+          "应用配置应用标识: reading-statistics页面: 阅读 / Reading角色: Lifecycle acceptance依赖: filter, stats, list, detail, connection:reading-data, agent:lifecycle-role, skill:lifecycle-role:dependency-lifecycle-acceptance-skill"
+        ],
+        "retained": true,
+        "version": "3"
+      }
+    },
+    "mutationMethod": "Authenticated public management and recipe APIs against owned synthetic profile; browser click Refresh application status for actual projection",
+    "modelCalls": 0,
+    "formal3080DataChanges": 0
+  },
+  "reviews": {
+    "standards": "No new actionable standards findings",
+    "spec": "No new actionable specification findings"
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "limits": [
+    "No model-backed teaching/question/permission/Stop proof",
+    "No native Session owner created for the fixture role; only capability dependency/view retention covered",
+    "Complete sidebar teaching matrix, physical IME and broader visual acceptance remain open",
+    "No new screenshots"
+  ]
+}

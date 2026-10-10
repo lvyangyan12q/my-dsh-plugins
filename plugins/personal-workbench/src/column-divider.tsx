@@ -1,0 +1,7 @@
+import {useRef} from 'react'
+/** The divider edits a bounded ratio; keyboard control remains available on narrow screens. */
+export function ColumnDivider({value,onChange,label}:{value:number;onChange:(value:number)=>void;label:string}){
+ const origin=useRef<{x:number;ratio:number;width:number}>()
+ const update=(next:number)=>onChange(Math.max(20,Math.min(80,Math.round(next))))
+ return <div role="separator" aria-label={label} aria-orientation="vertical" aria-valuemin={20} aria-valuemax={80} aria-valuenow={value} tabIndex={0} className="pwb-column-divider" style={{position:'absolute',top:0,bottom:0,left:value+'%',transform:'translateX(-50%)',width:10,zIndex:3,cursor:'col-resize',touchAction:'none',border:'1px solid var(--pwb-line,#d7d0c5)',borderRadius:4,background:'var(--pwb-canvas,#f7f5f0)',display:'flex',alignItems:'center',justifyContent:'center'}} onKeyDown={event=>{if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();update(value+(event.key==='ArrowRight'?5:-5))}}} onPointerDown={event=>{origin.current={x:event.clientX,ratio:value,width:event.currentTarget.parentElement?.getBoundingClientRect().width||600};event.currentTarget.setPointerCapture(event.pointerId)}} onPointerMove={event=>{if(origin.current)update(origin.current.ratio+(event.clientX-origin.current.x)/origin.current.width*100)}} onPointerUp={event=>{origin.current=undefined;event.currentTarget.releasePointerCapture(event.pointerId)}} onPointerCancel={()=>{origin.current=undefined}}><span aria-hidden="true">⋮</span></div>
+}

@@ -1,0 +1,298 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "7026bed1d8f18d19c9886d2a7b280850a9fbae9e",
+  "method": "Actual Chrome UI more/history clicks after official archive install; public API read only",
+  "url": "http://127.0.0.1:3089/",
+  "hitBefore": {
+    "pass": false,
+    "nativeComposerStickyZIndex": 7,
+    "roleMenuZIndex": 2
+  },
+  "hitAfter": {
+    "pass": true,
+    "hit": "打开历史会话: efd2c984-c376-4bc6-a236-6f85988345f2"
+  },
+  "opened": {
+    "status": 200,
+    "binding": {
+      "binding": {
+        "version": 1,
+        "key": {
+          "appId": "cross-page-proof",
+          "instanceId": "default",
+          "roleId": "analyst"
+        },
+        "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+        "presetId": "my-dsh.agent-change-acceptance",
+        "phase": "ready",
+        "previousSessionIds": [
+          "efd2c984-c376-4bc6-a236-6f85988345f2"
+        ],
+        "creation": {
+          "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+        }
+      }
+    },
+    "workspaceVisible": false,
+    "visibleDrafts": [],
+    "visibleText": "DSH 本地构建\n新会话\nCtrl\n+\nAlt\n+\nN\n插件\n工作区\nworkspace\n未分组\n新会话\n工作台自研平台\n标注闭环验收\n考公学习\n跨页角色验收\n模块任务交接验收\n缺失会话恢复验收\n阅读统计 / Reading statistics\nHTML assets\nAgent\nSkills\n验收实例 default验收实例 second\n设置\n探索未至之境\n预览版\n选择工作区\nLifecycle acceptance\n工作区内修改\nDeepSeek-V41-Flash\nHigh"
+  },
+  "returned": {
+    "status": 200,
+    "binding": {
+      "binding": {
+        "version": 1,
+        "key": {
+          "appId": "cross-page-proof",
+          "instanceId": "default",
+          "roleId": "analyst"
+        },
+        "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+        "presetId": "my-dsh.agent-change-acceptance",
+        "phase": "ready",
+        "previousSessionIds": [
+          "efd2c984-c376-4bc6-a236-6f85988345f2"
+        ],
+        "creation": {
+          "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+        }
+      }
+    },
+    "drafts": [
+      ""
+    ],
+    "historyEntrance": true,
+    "text": "学习页面\n复习页面\n标注画布\n标注记录 (0)\n学习对话\n更换内容\n设置\n放大模块\n跨页角色\n绑定已有会话\n更多\n\n会话：918c1824-d28a-42fa-b413-fe581b359157\n\n新建角色会话\n打开历史会话 · efd2c984-c376-4bc6-a236-6f85988345f2\nworkspace\nAgent 更换验收\n对话\n轨迹\n发消息或创建任务, / 调用指令, @ 文件或对话\n工作区内修改\nDeepSeek-V41-Flash\nHigh"
+  },
+  "limitations": [
+    "Old native Session has zero model turns. Native main view shows the old Agent's blank-session workspace chooser; old draft is not visible there. No completed historical transcript display claimed.",
+    "After recipe Agent change the Host read correctly reports preset mismatch until explicit new-session confirmation; the previously mounted composer is stale until reopened.",
+    "Model teaching/permissions/ask-user-question/Stop/physical IME remain unverified."
+  ],
+  "agentChange": {
+    "before": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.dependency-lifecycle-acceptance",
+      "runningVersion": 1,
+      "revision": 2,
+      "drafts": [
+        "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+      ],
+      "alerts": []
+    },
+    "edited": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.dependency-lifecycle-acceptance",
+      "runningVersion": 1,
+      "revision": 2,
+      "drafts": [
+        "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+      ],
+      "alerts": []
+    },
+    "saved": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.dependency-lifecycle-acceptance",
+      "runningVersion": 1,
+      "revision": 3,
+      "drafts": [
+        "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+      ],
+      "alerts": []
+    },
+    "previewed": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.dependency-lifecycle-acceptance",
+      "runningVersion": 1,
+      "revision": 3,
+      "drafts": [
+        "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+      ],
+      "alerts": []
+    },
+    "activated": {
+      "status": 409,
+      "body": {
+        "error": "Recorded role preset unavailable",
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.agent-change-acceptance",
+      "runningVersion": 2,
+      "revision": 4,
+      "drafts": [
+        "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+      ],
+      "alerts": []
+    },
+    "cancelled": {
+      "status": 409,
+      "body": {
+        "error": "Recorded role preset unavailable",
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "efd2c984-c376-4bc6-a236-6f85988345f2",
+          "presetId": "my-dsh.dependency-lifecycle-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.agent-change-acceptance",
+      "runningVersion": 2,
+      "revision": 4,
+      "drafts": [
+        "跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。"
+      ],
+      "alerts": []
+    },
+    "replaced": {
+      "status": 200,
+      "body": {
+        "binding": {
+          "version": 1,
+          "key": {
+            "appId": "cross-page-proof",
+            "instanceId": "default",
+            "roleId": "analyst"
+          },
+          "sessionId": "918c1824-d28a-42fa-b413-fe581b359157",
+          "presetId": "my-dsh.agent-change-acceptance",
+          "phase": "ready",
+          "previousSessionIds": [
+            "efd2c984-c376-4bc6-a236-6f85988345f2"
+          ],
+          "creation": {
+            "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+          }
+        }
+      },
+      "runningPreset": "my-dsh.agent-change-acceptance",
+      "runningVersion": 2,
+      "revision": 4,
+      "drafts": [
+        ""
+      ],
+      "alerts": []
+    }
+  },
+  "installedArchiveSha256": "d60a292f1cf02c694552513de4f34f181107240795b0dd5860440faacd96aa52",
+  "installedBytesEqual": true,
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "cleanChecks": {
+    "testsPassed": 295,
+    "testsLogSha256": "17e2783c0770d6c529d8d5bb5bed7f20293e8f8a16809e2cad917c2454623a38",
+    "releaseVerdictSha256": "754c2b69043c2ffe2c193ea3fe6fd86648d19c2d6d9c4b6afa6fe677b064b1ee",
+    "releaseVerdict": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "d60a292f1cf02c694552513de4f34f181107240795b0dd5860440faacd96aa52",
+        "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    }
+  }
+}

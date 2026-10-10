@@ -1,0 +1,47 @@
+{
+  "baseCommit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+  "files": [
+    {
+      "path": "packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx",
+      "before": "1a2a70d24d48b04e13057c40b3cec916c5f3a81c71b8c5a6006b83861b972cd8",
+      "previous": "c9f1dd5015e384280ff458c05c16bb6be361b52536f024e16233851859b09516",
+      "after": "6b427151f33539a94cbc8e50ddd64cc6160adc8cb33fa0d09493b6fb0d6b3a6d"
+    },
+    {
+      "path": "packages/client/ui-conversation/src/client/input/editor/DraftEditor.tsx",
+      "before": "7b41e1d8be057bf0b3a8658c79514090d18be175b481ababec3e4690c1093e7d",
+      "previous": "7b41e1d8be057bf0b3a8658c79514090d18be175b481ababec3e4690c1093e7d",
+      "after": "cc8433d524a11c4c1e93f6b02238e9de9c43961f5f0f33b370e8dcd9991a8932"
+    },
+    {
+      "path": "packages/client/ui-conversation/src/client/input/editor/composer-surfaces.ts",
+      "before": null,
+      "previous": null,
+      "after": "47a0229fd405c6d97ca8c2727aa946b8cb5bfda56606c309938a44ad39aa975b"
+    },
+    {
+      "path": "packages/client/ui-conversation/src/client/input/editor/view-binding.ts",
+      "before": "aadba7dc4bc548f1d679a1e63e9de367cb3fd691ea5540c45ea13c25e83df65f",
+      "previous": "aadba7dc4bc548f1d679a1e63e9de367cb3fd691ea5540c45ea13c25e83df65f",
+      "after": "fdc05af5d2aac559358115c07023aa108d7286eb28db470863be4bad08741421"
+    },
+    {
+      "path": "packages/client/ui-conversation/src/client/skeleton/InputBar.tsx",
+      "before": "2716aa3582251a5cfbc77268f95c39ebfcf44a4d3c43cd65d0726ddb7a9c7649",
+      "previous": "2716aa3582251a5cfbc77268f95c39ebfcf44a4d3c43cd65d0726ddb7a9c7649",
+      "after": "27c74162411b31c3b072c1e2d969190e4a2526e8bfb9534b8643160769d81979"
+    },
+    {
+      "path": "packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx",
+      "before": null,
+      "previous": "29390c6126d6d9769f2090e566677497e0d5c5c7aa4797cd6a63d5f15fdc7ebe",
+      "after": "8a5faab4194f4ff3604a6e5f3588570fe1e45b74ee692c2aeee9e192cc20f39f"
+    },
+    {
+      "path": "packages/client/ui-conversation/tests/input-bar.client.spec.tsx",
+      "before": "2fa76bf2cd26efc8a0327dc9c8187939ef521d4e9ff7d260698d869bda754a70",
+      "previous": "2fa76bf2cd26efc8a0327dc9c8187939ef521d4e9ff7d260698d869bda754a70",
+      "after": "30209a936934cf9ffa63bf01ecdf5c16c27098f817e9a0bfd2704a55f54acda5"
+    }
+  ]
+}

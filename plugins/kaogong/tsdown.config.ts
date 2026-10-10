@@ -6,9 +6,10 @@ export default defineConfig({
   format: ['cjs'],
   platform: 'browser',
   dts: false,
-  sourcemap: true,
+  sourcemap: false,
   clean: false,
-  external: ['react', 'react/jsx-runtime'],
+  external: ['react', 'react/jsx-runtime', '@deepseek-ai/dsh-personal-workbench/client'],
+  alias: { 'lucide-react': 'lucide-react/dist/esm/lucide-react.js' },
   noExternal: ['marked', 'dompurify'],
   outputOptions: {
     entryFileNames: 'client.js',
