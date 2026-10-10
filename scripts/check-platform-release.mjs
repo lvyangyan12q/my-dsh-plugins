@@ -45,6 +45,9 @@ for (const [index, name] of ['dsh-personal-workbench', 'dsh-tool-kaogong', 'dsh-
   const host = await import(pathToFileURL(installed.resolve('@deepseek-ai/' + name)).href); assert.equal(typeof host.apply, 'function')
 }
 await checkInstalledTypes(home, source, root, env)
+await runNode([resolve(worktree, 'node_modules/tsx/dist/cli.mjs'), 'scripts/check-client-module-artifacts.mjs', '--installed-profile', home],
+  { cwd: worktree, env: { ...env, DSH_SOURCE: source, KAOGONG_TEST_TOOLS: process.env.KAOGONG_TEST_TOOLS ?? source }, outputFile: join(root, 'installed-client-modules.log') })
+console.log('Official installed Client factory resolution: integrated and standalone passed')
 // The reading package publishes JS exports; exercise its installed Client export through the native factory format.
 const { runInNewContext } = await import('node:vm')
 let client
@@ -124,5 +127,5 @@ await host('installed HTML content / scoped static assets and authentication', a
   await call(path,body,401,{cookie:''});await call(path,body,403,{origin:'http://foreign.invalid'})
   const result=await call(path,body);assert.equal(result.kind,'html');assert.match(result.content,/data:text\/css;base64,/);assert.match(result.content,/data:image\/svg\+xml;base64,/);assert.match(result.content,/data:application\/javascript;base64,/)
 })
-await writeFile(join(root,'verdict.json'),JSON.stringify({ officialOfflineArchiveInstall:true, dependencyMode:'existing public dependency links; products installed from exact archives', compatibilityExemptions:0, installedBytes:true, installedConsumers:true, authenticatedLifecycle:true, installedHtmlAssets:true, coldRestart:true, readingUninstallReinstall:true, fixture:'public synthetic reading records', modelCalls:0, archives:packages.map(({sha256})=>sha256) },null,2))
+await writeFile(join(root,'verdict.json'),JSON.stringify({ officialOfflineArchiveInstall:true, dependencyMode:'existing public dependency links; products installed from exact archives', compatibilityExemptions:0, installedBytes:true, installedClientFactories:true, standaloneClientFactory:true, installedConsumers:true, authenticatedLifecycle:true, installedHtmlAssets:true, coldRestart:true, readingUninstallReinstall:true, fixture:'public synthetic reading records', modelCalls:0, archives:packages.map(({sha256})=>sha256) },null,2))
 console.log('Platform release checks passed (synthetic profile; zero model calls).')
