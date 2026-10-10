@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
-import { mkdir, writeFile, lstat, realpath } from 'node:fs/promises'
+import { mkdir, writeFile, lstat, realpath, open } from 'node:fs/promises'
 import { dirname, resolve, relative, isAbsolute, join } from 'node:path'
 import { spawn } from 'node:child_process'
 
@@ -41,10 +41,24 @@ const denied = () => { throw Error('Offline check denied HTTP client'); }; for (
   return env
 }
 
-export async function runNode(args, { cwd, env, timeout = 60000 } = {}) {
-  const child = spawn(process.execPath, args, { cwd, env, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] })
+export async function runNode(args, { cwd, env, timeout = 60000, outputFile } = {}) {
+  const log = outputFile ? await open(outputFile, 'w') : undefined
+  let child
+  try { child = spawn(process.execPath, args, { cwd, env, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] }) }
+  catch (error) { await log?.close(); throw error }
   let output = '', timedOut = false
-  child.stdout.on('data', bytes => { output = (output + bytes).slice(-32000) }); child.stderr.on('data', bytes => { output = (output + bytes).slice(-32000) })
+  let writes = Promise.resolve(), logError
+  // Persist full raw UTF-8 output while keeping interactive diagnostics bounded.
+  // Pausing each pipe bounds queued buffers if the disk is slower than the child.
+  const capture = (stream, bytes) => {
+    output = (output + bytes).slice(-32000)
+    if (!log) return
+    stream.pause()
+    writes = writes.then(() => logError ? undefined : log.writeFile(bytes))
+      .catch(error => { logError = error }).finally(() => stream.resume())
+  }
+  child.stdout.on('data', bytes => capture(child.stdout, bytes))
+  child.stderr.on('data', bytes => capture(child.stderr, bytes))
   let stopping
   const timer = setTimeout(() => {
     timedOut = true
@@ -61,7 +75,9 @@ export async function runNode(args, { cwd, env, timeout = 60000 } = {}) {
   try {
     const code = await new Promise((yes, no) => { child.once('error', no); child.once('close', yes) })
     await stopping
+    await writes
+    if (logError) throw logError
     assert(!timedOut && code === 0, `Child failed (code=${code}, timedOut=${timedOut}): ${output.replace(/https?:\/\/\S+/g, '<URL omitted>').replace(/token=[A-Za-z0-9_-]+/g, 'token=REDACTED')}`)
     return output
-  } finally { clearTimeout(timer) }
+  } finally { clearTimeout(timer); await writes; await log?.close() }
 }

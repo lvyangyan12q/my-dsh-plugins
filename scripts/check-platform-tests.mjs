@@ -20,6 +20,5 @@ const env = { ...process.env, DSH_SOURCE: source, KAOGONG_TEST_RUNTIME: source, 
 const output = await runNode([resolve(root, 'node_modules/tsx/dist/cli.mjs'), '--tsconfig', config, '--test',
   'scripts/native-sidebar-sections.test.mjs', 'plugins/personal-workbench/tests/*.test.ts', 'plugins/personal-workbench/tests/*.test.mjs',
   'plugins/kaogong/tests/*.test.ts', 'plugins/kaogong/tests/*.test.tsx', 'plugins/kaogong/tests/*.test.mjs',
-  'plugins/reading-statistics/tests/*.test.mjs', 'tests/release-package.test.mjs'], { cwd: root, env })
-await writeFile(join(run, 'tests.log'), output)
+  'plugins/reading-statistics/tests/*.test.mjs', 'tests/release-package.test.mjs'], { cwd: root, env, outputFile: join(run, 'tests.log') })
 console.log(output.split('\n').filter(line => /(?:tests|pass|fail|cancelled|skipped|todo|duration_ms) \d+/.test(line)).join('\n'))

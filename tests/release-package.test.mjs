@@ -42,3 +42,14 @@ test('owned installer timeout terminates and awaits its child tree', async () =>
   await new Promise(yes => setTimeout(yes, 100))
   assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' })
 })
+
+test('full command log preserves early output and UTF-8 beyond the diagnostic tail', async () => {
+  const root = await ownedRoot(worktree, join(worktree, '.scratch', 'complete-log-fixture-' + Date.now()))
+  const outputFile = join(root, 'command.log')
+  const expected = 'FIRST TEST PASSED\n' + '中'.repeat(20000) + 'x'.repeat(40000) + '\nLAST TEST PASSED\n'
+  const tail = await runNode(['-e', "process.stdout.write('FIRST TEST PASSED\\n' + '\\u4e2d'.repeat(20000) + 'x'.repeat(40000) + '\\nLAST TEST PASSED\\n')"], { cwd: root, outputFile })
+  const full = await readFile(outputFile, 'utf8')
+  assert(full === expected, 'the durable log must contain the complete exact UTF-8 output')
+  assert.ok(tail.endsWith('LAST TEST PASSED\n'))
+  assert.equal(tail.includes('FIRST TEST PASSED'), false, 'interactive diagnostics remain a bounded tail')
+})
