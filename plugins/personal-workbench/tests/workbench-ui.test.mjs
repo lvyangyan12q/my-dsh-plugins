@@ -15,7 +15,7 @@ const h = React.createElement
 function boundHook(source) {
   return selector => selector(React.useSyncExternalStore(source.subscribe, source.getSnapshot, source.getSnapshot))
 }
-async function fixture({ nativeColumns = false, width = 960, height = 640, recipeCatalog = () => ({version:1,recipes:[]}) } = {}) {
+async function fixture({ nativeColumns = false, pluginNavigation = false, width = 960, height = 640, recipeCatalog = () => ({version:1,recipes:[]}) } = {}) {
   const dom = new JSDOM('<button id="origin">Origin</button><div id="mount"></div>', { url: 'http://localhost' })
   let sidebarWidth = 280
   const columnObservers = new Map()
@@ -38,7 +38,7 @@ async function fixture({ nativeColumns = false, width = 960, height = 640, recip
   const { createRoot } = require('react-dom/client')
   Object.defineProperty(dom.window.HTMLElement.prototype, 'clientWidth', { get: () => width })
   Object.defineProperty(dom.window.HTMLElement.prototype, 'clientHeight', { get: () => height })
-  const declarations = [], cleanups = []
+  const declarations = [], cleanups = [], pluginNavigationCalls = []
   let service, exports, fetches = 0, retained = 0, mounts = 0, unmounts = 0
   runInNewContext(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'), {
     window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }),
@@ -52,7 +52,7 @@ async function fixture({ nativeColumns = false, width = 960, height = 640, recip
     },
   })
   const ctx = {
-    get: () => undefined, // Optional official plugin configuration navigation is absent.
+    get: name => name === 'pluginNavigation' && pluginNavigation ? {openBundle:name=>pluginNavigationCalls.push(name)} : undefined, // Optional official plugin configuration navigation is absent.
     inject: () => {}, // Optional Better Sidebar is absent in this UI fixture.
     effect: execute => { const dispose = execute(); if (typeof dispose === 'function') cleanups.push(dispose); return dispose },
     reflect: { provide: (name, value) => { assert.equal(name, 'personalWorkbench'); service = value; return () => { service = undefined } } },
@@ -108,7 +108,7 @@ async function fixture({ nativeColumns = false, width = 960, height = 640, recip
   const button = label => [...dom.window.document.querySelectorAll('button')].find(element =>
     !element.closest('[hidden]') && (element.getAttribute('aria-label') === label || element.textContent === label))
   const click = async label => { const target = button(label); assert.ok(target, `Missing visible button: ${label}`); await act(async () => target.click()); return target }
-  return { dom, ctx, declarations, service, root, removeApp, removeView, click, button,
+  return { dom, ctx, declarations, service, root, pluginNavigationCalls, removeApp, removeView, click, button,
     async collapseNativeSidebar() { await act(async () => {sidebarWidth = 56;columnObservers.get(dom.window.document.getElementById('sidebar'))?.()}) },
     counts: () => ({ fetches, retained, mounts, unmounts }),
     async dispose() {
@@ -346,5 +346,23 @@ test('workspace follows native sidebar collapse even when center width and frame
     assert.equal(workspace.style.left, '56px', 'Position-only center movement must not leave the workspace covering the native right sidebar')
     assert.equal(workspace.style.width, '400px')
     assert.equal(f.dom.window.document.getElementById('sidebar').style.width, '')
+  } finally { await f.dispose() }
+})
+
+test('both independent libraries reach official plugin configuration without creating Sessions or discarding app drafts', async () => {
+  const f = await fixture({pluginNavigation:true})
+  try {
+    await f.click('Exercise')
+    await f.click('Enter answer')
+    const draft = f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
+    for (const library of ['agents','skills']) {
+      await f.click(library)
+      await f.click('nativePluginConfiguration')
+      assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').hidden, true)
+      assert.equal(draft.isConnected, true)
+      assert.equal(draft.value, 'retained answer')
+    }
+    assert.deepEqual(f.pluginNavigationCalls, ['@deepseek-ai/dsh-personal-workbench','@deepseek-ai/dsh-personal-workbench'])
+    assert.equal(f.counts().retained, 0)
   } finally { await f.dispose() }
 })

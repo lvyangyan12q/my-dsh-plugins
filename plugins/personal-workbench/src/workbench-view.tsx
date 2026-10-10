@@ -2,7 +2,7 @@ import { compareApplications } from './app-order.ts'
 import {sidebarCoexistenceStyles} from './sidebar-coexistence-styles.ts'
 import { RecipeEditor } from './recipe-editor.tsx'
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, ChevronDown, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search } from 'lucide-react'
+import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, ChevronDown, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search, Settings } from 'lucide-react'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { WorkbenchAppDefinition, WorkbenchIcon } from './workbench-api.ts'
 import type { Workbench } from './workbench.ts'
@@ -196,7 +196,7 @@ export function ManagementPanel({ useNavigation, useWorkbench, close, management
   return <div ref={root} className="pwb-workspace pwb-project-shell pwb-independent-management" style={bounds} role="region" aria-label={panel ? t(panel) : t('catalogTabs')} tabIndex={-1} hidden={!panel}
     onKeyDown={e => { if (e.key === 'Escape' && e.target === root.current) close() }}>
     <style>{workspaceStyles}</style>
-    <header className="pwb-top"><strong>{panel ? t(panel) : t('catalogTabs')}</strong><button data-pwb-button type="button" aria-label={t('close')} onClick={close}><X size={18} /></button></header>
+    <header className="pwb-top"><strong>{panel ? t(panel) : t('catalogTabs')}</strong>{management?.openBundle && <button data-pwb-button type="button" aria-label={t('nativePluginConfiguration')} onClick={() => { management.openBundle?.('@deepseek-ai/dsh-personal-workbench'); close() }}><Settings size={16} aria-hidden="true" />{t('nativePluginConfiguration')}</button>}<button data-pwb-button type="button" aria-label={t('close')} onClick={close}><X size={18} /></button></header>
     {(['agents','skills'] as const).map(tab => <div key={tab} hidden={panel !== tab} className="pwb-management-page">
       <label className="pwb-search"><Search size={16} /><input type="search" aria-label={t('searchCatalog')} placeholder={t('searchCatalog')} value={queries[tab]} onChange={e => setQueries(value => ({ ...value, [tab]: e.target.value }))} /></label>
       <ManagementCatalogView tab={tab} active={panel === tab} apps={apps} query={queries[tab]} commands={management ?? {}} t={t} />
