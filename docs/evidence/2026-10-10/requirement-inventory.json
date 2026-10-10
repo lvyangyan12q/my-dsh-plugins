@@ -876,7 +876,10 @@
       "section": "User Stories",
       "number": 5,
       "requirementSha256": "dc8641e1bc2e1f27d8477bfbf7981b4bf2295e1b8fafedb133a679853e3acb31",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for choosing page layouts: actual installed canvas switches grid/split to two columns and stack to one column while retaining both module identities; saved split layout opens in the activated application. Other pages and data/AI behavior are separate requirements.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/manual-canvas-lifecycle-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:6",
