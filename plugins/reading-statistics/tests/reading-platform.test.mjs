@@ -40,7 +40,7 @@ async function client(host) {
   const dom = new JSDOM('<div id="mount"></div>', { url: 'http://localhost' }), original = new Map()
   for (const [key, value] of Object.entries({ window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true })) { original.set(key, Object.getOwnPropertyDescriptor(globalThis, key)); Object.defineProperty(globalThis, key, { configurable: true, writable: true, value }) }
   let platform, reading, workbench, forbidden = 0, fail = false
-  const fetch = async (url, options) => { if (url === '/api/reading-statistics/data' && fail) throw new Error('Reading backend failed'); if (!['/api/reading-statistics/data', '/api/personal-workbench/recipes', '/api/personal-workbench/apps'].includes(url)) { forbidden++; throw new Error('AI/Session request forbidden') } const result = await host.call(url, JSON.parse(options.body)); return { ok: result.status === 200, json: async () => result.value } }
+  const fetch = async (url, options) => { if (url === '/api/personal-workbench/annotations' && JSON.parse(options.body).action === 'list') return { ok: true, json: async () => ({ records: [] }) };  if (url === '/api/reading-statistics/data' && fail) throw new Error('Reading backend failed'); if (!['/api/reading-statistics/data', '/api/personal-workbench/recipes', '/api/personal-workbench/apps'].includes(url)) { forbidden++; throw new Error('AI/Session request forbidden') } const result = await host.call(url, JSON.parse(options.body)); return { ok: result.status === 200, json: async () => result.value } }
   const load = async (file, dependency) => { let api; const window = Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { api = factory(name => name === '@deepseek-ai/dsh-personal-workbench/client' ? dependency : require(name)) } } }); runInNewContext(await readFile(file, 'utf8'), { window, document: dom.window.document, console, AbortController, structuredClone, crypto: globalThis.crypto, fetch }); return api }
   platform = await load(new URL('../../personal-workbench/lib/client.js', import.meta.url)); reading = await load(new URL('../lib/client.js', import.meta.url), platform)
   const entries = [], cleanups = []
@@ -171,4 +171,21 @@ test('built reading editor adds own records, edits, confirms delete and retries 
     await act(async()=>ui.document.querySelector('[aria-label="删除阅读记录: '+own.id+'"]').click()); ui.fail(true); await ui.click('确认删除阅读记录'); assert.match(ui.document.querySelector('[data-reading-editor]').textContent,/Reading backend failed/); assert.equal(server.reading.read('default').records.length,4)
     ui.fail(false); await ui.click('重试加载阅读记录'); await act(async()=>ui.document.querySelector('[aria-label="删除阅读记录: '+own.id+'"]').click()); await ui.click('确认删除阅读记录'); assert.equal(server.reading.read('default').records.length,3); await ui.flush(); assert.equal(ui.document.querySelector('[data-stat=books]').textContent,'3'); assert.equal([...ui.document.querySelectorAll('.pwb-display-list button')].some(button=>button.textContent==='User owned book'),false); assert.equal(ui.forbidden(),0)
   } finally { await ui?.close(); await server.close(); await rm(folder,{recursive:true,force:true}) }
+})
+
+test('built reading app exposes validated instance opening and keeps new instance empty and preview locked', async () => {
+  const folder=await mkdtemp(join(tmpdir(),'reading-instance-ui-')); const server=await host(folder);let ui
+  try {
+    ui=await client(server);const recipe=ui.reading.readingRecipe(),opened=[]
+    const ctx={personalWorkbench:{openApp:(app,id)=>{opened.push([app,id])}}}
+    const page=(id='default',preview=false)=>h(ui.platform.RecipePage,{recipe,pageId:'library',appId:recipe.appId,instanceId:id,preview,ctx,t:key=>key})
+    const fill=async(label,value)=>{const el=ui.document.querySelector('[aria-label="'+label+'"]');assert.ok(el,label);await act(async()=>{Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(el,value);el.dispatchEvent(new window.Event('input',{bubbles:true}))})}
+    await ui.render(page());await ui.flush();assert.equal(server.reading.read('default').records.length,0)
+    await fill('阅读实例 ID','../invalid');assert.equal([...ui.document.querySelectorAll('button')].find(b=>b.textContent==='打开阅读实例').disabled,true);assert.equal(opened.length,0)
+    await fill('阅读实例 ID','second');await ui.click('打开阅读实例');assert.deepEqual(opened,[['reading-statistics','second']]);assert.equal(server.reading.read('second').initialized,false)
+    await ui.render(page('second'));await ui.flush();assert.match(ui.document.querySelector('[data-reading-editor]').textContent,/实例：second/);assert.match(ui.document.body.textContent,/displayEmpty/)
+    await ui.click('新增阅读记录');await fill('书名','Second instance personal book');await fill('阅读分钟','12');await ui.click('保存阅读记录');assert.equal(server.reading.read('second').records.length,1);assert.equal(server.reading.read('default').records.length,0)
+    await fill('阅读实例 ID','default');await ui.click('打开阅读实例');assert.deepEqual(opened[1],['reading-statistics','default']);assert.equal(server.reading.read('default').initialized,false)
+    await ui.render(page('second',true));await ui.flush();assert.equal(ui.document.querySelector('[aria-label="阅读实例 ID"]'),null);assert.equal([...ui.document.querySelectorAll('button')].some(b=>b.textContent==='打开阅读实例'),false);assert.equal(opened.length,2);assert.equal(ui.forbidden(),0)
+  }finally{await ui?.close();await server.close();await rm(folder,{recursive:true,force:true})}
 })
