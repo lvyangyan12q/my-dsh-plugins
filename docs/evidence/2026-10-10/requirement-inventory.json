@@ -114,7 +114,10 @@
       "section": "User Stories",
       "number": 8,
       "requirementSha256": "80de596137e1426d935379a5a6de9da23b5bff9da69e7a1176a9cd0ed061de9b",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "requires individual proof; inventory does not certify completion",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:9",
@@ -291,7 +294,8 @@
       "requirementSha256": "37794592330e74319e7336d187b149f83d62f40a2a720e1594b32be92874553c",
       "evidenceStatus": "satisfied at ten-question practice behavior: actual installed UI begins ten distinct approved-bank snapshot questions and continues to ten unseen questions; complete three-environment teaching workflow remains separate",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/kaogong-practice-browser.json"
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
       ]
     },
     {
@@ -303,7 +307,8 @@
       "requirementSha256": "a7b296c1ea17f76f86876abf0a14051e62ce66c73d243cf10e0d9e0d0d356f04",
       "evidenceStatus": "satisfied at submission/results boundary: actual installed UI/API hide answers before submission, Host score matches unchanged bank answers, results/analyses and saved reflections survive reload; question OCR/image fidelity is not certified",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/kaogong-practice-browser.json"
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
       ]
     },
     {
@@ -381,7 +386,10 @@
       "section": "User Stories",
       "number": 30,
       "requirementSha256": "6198b58a15b143e2128f1d674f6d86155a1aa6d4af4e7d2be1cb283c1fe56c62",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual historical backup restored into isolated installed DSH; all 3994 bank, 72 knowledge, 8 old notebook and 216 plan records preserve identity and fields; ten-question UI scoring, next round and cold recovery verified; owned state rolled back and formal data unchanged. Full original question/material fidelity remains incomplete: actual sample contains missing diagram placeholder and footer-contaminated options.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:31",
@@ -550,7 +558,8 @@
       "evidenceStatus": "partial: existing Kaogong view state transfers into explicit default instance without duplication; non-default instance is rejected. Business domains remain owned by Kaogong. Arbitrary legacy deployment migration is not established. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven.",
       "evidencePaths": [
         "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json",
-        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json"
+        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
       ]
     },
     {
@@ -697,7 +706,8 @@
         "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json",
         "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
         "docs/evidence/2026-10-10/historical-analysis-page-restoration.json",
-        "docs/evidence/2026-10-10/restored-image-route-runtime.json"
+        "docs/evidence/2026-10-10/restored-image-route-runtime.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
       ]
     },
     {
@@ -730,7 +740,8 @@
       "requirementSha256": "a1265a0d30af99550dcf420a3743205ae2fef4860527c8bf72263b033d3c7c4a",
       "evidenceStatus": "partial: exact old/new archive upgrade and durable records/legacy assets retained; original-user backup/restore and full migration scope need their own individual proof",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
       ]
     },
     {
@@ -854,10 +865,11 @@
       "section": "Testing Decisions",
       "number": 10,
       "requirementSha256": "a06a0cf73baa7a8670cee3144eca2547cb2d782c5d2f9e882c13efc8da091f0d",
-      "evidenceStatus": "partial: actual historical business-record preservation checked. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven. Historical asset gap subsequently repaired: 149 analysis600 and 29 analysis1200 page images restored from calibrated source PDFs, all 183 stored image references now resolve; business hashes unchanged. Full analysis pages remain excluded from exercise stems; safe material-only crops and runtime image acceptance are separate.",
+      "evidenceStatus": "partial: actual historical backup restored into isolated installed DSH; all 3994 bank, 72 knowledge, 8 old notebook and 216 plan records preserve identity and fields; ten-question UI scoring, next round and cold recovery verified; owned state rolled back and formal data unchanged. Full original question/material fidelity remains incomplete: actual sample contains missing diagram placeholder and footer-contaminated options.",
       "evidencePaths": [
         "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
-        "docs/evidence/2026-10-10/historical-analysis-page-restoration.json"
+        "docs/evidence/2026-10-10/historical-analysis-page-restoration.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
       ]
     },
     {
@@ -1051,7 +1063,10 @@
       "section": "User Stories",
       "number": 13,
       "requirementSha256": "4e87fa08e965950a4cca80ab0e29b658dee18fa29c6c29a26e78c13ff8d2ba92",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for platform entry and reuse of actual default-instance backup data in isolated installed DSH, including actual ten-question submit/next-round/cold recovery; full question and MinerU visual fidelity remains separate.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
     },
     {
       "id": "platform:User Stories:14",
@@ -1405,7 +1420,10 @@
       "section": "Implementation Decisions",
       "number": 13,
       "requirementSha256": "f7e0ccc91a5cbb4095dc81f05a100ba68ceed8793f0856c46957cd53b80992bb",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "requires individual proof; inventory does not certify completion",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:14",
@@ -1492,7 +1510,10 @@
       "section": "Testing Decisions",
       "number": 7,
       "requirementSha256": "4b376e3abf6d859295dc451bc9fa72a6bf4c828ecbe9ca7c69e300595e9ae23f",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "requires individual proof; inventory does not certify completion",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
     },
     {
       "id": "platform:Testing Decisions:8",
