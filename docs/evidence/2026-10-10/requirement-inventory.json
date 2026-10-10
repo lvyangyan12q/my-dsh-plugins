@@ -346,7 +346,10 @@
       "section": "User Stories",
       "number": 28,
       "requirementSha256": "e0f67b23cffae7837e273a76d9911e8271ef3c7161adc48d2ff14a0ccb4201e5",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: managed Agent Skill assignment/availability checked with exact installed public API save and native preset registration; actual UI offers managed invocable Skills only, rejects new native references and preserves existing references. Full app-role assignment and real committed Skill execution still unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/managed-skill-reuse-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:29",

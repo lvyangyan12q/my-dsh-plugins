@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-10",
+  "commit": "b243909f457ee639ab500af09f3741b9581df8e0",
+  "archiveSha256": "752894fc0be2391d6323f01215d850f9fabc243a1c0f30ade2be6fa3f3919054",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual installed Agent detail UI and authenticated public API; unmanaged bundled Skill reference rejected, managed fixture Skill reference saved into a temporary Agent then removed with exact identity/revision",
+  "red": {
+    "newNativeReferenceWasAccepted": true,
+    "newNativeChoicesWereOffered": true
+  },
+  "green": {
+    "cleanTests": 311,
+    "failed": 0,
+    "skipped": 0,
+    "legacySavedPrivateReferenceRetained": true,
+    "legacyReferenceNotCopyableToAnotherAgent": true,
+    "unmanagedNativeSkillWasAvailable": true,
+    "unmanagedReferenceSaveStatus": 409,
+    "unmanagedProbeNeverCreated": true,
+    "managedReferenceSaveStatus": 200,
+    "managedRecordAndSkillReferencePersisted": true,
+    "nativePresetIdentityCorrect": true,
+    "temporaryManagedAgentRemoved": true,
+    "publicAgentCountBeforeAndAfter": 2,
+    "visibleSkillChoices": [
+      "dependency-lifecycle-acceptance-skill"
+    ],
+    "nativePlatformSkillsAbsentFromNewChoices": true,
+    "applicationRolesStillAvailable": true,
+    "globalApplicationBindingSelectorAbsent": true,
+    "modelTasksSent": 0
+  },
+  "limits": [
+    "Legacy preservation is verified through real storage/registry boundary tests; no formal legacy user deployment was rewritten.",
+    "Application-private roles and current references are retained; this is a restriction on new public managed Agent Skill references.",
+    "No native teaching turn or committed Skill execution; complete original provider gates remain open."
+  ]
+}
