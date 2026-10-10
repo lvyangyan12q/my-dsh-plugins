@@ -302,3 +302,22 @@ test('maximize, minimize and restore keep the same page and draft while releasin
   assert.deepEqual(f.counts(),{fetches:0,retained:0,mounts:1,unmounts:0})
  }finally{await f.dispose()}
 })
+
+test('external application disable and withdrawal move keyboard focus out of hidden or removed content',async()=>{
+ const f=await fixture()
+ try{
+  const doc=f.dom.window.document,origin=doc.querySelector('#origin');origin.focus()
+  await f.click('Exercise')
+  const draft=doc.querySelector('input[aria-label="Answer draft"]');draft.focus()
+  await act(async()=>f.service.applyLifecycle([{appId:'test.exercise',enabled:false,revision:1}]))
+  assert.ok(doc.activeElement===doc.querySelector('[data-window-mode]'),'Disabling the active application must focus the visible application center')
+  assert.equal(draft.isConnected,true,'Disabling retains the application draft')
+  await act(async()=>f.service.applyLifecycle([{appId:'test.exercise',enabled:true,revision:2}]))
+  await f.click('Exercise');draft.focus()
+  await act(async()=>f.removeApp())
+  assert.ok(doc.activeElement===doc.querySelector('[data-window-mode]'),'Withdrawing an active application must focus the remaining workspace')
+  await f.click('closeWorkspace')
+  assert.ok(doc.activeElement===origin,'Closing after external changes returns focus to the original external entry')
+  assert.equal(f.counts().retained,0)
+ }finally{await f.dispose()}
+})

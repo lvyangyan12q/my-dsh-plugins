@@ -110,7 +110,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     if (focused) frames.current.get(windowKey(focused.appId, focused.instanceId))?.focus()
     else root.current?.focus()
     return () => { if (before instanceof HTMLElement && before.isConnected) before.focus() }
-  }, [state.visible, state.focusRevision])
+  }, [state.visible, state.focusRevision, state.focused])
   const orderedApps = [...state.definitions].sort(compareApplications(state.apps))
   const apps = orderedApps.filter(row => (showHidden || !state.apps[row.id]?.hidden)
     && row.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
