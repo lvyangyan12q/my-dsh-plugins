@@ -8,7 +8,7 @@ import {KaogongStateContext,KaogongViewState} from '../src/view-state.tsx'
 
 test('unmatched classroom practice ends preparation and broadens only after an explicit learner gesture',async()=>{
  const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),originals=new Map(),calls=[];
- for(const [name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,localStorage:dom.window.localStorage,IS_REACT_ACT_ENVIRONMENT:true})){originals.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ for(const [name,value]of Object.entries({React,window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,localStorage:dom.window.localStorage,IS_REACT_ACT_ENVIRONMENT:true})){originals.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
  const previousFetch=globalThis.fetch,subject='行测-判断推理',point='逻辑判断-原因解释',owner=new KaogongViewState();
  const lesson:any={lesson:{request:{lessonId:'kept-classroom',subject,objective:'解释原因的课堂目标',knowledgePoint:point,requireReflections:false},objectiveId:'objective',notes:'保留学习者总结',materials:[],roundIds:[],completion:null},evidence:[],canConfirm:false,summary:'原课堂摘要'};
  owner.cell('lesson.view',null).set(lesson);owner.cell('lesson.notes','').set(lesson.lesson.notes);owner.cell('dashboard',null).set({today:'2026-10-11',daysToExam:100,pastDonePct:0,pastDone:0,pastDays:1,accuracyRate:0,totalQuestions:0,knowledgeTotal:0,bankTotal:1,todayPlan:{phase:'foundation',items:[]},modules:[],weakPoints:[],recentKnowledge:[]} as any);
