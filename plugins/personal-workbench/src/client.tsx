@@ -170,7 +170,7 @@ export function apply(ctx: Context): void {
 }
 
 export { registerRecipeModuleRenderer, RecipePage } from './recipe-view.tsx'
-export type { RecipeModuleProps } from './recipe-view.tsx'
+export type { RecipeModuleProps, RecipeModuleDescriptor } from './recipe-view.tsx'
 export type { AppRecipe, RecipeRecord, RecipeModule } from './recipe-api.ts'
 
 export { registerDisplaySource, listDisplaySources, registerRecipeTemplate } from './display-api.ts'

@@ -1,3 +1,4 @@
+import {useApplicationModules,moduleChoiceTitle} from './application-modules.ts'
 import {contentTypes} from './content-catalog.ts'
 import {PageTemplates} from './page-template-view.tsx'
 import {ColumnDivider} from './column-divider.tsx'
@@ -15,10 +16,11 @@ export function createCanvasRecipe(appId:string,layout:AppRecipe['pages'][number
  return{schemaVersion:1,appId,version:1,name:t('recipeNewName'),description:'',pages:[{id:'home',label:t('recipeHome'),layout,modules:Array.from({length:layout==='grid'?4:layout==='stack'?3:2},emptyModule)}],connections:[],roles:[]}
 }
 export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t:(key:any)=>string}){
+ const applicationModules=useApplicationModules(recipe.appId)
  const [selectedPage,setPage]=useState(recipe.pages[0]?.id),[selected,setSelected]=useState<string|null>(null),[focused,setFocused]=useState<string|null>(null),[pageSettings,setPageSettings]=useState(false)
  const pageIndex=Math.max(0,recipe.pages.findIndex(page=>page.id===selectedPage)),page=recipe.pages[pageIndex]
  if(!page)return null
- const choose=(moduleId:string,type:string)=>{change(copy=>{const module=copy.pages[pageIndex].modules.find(m=>m.id===moduleId)!;module.type=type;module.title=t('recipeModule'+type);module.config=type==='custom'?{mode:'generate'}:{};delete module.connectionId;delete module.roleId});setSelected(moduleId)}
+ const choose=(moduleId:string,type:string)=>{change(copy=>{const module=copy.pages[pageIndex].modules.find(m=>m.id===moduleId)!;module.type=type;module.title=moduleChoiceTitle(type,recipe.appId,t);module.config=type==='custom'?{mode:'generate'}:{};delete module.connectionId;delete module.roleId});setSelected(moduleId)}
  const move=(moduleId:string,direction:number)=>change(copy=>{const modules=copy.pages[pageIndex].modules,index=modules.findIndex(m=>m.id===moduleId),next=index+direction;if(next>=0&&next<modules.length)[modules[index],modules[next]]=[modules[next],modules[index]]})
  const clear=(moduleId:string)=>{change(copy=>{const module=copy.pages[pageIndex].modules.find(m=>m.id===moduleId)!;module.type='empty';module.title='';module.config={};delete module.connectionId;delete module.roleId});setSelected(null)}
  const closeSettings=()=>{setSelected(null);setFocused(null)}
@@ -32,8 +34,8 @@ export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t
     <button data-pwb-button type="button" title={t('canvasFocus')} aria-label={t('canvasFocus')+': '+module.id} aria-pressed={focused===module.id} onClick={()=>{setFocused(focused===module.id?null:module.id);setSelected(module.id)}}><Expand size={14}/></button>
     <button data-pwb-button type="button" title={t('moduleRemove')} aria-label={t('moduleRemove')+': '+module.id} onClick={()=>{change(copy=>{copy.pages[pageIndex].modules=copy.pages[pageIndex].modules.filter(m=>m.id!==module.id)});if(open)closeSettings()}}><X size={14}/></button>
    </div></CanvasPaneHeader>
-   {module.type==='empty'?<CanvasContentPicker moduleId={module.id} t={t} onChoose={type=>choose(module.id,type)}/>:<>
-    <div className="pwb-canvas-summary"><Icon size={25}/><strong>{contentTypes.some(type=>type===module.type)?t('recipeModule'+module.type):t('moduleType')+': '+module.type}</strong><span>{String(module.config.url??module.config.path??module.config.basePath??module.config.requirement??'')||t('canvasConfigureHelp')}</span>
+   {module.type==='empty'?<CanvasContentPicker appId={recipe.appId} moduleId={module.id} t={t} onChoose={type=>choose(module.id,type)}/>:<>
+    <div className="pwb-canvas-summary"><Icon size={25}/><strong>{contentTypes.some(type=>type===module.type)?t('recipeModule'+module.type):applicationModules.find(row=>row.id===module.type)?.title??t('moduleType')+': '+module.type}</strong><span>{String(module.config.url??module.config.path??module.config.basePath??module.config.requirement??'')||t('canvasConfigureHelp')}</span>
      {module.connectionId&&<small>{t('recipeSource')}: {recipe.connections.find(c=>c.id===module.connectionId)?.resource}</small>}{module.roleId&&<small>{t('recipeTaskRole')}: {recipe.roles.find(r=>r.id===module.roleId)?.name}</small>}
     </div>
     {open&&<div className="pwb-canvas-settings"><RecipeModuleEditor recipe={recipe} pageIndex={pageIndex} moduleId={module.id} change={change} t={t}/><button data-pwb-button data-variant="primary" type="button" aria-label={t('canvasDone')+': '+module.id} onClick={closeSettings}>{t('canvasDone')}</button></div>}
@@ -51,6 +53,7 @@ export function RecipeCanvas({recipe,change,t}:{recipe:AppRecipe;change:Change;t
  </section>
 }
 
-export function CanvasContentPicker({moduleId,t,onChoose}:{moduleId:string;t:(key:any)=>string;onChoose:(type:string)=>void}){
- return <div className="pwb-canvas-picker"><p>{t('canvasChooseContent')}</p><div>{choices.map(([type,ChoiceIcon])=><button data-pwb-button key={type} type="button" aria-label={t('recipeModule'+type)+': '+moduleId} onClick={()=>onChoose(type)}><ChoiceIcon size={22}/><span>{t('recipeModule'+type)}</span></button>)}</div></div>
+export function CanvasContentPicker({moduleId,t,onChoose,appId}:{appId?:string;moduleId:string;t:(key:any)=>string;onChoose:(type:string)=>void}){
+ const applicationModules=useApplicationModules(appId)
+ return <div className="pwb-canvas-picker"><p>{t('canvasChooseContent')}</p><div>{choices.map(([type,ChoiceIcon])=><button data-pwb-button key={type} type="button" aria-label={t('recipeModule'+type)+': '+moduleId} onClick={()=>onChoose(type)}><ChoiceIcon size={22}/><span>{t('recipeModule'+type)}</span></button>)}{applicationModules.map(module=><button data-pwb-button key={module.id} type="button" aria-label={module.title+': '+moduleId} onClick={()=>onChoose(module.id)}><Settings size={22}/><span>{module.title}</span></button>)}</div></div>
 }

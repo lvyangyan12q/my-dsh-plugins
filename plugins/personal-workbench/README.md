@@ -148,3 +148,7 @@ The upstream rc.2 `closeIn` fallback cleans known retired IDs after adoption but
 ## Display presentation recovery
 
 Declared data connections cache only filter values, search text and selected record ID in bounded versioned browser storage, isolated by app/instance/connection/source identity and preview mode. Records are always reloaded from the application's source, and stale filter options or missing selections are cleared. A visible notice reports unavailable persistence without blocking controls. Optional `DisplaySource.subscribe(scope, onChange)` lets the application notify its own connection owners after changes; owners reload and release subscriptions on disposal. Neither restoration nor subscription starts a model task or creates a Session. Installed browser recovery remains a separate acceptance check.
+
+## Application-provided module choices
+
+An installed application can register its renderer with an optional descriptor: `registerRecipeModuleRenderer(id, view, {title: 'My module', appIds: ['my-app']})`. Omit appIds for an application-independent module; omit the entire descriptor to retain the original two-argument behavior. The descriptor adds a visual canvas/type choice, and disappears with the renderer's unregister callback. Scoped renderers are also unavailable in other applications at rendering/dependency projection. Recipes still contain only module data, and changing or adding one module preserves unrelated modules, roles and data connections. Applications own preview read-only behavior and module configuration.

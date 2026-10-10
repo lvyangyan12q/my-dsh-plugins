@@ -11,11 +11,20 @@ import type { ComponentType } from 'react'
 import type { AppRecipe,RecipeModule } from './recipe-api.ts'
 export interface RecipeModuleProps { conversationHost?:boolean; onViewRole?:()=>void; toolbarHost?:HTMLDivElement|null; onEditModule?:(pageId:string,moduleId:string,changeContent:boolean)=>void; placement?:number; focused?:boolean; onFocus?:()=>void; active?:boolean; recipe:AppRecipe; module:RecipeModule; appId:string; instanceId:string; preview:boolean; taskEditorHost?:boolean; ctx?:Context; pageId:string; t:(key:any)=>string; renderFactorySlot?:PropsRenderFactories['renderFactorySlot'] }
 const renderers=new Map<string,ComponentType<RecipeModuleProps>>()
+export interface RecipeModuleDescriptor { title:string; appIds?:readonly string[] }
+const descriptors=new Map<string,RecipeModuleDescriptor>()
+let rendererRevision=0
 const rendererListeners=new Set<()=>void>()
-const renderersChanged=()=>{for(const listener of rendererListeners)listener()}
-export const recipeRendererCatalog={has:(id:string)=>renderers.has(id),subscribe:(listener:()=>void)=>{rendererListeners.add(listener);return()=>{rendererListeners.delete(listener)}}}
+const renderersChanged=()=>{rendererRevision++;for(const listener of rendererListeners)listener()}
+const allowed=(id:string,appId?:string)=>!descriptors.get(id)?.appIds||(!!appId&&descriptors.get(id)!.appIds!.includes(appId))
+export const recipeRendererCatalog={has:(id:string,appId?:string)=>renderers.has(id)&&(appId===undefined||allowed(id,appId)),getSnapshot:()=>rendererRevision,entries:(appId?:string)=>[...descriptors].filter(([id])=>allowed(id,appId)).map(([id,descriptor])=>({id,...descriptor})),subscribe:(listener:()=>void)=>{rendererListeners.add(listener);return()=>{rendererListeners.delete(listener)}}}
 /** Renderers are installed code owned by plugins; recipes contain no executable source. */
-export function registerRecipeModuleRenderer(id:string,view:ComponentType<RecipeModuleProps>):()=>void{if(renderers.has(id))throw new Error('Duplicate module renderer');renderers.set(id,view);renderersChanged();return()=>{if(renderers.get(id)===view){renderers.delete(id);renderersChanged()}}}
+export function registerRecipeModuleRenderer(id:string,view:ComponentType<RecipeModuleProps>,descriptor?:RecipeModuleDescriptor):()=>void{
+ if(renderers.has(id))throw new Error('Duplicate module renderer')
+ if(descriptor&&(!descriptor.title.trim()||descriptor.title.length>300||descriptor.appIds&&(!descriptor.appIds.length||descriptor.appIds.some(appId=>typeof appId!=='string'||!appId))))throw new Error('Invalid module descriptor')
+ renderers.set(id,view);if(descriptor)descriptors.set(id,Object.freeze({title:descriptor.title,...(descriptor.appIds?{appIds:Object.freeze([...descriptor.appIds])}:{})}));renderersChanged();let active=true
+ return()=>{if(active&&renderers.get(id)===view){active=false;renderers.delete(id);descriptors.delete(id);renderersChanged()}}
+}
 function DataRoleConversation(props:RecipeModuleProps){
  const [opened,setOpened]=useState(false),[visited,setVisited]=useState(false),surface=useRef<HTMLDivElement>(null)
  useEffect(()=>{const node=surface.current,show=()=>{setOpened(true);setVisited(true)};node?.addEventListener('pwb-show-role',show);return()=>node?.removeEventListener('pwb-show-role',show)},[])
@@ -25,7 +34,7 @@ function DataRoleConversation(props:RecipeModuleProps){
 }
 function RecipeModuleSection(props:RecipeModuleProps) {
  const [toolbarHost,setToolbarHost]=useState<HTMLDivElement|null>(null)
- const [error,setError]=useState(''),{module,ctx,preview,t,appId,instanceId,pageId}=props,View=renderers.get(module.type)
+ const [error,setError]=useState(''),{module,ctx,preview,t,appId,instanceId,pageId}=props,View=allowed(module.type,appId)?renderers.get(module.type):undefined
  const prepare=()=>{try{
   const tasks=ctx?.get('personalWorkbenchTasks');if(!tasks)throw new Error(t('taskUnavailable'))
   const context=[...captureRecipeModuleContext(props)]
