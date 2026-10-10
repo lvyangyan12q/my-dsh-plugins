@@ -228,13 +228,43 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     mounted = 'dormant'
     for (const fn of mountedListeners) fn()
     assert.deepEqual(inventory.map(row => row.tabId), ['native-unrelated-tab', 'new-catalog-tab'], 'Future public adoption cleans only retired catalog records, preserving newly opened catalogs')
-    assert.equal(status(), null)
+    assert.equal(status(), 'sidebarCleanupPending', 'Legacy adopted-only close cannot certify durable retirement')
     await provider.dispose()
     assert.deepEqual(inventory.map(row => row.tabId), ['native-unrelated-tab'])
     await nativeProvider.dispose()
     assert.equal(inventoryListeners.size, 0)
     assert.equal(mountedListeners.size, 0)
     await render(false)
+    // The additive native face is tested through the real owner/provider
+    // lifecycle, without using adopted-only fallback as a durability claim.
+    let durableOutcome: 'partial' | 'complete' = 'complete'
+    const retiredKinds: string[] = []
+    const durableProvider = ctx.plugin({ apply: (child: typeof ctx) => child.effect(() => child.reflect.provide('sidebarRight', {
+      retirementVersion: 1,
+      openTabs: { getSnapshot: () => [], subscribe: (fn: () => void) => { inventoryListeners.add(fn); return () => inventoryListeners.delete(fn) } },
+      mounted: { getSnapshot: () => undefined, subscribe: () => () => {} },
+      closeIn: () => assert.fail('Durable retirement must use the supported owner-kind API'),
+      retireTabsByKind: (kind: string) => { retiredKinds.push(kind); return { outcome: durableOutcome, records: [] } },
+    })) })
+    await durableProvider
+    provider = provideSidebar(ctx, new SidebarFixture())
+    await provider
+    assert.deepEqual(retiredKinds, [descriptor.id], 'Supported attach completes the retained legacy request before registration')
+    durableOutcome = 'partial'
+    await provider.dispose()
+    assert.deepEqual(retiredKinds, [descriptor.id, descriptor.id])
+    assert.equal(status(), 'sidebarCleanupPending', 'Empty inventory does not erase a native partial failure')
+    provider = provideSidebar(ctx, new SidebarFixture())
+    await provider
+    for (const listener of inventoryListeners) listener()
+    assert.equal(retiredKinds.length, 2, 'Re-enabling protects new occurrences from an old kind-wide retry')
+    durableOutcome = 'complete'
+    await provider.dispose()
+    assert.equal(retiredKinds.length, 3)
+    assert.equal(status(), null)
+    await durableProvider.dispose()
+    assert.equal(inventoryListeners.size, 0)
+
     const incompatible: [string, unknown][] = [['version', '0.24.2'], ['version', '0.25.0'], ['features', []], ['openTab', undefined]]
     for (const [key, value] of incompatible) {
       const unsupported = new SidebarFixture()

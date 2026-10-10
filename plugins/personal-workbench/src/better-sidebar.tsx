@@ -99,6 +99,7 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
       return
     }
     child.effect(() => {
+      retirement.resume()
       let active = true
       const availability = new AdapterState(true)
       const scopes = new Map<string, { scope: SessionScope; ids: Set<string> }>()
