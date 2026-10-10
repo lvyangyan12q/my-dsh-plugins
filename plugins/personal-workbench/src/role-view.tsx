@@ -82,4 +82,3 @@ export function installRoleClient(ctx: Context, onOpenHistory?: () => void) {
     child.slots.inject('personal-workbench.role-native', () => child.slots.register({ name: 'personal-workbench.role-native' }, RoleNative))
   })
 }
-
