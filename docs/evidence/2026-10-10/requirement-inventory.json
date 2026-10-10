@@ -34,9 +34,12 @@
       "section": "User Stories",
       "number": 2,
       "requirementSha256": "7d434619f0a2905c16734907cb43da0de484c9cf8fdc4348d36cac3f0f09de6f",
-      "evidenceStatus": "satisfied for ordinary native sidebar use without Better Sidebar; broader original native teaching and sidebar runtime gates remain separate",
+      "evidenceStatus": "satisfied for ordinary workbench/Reading/Kaogong entry with Better Sidebar physically absent; full real-teaching compatibility matrix remains separate",
       "evidencePaths": [
         "docs/evidence/2026-10-10/native-navigation-contract-audit.json"
+      ],
+      "evidence": [
+        "docs/evidence/2026-10-10/better-sidebar-absence-reinstall-browser.json"
       ]
     },
     {
