@@ -148,9 +148,10 @@
       "section": "User Stories",
       "number": 11,
       "requirementSha256": "82d6e67c78787fb4c17821073316920d5afc2a1a39493fc84c6bf6eb5dcab8f0",
-      "evidenceStatus": "partial: actual 1024/768/1920 native-column alignment and unoccluded toolbars verified; complete single-column material reading and message input still requires proof",
+      "evidenceStatus": "partial: actual native-column alignment, unoccluded toolbars and container-width single-column Reading modules verified at 1024/768/1920 with retained filter/selection; real teaching message input and material-reading combinations still require proof",
       "evidence": [
-        "docs/evidence/2026-10-10/native-sidebar-position-browser.json"
+        "docs/evidence/2026-10-10/native-sidebar-position-browser.json",
+        "docs/evidence/2026-10-10/canvas-container-responsive-browser.json"
       ]
     },
     {
