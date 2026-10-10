@@ -1,6 +1,6 @@
 diff --git a/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.i18n.yaml b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.i18n.yaml
 new file mode 100644
-index 0000000000..990ae53670
+index 0000000000000000000000000000000000000000..990ae53670fbf13fade55009c98f8e9b3089f2a3
 --- /dev/null
 +++ b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.i18n.yaml
 @@ -0,0 +1,22 @@
@@ -28,7 +28,7 @@ index 0000000000..990ae53670
 +  zh: 0b25d7b63aced1ea
 diff --git a/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.md b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.md
 new file mode 100644
-index 0000000000..88002630f0
+index 0000000000000000000000000000000000000000..88002630f01287be36b18639a55a78f748696993
 --- /dev/null
 +++ b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.md
 @@ -0,0 +1,27 @@
@@ -61,7 +61,7 @@ index 0000000000..88002630f0
 +Retirement snapshots increase window-local history memory. A failed rollback cannot certify persisted bytes, so the operation reports unavailable and the provider must retry explicitly. Installed runtime disposal order and adapter retry semantics require integration acceptance before release.
 diff --git a/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.zh.md b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.zh.md
 new file mode 100644
-index 0000000000..b935ee9879
+index 0000000000000000000000000000000000000000..b935ee9879d4de2c296abacc0c051d378d85b524
 --- /dev/null
 +++ b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.zh.md
 @@ -0,0 +1,27 @@
@@ -93,7 +93,7 @@ index 0000000000..b935ee9879
 +
 +退休快照会增加窗口内历史的内存。回滚失败时无法证明保存字节，因此操作报告不可访问，由 provider 显式重试。正式运行时析构顺序与适配器重试语义仍需在发布前完成集成验收。
 diff --git a/packages/client/ui-sidebar-right/README.i18n.yaml b/packages/client/ui-sidebar-right/README.i18n.yaml
-index dfd1b69803..4a3f22497c 100644
+index dfd1b6980361ee2415f5abec1ae00bba49fc2983..4a3f22497c154a78365cebeddf7c40e064456c44 100644
 --- a/packages/client/ui-sidebar-right/README.i18n.yaml
 +++ b/packages/client/ui-sidebar-right/README.i18n.yaml
 @@ -30,8 +30,8 @@
@@ -119,7 +119,7 @@ index dfd1b69803..4a3f22497c 100644
    en: 9fcbcccf09b43c5d
    zh: 224b8a0881ab6890
 diff --git a/packages/client/ui-sidebar-right/README.md b/packages/client/ui-sidebar-right/README.md
-index 980b192ce0..4659ba2199 100644
+index 980b192ce084d7f9adcfed2ba9008e65adf2efb3..4659ba21999b61cef1f0f9e6fecf0d65c4bc8235 100644
 --- a/packages/client/ui-sidebar-right/README.md
 +++ b/packages/client/ui-sidebar-right/README.md
 @@ -98,6 +98,8 @@ Two more seats extend what is already there: `sidebar.right.tab.guide` (chain) r
@@ -140,7 +140,7 @@ index 980b192ce0..4659ba2199 100644
  - **No surface without a session.** State is keyed by session id, so the hero screen shows nothing on the right.
  - **Hard-coded stacking.** The content tree uses a fixed stacking layer; floats reorder within it without raising that layer above menus.
 diff --git a/packages/client/ui-sidebar-right/README.zh.md b/packages/client/ui-sidebar-right/README.zh.md
-index 96f8e284d9..d1484242e3 100644
+index 96f8e284d92665642d7db676e2ffbbebfd78af0d..d1484242e3832ea65eaa82a488ff19e0c167fc1a 100644
 --- a/packages/client/ui-sidebar-right/README.zh.md
 +++ b/packages/client/ui-sidebar-right/README.zh.md
 @@ -98,6 +98,8 @@ tab 类型分两阶段注册，随包发布的引导类型走的正是别的包
@@ -161,7 +161,7 @@ index 96f8e284d9..d1484242e3 100644
  - **没有会话就没有停靠面。** 状态按会话 id 键控，因此 hero 画面右侧什么都不显示。
  - **硬编码的层叠。** 内容树使用固定层叠层；浮窗在该层内重排，不会把整层抬到菜单之上。
 diff --git a/packages/client/ui-sidebar-right/src/client/index.ts b/packages/client/ui-sidebar-right/src/client/index.ts
-index 5974b81723..62c307500d 100644
+index 5974b81723fb3c47c1879eaf76a5cce20cd21e25..62c307500dc2b4c3b84901948020eb30d959550a 100644
 --- a/packages/client/ui-sidebar-right/src/client/index.ts
 +++ b/packages/client/ui-sidebar-right/src/client/index.ts
 @@ -120,7 +120,7 @@ export function apply(ctx: ClientContext): void {
@@ -183,7 +183,7 @@ index 5974b81723..62c307500d 100644
      void disposeRegistry()
    }, 'ui-sidebar-right: service faces')
 diff --git a/packages/client/ui-sidebar-right/src/client/persistence.ts b/packages/client/ui-sidebar-right/src/client/persistence.ts
-index 7335573d97..1b9b5810fe 100644
+index 7335573d977849b7e809e6c71ebce925ad761eca..1b9b5810fe09dfb499bdf7912c482cece050b0d7 100644
 --- a/packages/client/ui-sidebar-right/src/client/persistence.ts
 +++ b/packages/client/ui-sidebar-right/src/client/persistence.ts
 @@ -1,6 +1,6 @@
@@ -321,7 +321,7 @@ index 7335573d97..1b9b5810fe 100644
 +  }
 +}
 diff --git a/packages/client/ui-sidebar-right/src/client/service.ts b/packages/client/ui-sidebar-right/src/client/service.ts
-index c4bfc1252b..05a0115a58 100644
+index c4bfc1252b03839888e054317aa6968025367c55..05a0115a588ef574e577479e5f838068c27a1fb6 100644
 --- a/packages/client/ui-sidebar-right/src/client/service.ts
 +++ b/packages/client/ui-sidebar-right/src/client/service.ts
 @@ -33,6 +33,8 @@
@@ -523,7 +523,7 @@ index c4bfc1252b..05a0115a58 100644
  
    /**
 diff --git a/packages/client/ui-sidebar-right/src/client/stores.ts b/packages/client/ui-sidebar-right/src/client/stores.ts
-index 9478980de6..b4878dbd66 100644
+index 9478980de685cd31f1ee28f9f6b00cbda2b6c698..b4878dbd6607056a8876b75e3420c4b75a6faf85 100644
 --- a/packages/client/ui-sidebar-right/src/client/stores.ts
 +++ b/packages/client/ui-sidebar-right/src/client/stores.ts
 @@ -32,7 +32,7 @@ import type {
@@ -673,7 +673,7 @@ index 9478980de6..b4878dbd66 100644
 +  return layout
  }
 diff --git a/packages/client/ui-sidebar-right/src/client/tab-inventory.ts b/packages/client/ui-sidebar-right/src/client/tab-inventory.ts
-index 1dfc139518..b3afc33657 100644
+index 1dfc13951813a988364bcd8b32499892b8378e0c..b3afc33657664d206990b1122f7b96483889380e 100644
 --- a/packages/client/ui-sidebar-right/src/client/tab-inventory.ts
 +++ b/packages/client/ui-sidebar-right/src/client/tab-inventory.ts
 @@ -2,7 +2,7 @@
@@ -696,7 +696,7 @@ index 1dfc139518..b3afc33657 100644
            sessionId, tabId: tab.id, kind: tab.kind, contentId: tab.contentId,
          })))
 diff --git a/packages/client/ui-sidebar-right/tests/apply.client.spec.ts b/packages/client/ui-sidebar-right/tests/apply.client.spec.ts
-index fa83737536..83e84863db 100644
+index fa83737536da092da3db429e94f8660fc1e4e038..83e84863dbfe1ef90e7ecf475b68ed418bdd2abe 100644
 --- a/packages/client/ui-sidebar-right/tests/apply.client.spec.ts
 +++ b/packages/client/ui-sidebar-right/tests/apply.client.spec.ts
 @@ -312,9 +312,11 @@ describe('ui-sidebar-right apply', () => {
@@ -713,7 +713,7 @@ index fa83737536..83e84863db 100644
      expect(instance.getSnapshot().bySession[SESSION]?.layout.tabs[guide.id]).toBeDefined()
 diff --git a/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts b/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts
 new file mode 100644
-index 0000000000..573287c574
+index 0000000000000000000000000000000000000000..7d144f926da449e2101ed6193af14e07bb009278
 --- /dev/null
 +++ b/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts
 @@ -0,0 +1,166 @@
@@ -872,7 +872,7 @@ index 0000000000..573287c574
 +  f.adopt(session, store)
 +  const before = store.getSnapshot(), raw = localStorage.getItem(sidebarPersistence + '.' + session), get = Storage.prototype.getItem
 +  let checks = 0
-+  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (key) { if (key === sidebarPersistence + '.' + session && ++checks === 2)
++  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key) { if (key === sidebarPersistence + '.' + session && ++checks === 2)
 +    return 'different bytes'; return get.call(this, key) })
 +  try {
 +    expect(f.controller.retireTabsByKind('owned').records.some(record => record.outcome === 'persistence-unavailable')).toBe(true)
