@@ -87,3 +87,5 @@ owned merge helper 仅在 C 工作区准备并 dry-run，未执行 apply，也�
 
 脱敏回执：`docs/evidence/2026-10-11/completion-approved-two-tailnotes-proof.json`。
 
+
+父层后续实际 installed Browser 补验（source ca55fb4）：仅向 owned 3089 追加两条来源资产关联，原 bank、备份与配置 SHA 不变，已有题目/选项关联保留；原生插件停用再启用后，原未提交练习仍在。题本物理 26/48 页对应原题图真实 loaded，natural size 分别 675×120、680×165，原无关出版页头及评论尾注不再渲染。原答案不变。脱敏 installed 回执见 continuation-real-model-browser.json 的 SourceVerifiedTailnotesBrowser。仅这两条追加实际证据，不宣称全部 59 已 Browser 覆盖，不关闭工单 08。

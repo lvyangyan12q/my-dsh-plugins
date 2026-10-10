@@ -337,6 +337,31 @@
     "actualBrowserNewRoleSessionAndBothHistoricalIdsRestored": true,
     "actualBrowserCancelledEditorRestoredRequirementStatusAndNativeHistoryEntry": true
   },
+  "SourceVerifiedTailnotesBrowser": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "twoSourceAssetsMergedOnlyIntoOwned3089": true,
+    "bankBackupAndConfigExactHashesUnchangedByMerge": true,
+    "nativePluginDisableEnableReloadedSourceIndexes": true,
+    "previousUnsubmittedPracticeRoundPreserved": true,
+    "loadedOriginalQuestionImages": [
+      {
+        "questionId": "sha256:4e3807517c8e64459826e8cb301248caef33b3b4d73af2a668230a07d3a8d2ae",
+        "pdfPage": 26,
+        "width": 675,
+        "height": 120
+      },
+      {
+        "questionId": "sha256:a52f373e4f0741c6ffbbb5dd2859e70ecfafc4a7bf9a6ae4f01d5fe62e18320f",
+        "pdfPage": 48,
+        "width": 680,
+        "height": 165
+      }
+    ],
+    "priorUnrelatedPdfHeaderAndCommentFootnoteNoLongerRendered": true,
+    "oldQuestionAndOptionAssociationsPreserved": true,
+    "originalAnswersUnchanged": true,
+    "all59ActualBrowserCoverageClaimed": false
+  },
   "sanitization": {
     "localPaths": "owned-workspace",
     "nativeSessionAndQuestionIdentities": "SHA-256 fingerprints",
