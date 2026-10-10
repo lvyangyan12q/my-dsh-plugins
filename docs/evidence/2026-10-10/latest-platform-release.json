@@ -1,7 +1,7 @@
 {
   "date": "2026-10-10",
-  "sourceCommit": "5c6b42aa06d6aaa15a28c940009d2bfe9d0f47a8",
-  "reviewedHead": "5c6b42aa06d6aaa15a28c940009d2bfe9d0f47a8",
+  "sourceCommit": "a460ac263baf2e3f4c1eb2eb592358ebcc85b42b",
+  "reviewedHead": "a460ac263baf2e3f4c1eb2eb592358ebcc85b42b",
   "method": "Executed scripts/check-platform-release.mjs from a clean git archive, after complete three-plugin build and 308 passing tests",
   "verdict": {
     "officialOfflineArchiveInstall": true,
@@ -16,7 +16,7 @@
     "fixture": "public synthetic reading records",
     "modelCalls": 0,
     "archives": [
-      "e5ddb971d5467748a01547dd4d028579ca1c7f1dec4a2777728f1d43c9b41727",
+      "10b2886209f72a7a7e6d872fbcaa8a47337b926bb0cbc41f924cf6c9c6f0d979",
       "c96fc9e0e024a272f75d6c641654add9a02cef98b6d38216b917259121d43e16",
       "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
     ]

@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-10",
+  "commit": "a460ac263baf2e3f4c1eb2eb592358ebcc85b42b",
+  "archiveSha256": "10b2886209f72a7a7e6d872fbcaa8a47337b926bb0cbc41f924cf6c9c6f0d979",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual browser reload and ordinary Workbench navigation using exact clean committed installed archive",
+  "observations": {
+    "userRecipeCards": 7,
+    "userRecipeSourceLabel": "用户配方",
+    "pluginSourceRetained": "@deepseek-ai/dsh-tool-kaogong",
+    "pluginVersionRetained": "0.1.0",
+    "cardConfigurationsStayedClosed": true,
+    "nativeMenusRetained": true,
+    "missingDependencyWarnings": 0
+  },
+  "regression": {
+    "red": "saved recipes need an explicit origin label instead of only Workbench",
+    "cleanPassingTests": 308,
+    "failed": 0,
+    "skipped": 0,
+    "legacyPluginSourcePreserved": true
+  },
+  "limits": [
+    "Source kind labels registration provenance only, not trust, security or publisher verification.",
+    "Applications created from plugin-provided templates are user-saved recipes; the provider still owns their data source.",
+    "No real provider model call, complete community plugin catalog or historical deployment migration established.",
+    "User-owned management modifications remain unpublished."
+  ]
+}
