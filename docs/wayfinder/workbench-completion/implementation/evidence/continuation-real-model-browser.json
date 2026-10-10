@@ -155,7 +155,7 @@
   "limits": [
     "Historical Kaogong actual practice/unmatched observations were installed c966; source-pinned guidance correction and cold continuation used installed e989.",
     "Current merged role-choice and figure eligibility product fixes await installed and full-gate acceptance.",
-    "Reading real role task completed on c966 but had no application-native result entry; the subsequently merged entry needs installed retry and Reading cold recovery.",
+    "Reading native result entry passed on installed 6f3e471 with prior cold model history and preserved fold/reopen draft; full Reading instance/lifecycle still pending.",
     "Full manual authoring, complete role replacement and historical conversation/material coverage still require installed acceptance.",
     "The original restricted lesson remains unfinished; generic lesson closure does not imply its completion or long-term mastery.",
     "Earlier incorrect counselor/plan narratives remain in history; one corrected follow-up is not a guarantee of all model answers.",
@@ -191,10 +191,24 @@
     "RuntimeRoleConfigurationSavedPreviewedExplicitlyActivated": true,
     "PreparedTaskContainedExactSelectedRecordAndFilters": true,
     "NativeModelTaskCompleted": true,
-    "ApplicationNativeResultEntryMissing": true,
+    "ApplicationNativeResultEntryMissing": false,
     "ColdRecoveryPending": true,
     "selectedRecordDetailRendered": true,
-    "newNativeResultEntryInstalledRetest": false
+    "newNativeResultEntryInstalledRetest": true,
+    "applicationNativeResult": {
+      "InstalledWorkbenchSource": "6f3e471576aad4b55b817cbe0c6f5a4a4add99b5",
+      "ActualModelResultVisible": true,
+      "NativeTitleChatAndTrajectoryVisible": true,
+      "NativeRequestOneVisible": true,
+      "FoldReopenDraftPreserved": true,
+      "OneMountedNativeComponent": true,
+      "NarrowViewport": 480,
+      "NarrowDocumentWidth": 480,
+      "NarrowNativeWidth": 353,
+      "NarrowNativeRight": 442,
+      "OwnedColdPriorModelHistoryRecovered": true,
+      "FullReadingInstanceAndLifecycleStillPending": true
+    }
   },
   "documentImageRecovery": {
     "ownedReferencedAssetCount": 3097,
