@@ -69,3 +69,24 @@ test('author can reopen an enabled application and publish an edit without chang
 
 
 
+
+test('generated module requirement survives normal textarea input, role creation and Host save',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'recipe-requirement-')),dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map()
+ for(const[name,value]of Object.entries({React,window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const oldFetch=globalThis.fetch,api=await host(directory),requests=[];let root
+ globalThis.fetch=async(url,options)=>{const request=JSON.parse(options.body);requests.push({url,request});if(url==='/api/personal-workbench/management')return{ok:true,json:async()=>({version:1,presets:[{id:'personal-workbench.module-builder.v1',name:'Workbench builder'}],agents:[],skills:[]})};assert.equal(url,'/api/personal-workbench/recipes');return api.call(request)}
+ const click=async text=>{const button=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(button,text);await act(async()=>button.click());for(let i=0;i<100&&[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeSave')?.disabled;i++)await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10))})}
+ const read=()=>JSON.parse(document.querySelector('textarea[aria-label="recipeConfiguration"]').value)
+ try{
+  const{createRoot}=await import('react-dom/client');root=createRoot(document.getElementById('mount'));await act(async()=>root.render(React.createElement(RecipeEditor,{t:k=>k,refresh:async()=>{}})))
+  await click('recipeCreate');const id=read().pages[0].modules[0].id
+  const picker=document.querySelector('button[aria-label="recipeModulecustom: '+id+'"]');assert.ok(picker);await act(async()=>picker.click())
+  const textarea=document.querySelector('textarea[aria-label="moduleRequirement: '+id+'"]'),requirement='创建可交互的四格学习统计页面，保留课堂资料入口。';assert.ok(textarea)
+  await act(async()=>{textarea.focus();Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value').set.call(textarea,requirement);textarea.dispatchEvent(new dom.window.InputEvent('input',{bubbles:true,inputType:'insertText',data:requirement}));textarea.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Tab',bubbles:true}));textarea.blur()})
+  assert.equal(read().pages[0].modules[0].config.requirement,requirement,'normal input must update controlled recipe before role gesture')
+  await click('recipeAddRole');assert.equal(read().pages[0].modules[0].config.requirement,requirement,'adding role must retain requirement');assert.ok(read().pages[0].modules[0].roleId)
+  await click('recipeSave');assert.equal(document.querySelector('[role="alert"]')?.textContent,undefined)
+  const payload=requests.find(call=>call.request.action==='save').request.recipe;assert.equal(payload.pages[0].modules[0].config.requirement,requirement)
+  const rows=(await(await api.call({action:'catalog'})).json()).recipes;assert.equal(rows[0].draft.pages[0].modules[0].config.requirement,requirement)
+ }finally{if(root)await act(async()=>root.unmount());await api.close();await rm(directory,{recursive:true,force:true});dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+})
