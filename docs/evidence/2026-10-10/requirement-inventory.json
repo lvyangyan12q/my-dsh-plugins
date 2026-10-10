@@ -493,7 +493,8 @@
       "requirementSha256": "bcb53975960b0bc26b7dd53a2f7940094e77060c897931935cba284324a3313b",
       "evidenceStatus": "satisfied at independent plugin delivery scope: exact Host/Client archives import, official rc.2 compatibility with zero exemptions, public installed consumers and generic bounded native seams; no business hardcoding into native DSH",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json",
+        "docs/evidence/2026-10-10/official-client-module-artifact-gate.json"
       ]
     },
     {
@@ -900,7 +901,10 @@
       "section": "Testing Decisions",
       "number": 12,
       "requirementSha256": "778405df9539cd962e265204be1033849396f3a00fe17db6f3391bb29733847b",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual clean archive official CLI installation, exact installed bytes, public types, native module resolver over integrated and standalone artifacts, authenticated lifecycle and cold recovery pass. Native factory resolver demonstrably rejects an actual unregistered-zod failure artifact. Full incompatible dependency GUI, native activation and original browser/provider/IME compatibility scope remain open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/official-client-module-artifact-gate.json"
+      ]
     },
     {
       "id": "platform:User Stories:1",
