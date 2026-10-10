@@ -376,3 +376,57 @@ test('public readonly practice tool distinguishes latest completed round from cu
  assert.equal(tableSnapshot(),before,'Readonly lookup must not repair projections or rewrite score/bank/notebook')
  }finally{for(const d of disposers.reverse())await d();await backend.close();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}
 })
+
+test('bibliographic analysis titles remain readable through issuing and scoring without admitting instructional content', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-source-title-')); const app = await boot(root)
+  const source = '2009年北京市公务员考试行测真题（华图名师解析）'
+  const original = { ...bankRow(), source }
+  try {
+    await app.bank.put('bibliography', original)
+    const issued = await app.service.start(context)
+    assert.equal(issued.returned, 1)
+    assert.equal(issued.questions[0].source, source)
+    assert.equal(issued.questions[0].stem, original.stem)
+    assert.deepEqual(issued.questions[0].options, original.options)
+    assert.equal(issued.result, null)
+    assert.doesNotMatch(JSON.stringify(issued), /correctAnswer|original explanation/)
+    const scored = await app.service.submit(issued.roundId, answers(issued, 'B'))
+    assert.equal(scored.correctCount, 1)
+    assert.equal(scored.results[0].correctAnswer, 'B')
+    assert.equal(scored.results[0].source, source)
+    assert.deepEqual(app.bank.get('bibliography'), original)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('bibliographic metadata does not excuse leaked answers, commentary, missing figures or invalid options', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-source-boundary-')); const app = await boot(root)
+  const clean = { ...bankRow(), source: '公开题集（名师解析）' }
+  const refused = [
+    { stem: clean.stem + '\n【答案】B' },
+    { stem: clean.stem + '\n解析：先使用公式' },
+    { options: ['A. first', 'B. 参考答案 B'] },
+    { options: ['A. first', 'B. 解析：先排除A'] },
+    { stem: clean.stem + '\n花生批注：先看结论' },
+    { options: ['A. first', 'B. second 花生批注：排除A'] },
+    { source: '花生批注：先看结论' },
+    { source: '参考答案 B' },
+    { source: '解析：B符合公式' },
+    { source: 'answer: B' },
+    { source: '1. A 2. B 3. C' },
+    { stem: '题目［图：待恢复］' },
+    { stem: '题目 ![原图](题目_images/missing.png)' },
+    { options: ['A. first', 'B. second 公考最新资料、更新进度微信SKA674'] },
+    { options: ['A. first'], correctAnswer: 'B' },
+  ]
+  try {
+    await app.bank.put('clean-source', clean)
+    for (const [index, fields] of refused.entries()) await app.bank.put(`refused-${index}`, { ...clean, ...fields })
+    const issued = await app.service.start(context)
+    assert.equal(issued.totalAvailable, 1)
+    assert.deepEqual(issued.questions.map(q => q.id), ['clean-source'])
+    assert.match(issued.reason, /暂缓 15 道/)
+    assert.equal(app.notebook.size, 0)
+    assert.equal(app.bank.size, 16)
+    for (const [index, fields] of refused.entries()) assert.deepEqual(app.bank.get(`refused-${index}`), { ...clean, ...fields })
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
