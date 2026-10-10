@@ -1,3 +1,4 @@
+import { materializeReviewedNativeCombination } from './native-compat-test-fixture.mjs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises'
@@ -52,11 +53,7 @@ test('native sections accept the exact reviewed retirement combination and rejec
   const fixture = await mkdtemp(resolve(tmpdir(), 'my-dsh-sidebar-sections-'))
   const run = (...args) => spawnSync(process.execPath, [resolve(root, 'scripts/check-native-sidebar-sections.mjs'), ...args], { encoding: 'utf8', env: { ...process.env, DSH_SOURCE: fixture } })
   try {
-    for (const row of manifest.files) {
-      const original = execFileSync('git', ['-C', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE, 'show', 'd6a3a72164447bd8717db2ecdc66962a7800985a:' + row.path], { encoding: 'utf8' })
-      await mkdir(dirname(resolve(fixture, row.path)), { recursive: true })
-      await writeFile(resolve(fixture, row.path), original)
-    }
+    await materializeReviewedNativeCombination(fixture, 'native-sidebar-sections', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE)
     assert.equal(run().status, 0, 'reviewed retirement + native sections must verify without rewriting files')
     assert.equal(run('--apply').status, 0)
     const changed = resolve(fixture, 'packages/client/ui-sidebar/src/client/contract/slots.ts')

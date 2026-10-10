@@ -47,7 +47,7 @@
   "reviewedCombinations": [
     {
       "id": "platform-native-hooks-v1",
-      "sourceCommit": "d76d31673e727389321e1da3d6d801a4aee5699b",
+      "sourceCommit": "2ea2a7ebf801c7f001a96d676c6fc1fa21ca3445",
       "files": [
         {
           "path": "packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx",
@@ -71,7 +71,7 @@
         },
         {
           "path": "packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx",
-          "after": "01c0a5ab62fe2a8385f97c9411a50b030ecc5b1e9823e3aa0e695f490612e223"
+          "after": "3cae4557749500da566efc0d848c973c83f0d0606af35d1b55262e9983519bb5"
         },
         {
           "path": "packages/client/ui-conversation/tests/input-bar.client.spec.tsx",
