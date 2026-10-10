@@ -1204,7 +1204,10 @@
       "section": "Implementation Decisions",
       "number": 5,
       "requirementSha256": "941c7c7b60fad087389bb0b4e2bf3bb10920f50efb67b9084ffb04889b96f9f0",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at installed component registration and recipe contract; whole native teaching/release acceptance is not certified by this item",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/display-module-contract-audit.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:6",
@@ -1228,7 +1231,10 @@
       "section": "Implementation Decisions",
       "number": 7,
       "requirementSha256": "2d893e818d383ace02431332fb0e4608c76bbbaa03db29fe4d7d2d0fde37eb55",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied at shared interaction-state contract; whole native teaching/release acceptance is not certified by this item",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/display-module-contract-audit.json"
+      ]
     },
     {
       "id": "platform:Implementation Decisions:8",
@@ -1307,7 +1313,10 @@
       "section": "Implementation Decisions",
       "number": 14,
       "requirementSha256": "940452fbcbef8825474fb3731305809aa3cb474a1a357045d8eda029de16fc7e",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for first-version public component set and deferred real map scope; whole native teaching/release acceptance is not certified by this item",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/display-module-contract-audit.json"
+      ]
     },
     {
       "id": "platform:Testing Decisions:1",

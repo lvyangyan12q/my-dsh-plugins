@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "d0103bec87eae2930579ab64877fb36be0ef6d61",
+  "method": "Read actual public contracts and behavioral assertions; match exact passed names in the 304-test clean-source log; compare current source to tested archive with CRLF normalization; inspect prior native browser filter/selection observations.",
+  "source": [
+    {
+      "path": "plugins/personal-workbench/src/recipe-api.ts",
+      "normalizedSha256": "6b1122c374025a29e34af1de8cf99bb6e2b4c9503e269630d2e9f3d1cdd02b13"
+    },
+    {
+      "path": "plugins/personal-workbench/src/recipe-schema.ts",
+      "normalizedSha256": "5acc123fb290dc05b5c697bd15e3b5d507814d23439f181743c8962025af1fcc"
+    },
+    {
+      "path": "plugins/personal-workbench/src/recipe-view.tsx",
+      "normalizedSha256": "ebf0b9b79fee9bdc89f401e9cedf442a72f2dca730f0e821b18f6f1e5eec9335"
+    },
+    {
+      "path": "plugins/personal-workbench/src/display-api.ts",
+      "normalizedSha256": "5ebe8231a7fa7613895aca42480c05f96bbfdbcc071ffba5c826584743f8dc58"
+    },
+    {
+      "path": "plugins/personal-workbench/src/display-store.ts",
+      "normalizedSha256": "65c23d4a3294f513f175fc2f884a7cb68baa128c91112915b9c7666ae6757f54"
+    },
+    {
+      "path": "plugins/personal-workbench/src/display-view.tsx",
+      "normalizedSha256": "1e324dd42c124732aa44fe9e013cbe48fed3d53e7721985d52078f9781418d60"
+    },
+    {
+      "path": "plugins/personal-workbench/src/task-view.tsx",
+      "normalizedSha256": "d132855c3cfb333a57b269d3decaf9e13cb08681e701f979e89021aed0c88c40"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/recipe-client.test.mjs",
+      "normalizedSha256": "e17b58889b5f17b376a429b4f38641cc7da395b873b0342d9325bee26eb27b21"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/data-visual-ui.test.mjs",
+      "normalizedSha256": "3cec84c1a6bb4ded9bd7518dd09f15bef387065c3269d68b7277500166c54b33"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/task-data-ui.test.mjs",
+      "normalizedSha256": "488f4ce8bda9ff849066c70b7e182553b942c8f8671ca58d73f5cdbf45a69d7a"
+    }
+  ],
+  "testLogSha256": "ce138b7596a0f9a4bfac07600660f26c64536e5e841399d258bb93ed9896e62d",
+  "passedTests": [
+    "built Client installs real recipe app registration and keyed runtime; draft/preview do not replace running app",
+    "chart and map use filtered owned records, preserve zero values and link selection to detail",
+    "recipe registers chart/map through an owned shared connection and blocks cross-application sources",
+    "built display modules capture current selected/filter/aggregate data per instance and send only edited remaining context once",
+    "actual Cordis/SlotRegistry optional role factory delegates native content and unloads without base registration loss"
+  ],
+  "priorBrowserEvidence": {
+    "path": "docs/evidence/2026-10-10/reading-display-browser-interactions.json",
+    "sourceCommit": "b7ba8f76dc0be479480aba3802fd9f129daa8356",
+    "scienceStats": [
+      1,
+      60,
+      60
+    ],
+    "literatureStats": [
+      2,
+      150,
+      75
+    ],
+    "selectionDetailCount": 1,
+    "detailClearedOnFilterChange": true,
+    "modelMessagesSent": 0
+  },
+  "decisions": [
+    {
+      "id": "platform:Implementation Decisions:5",
+      "verdict": "satisfied at installed component registration and recipe contract",
+      "proof": "Page layout is independent from module type. The supported renderer API installs plugin-owned specialized code, renders a custom module through the built Client, and withdrawal exposes a missing renderer instead of silently substituting content. Shared display and role-chat modules use this same registration seam."
+    },
+    {
+      "id": "platform:Implementation Decisions:7",
+      "verdict": "satisfied at shared interaction-state contract",
+      "proof": "One connection store is shared across modules/pages within an instance. Changing filters updates matched records/aggregates; selecting a record updates detail; filtering it away clears selection. The built UI preserves filter/selection across pages and isolates another instance, with zero role ensure/send until explicit task send. Existing native browser Science/Literature filter observations independently show matching statistics, lists and detail clearing without model messages."
+    },
+    {
+      "id": "platform:Implementation Decisions:14",
+      "verdict": "satisfied for first-version public component set and deferred real map scope",
+      "proof": "Stats/list/detail/filter are installed through the public shared renderer entry; role-chat reuses the native role view. Registered specialized renderers are supported. Synthetic chart/map cases prove the extension seam only; no real map service/data acceptance is inferred."
+    }
+  ],
+  "limits": [
+    "No new test run or browser interaction is claimed in this audit.",
+    "Prior browser evidence was captured at its recorded earlier source commit; current contract behavior is additionally checked by the exact current clean-source test run.",
+    "Model teaching, native approval/question/Stop, screenshots, physical IME and full original release matrix remain separate unmet gates.",
+    "Map service acceptance remains deferred by the user; synthetic coordinates do not replace application data."
+  ]
+}
