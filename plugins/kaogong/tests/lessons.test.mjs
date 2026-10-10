@@ -219,3 +219,27 @@ test('actual domain-backed Host routes reject fabricated fields and auth failure
     assert.equal(domains.get('kaogong_lessons').table('lessons').size, 1)
   } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
 })
+
+test('canonical cause-explanation lesson accepts the sourced round while preserving its raw classification', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'lesson-cause-identity-')); const app = await boot(root)
+  try {
+    const causeSubject = '行测-判断推理', canonical = '逻辑判断-原因解释'
+    const original = { ...row, subject: causeSubject, knowledgePoint: '原因解释类' }
+    await app.bank.put('cause-source', original)
+    const request = { lessonId: randomUUID(), subject: causeSubject, objective: '解释原因并完成练习', knowledgePoint: canonical, materialIds: [], requireReflections: false }
+    await app.service.create(request)
+    const issued = await app.practice.start({ subject: causeSubject, knowledgePoint: canonical, title: '原因解释', limit: 10 })
+    assert.equal(issued.returned, 1)
+    assert.equal(issued.questions[0].knowledgePoint, '原因解释类')
+    await app.practice.submit(issued.roundId, [{ id: 'cause-source', answer: 'B' }])
+    const linked = await app.service.link(request.lessonId, issued.roundId)
+    assert.equal(linked.evidence[0].total, 1)
+    assert.equal(linked.lesson.request.knowledgePoint, canonical)
+    assert.equal(linked.canConfirm, true)
+    assert.deepEqual(app.bank.get('cause-source'), original)
+    await app.bank.put('wrong-type', { ...original, knowledgePoint: '解释说明类' })
+    const unrelated = await app.practice.start({ subject: causeSubject, knowledgePoint: '解释说明类', title: '其他分类', limit: 10 })
+    await app.practice.submit(unrelated.roundId, [{ id: 'wrong-type', answer: 'B' }])
+    await assert.rejects(app.service.link(request.lessonId, unrelated.roundId), /不属于/)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})

@@ -7,6 +7,7 @@
  */
 
 import { analyzeQuestions } from './analyze.ts'
+import { canonicalKnowledgePoint } from './knowledge-point-identity.ts'
 import type { Question, BankQuestion, Difficulty } from './types.ts'
 
 /** Options controlling one practice selection. */
@@ -52,8 +53,9 @@ export function selectPractice(bank: BankQuestion[], notebook: Question[], opts:
   let reason = '从全部题库抽题'
 
   if (opts.knowledgePoint) {
-    targets = [opts.knowledgePoint]
-    pool = drawable.filter(q => q.knowledgePoint === opts.knowledgePoint && (!opts.subject || q.subject === opts.subject))
+    const point = opts.knowledgePoint
+    targets = [point]
+    pool = drawable.filter(q => canonicalKnowledgePoint(q.subject, q.knowledgePoint) === canonicalKnowledgePoint(opts.subject ?? q.subject, point) && (!opts.subject || q.subject === opts.subject))
     reason = '专项训练：' + opts.knowledgePoint
   } else if (opts.subject) {
     pool = drawable.filter(q => q.subject === opts.subject)
