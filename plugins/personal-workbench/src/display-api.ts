@@ -10,6 +10,7 @@ export interface DisplayData {
 export interface DisplayScope { appId: string; instanceId: string; preview: boolean }
 export interface DisplaySource {
   appId: string; resource: string; label: string
+  subscribe?(scope: DisplayScope, onChange: () => void): () => void
   load(scope: DisplayScope & { signal: AbortSignal }): Promise<DisplayData>
 }
 export interface RecipeTemplate { id: string; label: string; create(): Promise<AppRecipe> }
