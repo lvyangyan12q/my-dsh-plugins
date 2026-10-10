@@ -89,7 +89,10 @@
       "section": "User Stories",
       "number": 6,
       "requirementSha256": "1fdf7e60f1f1275a976ff20a06034164cab0c48cbabd9e3d53f322f7de11374b",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: source/version and installed lifecycle displayed; actual missing managed Skill reason now visible on closed application cards and disappears on restoration, preserving running recipe and reading records. Complete source classification and all dependency conditions remain unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-dependency-card-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:7",

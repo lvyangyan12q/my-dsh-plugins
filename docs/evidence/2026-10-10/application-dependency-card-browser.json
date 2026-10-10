@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-10",
+  "commit": "5c6b42aa06d6aaa15a28c940009d2bfe9d0f47a8",
+  "archiveSha256": "e5ddb971d5467748a01547dd4d028579ca1c7f1dec4a2777728f1d43c9b41727",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual public managed fixture Skill invocation toggle, application status refresh clicks, browser DOM visibility and API readback; exact committed installed archive",
+  "red": {
+    "test": "application status refresh updates unchanged running recipe dependency projection and retains open app draft",
+    "failure": "missing dependency must be visible without expanding configuration"
+  },
+  "green": {
+    "cleanTests": 308,
+    "fail": 0,
+    "skipped": 0
+  },
+  "observations": {
+    "configurationStayedClosed": true,
+    "missingSkillWarningVisible": true,
+    "warningClearedAfterRestoration": true,
+    "installedLifecycleDisplayedSeparately": true,
+    "remainingApplicationCanOpen": true,
+    "nativeMenusRetained": true,
+    "nativeSessionRows": 3,
+    "runningVersion": 3,
+    "recipeRevision": 10,
+    "records": 3,
+    "totalMinutes": 210,
+    "recordIdsUnchanged": true,
+    "fixtureSkillRestored": true
+  },
+  "limits": [
+    "Only the isolated existing fixture Skill user-invocation flag was changed and restored.",
+    "No model or real-provider task executed; no formal user data changed.",
+    "This does not establish complete source attribution or whole compatibility matrix."
+  ]
+}
