@@ -1,3 +1,4 @@
+import { materializeReviewedNativeCombination } from './native-compat-test-fixture.mjs'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises'
@@ -56,11 +57,7 @@ test('native-session-chrome accepts only the complete reviewed platform native c
   const fixture = await mkdtemp(resolve(tmpdir(), 'my-dsh-composed-native-'))
   const run = (...args) => spawnSync(process.execPath, [resolve(root, 'scripts/check-native-session-chrome.mjs'), ...args], { encoding:'utf8', env:{...process.env, DSH_SOURCE:fixture} })
   try {
-    for (const row of manifest.files) {
-      const content = execFileSync('git', ['-C', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE, 'show', 'd76d31673e727389321e1da3d6d801a4aee5699b:' + row.path], {encoding:'utf8'})
-      await mkdir(dirname(resolve(fixture,row.path)), {recursive:true})
-      await writeFile(resolve(fixture,row.path), content)
-    }
+    await materializeReviewedNativeCombination(fixture, 'native-session-chrome', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE)
     assert.equal(run().status, 0)
     assert.equal(run('--apply').status, 0)
     const altered = resolve(fixture,manifest.files[0].path)
