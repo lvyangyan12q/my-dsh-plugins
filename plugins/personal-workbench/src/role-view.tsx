@@ -25,6 +25,7 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
   const [historyId,setHistoryId] = useState<{identity:string;sessionId:SessionId}|null>(null)
   const window = state.window
   const presetChanged = !!(expectedPresetId && state.binding && state.binding.presetId !== expectedPresetId)
+  const historySessionIds = [...new Set([...(state.binding?.previousSessionIds ?? []), ...(presetChanged && state.binding ? [state.binding.sessionId] : [])])]
   const status = useSessionStatus(value => state.binding ? value.get(state.binding.sessionId) : undefined)
   const identity = roleKey(bindingKey)
   // Identity-gated rendering prevents even one stale overlay mount before effects run.
@@ -45,7 +46,7 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
       {state.binding && <details style={{ position: 'relative' }}><summary aria-label="角色会话更多操作" style={{ cursor: 'pointer' }}>更多</summary><div style={{ position: 'absolute', right: 0, top: 24, zIndex: 2, minWidth: 180, padding: 10, background: 'var(--dsw-alias-bg-base, #fff)', border: '1px solid #ddd', borderRadius: 6 }}>
         <p style={{ overflowWrap: 'anywhere', margin: '0 0 8px' }}>会话：{state.binding.sessionId}</p>
         <button data-pwb-button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
-        {!!state.binding.previousSessionIds.length && <div role="group" aria-label={t('roleHistory')} style={{maxHeight:180,overflow:'auto',display:'flex',flexDirection:'column',gap:6,marginTop:10}}>{[...state.binding.previousSessionIds].reverse().map(id=><div key={id} style={{display:'flex',flexDirection:'column',gap:6}}><span style={{overflowWrap:'anywhere'}}>{id}</span><button data-pwb-button type="button" aria-label={t('roleViewHistory')+': '+id} disabled={state.busy} onClick={()=>setHistoryId({identity,sessionId:id})}>{t('roleViewHistory')}</button><button data-pwb-button type="button" disabled={state.busy||!openHistory} aria-label={t('roleOpenHistory')+': '+id} title={!openHistory?t('roleHistoryUnavailable'):undefined} style={{whiteSpace:'normal',overflowWrap:'anywhere',textAlign:'left'}} onClick={()=>openHistory?.(id)}>{t('roleOpenHistoryNative')}</button></div>)}</div>}
+        {!!historySessionIds.length && <div role="group" aria-label={t('roleHistory')} style={{maxHeight:180,overflow:'auto',display:'flex',flexDirection:'column',gap:6,marginTop:10}}>{[...historySessionIds].reverse().map(id=><div key={id} style={{display:'flex',flexDirection:'column',gap:6}}><span style={{overflowWrap:'anywhere'}}>{id}</span><button data-pwb-button type="button" aria-label={t('roleViewHistory')+': '+id} disabled={state.busy} onClick={()=>setHistoryId({identity,sessionId:id})}>{t('roleViewHistory')}</button><button data-pwb-button type="button" disabled={state.busy||!openHistory} aria-label={t('roleOpenHistory')+': '+id} title={!openHistory?t('roleHistoryUnavailable'):undefined} style={{whiteSpace:'normal',overflowWrap:'anywhere',textAlign:'left'}} onClick={()=>openHistory?.(id)}>{t('roleOpenHistoryNative')}</button></div>)}</div>}
       </div></details>}
     </header>
     {historyId?.identity === identity && renderFactorySlot('personal-workbench.role-history',{sessionId:historyId.sessionId,close:()=>setHistoryId(null)})}
