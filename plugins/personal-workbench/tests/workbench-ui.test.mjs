@@ -15,8 +15,9 @@ const h = React.createElement
 function boundHook(source) {
   return selector => selector(React.useSyncExternalStore(source.subscribe, source.getSnapshot, source.getSnapshot))
 }
-async function fixture({ nativeColumns = false, pluginNavigation = false, width = 960, height = 640, recipeCatalog = () => ({version:1,recipes:[]}) } = {}) {
+async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = false, width = 960, height = 640, recipeCatalog = () => ({version:1,recipes:[]}) } = {}) {
   const dom = new JSDOM('<button id="origin">Origin</button><div id="mount"></div>', { url: 'http://localhost' })
+  if (savedLayout) dom.window.localStorage.setItem('personal-workbench.layout.v1', savedLayout)
   let sidebarWidth = 280
   const columnObservers = new Map()
   if (nativeColumns) {
@@ -390,4 +391,24 @@ test('reverse keyboard window navigation from the application center selects the
   assert.equal(f.service.getSnapshot().focused,JSON.stringify(['test.beta','default']),'Reverse navigation begins at the last eligible window, not the penultimate window')
   assert.equal(draft.isConnected,true);assert.equal(draft.value,'retained answer')
  }finally{await act(async()=>{for(const remove of registrations)remove()});await f.dispose()}
+})
+
+
+test('browser refresh restores the focused application and selected page without another launcher click', async () => {
+ let savedLayout
+ const before = await fixture()
+ try {
+  await before.click('Exercise'); await before.click('Practice'); await before.click('maximize: Exercise')
+  savedLayout = before.dom.window.localStorage.getItem('personal-workbench.layout.v1')
+ } finally { await before.dispose() }
+ const after = await fixture({ savedLayout })
+ try {
+  const doc = after.dom.window.document
+  assert.equal(doc.querySelector('.pwb-app-home').hidden, true, 'Refresh must restore the application rather than the catalog')
+  assert.equal(doc.querySelector('output[aria-label="Activity"]').textContent, 'true')
+  assert.equal(doc.querySelector('output[aria-label="Selected page"]').textContent, 'practice')
+  assert.ok(after.button('restore: Exercise'))
+  assert.equal(after.service.getSnapshot().windows.length, 1)
+  assert.deepEqual(after.counts(), {fetches:0, retained:0, mounts:1, unmounts:0})
+ } finally { await after.dispose() }
 })

@@ -1,0 +1,11 @@
+# Focused application refresh — partial source regression
+
+The installed browser reported that reloading an open application returned to the application center even though its selected page, draft and split preference remained recoverable after another launcher click. The plugin stored window rows but discarded the focused instance identity when recreating its public Workbench service.
+
+A built Client factory/UI regression first failed at the visible application-center assertion, then passed after persisting and validating the focused window key in the plugin-owned version-1 layout preference. A recreated client now renders the same application instance and selected page in its maximized mode without another launch action. The fixture contains no model, native transcript, or durable application draft; application draft and native split restoration remain the responsibility of their existing owners and actual browser acceptance.
+
+Focused identity is restored only for a saved open, non-minimized window. Explicit return to the catalog persists null focus; unavailable, closed or minimized records cannot gain focus. Host availability is still required before rendering; disabled applications clear restored focus. Legacy version-1 preferences without focused identity remain readable and preserve existing layout, but cannot reconstruct an identity that was never saved. After opening the desired application once under this version, subsequent refreshes save its identity explicitly.
+
+Directed verification in the independent runtime worktree: public Workbench tests 8/8, built Client/UI tests 15/15, real Cordis and official SlotRegistry lifecycle 1/1; source type checking, declaration emission and public consumer check passed. RED and GREEN exercised the same new UI regression. No core storage/API change, formal plugin build, browser operation, Host restart or deployment was performed.
+
+Ticket 01 remains open. Parent must install the official archive, open an application, select its page, keep a draft and native split, reload without clicking the launcher, and observe the current application/page/draft/split directly. Repeat for explicit catalog, minimized/closed windows, disabled applications and Host cold start as applicable. Remaining dormant native cleanup and full ticket scope are unchanged.

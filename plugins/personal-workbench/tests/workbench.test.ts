@@ -64,7 +64,7 @@ test('same instance focus, minimize/maximize/close/reopen and refresh preserve p
   assert.equal(restored.getSnapshot().apps[app.id].favorite, true)
   assert.throws(() => restored.selectPage(key, 'missing'), /unavailable/)
   const persisted = JSON.parse([...storage.values.values()][0])
-  assert.deepEqual(Object.keys(persisted).sort(), ['apps', 'version', 'visible', 'windows'])
+  assert.deepEqual(Object.keys(persisted).sort(), ['apps', 'focused', 'version', 'visible', 'windows'])
   assert.equal(JSON.stringify(persisted).includes('source'), false)
 })
 
@@ -128,4 +128,38 @@ test('only the active registration owner updates metadata without retiring insta
   assert.throws(() => dispose.update(next), /disposed/)
   assert.equal(workbench.getSnapshot().definitions[0].version, '1.0')
   workbench.dispose()
+})
+
+
+test('refresh preserves an explicit catalog choice and rejects stale window focus', () => {
+  const storage = memory()
+  const workbench = new Workbench(storage)
+  workbench.registerApp(app)
+  workbench.openApp(app.id)
+  workbench.openWorkspace()
+  const catalog = new Workbench(storage)
+  catalog.registerApp(app)
+  assert.equal(catalog.getSnapshot().focused, null, 'Catalog navigation must survive refresh')
+  for (const mode of ['closed', 'minimized'] as const) {
+    workbench.openApp(app.id)
+    workbench.setMode(key, mode)
+    const refreshed = new Workbench(storage)
+    refreshed.registerApp(app)
+    assert.equal(refreshed.getSnapshot().focused, null)
+    assert.equal(refreshed.getSnapshot().windows[0].mode, mode)
+  }
+  storage.setItem('personal-workbench.layout.v1', JSON.stringify({version:1,visible:true,windows:[],apps:{},focused:key}))
+  assert.equal(new Workbench(storage).getSnapshot().focused, null, 'Missing windows cannot receive restored focus')
+})
+
+test('restored focus waits for availability and cannot reopen a disabled application', async () => {
+  const storage = memory()
+  const previous = new Workbench(storage)
+  previous.registerApp(app); previous.openApp(app.id)
+  const restored = new Workbench(storage, async () => [{appId:app.id,enabled:false,revision:1}])
+  restored.registerApp(app)
+  assert.equal(restored.isEnabled(app.id), false)
+  await restored.loadLifecycle()
+  assert.equal(restored.getSnapshot().focused, null)
+  assert.equal(restored.isEnabled(app.id), false)
 })
