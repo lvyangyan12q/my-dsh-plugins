@@ -21,12 +21,14 @@ function Mounted({ reference, bindingKey, mountRole, children }: { reference: Se
 type RoleViewProps = FactoryComponentPropsOf<'personal-workbench.role-conversation'>
 export function RoleConversation({ bindingKey, active, label, expectedPresetId, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, openHistory, renderFactorySlot, t }: RoleViewProps) {
   const state = useRoles(value => value.get(roleKey(bindingKey))) ?? EMPTY
-  const [attachment, setAttachment] = useState<{ expectedSessionId: SessionId | null } | null>(null)
-  const [historyId,setHistoryId] = useState<SessionId|null>(null)
+  const [attachment, setAttachment] = useState<{ identity: string; expectedSessionId: SessionId | null } | null>(null)
+  const [historyId,setHistoryId] = useState<{identity:string;sessionId:SessionId}|null>(null)
   const window = state.window
   const presetChanged = !!(expectedPresetId && state.binding && state.binding.presetId !== expectedPresetId)
   const status = useSessionStatus(value => state.binding ? value.get(state.binding.sessionId) : undefined)
   const identity = roleKey(bindingKey)
+  // Identity-gated rendering prevents even one stale overlay mount before effects run.
+  useEffect(() => { setHistoryId(null); setAttachment(null) }, [identity])
   const surface=useRef<HTMLElement>(null)
   useEffect(()=>{const node=surface.current;if(!node)return;const reveal=()=>{setHistoryId(null);setAttachment(null)};node.addEventListener('pwb-reveal-role',reveal);return()=>node.removeEventListener('pwb-reveal-role',reveal)},[identity])
   // Re-read on explicit view activation, including cached disabled errors; never ensure or replace.
@@ -39,15 +41,15 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
       {status?.running && <span role="status">运行中</span>}{status?.pendingInteraction && <span role="status">待处理：{status.pendingInteraction.kind}</span>}{status?.completionUnread && <span role="status">未读完成</span>}
       {!state.binding && !state.error && window.phase !== 'error' && <button data-pwb-button data-variant="primary" disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}>创建{label ?? '角色会话'}</button>}
       {(state.error || window.phase === 'error' || state.binding?.phase === 'intent') && <button data-pwb-button disabled={state.busy} onClick={retry}><RefreshCw size={14} /> 重试</button>}
-      {commands.attach && <button data-pwb-button disabled={state.busy} onClick={() => setAttachment({ expectedSessionId: state.binding?.sessionId ?? null })}>{t('roleAttach')}</button>}
+      {commands.attach && <button data-pwb-button disabled={state.busy} onClick={() => setAttachment({ identity, expectedSessionId: state.binding?.sessionId ?? null })}>{t('roleAttach')}</button>}
       {state.binding && <details style={{ position: 'relative' }}><summary aria-label="角色会话更多操作" style={{ cursor: 'pointer' }}>更多</summary><div style={{ position: 'absolute', right: 0, top: 24, zIndex: 2, minWidth: 180, padding: 10, background: 'var(--dsw-alias-bg-base, #fff)', border: '1px solid #ddd', borderRadius: 6 }}>
         <p style={{ overflowWrap: 'anywhere', margin: '0 0 8px' }}>会话：{state.binding.sessionId}</p>
         <button data-pwb-button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
-        {!!state.binding.previousSessionIds.length && <div role="group" aria-label={t('roleHistory')} style={{maxHeight:180,overflow:'auto',display:'flex',flexDirection:'column',gap:6,marginTop:10}}>{[...state.binding.previousSessionIds].reverse().map(id=><div key={id} style={{display:'flex',flexDirection:'column',gap:6}}><span style={{overflowWrap:'anywhere'}}>{id}</span><button data-pwb-button type="button" aria-label={t('roleViewHistory')+': '+id} disabled={state.busy} onClick={()=>setHistoryId(id)}>{t('roleViewHistory')}</button><button data-pwb-button type="button" disabled={state.busy||!openHistory} aria-label={t('roleOpenHistory')+': '+id} title={!openHistory?t('roleHistoryUnavailable'):undefined} style={{whiteSpace:'normal',overflowWrap:'anywhere',textAlign:'left'}} onClick={()=>openHistory?.(id)}>{t('roleOpenHistoryNative')}</button></div>)}</div>}
+        {!!state.binding.previousSessionIds.length && <div role="group" aria-label={t('roleHistory')} style={{maxHeight:180,overflow:'auto',display:'flex',flexDirection:'column',gap:6,marginTop:10}}>{[...state.binding.previousSessionIds].reverse().map(id=><div key={id} style={{display:'flex',flexDirection:'column',gap:6}}><span style={{overflowWrap:'anywhere'}}>{id}</span><button data-pwb-button type="button" aria-label={t('roleViewHistory')+': '+id} disabled={state.busy} onClick={()=>setHistoryId({identity,sessionId:id})}>{t('roleViewHistory')}</button><button data-pwb-button type="button" disabled={state.busy||!openHistory} aria-label={t('roleOpenHistory')+': '+id} title={!openHistory?t('roleHistoryUnavailable'):undefined} style={{whiteSpace:'normal',overflowWrap:'anywhere',textAlign:'left'}} onClick={()=>openHistory?.(id)}>{t('roleOpenHistoryNative')}</button></div>)}</div>}
       </div></details>}
     </header>
-    {historyId && renderFactorySlot('personal-workbench.role-history',{sessionId:historyId,close:()=>setHistoryId(null)})}
-    {attachment && renderFactorySlot('personal-workbench.role-attachment', { bindingKey, expectedSessionId: attachment.expectedSessionId, close: () => setAttachment(null) })}
+    {historyId?.identity === identity && renderFactorySlot('personal-workbench.role-history',{sessionId:historyId.sessionId,close:()=>setHistoryId(null)})}
+    {attachment?.identity === identity && renderFactorySlot('personal-workbench.role-attachment', { bindingKey, expectedSessionId: attachment.expectedSessionId, close: () => setAttachment(null) })}
     {presetChanged && <p role="alert">{t('rolePresetChanged')}</p>}
     {state.busy && <p role="status">正在连接角色会话…</p>}
     {state.error && <p role="alert">{state.error}</p>}
