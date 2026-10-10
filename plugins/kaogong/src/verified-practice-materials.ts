@@ -11,6 +11,7 @@ const indexSchema = z.object({
     stemSha256: digest,
     asset: z.string().regex(/^verified\/[\p{L}\p{N}_-]+\.(?:png|jpg|jpeg|webp)$/iu),
     assetSha256: digest,
+    displayMode: z.enum(['supplement', 'source-image']).optional(),
     sourcePdfSha256: digest,
     sourcePage: z.number().int().positive(),
   }).strict()).max(5000),
@@ -46,6 +47,7 @@ export async function loadVerifiedPracticeMaterials(root?: string): Promise<(id:
     const row = associations.get(id)
     if (!row || sha(stem) !== row.stemSha256) return stem
     const reference = `![已核验原题图示 · PDF 第 ${row.sourcePage} 页](题目_images/${row.asset})`
+    if (row.displayMode === 'source-image') return reference
     return stem.includes(reference) ? stem : stem + '\n\n' + reference
   }
 }
@@ -58,6 +60,7 @@ const optionRepairSchema = z.object({
     stemSha256: digest,
     optionsSha256: digest,
     optionIndices: z.array(z.number().int().min(0).max(25)).min(1).max(26),
+    sourceOptions: z.array(z.string().min(1).max(10_000).refine(value => !/答案|解析|批注|SKA674/.test(value))).min(1).max(26).optional(),
     sourcePdfSha256: digest,
     sourcePage: z.number().int().positive(),
   }).strict()).max(5000),
@@ -86,6 +89,12 @@ export async function loadVerifiedPracticeOptions(root?: string): Promise<typeof
   return (id, stem, options) => {
     const row = associations.get(id)
     if (!row || sha(stem) !== row.stemSha256 || sha(JSON.stringify(options)) !== row.optionsSha256) return options
+    if (row.sourceOptions) {
+      if (row.sourceOptions.length !== options.length || row.optionIndices.length !== options.length || row.optionIndices.some(index => index >= options.length)) return options
+      const key = (option: string) => /^\s*([A-Z])(?:[.、)\s]|$)/.exec(option)?.[1]
+      if (row.sourceOptions.some((option, index) => !key(option) || key(option) !== key(options[index]!))) return options
+      return [...row.sourceOptions]
+    }
     if (row.optionIndices.some(index => !options[index] || !terminalAdvertisement.test(options[index]) || !options[index].replace(terminalAdvertisement, '').trim())) return options
     return options.map((option, index) => row.optionIndices.includes(index) ? option.replace(terminalAdvertisement, '') : option)
   }

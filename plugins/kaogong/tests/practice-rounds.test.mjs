@@ -276,10 +276,10 @@ for (const separator of ['、', '，']) test(`verified terminal advertisement ($
   const raw = { ...bankRow(), options: ['A. first', 'B. second', 'C. third', `D. fourth\n公考最新资料${separator}更新进度微信 SKA674`], correctAnswer: 'D' }
   const sha = value => createHash('sha256').update(value).digest('hex')
   const host = { storageDomain: { async open(spec) { const domain = await facility.open(spec); domains.set(spec.name, domain); return domain } }, inject() {}, logger: { warn() {} }, effect(effect) { const dispose = effect(); if (typeof dispose === 'function') disposers.push(dispose) }, connection: { requestRejection: () => undefined }, webServer: { register(route) { routes.set(route.path, route.handler); return () => routes.delete(route.path) } }, tools: { register() {} } }
-  const request = async (action, body) => {
+  const request = async (action, body, expectedStatus = 200) => {
     const req = Readable.from([JSON.stringify(body)]); req.method = 'POST'; req.headers = { 'content-type': 'application/json' }
     let status, value; await routes.get('/api/kaogong/practice/' + action)(req, { writeHead(code) { status = code }, end(bytes) { value = JSON.parse(bytes) } })
-    assert.equal(status, 200); return value
+    assert.equal(status, expectedStatus); return value
   }
   try {
     const seed = await facility.open(bankDomainSpec)
@@ -298,8 +298,9 @@ for (const separator of ['、', '，']) test(`verified terminal advertisement ($
     assert.equal(score.results[0].options[3], 'D. fourth')
     const bank = domains.get(bankDomainSpec.name).table('questions')
     await bank.put('pinned-footer', { ...raw, stem: raw.stem + ' changed' })
-    const changed = await request('start', context)
-    assert.deepEqual(changed.questions[0].options, raw.options, 'a changed original stem invalidates the proof rather than editing unverified options')
+    const changed = await request('start', context, 400)
+    assert.match(changed.error, /来源核验.*修复/, 'a changed original stem invalidates the proof and waits for source repair')
+    assert.deepEqual(bank.get('pinned-footer').options, raw.options)
   } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
 })
 
@@ -324,5 +325,29 @@ test('publisher solution annotations are withheld from new practice and unsubmit
     assert.equal(graded.results[0].explanation, contaminated.explanation)
     assert.deepEqual(graded.results[0].options, contaminated.options)
     assert.equal((await app.service.read(legacy.roundId)).result.correctCount, 1)
+  } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
+})
+
+
+test('unverified option adverts and historical missing figures wait for source repair; verified figures can resume without rewriting the bank', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-material-eligibility-'))
+  const old = { ...bankRow(), stem: 'Original material\n![材料图表](D:/old/题目_images/chart.png)\nQuestion' }
+  const app = await boot(root, (id, stem) => id === 'restored' ? stem + '\n![已核验原题图示](题目_images/verified/restored.png)' : stem)
+  try {
+    await app.bank.put('clean', bankRow())
+    await app.bank.put('missing-chart', old)
+    await app.bank.put('restored', old)
+    await app.bank.put('unverified-advert', { ...bankRow(1), options: ['A. first', 'B. second 公考最新资料、更新进度微信SKA674'] })
+    await app.bank.put('missing-option-image', { ...bankRow(2), options: ['A. （饼图）', 'B. （饼图）'] })
+    const issued = await app.service.start(context)
+    assert.deepEqual(issued.questions.map(q => q.id).sort(), ['clean', 'restored'])
+    assert.match(issued.reason, /暂缓.*核验.*修复/)
+    assert.equal(issued.result, null)
+    assert.deepEqual(app.bank.get('missing-chart'), old)
+    assert.deepEqual(app.bank.get('restored'), old)
+    const score = await app.service.submit(issued.roundId, answers(issued, 'B'))
+    assert.equal(score.correctCount, 2)
+    await app.bank.delete('clean'); await app.bank.delete('restored')
+    await assert.rejects(app.service.start(context), /图表.*核验.*修复/)
   } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
 })

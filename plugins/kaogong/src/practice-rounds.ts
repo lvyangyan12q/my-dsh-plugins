@@ -11,8 +11,10 @@ export class PracticeError extends Error {
 }
 
 /** Fail closed on answer-key material rather than editing the original bank text. */
-export function safePracticeQuestion(question: BankQuestion): boolean {
+export function safePracticeQuestion(question: BankQuestion, verifiedFigure = false): boolean {
   const text = [question.stem, ...question.options, question.source].join('\n')
+  if (question.options.some(option => /SKA674|公考最新资料[、，]更新进度微信|[（(]饼图[）)]/.test(option))) return false
+  if (!verifiedFigure && /!\[[^\]]*\]\((?:[A-Za-z]:[\\/]|(?:\.\.?[\\/])?题目_images[\\/](?!verified[\\/]))/u.test(question.stem)) return false
   if (/花生批注\s*[:：]/.test(text)) return false
   if (/答案|解析|(?:answer|solution|explanation)\s*[:：]|(?:^|\n)\s*\d+[.、]\s*[A-D](?:\s+\d+[.、]\s*[A-D])+/im.test(text)) return false
   return question.options.length > 0 && question.options.some(option => optionKey(option) === question.correctAnswer.trim())
@@ -24,6 +26,14 @@ function optionKey(option: string) { return /^\s*([A-Za-z])(?:[.、)\s]|$)/.exec
 export class PracticeRounds {
   private tail: Promise<unknown> = Promise.resolve()
   constructor(private rounds: KvTable<string, PracticeRound>, private bank: KvTable<string, BankQuestionRecord>, private notebook: KvTable<string, QuestionRecord>, private materialStem: (id: string, stem: string) => string = (_id, stem) => stem, private materialOptions: (id: string, stem: string, options: string[]) => string[] = (_id, _stem, options) => options) {}
+  private displayQuestion(question: BankQuestion) {
+    const stem = this.materialStem(question.id, question.stem)
+    return { question: { ...question, stem, options: this.materialOptions(question.id, question.stem, question.options) }, verifiedFigure: stem !== question.stem && /!\[[^\]]*\]\(题目_images\/verified\//u.test(stem) }
+  }
+  private drawable(question: BankQuestion) {
+    const display = this.displayQuestion(question)
+    return safePracticeQuestion(display.question, display.verifiedFigure)
+  }
   drain() { return this.tail }
   notebookCommand<T>(command: () => Promise<T>): Promise<T> { return this.run(command) }
   private run<T>(command: () => Promise<T>): Promise<T> {
@@ -41,10 +51,13 @@ export class PracticeRounds {
     return this.run(async () => {
       const previous = previousRoundId ? this.round(previousRoundId) : undefined
       if (previous && (!previous.score || previous.context.subject !== context.subject || previous.context.knowledgePoint !== context.knowledgePoint)) throw new PracticeError('next round requires a submitted round in the same module')
-      const bank: BankQuestion[] = [...this.bank.entries()].map(([id, row]) => ({ id, ...row })).filter(safePracticeQuestion)
+      const originals: BankQuestion[] = [...this.bank.entries()].map(([id, row]) => ({ id, ...row }))
+      const bank = originals.filter(question => this.drawable(question))
       const notebook: Question[] = [...this.notebook.entries()].map(([id, row]) => ({ id, ...row }))
       const controls = { ...context, limit: 10, weak, difficulty }
       const full = selectPractice(bank, notebook, controls)
+      const deferred = selectPractice(originals, notebook, controls).totalAvailable - full.totalAvailable
+      if (full.totalAvailable === 0 && deferred > 0) throw new PracticeError('匹配题目的图表或选项尚未通过来源核验，请修复原题资料后重新开始练习')
       if (full.totalAvailable === 0 && context.knowledgePoint) {
         throw new PracticeError('没有匹配当前科目、考点和难度的可练习题目；请确认考点名称或显式选择科目练习')
       }
@@ -57,7 +70,7 @@ export class PracticeRounds {
       }
       const now = new Date().toISOString()
       const id = randomUUID()
-      const round: PracticeRound = { version: 1, context, questions: selected, seenIds: [...new Set([...(cycled ? [] : seen), ...selected.map(row => row.id)])], reason: full.reason,
+      const round: PracticeRound = { version: 1, context, questions: selected, seenIds: [...new Set([...(cycled ? [] : seen), ...selected.map(row => row.id)])], reason: full.reason + (deferred > 0 ? `；暂缓 ${deferred} 道尚未通过资料核验的题目，请修复后再练习` : ''),
         totalAvailable: full.totalAvailable, cycled, createdAt: now, changedAt: now, reflections: [], revision: 0, projectedRevision: 0, review: 'ready' }
       await this.rounds.put(id, round)
       return this.view(id, round)
@@ -76,8 +89,8 @@ export class PracticeRounds {
       projection: round.projectedRevision === round.revision ? 'complete' as const : 'pending' as const, review: round.review }
   }
   private view(id: string, round: PracticeRound) {
-    if (!round.score && round.questions.some(q => /花生批注\s*[:：]/.test([q.stem, ...q.options].join('\n')))) {
-      throw new PracticeError('这轮题目含解题批注，请重新开始练习；原始记录与评分仍然保留', 409)
+    if (!round.score && round.questions.some(q => !this.drawable(q))) {
+      throw new PracticeError('这轮题目的图表、选项或解题批注尚未通过来源核验，请修复资料后重新开始练习；原始记录与评分仍然保留', 409)
     }
     return { roundId: id, context: round.context, reason: round.reason, totalAvailable: round.totalAvailable, returned: round.questions.length, cycled: round.cycled,
       questions: round.questions.map(({ id, subject, knowledgePoint, stem, options, difficulty, source }) => ({ id, subject, knowledgePoint, stem: this.materialStem(id, stem), options: this.materialOptions(id, stem, options), difficulty, source })),

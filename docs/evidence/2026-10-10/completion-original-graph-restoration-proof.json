@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-11",
+  "historicalImageSources": {
+    "uniqueImageReferences": 181,
+    "sourcePixelHashesExactlyMatchReRenderedOriginalPdf": 181,
+    "originalPdfCount": 2,
+    "questionRowsReferencingHistoricalWholePages": 873,
+    "approvedQuestionRowsReferencingHistoricalWholePages": 0,
+    "sourcePdfSha256": [
+      "027ffa9f2c4ed788bc3722e1502b78384615ce52a60fd50415b2ed014b0ae5f5",
+      "b934286af7e658aee0469d9c8ae94471caa34d91ff2c651f46bffef9bcacc446"
+    ],
+    "wholeAnalysisPagesNotAllowedForPreSubmitDisplay": true
+  },
+  "remainingAdvertisementCandidateSourceDiscovery": {
+    "previouslyUnlocatedCandidates": 3,
+    "nowLocatedInOriginalQuestionOrExplanationPdf": 3,
+    "allSevenRemainingCandidatesHaveSourceIdentityEvidence": true,
+    "originalQuestionBookPagesChecked": [
+      4,
+      9,
+      28,
+      41,
+      61,
+      174
+    ],
+    "oneOcrOptionDifferenceInOriginalLogicQuestionBookPage": 176,
+    "allSevenRepaired": false
+  },
+  "completeSourceGraphRecovery": {
+    "questionCount": 1,
+    "sourceQuestionBookPages": [
+      27,
+      28
+    ],
+    "originalAnswerIndependentlyMatchedOriginalExplanationPdfPage": 63,
+    "sourcePdfSha256": "a30ec840f6d1789a3ee8a214409d9f1a37092b61c0809edd616fd2e0867ebb55",
+    "assetSha256": "544deb79b207f248fd9a06de5e2bb23867bfea67fa3a176288f857b88e21e36b",
+    "manualCropVisualInspection": true,
+    "completeSharedMaterialAndGraphQuestionAndAllFourOptionsVisible": true,
+    "answerExplanationPublisherAnnotationsAndAdjacentQuestionsExcluded": true,
+    "originalCanonicalQuestionStillPending": true,
+    "approvalPerformedExplicitlyOnlyInIsolatedHostViaExistingReviewTool": true,
+    "publicHostStartAndImageHttpAndSubmitAndColdRestartRead": true,
+    "originalBodyAndOptionsAndAnswerAndExplanationUnchanged": true,
+    "originalBackupHashUnchanged": true
+  },
+  "regression": {
+    "targetedTestsPassed": 19,
+    "hostAndClientTypecheckPassed": true,
+    "newSourceOptionAndSourceImageDisplayRedObserved": true,
+    "fullBuildRun": false
+  },
+  "privateMaterialsOrIndicesCommitted": false,
+  "actualInstalledBrowserAcceptance": false,
+  "limitations": [
+    "181 exact origin matches prove source identity, not safe pre-submit suitability of analysis full pages",
+    "One complete graph question restored, not all 873 pending historical questions",
+    "Manual complete source-image certification is trusted local metadata, not automatic image semantic checking",
+    "Other six contaminated candidates and full historical material restoration remain open"
+  ]
+}
