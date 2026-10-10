@@ -39,7 +39,7 @@ async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = 
   const { createRoot } = require('react-dom/client')
   Object.defineProperty(dom.window.HTMLElement.prototype, 'clientWidth', { get: () => width })
   Object.defineProperty(dom.window.HTMLElement.prototype, 'clientHeight', { get: () => height })
-  const declarations = [], cleanups = [], pluginNavigationCalls = []
+  const declarations = [], cleanups = [], pluginNavigationCalls = [], slotWithdrawals = new Map()
   let service, exports, fetches = 0, retained = 0, mounts = 0, unmounts = 0
   runInNewContext(await readFile(new URL('../lib/client.js', import.meta.url), 'utf8'), {
     window: Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { exports = factory(require) } } }),
@@ -61,7 +61,7 @@ async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = 
     workspaces: { list: { getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }), subscribe: () => () => {} } },
     locale: { register: () => () => {} },
     slots: {
-      inject: (_key, install) => { cleanups.push(install()) },
+      inject: (key, install) => { const remove = install(); slotWithdrawals.set(key, remove); cleanups.push(remove) },
       register: (options, component) => {
         const entry = { options, component }
         declarations.push(entry)
@@ -101,7 +101,7 @@ async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = 
         renderSlot: (name, owner, options) => {
           assert.equal(name, 'personal-workbench.app')
           const entry = declarations.find(row => row.options.name === name && row.options.key === options.entryKey)
-          return entry ? h(entry.component, owner) : options.fallback
+          return entry ? h(entry.component, { ...owner, t: key => key }) : options.fallback
         } }))
   }
   const root = createRoot(dom.window.document.getElementById('mount'))
@@ -112,16 +112,64 @@ async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = 
   return { dom, ctx, declarations, service, root, pluginNavigationCalls, removeApp, removeView, click, button,
     async collapseNativeSidebar() { await act(async () => {sidebarWidth = 56;columnObservers.get(dom.window.document.getElementById('sidebar'))?.()}) },
     counts: () => ({ fetches, retained, mounts, unmounts }),
+    refreshRecipes: overlay.options.inject().refreshRecipes,
+    withdrawApplicationSlots: () => slotWithdrawals.get('personal-workbench.app')(),
     async dispose() {
       await act(async () => root.unmount())
       for (const dispose of cleanups.reverse()) await dispose()
+      const saved = dom.window.localStorage.getItem('personal-workbench.layout.v1')
       dom.window.close()
       for (const [name, descriptor] of globals) {
         if (descriptor) Object.defineProperty(globalThis, name, descriptor)
         else delete globalThis[name]
       }
+      return saved
     } }
 }
+
+test('application slot withdrawal and platform reconstruction restore the last focused recipe without an invalid live view', async () => {
+  const running = { appId: 'test.cold-project', version: 1, name: 'Cold project', roles: [], connections: [],
+    pages: [{ id: 'home', label: 'Home', modules: [] }, { id: 'review', label: 'Review', modules: [] }] }
+  const recipeCatalog = () => ({ version: 1, recipes: [{ appId: running.appId, running, draft: running }] })
+  const first = await fixture({ recipeCatalog })
+  let saved
+  try {
+    await first.click('Cold project')
+    await first.click('Review')
+    assert.equal(first.service.getSnapshot().focused, '["test.cold-project","default"]')
+    await act(async () => first.withdrawApplicationSlots())
+    assert.equal(first.service.getSnapshot().definitions.some(row => row.id === running.appId), false)
+  } finally { saved = await first.dispose() }
+  const second = await fixture({ recipeCatalog, savedLayout: saved })
+  try {
+    assert.equal(second.dom.window.document.querySelector('.pwb-app-home').hidden, true)
+    assert.equal(second.service.getSnapshot().focused, '["test.cold-project","default"]')
+    assert.equal(second.service.getSnapshot().windows.find(row => row.appId === running.appId).pageId, 'review')
+    assert.equal(second.counts().retained, 0)
+  } finally { await second.dispose() }
+})
+
+test('confirmed recipe withdrawal remains retired after the same application is installed again', async () => {
+  const running = { appId: 'test.retired-project', version: 1, name: 'Retired project', roles: [], connections: [],
+    pages: [{ id: 'home', label: 'Home', modules: [] }] }
+  let installed = true
+  const recipeCatalog = () => ({ version: 1, recipes: installed ? [{ appId: running.appId, running, draft: running }] : [] })
+  const first = await fixture({ recipeCatalog })
+  let saved
+  try {
+    await first.click('Retired project')
+    installed = false
+    await act(async () => first.refreshRecipes())
+    assert.equal(first.service.getSnapshot().definitions.some(row => row.id === running.appId), false)
+    assert.equal(first.service.getSnapshot().windows.find(row => row.appId === running.appId).mode, 'closed')
+  } finally { saved = await first.dispose() }
+  installed = true
+  const second = await fixture({ recipeCatalog, savedLayout: saved })
+  try {
+    assert.equal(second.dom.window.document.querySelector('.pwb-app-home').hidden, false)
+    assert.equal(second.service.getSnapshot().focused, null)
+  } finally { await second.dispose() }
+})
 
 
 test('direct project fills the main surface and retains draft through page, exit and reopen', async () => {

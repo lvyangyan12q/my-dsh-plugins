@@ -108,7 +108,7 @@ export class Workbench implements PersonalWorkbench {
     this.listeners.add(listener)
     return () => { this.listeners.delete(listener) }
   }
-  readonly registerApp = (definition: WorkbenchAppDefinition): (() => void) & { update: (next: WorkbenchAppDefinition) => void } => {
+  readonly registerApp = (definition: WorkbenchAppDefinition): (() => void) & { update: (next: WorkbenchAppDefinition) => void; suspend: () => void } => {
     if (this.disposed) throw new Error('Workbench is disposed')
     if (this.definitions.has(definition.id)) throw new Error(`Duplicate application: ${definition.id}`)
     const id = definition.id
@@ -139,7 +139,15 @@ export class Workbench implements PersonalWorkbench {
         windows: this.snapshot.windows.map(row => row.appId === id ? { ...row, mode: 'closed' } : row),
         focused: retired.includes(this.snapshot.focused ?? '') ? null : this.snapshot.focused })
     }
-    return Object.assign(remove, { update })
+    // A renderer dependency may disappear during Client reconstruction. Hide its
+    // live view without turning the saved presentation into a user's close.
+    const suspend = () => {
+      if (!active || this.disposed) return
+      active = false
+      this.definitions.delete(id)
+      this.publish({ definitions: [...this.definitions.values()] })
+    }
+    return Object.assign(remove, { update, suspend })
   }
   readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, focused: null, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }); void this.loadLifecycle() }
   readonly closeWorkspace = (): void => { this.publish({ visible: false }) }
