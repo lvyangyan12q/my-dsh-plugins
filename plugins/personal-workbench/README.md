@@ -138,3 +138,9 @@ Role modules render DSH's conversation body and Session chrome under the same re
 插件包携带 skills 目录，通过 DSH 原生 bundled filesystem provider 加载 workbench-module-generate、workbench-page-adjust、workbench-data-display 和 workbench-app-build。skills/shared/module-template.html 是统一页面样式参考。工作台自有“应用搭建”角色使用原生文件和 Skill 工具，继续遵循所绑定 Session 的权限及审批策略；它不写入公共 Agent 管理目录，不迁移应用已有私有能力。
 
 自定义生成模块可在模块内创建该角色。准备任务仅建立可编辑上下文；显式发送时调用对应 Skill。继续修改使用新的请求输出文件，并提供前一个产物路径供读取，保留原文件。实际生成、修改、显示恢复及审批仍须在宿主中完成验收。
+
+## Optional sidebar retirement
+
+Better Sidebar 0.24.1 catalogs use the rc.2 published `Context.sidebarRight.openTabs` and `closeIn` contract to retire only `personal-workbench.catalog` records. The observer belongs to Workbench, outside the optional provider view lifetime. Other tab kinds, native Sessions and application data remain untouched.
+
+Unadopted saved layouts cannot be changed by `closeIn`. Workbench stores bounded, versioned retirement identities in its own browser key, and retries on public inventory and mounted-session changes. Entering a retired session permits cleanup; successful removal is verified from inventory. Newly created catalog ids are not retirement targets. Pending or unavailable-storage recovery is displayed explicitly. This does not guarantee immediate cleanup of dormant sessions or continued cleanup while Workbench itself is unloaded.

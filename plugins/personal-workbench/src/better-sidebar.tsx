@@ -1,3 +1,4 @@
+import { CatalogRetirement } from './catalog-retirement.ts'
 import { compareApplications } from './app-order.ts'
 import { controlStyles } from './control-styles.ts'
 import { useSyncExternalStore } from 'react'
@@ -8,7 +9,7 @@ import type { BetterSidebarService, TabComponentProps, SidebarState, SessionScop
 import type { Workbench } from './workbench.ts'
 
 const tabId = 'personal-workbench.catalog'
-type Status = 'sidebarUnsupported' | null
+type Status = 'sidebarUnsupported' | 'sidebarCleanupPending' | null
 type SplitNode = SidebarState['bottomSplits']
 class AdapterState<T> {
   constructor(private status: T) {}
@@ -68,6 +69,24 @@ function Unsupported({ useBetterSidebarAdapter, t }: PropsRuntime<'sidebar.foote
  */
 export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench): void {
   const status = new AdapterState<Status>(null)
+  const retirement = new CatalogRetirement({
+    getItem: key => window.localStorage.getItem(key),
+    setItem: (key, value) => window.localStorage.setItem(key, value),
+  }, pending => {
+    if (status.getSnapshot() !== 'sidebarUnsupported') status.set(pending ? 'sidebarCleanupPending' : null)
+  })
+  // Own this observer outside the optional provider child: its view records may
+  // already be gone before dependency teardown reaches our catalog disposer.
+  ctx.inject(['sidebarRight'], child => child.effect(() => {
+    const native = child.sidebarRight
+    if (typeof native.closeIn !== 'function' || typeof native.openTabs?.getSnapshot !== 'function'
+      || typeof native.openTabs?.subscribe !== 'function' || typeof native.mounted?.subscribe !== 'function') {
+      status.set('sidebarUnsupported')
+      return () => status.set(null)
+    }
+    const detach = retirement.attach(native)
+    return () => { retirement.retire(); detach() }
+  }, 'personal-workbench: native catalog retirement'))
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action', id: 'personal-workbench.sidebar-status', locale: 'personal-workbench',
     inject: () => ({ hooks: { betterSidebarAdapter: status } }),
@@ -121,6 +140,7 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
       return () => {
         active = false
         availability.set(false)
+        retirement.retire()
         unsubscribe()
         try { for (const { scope, ids } of scopes.values()) for (const id of ids) service.closeTab(id, scope) }
         finally { scopes.clear(); removeTab() }

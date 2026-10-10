@@ -186,9 +186,54 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
       visible: false, scope: { sessionId: 'main' },
       tab: { id: 'native-catalog-tab', type: descriptor.id, title: 'Catalog' },
     })))
+    // The provider has already retired its view records when dependency cleanup
+    // runs. The published native inventory and scoped command remain available.
+    let inventory = [
+      { sessionId: 'main', tabId: 'native-catalog-tab', kind: descriptor.id, contentId: 'catalog' },
+      { sessionId: 'main', tabId: 'native-unrelated-tab', kind: 'fixture.other', contentId: 'other' },
+      { sessionId: 'dormant', tabId: 'saved-catalog', kind: descriptor.id, contentId: 'saved' },
+    ]
+    let mounted: string | undefined
+    const inventoryListeners = new Set<() => void>()
+    const mountedListeners = new Set<() => void>()
+    const adopted = new Set(['main'])
+    const nativeProvider = ctx.plugin({ apply: (child: typeof ctx) => child.effect(() => child.reflect.provide('sidebarRight', {
+      openTabs: { getSnapshot: () => inventory, subscribe: (fn: () => void) => { inventoryListeners.add(fn); return () => inventoryListeners.delete(fn) } },
+      mounted: { getSnapshot: () => mounted, subscribe: (fn: () => void) => { mountedListeners.add(fn); return () => mountedListeners.delete(fn) } },
+      closeIn: (sessionId: string, tabId: string) => {
+        if (!adopted.has(sessionId)) return
+        nativeTabs.delete(tabId)
+        inventory = inventory.filter(row => row.sessionId !== sessionId || row.tabId !== tabId)
+        for (const fn of inventoryListeners) fn()
+      },
+    })) })
+    await nativeProvider
+    nativeSidebar.closeTab = () => {} // Actual provider record-loss failure boundary.
     await React.act(async () => provider!.dispose())
     assert.equal(nativeTabs.has('native-catalog-tab'), false, 'Unload closes the real native tab, not only the synthetic onOpen id')
     assert.equal(nativeTabs.has('native-unrelated-tab'), true)
+    assert.equal(inventory.some(row => row.tabId === 'saved-catalog'), true, 'Dormant saved layouts cannot be written before adoption')
+    assert.equal(status(), 'sidebarCleanupPending')
+    // Recreating the owner replays only its own durable retirement markers;
+    // a freshly enabled provider's newly opened catalog must survive.
+    await owner.dispose()
+    owner = ctx.plugin(plugin)
+    await owner
+    assert.equal(status(), 'sidebarCleanupPending')
+    provider = provideSidebar(ctx, nativeSidebar)
+    await provider
+    nativeTabs.add('new-catalog-tab')
+    inventory.push({ sessionId: 'main', tabId: 'new-catalog-tab', kind: descriptor.id, contentId: 'new' })
+    adopted.add('dormant')
+    mounted = 'dormant'
+    for (const fn of mountedListeners) fn()
+    assert.deepEqual(inventory.map(row => row.tabId), ['native-unrelated-tab', 'new-catalog-tab'], 'Future public adoption cleans only retired catalog records, preserving newly opened catalogs')
+    assert.equal(status(), null)
+    await provider.dispose()
+    assert.deepEqual(inventory.map(row => row.tabId), ['native-unrelated-tab'])
+    await nativeProvider.dispose()
+    assert.equal(inventoryListeners.size, 0)
+    assert.equal(mountedListeners.size, 0)
     await render(false)
     const incompatible: [string, unknown][] = [['version', '0.24.2'], ['version', '0.25.0'], ['features', []], ['openTab', undefined]]
     for (const [key, value] of incompatible) {
