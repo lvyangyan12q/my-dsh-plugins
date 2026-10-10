@@ -819,3 +819,25 @@ test('disabled or full browser preference storage leaves in-memory learning navi
     assert.equal(owner.cell('study.pane','content').value,'conversation')
   } finally {Object.defineProperty(prototype,'getItem',get);Object.defineProperty(prototype,'setItem',set)}
 })
+
+
+test('original option diagrams render inside selectable answers instead of showing Markdown source', async () => {
+  mockApi()
+  const fetch = globalThis.fetch
+  globalThis.fetch = async (url, options) => {
+    const response = await fetch(url, options)
+    if (url !== '/api/kaogong/practice/start') return response
+    const value = await response.json()
+    value.questions[0].options = ['A. ![原题 A 选项](题目_images/verified/option-A.png)', 'B. 20%']
+    return { ...response, json: async () => value }
+  }
+  render(React.createElement(client.KaogongView))
+  fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
+  const image = await screen.findByRole('img', { name: '原题 A 选项' })
+  assert.equal(image.getAttribute('src'), '/api/kaogong/material-image?asset=verified%2Foption-A.png')
+  fireEvent.click(image)
+  assert.equal(screen.getByRole('radio', { name: 'A. 原题 A 选项' }).checked, true)
+  fireEvent.click(screen.getByRole('button', { name: '提交判分' }))
+  await screen.findByText('0/1 题正确，正确率 0%')
+  assert.deepEqual(calls.find(row => row.url === '/api/kaogong/practice/submit').body.answers, [{ id: 'fixture-1', answer: 'A' }])
+})

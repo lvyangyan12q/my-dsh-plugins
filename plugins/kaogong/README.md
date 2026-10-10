@@ -81,3 +81,5 @@ Review reserves the durable round only when explicitly sent, so competing window
 
 
 完整原题显示恢复仍采用私有内容固定关联。`verified/associations.json` 单行可选 `displayMode: "source-image"`，仅在源题本已完整裁出材料、指定题面与全部选项，并视检排除答案、批注、相邻题后使用；未设置时仍追加图示。`verified/option-repairs.json` 单行可选 `sourceOptions`（完整显示选项数组），用于原PDF确认的页码残留或图选项恢复；须选项数量、原字母键和全部 `optionIndices` 一致，原题干与原选项数组哈希一致。不得猜写选项或答案。原始题库、已发快照与评分不改，pending题必须继续显式审查，认证索引不会自动批准。未知或哈希改变的污染记录暂缓练习并提示修复。
+
+源选项使用原 PDF 图形时，`sourceOptions` 可写 `A. ![原题 A 选项](题目_images/verified/option-A.png)`，并在同一关联 `sourceAssets` 提供 `{ asset: "verified/option-A.png", assetSha256: "<SHA256>" }`。所有图片引用须逐项裁剪、人工来源核验并固定字节；外部 URL、未关联图片或变更字节将拒绝加载。该显示投影不改变待审状态，不能替代人工题库审核。

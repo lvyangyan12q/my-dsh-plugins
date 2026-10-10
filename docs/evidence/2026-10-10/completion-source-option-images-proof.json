@@ -1,0 +1,21 @@
+{
+  "verifiedCandidateCount": 17,
+  "originalQuestionImageCount": 9,
+  "originalOptionImageCount": 12,
+  "publicImageByteHashesMatched": 21,
+  "publicApprovedQuestionIssuedAndGraded": 11,
+  "pendingUnchangedAndNotIssued": 6,
+  "coldRestartRecovered": true,
+  "originalBankAndSnapshotsUnchanged": true,
+  "canonicalBackupSha256": "8b2e130696aeb5d862a83cc844de05f0020f4c4c8e43fcfea978d6583f8af883",
+  "privateImagesCommitted": false,
+  "scope": "17 confirmed footer candidates; no pending approval performed",
+  "historicalFullPageAnalysisImages": 181,
+  "historicalPendingQuestions": 873,
+  "historicalFullSetRestored": false,
+  "sourceAnswersCheckedIndependentlyForRemainingSeven": true,
+  "targetedHostTests": 20,
+  "builtClientViewTests": 26,
+  "types": "passed",
+  "originalBankReviewStatusUnchanged": true
+}

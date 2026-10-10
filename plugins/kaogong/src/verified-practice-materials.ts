@@ -60,6 +60,10 @@ const optionRepairSchema = z.object({
     stemSha256: digest,
     optionsSha256: digest,
     optionIndices: z.array(z.number().int().min(0).max(25)).min(1).max(26),
+    sourceAssets: z.array(z.object({
+      asset: z.string().regex(/^verified\/[\p{L}\p{N}_-]+\.(?:png|jpg|jpeg|webp)$/iu),
+      assetSha256: digest,
+    }).strict()).max(26).optional(),
     sourceOptions: z.array(z.string().min(1).max(10_000).refine(value => !/答案|解析|批注|SKA674/.test(value))).min(1).max(26).optional(),
     sourcePdfSha256: digest,
     sourcePage: z.number().int().positive(),
@@ -84,6 +88,22 @@ export async function loadVerifiedPracticeOptions(root?: string): Promise<typeof
   const associations = new Map<string, typeof index.associations[number]>()
   for (const row of index.associations) {
     if (associations.has(row.questionId) || new Set(row.optionIndices).size !== row.optionIndices.length) throw new Error('Duplicate verified option repair identity')
+    const assets = new Set<string>()
+    for (const asset of row.sourceAssets ?? []) {
+      if (assets.has(asset.asset)) throw new Error('Duplicate verified option image')
+      const actual = await realpath(resolve(directory, asset.asset))
+      const assetOffset = relative(directory, actual)
+      if (!assetOffset || assetOffset.startsWith('..') || isAbsolute(assetOffset)) throw new Error('Verified option image escapes configured root')
+      if (sha(await readFile(actual)) !== asset.assetSha256) throw new Error('Verified option image changed')
+      assets.add(`题目_images/${asset.asset}`)
+    }
+    for (const option of row.sourceOptions ?? []) {
+      for (const reference of option.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
+        if (!assets.has(reference[1]!)) throw new Error('Unverified option image reference')
+      }
+      // HTML and reference-style images have no independently pinned target.
+      if (/<img\b/i.test(option) || /!\[[^\]]*\]\s*\[/.test(option)) throw new Error('Unverified option image reference')
+    }
     associations.set(row.questionId, row)
   }
   return (id, stem, options) => {

@@ -82,7 +82,7 @@ test('option footer proofs remain scoped to exact question content and reject am
 
 test('source-certified option display can restore page-number and image placeholders with exact content identity', async () => {
   const root = await mkdtemp(join(tmpdir(), 'verified-source-options-')), stem = 'Original graph question', options = ['A. image placeholder', 'B. 160亿元20公考最新资料、更新进度微信SKA674']
-  const row = { questionId: 'q1', stemSha256: sha(stem), optionsSha256: sha(JSON.stringify(options)), optionIndices: [0, 1], sourcePdfSha256: sha('source-pdf'), sourcePage: 9, sourceOptions: ['A. 见上方原题图示中的 A 图', 'B. 160亿元'] }
+  const row = { questionId: 'q1', stemSha256: sha(stem), optionsSha256: sha(JSON.stringify(options)), optionIndices: [0, 1], sourcePdfSha256: sha('source-pdf'), sourcePage: 9, sourceOptions: ['A. 126亿元', 'B. 160亿元'] }
   const save = r => writeFile(join(root, 'verified', 'option-repairs.json'), JSON.stringify({ version: 1, associations: [r] }))
   try {
     await mkdir(join(root, 'verified')); await save(row)
@@ -110,5 +110,28 @@ test('complete source-image display replaces contaminated visible text while pre
     assert.ok(!result.includes(f.stem))
     assert.equal(display('q1', f.stem + ' changed'), f.stem + ' changed')
     assert.equal(display('other', f.stem), f.stem)
+  } finally { await f.close() }
+})
+
+
+test('source option images require contained byte-pinned assets before displaying restored options', async () => {
+  const f = await fixture(), options = ['A. image placeholder', 'B. original text']
+  const row = { questionId: 'q1', stemSha256: sha(f.stem), optionsSha256: sha(JSON.stringify(options)), optionIndices: [0, 1], sourcePdfSha256: sha('source-pdf'), sourcePage: 83,
+    sourceOptions: ['A. ![原题 A 选项](题目_images/verified/diagram.jpg)', 'B. original text'] }
+  const save = r => writeFile(join(f.root, 'verified', 'option-repairs.json'), JSON.stringify({ version: 1, associations: [r] }))
+  try {
+    await save(row)
+    await assert.rejects(loadVerifiedPracticeOptions(f.root), /Unverified option image/)
+    const pinned = { ...row, sourceAssets: [{ asset: f.row.asset, assetSha256: f.row.assetSha256 }] }
+    await save(pinned)
+    assert.deepEqual((await loadVerifiedPracticeOptions(f.root))('q1', f.stem, options), row.sourceOptions)
+    await writeFile(join(f.root, 'verified', 'diagram.jpg'), 'changed')
+    await assert.rejects(loadVerifiedPracticeOptions(f.root), /option image changed/)
+    await writeFile(join(f.root, 'verified', 'diagram.jpg'), 'existing-image-bytes')
+    await save({ ...pinned, sourceOptions: ['A. ![original](https://example.org/image.png)', 'B. original text'] })
+    await assert.rejects(loadVerifiedPracticeOptions(f.root), /Unverified option image/)
+    await save({ ...pinned, sourceAssets: [{ asset: 'verified/../diagram.jpg', assetSha256: f.row.assetSha256 }] })
+    await assert.rejects(loadVerifiedPracticeOptions(f.root))
+    assert.deepEqual(options, ['A. image placeholder', 'B. original text'])
   } finally { await f.close() }
 })
