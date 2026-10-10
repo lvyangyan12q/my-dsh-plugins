@@ -7,3 +7,5 @@
 私有恢复 helper/资产 manifest/配置备份仅保留本地，不提交真实资料或题目引用。一次未提权裸 Node localhost读取被 sandbox EACCES 拒绝；授权只读重试得到 401 Image access denied，因为没有浏览器 session。未绕过连接授权。公开认证 Browser 六图恢复验收由父层继续，本证据不声称已经自然加载成功。
 
 后续安装历史业务库必须同时设置持久资料读根。四张业务表不是资料完整性的全部；保留 document IDs 和 assets 相对路径才能保持原有引用。新资料根无需自动重新导入或重写题库，也无需重新上传原 PDF。
+
+父层随后在实际认证安装 Browser 中验证原六张 document-image 均返回 200、content-type image/jpeg，逐项 lazy scroll 后自然宽度为 776、670、479、734、728、742，全部真实加载完成。刷新后保留未提交真实练习轮。该公开 Browser 证据只覆盖本次六张；3097 的证据仍仅为复制及逐项 SHA256，不宣称全部 HTTP/视觉验收。之前“Browser 尚待”的记录是恢复当时状态，本段补齐本次六图验收。历史 873 中其余 872 条仍未完整题面恢复且保持 pending，不因六图恢复而标完成。
