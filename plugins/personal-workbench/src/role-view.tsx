@@ -52,7 +52,7 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
     {attachment?.identity === identity && renderFactorySlot('personal-workbench.role-attachment', { bindingKey, expectedSessionId: attachment.expectedSessionId, close: () => setAttachment(null) })}
     {presetChanged && <p role="alert">{t('rolePresetChanged')}</p>}
     {state.busy && <p role="status">正在连接角色会话…</p>}
-    {state.error && <p role="alert">{state.error}</p>}
+    {state.error && <p role="alert">{['Packaged role Skill not discovered','Packaged role Skill body unavailable for user invocation'].includes(state.error)?t('roleTeachingSkillUnavailable'):state.error}</p>}
     {window.phase === 'error' && <p role="alert">角色会话不可访问。请同 ID 重试或显式新建。</p>}
     {!presetChanged && window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '角色创建尚未完成，请同 ID 重试。' : '点击创建，开始与角色对话。'}</p>}
     {!presetChanged && window.phase === 'open' && <div style={{ position: 'relative', zIndex: 0, flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}><Mounted reference={window.reference} bindingKey={bindingKey} mountRole={mountRole}><SessionProvider session={window.reference} empty={() => <p role="alert">角色会话不可访问。请同 ID 重试。</p>}>

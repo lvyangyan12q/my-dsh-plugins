@@ -71,6 +71,15 @@ test('built generic role view reads per-ID official status facts without a fake 
     await React.act(async()=>root.render(React.createElement(entry.component,{...recoveredProps,active:true})))
     assert.deepEqual(reopened,[bindingKey],'Explicitly reopening an enabled application must re-read its retained role despite cached disabled errors')
     state.error=null
+    state.window={phase:'closed'};
+    for(const message of ['Packaged role Skill not discovered','Packaged role Skill body unavailable for user invocation']){
+      state.error=message;await React.act(async()=>root.render(React.createElement(entry.component,{...props,active:false})));
+      assert.equal(dom.window.document.querySelector('[role="alert"]').textContent,'roleTeachingSkillUnavailable','missing packaged teaching Skill needs actionable localized guidance');
+      assert.ok([...dom.window.document.querySelectorAll('button')].some(button=>button.textContent.includes('重试')));
+    }
+    state.error='Unrelated preserved recovery error';await React.act(async()=>root.render(React.createElement(entry.component,{...props,active:false})));
+    assert.equal(dom.window.document.querySelector('[role="alert"]').textContent,state.error,'other native recovery errors retain their own diagnostic');
+    state.error=null;
     const history=entries.find(row=>row.options.name==='personal-workbench.role-history'),retained=[],released=[]
     ctx.workspaces.list={getSnapshot:()=>({phase:'ready',state:'idle',archivedSessionIds:[]}),subscribe:()=>()=>{}}
     ctx.sessions.retain=id=>{retained.push(id);const binding={session:{getSnapshot:()=>({openState:'open',removed:false}),subscribe:()=>()=>{}}};return {sessionId:id,binding,ready:Promise.resolve(binding),release:()=>released.push(id)}}
@@ -119,3 +128,4 @@ test('built generic role view reads per-ID official status facts without a fake 
     for (const [name, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name] }
   }
 })
+
