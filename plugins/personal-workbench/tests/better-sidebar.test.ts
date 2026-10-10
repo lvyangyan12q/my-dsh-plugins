@@ -88,9 +88,9 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     const main = sidebar.state('main').bottomSplits
     assert.equal(main.kind === 'leaf' && main.tabs.length, 1)
     const render = async (visible: boolean) => {
-      // This adapter's component consumes only visible; no sidebar store is borrowed.
-      const component = descriptor.component as (props: { visible: boolean }) => ReactNode
-      await React.act(async () => root.render(component({ visible })))
+      // The adapter consumes visibility and public tab identity, without borrowing its store.
+      const component = descriptor.component as (props: { visible: boolean; scope: { sessionId: string }; tab: { id: string; type: string; title: string } }) => ReactNode
+      await React.act(async () => root.render(component({ visible, scope: { sessionId: sidebar.sessionId }, tab: { id: descriptor.id, type: descriptor.id, title: 'Catalog' } })))
     }
     // The component uses only visibility, not the sidebar's Session/store as app state.
     await render(false)
@@ -171,6 +171,25 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     assert.equal(sidebar.listeners.size, 0)
     assert.equal(sidebar.closed.includes('other:restored-catalog'), true)
     assert.equal(sidebar.closed.includes('other:unrelated'), false)
+    // Native Sidebar 0.24.1 calls onOpen with a synthetic type id, while
+    // component props carry the real tab id. Native tabs are not in bottomSplits.
+    const nativeSidebar = new SidebarFixture()
+    const nativeTabs = new Set(['native-catalog-tab', 'native-unrelated-tab'])
+    nativeSidebar.closeTab = (tabId, scope) => {
+      if (nativeTabs.delete(tabId)) nativeSidebar.closed.push(`${scope?.sessionId}:${tabId}`)
+    }
+    provider = provideSidebar(ctx, nativeSidebar)
+    await provider
+    const nativeDescriptor = nativeSidebar.descriptors.get(descriptor.id)!
+    nativeDescriptor.onOpen?.({ id: descriptor.id, type: descriptor.id, title: 'Catalog' }, { sessionId: 'main' })
+    await React.act(async () => root.render((nativeDescriptor.component as (props: { visible: boolean; scope: { sessionId: string }; tab: { id: string; type: string; title: string } }) => ReactNode)({
+      visible: false, scope: { sessionId: 'main' },
+      tab: { id: 'native-catalog-tab', type: descriptor.id, title: 'Catalog' },
+    })))
+    await React.act(async () => provider!.dispose())
+    assert.equal(nativeTabs.has('native-catalog-tab'), false, 'Unload closes the real native tab, not only the synthetic onOpen id')
+    assert.equal(nativeTabs.has('native-unrelated-tab'), true)
+    await render(false)
     const incompatible: [string, unknown][] = [['version', '0.24.2'], ['version', '0.25.0'], ['features', []], ['openTab', undefined]]
     for (const [key, value] of incompatible) {
       const unsupported = new SidebarFixture()

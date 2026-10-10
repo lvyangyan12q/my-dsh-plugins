@@ -105,8 +105,13 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
         icon: size => <LayoutGrid size={size} aria-hidden="true" />,
         onOpen: (tab, scope) => remember(scope, tab.id),
         onActivate: (tab, scope) => remember(scope, tab.id),
-        component: ({ visible }: TabComponentProps) => visible
-          ? <Catalog ctx={child} workbench={workbench} enabled={enabled} availability={availability} /> : null,
+        component: ({ visible, tab, scope }: TabComponentProps) => {
+          // Native opens report a synthetic id in onOpen. Component props carry
+          // the actual native id, including tabs restored outside bottomSplits.
+          if (active) remember(scope, tab.id)
+          return visible
+            ? <Catalog ctx={child} workbench={workbench} enabled={enabled} availability={availability} /> : null
+        },
       })
       let unsubscribe: () => void
       try { unsubscribe = service.subscribeState(observe) }
