@@ -46,7 +46,11 @@
       "section": "User Stories",
       "number": 3,
       "requirementSha256": "2c537fc9faa85dbfa056d2d666fb51957883e5ecda30e1041dbb3f44f7d0d82c",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for documented Better Sidebar 0.24.1 optional Tab entry; full teaching compatibility matrix remains separate",
+      "evidence": [
+        "docs/evidence/2026-10-10/better-sidebar-catalog-layout-browser.json",
+        "docs/evidence/2026-10-10/native-sidebar-position-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:4",
@@ -144,7 +148,10 @@
       "section": "User Stories",
       "number": 11,
       "requirementSha256": "82d6e67c78787fb4c17821073316920d5afc2a1a39493fc84c6bf6eb5dcab8f0",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual 1024/768/1920 native-column alignment and unoccluded toolbars verified; complete single-column material reading and message input still requires proof",
+      "evidence": [
+        "docs/evidence/2026-10-10/native-sidebar-position-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:12",
