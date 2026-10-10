@@ -13,7 +13,7 @@ export function readingRecipe(): AppRecipe {
   return { schemaVersion: 1, appId: readingAppId, version: 1, name: '阅读统计 / Reading statistics', description: '独立阅读记录。示例数据由阅读应用初始化；浏览与筛选不使用 AI。', pages: [{ id: 'library', label: '阅读 / Reading', layout: 'grid', modules: [{ id: 'reading.editor', type: 'reading-record-editor', title: '阅读记录管理', config: {} }, ...(['filter', 'stats', 'list', 'detail'] as const).map(type => ({ id: 'reading.' + type, type, title: ({ filter: '筛选 / Filter', stats: '统计 / Statistics', list: '书籍 / Books', detail: '详情 / Detail' })[type], connectionId: 'reading-data', config: {} }))] }], connections: [{ id: 'reading-data', sourceAppId: readingAppId, resource: readingResource }], roles: [] }
 }
 export function apply(ctx: Context) {
-  ctx.effect(() => registerRecipeModuleRenderer('reading-record-editor', ReadingRecordEditor), 'reading record editor')
+  ctx.effect(() => registerRecipeModuleRenderer('reading-record-editor', ReadingRecordEditor, { title: '阅读记录管理', appIds: [readingAppId] }), 'reading record editor')
   ctx.effect(() => registerDisplaySource({ appId: readingAppId, resource: readingResource, label: '阅读应用自有记录 / Reading app records', subscribe: subscribeReading, load: async ({ instanceId, preview, signal }) => toDisplayData(await request({ action: 'read', instanceId, preview }, signal)) }), 'reading display adapter')
   ctx.effect(() => registerRecipeTemplate({ id: readingAppId, label: '阅读统计应用 / Reading statistics app', create: async () => { await request({ action: 'initialize', instanceId: 'default', seed: 'examples' }); return readingRecipe() } }), 'reading draft template')
 }

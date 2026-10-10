@@ -1,0 +1,11 @@
+# 01: cold recipe focus — partial source verification
+
+The isolated installed Browser returned to the application catalog after a Host cold restart although the focused running recipe had not been closed. The platform-owned saved layout contained closed windows and a null focus. Business records and native Session drafts were retained; those do not by themselves verify window restoration.
+
+Public Client regression distinguishes the renderer slot's withdrawal from confirmed application withdrawal. Before the fix, withdrawing `personal-workbench.app` removed the recipe registration and persisted a closed window; reconstructing the platform therefore displayed the catalog. That public apply/slot/storage/visible-UI regression failed before the fix and passed afterwards. A plain whole-owner disposal test already passed and was not misreported as the failing cause.
+
+Recipe renderer withdrawal now suspends its registration: its live definition/view disappears, while its saved page/window/focus remains available to the same declared application identity after reconstruction. The ordinary registration disposer still closes windows durably. A successful catalog refresh explicitly retires applications whose running recipes were withdrawn; a second RED→GREEN regression verifies that reinstalling that identity does not reopen the retired window. Host application availability continues to prevent disabled applications from reopening.
+
+Validation in an independent implementation checkout: directed plugin build and declaration generation; full configured plugin typecheck; 17 public Workbench UI tests; 8 Workbench state/lifecycle tests; one real Cordis/official SlotRegistry lifecycle test using the complete independently built native source. No model calls were made. The initial lifecycle test without `DSH_SOURCE` failed its required-environment guard; the properly configured rerun passed. No assertion or guard was waived.
+
+Actual Browser cold recovery, genuine installed uninstall/disable, and same-provider reattachment still require installed validation. This source result does not close ticket 01 or the full platform acceptance. Native menus, private native storage formats, running Host, and formal profile were not modified.

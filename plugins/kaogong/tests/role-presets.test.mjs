@@ -71,6 +71,16 @@ test('actual preset registry activates application personas in independent scope
           assert.match(skill.content,/题目 ID.*原题干.*原选项.*实际作答.*Host 标准答案/)
           assert.match(skill.content,/Ⅰ、Ⅱ、Ⅲ.*逐项.*必然/)
           assert.match(skill.content,/无法确定.*暂停.*不改写.*成绩/)
+          if(preset.id.includes('teacher')) {
+            // Verify the actual acquired persona and bundled Skill contract, not a model-output simulation.
+            assert.ok(assembly.sections.some(section=>section.text?.includes('来源核验边界')),'Teacher native persona must constrain readonly source audits')
+            assert.match(prefix,/来源核验.*不.*答案.*解析/)
+            assert.match(prefix,/已.*答案.*不.*独立诊断.*评分/)
+            assert.match(skill.content,/来源核验.*只.*类别.*ID.*标题.*范围/)
+            assert.match(skill.content,/已讲解例题.*未作答诊断/)
+            assert.match(skill.content,/新的未泄露题.*开放解释.*不记.*练习成绩/)
+            assert.match(skill.content,/诊断.*提交前.*不.*答案.*解析/)
+          }
         }
       } finally { await lease[Symbol.asyncDispose]() }
     }

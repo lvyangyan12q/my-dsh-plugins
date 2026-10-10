@@ -1,14 +1,16 @@
+import {useApplicationModules} from './application-modules.ts'
 import {isDataModuleType} from './content-catalog.ts'
 import type {AppRecipe,RecipeModule} from './recipe-api.ts'
 import {contentTypes} from './content-catalog.ts'
 import {listDisplaySources} from './display-api.ts'
 import {RecipeRoleSettings} from './recipe-role-settings.tsx'
 export function RecipeModuleEditor({pageIndex,recipe,change,t,moduleId}:{pageIndex:number;recipe:AppRecipe;change:(update:(r:AppRecipe)=>void)=>void;t:(key:any)=>string;moduleId?:string}){
+ const applicationModules=useApplicationModules(recipe.appId)
  const page=recipe.pages[pageIndex],sources=listDisplaySources(recipe.appId)
  const update=(index:number,fn:(m:RecipeModule)=>void)=>change(r=>fn(r.pages[pageIndex].modules[index]))
  return <section className="pwb-module-editor">{!moduleId&&<><h4>{t('moduleContents')}</h4><p>{t('moduleContentsHelp')}</p></>}{page.modules.map((m,index)=>(!moduleId||m.id===moduleId)&&<fieldset className="pwb-module-card" key={m.id}><legend>{t('modulePane')} {index+1}</legend>
  <label>{t('moduleTitle')}<input aria-label={t('moduleTitle')+': '+m.id} value={m.title} onChange={e=>update(index,m=>{m.title=e.target.value})}/></label>
- <label>{t('moduleType')}<select aria-label={t('moduleType')+': '+m.id} value={m.type} onChange={e=>update(index,m=>{m.type=e.target.value;m.config=m.type==='custom'?{mode:'generate'}:{};delete m.connectionId;delete m.roleId})}>{!contentTypes.includes(m.type as any)&&<option value={m.type}>{m.type}</option>}{contentTypes.map(type=><option key={type} value={type}>{t('recipeModule'+type)}</option>)}</select></label>
+ <label>{t('moduleType')}<select aria-label={t('moduleType')+': '+m.id} value={m.type} onChange={e=>update(index,m=>{m.type=e.target.value;m.config=m.type==='custom'?{mode:'generate'}:{};delete m.connectionId;delete m.roleId})}>{!contentTypes.includes(m.type as any)&&!applicationModules.some(row=>row.id===m.type)&&<option value={m.type}>{m.type}</option>}{contentTypes.map(type=><option key={type} value={type}>{t('recipeModule'+type)}</option>)}{applicationModules.map(row=><option key={row.id} value={row.id}>{row.title}</option>)}</select></label>
  {m.type==='custom'&&<label>{t('moduleSource')}<select aria-label={t('moduleSource')+': '+m.id} value={String(m.config.mode??'generate')} onChange={e=>update(index,m=>{m.config={mode:e.target.value}})}>{['generate','url','file'].map(mode=><option key={mode} value={mode}>{t('moduleSource'+mode)}</option>)}</select></label>}
  {(['website','animation'].includes(m.type)||(m.type==='custom'&&m.config.mode==='url'))&&<label>{t('moduleUrl')}<input aria-label={t('moduleUrl')+': '+m.id} type="url" placeholder="https://" value={String(m.config.url??'')} onChange={e=>update(index,m=>{m.config.url=e.target.value})}/></label>}
  {m.type==='resources'&&<label>{t('moduleDirectory')}<input aria-label={t('moduleDirectory')+': '+m.id} placeholder={t('moduleRoot')} value={String(m.config.basePath??'')} onChange={e=>update(index,m=>{m.config.basePath=e.target.value})}/></label>}

@@ -189,3 +189,19 @@ test('built reading app exposes validated instance opening and keeps new instanc
     await ui.render(page('second',true));await ui.flush();assert.equal(ui.document.querySelector('[aria-label="阅读实例 ID"]'),null);assert.equal([...ui.document.querySelectorAll('button')].some(b=>b.textContent==='打开阅读实例'),false);assert.equal(opened.length,2);assert.equal(ui.forbidden(),0)
   }finally{await ui?.close();await server.close();await rm(folder,{recursive:true,force:true})}
 })
+
+test('existing enabled v4 reading recipe adds its own manager through visual module choices before explicit activation',async()=>{
+ const folder=await mkdtemp(join(tmpdir(),'reading-visual-upgrade-'));const server=await host(folder);let ui
+ try{
+  ui=await client(server);const old=JSON.parse(JSON.stringify(ui.reading.readingRecipe()));old.version=4;old.pages[0].modules=old.pages[0].modules.filter(module=>module.type!=='reading-record-editor')
+  const saved=await server.call('/api/personal-workbench/recipes',{action:'save',expectedRevision:0,recipe:old});assert.equal(saved.status,200)
+  assert.equal((await server.call('/api/personal-workbench/recipes',{action:'activate',appId:old.appId,expectedRevision:saved.value.record.revision})).status,200)
+  await ui.commands.refreshRecipes();await ui.render(h(ui.platform.RecipeEditor,{t:key=>key,refresh:ui.commands.refreshRecipes}));await ui.flush();await ui.select('recipeSelect',old.appId)
+  await ui.click('moduleAdd');await ui.click('阅读记录管理');await ui.click('recipeSave')
+  let record=(await server.call('/api/personal-workbench/recipes',{action:'catalog'})).value.recipes[0];assert.equal(record.running.version,4);assert.equal(record.draft.version,5);assert.deepEqual(record.draft.connections,old.connections);assert.deepEqual(record.draft.roles,old.roles);assert.deepEqual(record.draft.pages[0].modules.slice(0,4),old.pages[0].modules)
+  const added=record.draft.pages[0].modules.at(-1);assert.equal(added.type,'reading-record-editor');assert.equal(added.title,'阅读记录管理')
+  await ui.click('recipePreview');assert.match(ui.document.querySelector('[data-preview="true"] [data-reading-editor]').textContent,/预览只读/);assert.equal(ui.document.querySelector('[data-preview="true"] [data-reading-editor] button'),null)
+  record=(await server.call('/api/personal-workbench/recipes',{action:'catalog'})).value.recipes[0];assert.equal(record.running.version,4)
+  await ui.click('recipeActivate');record=(await server.call('/api/personal-workbench/recipes',{action:'catalog'})).value.recipes[0];assert.equal(record.running.version,5);assert.equal(record.running.pages[0].modules.at(-1).type,'reading-record-editor');assert.deepEqual(record.running.connections,old.connections);assert.deepEqual(record.running.roles,old.roles);assert.equal(ui.forbidden(),0)
+ }finally{await ui?.close();await server.close();await rm(folder,{recursive:true,force:true})}
+})
