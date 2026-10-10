@@ -4,7 +4,7 @@ title: 能力复用与角色绑定
 parent: workbench-completion-spec
 labels: [ready-for-agent]
 status: open
-assignee: null
+assignee: codex-completion-roles
 blocked_by: []
 ---
 
@@ -14,7 +14,7 @@ blocked_by: []
 
 **Blocked by:** None (can start immediately)。
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 
 **范围关系：** 补充规格 User Stories 12、13、18、22、24；继承全部相关原规格要求。已有实现先复核并复用，旧工单和历史验收不被覆盖。
