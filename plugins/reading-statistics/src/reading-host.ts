@@ -4,9 +4,9 @@ import type {} from '@deepseek-ai/dsh-client-connection'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
 import { z } from 'zod'
-import { readingAppId, readingResource } from './reading-api.ts'
+import { readingAppId, readingResource, readingIdentityMaxLength, readingIdentityPattern } from './reading-api.ts'
 import type { ReadingInstance, ReadingRecord } from './reading-api.ts'
-const identity = z.string().min(1).max(160).regex(/^[a-zA-Z0-9_.-]+$/)
+const identity = z.string().min(1).max(readingIdentityMaxLength).regex(readingIdentityPattern)
 const recordSchema = z.object({ id: identity, title: z.string().max(200), author: z.string().max(200), category: z.string().max(100), status: z.enum(['reading', 'finished']), minutes: z.number().int().min(0).max(1000000), notes: z.string().max(4000) }).strict()
 export const readingDomain = defineDomain({ name: 'reading_statistics', version: 1, tables: { instances: domainTable<string, ReadingInstance>(z.object({ instanceId: identity, initialized: z.boolean(), records: z.array(recordSchema).max(2000) }).strict()) } })
 /** Public-domain example titles. This application's initializer owns these records. */
