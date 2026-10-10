@@ -122,7 +122,7 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
       const removeTab = service.registerTab({
         id: tabId, single: true, title: () => child.locale.bind('personal-workbench')('workspace'),
         description: () => child.locale.bind('personal-workbench')('sidebarCatalog'),
-        icon: size => <LayoutGrid size={size} aria-hidden="true" />,
+        icon: (size: number) => <LayoutGrid size={size} aria-hidden="true" />,
         onOpen: (tab, scope) => remember(scope, tab.id),
         onActivate: (tab, scope) => remember(scope, tab.id),
         component: ({ visible, tab, scope }: TabComponentProps) => {
