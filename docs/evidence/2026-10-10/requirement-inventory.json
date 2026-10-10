@@ -439,7 +439,10 @@
       "section": "User Stories",
       "number": 36,
       "requirementSha256": "c48068417ff0e37094bda63f587b7ddf0f18e8056b98d748f8220919c3739e90",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "satisfied for public native plugin/configuration navigation: actual Agent and Skills header buttons open installed own bundle details, retain native navigation and close management; no parallel installer or credential UI",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/official-plugin-navigation-browser.json"
+      ]
     },
     {
       "id": "workbench:Implementation Decisions:1",
