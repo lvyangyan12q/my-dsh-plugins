@@ -11,6 +11,7 @@ import {z} from 'zod'
 import {createUserMessage} from '@deepseek-ai/dsh-llm'
 import {finalAssistantOutput} from '@deepseek-ai/dsh-subagent'
 import {recipeSchema} from './recipe-schema.ts'
+import {generationJobsDomain} from './generation-domain.ts'
 import type {GenerationJob} from './generation-api.ts'
 const presetId='my-dsh.platform-generator'
 const identity=z.string().min(1).max(200)
@@ -34,19 +35,23 @@ export async function installGeneration(ctx:Context){
  ctx.loader.builtins[skillBuiltin]=nativeToolSkill
  let removePreset:()=>Promise<void>
  try{removePreset=await ctx.agentPresets.register({id:presetId,name:'Application recipe generator',description:'Generate data-only recipe drafts',plugins:[{name:'cordis:'+skillBuiltin},{name:'cordis:'+builtin}]});const preset=await ctx.agentPresets.resolve(presetId);if(preset.broken){await removePreset();throw new Error('Generator preset unavailable: '+preset.broken)}}catch(error){delete ctx.loader.builtins[builtin];delete ctx.loader.builtins[skillBuiltin];throw error}
+ const domain=await ctx.storageDomain.open(generationJobsDomain).catch(async error=>{await removePreset();delete ctx.loader.builtins[builtin];delete ctx.loader.builtins[skillBuiltin];throw error}),summaries=domain.table('jobs')
  const jobs=new Map<string,{view:GenerationJob;controller:AbortController;task:Promise<void>}>()
+ try{for(const[id,saved]of summaries.entries()){if(id!==saved.id||saved.record&&saved.record.appId!==saved.appId)throw new Error('Stored generation identity mismatch');const view:GenerationJob=structuredClone(saved);if(view.status==='running'||view.status==='saving'){view.status='failed';view.error='Generation interrupted by Host restart. Review the preserved native Session before explicitly starting again.';await summaries.put(id,structuredClone(view))}jobs.set(id,{view,controller:new AbortController(),task:Promise.resolve()})}}catch(error){await domain.close();await removePreset();delete ctx.loader.builtins[builtin];delete ctx.loader.builtins[skillBuiltin];throw error}
+ const persist=async(view:GenerationJob)=>{for(const[id]of summaries.entries())if(!jobs.has(id))await summaries.delete(id);await summaries.put(view.id,structuredClone(view))}
  let closing=false
  const execute=async(input:Extract<z.infer<typeof requestSchema>,{action:'start'}>,job:{view:GenerationJob;controller:AbortController})=>{
   const {view,controller}=job;let agent:Agent|undefined
   const cancel=()=>agent?.cancel({kind:'user'})
   controller.signal.addEventListener('abort',cancel,{once:true})
   try{
+   await persist(view);controller.signal.throwIfAborted()
    const catalog=await ctx.personalWorkbenchRecipes.generationCatalog();controller.signal.throwIfAborted()
    const requested=input.workspace??ctx.personalWorkbenchRecipes.list().find(row=>row.appId===input.appId)?.draft.workspace
    if(requested&&!isAbsolute(requested))throw new Error('An absolute trusted Host workspace is required')
    const workspace=requested?catalog.workspaces.find(path=>sameWorkspace(path,requested)):catalog.workspaces[0]
    if(requested&&!workspace)throw new Error('Trusted Host workspace unavailable')
-   const created=await ctx.sessionController.create({cwd:workspace??process.cwd(),agentPreset:presetId});view.sessionId=created.sessionId
+   const created=await ctx.sessionController.create({cwd:workspace??process.cwd(),agentPreset:presetId});view.sessionId=created.sessionId;await persist(view)
    const resolved=await ctx.sessionController.resolveAgent(created.sessionId);if('error' in resolved)throw resolved.error;agent=resolved.agent
    controller.signal.throwIfAborted()
    // Check the native model-facing surface after all hydrated scoped contributions.
@@ -74,11 +79,11 @@ export async function installGeneration(ctx:Context){
    validateGenerationInputs(recipe,input.requirement)
    controller.signal.throwIfAborted()
    // Once commit starts cancel is refused; saveGenerated revalidates and commits under recipe CAS.
-   view.status='saving'
+   view.status='saving';await persist(view)
    view.record=await ctx.personalWorkbenchRecipes.saveGenerated(recipe,input.expectedRevision,controller.signal)
    view.status='completed'
-  }catch(error){view.status=controller.signal.aborted?'cancelled':'failed';view.error=controller.signal.aborted?'Generation cancelled':(error instanceof Error?error.message:'Generation failed').slice(0,2000)}
-  finally{controller.signal.removeEventListener('abort',cancel);if(agent){if(controller.signal.aborted)agent.cancel({kind:'user'});await agent.whenIdle()}}
+  }catch(error){view.status=controller.signal.aborted?'cancelled':'failed';view.error=controller.signal.aborted?(controller.signal.reason instanceof Error&&controller.signal.reason.message==='Generation service closing'?'Generation interrupted by Host shutdown. Review the preserved native Session before explicitly starting again.':'Generation cancelled'):(error instanceof Error?error.message:'Generation failed').slice(0,2000)}
+  finally{controller.signal.removeEventListener('abort',cancel);if(agent){if(controller.signal.aborted)agent.cancel({kind:'user'});await agent.whenIdle()}try{await persist(view)}catch{view.status='failed';view.error='Generation status could not be persisted; inspect the native Session and saved draft before retrying'}}
  }
  const dispatch=(raw:unknown):GenerationJob=>{
   const input=requestSchema.parse(raw)
@@ -98,5 +103,5 @@ export async function installGeneration(ctx:Context){
   const respond=(status:number,value:unknown)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(value))}
   try{const rejection=ctx.connection.requestRejection(req);if(rejection!==undefined){respond(rejection,{error:'Authenticated same-origin request required'});return}if(closing){respond(503,{error:'Generation unavailable'});return}if(req.method!=='POST'){res.setHeader('allow','POST');respond(405,{error:'POST required'});return}if(!req.headers['content-type']?.startsWith('application/json')){respond(415,{error:'JSON required'});return}let size=0;const chunks:Buffer[]=[];for await(const chunk of req){const bytes=Buffer.from(chunk);size+=bytes.length;if(size>32768){respond(413,{error:'Request too large'});return}chunks.push(bytes)}const job=dispatch(JSON.parse(Buffer.concat(chunks).toString('utf8')));respond(200,{job})}catch(error){respond(409,{error:error instanceof Error?error.message:'Generation request failed'})}
  }
- return {dispatch,handle:(req:IncomingMessage,res:ServerResponse)=>{const task=handle(req,res);requests.add(task);void task.finally(()=>requests.delete(task)).catch(()=>{});return task},settled:async(id:string)=>{const job=jobs.get(id);if(!job)throw new Error('Generation job not found');await job.task;return structuredClone(job.view)},dispose:async()=>{closing=true;for(const job of jobs.values())if(job.view.status==='running')job.controller.abort(new Error('Generation service closing'));await Promise.allSettled([...requests,...[...jobs.values()].map(job=>job.task)]);await removePreset();if(ctx.loader.builtins[builtin]===guardPlugin)delete ctx.loader.builtins[builtin];if(ctx.loader.builtins[skillBuiltin]===nativeToolSkill)delete ctx.loader.builtins[skillBuiltin]}}
+ return {dispatch,handle:(req:IncomingMessage,res:ServerResponse)=>{const task=handle(req,res);requests.add(task);void task.finally(()=>requests.delete(task)).catch(()=>{});return task},settled:async(id:string)=>{const job=jobs.get(id);if(!job)throw new Error('Generation job not found');await job.task;return structuredClone(job.view)},dispose:async()=>{closing=true;for(const job of jobs.values())if(job.view.status==='running')job.controller.abort(new Error('Generation service closing'));await Promise.allSettled([...requests,...[...jobs.values()].map(job=>job.task)]);await domain.close();await removePreset();if(ctx.loader.builtins[builtin]===guardPlugin)delete ctx.loader.builtins[builtin];if(ctx.loader.builtins[skillBuiltin]===nativeToolSkill)delete ctx.loader.builtins[skillBuiltin]}}
 }

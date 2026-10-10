@@ -50,7 +50,7 @@ async function fixture(script){
   assert.ok(generationScope.skills,'generation declares the native Skill dependency explicitly')
   const adapter=new MockAdapter(script,{efforts:[{id:'high',name:'High'}],defaultEffort:'high'});ctx.llm.registerAdapter(['mock'],adapter)
   let executions=0;const tool={name:'write_fixture',description:'must never execute',parameters:{type:'object',properties:{}},output:{schema:{type:'object'},render:()=>[]},execute:async()=>{executions++;return {content:[],isError:false}}};ctx.tools.register(tool)
-  return {ctx,root,adapter,recipes,generation,tool,saves:()=>saves,executions:()=>executions,start:(version=1,expectedRevision=0)=>generation.dispatch({action:'start',requirement:'Create a reading dashboard',appId:'app.generated',version,expectedRevision}),close:async()=>{await generation.dispose();await recipes.dispose();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}}
+  return {ctx,root,adapter,recipes,generation,restartGeneration:async prepare=>{await generation.dispose();await prepare?.(ctx.storageDomain);generation=await installGeneration(generationScope);return generation},tool,saves:()=>saves,executions:()=>executions,start:(version=1,expectedRevision=0)=>generation.dispatch({action:'start',requirement:'Create a reading dashboard',appId:'app.generated',version,expectedRevision}),close:async()=>{await generation.dispose();await recipes.dispose();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}}
  }catch(error){await generation?.dispose();await recipes?.dispose();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true});throw error}
 }
 async function live(f,count=1){for(let i=0;i<200&&f.adapter.requests.length<count;i++)await new Promise(r=>setTimeout(r,5));assert.equal(f.adapter.requests.length,count)}
@@ -80,7 +80,7 @@ test('malformed, unsupported and incomplete native outputs never save; Agent fai
 })
 test('generation CAS rejects concurrent editing and service close cancels/drains real requests',async()=>{
  const f=await fixture(['hang','hang']);try{const first=f.start();await live(f);await f.recipes.service.save(recipe(),0);f.generation.dispatch({action:'cancel',id:first.id});await f.generation.settled(first.id);assert.throws(()=>f.start(),/Recipe changed/)
- const second=f.start(1,1);await live(f,2);const agent=f.ctx.agents.get(f.generation.dispatch({action:'status',id:second.id}).sessionId);await f.generation.dispose();assert.equal((await f.generation.settled(second.id)).status,'cancelled');assert.equal(agent.status,'idle');assert.equal(f.recipes.service.list()[0].revision,1)
+ const second=f.start(1,1);await live(f,2);const agent=f.ctx.agents.get(f.generation.dispatch({action:'status',id:second.id}).sessionId);await f.generation.dispose();assert.equal((await f.generation.settled(second.id)).status,'cancelled');assert.match((await f.generation.settled(second.id)).error,/interrupted by Host shutdown/);assert.equal(agent.status,'idle');assert.equal(f.recipes.service.list()[0].revision,1)
  }finally{await f.close()}
 })
 test('authenticated bounded route rejects invalid requests without model calls',async()=>{
@@ -214,4 +214,21 @@ test('native generation schema requires the trusted selected workspace while gen
   try{if(selected)f.ctx.workspaceRegistry.list=()=>[{path:f.root,status:async()=>'ok'}];const done=await f.generation.settled(f.start().id);assert.equal(received.schema.required.includes('workspace'),selected,'Model-facing schema must agree with the selected target workspace contract');if(selected)assert.equal(received.schema.properties.workspace.const,received.target.workspace);assert.equal(done.status,'completed',done.error);assert.equal(done.record.draft.workspace,selected?f.root:undefined)}finally{await f.close()}
  }
  assert.equal(z.toJSONSchema(recipeSchema).required.includes('workspace'),false);
+})
+
+test('generation owner restart retains completed job, exact native Session and draft without a model replay',async()=>{
+ const f=await fixture([validResponse()]);try{
+ const done=await f.generation.settled(f.start().id);assert.equal(done.status,'completed',done.error);const next=await f.restartGeneration();
+ const restored=next.dispatch({action:'status',id:done.id});assert.equal(restored.status,'completed');assert.equal(restored.sessionId,done.sessionId);assert.deepEqual(restored.record,done.record);assert.equal(f.adapter.requests.length,1);assert.deepEqual(await next.settled(done.id),restored);
+ }finally{await f.close()}
+})
+
+test('durable running and saving checkpoints restore as explicit interruption with native identity and no replay',async()=>{
+ const {generationJobsDomain}=await import('../src/generation-domain.ts');const f=await fixture([validResponse()]);
+ try{const done=await f.generation.settled(f.start().id);assert.equal(done.status,'completed');
+ for(const status of ['running','saving']){
+  const next=await f.restartGeneration(async facility=>{const domain=await facility.open(generationJobsDomain);try{const {record,error,...summary}=done;await domain.table('jobs').put(done.id,{...summary,status})}finally{await domain.close()}});
+  const restored=next.dispatch({action:'status',id:done.id});assert.equal(restored.status,'failed');assert.match(restored.error,/interrupted by Host restart/);assert.equal(restored.sessionId,done.sessionId);assert.equal(restored.record,undefined);assert.equal(f.adapter.requests.length,1);assert.equal(f.recipes.service.list()[0].draft.name,'Generated reading dashboard');
+ }
+ }finally{await f.close()}
 })
