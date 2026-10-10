@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-11",
+  "scope": "Partial real installed DSH acceptance; no completion ticket closed",
+  "environment": {
+    "ownedIsolatedPort": 3089,
+    "formal3080Modified": false,
+    "remotePushedDuringAcceptance": false,
+    "realModelConfiguredByUser": true
+  },
+  "generation": {
+    "sourceCommit": "4d66ed760e0988821e0657bef65bda5156c572c5",
+    "realNativeModelGenerated": true,
+    "draftSavedWithoutActivation": true,
+    "pages": 2,
+    "moduleTypes": [
+      "website",
+      "resources",
+      "custom-file"
+    ],
+    "previewThenExplicitActivation": true,
+    "actualWebsiteIframeRendered": true,
+    "resourceModuleListedExistingFiles": true,
+    "localHtmlContentRendered": true,
+    "coldRestartRetainedActivatedApplicationAndSelectedPage": true
+  },
+  "nativeExecution": {
+    "realStopObservedAfterCloseAndReopenRunningApplication": true,
+    "coldRestartPreservedRoleSessionFingerprint": "0f1e622112d35453b4a57a86057085caeb67227072ac62320dbee31d31bb388f",
+    "realKaogongTeachSkillLoaded": true,
+    "realKaogongKnowledgeSearchAndRead": true,
+    "defaultTeacherCompletedExplanation": true,
+    "subjectTeacherReceivedExplicitPreparedLessonTaskAndWaitedForLearner": true,
+    "NativeQuestionAnsweredAndToolTaskResumed": true,
+    "ReadOnlyWriteDeniedThenNativeAllowOnceSucceeded": true
+  },
+  "generationRecovery": {
+    "sourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
+    "realTwentyPageDraftCompletedAcrossBrowserRefresh": true,
+    "requirementAndNativeEntryRestored": true,
+    "realRunningGenerationInterruptedByOwnedHostStop": true,
+    "coldRestartStatus": "failed",
+    "nativeEntryPreserved": true,
+    "explicitRetryEnabled": true,
+    "automaticReplayEvidence": "Visible UI retains failed interruption; native request counts have not yet been reconciled, so no replay absence is claimed"
+  },
+  "moduleGeneration": {
+    "sourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
+    "explicitPreparedTaskSent": true,
+    "packagedModuleSkillAndTemplateUsed": true,
+    "nativeWriteToolCreatedScopedHtml": true,
+    "actualIframeContentRendered": true,
+    "actualStartPausedTimer": true,
+    "nativeTrajectoryIncludesRequestToolInputAndResult": true,
+    "coldRestartArtifactVerified": false
+  },
+  "kaogongPartial": {
+    "historicalDataCopiedToOwnedProfileOnly": true,
+    "historicalImageFileCount": 411,
+    "lessonCreated": true,
+    "actualPracticeSubmissionAndReasonSummarySaved": true,
+    "practiceClosureAccepted": false,
+    "lessonHomeworkCompleted": false,
+    "observedFailures": [
+      "No matching practice remained preparing",
+      "Pre-answer option included explanation annotation"
+    ],
+    "sourceFixesMergedButInstalledRetestPending": true
+  },
+  "latestVerifiedCleanGate": {
+    "sourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
+    "tests": 341,
+    "passed": 341,
+    "failed": 0,
+    "skipped": 0,
+    "officialOfflineArchiveInstall": true,
+    "installedBytes": true,
+    "installedClientFactories": true,
+    "standaloneClientFactory": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "compatibilityExemptions": 0,
+    "modelCalls": 0
+  },
+  "limits": [
+    "These are different source-pinned installed observations, not a full acceptance of the new integrated tip.",
+    "Full manual authoring, complete role replacement and historical conversation/material continuity still require installed acceptance.",
+    "Kaogong practice was one incorrect answer and nine unanswered after browser radio automation failed; it is not full practice or classroom closure.",
+    "Generated module artifact recovery after cold restart awaits separate evidence.",
+    "Physical Chinese IME, full compatibility/upgrade/rollback and dormant/PWB-own unload matrices remain open.",
+    "Clean gate lifecycle uses synthetic fixtures and deliberately makes zero model calls; actual model observations are separate.",
+    "Raw request/content/tool paths, native Session IDs, credentials, screenshots and historical materials are excluded."
+  ]
+}
