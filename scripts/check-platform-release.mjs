@@ -8,6 +8,7 @@ import { createServer } from 'node:net'
 import { ownedRoot, isolatedEnv, runNode } from './release-tools.mjs'
 import { packRelease } from './release-archive.mjs'
 import { checkInstalledTypes } from './check-installed-types.mjs'
+import { resolveReleaseDependencies } from './release-dependencies.mjs'
 const worktree = resolve(dirname(fileURLToPath(import.meta.url)), '..'), source = process.env.DSH_SOURCE
 assert(source, 'DSH_SOURCE must name the built official rc.2 checkout')
 const root = await ownedRoot(worktree, process.env.RELEASE_ROOT ?? join(worktree, '.scratch', 'platform-release-' + Date.now()))
@@ -18,15 +19,13 @@ for (const name of products) packages.push(await packRelease(join(worktree, 'plu
 await run(['--profile', profile, '--from-default-profile', 'web', '--dump-config'])
 // Public dependency anchors are existing built packages; product packages always come from archives.
 // This avoids copying user profiles or downloading a second runtime. Compatibility is not exempted.
-const require = createRequire(join(worktree, 'package.json')), overrides = {}
+const require = createRequire(join(worktree, 'package.json')), dependencies = new Set()
 for (const name of products) {
-  const manifest = JSON.parse(await readFile(join(worktree, 'plugins', name, 'package.json'), 'utf8'))
-  for (const dep of Object.keys({ ...manifest.dependencies, ...manifest.optionalDependencies })) {
-    if (dep === '@deepseek-ai/dsh-personal-workbench') continue
-    let anchor = dirname(require.resolve(dep)); while (JSON.parse(await readFile(join(anchor, 'package.json'), 'utf8').catch(() => '{}')).name !== dep) anchor = dirname(anchor)
-    overrides[dep] = 'link:' + anchor.replaceAll('\\', '/')
-  }
+ const manifest = JSON.parse(await readFile(join(worktree, 'plugins', name, 'package.json'), 'utf8'))
+ for (const dep of Object.keys({ ...manifest.dependencies, ...manifest.optionalDependencies })) if(dep !== '@deepseek-ai/dsh-personal-workbench') dependencies.add(dep)
 }
+const { overrides, nativeAnchors, nativeSource } = await resolveReleaseDependencies({ worktree, source, dependencies })
+await writeFile(join(root, 'native-anchors.json'), JSON.stringify({ nativeSource, nativeAnchors }, null, 2))
 const workspace = join(home, 'pnpm-workspace.yaml')
 assert.match(await readFile(workspace, 'utf8'), /autoInstallPeers: false/)
 await writeFile(workspace, (await readFile(workspace, 'utf8')) + '\noverrides: ' + JSON.stringify(overrides) + '\n')
@@ -127,5 +126,5 @@ await host('installed HTML content / scoped static assets and authentication', a
   await call(path,body,401,{cookie:''});await call(path,body,403,{origin:'http://foreign.invalid'})
   const result=await call(path,body);assert.equal(result.kind,'html');assert.match(result.content,/data:text\/css;base64,/);assert.match(result.content,/data:image\/svg\+xml;base64,/);assert.match(result.content,/data:application\/javascript;base64,/)
 })
-await writeFile(join(root,'verdict.json'),JSON.stringify({ officialOfflineArchiveInstall:true, dependencyMode:'existing public dependency links; products installed from exact archives', compatibilityExemptions:0, installedBytes:true, installedClientFactories:true, standaloneClientFactory:true, installedConsumers:true, authenticatedLifecycle:true, installedHtmlAssets:true, coldRestart:true, readingUninstallReinstall:true, fixture:'public synthetic reading records', modelCalls:0, archives:packages.map(({sha256})=>sha256) },null,2))
+await writeFile(join(root,'verdict.json'),JSON.stringify({ officialOfflineArchiveInstall:true, dependencyMode:'existing public dependency links; products installed from exact archives', compatibilityExemptions:0, installedBytes:true, installedClientFactories:true, standaloneClientFactory:true, installedConsumers:true, authenticatedLifecycle:true, installedHtmlAssets:true, coldRestart:true, readingUninstallReinstall:true, fixture:'public synthetic reading records', modelCalls:0, nativeSource, nativeAnchors, archives:packages.map(({sha256})=>sha256) },null,2))
 console.log('Platform release checks passed (synthetic profile; zero model calls).')
