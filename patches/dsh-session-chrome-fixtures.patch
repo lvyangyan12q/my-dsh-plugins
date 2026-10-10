@@ -1,0 +1,26 @@
+diff --git a/packages/client/ui-conversation/tests/skeleton.client.spec.tsx b/packages/client/ui-conversation/tests/skeleton.client.spec.tsx
+index 2d6bd58003..c539161f05 100644
+--- a/packages/client/ui-conversation/tests/skeleton.client.spec.tsx
++++ b/packages/client/ui-conversation/tests/skeleton.client.spec.tsx
+@@ -228,6 +228,8 @@ function mount(
+           useStore={bindSnapshotSelector(store)}
+           actions={store.actions}
+           renderSlot={renderSlot as never}
++          renderFactorySlot={() => null}
++          useFactorySlot={() => () => null}
+           open={open}
+           selectView={(view) => { store.actions.setView(view) }}
+           t={t}
+diff --git a/packages/client/ui-trajectory/tests/views.client.spec.tsx b/packages/client/ui-trajectory/tests/views.client.spec.tsx
+index 04d4040a6e..31923f4c7c 100644
+--- a/packages/client/ui-trajectory/tests/views.client.spec.tsx
++++ b/packages/client/ui-trajectory/tests/views.client.spec.tsx
+@@ -407,6 +407,8 @@ function mount(fixture: Awaited<ReturnType<typeof bench>>) {
+         useStore={bindSnapshotSelector(conversation)}
+         actions={conversation.actions}
+         renderSlot={() => null}
++        renderFactorySlot={() => null}
++        useFactorySlot={() => () => null}
+         open={vi.fn()}
+         selectView={conversation.actions.setView}
+         t={tConversation}

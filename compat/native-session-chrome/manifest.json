@@ -35,7 +35,7 @@
   "reviewedCombinations": [
     {
       "id": "platform-native-hooks-v1",
-      "sourceCommit": "d76d31673e727389321e1da3d6d801a4aee5699b",
+      "sourceCommit": "2ea2a7ebf801c7f001a96d676c6fc1fa21ca3445",
       "files": [
         {
           "path": "packages/client/ui-conversation/README.md",
@@ -59,7 +59,7 @@
         },
         {
           "path": "packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx",
-          "after": "5cf260ae0d13adde33f45793e3a5e8b8341ad75f8cc1134d202fe3980244fe35"
+          "after": "23c537d1f82efd83b3fd1a7326c861485d645d47855886f3760ae3b9b7634687"
         }
       ]
     }
