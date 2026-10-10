@@ -566,9 +566,10 @@
       "section": "Implementation Decisions",
       "number": 11,
       "requirementSha256": "621456b90042a4c78fa193670f80c60fbfcca87ee9ccc4b61ee358a82c2eca89",
-      "evidenceStatus": "partial: built Client regression proves focus leaves externally disabled/withdrawn content and closing returns to original entry, with retained draft on disable; whole real-browser keyboard, physical IME and responsive/unobscured-content acceptance still incomplete",
+      "evidenceStatus": "partial: built Client proves external disable/withdraw focus recovery; actual isolated installed-browser keyboard close/reopen and multiple-app switching preserve focus, drafts and annotations; whole physical IME, responsive geometry and unobscured-content acceptance still incomplete",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/workspace-external-focus-repair.json"
+        "docs/evidence/2026-10-10/workspace-external-focus-repair.json",
+        "docs/evidence/2026-10-10/owned-keyboard-annotation-browser.json"
       ]
     },
     {
