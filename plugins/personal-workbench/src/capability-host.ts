@@ -132,7 +132,10 @@ export async function installCapabilities(ctx: Context, usedSkill: (name:string)
    if(request.action==='agent-save'){
      const current=agents.get(request.agent.id);if((current?.revision??0)!==request.expectedRevision)throw new Error('Agent changed; refresh before saving')
      const snapshot=await ctx.skills.snapshot();if(!snapshot.complete)throw new Error('Skills catalog incomplete')
-     for(const name of request.agent.skillNames)if(!snapshot.skills.some(row=>row.name===name&&row.invocation.userInvocable))throw new Error(`Skill unavailable: ${name}`)
+     for(const name of request.agent.skillNames){
+       if(!skills.get(name)&&!current?.skillNames.includes(name))throw new Error(`Skill must be created in Skills management: ${name}`)
+       if(!snapshot.skills.some(row=>row.name===name&&row.invocation.userInvocable))throw new Error(`Skill unavailable: ${name}`)
+     }
      const next={...request.agent,revision:request.expectedRevision+1}
      await agentDisposers.get(next.id)?.();agentDisposers.delete(next.id)
      try{await installAgent(next);await agents.put(next.id,next)}catch(error){await agentDisposers.get(next.id)?.();agentDisposers.delete(next.id);if(current)await installAgent(current);throw error}

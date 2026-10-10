@@ -12,9 +12,9 @@ test('independent libraries save invocation policy without managing application 
   }
   const oldFetch = globalThis.fetch
   const calls = []
-  let agent = { id: 'writer', name: '写作助手', description: '多个应用复用', persona: 'Assist', skillNames: ['outline'], modelInvocable: true, userInvocable: true, revision: 2, managed: true, appIds: ['example'] }
+  let agent = { id: 'writer', name: '写作助手', description: '多个应用复用', persona: 'Assist', skillNames: ['outline','legacy-native'], modelInvocable: true, userInvocable: true, revision: 2, managed: true, appIds: ['example'] }
   const key = { appId: 'example', instanceId: 'default', roleId: 'advisor' }
-  const catalog = () => ({ version: 1, agents: [agent], roles: [{ key, name: '班主任', presetId: 'writer', binding: { sessionId: 'existing-session' }, assignment: { names: ['outline'] } }], presets: [], skills: [{ name: 'outline', description: '整理提纲', source: 'managed', provider: 'test', userInvocable: true, modelInvocable: true, managed: true, revision: 1, appIds: ['example'] }], executions: [{ id: 'run-1', kind: 'agent', capabilityId: 'writer', sessionId: 's', startedAt: '2026-10-02', status: 'completed' }] })
+  const catalog = () => ({ version: 1, agents: [agent], roles: [{ key, name: '班主任', presetId: 'writer', binding: { sessionId: 'existing-session' }, assignment: { names: ['outline'] } }], presets: [], skills: [{ name: 'outline', description: '整理提纲', source: 'managed', provider: 'test', userInvocable: true, modelInvocable: true, managed: true, revision: 1, appIds: ['example'] },{name:'native-new',description:'New private Skill',source:'bundled',provider:'test',appIds:[],managed:false,userInvocable:true,modelInvocable:true},{name:'legacy-native',description:'Existing native reference',source:'bundled',provider:'test',appIds:[],managed:false,userInvocable:true,modelInvocable:true},{name:'managed-disabled',description:'Disabled managed Skill',source:'runtime',provider:'test',appIds:[],managed:true,userInvocable:false,modelInvocable:false}], executions: [{ id: 'run-1', kind: 'agent', capabilityId: 'writer', sessionId: 's', startedAt: '2026-10-02', status: 'completed' }] })
   globalThis.fetch = async (_url, options) => {
     const request = JSON.parse(options.body); calls.push(request)
     if (request.action === 'catalog') return { ok: true, json: async () => catalog() }
@@ -35,6 +35,10 @@ test('independent libraries save invocation policy without managing application 
     await act(async () => document.querySelector('.pim-card').click())
     assert.match(document.body.textContent, /考公学习 · 班主任/)
     assert.match(document.body.textContent, /completed/)
+    const skillChoices=[...document.querySelectorAll('.pim-check')].map(row=>row.textContent);
+    assert.ok(skillChoices.includes('outline'));assert.ok(skillChoices.includes('legacy-native'));
+    assert.ok(!skillChoices.includes('native-new'),'new native Skill references must not be offered');
+    assert.ok(!skillChoices.includes('managed-disabled'),'disabled managed Skills must not be offered');
     const modelToggle = [...document.querySelectorAll('label')].find(label => label.textContent.includes('允许模型调用')).querySelector('input')
     await act(async () => modelToggle.click()); await click('保存')
     assert.equal(agent.modelInvocable, false)
@@ -53,3 +57,4 @@ test('independent libraries save invocation policy without managing application 
     for (const [name, descriptor] of original) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name] }
   }
 })
+
