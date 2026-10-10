@@ -23,11 +23,11 @@ if (rows.every(row => row.actual === row.after)) {
   if (!process.argv.includes('--apply')) throw new Error('Native draft images adaptation missing; inspect compat/native-draft-images/README.md and explicitly run this script with --apply')
   if (!rows.every(row => row.actual === row.before)) throw new Error('Native checkout differs from the reviewed patch baseline; preserve local changes and adapt explicitly')
   const patch = resolve(directory, 'native-draft-images.patch')
-  execFileSync('git', ['-C',source,'apply','--unidiff-zero','--check',patch], { stdio:'inherit' })
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '--check', '-'], { input: await readFile(patch, 'utf8').then(text => text.replaceAll('\r\n', '\n')), stdio: ['pipe','inherit','inherit'] })
   const backup = resolve(root,'.local/backups',`native-draft-images-${Date.now()}`)
   await mkdir(backup, { recursive:true })
   for (const row of rows) await copyFile(resolve(source,row.path), resolve(backup,row.path.replaceAll('/','__')))
-  execFileSync('git', ['-C',source,'apply','--unidiff-zero',patch], { stdio:'inherit' })
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '-'], { input: await readFile(patch, 'utf8').then(text => text.replaceAll('\r\n', '\n')), stdio: ['pipe','inherit','inherit'] })
   if (!(await state()).every(row => row.actual === row.after)) throw new Error('Applied patch differs from reviewed source')
   console.log('Applied native draft images adaptation; originals backed up. Build the native client next.')
 }

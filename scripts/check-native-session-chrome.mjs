@@ -19,22 +19,24 @@ const allowed = new Set([
   'packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx',
 ])
 if (manifest.files.length !== allowed.size || new Set(manifest.files.map(row => row.path)).size !== allowed.size || manifest.files.some(row => !allowed.has(row.path))) throw new Error('Unexpected compatibility patch file set')
+const combinations = [manifest.files, ...(manifest.reviewedCombinations ?? []).map(row => row.files)]
+for (const files of combinations) if (files.length !== allowed.size || new Set(files.map(row => row.path)).size !== allowed.size || files.some(row => !allowed.has(row.path) || !/^[a-f0-9]{64}$/.test(row.after))) throw new Error('Unexpected reviewed compatibility combination')
 const hash = text => createHash('sha256').update(text.replaceAll('\r\n','\n')).digest('hex')
 async function state() {
   return Promise.all(manifest.files.map(async row => ({ ...row, actual: hash(await readFile(resolve(source,row.path),'utf8')) })))
 }
 const rows = await state()
-if (rows.every(row => row.actual === row.after)) {
+if (combinations.some(files => rows.every(row => row.actual === files.find(expected => expected.path === row.path).after))) {
   console.log('Native Session chrome source adaptation verified; build the native client before runtime verification')
 } else {
   if (!process.argv.includes('--apply')) throw new Error('Native Session chrome adaptation missing; inspect compat/native-session-chrome/README.md and explicitly run this script with --apply')
   if (!rows.every(row => row.actual === row.before)) throw new Error('Native checkout differs from the reviewed patch baseline; preserve local changes and adapt explicitly')
   const patch = resolve(directory, 'native-session-chrome.patch')
-  execFileSync('git', ['-C',source,'apply','--unidiff-zero','--check',patch], { stdio:'inherit' })
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '--check', '-'], { input: await readFile(patch, 'utf8').then(text => text.replaceAll('\r\n', '\n')), stdio: ['pipe','inherit','inherit'] })
   const backup = resolve(root,'.local/backups',`native-session-chrome-${Date.now()}`)
   await mkdir(backup, { recursive:true })
   for (const row of rows) await copyFile(resolve(source,row.path), resolve(backup,row.path.replaceAll('/','__')))
-  execFileSync('git', ['-C',source,'apply','--unidiff-zero',patch], { stdio:'inherit' })
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '-'], { input: await readFile(patch, 'utf8').then(text => text.replaceAll('\r\n', '\n')), stdio: ['pipe','inherit','inherit'] })
   if (!(await state()).every(row => row.actual === row.after)) throw new Error('Applied patch differs from reviewed source')
   console.log('Applied native Session chrome adaptation; originals backed up. Build the native client next.')
 }

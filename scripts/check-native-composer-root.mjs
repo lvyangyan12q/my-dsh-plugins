@@ -19,6 +19,8 @@ const allowed = new Set([
   "packages/client/ui-conversation/tests/input-bar.client.spec.tsx"
 ])
 if (manifest.files.length !== allowed.size || new Set(manifest.files.map(row => row.path)).size !== allowed.size || manifest.files.some(row => !allowed.has(row.path))) throw new Error('Unexpected compatibility patch file set')
+const combinations = [manifest.files, ...(manifest.reviewedCombinations ?? []).map(row => row.files)]
+for (const files of combinations) if (files.length !== allowed.size || new Set(files.map(row => row.path)).size !== allowed.size || files.some(row => !allowed.has(row.path) || !/^[a-f0-9]{64}$/.test(row.after))) throw new Error('Unexpected reviewed compatibility combination')
 const hash = value => createHash('sha256').update(value.replaceAll('\r\n', '\n')).digest('hex')
 async function state() {
   return Promise.all(manifest.files.map(async row => {
@@ -27,7 +29,7 @@ async function state() {
   }))
 }
 const rows = await state()
-if (rows.every(row => row.actual === row.after)) {
+if (combinations.some(files => rows.every(row => row.actual === files.find(expected => expected.path === row.path).after))) {
   console.log('Native shared composer view adaptation verified; rebuild native client before runtime acceptance')
 } else {
   if (!process.argv.includes('--apply')) throw new Error('Native composer root adaptation missing; explicitly run with --apply after reviewing compat/native-composer-root/README.md')
@@ -35,11 +37,11 @@ if (rows.every(row => row.actual === row.after)) {
   const previous = rows.every(row => row.actual === row.previous)
   if (!initial && !previous) throw new Error('Native checkout differs from the reviewed baseline; preserve local changes and adapt explicitly')
   const patch = resolve(directory, previous ? 'upgrade-native-composer-root.patch' : 'native-composer-root.patch')
-  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '--check', patch], { stdio: 'inherit' })
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '--check', '-'], { input: await readFile(patch, 'utf8').then(text => text.replaceAll('\r\n', '\n')), stdio: ['pipe','inherit','inherit'] })
   const backup = resolve(root, '.local/backups', `native-composer-root-${Date.now()}`)
   await mkdir(backup, { recursive: true })
   for (const row of rows) if (row.actual !== null) await copyFile(resolve(source, row.path), resolve(backup, row.path.replaceAll('/', '__')))
-  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', patch], { stdio: 'inherit' })
+  execFileSync('git', ['-C', source, 'apply', '--unidiff-zero', '-'], { input: await readFile(patch, 'utf8').then(text => text.replaceAll('\r\n', '\n')), stdio: ['pipe','inherit','inherit'] })
   if (!(await state()).every(row => row.actual === row.after)) throw new Error('Applied patch differs from reviewed source')
   console.log('Applied native composer shared composer view adaptation; originals backed up. Rebuild native client next.')
 }

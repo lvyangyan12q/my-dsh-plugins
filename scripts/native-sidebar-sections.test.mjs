@@ -18,7 +18,7 @@ test('sidebar section adapter preserves local changes, installs its regression a
   try {
     for (const row of manifest.files) {
       if (row.before === null) continue
-      const original = execFileSync('git', ['-C', process.env.DSH_SOURCE, 'show', `${manifest.baseCommit}:${row.path}`], { encoding: 'utf8' })
+      const original = execFileSync('git', ['-C', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE, 'show', `${manifest.baseCommit}:${row.path}`], { encoding: 'utf8' })
       assert.equal(hash(original), row.before)
       await mkdir(dirname(resolve(fixture, row.path)), { recursive: true })
       await writeFile(resolve(fixture, row.path), original)
@@ -53,7 +53,7 @@ test('native sections accept the exact reviewed retirement combination and rejec
   const run = (...args) => spawnSync(process.execPath, [resolve(root, 'scripts/check-native-sidebar-sections.mjs'), ...args], { encoding: 'utf8', env: { ...process.env, DSH_SOURCE: fixture } })
   try {
     for (const row of manifest.files) {
-      const original = execFileSync('git', ['-C', process.env.DSH_SOURCE, 'show', 'd6a3a72164447bd8717db2ecdc66962a7800985a:' + row.path], { encoding: 'utf8' })
+      const original = execFileSync('git', ['-C', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE, 'show', 'd6a3a72164447bd8717db2ecdc66962a7800985a:' + row.path], { encoding: 'utf8' })
       await mkdir(dirname(resolve(fixture, row.path)), { recursive: true })
       await writeFile(resolve(fixture, row.path), original)
     }
@@ -67,7 +67,7 @@ test('native sections accept the exact reviewed retirement combination and rejec
     assert.equal(await readFile(changed, 'utf8'), original + '\n// unrelated local change\n')
     await writeFile(changed, original)
     const mixed = 'packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx'
-    const legacy = execFileSync('git', ['-C', process.env.DSH_SOURCE, 'show', manifest.baseCommit + ':' + mixed], { encoding: 'utf8' })
+    const legacy = execFileSync('git', ['-C', process.env.DSH_COMPAT_GIT_SOURCE ?? process.env.DSH_SOURCE, 'show', manifest.baseCommit + ':' + mixed], { encoding: 'utf8' })
     await writeFile(resolve(fixture, mixed), legacy)
     assert.notEqual(run().status, 0, 'mixed states are not a reviewed full twelve-file combination')
     assert.notEqual(run('--apply').status, 0)
