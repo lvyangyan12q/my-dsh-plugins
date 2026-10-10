@@ -6,7 +6,7 @@ import { useEffect, useRef, type ReactNode } from 'react'
 export function EmbeddedSessionFocus({ children }: { children: ReactNode }) {
   const root = useRef<HTMLDivElement>(null)
   const owner = useRef<HTMLElement | null>(
-    typeof document !== 'undefined' && document.activeElement instanceof HTMLElement && document.activeElement.tabIndex >= 0
+    typeof document !== 'undefined' && typeof HTMLElement !== 'undefined' && document.activeElement instanceof HTMLElement && document.activeElement.tabIndex >= 0
       ? document.activeElement : null,
   )
   useEffect(() => {
