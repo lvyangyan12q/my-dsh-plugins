@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-11",
+  "scope": "Actual historical option footer candidates, independently viewed original source PDF pages; no original data rewrite",
+  "candidateRows": 18,
+  "confirmedLegitimateWeChatOptionFalsePositive": 1,
+  "actualAdvertisementCandidates": 17,
+  "individuallyVerifiedOriginalOptionBodyAssociations": 10,
+  "newAssociationsSinceSingleOptionProof": 9,
+  "privateAssociationIndexCommitted": false,
+  "sourcePdfSha256": [
+    "325c434db73c47ffb9446c8bde385a0bef64567da01759ea3d65948eec2c6875",
+    "a30ec840f6d1789a3ee8a214409d9f1a37092b61c0809edd616fd2e0867ebb55"
+  ],
+  "publicHistoricalHostHTTP": {
+    "issuedQuestionCount": 9,
+    "excludedByKnownPublisherSolutionAnnotation": 1,
+    "submitCorrectAnswers": true,
+    "readAfterColdJsonStorageRestart": true,
+    "unaffectedOptionsUnchanged": true,
+    "originalBankRecordsAndSnapshotOptionsUnchanged": true,
+    "gradingAnswersAndExplanationsUnchanged": true,
+    "historicalBackupHashUnchanged": true
+  },
+  "unresolvedAdvertisementCandidates": 7,
+  "unresolvedDetails": {
+    "approvedQuestionHasDifferentOriginalOptionTextFromPdf": 1,
+    "unapprovedQuestionMaterialOrOptionContamination": 6,
+    "unapprovedSourcePageIdentityNotYetProven": 3
+  },
+  "publisherAnnotationAudit": {
+    "historicalRowsWithExactMarker": 283,
+    "approvedRowsWithExactMarker": 177,
+    "reportedBrowserQuestionFoundWithMarker": true,
+    "eligibilityPolicy": "Exclude exact publisher solution marker from new practice; reject reads of unsubmitted old annotated rounds; preserve source and grading snapshots"
+  },
+  "regression": {
+    "publicCommandsRedObservedForCommaFooter": true,
+    "publicCommandsRedObservedForPublisherAnnotation": true,
+    "targetedTestsPassed": 16,
+    "hostAndClientTypesPassed": true,
+    "fullBuildRun": false
+  },
+  "privateMaterialsUploaded": false,
+  "modelCalls": 0,
+  "installedBrowserAcceptance": false,
+  "limitations": [
+    "Source identity is manually certified against local original PDF; hashes are provenance, not automatic authenticity",
+    "One confirmed footer projection does not imply whole-question integrity: other stem or option contamination stays blocked or unchanged",
+    "Unsubmitted old rounds containing publisher notes require a new safe round; original submissions and grades remain available",
+    "Whole historical PDF/image associations and actual browser acceptance remain incomplete; ticket08 stays open"
+  ]
+}

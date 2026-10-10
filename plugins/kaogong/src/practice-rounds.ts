@@ -13,6 +13,7 @@ export class PracticeError extends Error {
 /** Fail closed on answer-key material rather than editing the original bank text. */
 export function safePracticeQuestion(question: BankQuestion): boolean {
   const text = [question.stem, ...question.options, question.source].join('\n')
+  if (/花生批注\s*[:：]/.test(text)) return false
   if (/答案|解析|(?:answer|solution|explanation)\s*[:：]|(?:^|\n)\s*\d+[.、]\s*[A-D](?:\s+\d+[.、]\s*[A-D])+/im.test(text)) return false
   return question.options.length > 0 && question.options.some(option => optionKey(option) === question.correctAnswer.trim())
 }
@@ -75,6 +76,9 @@ export class PracticeRounds {
       projection: round.projectedRevision === round.revision ? 'complete' as const : 'pending' as const, review: round.review }
   }
   private view(id: string, round: PracticeRound) {
+    if (!round.score && round.questions.some(q => /花生批注\s*[:：]/.test([q.stem, ...q.options].join('\n')))) {
+      throw new PracticeError('这轮题目含解题批注，请重新开始练习；原始记录与评分仍然保留', 409)
+    }
     return { roundId: id, context: round.context, reason: round.reason, totalAvailable: round.totalAvailable, returned: round.questions.length, cycled: round.cycled,
       questions: round.questions.map(({ id, subject, knowledgePoint, stem, options, difficulty, source }) => ({ id, subject, knowledgePoint, stem: this.materialStem(id, stem), options: this.materialOptions(id, stem, options), difficulty, source })),
       result: round.score ? this.result(id, round) : null, reflections: round.reflections }
