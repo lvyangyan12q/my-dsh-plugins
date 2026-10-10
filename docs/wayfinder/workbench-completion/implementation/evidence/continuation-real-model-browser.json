@@ -234,5 +234,43 @@
     "CurrentModelAndMaterialPatchPreserved": true,
     "NativeCounselorCorrectionHistoryPreserved": true,
     "scope": "Byte preservation of current authorized model/material configuration; not a claim of returning to pre-configuration bytes"
+  },
+  "manualAuthoringPartial": {
+    "InstalledWorkbenchSource": "6f3e471576aad4b55b817cbe0c6f5a4a4add99b5",
+    "ModuleFirstUi": true,
+    "ContentTypes": [
+      "website",
+      "custom-file",
+      "resources",
+      "animation",
+      "role-chat"
+    ],
+    "InvalidNonScriptUrlPreviewRejectedWithModuleIdentity": true,
+    "InvalidPreviewActivationDisabled": true,
+    "SavedDraftPreviewAndExplicitActivation": true,
+    "AnimationAuxiliaryServerTimeoutRecoveredByOwnedProcessRestart": true,
+    "NativeTitleChatTrajectoryComposerVisible": true,
+    "AddedAndRenamedSecondPage": true,
+    "MovedRoleModuleToSecondPosition": true,
+    "FocusModuleTogglePassed": true,
+    "KeyboardSplitWidth": "50 to 55",
+    "SwitchPageAndMinimizeReopenPreservedUnsentDraft": true,
+    "MaximizeRestoreCloseReopenPassed": true,
+    "BrowserReloadPreservedPageSplitAndUnsentDraftAfterLauncherClick": true,
+    "BrowserReloadActiveWindowLost": true,
+    "ActiveWindowFixInstalledRetestPending": true,
+    "StructureTemplateSavedAndReusedAsNewPage": true,
+    "TemplateNewModuleIdsAndTypesObserved": true,
+    "TemplateRemovedUrlsAndFilePathsAndPrivateBinding": true,
+    "IncompleteTemplatePreviewReportedUrlsAndRoleMissing": true,
+    "RuntimeRemainedTwoPagesAfterInvalidDraftSave": true,
+    "RuntimeVersionRemainedOne": true,
+    "SubsequentValidRuntimeEditAndColdRestartPending": true,
+    "FullTicketStillOpen": true,
+    "actualLocalHtmlRendered": true,
+    "actualResourceFilesListed": true,
+    "actualAnimationIframeRendered": true,
+    "activeWindowFixSourceCommit": "3bd801eb8668987db2911acbc5182a4ab6ec7ee2",
+    "activeWindowFixInstalled": false
   }
 }
