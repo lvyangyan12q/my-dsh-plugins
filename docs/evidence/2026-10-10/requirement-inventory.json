@@ -122,9 +122,10 @@
       "section": "User Stories",
       "number": 10,
       "requirementSha256": "a271824f27098a8cde6db41d35b54859d5e524539035a9ba61cfd1dc813bcecf",
-      "evidenceStatus": "partial: application minimize and explicit instance restore proven in actual installed3089; mounted page/draft and same Session retained, minimized state survives reload. Maximize and full close/restore window scope still require separate proof.",
+      "evidenceStatus": "partial: reversible center-column focus maximization, minimize/restore, close/reopen and native draft/page preservation verified; screenshot acceptance and the full original window/native-runtime matrix remain open",
       "evidencePaths": [
-        "docs/evidence/2026-10-10/application-minimize-browser.json"
+        "docs/evidence/2026-10-10/application-minimize-browser.json",
+        "docs/evidence/2026-10-10/focus-maximization-verification.json"
       ]
     },
     {
