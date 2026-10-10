@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-10",
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual installed isolated DSH image endpoint exercised from its browser with public GET requests; responses compared to local asset SHA256. Independent Node HTTP verifies unsigned and foreign-origin refusal.",
+  "assets": {
+    "requested": 183,
+    "status200AndExactSha256": 183,
+    "pngContentTypes": 183,
+    "pngSignatures": 183,
+    "failures": 0,
+    "totalBytes": 101233357
+  },
+  "negativeChecks": {
+    "parentTraversalStatus": 400,
+    "absolutePathStatus": 400,
+    "missingImageStatus": 404,
+    "unsupportedExtensionStatus": 404,
+    "independentUnsignedHttpStatus": 401,
+    "independentForeignOriginHttpStatus": 403,
+    "negativeRequestsReturnedImages": false
+  },
+  "observationCorrection": "A browser fetch with credentials:omit still returned 200. It is a same-origin browser request and is not a genuine unsigned external HTTP probe under the Host's API-request trust policy. Independent Node requests returned 401/403; no credential-injection mechanism is claimed.",
+  "configuration": "Only the owned isolated profile received a temporary explicit historical image root. The formal 3080 profile and real business records were not changed.",
+  "limits": [
+    "Checks prove actual endpoint bytes and access/path behavior; they do not prove all-page visual review or exercise image display.",
+    "Full historical analysis page images contain answers and commentary; the existing verified-only exercise-stem restriction remains unchanged.",
+    "No model request, study-record write, original PDF/image upload or formal Host restart.",
+    "Raw filenames, workspace paths, credentials and image bytes are omitted from this receipt."
+  ]
+}
