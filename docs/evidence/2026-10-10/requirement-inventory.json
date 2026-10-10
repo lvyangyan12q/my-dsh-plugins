@@ -242,7 +242,10 @@
       "section": "User Stories",
       "number": 19,
       "requirementSha256": "b8a2bfe2727751378fac0eee4df75d0ff61e86aa3c9543272ca9611b01ec98e3",
-      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+      "evidenceStatus": "partial: actual installed DSH public preset scopes discover packaged kaogong-teach for all nine application roles, with exact provider and invocation flags. Committed load count remains zero and model catalog is unavailable; real teaching Skill execution and missing teaching dependency GUI still require acceptance",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-teaching-skill-preflight-browser.json"
+      ]
     },
     {
       "id": "workbench:User Stories:20",

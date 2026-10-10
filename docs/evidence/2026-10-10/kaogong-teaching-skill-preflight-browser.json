@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-10",
+  "workbenchSourceCommit": "a460ac263baf2e3f4c1eb2eb592358ebcc85b42b",
+  "workbenchArchiveSha256": "10b2886209f72a7a7e6d872fbcaa8a47337b926bb0cbc41f924cf6c9c6f0d979",
+  "url": "http://127.0.0.1:3089/",
+  "method": "Ordinary Kaogong application navigation and separate learning window; read-only authenticated public management catalog, filtered to application-owned roles",
+  "observations": {
+    "httpStatus": 200,
+    "kaogongRoleCount": 9,
+    "subjectTeacherCount": 6,
+    "allRolePresetsAvailable": true,
+    "allRolesExposeTeachingSkill": true,
+    "skillName": "kaogong-teach",
+    "skillProvider": "kaogong-packaged-teaching",
+    "skillSource": "bundled",
+    "userInvocable": true,
+    "modelInvocable": true,
+    "missingAssignedSkillCount": 0,
+    "committedSkillLoadCount": 0,
+    "globalSkillCatalogError": false,
+    "modelCatalogAvailable": false,
+    "nativeRuntimeAvailable": true,
+    "learningWindowVisible": true
+  },
+  "limits": [
+    "Skill discovery is a preflight, not an executed or committed teaching Skill invocation.",
+    "The isolated Host deliberately has no model credential and blocks provider requests.",
+    "Real teaching, streaming, permissions, questions, Stop and loaded-instruction evidence remain unverified.",
+    "No Session created, model sent, role assignment changed or formal user data modified."
+  ]
+}
