@@ -20,7 +20,7 @@ function Mounted({ reference, bindingKey, mountRole, children }: { reference: Se
 }
 
 type RoleViewProps = FactoryComponentPropsOf<'personal-workbench.role-conversation'>
-export function RoleConversation({ bindingKey, active, label, expectedPresetId, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, openHistory, renderFactorySlot, t }: RoleViewProps) {
+export function RoleConversation({ bindingKey, active = true, label, expectedPresetId, SessionProvider, renderSlot, useSessionStatus, useRoles, commands, mountRole, openHistory, renderFactorySlot, t }: RoleViewProps) {
   const state = useRoles(value => value.get(roleKey(bindingKey))) ?? EMPTY
   const [attachment, setAttachment] = useState<{ identity: string; expectedSessionId: SessionId | null } | null>(null)
   const [historyId,setHistoryId] = useState<{identity:string;sessionId:SessionId}|null>(null)
@@ -44,6 +44,7 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
       {!state.binding && !state.error && window.phase !== 'error' && <button data-pwb-button data-variant="primary" disabled={state.busy} onClick={() => { void commands.ensure(bindingKey).catch(() => {}) }}>创建{label ?? '角色会话'}</button>}
       {(state.error || window.phase === 'error' || state.binding?.phase === 'intent') && <button data-pwb-button disabled={state.busy} onClick={retry}><RefreshCw size={14} /> 重试</button>}
       {commands.attach && <button data-pwb-button disabled={state.busy} onClick={() => setAttachment({ identity, expectedSessionId: state.binding?.sessionId ?? null })}>{t('roleAttach')}</button>}
+      {state.binding && <button data-pwb-button type="button" disabled={state.busy||!openHistory} title={!openHistory?t('roleHistoryUnavailable'):undefined} onClick={()=>openHistory?.(state.binding!.sessionId)}>{t('roleOpenHistoryNative')}</button>}
       {state.binding && <details style={{ position: 'relative' }}><summary aria-label="角色会话更多操作" style={{ cursor: 'pointer' }}>更多</summary><div style={{ position: 'absolute', right: 0, top: 24, zIndex: 2, minWidth: 180, padding: 10, background: 'var(--dsw-alias-bg-base, #fff)', border: '1px solid #ddd', borderRadius: 6 }}>
         <p style={{ overflowWrap: 'anywhere', margin: '0 0 8px' }}>会话：{state.binding.sessionId}</p>
         <button data-pwb-button disabled={state.busy} onClick={replace}><UserPlus size={14} /> 新建角色会话</button>
@@ -57,7 +58,7 @@ export function RoleConversation({ bindingKey, active, label, expectedPresetId, 
     {state.error && <p role="alert">{['Packaged role Skill not discovered','Packaged role Skill body unavailable for user invocation'].includes(state.error)?t('roleTeachingSkillUnavailable'):state.error}</p>}
     {window.phase === 'error' && <p role="alert">角色会话不可访问。请同 ID 重试或显式新建。</p>}
     {!presetChanged && window.phase === 'closed' && !state.busy && !state.error && <p>{state.binding?.phase === 'intent' ? '角色创建尚未完成，请同 ID 重试。' : '点击创建，开始与角色对话。'}</p>}
-    {!presetChanged && window.phase === 'open' && <EmbeddedSessionFocus key={identity}><Mounted reference={window.reference} bindingKey={bindingKey} mountRole={mountRole}><SessionProvider session={window.reference} empty={() => <p role="alert">角色会话不可访问。请同 ID 重试。</p>}>
+    {active && !presetChanged && window.phase === 'open' && <EmbeddedSessionFocus key={identity}><Mounted reference={window.reference} bindingKey={bindingKey} mountRole={mountRole}><SessionProvider session={window.reference} empty={() => <p role="alert">角色会话不可访问。请同 ID 重试。</p>}>
       {renderSlot('personal-workbench.role-native', {})}
     </SessionProvider></Mounted></EmbeddedSessionFocus>}
   </section>
