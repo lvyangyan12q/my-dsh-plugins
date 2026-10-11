@@ -3,6 +3,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type {} from '@deepseek-ai/dsh-api-session-controller'
 import type {} from '@deepseek-ai/dsh-session-persistence'
+import type {} from '@deepseek-ai/dsh-workspace'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
 import type {} from '@deepseek-ai/dsh-skill'
 import type {} from '@deepseek-ai/dsh-client-connection'
@@ -44,11 +45,26 @@ export async function installRoles(ctx: Context) {
         return (await readTeachingSkill(definition,declared.presetId))?.content
       }
     }
+    // A cwd alone does not populate native Workspace membership. Blank native
+    // Conversations refuse their composer without an owning registered Workspace.
+    // Production admission declares workspaceRegistry; authority-only callers can
+    // still use role persistence without providing a UI Workspace facility.
+    const ensureNativeWorkspace = async (sessionId: SessionId, expectedCwd?: string) => {
+      const registry = ctx.workspaceRegistry
+      if (!registry) return
+      const inspection = await ctx.sessionController.inspect(sessionId)
+      const cwd = inspection?.meta.cwd
+      if (!cwd || expectedCwd && !sameWorkspace(cwd, expectedCwd)) throw new Error('Role Session workspace changed; restore the original workspace or explicitly replace the role')
+      const workspace = registry.list().find(workspace => sameWorkspace(workspace.path, cwd))
+      if (!workspace) throw new Error('Role Session native workspace unavailable; restore its original registered workspace')
+      if (!workspace.sessionIds.includes(sessionId)) await workspace.attachSession(sessionId)
+    }
     const validateExisting = async (record: RoleBinding) => {
       if (record.presetId !== bindings.definition(record.key).presetId) throw new Error('Recorded role preset unavailable')
       const baseline = await ctx.sessionController.projections({ sessionId: record.sessionId }, new AbortController().signal)
       if (!baseline) throw new Error('Teacher Session missing; retry the same ID or explicitly create a replacement')
       if (baseline.values.agentPreset !== record.presetId) throw new Error('Teacher Session preset changed; explicit replacement required')
+      await ensureNativeWorkspace(record.sessionId, record.creation?.cwd)
     }
     const bindings = new RoleBindings(domain.table('bindings'), {
       validate: async definition => { await loadSkill(definition) },
@@ -76,6 +92,7 @@ export async function installRoles(ctx: Context) {
         // Native blank Sessions are lazy: ready requires a public header durability barrier.
         // The service-wide barrier also drains other active native write handles, without creating turns.
         await ctx.sessionPersistence.flush()
+        await ensureNativeWorkspace(value.sessionId, cwd)
         return value.sessionId
       },
     })

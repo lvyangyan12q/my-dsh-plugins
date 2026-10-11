@@ -61,3 +61,7 @@ blocked_by: [workbench-completion-roles]
 ## 2026-10-11 单编辑面兼容修复
 
 同角色的多个对话模块及跨页入口复用唯一角色会话位置；其它模块通过查看对话定位既有模块。原生会话体仅在应用角色视图 active 时挂载，隐藏页面或离开工作台释放编辑根，角色绑定、Session 和未发草稿由原生/平台持久服务保留，不调用 Stop。自定义生成模块遵守相同全应用角色宿主选择。模块 UI 回归覆盖重复及跨页入口；真实原生编辑器、草稿、审批和 Stop 待无补丁安装环境验收。本工单保持 open。
+
+## 2026-10-11 无补丁原生空白会话归属修复
+
+实页发现：应用已有角色 Session 可在嵌入区编辑未发送草稿，但公开导航打开同 ID 后原生显示“选择工作区”且输入失效。只读持久化核对：Session cwd 与既有原生 Workspace path 一致，而该 Workspace 的 sessionIds 未包含角色 Session。原生 blank Conversation 必须有工作区归属才启用 composer，故不是导航丢失 ID。角色创建在 header flush 后经公开 Workspace.attachSession 归属既有工作区；读取旧 ready 绑定同样修复缺失归属。缺失或改变工作区明确报错，不新建工作区、不替代 Session、不发送消息。公开 Host 回归须配合无补丁实页复验，工单保持 open。
