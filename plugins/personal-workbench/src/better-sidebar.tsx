@@ -91,8 +91,12 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
     name: 'sidebar.footer.action', id: 'personal-workbench.sidebar-status', locale: 'personal-workbench',
     inject: () => ({ hooks: { betterSidebarAdapter: status } }),
   }, Unsupported))
-  ctx.inject(['betterSidebar'], child => {
+  ctx.inject(['betterSidebar', 'sidebarRight'], child => {
     const service = child.betterSidebar
+    const cleanup = child.sidebarRight as Context['sidebarRight'] & { retirementVersion?: number; retireTabsByKind?: unknown }
+    // Stock native cannot durably remove dormant/undo layouts; do not create new tabs there.
+    // Its main/panellist entry remains available, and the separate observer handles known legacy IDs.
+    if (cleanup.retirementVersion !== 1 || typeof cleanup.retireTabsByKind !== 'function') return
     if (!compatible(service)) {
       status.set('sidebarUnsupported')
       child.effect(() => () => status.set(null))
@@ -149,3 +153,4 @@ export function installOptionalBetterSidebar(ctx: Context, workbench: Workbench)
     }, 'personal-workbench: optional Better Sidebar catalog')
   })
 }
+

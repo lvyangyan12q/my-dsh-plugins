@@ -18,7 +18,7 @@ The embedded conversation body uses only the public `conversation.content` facto
 
 ## Optional Better Sidebar
 
-The official sidebar launcher works without Better Sidebar. The optional adapter targets exactly `0.24.1` with its public tab lifecycle, targeted open and state subscription capabilities. It registers a catalog tab using the same workbench owner, not duplicate app views or Sessions. Absence, unsupported capabilities and unload remain explicit.
+The official sidebar launcher works without Better Sidebar. The optional adapter targets exactly `0.24.1` with its public tab lifecycle, targeted open and state subscription capabilities. It registers a catalog tab only when the native sidebar explicitly advertises public durable retirement version 1. On stock native it creates no catalog tab; the main/panellist Workbench entry remains available. Known legacy tabs may be closed through public closeIn without editing native layout storage. Absence, unsupported capabilities and unload remain explicit.
 
 Service fixtures cover absent/present/unsupported/unload/reload cases. They are not live browser acceptance. Both actual installed modes still require Chrome checks.
 
@@ -133,7 +133,7 @@ Native Team and Schedule services intentionally hydrate tools in an Agent's own 
 
 ## Embedded native Session navigation
 
-Role modules render DSH's conversation body and Session chrome under the same retained SessionProvider. The current rc.2 source runtime needs the reviewed native-session-chrome adaptation shipped in this repository; see [adapter installation and checks](../../compat/native-session-chrome/README.md). Release builds verify the source adaptation and fail explicitly on missing or conflicting changes. Native Chat, Trajectory, tool and approval rendering stay owned by DSH. Read-only opening and navigation never send model tasks. Runtime acceptance of real tools and approvals remains separate from component and registry tests.
+Role modules render the public DSH conversation body beneath a retained SessionProvider. The full original header is reached by public navigation to that same Session. Older native-session-chrome patches are historical archives and must not be installed; current build/install gates validate public types, Client factories and installed consumers against an independently built unpatched runtime. Real tools, approvals, questions and Stop still require actual runtime acceptance.
 
 ### 工作台自带页面 Skills
 
@@ -143,7 +143,7 @@ Role modules render DSH's conversation body and Session chrome under the same re
 
 ## Optional sidebar retirement
 
-The Workbench main entry is a native main panel and registers no native menu tab, so it does not depend on any native retirement capability. The optional Better Sidebar 0.24.1 adapter owns its own third-party tab and requests only `personal-workbench.catalog` cleanup. The current unpatched host exposes no public durable layout-retirement API (`retireTabsByKind`/`retirementVersion` are absent), so cleanup uses only the public `closeIn` fallback: it closes known adopted IDs but cannot certify dormant persistence or undo retirement. Where a host advertises the capability it is used, never inferred from rc.2 semver; it is not required for install.
+The Workbench main entry is a native main panel and registers no native menu tab, so it does not depend on any native retirement capability. The optional Better Sidebar 0.24.1 adapter owns its own third-party tab and requests only `personal-workbench.catalog` cleanup. The current unpatched host exposes no public durable layout-retirement API (`retireTabsByKind`/`retirementVersion` are absent), so no new optional catalog tabs are registered. Legacy cleanup uses only the public `closeIn` fallback: it closes known adopted IDs but cannot certify dormant persistence or undo retirement. Where a host advertises the capability it is used, never inferred from rc.2 semver; it is not required for install.
 
 The public `closeIn` fallback cleans known retired IDs after adoption but cannot certify dormant persistence or undo retirement. Workbench retains a bounded versioned pending intent in its own browser key until a supported native operation reports complete or not-found; an empty inventory never clears a partial failure. Re-enabling pauses old kind-wide retries to protect fresh catalogs; the next explicit unload retries cleanup. Pending or unavailable-storage recovery is displayed explicitly. Full durable cleanup would require a native public retention API; on the current unpatched host it remains a documented limitation and does not run while Workbench itself is unloaded.
 
@@ -154,3 +154,4 @@ Declared data connections cache only filter values, search text and selected rec
 ## Application-provided module choices
 
 An installed application can register its renderer with an optional descriptor: `registerRecipeModuleRenderer(id, view, {title: 'My module', appIds: ['my-app']})`. Omit appIds for an application-independent module; omit the entire descriptor to retain the original two-argument behavior. The descriptor adds a visual canvas/type choice, and disappears with the renderer's unregister callback. Scoped renderers are also unavailable in other applications at rendering/dependency projection. Recipes still contain only module data, and changing or adding one module preserves unrelated modules, roles and data connections. Applications own preview read-only behavior and module configuration.
+
