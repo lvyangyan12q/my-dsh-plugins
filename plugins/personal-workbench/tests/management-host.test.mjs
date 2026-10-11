@@ -134,3 +134,19 @@ test('assignment domain admits only stable keys, names and revisions', () => {
   assert.equal(assignmentRecord.safeParse({ version: 1, key, revision: 1, names: ['registered-skill'], bodyLoaded: true }).success, false)
   assert.equal(assignmentRecord.safeParse({ version: 1, key, revision: -1, names: [] }).success, false)
 })
+
+test('public management HTTP catalog keeps an owned preset private while next-version authoring recognizes its scoped availability',async()=>{
+ const {default:React,act,useState}=await import('react'),{JSDOM}=await import('jsdom'),{RecipeRolesEditor}=await import('../src/recipe-role-editor.tsx');
+ const directory=await mkdtemp(join(tmpdir(),'owned-authoring-')),f=await fixture(directory),dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map();
+ for(const[name,value]of Object.entries({React,window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const oldFetch=globalThis.fetch;let latest;
+ globalThis.fetch=async(url,options)=>{assert.equal(url,'/api/personal-workbench/management');const reply=await f.call(JSON.parse(options.body));return{ok:reply.status===200,json:async()=>reply.value}};
+ const initial={schemaVersion:1,appId:'example',version:2,name:'Example',description:'',pages:[],connections:[],roles:[{id:'teacher',name:'Private teacher',presetId:'example.legacy',skillNames:[]},{id:'new',name:'New',presetId:'',skillNames:[]}]};
+ function Harness(){const[recipe,setRecipe]=useState(initial);latest=recipe;return React.createElement(RecipeRolesEditor,{recipe,t:k=>k,change:update=>setRecipe(previous=>{const next=structuredClone(previous);update(next);return next})})}
+ const{createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'));
+ try{
+  const reply=await f.call({action:'catalog'});assert.equal(reply.status,200);assert.equal(reply.value.presets.some(row=>row.id==='example.legacy'),false);assert.equal(reply.value.roles.find(row=>row.key.subject===undefined).available,true);
+  await act(async()=>root.render(React.createElement(Harness)));const owned=document.querySelector('select[aria-label="recipeRoleAgent: teacher"]'),fresh=document.querySelector('select[aria-label="recipeRoleAgent: new"]');assert.equal(Boolean(document.querySelector('[role="alert"]')),false);assert.match(owned.textContent,/canvasExistingPrivateRole/);assert.equal([...fresh.options].some(option=>option.value==='example.legacy'),false);assert.deepEqual(latest.roles,initial.roles);
+  f.broken();await act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent==='recipeRefreshAgents').click());assert.equal(Boolean(document.querySelector('[role="alert"]')),true);assert.deepEqual(latest.roles,initial.roles);
+ }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;dom.window.close();for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}await f.close();await rm(directory,{recursive:true,force:true})}
+})
