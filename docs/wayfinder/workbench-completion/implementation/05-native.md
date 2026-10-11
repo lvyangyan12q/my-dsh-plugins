@@ -71,3 +71,13 @@ blocked_by: [workbench-completion-roles]
 alpha 原生 tool-skill、Subagents 新增 workingDirectory 公共依赖；测试按真实 native WorkingDirectory / FS / Projection 装配。spawn_teammate 名称未改变，Schedule 工具已移至独立 tool-schedule。生产分配 Skill 的发现和管理目录使用公开 Session projection workingDirectory，rc2 保持原始 cwd 回退；仍以原 Agent scope 发现、原生 loader 注入，并验证指令消息，不能仅凭 body 可读声称激活。新增有效目录变更行为先失败再修复，原 Session identity/header 和 scope 不变。
 
 独立未修改 alpha（d743267）聚焦 30/30；rc2 29 通过、仅 alpha 目录能力 1 skip、0 失败。独立产品完整构建及平台全量 411/411 通过；后续已完成自有alpha归档安装与受保护冷升级，并有文字标注追加实页证据；真实提问尝试明确返回缺少工具，不算通过。完整原生审批/提问/Stop等仍待实页复验，本工单保持open。生成守卫继续拒绝真实 Schedule、Team、global、late scoped 和 nested 工具，模型工具目录为空，无原生策略覆盖。考公只沿用现存回归夹具，没有执行考公流程或改题库。
+
+
+## 561实页增量（部分，不关单）
+
+专用会话真实一轮回复后公开归档，应用Retry保持原ID；显式新建保留旧历史，原生取消归档后应用内历史真实可读且不切回绑定。不能将归档当作Session文件missing；标题嵌入、未发图片冷恢复和物理指针限制保持。 [证据](evidence/2026-10-11-platform-561-live.md)。
+
+
+### 最终561身份与草稿
+
+最终再冷启动后，两Browser公开read的默认、新实例、并发验收三个角色仍同ID/ready；默认4条旧历史引用保持，新实例previous空。实际恢复不同实例的各自未发送文本，无混用或发送。 原生未发送图片恢复及准确内嵌标题两项公开能力缺口保持；文字恢复不替代图片恢复。

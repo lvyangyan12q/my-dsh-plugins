@@ -23,7 +23,7 @@ pnpm start
 
 应用平台的扩展与验证步骤见 [开发流程](docs/application-platform-extension.md) 和 [验收证据](docs/application-platform-acceptance.md)。阅读模板需要安装 `@deepseek-ai/dsh-reading-statistics` 并应用其 bundle patch；保存和预览草稿后仍需显式启用。
 
-工作台通过原生公开面板、会话与布局能力接入；不得给原生源码或 lib 打补丁。compat/native-* 仅为历史归档，不是安装步骤。发布构建使用独立已构建原生运行时，继续执行公开类型、客户端模块和官方安装验证。构建候选仅允许未补丁 0.2.0-rc.2 与 0.2.1-alpha.2，版本声明不是验收通过。rc.2 已通过隔离构建/回归/安装检查；alpha.2 在源码1ab23ed已通过独立构建、全量回归及官方安装消费者三门禁；自有实例1ab23ed冷安装、私有角色编辑保存、真实卸载重装与旧版回滚→最新恢复已验；完整范围仍按工单逐项保留。正式混合依赖等价验证仍有21项 strict 类型错误，正式部署尚未通过。完整状态见 docs/wayfinder/workbench-completion/implementation/README.md。
+工作台通过原生公开面板、会话与布局能力接入；不得给原生源码或 lib 打补丁。compat/native-* 仅为历史归档，不是安装步骤。发布构建使用独立已构建原生运行时，继续执行公开类型、客户端模块和官方安装验证。构建候选仅允许未补丁 0.2.0-rc.2 与 0.2.1-alpha.2，版本声明不是验收通过。rc.2 已通过隔离构建/回归/安装检查；alpha.2 在源码561fc228已通过独立构建、全量回归及官方安装消费者三门禁；自有实例561已冷升级启动，根面板布局、模板和任务冷恢复、新实例与并发唯一绑定有实页证据；此前1ab卸载重装与回滚证据分版本保留。完整范围仍按工单逐项验收。正式混合依赖等价验证仍有21项 strict 类型错误，正式部署尚未通过。完整状态见 docs/wayfinder/workbench-completion/implementation/README.md。
 
 ## 菜单
 
