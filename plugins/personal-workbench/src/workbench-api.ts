@@ -2,7 +2,7 @@ import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 
 /** Stable plugin-owned identifier; use a namespaced value such as `kaogong`. */
 export type WorkbenchAppId = string & { readonly __workbenchAppId: unique symbol }
-/** Stable application-owned instance key. The first release defaults to `default`. */
+/** Stable application-owned instance key (1¨C200 characters, kept verbatim). Omission defaults to `default`. */
 export type WorkbenchInstanceId = string & { readonly __workbenchInstanceId: unique symbol }
 /** Bundled Lucide glyph names supported by the workspace. */
 export type WorkbenchIcon = 'book-open' | 'graduation-cap' | 'briefcase' | 'notebook' | 'layout-grid'

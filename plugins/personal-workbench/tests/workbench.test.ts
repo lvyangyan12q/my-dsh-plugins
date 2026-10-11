@@ -163,3 +163,17 @@ test('restored focus waits for availability and cannot reopen a disabled applica
   assert.equal(restored.getSnapshot().focused, null)
   assert.equal(restored.isEnabled(app.id), false)
 })
+test('public openApp rejects invalid instance identity before publishing and retains exact valid IDs',()=>{
+ const workbench=new Workbench(),storage=memory(),persisted=new Workbench(storage)
+ workbench.registerApp(app);persisted.registerApp(app)
+ const before=workbench.getSnapshot()
+ for(const id of ['', 'x'.repeat(201)]){assert.throws(()=>workbench.openApp(app.id,id as WorkbenchInstanceId),/Too (small|big)/);assert.equal(workbench.getSnapshot(),before)}
+ const identity='second / 学习' as WorkbenchInstanceId
+ persisted.openApp(app.id,identity)
+ persisted.openApp(app.id,identity)
+ assert.equal(persisted.getSnapshot().windows.length,1)
+ assert.equal(persisted.getSnapshot().windows[0].instanceId,identity)
+ const restored=new Workbench(storage);restored.registerApp(app)
+ assert.equal(restored.getSnapshot().windows[0].instanceId,identity)
+ assert.equal(restored.getSnapshot().focused,windowKey(app.id,identity))
+})
