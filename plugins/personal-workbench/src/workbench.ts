@@ -162,7 +162,8 @@ export class Workbench implements PersonalWorkbench {
     const definition = this.definitions.get(appId)
     if (!definition || this.disposed) throw new Error(`Application unavailable: ${appId}`)
     if(!this.isEnabled(appId)) {
-      this.publish({visible:true,focused:null,lifecycleError:this.snapshot.lifecycleReady?'Application disabled; enable it in the application center':'Application availability is loading or unavailable'})
+      // Pending Host availability cannot retire a restored window intent; confirmed disable can.
+      this.publish({visible:true,...(this.snapshot.lifecycleReady?{focused:null}:{}),lifecycleError:this.snapshot.lifecycleReady?'Application disabled; enable it in the application center':'Application availability is loading or unavailable'})
       if(!this.snapshot.lifecycleReady) void this.loadLifecycle()
       return
     }
