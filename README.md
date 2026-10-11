@@ -1,5 +1,7 @@
 # my-dsh
 
+文档入口：[当前进度与待办](docs/STATUS.md) · [规格](docs/specs/README.md) · [工单](docs/tickets/README.md) · [验收](docs/verification/README.md) · [历史](docs/archive/README.md)
+
 DSH 的本地插件仓库。
 
 - `plugins/personal-workbench`：工作台、Agent 和 Skill 管理。

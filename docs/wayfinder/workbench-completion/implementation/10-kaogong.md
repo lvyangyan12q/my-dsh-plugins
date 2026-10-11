@@ -8,6 +8,16 @@ assignee: null
 blocked_by: [workbench-completion-data, workbench-completion-native, workbench-completion-materials]
 ---
 
+<!-- native-compatible-plan -->
+## 当前执行范围（2026-10-11）
+
+状态：open；考公专项暂缓。
+
+考公专项暂缓，保持open。待平台适配稳定后重验班主任/任课老师、独立学习窗口、原生会话、资料、练习与统计；本阶段只保留已有应用与数据。
+
+历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+
+
 # 10: 考公学习完整闭环
 
 **What to build:** 学习者在独立学习窗口完成班主任安排、任课老师讲解、练习、总结和辅导讲评，刷新后继续学习。

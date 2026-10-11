@@ -73,19 +73,18 @@ test('stored coordinates render only on the matching module geometry and scroll 
 })
 
 
-test('a screenshot is appended to the exact native draft without replacing its file chip, text or existing attachments',async()=>{
- const f=bridge(),image=new File(['image fixture'],'selected-region.png',{type:'image/png'}),original=f.state.draft
- await f.service.append(key,'Visual annotation',undefined,undefined,image)
- assert.equal(f.calls.find(c=>c[0]==='createDrafts')[1],'owned-session');assert.equal(f.calls.find(c=>c[0]==='createDrafts')[2][0],image)
- assert.deepEqual(f.state.attachmentIds,['existing-file','annotation-image']);assert.equal(f.state.draft,original+'\n\nVisual annotation');assert.deepEqual(f.state.occurrences,[{offset:7,length:7}]);assert.ok(!f.calls.some(c=>c[0]==='releaseDraftAttachments'))
+test('a screenshot is never staged into the native draft without the removed private capability',async()=>{
+ const f=bridge(),image=new File(['image fixture'],'selected-region.png',{type:'image/png'})
+ await assert.rejects(f.service.append(key,'Visual annotation',undefined,undefined,image),/attach the screenshot manually/)
+ assert.deepEqual(f.calls,[],'No role open, scope lookup or draft mutation may happen for a screenshot')
+ assert.equal(f.state.draft,'prefix @report suffix')
  const selected={moduleId:'web',moduleTitle:'Website',box:{x:1,y:2,width:10,height:20},canvas:{width:800,height:600,scrollX:0,scrollY:0},text:'',limited:true}
  assert.match(annotationText(recipe,'default','home',selected,'Fix the title',image),/user-attached image; not an automatic canvas capture/)
 })
-test('refused screenshot admission or text insertion releases only this annotation image and preserves the original draft',async()=>{
- for(const options of [{attachmentRefused:true},{bailResult:false}]){
-  const f=bridge(options),image=new File(['png'],'region.png',{type:'image/png'}),original=f.state.draft
-  await assert.rejects(f.service.append(key,'Visual annotation',undefined,undefined,image));assert.equal(f.state.draft,original);assert.deepEqual(f.state.attachmentIds,['existing-file']);assert.deepEqual(f.calls.find(c=>c[0]==='releaseDraftAttachments')[1],['annotation-image'])
- }
+test('a screenshot append never mutates the role or native draft',async()=>{
+ const f=bridge(),image=new File(['png'],'region.png',{type:'image/png'}),original=f.state.draft
+ await assert.rejects(f.service.append(key,'Visual annotation',undefined,undefined,image),/attach the screenshot manually/)
+ assert.equal(f.state.draft,original);assert.deepEqual(f.state.attachmentIds,['existing-file']);assert.deepEqual(f.calls,[])
 })
 test('unsupported or oversized screenshots are refused before touching a role or native draft',async()=>{
  for(const image of [new File(['svg'],'image.svg',{type:'image/svg+xml'}),new File([],'empty.png',{type:'image/png'}),new File([new Uint8Array(8*1024*1024+1)],'large.png',{type:'image/png'})]){

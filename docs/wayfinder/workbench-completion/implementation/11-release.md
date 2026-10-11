@@ -8,6 +8,16 @@ assignee: null
 blocked_by: [workbench-completion-runtime, workbench-completion-generation, workbench-completion-reading, workbench-completion-kaogong]
 ---
 
+<!-- native-compatible-plan -->
+## 当前执行范围（2026-10-11）
+
+状态：open；等待无原生补丁适配及对应验收。
+
+目标基线为未补丁原生639ed015；安装包只含插件，不含原生源码/lib补丁。验收依赖缺失、兼容入口、升级/回滚、卸载重装及数据保留；平台阶段与包含考公的完整阶段分开记录，不提前关闭本工单。
+
+历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+
+
 # 11: 兼容、升级与回滚验收
 
 **What to build:** 维护者用发布包在不同依赖环境和升级/回滚流程实际使用完整平台，原数据、资料和会话保持。
@@ -30,3 +40,10 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 ## Evidence and closure
 
 仅在每项标准有与其范围匹配的实际证据后关闭；研究、夹具、原型、源码断言和推送不代替使用验收。修复按已确认公共接缝 TDD，遵循实际安装浏览器/Host 流程。缺证据或外部条件阻塞如实记录，不勾选。
+
+
+## 2026-10-11 用户确认：恢复原生、改为插件适配
+
+验收基线改为未经工作台补丁的原生HEAD639ed015397290b3745d163aafe02ffee4aa3f84。此前native2ea补丁运行时上的406回归及实页结果只保留为历史证据，不能证明无补丁兼容。取消强制sidebar.sections、conversation.session.chrome、stageImages、retireTabsByKind及composer修改的安装/构建前提。后续在干净原生上重新构建、官方安装和完整平台闭环；缺失可选能力明确说明并保持入口/数据。不能用夹具新增这些服务来冒称兼容。
+
+本工单保持open。详细原生改动清单见[恢复与后续适配](../native-restoration.md)。考公专项暂缓，已有数据与历史证据保留。

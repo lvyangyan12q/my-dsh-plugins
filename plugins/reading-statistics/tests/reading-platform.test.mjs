@@ -47,7 +47,7 @@ async function client(host) {
   const ctx = { get: name => provided.get(name), inject: (services, install) => { if (services.every(name => provided.has(name))) install(ctx) }, effect: run => { const dispose = run(); if (typeof dispose === 'function') cleanups.push(dispose); return dispose }, reflect: { provide: (name, value) => { provided.set(name, value); if (name === 'personalWorkbench') workbench = value; return () => { provided.delete(name) } } }, sessions: { retain: () => { forbidden++; throw new Error('No Sessions') } }, workspaces: { list: { getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }), subscribe: () => () => {} } }, locale: { register: () => () => {} }, slots: { inject: (_key, install) => { const dispose = install(); if (dispose) cleanups.push(dispose) }, register: (options, component) => { const entry = { options, component }; entries.push(entry); return () => { entries.splice(entries.indexOf(entry), 1) } } } }
   platform.apply(ctx); reading.apply(ctx)
   await workbench.loadLifecycle()
-  const commands = entries.find(entry => entry.options.id === 'personal-workbench.workspace').options.inject()
+  const commands = entries.find(entry => entry.options.name === 'main' && entry.options.key === 'personal-workbench').options.inject()
   const { createRoot } = require('react-dom/client'), root = createRoot(dom.window.document.getElementById('mount'))
   const render = async element => { await act(async () => { root.render(element) }) }
   const flush = () => act(async () => { await new Promise(resolve => setTimeout(resolve, 15)) })

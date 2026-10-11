@@ -16,7 +16,7 @@ test('public client and package keep Better Sidebar optional at runtime and for 
   assert.equal(types.includes('better-sidebar.tsx'), false)
 })
 
-test('built client registers one explicit provider seat and delegates the entire native conversation', async () => {
+test('built client registers one explicit provider seat and delegates the public native conversation body', async () => {
   const declarations = []
   const cleanups = []
   const retained = []
@@ -79,22 +79,18 @@ test('built client registers one explicit provider seat and delegates the entire
     sessionId: 'synthetic-teacher', useSession: selector => selector({ openState: 'open' }), t: key => key,
     renderFactorySlot: (name, props) => { factories.push({ name, props }); return `native-factory:${name}` },
   })
-  assert.deepEqual(factories.map(row => row.name), ['conversation.content', 'conversation.session.chrome'])
+  assert.deepEqual(factories.map(row => row.name), ['conversation.content'])
   const content = factories.find(row => row.name === 'conversation.content')
   assert.equal(content.props.variant, 'embedded')
   assert.equal(content.props.phase, 'active')
   assert.equal(content.props.hero, false)
-  assert.equal(factories.find(row => row.name === 'conversation.session.chrome').props.hideChrome, false)
   assert.equal(rendered.type, 'div')
   assert.equal(rendered.props.style.display, 'flex')
   assert.equal(rendered.props.style.flexDirection, 'column')
   assert.equal(rendered.props.style.height, '100%')
   assert.equal(rendered.props.style.minHeight, 0)
   assert.equal(rendered.props.style.overflow, 'hidden')
-  const chromeSeat = rendered.props.children[0]
-  const contentSeat = rendered.props.children[2]
-  assert.equal(chromeSeat.props.style.flexShrink, 0)
-  assert.equal(chromeSeat.props.children, 'native-factory:conversation.session.chrome')
+  const contentSeat = rendered.props.children[1]
   assert.equal(contentSeat.props.style.display, 'flex')
   assert.equal(contentSeat.props.style.flex, 1)
   assert.equal(contentSeat.props.style.minHeight, 0)

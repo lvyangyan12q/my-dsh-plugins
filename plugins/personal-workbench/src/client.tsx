@@ -15,7 +15,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
-import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
+import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-plugin-manager/client'
 import { TeacherWindow, parseAssociation } from './teacher-window.ts'
@@ -23,9 +23,9 @@ import { en, zh } from './locale.ts'
 import type {} from './workbench-api.ts'
 import { Workbench } from './workbench.ts'
 import { installOptionalBetterSidebar } from './better-sidebar.tsx'
-import { Workspace, WorkspaceLauncher, ManagementPanel } from './workbench-view.tsx'
+import { Workspace, WorkspacePanelIcon, ManagementPanel } from './workbench-view.tsx'
 import type { WorkspaceInjected } from './workbench-view.tsx'
-import { PanelNavigation, bridgeNativeNavigation } from './panel-navigation.ts'
+import { PanelNavigation, bindWorkbenchPanel } from './panel-navigation.ts'
 import { installRoleClient } from './role-view.tsx'
 export type { RoleBindingKey, RoleBinding, PersonalWorkbenchRoles, TeachingEvidence } from './role-binding-api.ts'
 export type { ManagementCatalog, ManagedRole, ManagedSkill, SkillAssignment, ManagementRequest } from './management-api.ts'
@@ -103,6 +103,7 @@ export const inject = ['slots', 'sessions', 'workspaces', 'uiSession', 'locale']
  * @param ctx - client plugin context; all registrations unwind with its fiber.
  */
 export function apply(ctx: Context): void {
+  const PANEL_ID = 'personal-workbench' as MainPanelId
   const workbench = new Workbench({
     getItem: key => window.localStorage.getItem(key),
     setItem: (key, value) => window.localStorage.setItem(key, value),
@@ -125,9 +126,20 @@ export function apply(ctx: Context): void {
   const refreshRecipes = installRecipeClient(ctx, workbench)
   const navigation = new PanelNavigation()
   ctx.effect(() => () => navigation.dispose(), 'independent management navigation')
-  ctx.inject(['layout'], child => child.effect(() => bridgeNativeNavigation(child.layout, workbench, navigation), 'native menu navigation priority'))
-  ctx.effect(() => workbench.subscribe(() => { if (workbench.getSnapshot().visible) navigation.close() }), 'root panel exclusivity')
-  const openManagement = (panel: 'agents' | 'skills') => { workbench.closeWorkspace(); navigation.open(panel) }
+  let resyncPanel: () => void = () => {}
+  ctx.inject(['layout'], child => child.effect(() => {
+    const binding = bindWorkbenchPanel(child.layout, workbench, navigation, PANEL_ID)
+    resyncPanel = binding.resync
+    return binding.dispose
+  }, 'native main panel binding'))
+  const openManagement = (panel: 'agents' | 'skills') => { navigation.open(panel) }
+  // The Workbench is a first-class native main panel; opening it (from an app,
+  // the sidebar icon or another plugin) selects that panel. Opening an
+  // application also dismisses the Agents/Skills management overlay, which
+  // floats above the still-mounted workbench panel.
+  const selectPanel = (id: MainPanelId | null) => { ctx.get('layout')?.selectPanel(id) }
+  const openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications') => { selectPanel(PANEL_ID); workbench.openWorkspace(catalogTab) }
+  const openApp = (appId: Parameters<Workbench['openApp']>[0], instanceId?: Parameters<Workbench['openApp']>[1]) => { navigation.close(); selectPanel(PANEL_ID); workbench.openApp(appId, instanceId) }
   ctx.effect(() => () => { workbench.dispose() }, 'personal-workbench: registry lifetime')
   ctx.effect(() => ctx.reflect.provide('personalWorkbench', workbench), 'personal-workbench: public service')
   const teacher = new TeacherWindow(ctx.sessions, async signal => {
@@ -147,18 +159,26 @@ export function apply(ctx: Context): void {
     inject: (sessionId: SessionId) => ({ retry: () => teacher.retry(sessionId) }),
   }, NativeTeacher))
 
-  ctx.slots.inject('shell.overlay', () => ctx.slots.register({
-    name: 'shell.overlay', id: 'personal-workbench.workspace', locale: 'personal-workbench',
+  ctx.slots.inject('main', () => {
+    const remove = ctx.slots.register({
+    name: 'main', key: PANEL_ID, locale: 'personal-workbench',
     children: { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } },
-    inject: (): WorkspaceInjected => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace,
-      closeWorkspace: workbench.closeWorkspace, openApp: workbench.openApp, focusWindow: workbench.focus,
+    inject: (): WorkspaceInjected => ({ hooks: { workbench }, openWorkspace,
+      closeWorkspace: workbench.closeWorkspace, openApp, focusWindow: workbench.focus,
       setMode: workbench.setMode, selectPage: workbench.selectPage, setGeometry: workbench.setGeometry,
-      setPreference: workbench.setPreference, setAppEnabled, refreshRecipes, refreshApps: workbench.loadLifecycle, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
-  }, Workspace))
-  ctx.slots.inject('sidebar.sections', () => ctx.slots.register({
-    name: 'sidebar.sections', id: 'personal-workbench.workspace', locale: 'personal-workbench',
-    inject: () => ({ hooks: { workbench }, openWorkspace: workbench.openWorkspace, openApp: workbench.openApp, openAgents: () => openManagement('agents'), openSkills: () => openManagement('skills') }),
-  }, WorkspaceLauncher))
+      setPreference: workbench.setPreference, setAppEnabled, refreshRecipes, refreshApps: workbench.loadLifecycle,
+      openAgents: () => openManagement('agents'), openSkills: () => openManagement('skills'),
+      management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),
+    }, Workspace)
+    // The panel key is now registered; re-assert a persisted selection if the
+    // binding's boot-time selection ran before registration.
+    resyncPanel()
+    return remove
+  })
+  ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
+    name: 'sidebar.panellist', id: PANEL_ID, order: 20, locale: 'personal-workbench',
+    label: () => ctx.locale.bind('personal-workbench')('workspace'),
+  }, WorkspacePanelIcon))
   ctx.slots.inject('shell.overlay', () => ctx.slots.register({
     name: 'shell.overlay', id: 'personal-workbench.management', locale: 'personal-workbench',
     inject: () => ({ hooks: { navigation, workbench }, close: navigation.close, management: { openBundle: ctx.get('pluginNavigation')?.openBundle, openSession: ctx.get('uiWorkspace') ? (id: string) => { (ctx.get('uiWorkspace') as UiWorkspace).openSession(id as SessionId); navigation.close(); workbench.closeWorkspace() } : undefined } }),

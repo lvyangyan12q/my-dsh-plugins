@@ -13,6 +13,11 @@ export function installAnnotations(ctx:Context){ctx.inject(['personalWorkbenchRo
   signal?.throwIfAborted()
   if(!text.trim()||text.length>16000)throw Error('Invalid annotation')
   if(image)validateAnnotationImage(image)
+  // The public native conversation service exposes no draft-image staging
+  // (the removed `stageImages` capability). Never silently drop or upload the
+  // screenshot: require the user to attach it through the supported native
+  // attachment entry instead.
+  if(image)throw Error('Native screenshot draft API unavailable; attach the screenshot manually in the conversation')
   const roles=child.personalWorkbenchRoles;await roles.open(key)
   signal?.throwIfAborted()
   const current=roles.view?.getSnapshot().get(roleKey(key))
@@ -25,14 +30,10 @@ export function installAnnotations(ctx:Context){ctx.inject(['personalWorkbenchRo
   if(!['plain','claimed'].includes(state.phase))throw Error('Native conversation draft is busy; retry later')
   let end=state.draft.length,previous=0
   for(const occurrence of state.occurrences){if(occurrence.offset<previous||occurrence.length<0||occurrence.offset+occurrence.length>state.draft.length)throw Error('Native draft references unavailable');previous=occurrence.offset+occurrence.length;end+=1-occurrence.length}
-  if(image&&!child.conversation.stageImages)throw Error('Native screenshot draft API unavailable; update the DSH compatibility adapter')
-  const rollback=image?child.conversation.stageImages!(sessionId,[image]):undefined
-  try {
   const inserted=(state.draft.trim()?'\n\n':'')+text
   if(scope.bail(scope,'slash/input-insert-text',{text:inserted,span:{start:end,end,draftRev:state.draftRev}})!==true)throw Error('Native draft changed; retry annotation insertion')
   if(input.state.getSnapshot().draft!==state.draft+inserted)throw Error('Open the target role composer and retry; annotation insertion was not confirmed')
   input.focus();return sessionId
-  }catch(error){rollback?.();throw error}
  }}
  child.effect(()=>child.reflect.provide('personalWorkbenchAnnotations',service))
 })}

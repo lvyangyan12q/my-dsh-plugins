@@ -8,6 +8,16 @@ assignee: null
 blocked_by: [workbench-completion-roles]
 ---
 
+<!-- native-compatible-plan -->
+## 当前执行范围（2026-10-11）
+
+状态：open；等待无原生补丁适配及对应验收。
+
+取消conversation.session.chrome、composer-surfaces及原生编辑器补丁依赖。优先一个原生编辑面，通过已有公开入口打开/恢复同Session；无法完整嵌入时使用原生会话导航并明确入口。复验标题、对话/轨迹、工具、审批、提问、Stop、流式、草稿及历史身份。
+
+历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+
+
 # 05: DSH 原生执行闭环
 
 **What to build:** 用户在应用内真正执行任务，并通过原生对话、轨迹、审批、提问和 Stop 控制任务及恢复历史。
@@ -32,3 +42,18 @@ blocked_by: [workbench-completion-roles]
 ## Evidence and closure
 
 仅在每项标准有与其范围匹配的实际证据后关闭；研究、夹具、原型、源码断言和推送不代替使用验收。修复按已确认公共接缝 TDD，遵循实际安装浏览器/Host 流程。缺证据或外部条件阻塞如实记录，不勾选。
+
+
+## 2026-10-11 用户确认：恢复原生、改为插件适配
+
+原生会话扩展：曾新增conversation.session.chrome工厂供嵌入标题栏使用；composer-surfaces及editor/root/keymap绑定解决同Session多个输入面竞争。后续只复用已有公开会话/轨迹/审批/Stop接口；优先单一原生编辑面，必要时通过公开导航打开原会话。不修改原生编辑器来适配插件，不要求新chrome工厂或内部服务。保持同Session、草稿、原生模型/权限操作；缺少公开嵌入能力时明确降级。
+
+本工单保持open。详细原生改动清单见[恢复与后续适配](../native-restoration.md)。考公专项暂缓，已有数据与历史证据保留。
+
+## 2026-10-11 无补丁会话适配（代码层完成，实页验收待做）
+
+- 移除 `conversation.session.chrome` 依赖：`renderNativeSession` 只渲染原生公开的 `conversation.content` 会话体。
+- **降级**：应用内嵌视图不再包含第二套原生标题/导航（原生 header 属主为主对话，插件不可二次声明）。需要完整标题栏与 Chat/Trajectory 导航时，用公开 `uiWorkspace.openSession` 打开同一原生会话。
+- 保留单一原生编辑面；取消 `composer-surfaces` 同 Session 多输入面依赖。
+
+**未满足项**：原生标题、lineage、actions 与 view-tabs 的内嵌渲染不可用，不得勾选为通过。真实模型、工具、审批、提问、Stop、流式关闭重开与历史恢复仍需在授权环境实页验收。

@@ -8,6 +8,16 @@ assignee: null
 blocked_by: [workbench-completion-data, workbench-completion-roles, workbench-completion-native]
 ---
 
+<!-- native-compatible-plan -->
+## 当前执行范围（2026-10-11）
+
+状态：open；等待无原生补丁适配及对应验收。
+
+在未补丁原生DSH中验证通用平台：创建应用、连接数据、配置模块、绑定角色、原生会话、标注生成、筛选/选择、刷新与重启恢复。不能沿用旧补丁实例证据关单。
+
+历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+
+
 # 09: 阅读统计通用应用闭环
 
 **What to build:** 用户用工作台搭建并持续使用阅读统计，证明平台能服务考公以外的应用。

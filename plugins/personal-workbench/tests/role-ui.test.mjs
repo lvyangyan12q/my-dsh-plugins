@@ -104,8 +104,7 @@ test('built generic role view reads per-ID official status facts without a fake 
       useSession: selector => selector({}),
       renderFactorySlot: (name, owner) => { factories.push({ name, owner }); return React.createElement('div', null, name) },
     })))
-    assert.deepEqual(factories.map(row => row.name), ['conversation.content', 'conversation.session.chrome'])
-    assert.equal(factories[1].owner.hideChrome, false)
+    assert.deepEqual(factories.map(row => row.name), ['conversation.content'])
     const attachment = entries.find(row => row.options.name === 'personal-workbench.role-attachment')
     const candidates = ['session-one', 'session-two'].map(id => ({ id, displayTitle: 'Same title', cwd: '/same/workspace', origin: 'user' }))
     await React.act(async () => root.render(React.createElement(attachment.component, {

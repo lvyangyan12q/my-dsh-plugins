@@ -1,8 +1,7 @@
 import { compareApplications } from './app-order.ts'
-import {sidebarCoexistenceStyles} from './sidebar-coexistence-styles.ts'
 import { RecipeEditor } from './recipe-editor.tsx'
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, ChevronDown, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search, Settings } from 'lucide-react'
+import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search, Settings } from 'lucide-react'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { WorkbenchAppDefinition, WorkbenchIcon } from './workbench-api.ts'
 import type { Workbench } from './workbench.ts'
@@ -25,50 +24,21 @@ export interface WorkspaceInjected {
   setAppEnabled?: (appId: string, enabled: boolean) => Promise<void>
   refreshRecipes?: () => Promise<void>
   refreshApps?: () => Promise<void>
+  openAgents?: () => void
+  openSkills?: () => void
   management?: ManagementCommands
 }
-type WorkspaceProps = PropsRuntime<'shell.overlay'> & PropsRenderSlots<'personal-workbench.app'>
+type WorkspaceProps = PropsRuntime<'main'> & PropsRenderSlots<'personal-workbench.app'>
   & PropsLocale<'personal-workbench'> & InjectFace<WorkspaceInjected>
 const icons = { 'book-open': BookOpen, 'graduation-cap': GraduationCap, briefcase: Briefcase, notebook: Notebook, 'layout-grid': LayoutGrid }
 function AppIcon({ icon }: { icon: WorkbenchIcon }) { const Icon = icons[icon]; return <Icon size={18} aria-hidden="true" /> }
 
-/** Full-width navigation follows the native Workspace browser in the sidebar. */
-export function WorkspaceLauncher({ openWorkspace, openApp, openAgents, openSkills, useWorkbench, t, wide }: PropsRuntime<'sidebar.sections'> & PropsLocale<'personal-workbench'>
-  & InjectFace<{ hooks: { workbench: Workbench } }> & { openWorkspace: Workbench['openWorkspace']; openApp: Workbench['openApp']; openAgents: () => void; openSkills: () => void }) {
-  const state = useWorkbench(value => value)
-  const [expanded, setExpanded] = useState(true)
-  const apps = state.definitions.filter(app => !state.apps[app.id]?.hidden && state.lifecycleReady && state.lifecycle[app.id]?.enabled !== false).sort(compareApplications(state.apps))
-  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, width: '100%', minWidth: 0,
-    minHeight: 40, padding: wide ? '8px 10px' : '8px 0', justifyContent: wide ? 'flex-start' : 'center',
-    border: 0, borderRadius: 8, background: 'transparent', color: 'inherit', fontSize: 14, textAlign: 'left', cursor: 'pointer' }
-  const label: React.CSSProperties = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
-  return <><style>{sidebarCoexistenceStyles}</style><nav className="pwb-sidebar-navigation" aria-label={t('catalogTabs')} style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0,
-    gap: 3, paddingTop: 8, paddingBottom: 8, borderTop: '1px solid var(--dsw-alias-border-default)' }}>
-    <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-      <button data-pwb-button type="button" title={t('workspace')} aria-label={t('workspace')} onClick={() => openWorkspace()} style={row}>
-        <LayoutGrid size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('workspace')}<small className="pwb-sidebar-origin">{t('sidebarPlatformOrigin')}</small></span>}
-      </button>
-      {wide && <button data-pwb-button type="button" aria-label={t('applications')} aria-expanded={expanded} onClick={() => setExpanded(value => !value)}
-        style={{ flexShrink: 0, border: 0, background: 'transparent', color: 'inherit', padding: 8, cursor: 'pointer' }}>
-        <ChevronDown size={16} style={{ transform: expanded ? undefined : 'rotate(-90deg)' }} aria-hidden="true" />
-      </button>}
-    </div>
-    {wide && expanded && <ul aria-label={t('applications')} style={{ listStyle: 'none', padding: '0 0 4px 19px', margin: 0,
-      borderLeft: '1px solid var(--dsw-alias-border-default)', marginLeft: 18 }}>
-      {apps.map(app => <li key={app.id}><button data-pwb-button type="button" title={app.name} aria-label={app.name} onClick={() => openApp(app.id)}
-        style={{ ...row, minHeight: 36, fontSize: 13 }}><AppIcon icon={app.icon} /><span style={label}>{app.name}</span></button></li>)}
-    </ul>}
-    <button data-pwb-button type="button" title={t('agents')} aria-label={t('agents')} onClick={openAgents} style={row}>
-      <Bot size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('agents')}</span>}
-    </button>
-    <button data-pwb-button type="button" title={t('skills')} aria-label={t('skills')} onClick={openSkills} style={row}>
-      <Sparkles size={18} style={{ flexShrink: 0 }} aria-hidden="true" />{wide && <span style={label}>{t('skills')}</span>}
-    </button>
-  </nav></>
+/** Native sidebar panel-list entry that selects the workbench main panel. */
+export function WorkspacePanelIcon({ size }: PropsRuntime<'sidebar.panellist'>) {
+  return <LayoutGrid size={size} aria-hidden="true" />
 }
 
-
-/** Anchor plugin panels to the native center column, keeping both sidebars usable. */
+/** Anchor the independent management overlays to the native center column, keeping both sidebars usable. */
 function useCenterColumn(ref: React.RefObject<HTMLDivElement>) {
   const [bounds, setBounds] = useState<React.CSSProperties>({ inset: 0 })
   useEffect(() => {
@@ -93,7 +63,7 @@ function useCenterColumn(ref: React.RefObject<HTMLDivElement>) {
 }
 
 /** Project workspace: direct content, one title and page navigation; owners stay mounted. */
-export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, setAppEnabled, refreshApps, refreshRecipes, management, renderSlot, t }: WorkspaceProps) {
+export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, setMode, selectPage, setPreference, setAppEnabled, refreshApps, refreshRecipes, openAgents, openSkills, management, renderSlot, t }: WorkspaceProps) {
   const state = useWorkbench(value => value)
   useEffect(() => { void refreshApps?.(); void refreshRecipes?.() }, [refreshApps, refreshRecipes])
   const [query, setQuery] = useState('')
@@ -102,7 +72,6 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
   const refreshApplicationStatus=async()=>{setAvailabilityError(null);try{await Promise.all([refreshApps?.(),refreshRecipes?.()])}catch(error){setAvailabilityError(error instanceof Error?error.message:String(error))}}
   const [showHidden, setShowHidden] = useState(false)
   const root = useRef<HTMLDivElement>(null)
-  const bounds = useCenterColumn(root)
   const frames = useRef(new Map<string, HTMLDivElement>())
   const retained = state.windows.filter(row => state.definitions.some(app => app.id === row.appId))
   const opened = retained.filter(row => state.lifecycleReady && state.lifecycle[row.appId]?.enabled !== false && row.mode !== 'closed' && row.mode !== 'minimized')
@@ -128,7 +97,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     ;[group[from], group[to]] = [group[to], group[from]]
     group.forEach((candidate, order) => setPreference(candidate.id, { order }))
   }
-  return <div ref={root} className="pwb-workspace pwb-project-shell" data-window-mode={focused?.mode ?? 'normal'} style={bounds} hidden={!state.visible} role="region" aria-label={app?.name ?? t('workspace')} tabIndex={-1}
+  return <div ref={root} className="pwb-workspace pwb-project-shell" data-window-mode={focused?.mode ?? 'normal'} hidden={!state.visible} role="region" aria-label={app?.name ?? t('workspace')} tabIndex={-1}
     onKeyDown={event => {
       if (event.defaultPrevented || event.nativeEvent.isComposing) return
       if (event.key === 'Escape' && event.target === root.current) { event.preventDefault(); closeWorkspace() }
@@ -143,6 +112,8 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
     <header className="pwb-top"><LayoutGrid size={18} aria-hidden="true" /><strong>{app?.name ?? t('workspace')}</strong>
       {focused && <button data-pwb-button type="button" aria-label={t(focused.mode === 'maximized' ? 'restore' : 'maximize') + ': ' + app!.name} title={t(focused.mode === 'maximized' ? 'restore' : 'maximize')} onClick={() => setMode(windowKey(focused.appId, focused.instanceId), focused.mode === 'maximized' ? 'normal' : 'maximized')}>{focused.mode === 'maximized' ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button>}
       {focused && <button data-pwb-button type="button" aria-label={t('minimize') + ': ' + app!.name} title={t('minimize')} onClick={() => setMode(windowKey(focused.appId, focused.instanceId), 'minimized')}><Minus size={18} aria-hidden="true" /></button>}
+      {openAgents && <button data-pwb-button type="button" aria-label={t('agents')} title={t('agents')} onClick={openAgents}><Bot size={18} aria-hidden="true" /></button>}
+      {openSkills && <button data-pwb-button type="button" aria-label={t('skills')} title={t('skills')} onClick={openSkills}><Sparkles size={18} aria-hidden="true" /></button>}
       <button data-pwb-button type="button" aria-label={t('closeWorkspace')} title={t('closeWorkspace')} onClick={closeWorkspace}><X size={18} /></button>
     </header>
     {state.lifecycleError && <div role="alert">{t(state.lifecycleError.includes('Application disabled') ? 'appDisabledNotice' : 'appAvailabilityUnavailable')}<button data-pwb-button type="button" onClick={()=>{void refreshApplicationStatus()}}>{t('refreshApps')}</button></div>}

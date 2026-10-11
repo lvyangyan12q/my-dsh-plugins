@@ -26,7 +26,8 @@ test('built plugin and optional consumer clean up and reactivate through real Co
   await registry
   const seed = ctx.plugin({ inject: ['slots'], apply: child => {
     child.slots.register({ name: 'root', children: {
-      'shell.overlay': { kind: 'list', scope: 'root' }, 'sidebar.footer.action': { kind: 'list', scope: 'root' }, 'sidebar.sections': {kind:'list',scope:'root'},
+      'shell.overlay': { kind: 'list', scope: 'root' }, 'sidebar.footer.action': { kind: 'list', scope: 'root' },
+      'main': { kind: 'keyed', scope: 'root' }, 'sidebar.panellist': { kind: 'list', scope: 'root' },
     } }, () => null)
     child.slots.register({name:'sidebar.footer.action',id:'native-test-footer'},()=>null)
     for (const [name, service] of Object.entries({
@@ -53,10 +54,11 @@ test('built plugin and optional consumer clean up and reactivate through real Co
     await owner
     await consumer
     assert.equal(activations, 1)
-    assert.equal(ctx.slots.entries('sidebar.sections').length,1)
+    assert.equal(ctx.slots.entries('main').length, 1, 'the workbench is the native main panel')
+    assert.equal(ctx.slots.entries('sidebar.panellist').length, 1, 'the workbench main panel has a sidebar entry')
     assert.ok(ctx.slots.entries('sidebar.footer.action').includes(nativeFooter),'native footer registration is retained')
     assert.equal(ctx.slots.entries('personal-workbench.app').length, 1)
-    assert.equal(ctx.slots.entries('shell.overlay').length, 3, 'launcher, workspace and independent management overlays')
+    assert.equal(ctx.slots.entries('shell.overlay').length, 2, 'the teacher window and the independent management overlay')
     const old = ctx.personalWorkbench
     assert.equal(old.getSnapshot().definitions.length, 1)
     await old.loadLifecycle()
@@ -65,7 +67,8 @@ test('built plugin and optional consumer clean up and reactivate through real Co
     assert.equal(ctx.get('personalWorkbench'), undefined)
     assert.equal(ctx.slots.entries('personal-workbench.app').length, 0)
     assert.equal(ctx.slots.entries('shell.overlay').length, 0)
-    assert.equal(ctx.slots.entries('sidebar.sections').length,0)
+    assert.equal(ctx.slots.entries('main').length, 0)
+    assert.equal(ctx.slots.entries('sidebar.panellist').length, 0)
     assert.ok(ctx.slots.entries('sidebar.footer.action').includes(nativeFooter),'native footer registration is retained')
     assert.equal(old.getSnapshot().definitions.length, 0)
     owner = ctx.plugin(plugin)

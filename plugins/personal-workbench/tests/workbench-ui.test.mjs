@@ -71,11 +71,12 @@ async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = 
   }
   exports.apply(ctx)
   await service.loadLifecycle()
-  const overlay = declarations.find(row => row.options.name === 'shell.overlay' && row.options.id === 'personal-workbench.workspace')
+  const main = declarations.find(row => row.options.name === 'main' && row.options.key === 'personal-workbench')
   const management = declarations.find(row => row.options.id === 'personal-workbench.management')
-  const launcher = declarations.find(row => row.options.name === 'sidebar.sections' && row.options.id === 'personal-workbench.workspace')
-  assert.ok(launcher,'full application navigation must use the additive section seat, not the native footer action row')
-  assert.deepEqual(JSON.parse(JSON.stringify(overlay.options.children)), { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } })
+  const icon = declarations.find(row => row.options.name === 'sidebar.panellist' && row.options.id === 'personal-workbench')
+  assert.ok(main,'the workbench must register the native main panel rather than inserting a native menu section')
+  assert.ok(icon,'the workbench main panel must have a sidebar.panellist entry')
+  assert.deepEqual(JSON.parse(JSON.stringify(main.options.children)), { 'personal-workbench.app': { kind: 'keyed', scope: 'root' } })
   function Exercise({ active, pageId }) {
     const [answer, setAnswer] = React.useState('')
     const [submitted, setSubmitted] = React.useState(false)
@@ -91,18 +92,25 @@ async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = 
     pages: [{ id: 'lesson', label: 'Lesson' }, { id: 'practice', label: 'Practice' }], defaultLayout: { width: 700, height: 500, pageId: 'lesson' } }
   const removeApp = service.registerApp(app)
   const removeView = ctx.slots.register({ name: 'personal-workbench.app', key: app.id }, Exercise)
+  function Panel() {
+    // The native `main` keyed panel renders only the active panel: leaving the
+    // workbench (selecting a Session) unmounts it and its application views.
+    const state = boundHook(main.options.inject().hooks.workbench)(value => value)
+    if (!state.visible) return null
+    const { hooks, ...callbacks } = main.options.inject()
+    return h(main.component, { ...callbacks, useWorkbench: boundHook(hooks.workbench), t: key => key,
+      renderSlot: (name, owner, options) => {
+        assert.equal(name, 'personal-workbench.app')
+        const entry = declarations.find(row => row.options.name === name && row.options.key === options.entryKey)
+        return entry ? h(entry.component, { ...owner, t: key => key }) : options.fallback
+      } })
+  }
   function Root() {
-    const injected = overlay.options.inject()
-    const { hooks, ...callbacks } = injected
+    const { hooks } = management.options.inject()
     return h(React.Fragment, null,
-      h(launcher.component, { wide: true, t: key => key, ...launcher.options.inject(), useWorkbench: boundHook(hooks.workbench) }),
+      h('button', { key: 'panel-entry', 'aria-label': 'workspace', onClick: () => main.options.inject().openWorkspace() }, 'workspace'),
       h(management.component, { ...management.options.inject(), useNavigation: boundHook(management.options.inject().hooks.navigation), useWorkbench: boundHook(hooks.workbench), t: key => key }),
-      h(overlay.component, { ...callbacks, useWorkbench: boundHook(hooks.workbench), t: key => key,
-        renderSlot: (name, owner, options) => {
-          assert.equal(name, 'personal-workbench.app')
-          const entry = declarations.find(row => row.options.name === name && row.options.key === options.entryKey)
-          return entry ? h(entry.component, { ...owner, t: key => key }) : options.fallback
-        } }))
+      h(Panel, { key: 'panel' }))
   }
   const root = createRoot(dom.window.document.getElementById('mount'))
   await act(async () => root.render(h(Root)))
@@ -112,7 +120,7 @@ async function fixture({ savedLayout, nativeColumns = false, pluginNavigation = 
   return { dom, ctx, declarations, service, root, pluginNavigationCalls, removeApp, removeView, click, button,
     async collapseNativeSidebar() { await act(async () => {sidebarWidth = 56;columnObservers.get(dom.window.document.getElementById('sidebar'))?.()}) },
     counts: () => ({ fetches, retained, mounts, unmounts }),
-    refreshRecipes: overlay.options.inject().refreshRecipes,
+    refreshRecipes: main.options.inject().refreshRecipes,
     withdrawApplicationSlots: () => slotWithdrawals.get('personal-workbench.app')(),
     async dispose() {
       await act(async () => root.unmount())
@@ -134,6 +142,7 @@ test('application slot withdrawal and platform reconstruction restore the last f
   const first = await fixture({ recipeCatalog })
   let saved
   try {
+    await first.click('workspace')
     await first.click('Cold project')
     await first.click('Review')
     assert.equal(first.service.getSnapshot().focused, '["test.cold-project","default"]')
@@ -157,6 +166,7 @@ test('confirmed recipe withdrawal remains retired after the same application is 
   const first = await fixture({ recipeCatalog })
   let saved
   try {
+    await first.click('workspace')
     await first.click('Retired project')
     installed = false
     await act(async () => first.refreshRecipes())
@@ -172,9 +182,10 @@ test('confirmed recipe withdrawal remains retired after the same application is 
 })
 
 
-test('direct project fills the main surface and retains draft through page, exit and reopen', async () => {
+test('direct project fills the main surface and leaving the panel unmounts the native main panel', async () => {
   const f = await fixture()
   try {
+    await f.click('workspace')
     await f.click('Exercise')
     assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden, true)
     assert.equal(f.dom.window.document.querySelector('.pwb-catalog'), null)
@@ -186,47 +197,53 @@ test('direct project fills the main surface and retains draft through page, exit
     assert.equal(draft.value, 'retained answer')
     await f.click('Submit exercise')
     await f.click('closeWorkspace')
-    assert.equal(draft.isConnected, true)
-    assert.equal(f.dom.window.document.querySelector('output[aria-label="Activity"]').textContent, 'false')
-    await f.click('Exercise')
-    assert.equal(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'), draft)
-    assert.equal(f.dom.window.document.querySelector('output[aria-label="Result"]').textContent, 'Submitted')
-    assert.deepEqual(f.counts(), {fetches:0,retained:0,mounts:1,unmounts:0})
+    // The workbench is a native main panel: deselecting it unmounts the panel
+    // and its application views (the accepted native-panel degradation). The
+    // plugin still retains the window preference (page, geometry).
+    assert.equal(draft.isConnected, false)
+    assert.equal(f.dom.window.document.querySelector('.pwb-app-home'), null)
+    assert.equal(f.service.getSnapshot().windows.find(row => row.appId === 'test.exercise').pageId, 'practice')
+    assert.equal(f.service.getSnapshot().visible, false)
+    await f.click('workspace')
+    assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden, false)
+    assert.notEqual(f.dom.window.document.querySelector('input[aria-label="Answer draft"]'), draft)
+    assert.deepEqual(f.counts(), {fetches:0,retained:0,mounts:2,unmounts:1})
   } finally { await f.dispose() }
 })
 
 test('Agent and Skills open independent root panels and project drafts remain mounted', async () => {
   const f = await fixture()
   try {
+    await f.click('workspace')
     await f.click('Exercise'); await f.click('Enter answer')
     const draft = f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
     await f.click('agents')
-    assert.equal(f.dom.window.document.querySelector('.pwb-project-shell:not(.pwb-independent-management)').hidden, true)
+    assert.equal(f.dom.window.document.querySelector('.pwb-project-shell:not(.pwb-independent-management)').hidden, false, 'the management overlay floats above the still-mounted workbench panel')
     assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').hidden, false)
     assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').getAttribute('aria-label'), 'agents')
     assert.equal(draft.isConnected, true)
     await f.click('skills')
     assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').getAttribute('aria-label'), 'skills')
-    await f.click('Exercise')
+    await f.click('close')
     assert.equal(f.dom.window.document.querySelector('.pwb-independent-management').hidden, true)
     assert.equal(draft.value, 'retained answer')
     assert.equal(f.counts().retained, 0)
   } finally { await f.dispose() }
 })
 
-test('workbench home and sidebar application hierarchy share registration without duplicate app mounting', async () => {
+test('workbench home lists registered applications and reflects hidden state without duplicate mounting', async () => {
  const f = await fixture()
  try {
-   const nav = f.dom.window.document.querySelector('nav[aria-label="catalogTabs"]')
-   assert.ok(nav.querySelector('ul button[aria-label="Exercise"]'))
    await f.click('workspace')
    assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden, false)
+   const grid = () => [...f.dom.window.document.querySelectorAll('.pwb-app-grid .pwb-open')].map(row => row.textContent)
+   assert.ok(grid().includes('Exercise'))
    await f.click('hideApp: Exercise')
-   assert.equal(nav.querySelector('ul button[aria-label="Exercise"]'), null)
+   assert.ok(!grid().includes('Exercise'))
    const checkbox = f.dom.window.document.querySelector('input[type="checkbox"]')
    await act(async () => checkbox.click())
    await f.click('showApp: Exercise')
-   assert.ok(nav.querySelector('ul button[aria-label="Exercise"]'))
+   assert.ok(grid().includes('Exercise'))
    await f.click('Exercise')
    await act(async () => { f.removeView(); f.removeApp() })
    assert.equal(f.dom.window.document.querySelector('.pwb-project'), null)
@@ -237,13 +254,14 @@ test('workbench home and sidebar application hierarchy share registration withou
 test('application availability disables entry without deleting mounted draft or role owner', async()=>{
  const f=await fixture()
  try {
+  await f.click('workspace')
   await f.click('Exercise');await f.click('Enter answer')
   const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
   await f.click('workspace');await f.click('disableApp: Exercise')
   assert.equal(draft.isConnected,true);assert.equal(f.counts().unmounts,0)
   assert.equal(f.dom.window.document.querySelector('.pwb-app-home').hidden,false)
   assert.equal(f.button('Exercise').disabled,true)
-  assert.equal(f.dom.window.document.querySelector('nav ul button[aria-label="Exercise"]'),null)
+  assert.ok([...f.dom.window.document.querySelectorAll('.pwb-app-grid .pwb-open')].some(b=>b.textContent==='Exercise'))
   await act(async()=>f.service.openApp('test.exercise'))
   assert.match(f.dom.window.document.querySelector('[role="alert"]').textContent,/appDisabledNotice/)
   await f.click('enableApp: Exercise');await f.click('Exercise')
@@ -255,10 +273,12 @@ test('application availability disables entry without deleting mounted draft or 
 test('a second application enters the platform without app-specific platform conditions',async()=>{
  const f=await fixture();let remove
  try {
+  await f.click('workspace')
   await act(async()=>{remove=f.service.registerApp({id:'reading',name:'Reading',version:'1',source:'Independent plugin',icon:'notebook',pages:[{id:'overview',label:'Overview'}],defaultLayout:{pageId:'overview',width:500,height:400}})})
-  assert.ok(f.dom.window.document.querySelector('nav ul button[aria-label="Reading"]'))
+  const grid=()=>[...f.dom.window.document.querySelectorAll('.pwb-app-grid .pwb-open')].map(b=>b.textContent)
+  assert.ok(grid().includes('Reading'))
   await f.click('Reading');assert.equal(f.service.getSnapshot().windows.at(-1).appId,'reading')
-  await act(async()=>remove());assert.equal(f.dom.window.document.querySelector('nav ul button[aria-label="Reading"]'),null)
+  await act(async()=>remove());assert.ok(!grid().includes('Reading'))
   assert.equal(f.counts().retained,0)
  } finally {await f.dispose()}
 })
@@ -283,6 +303,7 @@ test('application status refresh updates unchanged running recipe dependency pro
  let available=true;const recipe={schemaVersion:1,appId:'dependency-refresh',version:1,name:'Dependency refresh',description:'Fixture',pages:[{id:'home',label:'Home',layout:'stack',modules:[{id:'empty',type:'empty',title:'Empty',config:{}}]}],connections:[],roles:[{id:'analyst',name:'Analyst',presetId:'my-dsh.analyst',skillNames:[]}]};
  const f=await fixture({recipeCatalog:()=>({version:1,recipes:[{appId:recipe.appId,revision:2,draft:recipe,running:recipe}],dependencies:{[recipe.appId]:[{id:'agent:analyst',available,...(!available?{reason:'Unavailable Agent: my-dsh.analyst'}:{})}]}})});
  try{
+  await f.click('workspace')
   await f.click('Exercise');await f.click('Enter answer');const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]');
   await f.click('workspace');available=false;await f.click('refreshApps');
   assert.equal(f.service.getSnapshot().definitions.find(row=>row.id===recipe.appId).dependencies.find(row=>row.id==='agent:analyst').available,false,'refresh must update actual recipe dependency projection');
@@ -300,24 +321,20 @@ test('application status refresh updates unchanged running recipe dependency pro
 })
 
 
-test('catalog and sidebar share favorite and user order with persisted preferences', async () => {
+test('catalog order and favorites persist across the workbench panel', async () => {
  const f=await fixture()
  let remove
  try {
   await act(async()=>{remove=f.service.registerApp({id:'test.alpha',version:'1',name:'Alpha',source:'UI test registration',icon:'book-open',pages:[{id:'home',label:'Home'}],defaultLayout:{width:700,height:500,pageId:'home'}})})
   await f.click('workspace')
   const cards=()=>[...f.dom.window.document.querySelectorAll('.pwb-app-grid .pwb-open')].map(row=>row.textContent)
-  const sidebar=()=>[...f.dom.window.document.querySelectorAll('nav[aria-label="catalogTabs"] ul button')].map(row=>row.textContent)
   assert.deepEqual(cards(),['Alpha','Exercise'])
-  assert.deepEqual(sidebar(),cards())
   await f.click('moveUp: Exercise')
   assert.deepEqual(cards(),['Exercise','Alpha'])
-  assert.deepEqual(sidebar(),cards())
   assert.equal(f.button('moveUp: Exercise').disabled,true)
   assert.equal(f.button('moveDown: Alpha').disabled,true)
   await f.click('favorite: Alpha')
   assert.deepEqual(cards(),['Alpha','Exercise'])
-  assert.deepEqual(sidebar(),cards())
   assert.equal(f.button('moveDown: Alpha').disabled,true,'manual ordering stays inside favorite group')
   const saved=JSON.parse(f.dom.window.localStorage.getItem('personal-workbench.layout.v1'))
   assert.equal(saved.apps['test.alpha'].favorite,true)
@@ -331,7 +348,7 @@ test('catalog and sidebar share favorite and user order with persisted preferenc
 test('minimize and explicit restore retain the same application instance, page and draft',async()=>{
  const f=await fixture()
  try{
-  await f.click('Exercise');await f.click('Enter answer');await f.click('Practice')
+  await f.click('workspace');await f.click('Exercise');await f.click('Enter answer');await f.click('Practice')
   const draft=f.dom.window.document.querySelector('input[aria-label="Answer draft"]'),key=f.service.getSnapshot().focused
   await f.click('minimize: Exercise')
   assert.equal(f.service.getSnapshot().windows.find(row=>row.appId==='test.exercise').mode,'minimized')
@@ -351,7 +368,7 @@ test('minimize and explicit restore retain the same application instance, page a
 test('maximize, minimize and restore keep the same page and draft while releasing page-navigation space',async()=>{
  const f=await fixture()
  try{
-  await f.click('Exercise');await f.click('Enter answer');await f.click('Practice')
+  await f.click('workspace');await f.click('Exercise');await f.click('Enter answer');await f.click('Practice')
   const doc=f.dom.window.document,draft=doc.querySelector('input[aria-label="Answer draft"]'),pages=doc.querySelector('[role="tablist"][aria-label="pages"]')
   await f.click('maximize: Exercise')
   assert.equal(pages.hidden,true)
@@ -359,7 +376,7 @@ test('maximize, minimize and restore keep the same page and draft while releasin
   assert.equal(doc.querySelector('input[aria-label="Answer draft"]'),draft)
   assert.equal(draft.value,'retained answer')
   assert.equal(doc.querySelector('output[aria-label="Selected page"]').textContent,'practice')
-  assert.equal(doc.querySelector('nav[aria-label="catalogTabs"]').closest('[hidden]'),null)
+  assert.equal(doc.querySelector('[data-window-mode]').hidden,false)
   await f.click('minimize: Exercise');await f.click('restore: Exercise · default')
   assert.equal(pages.hidden,true,'restoring a minimized maximized window keeps its focus mode')
   assert.ok(f.button('restore: Exercise'))
@@ -377,6 +394,7 @@ test('external application disable and withdrawal move keyboard focus out of hid
  const f=await fixture()
  try{
   const doc=f.dom.window.document,origin=doc.querySelector('#origin');origin.focus()
+  await f.click('workspace')
   await f.click('Exercise')
   const draft=doc.querySelector('input[aria-label="Answer draft"]');draft.focus()
   await act(async()=>f.service.applyLifecycle([{appId:'test.exercise',enabled:false,revision:1}]))
@@ -392,23 +410,10 @@ test('external application disable and withdrawal move keyboard focus out of hid
  }finally{await f.dispose()}
 })
 
-test('workspace follows native sidebar collapse even when center width and frame dimensions stay unchanged', async () => {
-  const f = await fixture({nativeColumns:true})
-  try {
-    await f.click('Exercise')
-    const workspace = f.dom.window.document.querySelector('[data-window-mode]')
-    assert.equal(workspace.style.left, '280px')
-    assert.equal(workspace.style.width, '400px')
-    await f.collapseNativeSidebar()
-    assert.equal(workspace.style.left, '56px', 'Position-only center movement must not leave the workspace covering the native right sidebar')
-    assert.equal(workspace.style.width, '400px')
-    assert.equal(f.dom.window.document.getElementById('sidebar').style.width, '')
-  } finally { await f.dispose() }
-})
-
 test('both independent libraries reach official plugin configuration without creating Sessions or discarding app drafts', async () => {
   const f = await fixture({pluginNavigation:true})
   try {
+    await f.click('workspace')
     await f.click('Exercise')
     await f.click('Enter answer')
     const draft = f.dom.window.document.querySelector('input[aria-label="Answer draft"]')
@@ -428,7 +433,7 @@ test('both independent libraries reach official plugin configuration without cre
 test('reverse keyboard window navigation from the application center selects the last visible window',async()=>{
  const f=await fixture();const registrations=[]
  try{
-  await f.click('Exercise');await f.click('Enter answer')
+  await f.click('workspace');await f.click('Exercise');await f.click('Enter answer')
   const doc=f.dom.window.document,draft=doc.querySelector('input[aria-label="Answer draft"]')
   for(const [id,name] of [['test.alpha','Alpha'],['test.beta','Beta']]){
    await act(async()=>{registrations.push(f.service.registerApp({id,version:'1',name,source:'UI test registration',icon:'book-open',pages:[{id:'home',label:'Home'}],defaultLayout:{width:700,height:500,pageId:'home'}}));f.service.openApp(id)})
@@ -446,7 +451,7 @@ test('browser refresh restores the focused application and selected page without
  let savedLayout
  const before = await fixture()
  try {
-  await before.click('Exercise'); await before.click('Practice'); await before.click('maximize: Exercise')
+  await before.click('workspace'); await before.click('Exercise'); await before.click('Practice'); await before.click('maximize: Exercise')
   savedLayout = before.dom.window.localStorage.getItem('personal-workbench.layout.v1')
  } finally { await before.dispose() }
  const after = await fixture({ savedLayout })

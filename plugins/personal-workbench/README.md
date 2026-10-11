@@ -10,9 +10,11 @@ The Client retains one application view per default instance across workspace/pa
 
 Kaogong remains optional and owns its own learning domains, endpoints, personas and teaching Skill. Workbench removal leaves those business records intact; reinstall can recover saved role associations and assignments. There is no Kaogong runtime peer workaround.
 
-## Native sidebar sections
+## Native main panel entry
 
-Full application navigation registers in the root `sidebar.sections` list after native Workspace browsing and before the existing footer. It keeps applications beneath Workbench and preserves separate Agent/Skill entries. The generic [native sidebar adaptation](../../compat/native-sidebar-sections/README.md) supplies this public seat on the reviewed rc.2 host; native menu handlers, Workspace ownership and footer CSS remain unchanged. Build verification rejects an unadapted host instead of targeting private CSS-module classes.
+The application workspace is a first-class native main panel (the `main` keyed slot, key `personal-workbench`), selected from the public `sidebar.panellist` icon — the same public pattern the native Task manager and Plugins panels use. No native menu insertion, editor change or `sidebar.sections`/`retireTabsByKind` patch is required. Selection is bridged both ways through the public `ctx.layout.selectPanel` and `panelInfo`; `visible` is persisted by the plugin and re-selected on boot because the native layout does not persist `activePanelId`. A keyed `main` panel unmounts when another panel is selected, so leaving the workbench unmounts its application views; applications own durable state (documented degradation, tickets 01/05).
+
+The embedded conversation body uses only the public `conversation.content` factory. DSH exposes no public session-header factory, so the independent study window renders the native conversation body without a second native title/actions header; open the same Session through native navigation when the full header is required (ticket 05). Annotation appends text through the public draft command; screenshots are not staged into the native draft (DSH exposes no public draft-image API) and must be attached manually (ticket 06).
 
 ## Optional Better Sidebar
 
@@ -141,9 +143,9 @@ Role modules render DSH's conversation body and Session chrome under the same re
 
 ## Optional sidebar retirement
 
-Better Sidebar 0.24.1 catalogs request only `personal-workbench.catalog` cleanup. If the native face advertises `retirementVersion: 1`, Workbench uses the public `retireTabsByKind` capability for saved and live layouts; it does not infer this support from rc.2 semver. The observer belongs to Workbench, outside the optional provider view lifetime. Other tab kinds, native Sessions and application data remain untouched.
+The Workbench main entry is a native main panel and registers no native menu tab, so it does not depend on any native retirement capability. The optional Better Sidebar 0.24.1 adapter owns its own third-party tab and requests only `personal-workbench.catalog` cleanup. The current unpatched host exposes no public durable layout-retirement API (`retireTabsByKind`/`retirementVersion` are absent), so cleanup uses only the public `closeIn` fallback: it closes known adopted IDs but cannot certify dormant persistence or undo retirement. Where a host advertises the capability it is used, never inferred from rc.2 semver; it is not required for install.
 
-The upstream rc.2 `closeIn` fallback cleans known retired IDs after adoption but cannot certify dormant persistence or undo retirement. Workbench retains a bounded versioned pending intent in its own browser key until the supported native operation reports complete or not-found; an empty inventory never clears a partial failure. Re-enabling pauses old kind-wide retries to protect fresh catalogs; the next explicit unload retries cleanup. Pending or unavailable-storage recovery is displayed explicitly. Full durable cleanup requires the separately reviewed [native source patch and upgrade procedure](../../patches/README.md), and does not run while Workbench itself is unloaded.
+The public `closeIn` fallback cleans known retired IDs after adoption but cannot certify dormant persistence or undo retirement. Workbench retains a bounded versioned pending intent in its own browser key until a supported native operation reports complete or not-found; an empty inventory never clears a partial failure. Re-enabling pauses old kind-wide retries to protect fresh catalogs; the next explicit unload retries cleanup. Pending or unavailable-storage recovery is displayed explicitly. Full durable cleanup would require a native public retention API; on the current unpatched host it remains a documented limitation and does not run while Workbench itself is unloaded.
 
 ## Display presentation recovery
 

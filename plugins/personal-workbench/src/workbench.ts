@@ -158,6 +158,8 @@ export class Workbench implements PersonalWorkbench {
   }
   readonly openWorkspace = (catalogTab: 'applications' | 'agents' | 'skills' = 'applications'): void => { this.publish({ visible: true, focused: null, catalogTab, focusRevision: this.snapshot.focusRevision + 1 }); void this.loadLifecycle() }
   readonly closeWorkspace = (): void => { this.publish({ visible: false }) }
+  /** Reflect the native main-panel selection without resetting the focused window or catalog. */
+  readonly setVisible = (visible: boolean): void => { if (this.snapshot.visible !== visible) this.publish({ visible }) }
   readonly openApp = (appId: WorkbenchAppId, instanceId = defaultInstance): void => {
     const definition = this.definitions.get(appId)
     if (!definition || this.disposed) throw new Error(`Application unavailable: ${appId}`)
