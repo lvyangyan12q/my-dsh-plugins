@@ -11,4 +11,21 @@
 - 新增自有验收记录0e01012f-8c3d-49b2-904c-93587a0d965e，17分钟，自录范围2本77分钟；修改23分钟，范围2本83分钟。历史记录未修改。
 - 新实例unpatched-acceptance-20261011为空，未复制示例与默认数据。
 
-剩余：上述修复实页复验、第二实例CRUD及恢复、标注/截图/原生附加、能力角色任务与真实模型生成执行/审批/Stop/重启、alpha候选完整构建及兼容、升级回滚、完整审查。考公08/10暂停。3080及远程尚未同步。
+## c108c42e 安装后复验
+
+- 同一Session原生跳转：正确显示workspace与原未发送文字，输入恢复可用；真正发送一轮后原生标题“无补丁工作台平台验收”、对话/轨迹标签出现。GLM-5.3-Flash真实回复“工作台原生会话验收通过。”，用时7秒；轨迹展示用户/上下文/助手。返回应用，同ID原生轨迹可见。仅一轮消息，无文件工具。
+- 默认自录记录修改后2本83分钟；新实例创建记录6c035970-85fa-4ce6-a6f8-54e9f1a2faad，5分钟，默认不显示。Host重启新实例1本5分钟、默认数据保持。
+- 画布中心252,475标注统计模块、文字与位置保存，记录数0→1。未打开目标角色输入框时明确失败、保留要求；不伪称已追加。
+- 实际模型生成“无补丁AI画布验收”，两页3模块：home左右网站/空模块，动画页example URL。结果自动进入可编辑草稿revision1，未启用。改名“无补丁AI画布验收·修改”，保存revision2，隔离预览不载网站，显式启用revision3；菜单出现应用，运行首页和动画页有效，模块ID保持。
+- 最新alpha原生d743完整官方九阶段绿，产品195ec36干净构建、回归、官方安装消费者全门禁绿；alpha实页迁移尚待执行。
+
+剩余：连续编辑与旧缓存修复实页复验、标注完整追加/截图原生附加、能力替换任务与真实审批/Stop/模块生成/中途重启、alpha实页、升级回滚、完整审查。考公08/10暂停。3080及远程尚未同步。
+
+## Alpha actual annotation and role tools
+- 3089 alpha a92: manual app app.d779ca63-610c-4f7c-9bef-c49cc5d324fc page page.7f093e24-6b33-42aa-954a-78a4e43e19fb module module.50d29fba-560f-4b62-b565-019e02ced7bb: clicked arbitrary canvas point 211,502.5, selected application reading assistant. Annotation count 0→1; eventual success text explicitly says appended and not sent. DOM native editor contains exact requirement and app/instance/version/page/module/position context; no new turn. Screenshot path not yet tested.
+- Actual ask prompt in old Lifecycle acceptance session completed with explicit no ask_user_question tool response. This is NOT a passed ask test. Public managed Agent currently mounts skill/persona only; use already-installed native-tool-bearing Workbench module-builder role for actual approval/ask/Stop next, retain old session history.
+- Current integration 2d212ab clean alpha gates build-release/check-platform-tests/check-platform-release all status0. Installed alpha is still a92 until guarded update.
+
+## 2d212ab alpha受保护冷升级
+
+自有alpha实例已通过官方归档安装更新至2d212ab。核对182产品文件、4514目标保护文件、4514来源保护文件与28554原生文件；凭据、业务、会话保留，不回退旧原生，不写正式实例。三门禁status0。该安装/冷升级清单不等于真实审批/Stop、连续编辑恢复、截图附加或完整升级回滚通过；原记录中的旧版本失败及未验收范围仍保留。

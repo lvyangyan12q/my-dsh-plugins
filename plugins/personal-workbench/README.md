@@ -26,7 +26,7 @@ Service fixtures cover absent/present/unsupported/unload/reload cases. They are 
 
 The root combined release checks pack actual archives, install using the official built CLI offline, verify bytes and public declarations, preserve synthetic native role IDs/Skill assignments, and exercise the actual native pre-step loader without a model call. See [ticket11 evidence](../../docs/ticket11-release-evidence.md), [role ownership](../../docs/ticket07-roles-evidence.md), [management](../../docs/ticket09-management-evidence.md) and [application API](../../docs/workbench-api.md).
 
-Live native composer/streaming, tools, approval, questions, Stop, close-during-run and continued turns are pending. Desktop/narrow screenshots, image pixels, focus/overlap and no/with-sidebar acceptance remain blocked by Chrome transport. Ready Sessions and pre-step proposals do not satisfy those gates.
+Installed unpatched Browser evidence now includes a real native reply and trajectory, retained unsent drafts, editable AI generation/explicit activation, reading data isolation and text annotation appended without sending. Real approval/questions/Stop, module generation, screenshot manual attachment, complete responsive/focus behavior and upgrade/rollback/uninstall flows remain partial or pending. Chrome transport is not the current blanket blocker. Ready Sessions, old patched-runtime evidence and test counts do not satisfy these gates.
 
 The generic role implementation, native Session ownership, model controls and permissions are unchanged by the release packaging work.
 

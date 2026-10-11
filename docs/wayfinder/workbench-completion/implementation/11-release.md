@@ -13,7 +13,7 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 
 状态：open；等待无原生补丁适配及对应验收。
 
-目标基线为未补丁原生639ed015；安装包只含插件，不含原生源码/lib补丁。验收依赖缺失、兼容入口、升级/回滚、卸载重装及数据保留；平台阶段与包含考公的完整阶段分开记录，不提前关闭本工单。
+支持的精确候选为未补丁0.2.0-rc.2（639ed015）与0.2.1-alpha.2（d743267388）；当前原生只读检出为后者，历史恢复记录保留；安装包只含插件，不含原生源码/lib补丁。验收依赖缺失、兼容入口、升级/回滚、卸载重装及数据保留；平台阶段与包含考公的完整阶段分开记录，不提前关闭本工单。
 
 历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
 
@@ -44,7 +44,7 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 
 ## 2026-10-11 用户确认：恢复原生、改为插件适配
 
-验收基线改为未经工作台补丁的原生HEAD639ed015397290b3745d163aafe02ffee4aa3f84。此前native2ea补丁运行时上的406回归及实页结果只保留为历史证据，不能证明无补丁兼容。取消强制sidebar.sections、conversation.session.chrome、stageImages、retireTabsByKind及composer修改的安装/构建前提。后续在干净原生上重新构建、官方安装和完整平台闭环；缺失可选能力明确说明并保持入口/数据。不能用夹具新增这些服务来冒称兼容。
+当时恢复基线为未经工作台补丁的原生HEAD639ed015397290b3745d163aafe02ffee4aa3f84；这是历史记录，当前原生只读检出为d743267388641bc76f17c45ce8b4c231aed1d32c，双候选各自验证。此前native2ea补丁运行时上的406回归及实页结果只保留为历史证据，不能证明无补丁兼容。取消强制sidebar.sections、conversation.session.chrome、stageImages、retireTabsByKind及composer修改的安装/构建前提。后续在干净原生上重新构建、官方安装和完整平台闭环；缺失可选能力明确说明并保持入口/数据。不能用夹具新增这些服务来冒称兼容。
 
 本工单保持open。详细原生改动清单见[恢复与后续适配](../native-restoration.md)。考公专项暂缓，已有数据与历史证据保留。
 
@@ -58,5 +58,5 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 
 
 ### 原生版本候选矩阵
-版本预检只允许0.2.0-rc.2与0.2.1-alpha.2；三个产品native声明仅列这两个精确版本。所有First-party类型锚点及运行时版本必须严格等于选定runtime，不能以另一个候选版本混用。新增alpha候选只解锁实际编译/安装验收入口，不代表通过；alpha真实全量检查及Browser证据仍待根代理回填。其他版本明确拒绝，无兼容豁免。
+版本预检只允许0.2.0-rc.2与0.2.1-alpha.2；三个产品native声明仅列这两个精确版本。所有First-party类型锚点及运行时版本必须严格等于选定runtime，不能以另一个候选版本混用。alpha产品2d212ab的干净构建、全量回归及官方安装消费者三门禁均status0，已完成自有验收实例受保护冷升级；真实完整Browser链、回滚与卸载重装仍待验，不能据此关闭11。其他版本明确拒绝，无兼容豁免。
 

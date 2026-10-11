@@ -14,7 +14,7 @@
 - **05 会话**：`renderNativeSession` 只渲染公开 `conversation.content`；删除 `conversation.session.chrome` 使用。
 - **06 标注**：`annotation-client.append` 只走公开草稿插入；删除 `stageImages`；携带截图时显式报“需手动附加”。
 
-## 降级（用户 2026-10-11 确认）
+## 已知公开接口限制（不表示用户接受原需求减少）
 
 - `main` keyed 面板切换即卸载：离开工作台会卸载应用视图，草稿由应用自持持久状态。
 - 内嵌会话不显示第二套原生标题/导航；需完整标题栏时用 `uiWorkspace.openSession` 打开原会话。
@@ -31,4 +31,4 @@
 - 未补丁实例上的实际浏览器实页：原生导航、无关标签与草稿保留、窗口模式、刷新、外部停用、热更新；Host 冷启动恢复。
 - 05 的真实模型、工具、审批、提问、Stop、流式关闭重开与历史恢复。
 - 06 手动附加截图的实页路径。
-- 与本次无关的既存失败：reading-statistics 的陈旧 lib/externals 与原生版本断言（`0.2.0-rc.2` vs `0.2.1-alpha.2`）；kaogong 缺 `@testing-library/react` 及 client-module externals。
+- 历史首次适配失败：reading-statistics 陈旧 lib/externals、版本断言及kaogong测试依赖问题已后续修复；不作为当前阻碍。最新2d212ab在独立未补丁alpha上的三项完整门禁status0。上列实际流程逐项证据见2026-10-11-unpatched-live.md，仍不能按测试数关单。
