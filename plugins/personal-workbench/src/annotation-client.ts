@@ -17,7 +17,7 @@ export function installAnnotations(ctx:Context){ctx.inject(['personalWorkbenchRo
   // (the removed `stageImages` capability). Never silently drop or upload the
   // screenshot: require the user to attach it through the supported native
   // attachment entry instead.
-  if(image)throw Error('Native screenshot draft API unavailable; attach the screenshot manually in the conversation')
+  // Image ownership remains in annotation history. Only text enters this draft.
   const roles=child.personalWorkbenchRoles;await roles.open(key)
   signal?.throwIfAborted()
   const current=roles.view?.getSnapshot().get(roleKey(key))

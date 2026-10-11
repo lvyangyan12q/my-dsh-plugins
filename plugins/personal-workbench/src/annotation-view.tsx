@@ -1,5 +1,5 @@
 import {AnnotationImage} from './annotation-image-view.tsx'
-import {validateAnnotationImage} from './annotation-image.ts'
+import {validateAnnotationImage,serializeAnnotationImage} from './annotation-image.ts'
 import {AnnotationHistory} from './annotation-history.tsx'
 import {annotationRequest} from './annotation-records-api.ts'
 import type {AnnotationRecord} from './annotation-records-api.ts'
@@ -55,8 +55,8 @@ export function AnnotationLayer({canvas,recipe,pageId,instanceId,ctx,active,t,on
   const captured=identity,controller=new AbortController();pending.current=controller;setBusy(true);setStorageError('')
   try{validRecord(record);if(record.archived||!canvas.current||!annotationPositionMatches(canvas.current,record.annotation))throw Error(t('annotationTargetChanged'))
    const bridge=ctx?.get('personalWorkbenchAnnotations');if(!bridge)throw Error(t('annotationUnavailable'))
-   await bridge.append({appId:recipe.appId,instanceId,roleId:record.roleId},annotationText(recipe,instanceId,pageId,record.annotation,record.requirement),controller.signal,async()=>{onRevealRole?.();if(!canvas.current)throw Error(t('annotationTargetChanged'));await revealAnnotationComposer(canvas.current,{appId:recipe.appId,instanceId,roleId:record.roleId},controller.signal,t('annotationComposerMissing'))})
-   if(identityRef.current===captured&&!controller.signal.aborted)setNotice(t('annotationAdded'))
+   await bridge.append({appId:recipe.appId,instanceId,roleId:record.roleId},annotationText(recipe,instanceId,pageId,record.annotation,record.requirement,record.screenshot),controller.signal,async()=>{onRevealRole?.();if(!canvas.current)throw Error(t('annotationTargetChanged'));await revealAnnotationComposer(canvas.current,{appId:recipe.appId,instanceId,roleId:record.roleId},controller.signal,t('annotationComposerMissing'))})
+   if(identityRef.current===captured&&!controller.signal.aborted)setNotice(t('annotationAdded')+(record.screenshot?' '+t('annotationManualImage'):''))
   }catch(error){if(identityRef.current===captured&&!controller.signal.aborted)setStorageError(error instanceof Error?error.message:String(error))}finally{if(identityRef.current===captured)setBusy(false)}
  }
  const saveEdit=async()=>{
@@ -72,9 +72,10 @@ export function AnnotationLayer({canvas,recipe,pageId,instanceId,ctx,active,t,on
  const confirm=async()=>{if(!selection||!roleId)return;const captured=identity;const controller=new AbortController();pending.current=controller;setBusy(true);setError('');try{
   if(!recipe.roles.some(role=>role.id===roleId)||selection.moduleId&&!page.modules.some(module=>module.id===selection.moduleId))throw Error(t('annotationTargetChanged'))
   const bridge=ctx?.get('personalWorkbenchAnnotations');if(!bridge)throw Error(t('annotationUnavailable'))
-  ++revision.current;const saved=await annotationRequest({action:'save',appId:recipe.appId,instanceId,pageId,recipeVersion:recipe.version,annotation:selection,requirement,roleId},controller.signal);controller.signal.throwIfAborted();if(identityRef.current!==captured)return;setRecords(saved.records);setStorageError('');setNotice(t('annotationSaved'))
+  const image=screenshot?await serializeAnnotationImage(screenshot,controller.signal):undefined;controller.signal.throwIfAborted();
+  ++revision.current;const saved=await annotationRequest({action:'save',appId:recipe.appId,instanceId,pageId,recipeVersion:recipe.version,annotation:selection,requirement,roleId,...(image?{screenshot:image}:{})},controller.signal);controller.signal.throwIfAborted();if(identityRef.current!==captured)return;setRecords(saved.records);setStorageError('');setNotice(t('annotationSaved'))
   await bridge.append({appId:recipe.appId,instanceId,roleId},annotationText(recipe,instanceId,pageId,selection,requirement,screenshot),controller.signal,async()=>{onRevealRole?.();if(!canvas.current)throw Error(t('annotationTargetChanged'));await revealAnnotationComposer(canvas.current,{appId:recipe.appId,instanceId,roleId},controller.signal,t('annotationComposerMissing'))},screenshot)
-  if(identityRef.current===captured){setSelection(null);setEditing(null);setRequirement('');setNotice(t('annotationAdded'))}
+  if(identityRef.current===captured){setSelection(null);setEditing(null);setRequirement('');setNotice(t('annotationAdded')+(screenshot?' '+t('annotationManualImage'):''))}
  }catch(error){if(identityRef.current===captured)setError(error instanceof Error?error.message:String(error))}finally{if(identityRef.current===captured)setBusy(false)}}
  return <><style>{annotationStyles}</style><div ref={toolbar} className="pwb-annotation-toolbar" data-pwb-annotation-ui><button data-pwb-button type="button" aria-pressed={aiming} disabled={busy} onClick={()=>{setAiming(!aiming);setSelection(null);setEditing(null);setHistory(false);setError('');setNotice('')}}>{t(aiming?'annotationCancel':'annotationStart')}</button><button data-pwb-button type="button" disabled={busy} aria-expanded={history} onClick={()=>{setHistory(!history);setSelection(null);setEditing(null);setAiming(false)}}>{t('annotationHistory')} ({records.filter(record=>!record.archived).length})</button>{storageError&&<><span role="alert">{storageError}</span><button data-pwb-button type="button" disabled={busy} onClick={()=>setReload(value=>value+1)}>{t('retry')}</button></>}{aiming&&<small>{t('annotationHint')}</small>}{notice&&<span role="status">{notice}</span>}</div>
  {active&&history&&<AnnotationHistory style={editorStyle} records={records} busy={busy} onArchive={record=>{void archive(record)}} onEdit={editRecord} onAppend={record=>{void appendRecord(record)}} t={t}/>}

@@ -7,7 +7,8 @@ import type {} from './app-lifecycle-api.ts'
 const id=z.string().min(1).max(200),number=z.number().finite().min(0).max(100000)
 const scope={appId:id,instanceId:id,pageId:id}
 const annotation=z.object({id,moduleId:id.nullable(),moduleTitle:z.string().max(500),box:z.object({x:number,y:number,width:number,height:number}).strict(),canvas:z.object({width:number.positive(),height:number.positive(),scrollX:number,scrollY:number}).strict(),text:z.string().max(2000),limited:z.boolean(),moduleBounds:z.object({x:z.number().finite().min(-100000).max(100000),y:z.number().finite().min(-100000).max(100000),width:number,height:number,focused:z.boolean()}).strict().optional()}).strict()
-const fields={recipeVersion:z.number().int().positive(),annotation,requirement:z.string().trim().min(1).max(2000),roleId:id}
+const screenshot=z.object({name:z.string().min(1).max(200),type:z.enum(['image/png','image/jpeg','image/webp']),data:z.string().min(4).max(11184812).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/).refine(value=>Buffer.byteLength(value,'base64')<=8*1024*1024)}).strict()
+const fields={screenshot:screenshot.optional(),recipeVersion:z.number().int().positive(),annotation,requirement:z.string().trim().min(1).max(2000),roleId:id}
 const requestSchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('list'),...scope}).strict(),
  z.object({action:z.literal('save'),...scope,...fields}).strict(),
@@ -26,7 +27,7 @@ export async function installAnnotationRecords(ctx:Context){
    const denied=ctx.connection.requestRejection(req);if(denied!==undefined){respond(denied,{error:'Authenticated same-origin request required'});return}
    if(req.method!=='POST'){res.setHeader('allow','POST');respond(405,{error:'POST required'});return}
    if(!req.headers['content-type']?.startsWith('application/json')){respond(415,{error:'JSON required'});return}
-   const chunks:Buffer[]=[];let length=0;for await(const part of req){const bytes=Buffer.from(part);length+=bytes.length;if(length>32768){respond(413,{error:'Request too large'});return}chunks.push(bytes)}
+   const chunks:Buffer[]=[];let length=0;for await(const part of req){const bytes=Buffer.from(part);length+=bytes.length;if(length>11220000){respond(413,{error:'Request too large'});return}chunks.push(bytes)}
    const parsed=requestSchema.safeParse(JSON.parse(Buffer.concat(chunks).toString('utf8')));if(!parsed.success){respond(400,{error:'Invalid annotation request'});return}
    const data=parsed.data
    const records=await serial(async()=>{

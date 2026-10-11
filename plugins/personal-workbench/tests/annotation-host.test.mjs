@@ -70,3 +70,8 @@ test('editing a saved annotation preserves target, geometry and archive state ac
 
  } finally { await f?.close();await rm(root,{recursive:true,force:true}) }
 })
+
+ test('optional screenshot survives annotation reopen and edits without native upload',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'annotation-image-host-'));let f;const screenshot={name:'region.png',type:'image/png',data:'iVBORw0KGgo='};
+ try{f=await fixture(root,recipe());const saved=await f.call({...save,screenshot});assert.equal(saved.status,200);assert.deepEqual(saved.value.records[0].screenshot,screenshot);await f.close();f=await fixture(root,recipe());assert.deepEqual((await f.call({...scope,action:'list'})).value.records[0].screenshot,screenshot);const updated=await f.call({...scope,action:'update',id:'mark-one',recipeVersion:1,requirement:'New request',roleId:'maker'});assert.deepEqual(updated.value.records[0].screenshot,screenshot);assert.equal((await f.call({...save,screenshot:{...screenshot,type:'image/svg+xml'}})).status,400);assert.equal((await f.call({...save,screenshot:{...screenshot,data:'not base64!'}})).status,400)}finally{await f?.close();await rm(root,{recursive:true,force:true})}
+ })
