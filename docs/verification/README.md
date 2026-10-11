@@ -3,6 +3,7 @@
 返回 [进度入口](../STATUS.md)。
 
 - [最新阶段检查摘要](latest.md)
+- [当前未补丁平台实际恢复链](../wayfinder/workbench-completion/implementation/evidence/2026-10-11-unpatched-live.md#1ab23ed-实际安装与恢复增量)
 - [完整需求审计](../full-scope-audit.md)
 - [平台既有验收记录](../application-platform-acceptance.md)
 - [平台既有代码审查](../application-platform-review.md)
