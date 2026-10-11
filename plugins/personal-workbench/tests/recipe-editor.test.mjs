@@ -41,6 +41,7 @@ test('canvas creation retains stable panes and requires save and preview before 
  await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(input,'Revised reading');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}))})
  assert.equal(button('recipeActivate').disabled,true);assert.equal(document.querySelector('[data-preview="true"]'),null)
  await click('recipeSave');await click('recipePreview');await click('recipeActivate');assert.equal(record.running.name,'Revised reading');assert.equal(refreshes,1);assert.equal(record.running.pages[0].modules[0].id,left);assert.deepEqual(calls.filter(r=>['save','preview','activate'].includes(r.action)).map(r=>r.action),['save','preview','save','preview','activate'])
+ await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(input,'Second edit');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}))});await click('recipeSave');const again=calls.filter(r=>r.action==='save').at(-1);assert.equal(again.expectedRevision,2);assert.equal(again.recipe.version,2)
  }finally{await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
 })
 
