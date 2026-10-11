@@ -43,3 +43,21 @@ test('canvas creation retains stable panes and requires save and preview before 
  await click('recipeSave');await click('recipePreview');await click('recipeActivate');assert.equal(record.running.name,'Revised reading');assert.equal(refreshes,1);assert.equal(record.running.pages[0].modules[0].id,left);assert.deepEqual(calls.filter(r=>['save','preview','activate'].includes(r.action)).map(r=>r.action),['save','preview','save','preview','activate'])
  }finally{await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
 })
+
+test('unsaved canvas configuration survives leaving the native main panel and browser reload without publishing',async()=>{
+ const dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map();
+ for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const oldFetch=globalThis.fetch,calls=[];globalThis.fetch=async(_url,options)=>{calls.push(JSON.parse(options.body));return{ok:true,json:async()=>({recipes:[],workspaces:[]})}};
+ const{createRoot}=await import('react-dom/client');let root;
+ const mount=async()=>{root=createRoot(document.getElementById('mount'));await act(async()=>root.render(React.createElement(RecipeEditor,{t:k=>k,refresh:async()=>{}})))};
+ try{
+  await mount();await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeCreate').click());
+  const input=document.querySelector('input[aria-label="recipeName"]');await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(input,'Unpublished notebook');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}))});
+  const before=document.querySelector('textarea[aria-label="recipeConfiguration"]').value;
+  await act(async()=>root.unmount());root=undefined;await mount();
+  assert.equal(document.querySelector('textarea[aria-label="recipeConfiguration"]')?.value,before);
+  assert.equal(document.querySelector('input[aria-label="recipeName"]')?.value,'Unpublished notebook');
+  assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='recipeActivate').disabled,true);
+  assert.equal(calls.some(c=>['save','activate','start'].includes(c.action)),false);
+ }finally{if(root)await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+});

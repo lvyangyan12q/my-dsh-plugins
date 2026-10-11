@@ -47,10 +47,11 @@ function TaskEditor({tasks,bindingKey,label,t,roles}:{tasks:PreparedTasks|import
   </div>
  </fieldset></>
 }
-function RecipeRoleChat({ctx,recipe,module,appId,instanceId,preview,taskEditorHost=true,t,renderFactorySlot,active=true}:RecipeModuleProps) {
+function RecipeRoleChat({ctx,recipe,module,appId,instanceId,preview,taskEditorHost=true,t,renderFactorySlot,active=true,conversationHost=true,onViewRole}:RecipeModuleProps) {
  const key=useMemo(()=>({appId,instanceId,roleId:module.roleId??''}),[appId,instanceId,module.roleId]),role=recipe.roles.find(r=>r.id===module.roleId)
  if(!role)return <p role="alert">{t('taskMissingRole')}</p>
  if(preview)return <p role="status">{t('taskPreview')}</p>
+ if(!conversationHost)return <button data-pwb-button type="button" onClick={onViewRole}>{t('moduleRoleConversation')}</button>
  return <section style={{display:'flex',flexDirection:'column',flex:1,width:'100%',minWidth:0,minHeight:0,overflow:'hidden'}}>{ctx&&taskEditorHost&&<div style={{display:'flex',flexDirection:'column',flexShrink:0,minHeight:0,maxHeight:'50%',overflow:'hidden'}}><PreparedTaskEditor ctx={ctx} bindingKey={key} label={role.name} t={t}/></div>}<div style={{flex:1,width:'100%',minWidth:0,minHeight:0,overflow:'hidden'}}>{renderFactorySlot?.('personal-workbench.role-conversation',{bindingKey:key,active,label:role.name,expectedPresetId:role.presetId},{fallback:<p role="alert">{t('taskUnavailable')}</p>})??<p role="alert">{t('taskUnavailable')}</p>}</div></section>
 }
 export function installTasks(ctx:Context) {

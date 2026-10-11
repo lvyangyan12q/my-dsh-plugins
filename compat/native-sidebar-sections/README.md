@@ -1,3 +1,9 @@
+# 历史原生补丁归档：native-sidebar-sections
+
+2026-10-11：用户已恢复原生仓库，本目录仅保留历史实现及证据。当前工作台发布不依赖、不安装这些补丁。不得按下文旧命令修改原生仓库；所有旧安装建议均已撤销。原生公开接口适配与独立无补丁验收以当前规格及11/12工单为准。
+
+---
+
 # Native sidebar plugin sections
 
 The generic root list slot `sidebar.sections` renders after native Workspace browsing and before the existing footer. Occupants receive `wide` and `expandSidebar`, own their layout and are removed with their registration. Native Workspace, global panels, Settings, footer actions and CSS retain their original owners and behavior. Workbench registers its application/Agent/Skill navigation here; Better Sidebar and the upstream Worktable keep their own registrations.
@@ -9,3 +15,4 @@ The actual native sidebar regression suite covers expanded/collapsed section sta
 The exact twelve-file `retirement-with-sections-hooks-v1` combination records native commit `d6a3a72164447bd8717db2ecdc66962a7800985a`: it combines the existing sections with public sidebar retirement, and changes only two sections tests for required object spacing and void callback braces. Original reviewed rc.2 before/after states remain supported; mixed combinations or unrelated file changes remain rejected. This is source compatibility, not installed Browser acceptance.
 
 [The minimal normal-hooks upgrade](reviewed-normal-hooks.patch) is distributable and reconstructs the exact newer state from the reviewed legacy after state. Tests build fixtures from only the existing official base commit plus these repository-owned patches; no unpublished combined-core Git object is required. Apply each with `git apply --check` before application in a clean isolated checkout.
+
