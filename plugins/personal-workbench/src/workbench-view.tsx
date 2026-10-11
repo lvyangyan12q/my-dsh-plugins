@@ -3,9 +3,10 @@ import { RecipeEditor } from './recipe-editor.tsx'
 import { useEffect, useRef, useState } from 'react'
 import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search, Settings } from 'lucide-react'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { WorkbenchAppDefinition, WorkbenchIcon } from './workbench-api.ts'
+import type { WorkbenchAppDefinition, WorkbenchIcon, WorkbenchInstanceId } from './workbench-api.ts'
 import type { Workbench } from './workbench.ts'
 import { windowKey } from './workbench.ts'
+import { workbenchInstanceIdentity } from './instance-identity.ts'
 import { workspaceStyles } from './workbench-styles.ts'
 import { ManagementCatalogView } from './management-view.tsx'
 import type { PanelNavigation } from './panel-navigation.ts'
@@ -32,6 +33,21 @@ type WorkspaceProps = PropsRuntime<'main'> & PropsRenderSlots<'personal-workbenc
   & PropsLocale<'personal-workbench'> & InjectFace<WorkspaceInjected>
 const icons = { 'book-open': BookOpen, 'graduation-cap': GraduationCap, briefcase: Briefcase, notebook: Notebook, 'layout-grid': LayoutGrid }
 function AppIcon({ icon }: { icon: WorkbenchIcon }) { const Icon = icons[icon]; return <Icon size={18} aria-hidden="true" /> }
+
+function InstanceOpener({app,disabled,openApp,t}:{app:WorkbenchAppDefinition;disabled:boolean;openApp:Workbench['openApp'];t:WorkspaceProps['t']}) {
+  const [identity,setIdentity]=useState('default')
+  const [error,setError]=useState<string|null>(null)
+  return <form onSubmit={event=>{
+    event.preventDefault();setError(null)
+    if(!workbenchInstanceIdentity.safeParse(identity).success){setError(t('appInstanceInvalid'));return}
+    try{openApp(app.id,identity as WorkbenchInstanceId)}catch{setError(t('appInstanceOpenFailed'))}
+  }}>
+    <label>{t('appInstanceId')}<input aria-label={t('appInstanceId')+': '+app.name} value={identity} disabled={disabled} onChange={event=>{setIdentity(event.target.value);setError(null)}} /></label>
+    <p>{t('appInstanceHelp')}</p>
+    <button data-pwb-button type="submit" disabled={disabled} aria-label={t('appOpenInstance')+': '+app.name}>{t('appOpenInstance')}</button>
+    {error&&<p role="alert">{error}</p>}
+  </form>
+}
 
 /** Native sidebar panel-list entry that selects the workbench main panel. */
 export function WorkspacePanelIcon({ size }: PropsRuntime<'sidebar.panellist'>) {
@@ -133,7 +149,7 @@ export function Workspace({ useWorkbench, openApp, closeWorkspace, focusWindow, 
         <button data-pwb-button type="button" className="pwb-open" disabled={!state.lifecycleReady || state.lifecycle[row.id]?.enabled===false} onClick={() => openApp(row.id)}><AppIcon icon={row.icon} /><span>{row.name}</span></button>
         <div className="pwb-meta">{row.sourceKind==='recipe'?t('appRecipeSource'):row.source} · {row.version} · {t(state.lifecycle[row.id]?.enabled===false?'appDisabled':'appEnabled')}</div>
         {row.dependencies?.some(dependency=>!dependency.available) && <p className="pwb-notice" role="status">{t('appMissingDependencies')}: {row.dependencies.filter(dependency=>!dependency.available).map(dependency=>dependency.reason||dependency.id).join('; ')}</p>}
-        <details><summary>{t('appConfiguration')}</summary><p>{t('appIdentity')}: {row.id}</p><p>{t('pages')}: {row.pages.map(page=>page.label).join(', ')}</p><p>{t('appRoles')}: {row.roles?.map(role=>role.name).join(', ')||t('appNone')}</p><p>{t('appDependencies')}: {row.dependencies?.map(dep=>dep.id+(dep.available?'':' — '+dep.reason)).join(', ')||t('appNone')}</p></details>
+        <details><summary>{t('appConfiguration')}</summary><p>{t('appIdentity')}: {row.id}</p><p>{t('pages')}: {row.pages.map(page=>page.label).join(', ')}</p><p>{t('appRoles')}: {row.roles?.map(role=>role.name).join(', ')||t('appNone')}</p><p>{t('appDependencies')}: {row.dependencies?.map(dep=>dep.id+(dep.available?'':' — '+dep.reason)).join(', ')||t('appNone')}</p><InstanceOpener app={row} disabled={!state.lifecycleReady||state.lifecycle[row.id]?.enabled===false} openApp={openApp} t={t} /></details>
         {setAppEnabled && <button data-pwb-button type="button" disabled={!state.lifecycleReady || pendingApp!==null} onClick={async()=>{
           setPendingApp(row.id);setAvailabilityError(null)
           try {await setAppEnabled(row.id,state.lifecycle[row.id]?.enabled===false)} catch(error) {setAvailabilityError(error instanceof Error?error.message:'Application availability update failed')} finally {setPendingApp(null)}
