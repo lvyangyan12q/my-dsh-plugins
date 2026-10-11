@@ -22,6 +22,11 @@ export async function recipeRequest(request:RecipeRequest){
 }
 const editorCachePrefix='personal-workbench.authoring.v1.'
 function readEditorCache(key:string){try{const raw=window.localStorage.getItem(key);if(!raw||raw.length>512000)return;const value=JSON.parse(raw);if(typeof value.selected==='string'&&typeof value.text==='string'&&Number.isSafeInteger(value.revision)&&value.revision>=0)return value as {selected:string;text:string;revision:number}}catch{}return undefined}
+function matchesPublishedRecipe(text:string,published:AppRecipe|undefined):boolean{
+ if(!published)return false
+ const canonical=(value:unknown):unknown=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,row])=>[key,canonical(row)])):value
+ try{return JSON.stringify(canonical(JSON.parse(text)))===JSON.stringify(canonical(published))}catch{return false}
+}
 export function RecipeEditor({t,refresh,onOpenSession,target,onActivated,onBusy}:{target?:{pageId:string;moduleId:string;appId:string;changeContent:boolean};onActivated?:()=>void;onBusy?:(busy:boolean)=>void;onOpenSession?:(id:string)=>void;t:(key:any)=>string;refresh:()=>Promise<void>}){
  useSyncExternalStore(displayCatalog.subscribe,displayCatalog.getSnapshot,displayCatalog.getSnapshot)
  const cacheKey=editorCachePrefix+JSON.stringify(target?[target.appId,target.pageId,target.moduleId]:['catalog'])
@@ -33,7 +38,7 @@ export function RecipeEditor({t,refresh,onOpenSession,target,onActivated,onBusy}
  useEffect(()=>{onBusy?.(busy||generating)},[busy,generating])
  const locked=busy||generating,row=records.find(record=>record.appId===selected)
  const load=async()=>{const data=await recipeRequest({action:'catalog'});setRecords(data.recipes??[])}
- useEffect(()=>{let live=true;void recipeRequest({action:'catalog'}).then(data=>{if(!live)return;setRecords(data.recipes??[]);if(target&&!restored?.text){const record=data.recipes?.find(r=>r.appId===target.appId),draft=record&&structuredClone(record.draft);if(!draft?.pages.find(p=>p.id===target.pageId)?.modules.some(m=>m.id===target.moduleId))throw new Error(t('recipeMissingModule'));draft.version=Math.max(draft.version,(record!.running?.version??0)+1);select(draft);setBaseRevision(record!.revision)}}).catch(error=>{if(live)setError(String(error.message))});return()=>{live=false}},[])
+ useEffect(()=>{let live=true;void recipeRequest({action:'catalog'}).then(data=>{if(!live)return;setRecords(data.recipes??[]);if(target){const record=data.recipes?.find(r=>r.appId===target.appId);if(restored?.text&&(restored.selected!==target.appId||!matchesPublishedRecipe(restored.text,record?.running)))return;const draft=record&&structuredClone(record.draft);if(!draft?.pages.find(p=>p.id===target.pageId)?.modules.some(m=>m.id===target.moduleId))throw new Error(t('recipeMissingModule'));draft.version=Math.max(draft.version,(record!.running?.version??0)+1);select(draft);setBaseRevision(record!.revision)}}).catch(error=>{if(live)setError(String(error.message))});return()=>{live=false}},[])
  useEffect(()=>{let live=true;void recipeRequest({action:'workspaces'}).then(data=>{if(live)setWorkspaces(data.workspaces??[])}).catch(error=>{if(live)setWorkspaceError(String(error.message))});return()=>{live=false}},[])
  let edited:AppRecipe|undefined;try{const parsed:unknown=JSON.parse(text);if(isRecipeForm(parsed))edited=parsed}catch{}
  const select=(recipe:AppRecipe)=>{setSelected(recipe.appId);setBaseRevision(records.find(r=>r.appId===recipe.appId)?.revision??0);setText(JSON.stringify(recipe,null,2));setPreview(null);setError('')}
