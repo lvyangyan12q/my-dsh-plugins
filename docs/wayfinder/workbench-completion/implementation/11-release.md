@@ -56,3 +56,7 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 ### 已安装公开类型验证修复
 独立未补丁639首次官方安装consumer编译报TS6200：Schemastery从旧原生目录与选定runtime各加载一份全局声明。类型验证工具现把Schemastery与其他原生公开声明统一锚定选定runtime，不再从profile工具依赖取另一份。对同一已安装归档复验先失败后通过，保留strict及skipLibCheck=false；不更改产品归档、原生源码或编译产物。完整发布流程及Browser仍需单独复验。
 
+
+### 原生版本候选矩阵
+版本预检只允许0.2.0-rc.2与0.2.1-alpha.2；三个产品native声明仅列这两个精确版本。所有First-party类型锚点及运行时版本必须严格等于选定runtime，不能以另一个候选版本混用。新增alpha候选只解锁实际编译/安装验收入口，不代表通过；alpha真实全量检查及Browser证据仍待根代理回填。其他版本明确拒绝，无兼容豁免。
+

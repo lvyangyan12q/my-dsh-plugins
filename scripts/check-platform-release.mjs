@@ -9,6 +9,7 @@ import { ownedRoot, isolatedEnv, runNode } from './release-tools.mjs'
 import { packRelease } from './release-archive.mjs'
 import { checkInstalledTypes } from './check-installed-types.mjs'
 import { resolveReleaseDependencies } from './release-dependencies.mjs'
+import { selectedNativeVersion } from './native-version-matrix.mjs'
 const worktree = resolve(dirname(fileURLToPath(import.meta.url)), '..'), source = process.env.DSH_SOURCE
 assert(source, 'DSH_SOURCE must name the built official rc.2 checkout')
 const root = await ownedRoot(worktree, process.env.RELEASE_ROOT ?? join(worktree, '.scratch', 'platform-release-' + Date.now()))
@@ -33,7 +34,7 @@ const args = ['--offline', '--ignore-scripts', '--store-dir', join(root, 'store'
 await run(['plugin', '--profile', profile, 'add', ...packages.map(row => row.archive), ...args])
 const installed = createRequire(join(home, 'package.json'))
 const { evaluatePluginCompatibility, getDshRuntimeVersion, readProfileCompatibility } = await import(pathToFileURL(resolve(source, 'packages/boot/app-boot/lib/index.js')).href)
-assert.equal(getDshRuntimeVersion(), '0.2.0-rc.2')
+assert.equal(getDshRuntimeVersion(), await selectedNativeVersion(source))
 assert.equal(Object.keys(readProfileCompatibility(home).exemptions).length, 0)
 for (const [index, name] of ['dsh-personal-workbench', 'dsh-tool-kaogong', 'dsh-reading-statistics'].entries()) {
   const packageRoot = dirname(installed.resolve('@deepseek-ai/' + name + '/package.json'))
@@ -128,3 +129,4 @@ await host('installed HTML content / scoped static assets and authentication', a
 })
 await writeFile(join(root,'verdict.json'),JSON.stringify({ officialOfflineArchiveInstall:true, dependencyMode:'existing public dependency links; products installed from exact archives', compatibilityExemptions:0, installedBytes:true, installedClientFactories:true, standaloneClientFactory:true, installedConsumers:true, authenticatedLifecycle:true, installedHtmlAssets:true, coldRestart:true, readingUninstallReinstall:true, fixture:'public synthetic reading records', modelCalls:0, nativeSource, nativeAnchors, archives:packages.map(({sha256})=>sha256) },null,2))
 console.log('Platform release checks passed (synthetic profile; zero model calls).')
+
