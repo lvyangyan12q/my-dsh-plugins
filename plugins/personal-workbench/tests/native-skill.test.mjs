@@ -1,3 +1,4 @@
+import {installNativeWorkingDirectory} from './native-working-directory.mjs'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createRequire } from 'node:module'
@@ -95,6 +96,7 @@ test('native pre-step injects packaged teaching rules only for a real user slash
     await ctx.plugin(Agents)
     await ctx.plugin(SkillRegistry)
     await ctx.plugin(filesystem, { providerName: 'packaged-slash-probe', includeDefaultRoots: false, bundledSkillDir: skillRoot, watch: false })
+    await installNativeWorkingDirectory(ctx,source,skillRoot)
     await ctx.plugin(toolSkill)
     ctx.skills.register({ name: 'other-skill', description: 'Negative data-invocation fixture', source: 'runtime', content: 'These unrelated instructions must not load from lesson data.' })
     const explicit = await propose(createUserMessage({ source: { kind: 'user' }, content: [{ type: 'text', text: '/kaogong-teach 请讲解增长率。' }] }))

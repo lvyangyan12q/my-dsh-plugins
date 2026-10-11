@@ -51,9 +51,11 @@ export async function installManagement(ctx: Context) {
       const inspection = await ctx.sessionController.inspect(binding.sessionId)
       if (!inspection) throw new Error('Role Session unavailable')
       const agent = ctx.agents.get(binding.sessionId)
-      if (agent) return visit(agent, agent.session.header.cwd)
+      const current = baseline.values['workingDirectory']
+      const cwd = typeof current === 'string' ? current : inspection.meta.cwd
+      if (agent) return visit(agent, cwd)
       const lease = await ctx.agentPresets.acquireScope(binding.presetId)
-      try { return await visit(lease.key, inspection.meta.cwd) } finally { await lease[Symbol.asyncDispose]() }
+      try { return await visit(lease.key, cwd) } finally { await lease[Symbol.asyncDispose]() }
     }
     if (!definition.creation?.cwd) throw new Error('Role creation cwd unavailable; configure the app or restore its existing Session')
     const lease = await ctx.agentPresets.acquireScope(definition.presetId)

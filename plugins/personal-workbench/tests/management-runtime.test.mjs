@@ -1,3 +1,6 @@
+import {mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises'
+import {tmpdir} from 'node:os'
+import {installNativeWorkingDirectory} from './native-working-directory.mjs'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createRequire } from 'node:module'
@@ -27,6 +30,7 @@ const loads = decision => decision.messages.filter(message => message.source.kin
 async function fixture({ loader = true, reusable = false, declaredSkills = [] } = {}) {
   const ctx = new Context()
   await ctx.plugin(SystemPrompt); await ctx.plugin(Tools); await ctx.plugin(Agents); await ctx.plugin(SkillRegistry)
+  await installNativeWorkingDirectory(ctx,source,root)
   if (loader) await ctx.plugin(toolSkill)
   const id = SessionId('management-role')
   const session = Session.create(id, [], { version: SESSION_FORMAT_VERSION, id, createdAt: 0, cwd: root, isSeeded: false, agentPreset: 'role-preset' })
@@ -42,7 +46,7 @@ async function fixture({ loader = true, reusable = false, declaredSkills = [] } 
   let selected = 'role-preset'
   const services = ctx.plugin({ apply: child => {
     child.effect(() => child.reflect.provide('personalWorkbenchBindings', bindings))
-    child.effect(() => child.reflect.provide('sessionController', { projections: async () => ({ values: { agentPreset: selected } }) }))
+    child.effect(() => child.reflect.provide('sessionController', { projections: async () => ({ values: { agentPreset: selected, ...(ctx.get('workingDirectory') ? {workingDirectory:ctx.get('workingDirectory').get(session)} : {}) } }) }))
     child.effect(() => child.reflect.provide('agentPresets', { serviceFor: () => undefined, composedPreset: () => reusable ? 'my-dsh.reusable' : undefined }))
   } })
   await services
@@ -127,3 +131,20 @@ test('reusable independent Agent assignment uses actual native Skill loader outs
 test('recipe role Skill references reach the actual native loader without copying or management assignments',async()=>{
  const f=await fixture({declaredSkills:['kaogong-teach']});try{const decision=await f.propose('Explain the selected material');assert.equal(loads(decision).length,1);assert.equal(loads(decision)[0].source.name,'kaogong-teach');assert.match(loads(decision)[0].content[0].text,/教学阶段/);assert.equal(f.agent.session.seq,f.initialSeq)}finally{await f.close()}
 })
+
+test('assigned native Skill discovery follows a committed effective directory while preserving original Session identity and exact scope',async t=>{
+ const f=await fixture({declaredSkills:['cwd-only']});let directory;
+ try{
+  if(!f.ctx.get('workingDirectory')){t.skip('rc2 has no effective-directory public capability');return}
+  directory=await mkdtemp(resolve(tmpdir(),'workbench-cwd-'));
+  await mkdir(resolve(directory,'.dsh/skills/cwd-only'),{recursive:true});
+  await writeFile(resolve(directory,'.dsh/skills/cwd-only/SKILL.md'),'---\nname: cwd-only\ndescription: effective directory proof\n---\nInstructions only in changed directory.');
+  const provider=await f.agent.ctx.plugin(filesystem,{providerName:'effective-directory',includeDefaultRoots:true,dshHome:resolve(directory,'isolated-home'),agentsHome:resolve(directory,'isolated-agents'),watch:false});
+  f.agent.session.append('working-directory/change',{cwd:directory});
+  assert.equal(f.agent.session.header.cwd,root);
+  const decision=await f.propose('Use assigned current-project instructions.');
+  assert.equal(loads(decision).length,1);assert.equal(loads(decision)[0].source.name,'cwd-only');
+  assert.match(loads(decision)[0].content[0].text,/Instructions only in changed directory/);
+  assert.equal(f.agent.session.id,f.agent.id);await provider.dispose();
+ }finally{await f.close();if(directory)await rm(directory,{recursive:true,force:true})}
+});
