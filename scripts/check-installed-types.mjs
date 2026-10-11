@@ -21,7 +21,8 @@ export async function checkInstalledTypes(home, source, root, env) {
     assert(rel && !rel.startsWith('..') && !isAbsolute(rel), 'Products must be installed in this owned home')
     await cp(packageRoot, join(modules, '@deepseek-ai', name), { recursive: true, filter: path => !relative(packageRoot, path).split(/[\\/]/).includes('node_modules') })
   }
-  // rc.2 supplies first-party services from its install anchor, not profile dependencies.
+  // The selected runtime supplies first-party declarations, including Schemastery.
+  // Profile tooling may link another native checkout; mixing its ambient schema types causes TS6200.
   // Expose their real built package exports for NodeNext, without src/lib tsconfig path mappings.
   const folders = [join(source, 'vendor')]
   for (const group of await readdir(join(source, 'packages'), { withFileTypes: true })) if (group.isDirectory()) folders.push(join(source, 'packages', group.name))
@@ -30,15 +31,16 @@ export async function checkInstalledTypes(home, source, root, env) {
     const packageRoot = join(folder, entry.name)
     let manifest
     try { manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) } catch (error) { if (error.code === 'ENOENT') continue; throw error }
-    if (!manifest.name?.startsWith('@deepseek-ai/') || !manifest.exports?.['.']?.types || manifest.name === '@deepseek-ai/schemastery') continue
+    if (!manifest.name?.startsWith('@deepseek-ai/') || !manifest.exports?.['.']?.types) continue
     assert(manifest.version === '0.2.0-rc.2' || !manifest.name.startsWith('@deepseek-ai/dsh-'), 'First-party type anchor must match rc.2')
     await link(packageRoot, join(modules, ...manifest.name.split('/')))
   }
   const require = createRequire(join(source, 'packages/client/ui-renderer/package.json'))
   for (const name of ['react', '@types/react', '@types/node']) await link(dirname(require.resolve(name + '/package.json')), join(modules, ...name.split('/')))
-  for (const name of ['zod', '@deepseek-ai/schemastery']) await link(dirname(installed.resolve(name + '/package.json')), join(modules, ...name.split('/')))
+  for (const name of ['zod']) await link(dirname(installed.resolve(name + '/package.json')), join(modules, ...name.split('/')))
   await cp(new URL('../tests/installed-consumer.ts', import.meta.url), join(consumer, 'consumer.mts'))
   await writeFile(join(consumer, 'package.json'), '{"private":true,"type":"module"}\n')
   await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, noEmit: true, skipLibCheck: false, jsx: 'react-jsx', types: ['node'], lib: ['ES2024', 'DOM', 'DOM.Iterable', 'ESNext.Disposable'] }, include: ['consumer.mts'] }))
   await runNode([resolve(source, 'node_modules/typescript/bin/tsc'), '-p', join(consumer, 'tsconfig.json')], { cwd: consumer, env })
 }
+

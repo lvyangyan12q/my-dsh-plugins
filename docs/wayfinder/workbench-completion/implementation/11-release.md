@@ -52,3 +52,7 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 发布构建移除四个原生补丁检查前置，默认回归移除补丁安装器夹具。保留独立官方runtime版本/CLI只读预检、公开类型编译、Client模块解析、安装字节及consumer验证；历史compat目录不再作为安装指南。rc.2无补丁验证和用户当前alpha.2的正式兼容是分别的证据，不能混用。
 
 
+
+### 已安装公开类型验证修复
+独立未补丁639首次官方安装consumer编译报TS6200：Schemastery从旧原生目录与选定runtime各加载一份全局声明。类型验证工具现把Schemastery与其他原生公开声明统一锚定选定runtime，不再从profile工具依赖取另一份。对同一已安装归档复验先失败后通过，保留strict及skipLibCheck=false；不更改产品归档、原生源码或编译产物。完整发布流程及Browser仍需单独复验。
+
