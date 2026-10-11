@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "439ec4983a7016ca03cb0d810e534311e1f0cc56",
+  "scope": "RoleBindings contract only; existing implementation unchanged",
+  "test": {
+    "path": "plugins/personal-workbench/tests/role-bindings.test.ts",
+    "sha256": "05767c7086e53593702e48b8c79937ef509629c323f661ade85414277a4d9596",
+    "command": "node node_modules/tsx/dist/cli.mjs --test plugins/personal-workbench/tests/role-bindings.test.ts",
+    "observedResult": {
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0
+    },
+    "newCase": "shared Agent keeps application, instance and delimiter-bearing role keys isolated across replacement and restart"
+  },
+  "source": [
+    {
+      "path": "plugins/personal-workbench/src/role-bindings.ts",
+      "normalizedSha256": "30a6ab37c0d9f2c8ada593001be911f4199b64ed3fac366fb9bb178674caec3e"
+    },
+    {
+      "path": "plugins/personal-workbench/src/role-domain.ts",
+      "normalizedSha256": "1756d07e95ca2d2de058ef00f8239f4f50a113d89717c89ab37775a07cf4b4ee"
+    },
+    {
+      "path": "plugins/personal-workbench/src/role-binding-api.ts",
+      "normalizedSha256": "32a07c649ea34ce7133bd55f4e1152947a9518aaf2428bf38fd05b36975cc42a"
+    }
+  ],
+  "assertions": [
+    "Seven declared keys share the same Agent preset but receive seven different Session IDs.",
+    "Four concurrent ensure calls per key issue one native creation command per key.",
+    "Application ID, instance ID, role ID and subject absence/presence remain separate, including colon-bearing identifiers.",
+    "Replacing one binding preserves only its own prior Session ID; every other record remains unchanged.",
+    "A foreign replacement Session ID is rejected as stale without issuing another create command.",
+    "Disposal and reconstruction over the retained table preserve each binding and history without new native commands."
+  ],
+  "limitations": [
+    "Uses the actual RoleBindings implementation with an in-memory KvTable adapter and a native authority command recorder.",
+    "Does not certify real DSH transcript contents, running tasks, durable disk storage, model teaching, permissions or Stop.",
+    "No application runtime code, formal 3080 data, screenshot or browser draft payload changed."
+  ]
+}

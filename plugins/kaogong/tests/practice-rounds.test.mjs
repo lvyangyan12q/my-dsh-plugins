@@ -1,0 +1,471 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { createRequire } from 'node:module'
+import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { tmpdir } from 'node:os'
+import { resolve, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { Readable } from 'node:stream'
+import { PracticeRounds, safePracticeQuestion } from '../src/practice-rounds.ts'
+import { practiceDomainSpec, bankDomainSpec, notebookDomainSpec } from '../src/domain.ts'
+import { apply, Config } from '../src/index.ts'
+import { parseMaterials } from '../src/material-repair.ts'
+
+const source = process.env.KAOGONG_TEST_RUNTIME
+const require = createRequire(resolve(source, 'packages/client/ui-renderer/package.json'))
+const { Context, resolveConfig } = require('@deepseek-ai/cordis')
+const load = path => import(pathToFileURL(resolve(source, path)).href)
+const { default: Storage } = await load('packages/storage/storage/lib/index.js')
+const { JsonStorageBackend } = await load('packages/storage/storage-json/lib/index.js')
+const { DomainFacility } = await load('packages/storage/storage-domain/lib/index.js')
+const subject = '行测-资料分析'
+const context = { subject, title: '增长率', limit: 10 }
+const bankRow = (n = 0) => ({ subject, knowledgePoint: '增长率', questionType: '单选', stem: `材料\n<table><tr><td>${n}</td></tr></table>\n![材料](题目_images/verified/资料600-2024-jiangsu-17.png)\n题干${n}`,
+  options: ['A. 10%', 'B. 20%'], correctAnswer: 'B', explanation: 'original explanation', difficulty: 'easy', source: 'synthetic fixture', origin: 'local', reviewStatus: 'approved', reviewNotes: '', tags: [], createdAt: '2020-01-01', reviewedAt: '' })
+async function boot(root, materialStem) {
+  const ctx = new Context(); await ctx.plugin(Storage)
+  const backend = new JsonStorageBackend(root)
+  ctx.storage.backend.register('json', backend)
+  const facility = new DomainFacility(ctx, { backend: 'json', routes: {} })
+  ctx.storage.mount('domain', facility)
+  const rounds = await facility.open(practiceDomainSpec), bank = await facility.open(bankDomainSpec), notebook = await facility.open(notebookDomainSpec)
+  const table = notebook.table('questions')
+  return { ctx, facility, bank: bank.table('questions'), notebook: table, rounds: rounds.table('rounds'),
+    service: new PracticeRounds(rounds.table('rounds'), bank.table('questions'), table, materialStem),
+    close: async () => { await Promise.all([rounds.close(), bank.close(), notebook.close()]); await backend.close(); await ctx.fiber.dispose() } }
+}
+const answers = (round, answer = 'A') => round.questions.map(row => ({ id: row.id, answer }))
+
+test('ten-question cycles prioritize unseen questions, stay in subject, and hide every answer field', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-cycle-')); const app = await boot(root)
+  try {
+    for (let n = 0; n < 13; n++) await app.bank.put('q' + n, bankRow(n))
+    await app.bank.put('other-subject', { ...bankRow(), subject: '申论' })
+    await app.bank.put('leaky', { ...bankRow(), stem: '材料【答案】B' })
+    const first = await app.service.start(context)
+    assert.equal(first.returned, 10); assert.equal(first.totalAvailable, 13)
+    assert.equal(first.result, null)
+    assert.doesNotMatch(JSON.stringify(first), /correctAnswer|original explanation|【答案】/)
+    assert.match(first.questions[0].stem, /<table>.*题目_images/s)
+    assert.deepEqual(first.questions[0].options, bankRow().options)
+    await app.service.submit(first.roundId, answers(first))
+    const second = await app.service.start(context, first.roundId)
+    assert.equal(second.returned, 10); assert.equal(new Set(second.questions.map(row => row.id)).size, 10)
+    assert.equal(second.questions.filter(row => !first.questions.some(old => old.id === row.id)).length, 3)
+    assert.equal(second.cycled, true)
+    assert.ok(second.questions.every(row => row.subject === subject))
+    await assert.rejects(app.service.start({ ...context, subject: '申论' }, first.roundId), /same module/)
+    assert.equal(app.service.history().length, 2)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('durable scoring rejects foreign, missing, duplicate and conflicting answers; snapshots survive bank changes', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-score-')); let app = await boot(root)
+  try {
+    await app.bank.put('q', bankRow()); const issued = await app.service.start(context)
+    await assert.rejects(app.service.submit('unknown', answers(issued)), /not found/)
+    for (const values of [[], [{ id: 'foreign', answer: 'B' }], [{ id: 'q', answer: 'B' }, { id: 'q', answer: 'B' }], [{ id: 'q', answer: 'X' }]]) await assert.rejects(app.service.submit(issued.roundId, values))
+    assert.equal(app.notebook.size, 0)
+    await app.bank.put('q', { ...bankRow(), correctAnswer: 'A' })
+    const result = await app.service.submit(issued.roundId, answers(issued, 'B'))
+    assert.equal(result.correctCount, 1); assert.equal(result.results[0].correctAnswer, 'B')
+    await app.service.drain(); await app.close(); app = await boot(root)
+    assert.deepEqual(await app.service.submit(issued.roundId, answers(issued, 'B')), result)
+    await assert.rejects(app.service.submit(issued.roundId, answers(issued, 'A')), /conflicting retry/)
+    assert.equal(app.notebook.size, 1); assert.equal(app.rounds.size, 1)
+    const skipped = await app.service.start(context)
+    await app.service.submit(skipped.roundId, answers(skipped, ''))
+    assert.equal(app.notebook.get('q').result, 'skipped')
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('partial notebook failure recovers after actual JSON reopen without reflection loss or replacing newer attempts', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-recovery-')); let app = await boot(root)
+  try {
+    for (let n = 0; n < 3; n++) await app.bank.put('q' + n, bankRow(n))
+    const first = await app.service.start(context)
+    const table = app.notebook
+    let writes = 0
+    const fault = new Proxy(table, { get(target, key) { if (key === 'put') return async (...args) => { if (++writes === 2) throw Error('disk failure'); return target.put(...args) }; const value = Reflect.get(target, key); return typeof value === 'function' ? value.bind(target) : value } })
+    const interrupted = new PracticeRounds(app.rounds, app.bank, fault)
+    const result = await interrupted.submit(first.roundId, answers(first))
+    assert.equal(result.projection, 'pending'); assert.equal(table.size, 1)
+    const savedId = first.questions[0].id
+    await table.update(savedId, old => ({ ...old, errorReason: '概念混淆', notes: 'learner reflection', updatedAt: '2099-01-01' }))
+    await app.close(); app = await boot(root)
+    await app.service.recover()
+    assert.equal((await app.service.read(first.roundId)).result.projection, 'complete')
+    assert.equal(app.notebook.size, 3); assert.equal(app.notebook.get(savedId).notes, 'learner reflection')
+    const second = await app.service.start(context, first.roundId)
+    await app.service.submit(second.roundId, answers(second, 'B'))
+    const target = second.questions.find(row => row.id !== savedId).id
+    const originalCreatedAt = app.notebook.get(target).createdAt
+    await app.service.reflect(first.roundId, [{ id: target, errorReason: '概念混淆', notes: 'old round reflection' }])
+    assert.equal(app.notebook.get(target).practiceRoundId, second.roundId)
+    assert.equal(app.notebook.get(target).result, 'correct')
+    assert.equal(app.notebook.get(target).createdAt, originalCreatedAt)
+    assert.equal((await app.service.read(first.roundId)).reflections[0].notes, 'old round reflection')
+    await app.service.submit(first.roundId, answers(first))
+    assert.equal(app.notebook.get(savedId).notes, 'learner reflection')
+    await assert.rejects(app.service.reflect(first.roundId, [{ id: target, errorReason: '概念混淆' }, { id: 'foreign', errorReason: '概念混淆' }]), /invalid/)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('reflection retries and review reservations persist once; uncertain native delivery never auto-resends', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-review-')); let app = await boot(root)
+  try {
+    await app.bank.put('q', bankRow()); const round = await app.service.start(context)
+    await assert.rejects(app.service.review(round.roundId, 'claim'), /not been submitted/)
+    await app.service.submit(round.roundId, answers(round))
+    const reflection = [{ id: 'q', errorReason: '概念混淆', notes: 'remember ratio' }]
+    await app.service.reflect(round.roundId, reflection)
+    const revision = app.rounds.get(round.roundId).revision
+    await app.service.reflect(round.roundId, reflection)
+    assert.equal(app.rounds.get(round.roundId).revision, revision)
+    await app.notebook.update('q', old => ({ ...old, notes: 'newer manual reflection' }))
+    await app.service.reflect(round.roundId, [{ id: 'q', errorReason: '审题不清' }])
+    assert.equal(app.notebook.get('q').notes, 'newer manual reflection', 'Changing only a reason must not reapply older notes')
+    const claims = await Promise.allSettled([app.service.review(round.roundId, 'claim'), app.service.review(round.roundId, 'claim')])
+    assert.equal(claims.filter(row => row.status === 'fulfilled').length, 1)
+    await app.close(); app = await boot(root)
+    await assert.rejects(app.service.review(round.roundId, 'claim'), /uncertain/)
+    await app.service.review(round.roundId, 'complete')
+    await app.service.review(round.roundId, 'complete')
+    assert.equal((await app.service.read(round.roundId)).result.review, 'sent')
+    assert.equal(app.rounds.size, 1); assert.equal(app.notebook.get('q').notes, 'newer manual reflection')
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('notebook commands serialize missing-row writes with practice projection', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-writer-')); const app = await boot(root)
+  try {
+    await app.bank.put('q', bankRow()); const round = await app.service.start(context)
+    let release
+    const gate = new Promise(resolve => { release = resolve })
+    const manual = app.service.notebookCommand(async () => {
+      await gate
+      await app.notebook.put('q', { ...bankRow(), userAnswer: 'A', result: 'wrong', notes: 'manual reflection', errorReason: '', updatedAt: '2020-01-01' })
+    })
+    const submission = app.service.submit(round.roundId, answers(round))
+    await Promise.resolve()
+    assert.equal(app.rounds.get(round.roundId).score, undefined)
+    release(); await manual; await submission
+    assert.equal(app.notebook.size, 1)
+    assert.equal(app.notebook.get('q').notes, 'manual reflection')
+    assert.equal(app.notebook.get('q').createdAt, '2020-01-01')
+    assert.equal(app.notebook.get('q').practiceRoundId, round.roundId)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('repair-style material retains table/image associations, while answer keys and subjective items fail closed', () => {
+  const material = '2019年一季度社会消费品零售总额97790亿元同比名义增长8.3%。其中3月份社会消费品零售总额31726亿元同比增长8.7%。'
+  const fixture = `## 三、根据所给资料，回答121～125题。\n${material}\n<table><tr><td>42</td></tr></table>\n![](chart.jpg)\n` + Array.from({ length: 5 }, (_, i) => `${121 + i}. 第${i}项是多少？\nA. 1.5 B. 2 C. 3 D. 4\n`).join('\n')
+  const parsed = parseMaterials(fixture, '1200题题本.pdf')[0]
+  const question = { id: 'original', ...bankRow(), stem: parsed.material + '\n' + parsed.stem, options: parsed.options.map((option, n) => 'ABCD'[n] + '. ' + option) }
+  assert.equal(safePracticeQuestion(question), true)
+  for (const leak of ['【答案】B', '参考答案 B', '答案解析', '答案：B', '解析：B', '1. A 2. B 3. C']) assert.equal(safePracticeQuestion({ ...question, stem: question.stem + '\n' + leak }), false, leak)
+  assert.equal(safePracticeQuestion({ ...question, options: ['A. 参考答案 B'] }), false)
+  assert.equal(safePracticeQuestion({ ...question, options: [], correctAnswer: 'essay' }), false)
+})
+
+test('Host endpoints and native tool share issued-round grading and explicit wire errors', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-routes-'))
+  const ctx = new Context(); await ctx.plugin(Storage)
+  const backend = new JsonStorageBackend(root); ctx.storage.backend.register('json', backend)
+  const facility = new DomainFacility(ctx, { backend: 'json' }); ctx.storage.mount('domain', facility)
+  const routes = new Map(), tools = new Map(), disposers = []
+  const domains = new Map()
+  const host = { storageDomain: { async open(spec) { const domain = await facility.open(spec); domains.set(spec.name, domain); return domain } }, inject() {}, logger: { warn() {} }, effect(effect) { const dispose = effect(); if (typeof dispose === 'function') disposers.push(dispose) },
+    connection: { requestRejection(req) { return req.headers.authorization === 'fixture' ? req.headers.origin === 'http://fixture' ? undefined : 403 : 401 } },
+    webServer: { register(route) { routes.set(route.path, route.handler); return () => routes.delete(route.path) } }, tools: { register(tool) { tools.set(tool.name, tool) } } }
+  const request = async (action, body, method = 'POST', headers = { authorization: 'fixture', origin: 'http://fixture', 'content-type': 'application/json' }) => {
+    const req = Readable.from([JSON.stringify(body)]); req.method = method
+    req.headers = headers
+    let status, value
+    await routes.get('/api/kaogong/practice/' + action)(req, { writeHead(code) { status = code }, end(bytes) { value = JSON.parse(bytes) } })
+    return { status, value }
+  }
+  try {
+    await apply(host, resolveConfig({ Config }, { mineru: { outputDir: root } }))
+    assert.equal((await request('history', {}, 'POST', {})).status, 401)
+    assert.equal((await request('history', {}, 'POST', { authorization: 'fixture', origin: 'http://foreign' })).status, 403)
+    assert.equal((await request('history', {}, 'POST', { authorization: 'fixture', origin: 'http://fixture' })).status, 415)
+    // Tools seed through the same declared application writer.
+    const add = tools.get('kaogong_bank_add')
+    await add.execute({ ...bankRow(), origin: 'local' })
+    const issued = await request('start', context)
+    assert.equal(issued.status, 200); assert.equal(issued.value.returned, 1)
+    assert.doesNotMatch(JSON.stringify(issued.value), /correctAnswer|original explanation/)
+    assert.equal((await request('submit', { answers: answers(issued.value) })).status, 400)
+    const scored = await request('submit', { roundId: issued.value.roundId, answers: answers(issued.value, 'B') })
+    assert.equal(scored.value.correctCount, 1)
+    const questionId = issued.value.questions[0].id
+    await tools.get('kaogong_record_question').execute({ id: questionId, ...bankRow(), notes: 'manual tool reflection' })
+    const notebook = domains.get(notebookDomainSpec.name)
+    assert.equal(notebook.table('questions').get(questionId).notes, 'manual tool reflection')
+    assert.equal(notebook.table('questions').get(questionId).practiceRoundId, issued.value.roundId)
+    const retry = await tools.get('kaogong_practice_submit').execute({ roundId: issued.value.roundId, answers: answers(issued.value, 'B') })
+    assert.equal(retry.correctCount, 1)
+    assert.equal((await request('submit', { roundId: issued.value.roundId, answers: answers(issued.value) })).status, 409)
+    assert.equal((await request('read', { roundId: issued.value.roundId }, 'GET')).status, 405)
+    // Dashboard accuracy uses only answered questions, matching the overall statistic.
+    const table = notebook.table('questions'), original = table.get(questionId)
+    await table.put(questionId, { ...original, result: 'wrong' })
+    for (let i = 0; i < 9; i++) await table.put('skipped-' + i, { ...original, result: 'skipped' })
+    const dashboard = async () => {
+      let value
+      await routes.get('/api/kaogong/dashboard')({ headers: { authorization: 'fixture', origin: 'http://fixture' } }, { writeHead() {}, end(bytes) { value = JSON.parse(bytes) } })
+      return value
+    }
+    const partial = await dashboard()
+    assert.equal(partial.accuracyRate, 0)
+    assert.equal(partial.modules.find(row => row.subject === subject).accuracyRate, 0)
+    await table.put(questionId, { ...original, result: 'skipped' })
+    assert.equal((await dashboard()).modules.find(row => row.subject === subject).accuracyRate, 0)
+    await table.put(questionId, { ...original, result: 'correct' })
+    await table.put('answered-wrong', { ...original, result: 'wrong' })
+    const mixed = await dashboard()
+    assert.equal(mixed.accuracyRate, 0.5)
+    assert.equal(mixed.modules.find(row => row.subject === subject).accuracyRate, 0.5)
+  } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('explicit knowledge point never silently issues unrelated subject questions', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-target-')); const app = await boot(root)
+  try {
+    await app.bank.put('unrelated', bankRow())
+    await assert.rejects(app.service.start({ ...context, knowledgePoint: '比重-基期比重' }), /没有匹配.*考点/)
+    assert.equal(app.rounds.size, 0)
+    assert.equal(app.notebook.size, 0)
+    await app.bank.put('matched', { ...bankRow(), knowledgePoint: '比重-基期比重' })
+    const round = await app.service.start({ ...context, knowledgePoint: '比重-基期比重' })
+    assert.equal(round.returned, 1)
+    assert.deepEqual(round.questions.map(row => row.id), ['matched'])
+    assert.equal(round.context.knowledgePoint, '比重-基期比重')
+    const general = await app.service.start(context)
+    assert.equal(general.returned, 2)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('verified display supplements preserve bank text and immutable grade snapshots', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-material-projection-'))
+  const raw = bankRow(), image = '\n![核验图示](题目_images/verified/diagram.jpg)'
+  const app = await boot(root, (id, stem) => id === 'with-material' ? stem + image : stem)
+  try {
+    await app.bank.put('with-material', raw)
+    const round = await app.service.start(context)
+    assert.ok(round.questions[0].stem.endsWith(image))
+    assert.equal(app.bank.get('with-material').stem, raw.stem)
+    assert.equal(app.rounds.get(round.roundId).questions[0].stem, raw.stem)
+    const score = await app.service.submit(round.roundId, answers(round, 'B'))
+    assert.equal(score.correctCount, 1)
+    assert.ok(score.results[0].stem.endsWith(image))
+    assert.equal(app.bank.get('with-material').correctAnswer, raw.correctAnswer)
+    assert.deepEqual(app.bank.get('with-material').options, raw.options)
+    assert.equal((await app.service.read(round.roundId)).questions[0].stem, raw.stem + image)
+  } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
+})
+
+for (const separator of ['、', '，']) test(`verified terminal advertisement (${separator}) repairs affect public option display only and preserve issued grading snapshots`, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-footer-')), ctx = new Context()
+  await ctx.plugin(Storage)
+  const backend = new JsonStorageBackend(root); ctx.storage.backend.register('json', backend)
+  const facility = new DomainFacility(ctx, { backend: 'json' }); ctx.storage.mount('domain', facility)
+  const imageRoot = join(root, 'images'), routes = new Map(), disposers = [], domains = new Map()
+  const raw = { ...bankRow(), options: ['A. first', 'B. second', 'C. third', `D. fourth\n公考最新资料${separator}更新进度微信 SKA674`], correctAnswer: 'D' }
+  const sha = value => createHash('sha256').update(value).digest('hex')
+  const host = { storageDomain: { async open(spec) { const domain = await facility.open(spec); domains.set(spec.name, domain); return domain } }, inject() {}, logger: { warn() {} }, effect(effect) { const dispose = effect(); if (typeof dispose === 'function') disposers.push(dispose) }, connection: { requestRejection: () => undefined }, webServer: { register(route) { routes.set(route.path, route.handler); return () => routes.delete(route.path) } }, tools: { register() {} } }
+  const request = async (action, body, expectedStatus = 200) => {
+    const req = Readable.from([JSON.stringify(body)]); req.method = 'POST'; req.headers = { 'content-type': 'application/json' }
+    let status, value; await routes.get('/api/kaogong/practice/' + action)(req, { writeHead(code) { status = code }, end(bytes) { value = JSON.parse(bytes) } })
+    assert.equal(status, expectedStatus); return value
+  }
+  try {
+    const seed = await facility.open(bankDomainSpec)
+    await seed.table('questions').put('pinned-footer', raw)
+    await seed.close()
+    await mkdir(join(imageRoot, 'verified'), { recursive: true })
+    await writeFile(join(imageRoot, 'verified', 'option-repairs.json'), JSON.stringify({ version: 1, associations: [{ questionId: 'pinned-footer', stemSha256: sha(raw.stem), optionsSha256: sha(JSON.stringify(raw.options)), optionIndices: [3], sourcePdfSha256: 'a'.repeat(64), sourcePage: 29 }] }))
+    await apply(host, resolveConfig({ Config }, { mineru: { outputDir: root }, questionImageRoot: imageRoot }))
+    const issued = await request('start', context)
+    assert.deepEqual(issued.questions[0].options, ['A. first', 'B. second', 'C. third', 'D. fourth'])
+    assert.equal(issued.result, null)
+    assert.deepEqual(domains.get(bankDomainSpec.name).table('questions').get('pinned-footer'), raw)
+    assert.deepEqual(domains.get(practiceDomainSpec.name).table('rounds').get(issued.roundId).questions[0].options, raw.options)
+    const score = await request('submit', { roundId: issued.roundId, answers: answers(issued, 'D') })
+    assert.equal(score.correctCount, 1); assert.equal(score.results[0].correctAnswer, 'D'); assert.equal(score.results[0].explanation, raw.explanation)
+    assert.equal(score.results[0].options[3], 'D. fourth')
+    const bank = domains.get(bankDomainSpec.name).table('questions')
+    await bank.put('pinned-footer', { ...raw, stem: raw.stem + ' changed' })
+    const changed = await request('start', context, 400)
+    assert.match(changed.error, /来源核验.*修复/, 'a changed original stem invalidates the proof and waits for source repair')
+    assert.deepEqual(bank.get('pinned-footer').options, raw.options)
+  } finally { for (const dispose of disposers.reverse()) await dispose(); await backend.close(); await ctx.fiber.dispose(); await rm(root, { recursive: true, force: true }) }
+})
+
+
+test('publisher solution annotations are withheld from new practice and unsubmitted legacy rounds without changing saved grading', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-publisher-note-')), app = await boot(root)
+  const clean = bankRow(), contaminated = { ...bankRow(1), options: ['A. first', 'B. second', 'C. third', 'D. fourth ⑳花生批注：A且B的否定为非A或非B'] }
+  try {
+    await app.bank.put('clean', clean)
+    const legacy = await app.service.start(context)
+    const original = app.rounds.get(legacy.roundId)
+    await app.rounds.put(legacy.roundId, { ...original, questions: [{ id: 'legacy', ...contaminated }] })
+    await app.bank.put('annotated-option', contaminated)
+    await app.bank.put('annotated-stem', { ...bankRow(2), stem: clean.stem + '\n花生批注：先看必要条件' })
+    const issued = await app.service.start(context)
+    assert.deepEqual(issued.questions.map(row => row.id), ['clean'])
+    await assert.rejects(app.service.read(legacy.roundId), /批注.*重新开始/)
+    assert.deepEqual(app.bank.get('annotated-option'), contaminated)
+    assert.deepEqual(app.rounds.get(legacy.roundId).questions[0].options, contaminated.options)
+    const graded = await app.service.submit(legacy.roundId, [{ id: 'legacy', answer: contaminated.correctAnswer }])
+    assert.equal(graded.correctCount, 1)
+    assert.equal(graded.results[0].explanation, contaminated.explanation)
+    assert.deepEqual(graded.results[0].options, contaminated.options)
+    assert.equal((await app.service.read(legacy.roundId)).result.correctCount, 1)
+  } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
+})
+
+
+test('unverified option adverts and historical missing figures wait for source repair; verified figures can resume without rewriting the bank', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-material-eligibility-'))
+  const old = { ...bankRow(), stem: 'Original material\n![材料图表](D:/old/题目_images/chart.png)\nQuestion' }
+  const app = await boot(root, (id, stem) => id === 'restored' ? stem + '\n![已核验原题图示](题目_images/verified/restored.png)' : stem)
+  try {
+    await app.bank.put('clean', bankRow())
+    await app.bank.put('missing-chart', old)
+    await app.bank.put('missing-card-diagram', { ...bankRow(3), stem: '请选择要翻转的卡片：【卡片图：星形】【卡片图：方形】 1 2' })
+    await app.bank.put('missing-geometry-diagram', { ...bankRow(4), stem: '求阴影区域面积（图：三角形，其中一区域为阴影）' })
+    await app.bank.put('missing-fullwidth-figure', { ...bankRow(5), stem: '求钻头截面积［图：三张示意图，正方形孔洞与圆弧图形］' })
+    await app.bank.put('restored', old)
+    await app.bank.put('unverified-advert', { ...bankRow(1), options: ['A. first', 'B. second 公考最新资料、更新进度微信SKA674'] })
+    await app.bank.put('missing-option-image', { ...bankRow(2), options: ['A. （饼图）', 'B. （饼图）'] })
+    const issued = await app.service.start(context)
+    assert.deepEqual(issued.questions.map(q => q.id).sort(), ['clean', 'restored'])
+    assert.match(issued.reason, /暂缓.*核验.*修复/)
+    assert.equal(issued.result, null)
+    assert.deepEqual(app.bank.get('missing-chart'), old)
+    assert.deepEqual(app.bank.get('restored'), old)
+    const score = await app.service.submit(issued.roundId, answers(issued, 'B'))
+    assert.equal(score.correctCount, 2)
+    await app.bank.delete('clean'); await app.bank.delete('restored')
+    await assert.rejects(app.service.start(context), /图表.*核验.*修复/)
+  } finally { await app.close(); assert.equal(resolve(root, '..'), resolve(tmpdir())); await rm(root, { recursive: true, force: true }) }
+})
+
+test('public readonly practice tool distinguishes latest completed round from cumulative notebook without writes', async () => {
+ const root=await mkdtemp(join(tmpdir(),'practice-read-tool-')),ctx=new Context();await ctx.plugin(Storage)
+ const backend=new JsonStorageBackend(root);ctx.storage.backend.register('json',backend);const facility=new DomainFacility(ctx,{backend:'json'});ctx.storage.mount('domain',facility)
+ const routes=new Map(),tools=new Map(),disposers=[],domains=new Map()
+ const host={storageDomain:{async open(spec){const d=await facility.open(spec);domains.set(spec.name,d);return d}},inject(){},logger:{warn(){}},effect(run){const d=run();if(typeof d==='function')disposers.push(d)},connection:{requestRejection:()=>undefined},webServer:{register(r){routes.set(r.path,r.handler);return()=>routes.delete(r.path)}},tools:{register(t){tools.set(t.name,t)}}}
+ const request=async(action,body)=>{const req=Readable.from([JSON.stringify(body)]);req.method='POST';req.headers={'content-type':'application/json'};let code,value;await routes.get('/api/kaogong/practice/'+action)(req,{writeHead(s){code=s},end(b){value=JSON.parse(b)}});assert.equal(code,200);return value}
+ try{await apply(host,resolveConfig({Config},{mineru:{outputDir:root}}));const read=tools.get('kaogong_practice_read');assert.ok(read,'Native roles need a readonly completed-round source, not only cumulative errors')
+ assert.equal(JSON.parse((await read.execute({})).summary).round,null)
+ for(let i=0;i<20;i++)await tools.get('kaogong_bank_add').execute({...bankRow(i),origin:'local'})
+ const first=await request('start',context);await request('submit',{roundId:first.roundId,answers:first.questions.map((q,i)=>({id:q.id,answer:i===0?'A':''}))})
+ const second=await request('start',{...context,previousRoundId:first.roundId});await request('submit',{roundId:second.roundId,answers:second.questions.map((q,i)=>({id:q.id,answer:i<3?'B':'A'}))})
+ const open=await request('start',{...context,previousRoundId:second.roundId})
+ const tableSnapshot=()=>JSON.stringify([domains.get(practiceDomainSpec.name).table('rounds').entries(),domains.get(notebookDomainSpec.name).table('questions').entries(),domains.get(bankDomainSpec.name).table('questions').entries()].map(rows=>[...rows]))
+ const before=tableSnapshot(),latest=JSON.parse((await read.execute({})).summary)
+ assert.equal(latest.round.roundId,second.roundId);assert.equal(latest.scope,'single-round');assert.deepEqual(latest.counts,{total:10,correct:3,incorrect:7,unanswered:0});assert.equal(latest.round.result.accuracyRate,.3)
+ const older=JSON.parse((await read.execute({roundId:first.roundId})).summary);assert.deepEqual(older.counts,{total:10,correct:0,incorrect:1,unanswered:9})
+ const cumulative=await tools.get('kaogong_list_questions').execute({limit:30});assert.equal(cumulative.total,20);assert.deepEqual({correct:cumulative.questions.filter(q=>q.result==='correct').length,incorrect:cumulative.questions.filter(q=>q.result==='wrong').length,unanswered:cumulative.questions.filter(q=>q.result==='skipped').length},{correct:3,incorrect:8,unanswered:9})
+ await assert.rejects(read.execute({roundId:open.roundId}),/尚未提交/);assert.equal(JSON.parse((await read.execute({subject:'no records'})).summary).round,null)
+ assert.equal(tableSnapshot(),before,'Readonly lookup must not repair projections or rewrite score/bank/notebook')
+ }finally{for(const d of disposers.reverse())await d();await backend.close();await ctx.fiber.dispose();await rm(root,{recursive:true,force:true})}
+})
+
+test('bibliographic analysis titles remain readable through issuing and scoring without admitting instructional content', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-source-title-')); const app = await boot(root)
+  const source = '2009年北京市公务员考试行测真题（华图名师解析）'
+  const original = { ...bankRow(), source }
+  try {
+    await app.bank.put('bibliography', original)
+    const issued = await app.service.start(context)
+    assert.equal(issued.returned, 1)
+    assert.equal(issued.questions[0].source, source)
+    assert.equal(issued.questions[0].stem, original.stem)
+    assert.deepEqual(issued.questions[0].options, original.options)
+    assert.equal(issued.result, null)
+    assert.doesNotMatch(JSON.stringify(issued), /correctAnswer|original explanation/)
+    const scored = await app.service.submit(issued.roundId, answers(issued, 'B'))
+    assert.equal(scored.correctCount, 1)
+    assert.equal(scored.results[0].correctAnswer, 'B')
+    assert.equal(scored.results[0].source, source)
+    assert.deepEqual(app.bank.get('bibliography'), original)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('bibliographic metadata does not excuse leaked answers, commentary, missing figures or invalid options', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-source-boundary-')); const app = await boot(root)
+  const clean = { ...bankRow(), source: '公开题集（名师解析）' }
+  const refused = [
+    { stem: clean.stem + '\n【答案】B' },
+    { stem: clean.stem + '\n解析：先使用公式' },
+    { options: ['A. first', 'B. 参考答案 B'] },
+    { options: ['A. first', 'B. 解析：先排除A'] },
+    { stem: clean.stem + '\n花生批注：先看结论' },
+    { options: ['A. first', 'B. second 花生批注：排除A'] },
+    { source: '花生批注：先看结论' },
+    { source: '参考答案 B' },
+    { source: '解析：B符合公式' },
+    { source: 'answer: B' },
+    { source: '1. A 2. B 3. C' },
+    { stem: '题目［图：待恢复］' },
+    { stem: '题目 ![原图](题目_images/missing.png)' },
+    { options: ['A. first', 'B. second 公考最新资料、更新进度微信SKA674'] },
+    { options: ['A. first'], correctAnswer: 'B' },
+  ]
+  try {
+    await app.bank.put('clean-source', clean)
+    for (const [index, fields] of refused.entries()) await app.bank.put(`refused-${index}`, { ...clean, ...fields })
+    const issued = await app.service.start(context)
+    assert.equal(issued.totalAvailable, 1)
+    assert.deepEqual(issued.questions.map(q => q.id), ['clean-source'])
+    assert.match(issued.reason, /暂缓 15 道/)
+    assert.equal(app.notebook.size, 0)
+    assert.equal(app.bank.size, 16)
+    for (const [index, fields] of refused.entries()) assert.deepEqual(app.bank.get(`refused-${index}`), { ...clean, ...fields })
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('only a bounded bibliography descriptor can contain analysis while source solution labels remain withheld', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-source-label-')); const app = await boot(root)
+  const sources = ['【解析】B为正确选项', '解析 B符合条件', '[解析] B', '【解答】B', '解答 B', '[answer] B', '【solution】B', 'explanation B', '原题集（华图名师解析：B）', '原题集（名师解析）\n【解析】B']
+  try {
+    await app.bank.put('bibliography', { ...bankRow(), source: '2009年北京市公务员考试行测真题（华图名师解析）' })
+    for (const [index, source] of sources.entries()) await app.bank.put(`source-leak-${index}`, { ...bankRow(), source })
+    const issued = await app.service.start(context)
+    assert.equal(issued.totalAvailable, 1)
+    assert.deepEqual(issued.questions.map(q => q.id), ['bibliography'])
+    assert.match(issued.reason, /暂缓 10 道/)
+    assert.equal(app.notebook.size, 0)
+    for (const [index, source] of sources.entries()) assert.equal(app.bank.get(`source-leak-${index}`).source, source)
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
+
+test('a reviewed one-question answer correction affects future rounds without rewriting previous scoring identities', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-answer-correction-')); let app = await boot(root)
+  try {
+    const original = { ...bankRow(), correctAnswer: 'C', options: ['A. 1', 'B. 2', 'C. 3'], explanation: 'Original conflicting source is retained', reviewStatus: 'approved' }
+    await app.bank.put('q', original)
+    const issued = await app.service.start(context)
+    const originalScore = await app.service.submit(issued.roundId, answers(issued, 'C'))
+    assert.equal(originalScore.correctCount, 1)
+    assert.equal(originalScore.results[0].correctAnswer, 'C')
+    await app.bank.put('q', { ...original, correctAnswer: 'B' })
+    assert.deepEqual((await app.service.read(issued.roundId)).result, originalScore)
+    const next = await app.service.start(context)
+    assert.doesNotMatch(JSON.stringify(next), /correctAnswer|Original conflicting source/)
+    const nextScore = await app.service.submit(next.roundId, answers(next, 'B'))
+    assert.equal(nextScore.correctCount, 1)
+    assert.equal(nextScore.results[0].correctAnswer, 'B')
+    assert.equal(nextScore.results[0].explanation, original.explanation)
+    await app.close(); app = await boot(root)
+    assert.deepEqual((await app.service.read(issued.roundId)).result, originalScore)
+    assert.deepEqual((await app.service.read(next.roundId)).result, nextScore)
+    assert.deepEqual(app.bank.get('q'), { ...original, correctAnswer: 'B' })
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})

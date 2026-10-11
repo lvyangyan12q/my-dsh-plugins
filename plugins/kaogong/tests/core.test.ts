@@ -178,3 +178,27 @@ test('searchKnowledge: 无命中关键词返回空', () => {
   const entries = [k('k1', 'S', '', '标题', '内容')]
   assert.equal(searchKnowledge(entries, { keyword: '不存在' }).length, 0)
 })
+
+test('canonical cause-explanation practice uses the verified same-subject source tag without rewriting records', () => {
+  const bank = [bq('source', '行测-判断推理', '原因解释类')]
+  const before = JSON.stringify(bank)
+  const selection = selectPractice(bank, [], { subject: '行测-判断推理', knowledgePoint: '逻辑判断-原因解释', limit: 10 })
+  assert.equal(selection.totalAvailable, 1)
+  assert.deepEqual(selection.selected.map(q => q.id), ['source'])
+  assert.equal(selection.selected[0]!.knowledgePoint, '原因解释类')
+  assert.equal(JSON.stringify(bank), before)
+})
+
+test('cause identity does not include another subject, unknown explanation labels or pending review', () => {
+  const bank = [
+    bq('verified-source', '行测-判断推理', '原因解释类'),
+    bq('foreign-source', '申论', '原因解释类'),
+    bq('unknown', '行测-判断推理', '原因解释类㉘'),
+    bq('different-type', '行测-判断推理', '解释说明类'),
+    bq('pending-source', '行测-判断推理', '原因解释类', 'easy', 'pending'),
+  ]
+  const selection = selectPractice(bank, [], { knowledgePoint: '逻辑判断-原因解释', limit: 10 })
+  assert.deepEqual(selection.selected.map(q => q.id), ['verified-source'])
+  assert.equal(selectPractice(bank, [], { subject: '申论', knowledgePoint: '逻辑判断-原因解释', limit: 10 }).totalAvailable, 0)
+  assert.deepEqual(selectPractice(bank, [], { subject: '行测-判断推理', knowledgePoint: '解释说明类', limit: 10 }).selected.map(q => q.id), ['different-type'])
+})

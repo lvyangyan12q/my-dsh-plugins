@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "c86874daf1f6caa71ba67b6a8feefde81c81c354",
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual public instance open, native old history view, canvas annotation mode and real point click, requirement fill and explicit append, old history reopen; read-only DOM and public binding API; no model send",
+  "red": {
+    "observations": {
+      "before": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Script ran on page and returned:\n```json\n{\"binding\":{\"binding\":{\"version\":1,\"key\":{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"roleId\":\"analyst\"},\"sessionId\":\"918c1824-d28a-42fa-b413-fe581b359157\",\"presetId\":\"my-dsh.agent-change-acceptance\",\"phase\":\"ready\",\"previousSessionIds\":[\"efd2c984-c376-4bc6-a236-6f85988345f2\"],\"creation\":{\"cwd\":\"D:\\\\programming\\\\workspace\\\\my-dsh\\\\.scratch\\\\committed-sidebar-source-1791575691476\\\\.scratch\\\\platform-release-1791575744854\\\\workspace\"}}},\"drafts\":[{\"text\":\"Agent 切换保护验收：保留这段未发送草稿。\",\"inDialog\":false}],\"dialogs\":[],\"alerts\":[]}\n```"
+          }
+        ]
+      },
+      "historyOpen": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Script ran on page and returned:\n```json\n{\"binding\":{\"binding\":{\"version\":1,\"key\":{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"roleId\":\"analyst\"},\"sessionId\":\"918c1824-d28a-42fa-b413-fe581b359157\",\"presetId\":\"my-dsh.agent-change-acceptance\",\"phase\":\"ready\",\"previousSessionIds\":[\"efd2c984-c376-4bc6-a236-6f85988345f2\"],\"creation\":{\"cwd\":\"D:\\\\programming\\\\workspace\\\\my-dsh\\\\.scratch\\\\committed-sidebar-source-1791575691476\\\\.scratch\\\\platform-release-1791575744854\\\\workspace\"}}},\"drafts\":[{\"text\":\"跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。\",\"inDialog\":true},{\"text\":\"Agent 切换保护验收：保留这段未发送草稿。\",\"inDialog\":false}],\"dialogs\":[\"历史角色会话\"],\"alerts\":[]}\n```"
+          }
+        ]
+      }
+    },
+    "hit": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"aim\":{\"x\":280,\"y\":155,\"width\":1640,\"height\":790,\"z\":\"20\"},\"hit\":{\"tag\":\"DIV\",\"label\":null,\"class\":\"g6sMRq_scrollBody\",\"inHistory\":true},\"ancestors\":[{\"tag\":\"DIALOG\",\"class\":\"\",\"z\":\"20\",\"position\":\"absolute\"},{\"tag\":\"SECTION\",\"class\":\"\",\"z\":\"auto\",\"position\":\"relative\"},{\"tag\":\"DIV\",\"class\":\"\",\"z\":\"auto\",\"position\":\"static\"},{\"tag\":\"SECTION\",\"class\":\"\",\"z\":\"auto\",\"position\":\"static\"},{\"tag\":\"SECTION\",\"class\":\"pwb-recipe-module\",\"z\":\"auto\",\"position\":\"static\"},{\"tag\":\"DIV\",\"class\":\"pwb-recipe-page\",\"z\":\"auto\",\"position\":\"static\"},{\"tag\":\"DIV\",\"class\":\"\",\"z\":\"auto\",\"position\":\"relative\"},{\"tag\":\"DIV\",\"class\":\"\",\"z\":\"auto\",\"position\":\"static\"}]}\n```"
+        }
+      ]
+    }
+  },
+  "green": {
+    "before": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"binding\":{\"binding\":{\"version\":1,\"key\":{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"roleId\":\"analyst\"},\"sessionId\":\"918c1824-d28a-42fa-b413-fe581b359157\",\"presetId\":\"my-dsh.agent-change-acceptance\",\"phase\":\"ready\",\"previousSessionIds\":[\"efd2c984-c376-4bc6-a236-6f85988345f2\"],\"creation\":{\"cwd\":\"D:\\\\programming\\\\workspace\\\\my-dsh\\\\.scratch\\\\committed-sidebar-source-1791575691476\\\\.scratch\\\\platform-release-1791575744854\\\\workspace\"}}},\"drafts\":[{\"text\":\"跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。\",\"inDialog\":true},{\"text\":\"Agent 切换保护验收：保留这段未发送草稿。\",\"inDialog\":false}],\"dialogs\":[\"历史角色会话\"],\"alerts\":[]}\n```"
+        }
+      ]
+    },
+    "hit": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"z\":\"30\",\"hitIsAim\":true,\"inHistory\":false}\n```"
+        }
+      ]
+    },
+    "appended": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"binding\":{\"binding\":{\"version\":1,\"key\":{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"roleId\":\"analyst\"},\"sessionId\":\"918c1824-d28a-42fa-b413-fe581b359157\",\"presetId\":\"my-dsh.agent-change-acceptance\",\"phase\":\"ready\",\"previousSessionIds\":[\"efd2c984-c376-4bc6-a236-6f85988345f2\"],\"creation\":{\"cwd\":\"D:\\\\programming\\\\workspace\\\\my-dsh\\\\.scratch\\\\committed-sidebar-source-1791575691476\\\\.scratch\\\\platform-release-1791575744854\\\\workspace\"}}},\"drafts\":[{\"text\":\"Agent 切换保护验收：保留这段未发送草稿。\\n\\n📌 工作台画布标注\\n{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}\\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\",\"inDialog\":false}],\"dialogs\":[],\"alerts\":[]}\n```"
+        }
+      ]
+    },
+    "reopened": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"binding\":{\"binding\":{\"version\":1,\"key\":{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"roleId\":\"analyst\"},\"sessionId\":\"918c1824-d28a-42fa-b413-fe581b359157\",\"presetId\":\"my-dsh.agent-change-acceptance\",\"phase\":\"ready\",\"previousSessionIds\":[\"efd2c984-c376-4bc6-a236-6f85988345f2\"],\"creation\":{\"cwd\":\"D:\\\\programming\\\\workspace\\\\my-dsh\\\\.scratch\\\\committed-sidebar-source-1791575691476\\\\.scratch\\\\platform-release-1791575744854\\\\workspace\"}}},\"drafts\":[{\"text\":\"跨页验收草稿：学习与复习使用同一个角色，不自动发送。跨页验收草稿：复习页补充内容，返回学习页仍保留。\",\"inDialog\":true},{\"text\":\"Agent 切换保护验收：保留这段未发送草稿。\\n\\n📌 工作台画布标注\\n{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}\\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\",\"inDialog\":false}],\"dialogs\":[\"历史角色会话\"],\"alerts\":[]}\n```"
+        }
+      ]
+    },
+    "snapshot": {
+      "content": [
+        {
+          "type": "text",
+          "text": "## Latest page snapshot\nuid=385_0 RootWebArea \"DSH 本地构建\" url=\"http://127.0.0.1:3089/\"\n  uid=386_0 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=386_1 button \"收起侧边栏\" keyshortcuts=\"Control+Alt+B\"\n  uid=386_2 button \"新建会话\" keyshortcuts=\"Control+Alt+N\"\n  uid=386_3 navigation \"全局面板\"\n    uid=386_4 button \"插件\"\n  uid=386_5 StaticText \"工作区\"\n  uid=386_6 button \"搜索会话\" expandable keyshortcuts=\"Control+Alt+K\"\n  uid=386_7 textbox \"搜索会话名称\"\n  uid=386_8 button \"视图选项\"\n  uid=386_9 button \"添加工作区\" keyshortcuts=\"Control+Alt+O\"\n  uid=386_10 tree \"会话\" orientation=\"vertical\"\n    uid=386_11 treeitem \"workspace\" expandable expanded level=\"1\" selectable\n    uid=386_12 treeitem \"未分组\" expandable expanded level=\"1\" selectable\n    uid=386_13 treeitem \"新会话\" level=\"1\" selectable selected\n  uid=386_14 navigation \"目录\"\n    uid=386_15 button \"工作台\" description=\"工作台\"\n    uid=386_16 button \"应用\" expandable expanded\n    uid=386_17 button \"标注闭环验收\"\n    uid=386_18 button \"考公学习\"\n    uid=386_19 button \"跨页角色验收\"\n    uid=386_20 button \"模块任务交接验收\"\n    uid=386_21 button \"缺失会话恢复验收\"\n    uid=386_22 button \"阅读统计 / Reading statistics\"\n    uid=386_23 button \"HTML assets\"\n    uid=386_24 button \"Agent\"\n    uid=386_25 button \"Skills\"\n  uid=386_26 region \"隔离实例验收入口\"\n    uid=386_27 button \"验收实例 default\"\n    uid=386_28 button \"验收实例 second\"\n  uid=386_29 button \"设置\" expandable haspopup=\"dialog\" keyshortcuts=\"Control+Alt+,\"\n  uid=386_30 banner\n    uid=386_31 button \"打开右侧边栏\" keyshortcuts=\"Control+Shift+B\"\n  uid=386_32 StaticText \"探索未至之境\"\n  uid=386_33 StaticText \"预览版\"\n  uid=386_34 button \"选择工作区\" expandable haspopup=\"menu\"\n  uid=386_35 button \"Lifecycle acceptance\" description=\"选择新任务使用的 Agent 预设\" expandable haspopup=\"menu\"\n  uid=386_36 textbox \"选择工作区\" haspopup=\"menu\" multiline\n  uid=386_37 button \"添加文件或调用指令\" disableable disabled expandable haspopup=\"listbox\"\n  uid=386_38 button \"访问模式，当前：工作区内修改\" disableable disabled\n  uid=386_39 button \"选择模型，当前 DeepSeek-V41-Flash，推理等级 High\" description=\"DeepSeek-V41-Flash · High\" disableable disabled expandable haspopup=\"menu\"\n  uid=386_40 button \"发送消息\" disableable disabled\n  uid=386_41 region \"跨页角色验收\"\n    uid=386_42 banner\n      uid=386_43 StaticText \"跨页角色验收\"\n      uid=386_44 button \"关闭工作台\" description=\"关闭工作台\"\n    uid=387_0 region \"跨页角色验收 · default\"\n      uid=387_1 tab \"学习页面\" selectable selected\n      uid=387_2 tab \"复习页面\" selectable\n      uid=387_3 button \"标注画布\"\n      uid=387_4 button \"标注记录 (1)\" expandable\n      uid=391_0 status atomic live=\"polite\" relevant=\"additions text\"\n        uid=391_1 StaticText \"已追加到原生会话草稿，尚未发送。\"\n      uid=391_2 StaticText \"1\"\n      uid=387_5 heading \"学习对话\" level=\"3\"\n      uid=387_6 button \"更换内容: lesson-chat\"\n      uid=387_7 button \"设置: lesson-chat\"\n      uid=387_8 button \"放大模块: lesson-chat\"\n      uid=387_9 region \"持续角色会话\"\n        uid=387_10 StaticText \"跨页角色\"\n        uid=387_11 button \"绑定已有会话\"\n        uid=387_12 DisclosureTriangle \"角色会话更多操作\" description=\"更多\" expandable expanded\n        uid=388_0 StaticText \"会话：\"\n        uid=388_1 StaticText \"918c1824-d28a-42fa-b413-fe581b359157\"\n        uid=388_2 button \"新建角色会话\"\n        uid=388_3 StaticText \"efd2c984-c376-4bc6-a236-6f85988345f2\"\n        uid=388_4 button \"应用内查看: efd2c984-c376-4bc6-a236-6f85988345f2\"\n        uid=388_5 button \"打开历史会话: efd2c984-c376-4bc6-a236-6f85988345f2\"\n        uid=387_13 navigation \"会话层级\"\n          uid=387_14 StaticText \"workspace\"\n        uid=387_15 StaticText \"Agent 更换验收\"\n        uid=387_16 button \"用 文件资源管理器 打开\" keyshortcuts=\"Control+Shift+O\"\n        uid=387_17 button \"更多打开方式\" expandable haspopup=\"menu\"\n        uid=387_18 button \"更多操作\" expandable haspopup=\"menu\"\n        uid=387_19 button \"打开右侧边栏\" keyshortcuts=\"Control+Shift+B\"\n        uid=387_20 tab \"对话\" selectable selected\n        uid=387_21 tab \"轨迹\" selectable\n        uid=387_22 textbox \"发消息或创建任务, / 调用指令, @ 文件或对话\" focusable focused multiline value=\"Agent 切换保护验收：保留这段未发送草稿。\n\n📌 工作台画布标注\n{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"\n          uid=387_23 paragraph\n            uid=387_24 StaticText \"Agent 切换保护验收：保留这段未发送草稿。\n\n📌 工作台画布标注\n{\"appId\":\"cross-page-proof\",\"instanceId\":\"default\",\"recipeVersion\":4,\"pageId\":\"lesson\",\"moduleId\":\"lesson-chat\",\"moduleTitle\":\"学习对话\",\"position\":{\"x\":820,\"y\":439,\"width\":0,\"height\":0},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\"}\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"\n        uid=387_25 button \"添加文件或调用指令\" expandable haspopup=\"listbox\"\n        uid=387_26 button \"访问模式，当前：工作区内修改\"\n        uid=387_27 button \"选择模型，当前 DeepSeek-V41-Flash，推理等级 High\" description=\"DeepSeek-V41-Flash · High\" expandable haspopup=\"menu\"\n        uid=387_28 button \"发送消息\"\n"
+        }
+      ]
+    }
+  },
+  "installedArchiveSha256": "4565ce8e1685d47f8aa9757bcc868f58d32cffaeec29fa437d7d1ed0ccb2454b",
+  "installedBytesEqual": true,
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "cleanChecks": {
+    "testsPassed": 297,
+    "testsLogSha256": "cbf67afd647a72055fd0d20cd860ac582d8ae1b426a593cf4d9537e7113197cb",
+    "releaseVerdictSha256": "837ec7faa020e6c7a527225e6bcfc69be372004266c62ea0f86ed4ecc251c78f",
+    "releaseVerdict": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "4565ce8e1685d47f8aa9757bcc868f58d32cffaeec29fa437d7d1ed0ccb2454b",
+        "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    }
+  },
+  "limits": [
+    "Real browser covers point annotation above an open native old-history dialog, not screenshot upload or all application layouts",
+    "Outer application dialog boundary is component regression proof, not a second rendered native outer-window acceptance",
+    "No send, new Session, model result, physical IME or native question/approval/Stop acceptance; full original scope remains open",
+    "Formal 3080 links rebuilt Workbench; refresh/restart there is not part of this receipt"
+  ]
+}

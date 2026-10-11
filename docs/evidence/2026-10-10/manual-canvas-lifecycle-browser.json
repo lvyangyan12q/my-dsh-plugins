@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "2ff0e68451be420a5310cab0618fea07e7c5b00c",
+  "url": "http://127.0.0.1:3089/",
+  "installedArchiveSha256": "451d0c06554e9dad2a46307ea325d81af8a36bb543a4ce829a9165d97dd114a5",
+  "method": "Actual DevTools UI actions in the owned isolated DSH: restore saved manual draft, switch three layouts, configure second resource module inside its pane, save, preview, explicitly activate, open, browse first module, disable, re-enable and reopen. Public authenticated catalog reads and visible DOM checks only.",
+  "checks": {
+    "savedManualDraftRestoredAfterHostRestart": true,
+    "gridShowsTwoColumns": true,
+    "stackShowsOneColumn": true,
+    "splitShowsTwoColumns": true,
+    "allLayoutChangesRetainTwoModules": true,
+    "secondModuleConfiguredWithinItsPane": true,
+    "savedRevisionBeforeActivation": 2,
+    "noRunningVersionAfterSaveAndPreview": true,
+    "previewShowsBothResourceModulePlaceholders": true,
+    "activationEnabledOnlyAfterPreview": true,
+    "explicitActivationAddsSidebarAndCatalogEntries": true,
+    "activatedRevision": 3,
+    "runningVersion": 1,
+    "runningApplicationHasTwoResourceModules": true,
+    "applicationRequiresNoRoles": true,
+    "disabledCatalogEntryCannotOpen": true,
+    "disabledSidebarEntryRemoved": true,
+    "disabledDraftAndRunningRecipeRetained": true,
+    "restoredApplicationReopens": true,
+    "firstModuleDirectoryRetainedAfterDisableRestore": true,
+    "secondModuleDirectoryUnaffected": true,
+    "restoredFirstModuleShowsFourFixtureFiles": true
+  },
+  "observationCorrection": "Initial broad DOM query counted modules in hidden mounted applications and did not identify the active region. Final read restricts to positive-width/height visible module elements, finding exactly two, corroborated by the fresh accessibility snapshot.",
+  "limits": [
+    "This is the manual application creation-to-runtime path; AI-generated application creation remains unproven.",
+    "No model Send action, role creation, history rendering, question, permission, Stop or streaming acceptance is claimed.",
+    "Content preview deliberately does not load workspace files; actual resource contents are checked only in the activated runtime.",
+    "In-memory resource navigation survives disable and restore; its persistence across reload or Host restart was not checked.",
+    "Only owned isolated fixture data was changed. The activated test app and its data are retained locally.",
+    "Raw workspace paths, names, IDs, description text, screenshots and credentials are omitted."
+  ]
+}

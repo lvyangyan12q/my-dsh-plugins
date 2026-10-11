@@ -1,0 +1,24 @@
+# 历史原生补丁归档：native-session-chrome
+
+2026-10-11：用户已恢复原生仓库，本目录仅保留历史实现及证据。当前工作台发布不依赖、不安装这些补丁。不得按下文旧命令修改原生仓库；所有旧安装建议均已撤销。原生公开接口适配与独立无补丁验收以当前规格及11/12工单为准。
+
+---
+
+# Native Session chrome adapter
+
+The workbench embeds the existing DSH conversation body and native Session header under one SessionProvider. Stock rc.2 exposes the body factory but owns the header beneath the main conversation. Declaring that header again from a plugin fails slot ownership validation. This patch introduces `conversation.session.chrome`, a session-scoped factory rendering the same native title, navigation, utilities and action components. The resident header delegates to it. Chat, trajectory, approvals, tool cards, menus and Session records are not reimplemented.
+
+The manifest pins the reviewed checkout commit and normalized SHA-256 for six files before and after adaptation. Local changes in any affected file cause the installer to stop before writing. Existing unrelated DSH changes remain untouched. Original affected files are backed up inside my-dsh's ignored `.local/backups` directory before applying the patch. The adaptation currently requires the official source checkout; an unmodified npm rc.2 installation does not expose this factory.
+
+Set `DSH_SOURCE` to the absolute official checkout path. From the my-dsh repository run `node scripts/check-native-session-chrome.mjs` to check the source. For an unadapted matching checkout, inspect this patch, then explicitly run `node scripts/check-native-session-chrome.mjs --apply`. Build `packages/client/ui-conversation/tsconfig.client.json` with the checkout's TypeScript compiler and bundle that package using its `tsdown.config.ts` before building the workbench. Source validation alone does not prove that the runtime bundle exposes the factory.
+
+The packaged patch includes a native registry regression covering shared per-Session view state, the registered Chat/Trajectory roster, unique child-slot ownership and disposal. Run the checkout's `apply-wiring.client.spec.tsx` and `skeleton.client.spec.tsx`, then the GUI and assembled browser gates required by its instructions. Verify the application in a cold-loaded browser. HMR can temporarily omit native content while the core plugin is disposed and recreated.
+
+2026-10-04 evidence: 33 focused native tests passed; native types and bundle compiled; the workbench role and task-data tests passed; all three application plugins built. At 3082, the Kaogong independent study window displayed native Chat/Trajectory navigation and the native composer. Switching to Trajectory changed the native selected tab. This empty teacher session does not demonstrate real tool-call or approval content. Existing-session attachment and real task acceptance remain outstanding.
+
+Exact combined platform native commit `d76d31673e727389321e1da3d6d801a4aee5699b` is also reviewed. Its full file-set hash combination includes the required normal-hook formatting and explicit optional DOM visibility capability typing; original runtime behavior and regression assertions remain. Legacy exact before/after states stay supported; mixed or unrelated local changes remain rejected. Full independent build and installed Browser acceptance are separate.
+
+[The minimal normal-hooks upgrade](reviewed-normal-hooks.patch) is distributable and reconstructs the exact newer state from the reviewed legacy after state. Tests build fixtures from only the existing official base commit plus these repository-owned patches; no unpublished combined-core Git object is required. Apply each with `git apply --check` before application in a clean isolated checkout.
+
+The complete type-checked fixture revision is native `2ea2a7ebf801c7f001a96d676c6fc1fa21ca3445`: the wiring test restores the declared Session injection type and the composer test removes an unused JSX-runtime import. Assertions and production behavior are unchanged. The published normal-hooks patch includes these source-only fixture corrections. Existing native header fixtures also need [the public fixture-contract patch](../../patches/dsh-session-chrome-fixtures.patch).
+

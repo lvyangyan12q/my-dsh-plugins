@@ -1,0 +1,50 @@
+diff --git a/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx b/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
+index b2d64cd..876678c 100644
+--- a/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
++++ b/packages/client/ui-sidebar/tests/sidebar-root.client.spec.tsx
+@@ -108,11 +108,11 @@ describe('SidebarRoot shell', () => {
+     expect(footer.compareDocumentPosition(settings) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+     expect(footer.parentElement?.contains(extension)).toBe(false)
+     expect(extension.getAttribute('data-wide')).toBe('true')
+-    expect(screen.getAllByRole('button', {name: 'New session'})).toHaveLength(2)
++    expect(screen.getAllByRole('button', { name: 'New session' })).toHaveLength(2)
+     expect(b.regionOwner().wide).toBe(true)
+   })
+   it('passes collapsed rail state to additive plugin sections', () => {
+-    mountShell({collapsed:true})
++    mountShell({ collapsed:true })
+     expect(screen.getByTestId('extension-section').getAttribute('data-wide')).toBe('false')
+     expect(screen.getByTestId('footer-action-seat').getAttribute('data-wide')).toBe('false')
+     expect(screen.getByTestId('settings-seat').getAttribute('data-wide')).toBe('false')
+diff --git a/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx b/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
+index e2668dd..c306baf 100644
+--- a/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
++++ b/packages/client/ui-sidebar/tests/sidebar-snapshot.client.spec.tsx
+@@ -55,18 +55,18 @@ async function bench(options: { locale?: 'en' } = {}) {
+ 
+ describe('sidebar shell snapshots', () => {
+   it('composes independent plugin sections without replacing the native foot', async () => {
+-    const {runtime} = await bench({locale:'en'})
+-    const section = runtime.ctx.slots.register({name:'sidebar.sections',id:'fixture-extension'}, ({wide}) => <nav aria-label="Fixture extension" data-wide={wide}>Fixture section</nav>)
+-    const footer = runtime.ctx.slots.register({name:'sidebar.footer.action',id:'fixture-native-footer'}, ({wide}) => <button data-wide={wide}>Fixture footer</button>)
++    const { runtime } = await bench({ locale:'en' })
++    const section = runtime.ctx.slots.register({ name:'sidebar.sections',id:'fixture-extension' }, ({ wide }) => <nav aria-label="Fixture extension" data-wide={wide}>Fixture section</nav>)
++    const footer = runtime.ctx.slots.register({ name:'sidebar.footer.action',id:'fixture-native-footer' }, ({ wide }) => <button data-wide={wide}>Fixture footer</button>)
+     try{
+-      const slot = runtime.renderSlot('sidebar',{collapsed:false,width:300})
+-      const nativeButton=slot.view.getAllByRole('button',{name:'New session'})[0], footerButton=slot.view.getByRole('button',{name:'Fixture footer'})
++      const slot = runtime.renderSlot('sidebar',{ collapsed:false,width:300 })
++      const nativeButton=slot.view.getAllByRole('button',{ name:'New session' })[0], footerButton=slot.view.getByRole('button',{ name:'Fixture footer' })
+       expect(slot.container).toMatchSnapshot()
+-      expect(slot.view.getByRole('navigation',{name:'Fixture extension'}).getAttribute('data-wide')).toBe('true')
++      expect(slot.view.getByRole('navigation',{ name:'Fixture extension' }).getAttribute('data-wide')).toBe('true')
+       await act(async () => {section()})
+-      await waitFor(() => expect(slot.view.queryByRole('navigation',{name:'Fixture extension'})).toBeNull())
+-      expect(slot.view.getByRole('button',{name:'Fixture footer'})).toBe(footerButton)
+-      expect(slot.view.getAllByRole('button',{name:'New session'})[0]).toBe(nativeButton)
++      await waitFor(() =>{  expect(slot.view.queryByRole('navigation',{ name:'Fixture extension' })).toBeNull() })
++      expect(slot.view.getByRole('button',{ name:'Fixture footer' })).toBe(footerButton)
++      expect(slot.view.getAllByRole('button',{ name:'New session' })[0]).toBe(nativeButton)
+     }finally{section();footer();await runtime.dispose()}
+   })
+   it('renders the expanded column in the default locale (zh, no setLocale)', async () => {

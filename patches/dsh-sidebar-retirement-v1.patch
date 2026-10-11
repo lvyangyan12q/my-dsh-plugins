@@ -1,0 +1,886 @@
+diff --git a/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.i18n.yaml b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.i18n.yaml
+new file mode 100644
+index 0000000000000000000000000000000000000000..990ae53670fbf13fade55009c98f8e9b3089f2a3
+--- /dev/null
++++ b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.i18n.yaml
+@@ -0,0 +1,22 @@
++# Bilingual-pair consistency record for 2026-10-11-sidebar-occurrence-retirement.md (docs/i18n/README.md): per heading
++# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
++# After editing either side, bring the other along and re-record with:
++#   pnpm run verify-translation-pairing --write .agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.md
++/agent-note-explicit-sidebar-occurrence-retirement:
++  en: b214857d2cb82552
++  zh: 7df3dd4732f52b0f
++/agent-note-explicit-sidebar-occurrence-retirement/problem:
++  en: a79171f439ce0128
++  zh: d83aee1fd8436584
++/agent-note-explicit-sidebar-occurrence-retirement/proposal:
++  en: 89c8dd9cb7914884
++  zh: 4334dc795c946be7
++/agent-note-explicit-sidebar-occurrence-retirement/acceptance-criteria:
++  en: af5a539d5fbbfbdd
++  zh: 054be531faa50a80
++/agent-note-explicit-sidebar-occurrence-retirement/alternatives-considered:
++  en: 90df91d67d4a4a82
++  zh: b5fcb219b7e4b087
++/agent-note-explicit-sidebar-occurrence-retirement/risks:
++  en: 023872c250237dd8
++  zh: 0b25d7b63aced1ea
+diff --git a/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.md b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..88002630f01287be36b18639a55a78f748696993
+--- /dev/null
++++ b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.md
+@@ -0,0 +1,27 @@
++# Agent Note: Explicit sidebar occurrence retirement
++
++Status: proposed
++
++English | [中文](2026-10-11-sidebar-occurrence-retirement.zh.md)
++
++## Problem
++
++Closing through an adopted Session cannot remove dormant saved tabs. Clearing a provider's current tabs also leaves inverse layout operations able to resurrect them. Providers must not reach browser persistence internals, adopt Sessions for cleanup, or destroy unrelated history.
++
++## Proposal
++
++The native sidebar owns a versioned synchronous retirement method. It enumerates saved scopes and adopted stores, validates dormant snapshots without rewriting unsupported fields, and reports each occurrence's outcome. An adopted store is authoritative. Close handlers run before mutation; changing the target or stopping the service blocks that attempt. Verified read-back precedes the store commit; failures attempt byte restoration and never report durable removal.
++
++Retirement maps every history cursor to a layout without the exact retired identifier. Normal undo grouping and unrelated history entries remain, while new actions retain their cursor snapshots. This costs one layout per existing cursor after retirement, stays window-local, and does not change the persisted layout format. It does not blacklist a kind: re-registration may create new occurrences. The sole guide rule and empty-column settling remain native rules.
++
++## Acceptance criteria
++
++Public controller and actual native apply-disposal tests cover dormant and live scopes, released adoption, floating tabs, storage rejection, unsupported snapshots, blocked handlers, fresh registration, and undo/redo. Full GUI regression and installed provider unload/reload acceptance remain integration work. Providers must call the public operation and preserve explicit failed outcomes; no plugin adapter or automatic missing-provider cleanup is part of this change.
++
++## Alternatives considered
++
++Adopting dormant Sessions introduces content and Agent lifetimes during cleanup. Filtering undo by kind prevents legitimate re-registration, and clearing history destroys unrelated operations. Provider-written storage bypasses native validation and commit authority. Mapping exact occurrences at every existing cursor preserves these boundaries.
++
++## Risks
++
++Retirement snapshots increase window-local history memory. A failed rollback cannot certify persisted bytes, so the operation reports unavailable and the provider must retry explicitly. Installed runtime disposal order and adapter retry semantics require integration acceptance before release.
+diff --git a/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.zh.md b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.zh.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..b935ee9879d4de2c296abacc0c051d378d85b524
+--- /dev/null
++++ b/.agents/notes/proposed/architecture/2026-10-11-sidebar-occurrence-retirement.zh.md
+@@ -0,0 +1,27 @@
++# Agent Note: 显式侧栏实例退休
++
++Status: proposed
++
++[English](2026-10-11-sidebar-occurrence-retirement.md) | 中文
++
++## 问题
++
++通过已接管 Session 关闭标签无法移除休眠会话的保存标签。清理 provider 的当前标签也会留下能复活标签的布局逆操作。Provider 不应访问浏览器持久化内部实现、为清理而接管 Session，或破坏其他撤销历史。
++
++## 提案
++
++原生侧栏提供带版本的同步退休方法。它枚举保存范围与已接管 store，在不重写未知字段的前提下验证休眠快照，并报告每个实例的结果。已接管 store 是当前状态的权威。关闭处理器先于状态变更运行；目标变化或服务停止会阻止该次处理。存储写入与读回验证先于 store 提交；失败时尝试恢复原始字节，绝不报告已持久移除。
++
++退休操作将每个历史位置映射为不含该实例标识的布局。普通撤销分组与其他历史条目保留，新操作继续记录各位置的布局。这会在退休后为每个已有历史位置保存一个布局，仅存在于窗口内，不改变保存布局的格式。它不封禁 kind：重新注册可以创建新实例。唯一 Guide 的保护与空列收束仍遵循原生规则。
++
++## 验收标准
++
++公开 controller 与真实原生 apply 析构测试覆盖休眠和已挂载范围、释放后的接管、浮窗、存储拒绝、不受支持的快照、关闭处理器拒绝、重新注册和撤销重做。完整 GUI 回归与实际安装后的 provider 卸载重载验收仍属于集成工作。Provider 必须调用公开操作并保留显式失败结果；本次不包含插件适配器或自动清理缺失 provider。
++
++## 考虑过的替代方案
++
++接管休眠 Session 会在清理时引入内容和 Agent 生命周期。按 kind 过滤撤销会阻止合法的重新注册，清空历史会破坏其他操作。Provider 自行写存储会绕过原生验证与提交权威。将已有历史每个位置中的确切实例映射移除可以保留这些边界。
++
++## 风险
++
++退休快照会增加窗口内历史的内存。回滚失败时无法证明保存字节，因此操作报告不可访问，由 provider 显式重试。正式运行时析构顺序与适配器重试语义仍需在发布前完成集成验收。
+diff --git a/packages/client/ui-sidebar-right/README.i18n.yaml b/packages/client/ui-sidebar-right/README.i18n.yaml
+index dfd1b6980361ee2415f5abec1ae00bba49fc2983..4a3f22497c154a78365cebeddf7c40e064456c44 100644
+--- a/packages/client/ui-sidebar-right/README.i18n.yaml
++++ b/packages/client/ui-sidebar-right/README.i18n.yaml
+@@ -30,8 +30,8 @@
+   en: ef2af36136c4a919
+   zh: 48d992e2c923a130
+ /deepseek-ai-dsh-client-ui-sidebar-right/ctx-sidebarright:
+-  en: 4519c4633d160c2a
+-  zh: e4019a62532f885a
++  en: 7801fdd62d978248
++  zh: bef91a0eaea2fdb7
+ /deepseek-ai-dsh-client-ui-sidebar-right/the-tab-domain:
+   en: 717b86e05b44ebdd
+   zh: 0f4f694d0ea1d7f8
+@@ -48,8 +48,8 @@
+   en: ca75c51c89c2c9b0
+   zh: f57cc48a1b5cbfa9
+ /deepseek-ai-dsh-client-ui-sidebar-right/known-limitations-and-deferred-work:
+-  en: 76a763b4dd71babd
+-  zh: fdc966dd427a82fb
++  en: 5421fd5813996085
++  zh: e73f56db3877bdc0
+ /deepseek-ai-dsh-client-ui-sidebar-right/known-limitations-and-deferred-work/dev-note:
+   en: 9fcbcccf09b43c5d
+   zh: 224b8a0881ab6890
+diff --git a/packages/client/ui-sidebar-right/README.md b/packages/client/ui-sidebar-right/README.md
+index 980b192ce084d7f9adcfed2ba9008e65adf2efb3..4659ba21999b61cef1f0f9e6fecf0d65c4bc8235 100644
+--- a/packages/client/ui-sidebar-right/README.md
++++ b/packages/client/ui-sidebar-right/README.md
+@@ -98,6 +98,8 @@ Two more seats extend what is already there: `sidebar.right.tab.guide` (chain) r
+ 
+ `focusedTarget(element?)` resolves the current DOM pane and tab, including an embedding iframe; outside focus returns no page. `commandTarget(element?)` additionally allows an outside open to use the on-screen Session's active dock pane. Captures include the occurrence and navigation revision; `isTargetCurrent(target)` rejects changed Sessions, moved or reopened tabs, and intervening navigation. Focus and pointer activation remain separate from persisted layout selection.
+ 
++`retirementVersion: 1` advertises `retireTabsByKind(kind)`, the owner-scoped cleanup operation for live and saved occurrences. It neither adopts dormant Sessions nor navigates or runs Agents. Each record reports verified removal, a blocked close handler, inaccessible persistence, or an unsupported saved snapshot. Unsupported data remains intact. Removal preserves unrelated tabs and identity allocation, and removes the exact occurrence from every in-window undo cursor; registering the same kind again may open fresh occurrences. Call it before native service disposal, including from a provider effect disposer; a stopped native service returns `service-unavailable`. Retry partial failures explicitly.
++
+ <a id="the-tab-domain"></a>
+ ## The Tab domain
+ 
+@@ -138,6 +140,7 @@ None; this package neither assembles nor sends a provider request.
+ 
+ <a id="known-limitations-and-deferred-work"></a>
+ 
++- **Retirement is explicit.** Providers must request cleanup and retain failed outcomes for retry; unloading a provider without that call does not automatically clean saved layouts. Inaccessible or unsupported storage stays pending.
+ - **Browser-local layout.** Layout does not synchronize between devices; provider-specific state requires its provider's recovery support.
+ - **No surface without a session.** State is keyed by session id, so the hero screen shows nothing on the right.
+ - **Hard-coded stacking.** The content tree uses a fixed stacking layer; floats reorder within it without raising that layer above menus.
+diff --git a/packages/client/ui-sidebar-right/README.zh.md b/packages/client/ui-sidebar-right/README.zh.md
+index 96f8e284d92665642d7db676e2ffbbebfd78af0d..d1484242e3832ea65eaa82a488ff19e0c167fc1a 100644
+--- a/packages/client/ui-sidebar-right/README.zh.md
++++ b/packages/client/ui-sidebar-right/README.zh.md
+@@ -98,6 +98,8 @@ tab 类型分两阶段注册，随包发布的引导类型走的正是别的包
+ 
+ `focusedTarget(element?)` 解析当前 DOM 分栏和标签页，也接受嵌入 iframe；焦点位于外部时不返回页面。`commandTarget(element?)` 另外允许外部打开动作使用屏幕上会话的活动停靠分栏。捕获值包含 occurrence 和导航版本；`isTargetCurrent(target)` 拒绝会话变更、已移动或重新打开的标签页，以及期间发生的导航。焦点和指针激活独立于持久化的布局选择。
+ 
++`retirementVersion: 1` 表示支持 `retireTabsByKind(kind)`：所属 provider 可清理已挂载和已保存的标签实例。它不会接管休眠 Session，也不会导航或运行 Agent。每条记录明确报告已验证的移除、关闭处理器拒绝、存储不可访问或保存快照不受支持；不受支持的数据保持原样。移除保留其他标签和标识分配计数，并从窗口内每个撤销位置移除该实例；重新注册相同 kind 可以打开新实例。应在原生服务析构前调用，包括 provider effect 的 disposer；已经停止的原生服务返回 `service-unavailable`。部分失败必须显式重试。
++
+ <a id="the-tab-domain"></a>
+ ## Tab 域
+ 
+@@ -138,6 +140,7 @@ Tab 域按（Session，Tab id）保留品牌化 occurrence id、导航、中止
+ 
+ <a id="known-limitations-and-deferred-work"></a>
+ 
++- **退休操作需要显式调用。** Provider 必须请求清理并保留失败结果以便重试；卸载 provider 本身不会自动清理保存布局。不可访问或不受支持的存储保持待处理。
+ - **布局保存在当前浏览器。** 布局不跨设备同步；provider 专属状态需要由该 provider 支持恢复。
+ - **没有会话就没有停靠面。** 状态按会话 id 键控，因此 hero 画面右侧什么都不显示。
+ - **硬编码的层叠。** 内容树使用固定层叠层；浮窗在该层内重排，不会把整层抬到菜单之上。
+diff --git a/packages/client/ui-sidebar-right/src/client/index.ts b/packages/client/ui-sidebar-right/src/client/index.ts
+index 5974b81723fb3c47c1879eaf76a5cce20cd21e25..62c307500dc2b4c3b84901948020eb30d959550a 100644
+--- a/packages/client/ui-sidebar-right/src/client/index.ts
++++ b/packages/client/ui-sidebar-right/src/client/index.ts
+@@ -120,7 +120,7 @@ export function apply(ctx: ClientContext): void {
+   // The automatic fullscreen rule as the seats last rendered it: the frame
+   // hands them its width as owner props, and every seat reports the same rule.
+   let autoFullscreen = false
+-  const { controller, adopt, forget, show, measure } = createSidebarRightController(
++  const { controller, adopt, forget, show, measure, dispose } = createSidebarRightController(
+     tabs,
+     (address, signal) => { ctx.resources.pin(address, signal) },
+     {
+@@ -154,7 +154,7 @@ export function apply(ctx: ClientContext): void {
+   // teardown is synchronous fire-and-forget, matching ui-layout's root entry.
+   // Unloading aborts every tab occurrence, which releases every pin.
+   ctx.effect(() => () => {
+-    controller.tabDomain.dispose()
++    dispose()
+     void disposeService()
+     void disposeRegistry()
+   }, 'ui-sidebar-right: service faces')
+diff --git a/packages/client/ui-sidebar-right/src/client/persistence.ts b/packages/client/ui-sidebar-right/src/client/persistence.ts
+index 7335573d977849b7e809e6c71ebce925ad761eca..1b9b5810fe09dfb499bdf7912c482cece050b0d7 100644
+--- a/packages/client/ui-sidebar-right/src/client/persistence.ts
++++ b/packages/client/ui-sidebar-right/src/client/persistence.ts
+@@ -1,6 +1,6 @@
+ /** Validated current-layout snapshots; undo history belongs to the live window. */
+ import { z } from 'zod'
+-import { EMPTY_HISTORY, type LayoutState } from '@deepseek-ai/dsh-client-ui-dockkit'
++import { EMPTY_HISTORY, type LayoutState, type LayoutNode, type NodeId, type PaneId, type SplitId, type TabId, type TabRecord } from '@deepseek-ai/dsh-client-ui-dockkit'
+ import type { SurfaceState } from './stores.ts'
+ 
+ /** Persistence namespace shared by scoped stores and startup discovery. */
+@@ -71,7 +71,7 @@ export function readSidebarLayout(sessionId: string): SurfaceState | undefined {
+     if (saved === undefined) return undefined
+     const parsed = surface.parse(saved)
+     validateReferences(parsed)
+-    return { layout: parsed.layout as unknown as LayoutState, minted: parsed.minted, history: EMPTY_HISTORY }
++    return { layout: restoreLayout(parsed.layout), minted: parsed.minted, history: EMPTY_HISTORY }
+   } catch (_invalidLayout) {
+     clearSidebarLayout(sessionId)
+     return undefined
+@@ -99,3 +99,116 @@ export function clearSidebarLayout(sessionId: string): void {
+   try { localStorage.removeItem(`${sidebarPersistence}.${sessionId}`) }
+   catch (_storageUnavailable) { /* The invalid layout is still excluded from this window. */ }
+ }
++
++/** Non-destructive inspection for explicit retirement and saved inventory. */
++export type SidebarLayoutInspection = {
++  readonly outcome: 'ready'
++  readonly surface: SurfaceState
++} | {
++  readonly outcome: 'not-found' | 'persistence-unavailable' | 'unsupported-snapshot'
++}
++/**
++ * Inspect a saved scope without deleting unsupported data.
++ * @param sessionId - exact storage scope.
++ * @returns validated state without deleting unsupported data.
++ */
++export function inspectSidebarLayout(sessionId: string): SidebarLayoutInspection {
++  if (typeof localStorage === 'undefined')
++    return { outcome: 'persistence-unavailable' }
++  let raw: string | null
++  try {
++    raw = localStorage.getItem(sidebarPersistence + '.' + sessionId)
++  }
++  catch (_unavailable) {
++    return { outcome: 'persistence-unavailable' }
++  }
++  if (raw === null)
++    return { outcome: 'not-found' }
++  try {
++    const data = envelope.strict().parse(JSON.parse(raw))
++    if (Object.keys(data.bySession).length !== 1 || data.bySession[sessionId] === undefined)
++      return { outcome: 'unsupported-snapshot' }
++    const parsed = surface.strict().parse(data.bySession[sessionId])
++    validateReferences(parsed)
++    if (!sameSavedFields(data.bySession[sessionId], parsed))
++      return { outcome: 'unsupported-snapshot' }
++    return { outcome: 'ready', surface: { layout: restoreLayout(parsed.layout), minted: parsed.minted, history: EMPTY_HISTORY } }
++  }
++  catch (_unsupported) {
++    return { outcome: 'unsupported-snapshot' }
++  }
++}
++/**
++ * Enumerate native saved scopes without mounting their content.
++ * @returns saved Session scopes, or undefined if storage cannot be enumerated.
++ */
++export function savedSidebarSessions(): readonly string[] | undefined {
++  if (typeof localStorage === 'undefined')
++    return undefined
++  try {
++    return Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).filter((key): key is string => key !== null && key.startsWith(sidebarPersistence + '.')).map(key => key.slice(sidebarPersistence.length + 1))
++  }
++  catch (_unavailable) {
++    return undefined
++  }
++}
++/**
++ * Verify persistence before certifying a durable retirement.
++ * @param sessionId - scope to commit.
++ * @param value - complete surface.
++ * @returns true only after successful save and exact read-back; failure attempts to restore prior bytes.
++ */
++export function writeSidebarLayoutVerified(sessionId: string, value: SurfaceState): boolean {
++  if (typeof localStorage === 'undefined')
++    return false
++  const key = sidebarPersistence + '.' + sessionId
++  let previous: string | null
++  try {
++    previous = localStorage.getItem(key)
++  }
++  catch (_unavailable) {
++    return false
++  }
++  const encoded = JSON.stringify({ bySession: { [sessionId]: { layout: value.layout, minted: value.minted } } })
++  try {
++    localStorage.setItem(key, encoded)
++    if (localStorage.getItem(key) === encoded)
++      return true
++  }
++  catch (_unavailable) { /* Failed writes cannot certify retirement. */ }
++  try {
++    if (previous === null)
++      localStorage.removeItem(key)
++    else
++      localStorage.setItem(key, previous)
++  }
++  catch (_rollbackUnavailable) { /* The caller reports unavailable rather than removed. */ }
++  return false
++}
++/** Parsed keys must account for every persisted field, including future nested fields. */
++function sameSavedFields(raw: unknown, parsed: unknown): boolean {
++  if (raw === null || parsed === null || typeof raw !== 'object' || typeof parsed !== 'object')
++    return true
++  const input = raw as Record<string, unknown>, known = parsed as Record<string, unknown>
++  return Object.keys(input).length === Object.keys(known).length
++    && Object.keys(input).every(key => Object.hasOwn(known, key) && sameSavedFields(input[key], known[key]))
++}
++
++/** Restore validated identifiers and the kit's explicit optional pane fields. */
++function restoreLayout(value: z.infer<typeof layout>): LayoutState {
++  const nodes: Record<NodeId, LayoutNode> = {}
++  for (const [id, entry] of Object.entries(value.nodes)) {
++    nodes[id as NodeId] = entry.kind === 'pane'
++      ? {
++        ...entry, id: entry.id as PaneId, tabs: entry.tabs.map(id => id as TabId),
++        activeTabId: entry.activeTabId as TabId | undefined, rect: entry.rect,
++      }
++      : { ...entry, id: entry.id as SplitId, children: entry.children.map(id => id as NodeId) }
++  }
++  const tabs: Record<TabId, TabRecord> = {}
++  for (const [id, tab] of Object.entries(value.tabs)) tabs[id as TabId] = { ...tab, id: tab.id as TabId }
++  return {
++    ...value, nodes, tabs, rootId: value.rootId as NodeId,
++    floats: value.floats.map(id => id as PaneId), activePaneId: value.activePaneId as PaneId,
++  }
++}
+diff --git a/packages/client/ui-sidebar-right/src/client/service.ts b/packages/client/ui-sidebar-right/src/client/service.ts
+index c4bfc1252b03839888e054317aa6968025367c55..1e25bac257dfcffda11c0c6622e153ae1eae658f 100644
+--- a/packages/client/ui-sidebar-right/src/client/service.ts
++++ b/packages/client/ui-sidebar-right/src/client/service.ts
+@@ -33,6 +33,8 @@
+  * The registration adopts Session stores, names the on-screen Session, and
+  * forwards the seats' reports; callers use the service's navigation methods.
+  */
++import { inspectSidebarLayout, savedSidebarSessions, writeSidebarLayoutVerified } from './persistence.ts'
++import { sidebarHistoryLayouts, retireSidebarOccurrence } from './stores.ts'
+ import { sidebarTargetFromElement, type SidebarRightTarget } from './focus.ts'
+ import { randomUUID } from '@deepseek-ai/dsh-util-crypto'
+ import { createSnapshotStore, type ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
+@@ -77,6 +79,7 @@ interface SidebarRightSessions {
+   readonly onScreen: ObservableSnapshot<SessionId | undefined>
+   /** Open tab metadata across saved and adopted Sessions. */
+   readonly openTabs: SidebarTabInventory['source']
++  readonly inventory: SidebarTabInventory
+ }
+ 
+ /**
+@@ -93,14 +96,16 @@ export function createSidebarRightController(tabs: SidebarRightTabRegistry, pin:
+   forget: (sessionId: SessionId) => void
+   show: (sessionId: SessionId | undefined) => void
+   measure: (sessionId: SessionId, canSplitPane: RoomRule) => void
++  dispose: () => void
+ } {
+   const adopted = new Map<SessionId, Adoption>()
+   const rooms = new Map<SessionId, RoomRule>()
+   const onScreen = createSnapshotStore<SessionId | undefined>(undefined)
+   const inventory = new SidebarTabInventory()
+-  const controller = new SidebarRightController(tabs, pin, host, { adopted, rooms, onScreen, openTabs: inventory.source })
++  const controller = new SidebarRightController(tabs, pin, host, { adopted, rooms, onScreen, openTabs: inventory.source, inventory })
+   return {
+     controller,
++    dispose: () => { controller._dispose() },
+     forget: (sessionId) => {
+       inventory.remove(sessionId)
+       rooms.delete(sessionId)
+@@ -182,8 +187,26 @@ const RESOURCE_SCHEME = 'dsh-resource://'
+ /** Synchronous close/replacement hook; resource owners retain any background cleanup. */
+ export type SidebarRightCloseHandler = (sessionId: SessionId, tab: TabRecord) => void
+ 
++/** Result of one explicit metadata retirement attempt; unsupported snapshots never disappear. */
++export interface SidebarRightRetirementResult {
++  readonly outcome: 'complete' | 'partial' | 'not-found' | 'persistence-unavailable' | 'service-unavailable' | 'in-progress'
++  readonly records: readonly {
++    readonly sessionId: SessionId
++    readonly tabId?: TabId
++    readonly outcome: 'removed' | 'blocked' | 'persistence-unavailable' | 'unsupported-snapshot'
++  }[]
++}
++
+ /** The outward right-Sidebar face (`ctx.sidebarRight`). */
+ export interface ISidebarRight {
++  /** Capability version for explicit saved/live retirement. */
++  readonly retirementVersion: 1
++  /**
++   * Retire an owner’s saved and live occurrences without mounting dormant Sessions.
++   * @param kind - exact owned kind.
++   * @returns verified outcomes; undo cannot revive old occurrences, and re-registration may create fresh occurrences.
++   */
++  retireTabsByKind(kind: string): SidebarRightRetirementResult
+   /**
+    * The Session on screen, or `undefined` while none is (a global panel fills
+    * the main column, or no Session is selected). It changes before React
+@@ -260,6 +283,10 @@ export interface ISidebarRight {
+ 
+ /** Cross-plugin right-Sidebar face (ctx.sidebarRight). */
+ export class SidebarRightController implements ISidebarRight {
++  readonly retirementVersion = 1 as const
++  private readonly inventory: SidebarTabInventory
++  private disposed = false
++  private retiring = false
+   /** Open tab metadata across saved and adopted Sessions, independent of visible seats. */
+   readonly openTabs: SidebarTabInventory['source']
+   /** The on-screen Session; see {@link ISidebarRight.mounted}. */
+@@ -268,6 +295,77 @@ export class SidebarRightController implements ISidebarRight {
+   private readonly rooms: ReadonlyMap<SessionId, RoomRule>
+   private readonly closeHandlers = new Map<string, SidebarRightCloseHandler>()
+ 
++  /**
++   * Retire owned occurrences without creating Session runtimes.
++   * @param kind - exact owned tab kind.
++   * @returns verified removals or explicit partial/storage/disposal failure without Session adoption.
++   */
++  retireTabsByKind(kind: string): SidebarRightRetirementResult {
++    if (this.disposed)
++      return { outcome: 'service-unavailable', records: [] }
++    if (this.retiring)
++      return { outcome: 'in-progress', records: [] }
++    this.retiring = true
++    try {
++      return this.retireKind(kind)
++    }
++    finally {
++      this.retiring = false
++    }
++  }
++  private retireKind(kind: string): SidebarRightRetirementResult {
++    const isDisposed = () => this.disposed
++    const records: SidebarRightRetirementResult['records'][number][] = [], saved = savedSidebarSessions(), sessions = new Set<SessionId>([...this.adopted.keys(), ...(saved ?? []).map(id => id as SessionId)])
++    for (const sessionId of sessions) {
++      if (isDisposed()) break
++      const store = this.adopted.get(sessionId)?.store, inspection = store ? undefined : inspectSidebarLayout(sessionId)
++      let current = store?.getSnapshot().bySession[sessionId] ?? (inspection?.outcome === 'ready' ? inspection.surface : undefined)
++      if (!current) {
++        if (inspection && inspection.outcome !== 'ready' && inspection.outcome !== 'not-found')
++          records.push({ sessionId, outcome: inspection.outcome })
++        continue
++      }
++      const targets = new Map<TabId, TabRecord>()
++      for (const layout of sidebarHistoryLayouts(current))
++        for (const tab of Object.values(layout.tabs))
++          if (tab.kind === kind)
++            targets.set(tab.id, tab)
++      for (const tab of targets.values()) {
++        let next: SurfaceState
++        try {
++          next = retireSidebarOccurrence(current, tab.id)
++          this.closeHandlers.get(kind)?.(sessionId, tab)
++        }
++        catch (_blocked) {
++          records.push({ sessionId, tabId: tab.id, outcome: 'blocked' })
++          continue
++        }
++        if (isDisposed()) {
++          records.push({ sessionId, tabId: tab.id, outcome: 'blocked' })
++          break
++        }
++        if (store && store.getSnapshot().bySession[sessionId] !== current) {
++          records.push({ sessionId, tabId: tab.id, outcome: 'blocked' })
++          break
++        }
++        if (!writeSidebarLayoutVerified(sessionId, next)) {
++          records.push({ sessionId, tabId: tab.id, outcome: 'persistence-unavailable' })
++          continue
++        }
++        if (store)
++          store.actions.commitRetirement(sessionId, current, next)
++        current = next
++        this.inventory.update(sessionId, Object.values(current.layout.tabs))
++        records.push({ sessionId, tabId: tab.id, outcome: 'removed' })
++      }
++    }
++    return { outcome: this.disposed ? 'service-unavailable' : saved === undefined ? 'persistence-unavailable' : records.length ? (records.every(record => record.outcome === 'removed') ? 'complete' : 'partial') : 'not-found', records }
++  }
++  /** Release native tab occurrences after the service owner's fiber stops. @internal */
++  _dispose(): void {
++    this.disposed = true
++    this.tabDomain.dispose()
++  }
+   /**
+    * Register resource cleanup before explicit removal. Failure preserves the tab.
+    * @param kind - tab kind owned by the registering plugin.
+@@ -302,6 +400,7 @@ export class SidebarRightController implements ISidebarRight {
+     this.rooms = sessions.rooms
+     this.mounted = sessions.onScreen
+     this.openTabs = sessions.openTabs
++    this.inventory = sessions.inventory
+     this.tabDomain = new TabDomain(this, pin)
+   }
+ 
+@@ -429,15 +528,17 @@ export class SidebarRightController implements ISidebarRight {
+       && dockPaneIds(surface.layout).length < 2
+       && this.mounted.getSnapshot() === sessionId
+       && this.canSplitPane(sessionId, target.id)
+-    const commit = (): void => { actions.openContent(sessionId, {
+-      kind: claim.kind,
+-      contentId: claim.contentId,
+-      title: claim.title,
+-      ...placement.paneId === undefined ? {} : { paneId: placement.paneId },
+-      ...preferNewPane ? { preferNewPane: true } : {},
+-      ...placement.replaceTab === undefined ? {} : { replaceTab: placement.replaceTab },
+-      ...placement.revealIfOpened === undefined ? {} : { revealIfOpened: placement.revealIfOpened },
+-    }, (tabId) => { this.tabDomain.navigate(sessionId, tabId, { address, params }) }) }
++    const commit = (): void => {
++      actions.openContent(sessionId, {
++        kind: claim.kind,
++        contentId: claim.contentId,
++        title: claim.title,
++        ...placement.paneId === undefined ? {} : { paneId: placement.paneId },
++        ...preferNewPane ? { preferNewPane: true } : {},
++        ...placement.replaceTab === undefined ? {} : { replaceTab: placement.replaceTab },
++        ...placement.revealIfOpened === undefined ? {} : { revealIfOpened: placement.revealIfOpened },
++      }, (tabId) => { this.tabDomain.navigate(sessionId, tabId, { address, params }) })
++    }
+     const layout = surface?.layout
+     const replaced = placement.replaceTab === undefined ? undefined : layout?.tabs[placement.replaceTab]
+     const revealed = layout === undefined || placement.revealIfOpened === false
+@@ -519,8 +620,10 @@ export class SidebarRightController implements ISidebarRight {
+     const pane = getPane(layout, activeDockPaneId(layout))
+     const tabId = pane.activeTabId
+     const held = tabId === undefined ? undefined : this.tabDomain.occurrence(sessionId, { id: tabId })
+-    return { sessionId, paneId: pane.id, host: pane.host, tabId,
+-      occurrence: held, navigationRevision: held?.navigation.getSnapshot().revision }
++    return {
++      sessionId, paneId: pane.id, host: pane.host, tabId,
++      occurrence: held, navigationRevision: held?.navigation.getSnapshot().revision,
++    }
+   }
+ 
+   /**
+diff --git a/packages/client/ui-sidebar-right/src/client/stores.ts b/packages/client/ui-sidebar-right/src/client/stores.ts
+index 9478980de685cd31f1ee28f9f6b00cbda2b6c698..e8b5e8c145ba86e61162ff0069b8501ba0de26bc 100644
+--- a/packages/client/ui-sidebar-right/src/client/stores.ts
++++ b/packages/client/ui-sidebar-right/src/client/stores.ts
+@@ -32,7 +32,7 @@ import type {
+   DockMode, DockZone, FloatRect, History, LayoutOp, LayoutState, Mint, PaneId, SplitId, TabId, TabRecord,
+ } from '@deepseek-ai/dsh-client-ui-dockkit'
+ import {
+-  activeDockPaneId, createInitialState, dockPaneIds, EMPTY_HISTORY, findContentTab, findPaneContentTab, findTabPane, getPane,
++  isFocusOp, activeDockPaneId, createInitialState, dockPaneIds, EMPTY_HISTORY, findContentTab, findPaneContentTab, findTabPane, getPane,
+   planDropTab, planDuplicateTab, planFloatTab, planOpenContent, planPlaceTab, planResizeSplit, planSetExpanded,
+   planSetMode, planSettle, planSplitPane, planUnfloatPane, record, replay, stepBack, stepForward,
+ } from '@deepseek-ai/dsh-client-ui-dockkit'
+@@ -42,6 +42,8 @@ import { GUIDE_KIND, pageAddress, type SidebarRightSeed } from './contract/seed.
+ export interface SurfaceState {
+   readonly layout: LayoutState
+   readonly history: History
++  /** Window-local layouts after irreversible occurrence retirement; normal undo entries remain intact. */
++  readonly retirementLayouts?: readonly LayoutState[]
+   /** How many ids this surface has minted; carried so replay stays reproducible. */
+   readonly minted: number
+ }
+@@ -198,7 +200,12 @@ function advance(surface: SurfaceState, plan: SurfacePlan, seed: () => SidebarRi
+   const after = replay(surface.layout, planned)
+   const settled = planSettle(after, counter.mint, after.expanded ? makeTab : undefined)
+   const stepped = record(surface.history, surface.layout, [...planned, ...settled])
+-  return { layout: stepped.state, history: stepped.history, minted: counter.used() }
++  return {
++    layout: stepped.state, history: stepped.history, minted: counter.used(),
++    ...(surface.retirementLayouts
++      ? { retirementLayouts: [...surface.retirementLayouts.slice(0, surface.history.cursor + 1), stepped.state] }
++      : {}),
++  }
+ }
+ 
+ /**
+@@ -231,6 +238,7 @@ type SidebarRightActions = {
+     settled: (tabId: TabId) => void,
+   ) => void
+   duplicateTab: (draft: SidebarRightState, sessionId: string, tabId: TabId) => void
++  commitRetirement: (draft: SidebarRightState, sessionId: string, expected: SurfaceState, next: SurfaceState) => void
+   closeTab: (draft: SidebarRightState, sessionId: string, tabId: TabId) => void
+   focusTab: (draft: SidebarRightState, sessionId: string, tabId: TabId) => void
+   focusPane: (draft: SidebarRightState, sessionId: string, paneId: PaneId) => void
+@@ -251,6 +259,14 @@ type HistoryStepper =
+ 
+ /** Step a surface through the history in one direction. */
+ function stepped(surface: SurfaceState, step: HistoryStepper): SurfaceState {
++  if (surface.retirementLayouts) {
++    const direction = step === stepBack ? -1 : 1, history = surface.history
++    if (direction < 0 ? history.cursor === 0 : history.cursor === history.entries.length) return surface
++    const focus = (index: number) => history.entries[index]?.ops.every(isFocusOp) === true
++    let cursor = history.cursor + direction
++    if (focus(direction < 0 ? history.cursor - 1 : history.cursor)) while (focus(direction < 0 ? cursor - 1 : cursor)) cursor += direction
++    return { ...surface, layout: historyLayoutAt(surface.retirementLayouts, cursor), history: { ...history, cursor } }
++  }
+   const moved = step(surface.history, surface.layout)
+   return moved === undefined ? surface : { ...surface, layout: moved.state, history: moved.history }
+ }
+@@ -356,6 +372,11 @@ export function createSidebarRightStore(
+         d.bySession = seat(d, sessionId, s =>
+           advance(s, (state, mint) => pageKind(state, tabId) !== undefined ? [] : planDuplicateTab(state, mint, tabId).ops, seed))
+       },
++      // The draft proxy is compared by value with the captured committed snapshot.
++      commitRetirement: (d, sessionId, expected, next) => {
++        if (JSON.stringify(d.bySession[sessionId]) !== JSON.stringify(expected)) throw Error('Sidebar retirement target changed')
++        d.bySession = { ...d.bySession, [sessionId]: next }
++      },
+       // A tab already gone — closed twice by a racing callback and the user — is
+       // left alone rather than handed to the kit, which refuses an unknown tab.
+       // The docked surface's last tab follows the close rule, whoever asks: the
+@@ -424,15 +445,67 @@ export function createSidebarRightStore(
+       },
+     },
+   })
+-  return { ...handle, create(scopeKey) {
+-    const instance = handle.create(scopeKey)
+-    if (scopeKey === undefined) return instance
+-    const saved = readSidebarLayout(scopeKey)
+-    if (saved !== undefined) instance.store.set({ bySession: { [scopeKey]: saved } })
+-    instance.subscribe(() => {
+-      const surface = instance.getSnapshot().bySession[scopeKey]
+-      if (surface !== undefined) writeSidebarLayout(scopeKey, surface)
+-    })
+-    return { ...instance, clearPersisted: () => { clearSidebarLayout(scopeKey) } }
+-  } }
++  return {
++    ...handle, create(scopeKey) {
++      const instance = handle.create(scopeKey)
++      if (scopeKey === undefined) return instance
++      const saved = readSidebarLayout(scopeKey)
++      if (saved !== undefined) instance.store.set({ bySession: { [scopeKey]: saved } })
++      instance.subscribe(() => {
++        const surface = instance.getSnapshot().bySession[scopeKey]
++        if (surface !== undefined) writeSidebarLayout(scopeKey, surface)
++      })
++      return { ...instance, clearPersisted: () => { clearSidebarLayout(scopeKey) } }
++    },
++  }
++}
++
++/**
++ * Reconstruct each cursor layout for exact occurrence retirement.
++ * @param value - current surface.
++ * @returns each undo/redo cursor's layout without mutating the history.
++ */
++export function sidebarHistoryLayouts(value: SurfaceState): readonly LayoutState[] {
++  if (value.retirementLayouts)
++    return value.retirementLayouts
++  const layouts: LayoutState[] = new Array<LayoutState>(value.history.entries.length + 1)
++  layouts[value.history.cursor] = value.layout
++  for (let index = value.history.cursor - 1; index >= 0; index--) {
++    const entry = value.history.entries[index]
++    if (entry === undefined) throw Error('Sidebar history entry missing')
++    layouts[index] = replay(historyLayoutAt(layouts, index + 1), entry.inverse)
++  }
++  for (let index = value.history.cursor; index < value.history.entries.length; index++) {
++    const entry = value.history.entries[index]
++    if (entry === undefined) throw Error('Sidebar history entry missing')
++    layouts[index + 1] = replay(historyLayoutAt(layouts, index), entry.ops)
++  }
++  return layouts
++}
++/**
++ * Remove an occurrence from current and historical layouts.
++ * @param value - current surface.
++ * @param tabId - exact occurrence to retire.
++ * @returns the current and historical layouts with this occurrence removed, preserving unrelated undo and identity allocation.
++ */
++export function retireSidebarOccurrence(value: SurfaceState, tabId: TabId): SurfaceState {
++  const layouts = sidebarHistoryLayouts(value).map((layout) => {
++    if (!layout.tabs[tabId])
++      return layout
++    if (!canCloseTab({ ...value, layout }, tabId))
++      throw Error('Sidebar occurrence cannot be retired from history')
++    let next = replay(layout, [{ type: 'closeTab', tabId }])
++    if (dockPaneIds(next).every(id => getPane(next, id).tabs.length === 0))
++      next = replay(next, [...planSetMode(next, 'push'), ...planSetExpanded(next, false)])
++    const counter = counting(value.minted)
++    return replay(next, planSettle(next, counter.mint))
++  })
++  return { ...value, layout: historyLayoutAt(layouts, value.history.cursor), retirementLayouts: layouts }
++}
++
++/** Resolve a cursor whose layout is required by the native history invariant. */
++function historyLayoutAt(layouts: readonly LayoutState[], cursor: number): LayoutState {
++  const layout = layouts[cursor]
++  if (layout === undefined) throw Error('Sidebar history layout missing')
++  return layout
+ }
+diff --git a/packages/client/ui-sidebar-right/src/client/tab-inventory.ts b/packages/client/ui-sidebar-right/src/client/tab-inventory.ts
+index 1dfc13951813a988364bcd8b32499892b8378e0c..b3afc33657664d206990b1122f7b96483889380e 100644
+--- a/packages/client/ui-sidebar-right/src/client/tab-inventory.ts
++++ b/packages/client/ui-sidebar-right/src/client/tab-inventory.ts
+@@ -2,7 +2,7 @@
+ import { createSnapshotStore, type ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
+ import type { SessionId } from '@deepseek-ai/dsh-session/types'
+ import type { TabId, TabRecord } from '@deepseek-ai/dsh-client-ui-dockkit'
+-import { readSidebarLayout, sidebarPersistence } from './persistence.ts'
++import { inspectSidebarLayout, sidebarPersistence } from './persistence.ts'
+ 
+ /** One open occurrence; resource recovery belongs to its kind's provider. */
+ export interface SidebarRightOpenTab {
+@@ -27,7 +27,8 @@ export class SidebarTabInventory {
+       for (const key of keys) {
+         if (key === null || !key.startsWith(`${sidebarPersistence}.`)) continue
+         const sessionId = key.slice(sidebarPersistence.length + 1) as SessionId
+-        const saved = readSidebarLayout(sessionId)
++        const inspection = inspectSidebarLayout(sessionId)
++        const saved = inspection.outcome === 'ready' ? inspection.surface : undefined
+         if (saved !== undefined) this.sessions.set(sessionId, Object.values(saved.layout.tabs).map(tab => ({
+           sessionId, tabId: tab.id, kind: tab.kind, contentId: tab.contentId,
+         })))
+diff --git a/packages/client/ui-sidebar-right/tests/apply.client.spec.ts b/packages/client/ui-sidebar-right/tests/apply.client.spec.ts
+index fa83737536da092da3db429e94f8660fc1e4e038..83e84863dbfe1ef90e7ecf475b68ed418bdd2abe 100644
+--- a/packages/client/ui-sidebar-right/tests/apply.client.spec.ts
++++ b/packages/client/ui-sidebar-right/tests/apply.client.spec.ts
+@@ -312,9 +312,11 @@ describe('ui-sidebar-right apply', () => {
+     const surface = instance.getSnapshot().bySession[SESSION]
+     const guide = Object.values(surface?.layout.tabs ?? {})[0]
+     if (guide === undefined) throw new Error('expected the guide tab')
++    const controller=ctx.sidebarRight
+     const { signal, tabActions } = ctx.sidebarRight.tabDomain.occurrence(SESSION, guide)
+     await fiber.dispose()
+     expect(signal.aborted).toBe(true)
++    expect(controller.retireTabsByKind('owned').outcome).toBe('service-unavailable')
+     // The adoption went with the plugin: a late action from the dead occurrence changes nothing.
+     tabActions.close()
+     expect(instance.getSnapshot().bySession[SESSION]?.layout.tabs[guide.id]).toBeDefined()
+diff --git a/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts b/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..facdbc3c90a353e2392543a429a7da45b3244052
+--- /dev/null
++++ b/packages/client/ui-sidebar-right/tests/retirement.client.spec.ts
+@@ -0,0 +1,166 @@
++// @vitest-environment jsdom
++/** Explicit tab-kind retirement reaches dormant layouts without Session adoption. */
++import { afterEach, expect, it, vi } from 'vitest'
++import { Context } from '@deepseek-ai/cordis'
++import type { SessionId } from '@deepseek-ai/dsh-session/types'
++import { createSidebarRightController } from '../src/client/service.ts'
++import { createSidebarRightStore } from '../src/client/stores.ts'
++import { SidebarRightTabRegistry } from '../src/client/tab-registry.ts'
++import { sidebarPersistence } from '../src/client/persistence.ts'
++const session = 'retirement' as SessionId
++const seed = () => ({ kind: 'guide', title: 'Guide' })
++afterEach(() => { localStorage.clear(); vi.restoreAllMocks() })
++function setup() {
++  const ctx = new Context(), tabs = new SidebarRightTabRegistry(ctx)
++  const unregisterOwned = tabs.register({ id: 'owned', kind: 'owned', title: () => 'Owned' })
++  const controls = createSidebarRightController(tabs, vi.fn(), {
++    autoFullscreen: () => false,
++    openWithFocus: () => { throw Error('No navigation') },
++    closeWithFocus: (_id, _pane, close) => { close() },
++  })
++  return { ...controls, ctx, tabs, unregisterOwned }
++}
++it('retires a never-adopted saved tab, preserves File identity and reports verified removal', async () => {
++  const store = createSidebarRightStore(seed).create(session)
++  store.actions.openContent(session, { kind: 'owned', contentId: 'owned-page', title: 'Owned' }, () => { })
++  store.actions.openContent(session, { kind: 'file', contentId: 'file-a', title: 'File' }, () => { })
++  const old = store.getSnapshot().bySession[session]!, file = Object.values(old.layout.tabs).find(tab => tab.kind === 'file')!
++  const f = setup()
++  try {
++    expect(f.controller.retireTabsByKind('owned').records).toContainEqual(expect.objectContaining({ sessionId: session, outcome: 'removed' }))
++    const restored = createSidebarRightStore(seed).create(session).getSnapshot().bySession[session]!
++    expect(Object.values(restored.layout.tabs)).toEqual([file])
++    expect(restored.minted).toBe(old.minted)
++    expect(f.controller.openTabs.getSnapshot()).toHaveLength(1)
++    expect(f.controller.retireTabsByKind('owned').outcome).toBe('not-found')
++  }
++  finally {
++    await f.ctx.fiber.dispose()
++  }
++})
++it('live retirement retains unrelated undo/redo while never resurrecting retired occurrences, and accepts a new registration', async () => {
++  const store = createSidebarRightStore(seed).create(session)
++  store.actions.openContent(session, { kind: 'file', contentId: 'file-a', title: 'File' }, () => { })
++  store.actions.openContent(session, { kind: 'owned', contentId: 'old', title: 'Owned' }, () => { })
++  store.actions.setMode(session, 'fullscreen')
++  const f = setup(), release = f.adopt(session, store)
++  try {
++    expect(f.controller.retireTabsByKind('owned').records.some(record => record.outcome === 'removed')).toBe(true)
++    for (let i = 0; i < 5; i++)
++      store.actions.undo(session)
++    expect(Object.values(store.getSnapshot().bySession[session]!.layout.tabs).some(tab => tab.kind === 'owned')).toBe(false)
++    for (let i = 0; i < 5; i++)
++      store.actions.redo(session)
++    expect(Object.values(store.getSnapshot().bySession[session]!.layout.tabs).map(tab => tab.kind)).toEqual(['file'])
++    expect(store.getSnapshot().bySession[session]!.layout.mode).toBe('fullscreen')
++    f.unregisterOwned()
++    f.tabs.register({ id: 'owned-new', kind: 'owned', title: () => 'New' })
++    store.actions.openContent(session, { kind: 'owned', contentId: 'new', title: 'New' }, () => { })
++    expect(Object.values(store.getSnapshot().bySession[session]!.layout.tabs).some(tab => tab.contentId === 'new')).toBe(true)
++    store.actions.undo(session)
++    expect(Object.values(store.getSnapshot().bySession[session]!.layout.tabs).some(tab => tab.kind === 'owned')).toBe(false)
++    store.actions.redo(session)
++    expect(Object.values(store.getSnapshot().bySession[session]!.layout.tabs).filter(tab => tab.kind === 'owned').map(tab => tab.contentId)).toEqual(['new'])
++  }
++  finally {
++    release()
++    await f.ctx.fiber.dispose()
++  }
++})
++it('preserves unsupported snapshots and failed storage or refused close without claiming removal', async () => {
++  const f = setup()
++  try {
++    const key = sidebarPersistence + '.future', raw = '{"version":99,"bySession":{}}'
++    localStorage.setItem(key, raw)
++    expect(f.controller.retireTabsByKind('owned').records).toContainEqual(expect.objectContaining({ sessionId: 'future', outcome: 'unsupported-snapshot' }))
++    expect(localStorage.getItem(key)).toBe(raw)
++    const store = createSidebarRightStore(seed).create(session)
++    store.actions.openContent(session, { kind: 'owned', contentId: 'owned', title: 'Owned' }, () => { })
++    f.adopt(session, store)
++    const snapshot = store.getSnapshot()
++    const unregister = f.controller.registerCloseHandler('owned', () => { throw Error('Refused') })
++    expect(f.controller.retireTabsByKind('owned').records.some(record => record.outcome === 'blocked')).toBe(true)
++    expect(store.getSnapshot()).toBe(snapshot)
++    unregister()
++    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw Error('Quota') })
++    expect(f.controller.retireTabsByKind('owned').records.some(record => record.outcome === 'persistence-unavailable')).toBe(true)
++    expect(store.getSnapshot()).toBe(snapshot)
++  }
++  finally {
++    await f.ctx.fiber.dispose()
++  }
++})
++it('retires floating and released dormant targets across scopes, protects the sole Guide and keeps unsupported nested bytes', async () => {
++  const first = 'released' as SessionId, second = 'other' as SessionId, live = createSidebarRightStore(seed).create(first)
++  live.actions.openContent(first, { kind: 'file', contentId: 'file', title: 'File' }, () => { })
++  let floated!: import('@deepseek-ai/dsh-client-ui-dockkit').TabId
++  live.actions.openContent(first, { kind: 'owned', contentId: 'float', title: 'Owned' }, (id) => { floated = id })
++  live.actions.floatTab(first, floated, { x: 5, y: 5, width: 300, height: 200 })
++  const original = live.getSnapshot().bySession[first]!, other = createSidebarRightStore(seed).create(second)
++  other.actions.openContent(second, { kind: 'owned', contentId: 'dormant', title: 'Owned' }, () => { })
++  const f = setup(), release = f.adopt(first, live)
++  release()
++  try {
++    expect(f.controller.retireTabsByKind('owned').records.filter(record => record.outcome === 'removed')).toHaveLength(2)
++    const restored = createSidebarRightStore(seed).create(first).getSnapshot().bySession[first]!
++    expect(restored.layout.floats).toEqual([])
++    expect(Object.values(restored.layout.tabs).find(tab => tab.kind === 'file')).toEqual(Object.values(original.layout.tabs).find(tab => tab.kind === 'file'))
++    expect(restored.minted).toBe(original.minted)
++    const emptied = createSidebarRightStore(seed).create(second).getSnapshot().bySession[second]!
++    expect(emptied.layout.expanded).toBe(false)
++    expect(Object.values(emptied.layout.tabs)).toEqual([])
++    const guide = createSidebarRightStore(seed).create('guide')
++    guide.actions.setExpanded('guide', true)
++    expect(f.controller.retireTabsByKind('guide').records.some(record => record.outcome === 'blocked')).toBe(true)
++    const key = sidebarPersistence + '.nested', future = JSON.stringify({ bySession: { nested: { ...restored, layout: { ...restored.layout, version: 99 } } } })
++    localStorage.setItem(key, future)
++    expect(f.controller.retireTabsByKind('owned').records.some(record => record.outcome === 'unsupported-snapshot')).toBe(true)
++    expect(localStorage.getItem(key)).toBe(future)
++  }
++  finally {
++    await f.ctx.fiber.dispose()
++  }
++})
++it('owner cleanup works while native service lives and simultaneous native teardown refuses stale handles', async () => {
++  const store = createSidebarRightStore(seed).create(session)
++  store.actions.openContent(session, { kind: 'owned', contentId: 'owned', title: 'Owned' }, () => { })
++  const f = setup()
++  f.adopt(session, store)
++  try {
++    let cleanup: ReturnType<typeof f.controller.retireTabsByKind> | undefined
++    await f.ctx.plugin({ apply: ctx => ctx.effect(() => () => { cleanup = f.controller.retireTabsByKind('owned') }) })
++    await f.ctx.fiber.dispose()
++    expect(cleanup?.outcome).toBe('complete')
++    store.actions.openContent(session, { kind: 'owned', contentId: 'new', title: 'New' }, () => { })
++    const before = store.getSnapshot()
++    const other = createSidebarRightStore(seed).create('later')
++    other.actions.openContent('later', { kind: 'owned', contentId: 'later', title: 'Later' }, () => {})
++    const handler = vi.fn(() => { f.dispose() })
++    f.controller.registerCloseHandler('owned', handler)
++    expect(f.controller.retireTabsByKind('owned').outcome).toBe('service-unavailable')
++    expect(store.getSnapshot()).toBe(before)
++    expect(handler).toHaveBeenCalledTimes(1)
++    expect(f.controller.retireTabsByKind('owned').outcome).toBe('service-unavailable')
++  }
++  finally {
++    f.dispose()
++  }
++})
++it('read-back failure restores bytes and keeps live metadata rather than claiming a durable removal', async () => {
++  const store = createSidebarRightStore(seed).create(session)
++  store.actions.openContent(session, { kind: 'owned', contentId: 'owned', title: 'Owned' }, () => { })
++  const f = setup()
++  f.adopt(session, store)
++  const before = store.getSnapshot(), raw = localStorage.getItem(sidebarPersistence + '.' + session), get = Storage.prototype.getItem.bind(localStorage)
++  let checks = 0
++  vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key) { if (key === sidebarPersistence + '.' + session && ++checks === 2)
++    return 'different bytes'; return get.call(this, key) })
++  try {
++    expect(f.controller.retireTabsByKind('owned').records.some(record => record.outcome === 'persistence-unavailable')).toBe(true)
++    expect(store.getSnapshot()).toBe(before)
++    expect(get.call(localStorage, sidebarPersistence + '.' + session)).toBe(raw)
++  }
++  finally {
++    await f.ctx.fiber.dispose()
++  }
++})

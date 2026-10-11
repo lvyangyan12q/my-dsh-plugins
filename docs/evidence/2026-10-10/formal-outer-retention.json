@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "4f73f57aa876c5453750b8bf654efd6cdb4118f8",
+  "browser": {
+    "url": "http://127.0.0.1:3080/",
+    "acceptanceTab": 4,
+    "viewport": 480
+  },
+  "sequence": [
+    "explicit sidebar Workbench entry",
+    "open default Kaogong",
+    "open study",
+    "select material",
+    "close inner study",
+    "close outer workspace",
+    "reopen via same sidebar entry and application",
+    "open study"
+  ],
+  "close": {
+    "focusLabel": "工作台",
+    "chapterNodeConnected": true,
+    "roleNodesConnected": true,
+    "visibleAppRegions": 0
+  },
+  "reopen": {
+    "page": "讲义",
+    "chapter": "【讲义】第三章 高频考点之比重类",
+    "sameChapterNode": true,
+    "sameRoleNodes": true,
+    "roleSessionIdsBefore": [
+      "ed2e6b58-a3c9-4135-9325-c7a0c83ce74c",
+      "03187104-497f-4fd0-8c8c-f10b15fa1f00",
+      "11c43f7b-b082-4ccf-bfc5-af38f81632e2"
+    ],
+    "roleSessionIdsAfter": [
+      "ed2e6b58-a3c9-4135-9325-c7a0c83ce74c",
+      "03187104-497f-4fd0-8c8c-f10b15fa1f00",
+      "11c43f7b-b082-4ccf-bfc5-af38f81632e2"
+    ],
+    "draftHashesBefore": [
+      {
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "length": 27,
+        "sha256": "4f091635e7013eb49c4b30904ed657a783de6504ab794ebc87681433e57bd30f"
+      },
+      {
+        "length": 605,
+        "sha256": "8f45b2d296681fa6c20399ea1505f0328f44fa0110c1e302f2caccc6c3d80d99"
+      },
+      {
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "draftHashesAfter": [
+      {
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "length": 27,
+        "sha256": "4f091635e7013eb49c4b30904ed657a783de6504ab794ebc87681433e57bd30f"
+      },
+      {
+        "length": 605,
+        "sha256": "8f45b2d296681fa6c20399ea1505f0328f44fa0110c1e302f2caccc6c3d80d99"
+      },
+      {
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "codeChanged": false,
+  "testsRerun": false,
+  "existingTest": "workbench-ui.test.mjs: direct project fills the main surface and retains draft through page, exit and reopen",
+  "classification": {
+    "explicitEntryFocus": "verified",
+    "defaultInstanceMaterialAndIdleRoleRetention": "verified",
+    "initialRestoredWorkspaceWithoutOpener": "BODY observed; explicit entry route subsequently passes, no code defect inferred",
+    "runningAgentStopOrClose": "not tested",
+    "fullStudyPersistence": "not individually proven by this DOM probe",
+    "reloadLayout": "not tested"
+  },
+  "modelMessagesSent": 0,
+  "studyRecordsWritten": 0,
+  "newScreenshot": false,
+  "overallScopeComplete": false
+}

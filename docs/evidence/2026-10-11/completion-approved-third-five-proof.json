@@ -1,0 +1,39 @@
+{
+  "approvedQuestionCount": 5,
+  "questionBookPhysicalPages": [
+    42,
+    43,
+    47,
+    48,
+    49
+  ],
+  "independentExplanationPhysicalPages": [
+    116,
+    117,
+    131,
+    134,
+    136
+  ],
+  "independentSourceAnswersMatched": [
+    "C",
+    "D",
+    "C",
+    "B",
+    "B"
+  ],
+  "sourceVerifiedSolutionNoteOptionCorrected": true,
+  "sourceDiagramsAndLabelsRestored": true,
+  "completeQuestionAndOptionCropsVisuallyVerified": true,
+  "publicStartSubmitColdRestartRead": true,
+  "publicImageBytesMatched": 5,
+  "originalBankSnapshotsReviewStatusUnchanged": true,
+  "canonicalBackupUnchanged": true,
+  "pendingReviewedOrApproved": false,
+  "privateAssetsCommitted": false,
+  "cumulativeApprovedQuestionCount": 21,
+  "riskCandidatesNotVerifiedInThisSeries": 37,
+  "targetedHostMaterialTests": 20,
+  "types": "passed",
+  "fullwidthPlaceholderRed": "public start incorrectly issued missing-fullwidth-figure",
+  "installedBrowserCoverage": "pending parent; public Host and asset byte validation only"
+}

@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "b5eb13efe9f0d59db646d8ac4b492b1a7809b7dc",
+  "installedArchiveSha256": "d1f93c913cca32d23b4cb94941aa2283154d6ce32c3b0216ea197fbf2314f1e7",
+  "officialCliInstall": true,
+  "allPackagedBytesVerified": true,
+  "method": "Actual Chrome DevTools public Reading filter/selection actions, viewport changes and read-only grid/rectangle observations in owned DSH 3089",
+  "before": {
+    "viewport": 1024,
+    "canvasWidth": 400,
+    "columnCount": 2,
+    "columnWidths": "173.5px 173.5px"
+  },
+  "after": [
+    {
+      "viewport": 1024,
+      "canvasWidth": 400,
+      "columnCount": 1,
+      "columnWidths": "363px",
+      "dividerVisible": false,
+      "filterRetained": true,
+      "selectedDetailRetained": true,
+      "horizontalOverflow": false,
+      "modulesOverlap": false
+    },
+    {
+      "viewport": 768,
+      "canvasWidth": 400,
+      "columnCount": 1,
+      "columnWidths": "363px",
+      "dividerVisible": false,
+      "filterRetained": true,
+      "selectedDetailRetained": true,
+      "horizontalOverflow": false,
+      "modulesOverlap": false
+    },
+    {
+      "viewport": 1920,
+      "canvasWidth": 776,
+      "columnCount": 2,
+      "columnWidths": "364px 364px",
+      "dividerVisible": true,
+      "filterRetained": true,
+      "selectedDetailRetained": true,
+      "horizontalOverflow": false,
+      "modulesOverlap": false
+    }
+  ],
+  "stableControls": {
+    "sameAccessibilityUidForFilterAndSearchAcrossResize": true
+  },
+  "tests": {
+    "cleanCommittedSource": {
+      "tests": 307,
+      "passed": 307,
+      "failed": 0,
+      "skipped": 0
+    },
+    "localIncludingUserChanges": {
+      "tests": 308,
+      "passed": 308,
+      "failed": 0,
+      "skipped": 0
+    },
+    "allThreeBuildsPassed": true
+  },
+  "limits": [
+    "Browser grid and hit geometry provide the responsive verdict; jsdom regression tests do not implement container-query layout.",
+    "Original complete chat/teaching/physical IME and all application-content combinations remain unproven.",
+    "No model Send or formal 3080 restart/reload was issued.",
+    "No raw screenshots, credentials, Session IDs, drafts or business records are included."
+  ]
+}

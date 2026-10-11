@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "cb355279b5ab5fecef5a24435b46f435b98c0418",
+  "scope": "Read-only entire retained 2026-10-02 historical backup; not installed-browser or per-question visual acceptance",
+  "records": 3994,
+  "approvedRows": 3111,
+  "eligibleRows": 3094,
+  "options": {
+    "adRows": 18,
+    "approvedAdRows": 12,
+    "exactTerminalAdRows": 15,
+    "approvedExactTerminalAdRows": 10,
+    "answerMarkedOptionRows": 1,
+    "approvedAnswerMarkedOptionRows": 1,
+    "answerMarkedEligibleRows": 0
+  },
+  "diagrams": {
+    "diagramWording": 183,
+    "diagramWordingWithoutMarkdown": 58,
+    "approvedDiagramWordingWithoutMarkdown": 58,
+    "imageRows": 1658,
+    "wordingIsRiskNotProofOfMissingDiagram": true
+  },
+  "imageReferences": {
+    "totalUnique": 329,
+    "localAvailable": 183,
+    "localMissing": 0,
+    "documentImagesAvailable": 146,
+    "documentImagesMissing": 0,
+    "unverifiedHistoricalReferences": 181,
+    "unsupportedOrForeign": 0,
+    "boundaryRejected": 0
+  },
+  "knowledgeImages": {
+    "entries": 72,
+    "uniqueReferences": 3097,
+    "documentImagesAvailable": 3097,
+    "documentImagesUnavailable": 0,
+    "otherReferences": 0
+  },
+  "businessBackupFilesUnchanged": true,
+  "privateMaterialsUploaded": false,
+  "modelCalls": 0,
+  "limitations": [
+    "Existence and path checks do not prove correct association or readable material-only crop",
+    "Question numbers in OCR source reset between groups; cannot substitute them for PDF pages",
+    "Known geometry PDF page 83 validates one question only",
+    "Advertisements and unrelated following-page content still require exact source verification before repair",
+    "No originals, options, answers, review state, or issued snapshots modified",
+    "Image counts cover conventional Markdown references, not a full HTML or malformed-link inventory",
+    "181 historical flat/folder references exist on disk but their correctness and material-only crops remain unverified; current practice renderer intentionally does not display them",
+    "Read-only storage and Mineru.image access are not installed browser layout, scroll, or narrow-screen acceptance"
+  ]
+}

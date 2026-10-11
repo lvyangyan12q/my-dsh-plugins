@@ -1,0 +1,49 @@
+{
+  "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476",
+  "commit": "2cf2f947ea0b62284da5f94e25e2e744aa76edb7",
+  "remote": "2cf2f947ea0b62284da5f94e25e2e744aa76edb7",
+  "verifiedAt": "2026-10-09T19:57:54.048Z",
+  "source": "git archive exact verified remote commit; four user dirty management files excluded",
+  "dependencyMode": "existing public development dependency anchors",
+  "threePluginBuilds": true,
+  "tests": {
+    "tests": 292,
+    "passed": 292,
+    "failed": 0,
+    "skipped": 0,
+    "testRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476/.scratch/platform-tests-1791575732457",
+    "logSha256": "39a47b237d892bb1b91a257ac9ba1bc00dc4942ae8de9bf67cbef7cc7add286d"
+  },
+  "release": {
+    "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854",
+    "verdictSha256": "9fc63737592c97c052da19699dd6e034d5aa6d8a09f91e56928d5a4430d4c25d",
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "71b5dc91c03c34024fdb88f3e08e163b13270c3e0bf37dd25beef0f69d81dbc9",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "limits": [
+    "No new native model question/approval/Stop proof",
+    "Complete teaching/sidebar environment matrix and physical IME remain open",
+    "No new legacy upgrade rerun; historical b42d3f7 upgrade evidence remains separately scoped",
+    "No new screenshot evidence"
+  ]
+}

@@ -1,0 +1,9 @@
+# 01 — Preserve focus through source re-admission before Host readiness
+
+A mounted KG application retains its public open state while the platform Client is replaced. Re-registering that source calls public `openApp` before the new platform has loaded Host lifecycle state. The existing unavailable branch wrote `focused: null` into browser preferences, losing the restored application even though the source was still enabled.
+
+The availability gate now keeps an existing persisted focus intent while lifecycle is unknown. It still refuses to create/open an enabled application surface, and the workspace still excludes windows until Host readiness. Confirmed disabled state clears focus as before; genuine source graph removal or disabled entry continues permanently closing saved windows. No native Session, role binding, grading, history or application data behavior changed.
+
+Two public behavior regressions reproduced `focused: null` before the fix: restored Workbench lifecycle intent, and real built KG Client factory mounted through official native SlotRegistry/renderer with retained state while its public platform service is disposed/replaced. The latter confirms KG's automatic fallback actually reaches the pending gate, then checks preserved page/focus, Host enablement and subsequent genuine graph-removal close. It uses no selected native Session and rejects model/session/grade/binding requests.
+
+Validation: 17/17 focused lifecycle/window/native-factory cases; independent Workbench package Host/Client build, configured source check and declarations passed; KG Client built independently. Native renderer uses the already built isolated source. These regressions do not claim the actual archived 68→new-version install/browser sequence passed. Parent must repeat that sequence with the clean combined archive; tickets remain open.

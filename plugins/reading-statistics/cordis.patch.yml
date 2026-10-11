@@ -1,0 +1,3 @@
+- insert:
+    - id: reading-statistics
+      name: '@deepseek-ai/dsh-reading-statistics'

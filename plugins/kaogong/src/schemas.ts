@@ -24,6 +24,9 @@ export const questionRecord = z.object({
   tags: z.array(z.string()),
   createdAt: z.string(),
   updatedAt: z.string(),
+  practiceRoundId: z.string().optional(),
+  practiceSequence: z.number().int().optional(),
+  practiceRevision: z.number().int().optional(),
 })
 
 /** One stored question record, inferred from {@link questionRecord}. */
@@ -97,3 +100,20 @@ export const knowledgeEntry = z.object({
 
 /** One stored knowledge entry record, inferred from {@link knowledgeEntry}. */
 export type KnowledgeEntryRecord = z.infer<typeof knowledgeEntry>
+
+/** Issued snapshots and immutable scores stay in one durable record. */
+export const practiceRound = z.object({
+  version: z.literal(1),
+  context: z.object({ subject: z.string(), title: z.string(), knowledgePoint: z.string().optional(), limit: z.literal(10), planIndex: z.number().int().nonnegative().optional() }),
+  questions: z.array(bankQuestion.extend({ id: z.string() })).max(10),
+  seenIds: z.array(z.string()),
+  reason: z.string(), totalAvailable: z.number().int(), cycled: z.boolean(), createdAt: z.string(),
+  score: z.object({ answers: z.array(z.object({ id: z.string(), answer: z.string() })), sequence: z.number().int(), submittedAt: z.string() }).optional(),
+  reflections: z.array(z.object({ id: z.string(), errorReason: z.string(), notes: z.string().optional(), savedAt: z.string().optional(), notesRevision: z.number().int().optional() })),
+  revision: z.number().int().nonnegative(), projectedRevision: z.number().int().nonnegative(), changedAt: z.string(),
+  review: z.enum(['ready', 'sending', 'sent']),
+}).refine(round => new Set(round.questions.map(row => row.id)).size === round.questions.length && round.projectedRevision <= round.revision &&
+  (round.score ? round.score.answers.length === round.questions.length && round.score.answers.every((row, index) => row.id === round.questions[index]?.id) : round.review === 'ready'),
+  'Invalid issued round membership or state')
+/** Version-one durable round. */
+export type PracticeRound = z.infer<typeof practiceRound>

@@ -1,0 +1,1554 @@
+{
+  "sourceCommit": "e9220b27ac2266123021f58093e3a39cfb779298",
+  "canonicalSources": [
+    "docs/personal-workbench-spec.md",
+    "docs/wayfinder/application-platform/platform-spec.md"
+  ],
+  "scopeOverrides": [
+    "docs/worktable-canvas-adjustment.md",
+    "user: retain native menus and upstream Worktable",
+    "user: reusable Agent/Skills only from management; app-private capabilities retained",
+    "user: map data supplied by each application; no synthetic map acceptance",
+    "user: retain old kaogong path during observation; do not delete"
+  ],
+  "overallStatus": "incomplete; evidence index is not a completion verdict",
+  "entries": [
+    {
+      "id": "workbench:User Stories:1",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 27,
+      "section": "User Stories",
+      "number": 1,
+      "requirementSha256": "5b6f8df6e0492362a03d64bf4b4741bc51cfcb1201f412798b3df1996dce52de",
+      "evidenceStatus": "satisfied for primary DSH sidebar entry: actual 3080 Workbench navigation opens shared applications; no claim about the entire Better Sidebar teaching matrix",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/sidebar-short-viewport.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 28,
+      "section": "User Stories",
+      "number": 2,
+      "requirementSha256": "7d434619f0a2905c16734907cb43da0de484c9cf8fdc4348d36cac3f0f09de6f",
+      "evidenceStatus": "satisfied for ordinary workbench/Reading/Kaogong entry with Better Sidebar physically absent; full real-teaching compatibility matrix remains separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-navigation-contract-audit.json"
+      ],
+      "evidence": [
+        "docs/evidence/2026-10-10/better-sidebar-absence-reinstall-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 29,
+      "section": "User Stories",
+      "number": 3,
+      "requirementSha256": "2c537fc9faa85dbfa056d2d666fb51957883e5ecda30e1041dbb3f44f7d0d82c",
+      "evidenceStatus": "satisfied for documented Better Sidebar 0.24.1 optional Tab entry; full teaching compatibility matrix remains separate",
+      "evidence": [
+        "docs/evidence/2026-10-10/better-sidebar-catalog-layout-browser.json",
+        "docs/evidence/2026-10-10/native-sidebar-position-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:4",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 30,
+      "section": "User Stories",
+      "number": 4,
+      "requirementSha256": "3f8e160fa24b358eeb6f94eefc0d59dadf6ef85b23209e4fa4854d595ede1ebd",
+      "evidenceStatus": "satisfied at shared catalog/state contract; full teaching workflow in all sidebar environments remains a separate gate",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 31,
+      "section": "User Stories",
+      "number": 5,
+      "requirementSha256": "727700416b95bbc50af8bd5b09e7494bc1a7d03c0e117bc9a81e0e9ca9cfae18",
+      "evidenceStatus": "satisfied for distinct applications, Agent and Skills navigation categories; broader original native teaching and sidebar runtime gates remain separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-navigation-contract-audit.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 32,
+      "section": "User Stories",
+      "number": 6,
+      "requirementSha256": "1fdf7e60f1f1275a976ff20a06034164cab0c48cbabd9e3d53f322f7de11374b",
+      "evidenceStatus": "partial: actual exact installed browser identifies user-saved recipes separately from retained plugin package/version sources; installed lifecycle and missing dependency reasons visible, recovery verified. Community provenance and complete missing-dependency matrix remain unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-dependency-card-browser.json",
+        "docs/evidence/2026-10-10/application-origin-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:7",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 33,
+      "section": "User Stories",
+      "number": 7,
+      "requirementSha256": "d90053d346abbcbf7aac988559aae238508afa7b73bda19aa08f21a9ca064b8c",
+      "evidenceStatus": "satisfied: installed real browser search, favorite, manual up/down ordering, hide/show and full-refresh preference retention; application catalog and native sidebar share order",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-catalog-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:8",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 34,
+      "section": "User Stories",
+      "number": 8,
+      "requirementSha256": "80de596137e1426d935379a5a6de9da23b5bff9da69e7a1176a9cd0ed061de9b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:9",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 35,
+      "section": "User Stories",
+      "number": 9,
+      "requirementSha256": "a0bcc604698f51165eb23be95aabdcb1d5901c264ac6131aebc4b1f0aa84a5d8",
+      "evidenceStatus": "satisfied for reopening and focusing one existing application instance; broader original native teaching and sidebar runtime gates remain separate",
+      "evidence": [
+        {
+          "receipt": "docs/evidence/2026-10-10/formal-outer-retention.json",
+          "scope": "explicit entry focus, same material and idle role nodes, same role session IDs and exact draft hashes",
+          "limits": "not running Agent close, reload-layout or independent Host study-data persistence proof"
+        }
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-navigation-contract-audit.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:10",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 36,
+      "section": "User Stories",
+      "number": 10,
+      "requirementSha256": "a271824f27098a8cde6db41d35b54859d5e524539035a9ba61cfd1dc813bcecf",
+      "evidenceStatus": "partial: reversible center-column focus maximization, minimize/restore, close/reopen and native draft/page preservation verified; screenshot acceptance and the full original window/native-runtime matrix remain open",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-minimize-browser.json",
+        "docs/evidence/2026-10-10/focus-maximization-verification.json",
+        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:11",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 37,
+      "section": "User Stories",
+      "number": 11,
+      "requirementSha256": "82d6e67c78787fb4c17821073316920d5afc2a1a39493fc84c6bf6eb5dcab8f0",
+      "evidenceStatus": "partial: actual native-column alignment, unoccluded toolbars and container-width single-column Reading modules verified at 1024/768/1920 with retained filter/selection; real teaching message input and material-reading combinations still require proof",
+      "evidence": [
+        "docs/evidence/2026-10-10/native-sidebar-position-browser.json",
+        "docs/evidence/2026-10-10/canvas-container-responsive-browser.json"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-header-corner-clearance-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:12",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 38,
+      "section": "User Stories",
+      "number": 12,
+      "requirementSha256": "e42e5eb9b0b306d2b09cb29a26113e6ed5760e2168dacc82b336545cfefe0e80",
+      "evidenceStatus": "partial: actual module ratio/focus and idle native drafts/sessions survive full browser reload; outer window dimensions/tabs scope remains open Additional installed-browser fix restores study open/closed state, errors page, reasoning teacher selection and narrow conversation pane after reload and explicit application reopen; same native Session and one study window retained. Full original layout/IME/provider scope remains open.",
+      "evidence": [
+        "docs/evidence/2026-10-10/formal-layout-refresh.json",
+        "plugins/personal-workbench/tests/runtime-layout.test.mjs"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json",
+        "docs/evidence/2026-10-10/learning-window-preferences-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:13",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 39,
+      "section": "User Stories",
+      "number": 13,
+      "requirementSha256": "0f39c3f51400a8b353272bea557c89193325bb825c9415392a77a46942623a8e",
+      "evidenceStatus": "partial: current default-instance close/reopen verified; complete original scope still requires individual proof",
+      "evidence": [
+        {
+          "receipt": "docs/evidence/2026-10-10/formal-outer-retention.json",
+          "scope": "explicit entry focus, same material and idle role nodes, same role session IDs and exact draft hashes",
+          "limits": "not running Agent close, reload-layout or independent Host study-data persistence proof"
+        }
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/window-mode-page-restoration-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:14",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 40,
+      "section": "User Stories",
+      "number": 14,
+      "requirementSha256": "e58fdcdfa873376606d5049cb1b255504d956813c04c4791a892c5cd4869418e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:15",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 41,
+      "section": "User Stories",
+      "number": 15,
+      "requirementSha256": "40f47e72c60046b036ef9630d3da6a76e912d26f22bb780a3fae30fd48acf06e",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:16",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 42,
+      "section": "User Stories",
+      "number": 16,
+      "requirementSha256": "1c771863b035076636b7ba95cea9dc7916b6d18d0c7600133e55d1526642e697",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:17",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 43,
+      "section": "User Stories",
+      "number": 17,
+      "requirementSha256": "c46fd89742e346daaf0826dbab0f1b2f5d4ae1fe025a624bf989eccdfdd1316b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:18",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 44,
+      "section": "User Stories",
+      "number": 18,
+      "requirementSha256": "0b2f7a0b7d126fcded2092bac41a4558082f0750469dce42074bbccbc1fe790b",
+      "evidenceStatus": "partial: actual data-analysis/reasoning teachers have independent native presets and durable Sessions, isolated unsent drafts, Conversation/Trace tabs and cold-restart recovery; completed teaching history and remaining subject matrix unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-subject-session-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:19",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 45,
+      "section": "User Stories",
+      "number": 19,
+      "requirementSha256": "b8a2bfe2727751378fac0eee4df75d0ff61e86aa3c9543272ca9611b01ec98e3",
+      "evidenceStatus": "partial: real installed nine-role packaged Skill discovery verified; actual missing packaged file blocks creation with actionable localized guidance and no Session, byte restoration and retry recover without implicit creation. Actual committed teaching Skill execution remains unproven because model catalog is unavailable",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-teaching-skill-preflight-browser.json",
+        "docs/evidence/2026-10-10/teaching-skill-missing-recovery-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:20",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 46,
+      "section": "User Stories",
+      "number": 20,
+      "requirementSha256": "0792e427aca1e626d47984cf04b0bb47e235d3cc31b54289627fdfc1631407e5",
+      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/formal-cross-page-material.json",
+        "docs/evidence/2026-10-10/verified-practice-diagram-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:21",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 47,
+      "section": "User Stories",
+      "number": 21,
+      "requirementSha256": "5300d80ec00f7cc6fcd90a95878f36c9f2c62993605a3cd3fbf005be2b72d273",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:22",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 48,
+      "section": "User Stories",
+      "number": 22,
+      "requirementSha256": "37794592330e74319e7336d187b149f83d62f40a2a720e1594b32be92874553c",
+      "evidenceStatus": "satisfied at ten-question practice behavior: actual installed UI begins ten distinct approved-bank snapshot questions and continues to ten unseen questions; complete three-environment teaching workflow remains separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:23",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 49,
+      "section": "User Stories",
+      "number": 23,
+      "requirementSha256": "a7b296c1ea17f76f86876abf0a14051e62ce66c73d243cf10e0d9e0d0d356f04",
+      "evidenceStatus": "satisfied at submission/results boundary: actual installed UI/API hide answers before submission, Host score matches unchanged bank answers, results/analyses and saved reflections survive reload; question OCR/image fidelity is not certified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:24",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 50,
+      "section": "User Stories",
+      "number": 24,
+      "requirementSha256": "3305af7fd160fbdcf30985debc17e32cbf5cfebe8d5b2b4d192ffb867e19b85c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:25",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 51,
+      "section": "User Stories",
+      "number": 25,
+      "requirementSha256": "3044c8262cda0542b024b591048bf091bbad7d9593a08f0c2c06fc6d98394b97",
+      "evidenceStatus": "satisfied for persistent classroom homework/completion/summary: actual form creation, real existing submitted round/reflections, explicit learner confirmation, cold Host restart and visible classroom recovery; model-generated teaching and the full teaching chain remain separate unmet requirements Additional exact-current installed replay proves optional-reflection classroom completion, independently checked scoring, idempotent confirmation and byte-exact cold persistence; its narrower reflection option does not replace the prior required-reflection evidence.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/lesson-persistence-verification.json",
+        "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+        "docs/evidence/2026-10-10/classroom-homework-persistence-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:26",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 52,
+      "section": "User Stories",
+      "number": 26,
+      "requirementSha256": "ed2a09e475d43e11cd92f33d1b64cd627f4e6a397abadfccc7233fe0c61b0b81",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:User Stories:27",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 53,
+      "section": "User Stories",
+      "number": 27,
+      "requirementSha256": "26742cc234be04d70cdc2ed458893e20580e492d2f34db5c6131ff985da73b61",
+      "evidenceStatus": "partial: actual embedded native model/reasoning and access-mode menus plus slash Skill discovery inspected; per-tool permission details, full role matrix and real provider execution remain unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-role-configuration-inspection.json",
+        "docs/evidence/2026-10-10/native-header-corner-clearance-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:28",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 54,
+      "section": "User Stories",
+      "number": 28,
+      "requirementSha256": "e0f67b23cffae7837e273a76d9911e8271ef3c7161adc48d2ff14a0ccb4201e5",
+      "evidenceStatus": "partial: managed Agent Skill assignment/availability checked with exact installed public API save and native preset registration; actual UI offers managed invocable Skills only, rejects new native references and preserves existing references. Full app-role assignment and real committed Skill execution still unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/managed-skill-reuse-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:29",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 55,
+      "section": "User Stories",
+      "number": 29,
+      "requirementSha256": "ab2941c6ecc4399da286ab925bfcd7074b8baac001efbd199444422906a815bb",
+      "evidenceStatus": "satisfied for reusable Agent library ownership: saved managed records only; actual application teacher presets excluded, nine application roles and teaching dependencies remain available, existing teacher bindings preserved",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/managed-agent-library-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:30",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 56,
+      "section": "User Stories",
+      "number": 30,
+      "requirementSha256": "6198b58a15b143e2128f1d674f6d86155a1aa6d4af4e7d2be1cb283c1fe56c62",
+      "evidenceStatus": "partial: actual historical backup restored into isolated installed DSH; all 3994 bank, 72 knowledge, 8 old notebook and 216 plan records preserve identity and fields; ten-question UI scoring, next round and cold recovery verified; owned state rolled back and formal data unchanged. Full original question/material fidelity remains incomplete: actual sample contains missing diagram placeholder and footer-contaminated options. One missing diagram now restored through a private verified association and confirmed in installed browser; broader material fidelity remains partial.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json",
+        "docs/evidence/2026-10-10/verified-practice-diagram-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:31",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 57,
+      "section": "User Stories",
+      "number": 31,
+      "requirementSha256": "15d76ab87d4cd0b863767d83f2e345a4698793a3945d3e444351af0298c1dda2",
+      "evidenceStatus": "partial: actual native archived and physically missing Session records expose recovery errors, preserve old binding IDs and require explicit retry or confirmed new Session; original attachment/draft restoration tested separately; other inaccessible conditions such as native permission denial remain open",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/role-session-recovery-browser.json",
+        "docs/evidence/2026-10-10/missing-session-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:32",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 58,
+      "section": "User Stories",
+      "number": 32,
+      "requirementSha256": "3f3a728c4681463753f400d0b629efaaed28f56354fd0a9d9da19e1d968cba1e",
+      "evidenceStatus": "satisfied for opening and using Kaogong after official Workbench uninstall; model-backed teacher acceptance remains a separate requirement",
+      "evidence": [
+        "docs/evidence/2026-10-09/standalone-kaogong-browser.json",
+        "docs/evidence/2026-10-10/standalone-study-responsive.json",
+        "plugins/kaogong/tests/views.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:33",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 59,
+      "section": "User Stories",
+      "number": 33,
+      "requirementSha256": "e8702061f7c782f502f754be39073bf955633ecadbea87e40125df16f8ee9123",
+      "evidenceStatus": "satisfied: public declaration and supported slot registration, exercised by optional consumer and installed Kaogong/Reading",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:34",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 60,
+      "section": "User Stories",
+      "number": 34,
+      "requirementSha256": "d2477cdfdbb53240bc70c7ce38144d68551dcade42105de09e6f3d6f14832db5",
+      "evidenceStatus": "satisfied: built-plugin dispose/reactivate through actual Cordis/SlotRegistry removes old registration and avoids duplicate entries",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:35",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 61,
+      "section": "User Stories",
+      "number": 35,
+      "requirementSha256": "d952df9685052bba5b7346f423d299d7eaf9d04faef53a7c1004ac67f053c9d7",
+      "evidenceStatus": "satisfied for optional Better Sidebar incompatibility: explicit unsupported reason and working primary entry; no broad version support claim",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:User Stories:36",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 62,
+      "section": "User Stories",
+      "number": 36,
+      "requirementSha256": "c48068417ff0e37094bda63f587b7ddf0f18e8056b98d748f8220919c3739e90",
+      "evidenceStatus": "satisfied for public native plugin/configuration navigation: actual Agent and Skills header buttons open installed own bundle details, retain native navigation and close management; no parallel installer or credential UI",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/official-plugin-navigation-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:1",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 66,
+      "section": "Implementation Decisions",
+      "number": 1,
+      "requirementSha256": "bcb53975960b0bc26b7dd53a2f7940094e77060c897931935cba284324a3313b",
+      "evidenceStatus": "satisfied at independent plugin delivery scope: exact Host/Client archives import, official rc.2 compatibility with zero exemptions, public installed consumers and generic bounded native seams; no business hardcoding into native DSH",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json",
+        "docs/evidence/2026-10-10/official-client-module-artifact-gate.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 67,
+      "section": "Implementation Decisions",
+      "number": 2,
+      "requirementSha256": "045a95aea833dd4a9ee02a5b7f5f86aa84aa590a6ae553d4709d5b1aed7fbfb4",
+      "evidenceStatus": "satisfied at native styling/public extension scope; full native teaching gates remain separately open",
+      "evidence": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json"
+      ],
+      "scopeNote": "Platform CSS does not rewrite native footer or Better Sidebar; upstream Worktable own styles are user-authorized."
+    },
+    {
+      "id": "workbench:Implementation Decisions:3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 68,
+      "section": "Implementation Decisions",
+      "number": 3,
+      "requirementSha256": "bd5aeec9ae3761e3598a3f70fec9289bf39d0fdec2c0f17e7c5a3f2187fa82cb",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:4",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 69,
+      "section": "Implementation Decisions",
+      "number": 4,
+      "requirementSha256": "1d50548d008d3b53bf9ace52c6f74fe421a3d86da9d9bad6e01aee91384a544b",
+      "evidenceStatus": "satisfied: stable registration fields, duplicate rejection, cleanup and zero Session acquisition",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 70,
+      "section": "Implementation Decisions",
+      "number": 5,
+      "requirementSha256": "b99b67b626ccee906cca27a675d96c8740a929d1cb397124c2034896720e1d21",
+      "evidenceStatus": "satisfied: persisted state contains stable preferences, not installed definitions or React content",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/workbench-api.ts",
+        "plugins/personal-workbench/src/workbench.ts",
+        "plugins/personal-workbench/tests/workbench.test.ts",
+        "plugins/personal-workbench/tests/workbench-lifecycle.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 71,
+      "section": "Implementation Decisions",
+      "number": 6,
+      "requirementSha256": "5df4bf3633be21940abd6e7277bf83c4806727691bf164c38bc24e94b9373a4c",
+      "evidenceStatus": "partial: existing Kaogong view state transfers into explicit default instance without duplication; non-default instance is rejected. Business domains remain owned by Kaogong. Arbitrary legacy deployment migration is not established. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json",
+        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:7",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 72,
+      "section": "Implementation Decisions",
+      "number": 7,
+      "requirementSha256": "a31960a88462f4f0c556274f4badc8bfd0fd981465c8895d95baccaab78e05d6",
+      "evidenceStatus": "satisfied at native styling/public extension scope; full native teaching gates remain separately open",
+      "evidence": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json"
+      ],
+      "scopeNote": "Generic public list slot, bounded native adaptation and unchanged native handlers/CSS; real disposal and browser navigation evidence."
+    },
+    {
+      "id": "workbench:Implementation Decisions:8",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 73,
+      "section": "Implementation Decisions",
+      "number": 8,
+      "requirementSha256": "61aab15ffcd5661379f2de8f76c4cd38183f770426e457eb519f067ecabec911",
+      "evidenceStatus": "satisfied: absent provider has no registration; unsupported provider keeps primary entry; real Cordis disposal tested",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:9",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 74,
+      "section": "Implementation Decisions",
+      "number": 9,
+      "requirementSha256": "710f28572427620aaf4ef272879d402ce05fc893e74da92c4ecc4864d5adb715",
+      "evidenceStatus": "satisfied: catalog delegates to the same owner and never borrows Sidebar Session state",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/better-sidebar.test.ts",
+        "plugins/personal-workbench/tests/better-sidebar-fixture.ts",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:10",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 75,
+      "section": "Implementation Decisions",
+      "number": 10,
+      "requirementSha256": "190c1630f95ecc0b5d86834fe0f15c14a5a7d2f6311119ed9a356240afb43d6a",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:11",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 76,
+      "section": "Implementation Decisions",
+      "number": 11,
+      "requirementSha256": "621456b90042a4c78fa193670f80c60fbfcca87ee9ccc4b61ee358a82c2eca89",
+      "evidenceStatus": "partial: built Client proves external disable/withdraw focus recovery; actual isolated installed-browser keyboard close/reopen and multiple-app switching preserve focus, drafts and annotations; whole physical IME, responsive geometry and unobscured-content acceptance still incomplete Additional installed-browser fix restores study open/closed state, errors page, reasoning teacher selection and narrow conversation pane after reload and explicit application reopen; same native Session and one study window retained. Full original layout/IME/provider scope remains open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/workspace-external-focus-repair.json",
+        "docs/evidence/2026-10-10/owned-keyboard-annotation-browser.json",
+        "docs/evidence/2026-10-10/learning-window-preferences-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:12",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 77,
+      "section": "Implementation Decisions",
+      "number": 12,
+      "requirementSha256": "49b61f10a8c6dffc8ba13d2428cd81e77500ef0fcf1e669ffccaf298056a4536",
+      "evidenceStatus": "partial: actual RoleBindings contract proves stable app/instance/role/subject identity, same-preset isolation, concurrent creation deduplication and per-key replacement/reconstruction; real native conversation and disk persistence acceptance remain separate gates",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/role-key-isolation-contract.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:13",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 78,
+      "section": "Implementation Decisions",
+      "number": 13,
+      "requirementSha256": "23b1cf53c792c5df149930f8f479016ddc3b346e15c114033f77e4c294205b57",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:14",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 79,
+      "section": "Implementation Decisions",
+      "number": 14,
+      "requirementSha256": "b2e9172f7218c4adb2d39c4892ce9c17ce6b2c244bdbd5a6d945371b4052e2bb",
+      "evidenceStatus": "partial: current tested code and exact passing lifecycle cases establish independent UI/command holds and persisted reopen; official Client reference contract has no Host Agent ownership; actual running provider task through close/reopen and status restoration remains unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-view-lifetime-contract.json",
+        "docs/evidence/2026-10-10/owned-keyboard-annotation-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:15",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 80,
+      "section": "Implementation Decisions",
+      "number": 15,
+      "requirementSha256": "f0fec4959711f826488294bd1d89bcf44210514fee0457429ef3ed9739beb595",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:16",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 81,
+      "section": "Implementation Decisions",
+      "number": 16,
+      "requirementSha256": "240e4446f8ee52299e4cc5a3c6bcd9db14c2a50945936c8221e0fd65abda6a40",
+      "evidenceStatus": "partial: installation-relative packaged personas and teaching Skill verified against installed archive bytes and actual official preset registry tests; retained legacy teacher ID and corrected obsolete installation guide; arbitrary historical deployment migration remains unverified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/packaged-role-guide-audit.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:17",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 82,
+      "section": "Implementation Decisions",
+      "number": 17,
+      "requirementSha256": "0ecfb4d6706e5060d5c11398c5bee1b2e41d6489335859500c610530d4b4a25f",
+      "evidenceStatus": "satisfied at supported public integration boundary: built shared Kaogong content and original standalone sidebar entry use one state owner; actual official Cordis optional-provider/keyed-slot lifecycle enables, withdraws, reappears and reloads with one app registration and retained standalone entry. Full real-provider Better Sidebar matrix is separate.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:18",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 83,
+      "section": "Implementation Decisions",
+      "number": 18,
+      "requirementSha256": "59bbaed5620f9596f3867699be5c4391330e1f8a558f296a473f73c08e94fadf",
+      "evidenceStatus": "partial: original practice/statistics/plan/knowledge pure regression files plus MinerU and material repair remain byte-equivalent after newline normalization to c44d9af and all their tests pass in the clean archive run. Existing views preserve practice/results/material/reflection across transfer. Complete real question-bank and original document/image fidelity remains unproven. Read-only current formal storage versus the actual 2026-10-02 migration backup now proves all 3994 bank questions, 72 knowledge records, 216 plan days and 8 historical notebook records preserved identically; notebook has 14 additional records, no historical IDs missing. Legacy path is a Junction to the canonical material root, not a second backup; all three formal configured material roots resolve correctly. Migration replay/rollback and full original PDF/image fidelity remain unproven. Historical asset gap subsequently repaired: 149 analysis600 and 29 analysis1200 page images restored from calibrated source PDFs, all 183 stored image references now resolve; business hashes unchanged. Full analysis pages remain excluded from exercise stems; safe material-only crops and runtime image acceptance are separate. Actual installed isolated DSH subsequently serves all 183 historical images with byte-identical SHA256; traversal/absolute path 400, missing/unsupported assets 404, independent unsigned HTTP 401 and foreign Origin 403. Full exercise material-only crop fidelity remains separate.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json",
+        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
+        "docs/evidence/2026-10-10/historical-analysis-page-restoration.json",
+        "docs/evidence/2026-10-10/restored-image-route-runtime.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:19",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 84,
+      "section": "Implementation Decisions",
+      "number": 19,
+      "requirementSha256": "a2c132a9c5c3381c0fab6eda4fcdf061ef74210d4fbcfed87e90081283c51a44",
+      "evidenceStatus": "satisfied at Host authority and persistence contract: scored round, explicit lesson confirmation, duplicate submission and review-claim protection tested in exact installed upgrade; full model teaching workflow remains a separate gate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:20",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 85,
+      "section": "Implementation Decisions",
+      "number": 20,
+      "requirementSha256": "ae93ee5ae03a37664ef4f3d845d5172ae926e962215a19a48382cd44ead4b896",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:21",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 86,
+      "section": "Implementation Decisions",
+      "number": 21,
+      "requirementSha256": "a1265a0d30af99550dcf420a3743205ae2fef4860527c8bf72263b033d3c7c4a",
+      "evidenceStatus": "partial: exact old/new archive upgrade and durable records/legacy assets retained; original-user backup/restore and full migration scope need their own individual proof",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Implementation Decisions:22",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 87,
+      "section": "Implementation Decisions",
+      "number": 22,
+      "requirementSha256": "7ae2857bf16a3e3050e88fb54df90b87d91baae9381ce64fb0cc1b2c1487397a",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:23",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 88,
+      "section": "Implementation Decisions",
+      "number": 23,
+      "requirementSha256": "8c2d6111d91060b1f9b7543f3a04d7293947a6582cb867a8bf37bfb6f3691144",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Implementation Decisions:24",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 89,
+      "section": "Implementation Decisions",
+      "number": 24,
+      "requirementSha256": "3c7460cc431eefd44232fae8f7dbb44bf28a3d4cd9d465f2873b3dced2885748",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:1",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 93,
+      "section": "Testing Decisions",
+      "number": 1,
+      "requirementSha256": "08006937d7ffd3f77b99f051c0cc831046e85918370c12765432e320a6d1b280",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 94,
+      "section": "Testing Decisions",
+      "number": 2,
+      "requirementSha256": "f7a9a0c548c3501fbe05d7a0f2f95643204e6de21b3e2ecfe978236c052f0007",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 95,
+      "section": "Testing Decisions",
+      "number": 3,
+      "requirementSha256": "bb6efe4bdfff49ef243988c23f9952e600aee0054950c816a4821a89ebc097b3",
+      "evidenceStatus": "partial: owned installed Better Sidebar 0.24.1 actual native/catalog entry sharing, disabled native access, restored catalog, and unchanged historical business records verified. Actual hot-disable leaves one unavailable native Workbench tab, including after reload; real-ID capture regression passes but does not resolve the actual integration failure. Full original real-teaching compatibility matrix remains open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/better-sidebar-historical-matrix-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Testing Decisions:4",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 96,
+      "section": "Testing Decisions",
+      "number": 4,
+      "requirementSha256": "34998c673e9145381d7cbcd310ce586731dc7deae641091e0dc10256f39318ca",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 97,
+      "section": "Testing Decisions",
+      "number": 5,
+      "requirementSha256": "63f86f3ca87eabb6cafdf9f8815e0875b8f06da6601e7be5a51abf3a2df09429",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 98,
+      "section": "Testing Decisions",
+      "number": 6,
+      "requirementSha256": "4d339db6c5d8a3a8a160dfeff8d893bc044667bd35efd0ee860702dab4e33b72",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "workbench:Testing Decisions:7",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 99,
+      "section": "Testing Decisions",
+      "number": 7,
+      "requirementSha256": "081cb63525f31169766818293f25b5bbfc17d1f582637df7f511a6497f2780e6",
+      "evidenceStatus": "satisfied: existing core logic, MinerU and material repair regression files are unchanged from the agreed baseline, their test assertions were inspected, current files match the clean archive source, and every named regression passes in its complete 306-test execution log.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/kaogong-optional-integration-regression-audit.json"
+      ]
+    },
+    {
+      "id": "workbench:Testing Decisions:8",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 100,
+      "section": "Testing Decisions",
+      "number": 8,
+      "requirementSha256": "e55649dc56706ddba35a9b09f7e442152b629befc94188b36456449488944eda",
+      "evidenceStatus": "partial: actual installed UI classroom goal, learner summary, committed ten-question practice, explicit completion and idempotent confirmation preserve the same record after browser reload and Host cold restart; independent original bank scoring matches. This browser run disables required reflections; default reflection-required completion and broader teaching linkage remain open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/classroom-homework-persistence-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Testing Decisions:9",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 101,
+      "section": "Testing Decisions",
+      "number": 9,
+      "requirementSha256": "d4ebe6604f286f6bcd8ecdcfd511eb34424d9600b302c6c29df1de42dbd6a6e2",
+      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/formal-cross-page-material.json"
+      ]
+    },
+    {
+      "id": "workbench:Testing Decisions:10",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 102,
+      "section": "Testing Decisions",
+      "number": 10,
+      "requirementSha256": "a06a0cf73baa7a8670cee3144eca2547cb2d782c5d2f9e882c13efc8da091f0d",
+      "evidenceStatus": "partial: actual historical backup restored into isolated installed DSH; all 3994 bank, 72 knowledge, 8 old notebook and 216 plan records preserve identity and fields; ten-question UI scoring, next round and cold recovery verified; owned state rolled back and formal data unchanged. Full original question/material fidelity remains incomplete: actual sample contains missing diagram placeholder and footer-contaminated options.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-kaogong-data-preservation.json",
+        "docs/evidence/2026-10-10/historical-analysis-page-restoration.json",
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Testing Decisions:11",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 103,
+      "section": "Testing Decisions",
+      "number": 11,
+      "requirementSha256": "ef20888d9b01b0e4439321d934a9b03b23fdeb103545f7a8bde2988623b73394",
+      "evidenceStatus": "partial; actual formal multi-page-range tables/image/source and narrow scrolling/focus verified; screenshots, full converted-page fidelity and broader keyboard/IME scope not certified Additional installed-browser fix restores study open/closed state, errors page, reasoning teacher selection and narrow conversation pane after reload and explicit application reopen; same native Session and one study window retained. Full original layout/IME/provider scope remains open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/formal-cross-page-material.json",
+        "docs/evidence/2026-10-10/learning-window-preferences-browser.json"
+      ]
+    },
+    {
+      "id": "workbench:Testing Decisions:12",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 104,
+      "section": "Testing Decisions",
+      "number": 12,
+      "requirementSha256": "778405df9539cd962e265204be1033849396f3a00fe17db6f3391bb29733847b",
+      "evidenceStatus": "partial: actual clean archive official CLI installation, exact installed bytes, public types, native module resolver over integrated and standalone artifacts, authenticated lifecycle and cold recovery pass. Native factory resolver demonstrably rejects an actual unregistered-zod failure artifact. Full incompatible dependency GUI, native activation and original browser/provider/IME compatibility scope remain open.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/official-client-module-artifact-gate.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:1",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 25,
+      "section": "User Stories",
+      "number": 1,
+      "requirementSha256": "7ee3ab9791d4d4b7031945767c8bdbf69dbdc22f9e85af3fbe0cf1f436c68e93",
+      "evidenceStatus": "satisfied for multiple installed/recipe applications in one center: actual formal 3080 and isolated installed 3089 include Kaogong, Reading and custom HTML",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:2",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 26,
+      "section": "User Stories",
+      "number": 2,
+      "requirementSha256": "7ee43348337f73108fe14e35bab5f797b9f368a564a4f88a1d6114332ab8b8a0",
+      "evidenceStatus": "satisfied for additive native menu preservation: public sections seat, native CSS unchanged, real desktop/short/narrow workspace and footer reachable",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/sidebar-short-viewport.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 27,
+      "section": "User Stories",
+      "number": 3,
+      "requirementSha256": "681a8f77dac64f57ea6322dbe800f4eccec52ac2fe97e0bd6c67c845dc2054f6",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:User Stories:4",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 28,
+      "section": "User Stories",
+      "number": 4,
+      "requirementSha256": "2cb445857783945cf8ae478bed303bb5078da72617e94b142d08e4566ce9627e",
+      "evidenceStatus": "satisfied for direct application name and description editing: actual installed Client created a split draft, edited both fields, saved and reselected it; application/module identities preserved and no implicit activation. Full AI generation-to-runtime chain is separate and unproven.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/manual-description-canvas-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 29,
+      "section": "User Stories",
+      "number": 5,
+      "requirementSha256": "dc8641e1bc2e1f27d8477bfbf7981b4bf2295e1b8fafedb133a679853e3acb31",
+      "evidenceStatus": "satisfied for choosing page layouts: actual installed canvas switches grid/split to two columns and stack to one column while retaining both module identities; saved split layout opens in the activated application. Other pages and data/AI behavior are separate requirements.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/manual-canvas-lifecycle-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 30,
+      "section": "User Stories",
+      "number": 6,
+      "requirementSha256": "8556b26417ca9d58fcddb6421e9d5ccd08af73f4c0ebe8900b0929080e5d8249",
+      "evidenceStatus": "satisfied for composition of public stats/list/detail/filter modules: the actual reading adapter and built RecipeEditor create a template draft, configure its module connection within the canvas, preview filtered stats and explicitly activate it; actual browser data preview is independently recorded. Arbitrary custom applications are not certified.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:7",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 31,
+      "section": "User Stories",
+      "number": 7,
+      "requirementSha256": "75d4e02f9bb10d6fb3df5272439aac969deda887f9d16ee16efebe4289169bb0",
+      "evidenceStatus": "satisfied for supported specialized component registration interface: public Host registerModule and built Client registerRecipeModuleRenderer render a specialized module, report withdrawal, retain running recipe and recover on re-registration. No arbitrary third-party plugin deployment claim.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:8",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 32,
+      "section": "User Stories",
+      "number": 8,
+      "requirementSha256": "3c023e2725dc4316c7c094192a80029c3abaeb7c2a193f5102f01f4ab79e344c",
+      "evidenceStatus": "satisfied for actual installed data-connected draft preview: category filters update statistics/list and selected detail, filtered-out detail clears, running filter state stays independent, and read-only catalogue/business data comparisons remain unchanged; full real AI generation/activation chain is a separate open gate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/reading-draft-preview-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 33,
+      "section": "User Stories",
+      "number": 9,
+      "requirementSha256": "aa3fb57c9144e47f004361372220f360466713b99fdfc59a99a7e2f419af1694",
+      "evidenceStatus": "satisfied for explicit activation: actual 3089 repair requires Save and Preview before Activate; old running version preserved until explicit click",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:10",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 34,
+      "section": "User Stories",
+      "number": 10,
+      "requirementSha256": "78d09287ba5d809f5760f5d644503ffd15a06479c35fe2353993fde29847abdb",
+      "evidenceStatus": "satisfied for configuration/dependency inspection: actual installed view displays app/page/role/module/data/Agent/Skill identities and unavailable reasons, refresh reflects same-capability restoration",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:11",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 35,
+      "section": "User Stories",
+      "number": 11,
+      "requirementSha256": "b3a2b1dc05488f3a93ef291cb22f097756c0df69f629999c0af95cb13e2eba2d",
+      "evidenceStatus": "satisfied for tested platform retention: actual disable/cold restart/enable preserves exact recipe, two native role associations, retained historical ID and current/old drafts; separate installed Reading lifecycle proves business-record retention. Running-model continuity is not claimed",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/application-disable-restore-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:12",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 36,
+      "section": "User Stories",
+      "number": 12,
+      "requirementSha256": "ca889e04714b3d9c36ad2d95100d20f95f2256b654497d4b54bd92a74bee4566",
+      "evidenceStatus": "satisfied for tested native sidebar/catalog/public consumer routes: disabled sidebar entry absent, catalog open disabled, actual existing public instance open rejected with explicit guidance and no visible app; disabled Host role read denied without discarding association",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs",
+        "plugins/personal-workbench/tests/app-lifecycle-client.test.ts",
+        "plugins/personal-workbench/tests/workbench-ui.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/application-disable-restore-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:13",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 37,
+      "section": "User Stories",
+      "number": 13,
+      "requirementSha256": "4e87fa08e965950a4cca80ab0e29b658dee18fa29c6c29a26e78c13ff8d2ba92",
+      "evidenceStatus": "satisfied for platform entry and reuse of actual default-instance backup data in isolated installed DSH, including actual ten-question submit/next-round/cold recovery; full question and MinerU visual fidelity remains separate.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:14",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 38,
+      "section": "User Stories",
+      "number": 14,
+      "requirementSha256": "b0cdff2dde133320ab4ab3836aaaeb7dad2e482f28179ed1756ee1d8467a18e9",
+      "evidenceStatus": "satisfied for no-AI display application: actual isolated installed Reading opens three records and statistics without model route; no Session/model operation performed",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:15",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 39,
+      "section": "User Stories",
+      "number": 15,
+      "requirementSha256": "44efbd1ddddcf5c2f170ea2227d5fc319a084b2ab116065bc2865c2671c6453e",
+      "evidenceStatus": "satisfied for actual installed display filtering: science yields 1/60/60 and literature 2/150/75 in both statistics and list; records unchanged",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:16",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 40,
+      "section": "User Stories",
+      "number": 16,
+      "requirementSha256": "216c10eeb4b3c46b2ca5aa18a44ad3e198b98e97c83b6e819517e45ba54719ef",
+      "evidenceStatus": "satisfied at approved first-release list/detail scope: actual selected science book shows correct details, switching to literature clears it; real map remains explicitly deferred by user",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:17",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 41,
+      "section": "User Stories",
+      "number": 17,
+      "requirementSha256": "ab0bda63f586681a85a562198d867173540ea19bd1a190c7958f29ab1a1bbc30",
+      "evidenceStatus": "satisfied for rendered functional loading/empty/error states: first-load text transitions to empty underlying dataset on exact installed source; previous browser receipt proves request failure and real Retry recovery; complete visual gates remain separately open",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json",
+        "docs/evidence/2026-10-10/reading-empty-loading-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:18",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 42,
+      "section": "User Stories",
+      "number": 18,
+      "requirementSha256": "8442b37a404d1176d883a2565c8316780c3c86f5deb22d488c09a952ceac25d9",
+      "evidenceStatus": "partial: actual Reading business Host uses its own storage domain; multiple instances persist independently, preview is read-only, and default private cross-application sources are rejected. Migration/isolation of every business application remains separate.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:19",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 43,
+      "section": "User Stories",
+      "number": 19,
+      "requirementSha256": "29276659e3c99af09d6cf639e96ad1fa92ad893b5595e4bfec961793e11d5b4b",
+      "evidenceStatus": "partial within first-release scope: declared owned connections expose source application/resource, canvas connection editing and dependency availability are verified. Real cross-application source authorization is explicitly deferred in canonical platform-spec.md Further Notes; it is not implemented or counted complete.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/public-extension-data-contract-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:20",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 44,
+      "section": "User Stories",
+      "number": 20,
+      "requirementSha256": "151010f537833529d829e51dbdaabaa0d70689dc9fd6a05be53135e91fe8fafa",
+      "evidenceStatus": "satisfied for reuse of managed capabilities: actual public management creates Agent/Skill, running recipe references unchanged managed identifiers, disable/restore affects projected dependencies; native conversation execution remains separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:21",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 45,
+      "section": "User Stories",
+      "number": 21,
+      "requirementSha256": "021ab015fc469ea613556a2ff72fbdeffbeaf1b5d4f466a9927fa44e0489da47",
+      "evidenceStatus": "partial: actual two-page native UI uses same Session ID, shares edited draft, restores after browser reload and Host cold restart; completed historical messages across pages not yet exercised Actual inline native prior-Session view now exposes original Agent, exact retained draft and native Conversation/Trace tabs; repeated close/reopen retains old view tab and preserves current role Session/draft. Completed historical message rendering still unproven.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/cross-page-instance-browser.json",
+        "docs/evidence/2026-10-10/inline-native-role-history-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:22",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 46,
+      "section": "User Stories",
+      "number": 22,
+      "requirementSha256": "0615161010a2f8854a5bea48e3df4d6fd97bff93c977e1b306677d953adbaac3",
+      "evidenceStatus": "satisfied: actual public consumer buttons open default/second instances; second initially has no binding, explicit creation allocates different real native Session; distinct drafts survive switching and Host cold restart",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/cross-page-instance-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:23",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 47,
+      "section": "User Stories",
+      "number": 23,
+      "requirementSha256": "c46e6cade7ac24e233486ebdb9e4d02dac6ca8835e482f2e81d55797e08de951",
+      "evidenceStatus": "partial: actual review/analysis module actions target their declared roles and preserve independent prepared tasks; native completed delivery remains unproven because Send task was not clicked",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/module-handoff-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:24",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 48,
+      "section": "User Stories",
+      "number": 24,
+      "requirementSha256": "3a6078fa1c13585a135ca74d35d91abab1577d97c23215b36ae13adb87bf6415",
+      "evidenceStatus": "satisfied for pre-send user control: actual editor shows source and role, task/context edit, cross-page continuation, context removal and role-specific discard; no claim about successful model execution",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/module-handoff-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:25",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 49,
+      "section": "User Stories",
+      "number": 25,
+      "requirementSha256": "81b59ffb64ef5f55b1f7466abcd34e335b6b1c1aedec09fddfef250d149335c6",
+      "evidenceStatus": "satisfied for display selection/filter no-AI contract: actual built Client restricts HTTP paths and throws for every unauthorized AI/Session call; filter/selection/loading/retry complete with zero forbidden calls; actual no-AI installed app agrees",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:26",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 50,
+      "section": "User Stories",
+      "number": 26,
+      "requirementSha256": "d9adaf00abcb32dc59385a36d3bc80be508c3aeba5df7042f115a6fdd4eb6dfa",
+      "evidenceStatus": "partial: actual Agent change keeps prior Session until explicit confirmation, cancellation preserves it; confirmed replacement retains prior ID. Actual history navigation reveals native old Agent and returning preserves the new role binding. Zero-turn old Session shows native workspace chooser; old draft and completed historical transcript display remain unproven. Actual running Agent mismatch now hides stale native composer with explicit preservation/recovery guidance; restoring the original Agent restores the exact unsent draft and same Session without new Session creation. Historical completed messages remain unproven. Actual inline native prior-Session view now exposes original Agent, exact retained draft and native Conversation/Trace tabs; repeated close/reopen retains old view tab and preserves current role Session/draft. Completed historical message rendering still unproven.",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/agent-change-history-browser.json",
+        "docs/evidence/2026-10-10/agent-preset-change-guard-browser.json",
+        "docs/evidence/2026-10-10/inline-native-role-history-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:27",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 51,
+      "section": "User Stories",
+      "number": 27,
+      "requirementSha256": "b2b7e3e9548f1ec1e2be8b15886493c2eac13fe6dcf0a101ccc27ac96c04d6db",
+      "evidenceStatus": "satisfied for enabled recipe and role associations: actual browser reload and Host cold restart retain running two-page application and both exact native role Session IDs; no claim about all outer-layout or running-model gates",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/cross-page-instance-browser.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:28",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 52,
+      "section": "User Stories",
+      "number": 28,
+      "requirementSha256": "d60fefc06e0b8d6543c7bfa4d721ff9222de6b02ef23aff64a2e0e6766ca380e",
+      "evidenceStatus": "satisfied for absent module/capability reasons and repair: actual module-label/preview rejection, Agent missing draft error and runtime Skill availability/recovery remain visible without a blank application",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ],
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/module-type-fallback.json",
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json",
+        "docs/evidence/2026-10-10/platform-stories-scoped-audit.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:1",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 56,
+      "section": "Implementation Decisions",
+      "number": 1,
+      "requirementSha256": "8d1d710ae3c4dbb0a9563b9a0cb6a9e72350072ceffe121afbbed9951cb2665e",
+      "evidenceStatus": "satisfied at platform/business ownership boundary: independent Workbench, Kaogong and Reading packages; core source scan has no application-specific business conditional and both applications own their data services",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:2",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 57,
+      "section": "Implementation Decisions",
+      "number": 2,
+      "requirementSha256": "715929ac0554f1d3df7ca2d10f9e394a209a6ca8dcd0ac8a3bbce52478b523ce",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 58,
+      "section": "Implementation Decisions",
+      "number": 3,
+      "requirementSha256": "44c2589e2c77b6bbc39d06f9f9483acaa45319754feee89144fb060f2eb39448",
+      "evidenceStatus": "satisfied for scalar recipe contract: stable declared identities and no executable/business data payload; credential handling audit remains separate",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:4",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 59,
+      "section": "Implementation Decisions",
+      "number": 4,
+      "requirementSha256": "b4c82730f6fae2f206b191bbb07c38c809de390f8c2301b311eb5ba1fc2e734c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 60,
+      "section": "Implementation Decisions",
+      "number": 5,
+      "requirementSha256": "941c7c7b60fad087389bb0b4e2bf3bb10920f50efb67b9084ffb04889b96f9f0",
+      "evidenceStatus": "satisfied at installed component registration and recipe contract; whole native teaching/release acceptance is not certified by this item",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/display-module-contract-audit.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 61,
+      "section": "Implementation Decisions",
+      "number": 6,
+      "requirementSha256": "a319c61f4e676329014a3364c7a0ccb08e732cb1a51ad1a4907cb26600e2344d",
+      "evidenceStatus": "satisfied for first-release owned-data connection contract; real external cross-app authorization remains out of scope",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:7",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 62,
+      "section": "Implementation Decisions",
+      "number": 7,
+      "requirementSha256": "2d893e818d383ace02431332fb0e4608c76bbbaa03db29fe4d7d2d0fde37eb55",
+      "evidenceStatus": "satisfied at shared interaction-state contract; whole native teaching/release acceptance is not certified by this item",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/display-module-contract-audit.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:8",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 63,
+      "section": "Implementation Decisions",
+      "number": 8,
+      "requirementSha256": "103d3d1365f48d8a21ec9bc587b45ec523068308b3c2bd6a4e592c8cbc2e1e3d",
+      "evidenceStatus": "partial: actual RoleBindings contract proves stable app/instance/role/subject identity, same-preset isolation, concurrent creation deduplication and per-key replacement/reconstruction; real native conversation and disk persistence acceptance remain separate gates",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/role-key-isolation-contract.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 64,
+      "section": "Implementation Decisions",
+      "number": 9,
+      "requirementSha256": "3dad1b73a2b4b23f1c5043da6a79b6757a43ea20a4ed2aff1d5346a15bb936dc",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:10",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 65,
+      "section": "Implementation Decisions",
+      "number": 10,
+      "requirementSha256": "89ab2172899b7bbca626012920223022c50a9867baf087d5b29b8552b0080b7b",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Implementation Decisions:11",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 66,
+      "section": "Implementation Decisions",
+      "number": 11,
+      "requirementSha256": "b664032d5893cd606fa362ce62d20ed3b422b51d28e9062ee59a26fbcf0b3b08",
+      "evidenceStatus": "satisfied: distinct draft/preview/running state, validated references, CAS, failure retains old running version",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/src/recipe-api.ts",
+        "plugins/personal-workbench/tests/recipe-host.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:12",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 67,
+      "section": "Implementation Decisions",
+      "number": 12,
+      "requirementSha256": "0d2ca9928d9ea5faf347b83d76b0bb8fedfcc0305843352ef6fbe01c14ed75b5",
+      "evidenceStatus": "satisfied: disabling changes availability only; exact Reading data and running recipe survive restore and reinstall",
+      "evidence": [
+        "docs/evidence/2026-10-10/contract-requirements-audit.json",
+        "plugins/personal-workbench/tests/app-lifecycle-host.test.mjs",
+        "plugins/personal-workbench/tests/app-lifecycle-client.test.ts",
+        "plugins/personal-workbench/tests/workbench-ui.test.mjs",
+        "docs/evidence/2026-10-10/remote-committed-source-final.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:13",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 68,
+      "section": "Implementation Decisions",
+      "number": 13,
+      "requirementSha256": "f7e0ccc91a5cbb4095dc81f05a100ba68ceed8793f0856c46957cd53b80992bb",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "platform:Implementation Decisions:14",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 69,
+      "section": "Implementation Decisions",
+      "number": 14,
+      "requirementSha256": "940452fbcbef8825474fb3731305809aa3cb474a1a357045d8eda029de16fc7e",
+      "evidenceStatus": "satisfied for first-version public component set and deferred real map scope; whole native teaching/release acceptance is not certified by this item",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/display-module-contract-audit.json"
+      ]
+    },
+    {
+      "id": "platform:Testing Decisions:1",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 73,
+      "section": "Testing Decisions",
+      "number": 1,
+      "requirementSha256": "6a577381c3b64bbfd1bef096e8f7514c09e6f37101985c1f0c0fde2a65e0b5be",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:2",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 74,
+      "section": "Testing Decisions",
+      "number": 2,
+      "requirementSha256": "07b32812f4011968e9b68c57f292bc66baeb9243737330f6dda6c11fd068c7f2",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 75,
+      "section": "Testing Decisions",
+      "number": 3,
+      "requirementSha256": "d548ef1560d74a6c9ba2989d912daca16548a4a2a5525ee9d0bc374a9854f7f3",
+      "evidenceStatus": "satisfied for actual installed display chain: filter updates statistics/list, selection updates detail, filtered-out selection clears and display interactions send no model task; maps explicitly deferred",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
+      ]
+    },
+    {
+      "id": "platform:Testing Decisions:4",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 76,
+      "section": "Testing Decisions",
+      "number": 4,
+      "requirementSha256": "58776aaed66cf67f546ca106012ff2df4e2633289d97f34e267783c919ce0721",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 77,
+      "section": "Testing Decisions",
+      "number": 5,
+      "requirementSha256": "9ad2b151d775b11b03571ea0940496785cb48eb33ae06d2c7732edc89c52c90a",
+      "evidenceStatus": "partial: exact installed cold restart/uninstall/reinstall preserves enabled state, data and native role bindings; whole invalid-reference GUI/replacement recovery still requires individual proof",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json"
+      ]
+    },
+    {
+      "id": "platform:Testing Decisions:6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 78,
+      "section": "Testing Decisions",
+      "number": 6,
+      "requirementSha256": "277a0eeda3796afd012af7cab10cb436b9fc4d229d8ab88ab9acb82dd1dee8c5",
+      "evidenceStatus": "satisfied at shared display/ownership contract: Kaogong knowledge-reader consumes the same public DisplayModule/DisplayStore used by Reading recipes, source proof and actual prior material/display browser receipts; full teaching/model gates remain separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/current-source-release-f2ee7ba.json",
+        "plugins/kaogong/src/knowledge-reader.tsx",
+        "docs/evidence/2026-10-10/formal-cross-page-material.json",
+        "docs/evidence/2026-10-10/reading-display-browser-interactions.json"
+      ]
+    },
+    {
+      "id": "platform:Testing Decisions:7",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 79,
+      "section": "Testing Decisions",
+      "number": 7,
+      "requirementSha256": "4b376e3abf6d859295dc451bc9fa72a6bf4c828ecbe9ca7c69e300595e9ae23f",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/historical-business-backup-replay-browser.json"
+      ]
+    },
+    {
+      "id": "platform:Testing Decisions:8",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 80,
+      "section": "Testing Decisions",
+      "number": 8,
+      "requirementSha256": "f61fe9ff73db1ed10ce85654a71e7c0ffdf572f42e3f7bbbb4dc113e087bba10",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    },
+    {
+      "id": "platform:Testing Decisions:9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 81,
+      "section": "Testing Decisions",
+      "number": 9,
+      "requirementSha256": "417458200e02d4b6aa49f2e5186fb8136056c25ae19251896ce3a5e934c1812c",
+      "evidenceStatus": "requires individual proof; inventory does not certify completion"
+    }
+  ],
+  "latestEvidenceCommit": "1efb0f4b377553959fa0679ac3faf84f7a2c4e68"
+}

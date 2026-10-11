@@ -1,0 +1,93 @@
+import assert from 'node:assert/strict'
+import {test} from 'node:test'
+import React,{act} from 'react'
+import {JSDOM} from 'jsdom'
+import {RecipeEditor} from '../src/recipe-editor.tsx'
+test('invalid advanced JSON remains editable, reports validation and never crashes the form',async()=>{
+ const dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map();for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const oldFetch=globalThis.fetch,calls=[];globalThis.fetch=async(_url,options)=>{calls.push(JSON.parse(options.body));return{ok:true,json:async()=>({recipes:[]})}}
+ const {createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'))
+ const click=async text=>{const button=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(button,text);await act(async()=>button.click())}
+ try{await act(async()=>root.render(React.createElement(RecipeEditor,{t:k=>k,refresh:async()=>{}})));await click('recipeCreate')
+ for(const value of ['{}','[]','{"appId":"partial","pages":[{}]}']){const textarea=document.querySelector('textarea[aria-label="recipeConfiguration"]');assert.ok(textarea);await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value').set.call(textarea,value);textarea.dispatchEvent(new dom.window.Event('input',{bubbles:true}))});assert.equal(document.querySelector('textarea[aria-label="recipeConfiguration"]').value,value);assert.match(document.body.textContent,/recipeInvalidConfiguration/);await click('recipeSave');assert.match(document.body.textContent,/recipeError/);assert.equal(calls.some(r=>r.action==='save'),false)}
+ }finally{await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+})
+
+test('canvas creation retains stable panes and requires save and preview before explicit activation',async()=>{
+ const dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map()
+ for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const oldFetch=globalThis.fetch,calls=[];let record,refreshes=0
+ globalThis.fetch=async(url,options)=>{const request=JSON.parse(options.body);calls.push(request);let value
+  if(url.endsWith('/management'))value={version:1,presets:[],agents:[]}
+  else if(request.action==='workspaces')value={workspaces:[]}
+  else if(request.action==='catalog')value={recipes:record?[record]:[]}
+  else if(request.action==='save'){record={appId:request.recipe.appId,revision:1,draft:request.recipe};value={record}}
+  else if(request.action==='preview')value={recipe:record.draft}
+  else if(request.action==='activate'){record={...record,revision:2,running:record.draft};value={record}}
+  else assert.fail(request.action)
+  return{ok:true,json:async()=>value}
+ }
+ const{createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'))
+ const click=async text=>{const button=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(button,text);await act(async()=>button.click())}
+ try{await act(async()=>root.render(React.createElement(RecipeEditor,{t:k=>k,refresh:async()=>{refreshes++}})));const split=document.querySelector('button[aria-label="recipeStartersplit"]');assert.ok(split);await act(async()=>split.click());await click('recipeCreate');const starter=JSON.parse(document.querySelector('textarea[aria-label="recipeConfiguration"]').value);assert.equal(starter.pages[0].layout,'split');assert.deepEqual(starter.pages[0].modules.map(m=>m.type),['empty','empty']);assert.deepEqual(starter.connections,[]);assert.deepEqual(starter.roles,[]);assert.equal(document.querySelector('[aria-current="step"]'),null)
+ const input=document.querySelector('input[aria-label="recipeName"]');await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(input,'Unsaved reading');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}))})
+ const left=starter.pages[0].modules[0].id,right=starter.pages[0].modules[1].id
+ const choose=document.querySelector('button[aria-label="recipeModulewebsite: '+left+'"]');assert.ok(choose);await act(async()=>choose.click())
+ const url=document.querySelector('input[aria-label="moduleUrl: '+left+'"]');await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(url,'https://example.com/learning');url.dispatchEvent(new dom.window.Event('input',{bubbles:true}))})
+ const button=label=>[...document.querySelectorAll('button')].find(b=>b.textContent===label)
+ assert.equal(button('recipePreview').disabled,true);assert.equal(button('recipeActivate').disabled,true)
+ await click('recipeSave');assert.equal(record.running,undefined);assert.equal(record.draft.pages[0].modules[0].config.url,'https://example.com/learning');assert.equal(record.draft.pages[0].modules[1].id,right)
+ await click('recipePreview');assert.equal(record.running,undefined);assert.ok(document.querySelector('[data-preview="true"]'))
+ await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(input,'Revised reading');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}))})
+ assert.equal(button('recipeActivate').disabled,true);assert.equal(document.querySelector('[data-preview="true"]'),null)
+ await click('recipeSave');await click('recipePreview');await click('recipeActivate');assert.equal(record.running.name,'Revised reading');assert.equal(refreshes,1);assert.equal(record.running.pages[0].modules[0].id,left);assert.deepEqual(calls.filter(r=>['save','preview','activate'].includes(r.action)).map(r=>r.action),['save','preview','save','preview','activate'])
+ await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(input,'Second edit');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}))});await click('recipeSave');const again=calls.filter(r=>r.action==='save').at(-1);assert.equal(again.expectedRevision,2);assert.equal(again.recipe.version,2)
+ }finally{await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+})
+
+test('unsaved canvas configuration survives leaving the native main panel and browser reload without publishing',async()=>{
+ const dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map();
+ for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const oldFetch=globalThis.fetch,calls=[];globalThis.fetch=async(_url,options)=>{calls.push(JSON.parse(options.body));return{ok:true,json:async()=>({recipes:[],workspaces:[]})}};
+ const{createRoot}=await import('react-dom/client');let root;
+ const mount=async()=>{root=createRoot(document.getElementById('mount'));await act(async()=>root.render(React.createElement(RecipeEditor,{t:k=>k,refresh:async()=>{}})))};
+ try{
+  await mount();await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeCreate').click());
+  const input=document.querySelector('input[aria-label="recipeName"]');await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value').set.call(input,'Unpublished notebook');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}))});
+  const before=document.querySelector('textarea[aria-label="recipeConfiguration"]').value;
+  await act(async()=>root.unmount());root=undefined;await mount();
+  assert.equal(document.querySelector('textarea[aria-label="recipeConfiguration"]')?.value,before);
+  assert.equal(document.querySelector('input[aria-label="recipeName"]')?.value,'Unpublished notebook');
+  assert.equal([...document.querySelectorAll('button')].find(b=>b.textContent==='recipeActivate').disabled,true);
+  assert.equal(calls.some(c=>['save','activate','start'].includes(c.action)),false);
+ }finally{if(root)await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+});
+for (const dirty of [false, true]) test(dirty ? 'target editor preserves an unsaved older cached recipe and its stale revision conflict' : 'target editor upgrades an old activated cache without losing module configuration', async () => {
+ const dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map()
+ for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const running={schemaVersion:1,appId:'cache-app',version:4,name:'Cache app',description:'',pages:[{id:'home',label:'Home',layout:'grid',modules:[{id:'web',type:'website',title:'Saved module',config:{url:'https://example.com'}}]}],connections:[],roles:[]}
+ const cached=structuredClone(running);if(dirty)cached.pages[0].modules[0].title='Unsaved personal title'
+ const key='personal-workbench.authoring.v1.'+JSON.stringify(['cache-app','home','web'])
+ window.localStorage.setItem(key,JSON.stringify({selected:'cache-app',text:JSON.stringify(cached),revision:7}))
+ const oldFetch=globalThis.fetch,calls=[];globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);calls.push(request);return{ok:request.action!=='save',json:async()=>request.action==='catalog'?{recipes:[{appId:running.appId,revision:8,draft:running,running}]}:request.action==='save'?{error:'Recipe revision conflict'}:{workspaces:[]}}}
+ const{createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'))
+ try{
+  await act(async()=>root.render(React.createElement(RecipeEditor,{target:{appId:'cache-app',pageId:'home',moduleId:'web',changeContent:false},t:k=>k,refresh:async()=>{}})))
+  const recovered=JSON.parse(window.localStorage.getItem(key))
+  assert.equal(JSON.parse(recovered.text).version,dirty?4:5)
+  assert.equal(recovered.revision,dirty?7:8)
+  assert.equal([...document.querySelectorAll('button')].some(b=>b.textContent==='recipeDiscardLocal'),dirty)
+  assert.equal(document.querySelector('input[aria-label="moduleTitle: web"]').value,dirty?'Unsaved personal title':'Saved module')
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeSave').click())
+  assert.equal(calls.find(r=>r.action==='save').expectedRevision,dirty?7:8)
+ }finally{await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+})
+for (const outcome of ['success','missing','failure']) test(`explicit stale module draft recovery ${outcome} preserves safety`,async()=>{
+ const dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map();for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const recipe={schemaVersion:1,appId:'recover',version:4,name:'Recovery',description:'',pages:[{id:'home',label:'Home',layout:'grid',modules:[{id:'web',type:'website',title:'Unsaved local',config:{url:'https://example.com'}}]}],connections:[],roles:[]},key='personal-workbench.authoring.v1.'+JSON.stringify(['recover','home','web']);const cached={selected:'recover',text:JSON.stringify(recipe),revision:7};window.localStorage.setItem(key,JSON.stringify(cached))
+ const latest=structuredClone(recipe);latest.pages[0].modules[0].title='Latest server';const oldFetch=globalThis.fetch,calls=[];let catalogs=0,finish
+ globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);calls.push(request);if(request.action!=='catalog')return{ok:true,json:async()=>({workspaces:[]})};catalogs++;if(catalogs>1)await new Promise(resolve=>{finish=resolve});const draft=structuredClone(latest);if(catalogs>1&&outcome==='missing')draft.pages[0].modules=[];return{ok:!(catalogs>1&&outcome==='failure'),json:async()=>outcome==='failure'&&catalogs>1?{error:'Unavailable'}:{recipes:[{appId:'recover',revision:catalogs>1?9:8,draft,running:latest}]}}}
+ const{createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'))
+ try{await act(async()=>root.render(React.createElement(RecipeEditor,{target:{appId:'recover',pageId:'home',moduleId:'web',changeContent:false},t:k=>k,refresh:async()=>{}})));assert.equal(document.querySelector('input[aria-label="moduleTitle: web"]').value,'Unsaved local');const button=[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeDiscardLocal');assert.ok(button);await act(async()=>button.click());assert.equal(button.disabled,true);assert.deepEqual(JSON.parse(window.localStorage.getItem(key)),cached);await act(async()=>finish());const recovered=JSON.parse(window.localStorage.getItem(key));if(outcome==='success'){assert.equal(recovered.revision,9);assert.equal(JSON.parse(recovered.text).version,5);assert.equal(document.querySelector('input[aria-label="moduleTitle: web"]').value,'Latest server');assert.equal([...document.querySelectorAll('button')].some(b=>b.textContent==='recipeDiscardLocal'),false)}else{assert.deepEqual(recovered,cached);assert.ok(document.querySelector('[role="alert"]'))}assert.equal(calls.some(c=>['save','preview','activate'].includes(c.action)),false)
+ }finally{await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+})

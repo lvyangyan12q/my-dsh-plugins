@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "56c595246059fd82609b6b2c13361abee4f8410e",
+  "archiveSha256": "b91ad8ef2fce994ac0361b22a1103113c495a8628885415250c517653815f0d3",
+  "officialCliInstall": true,
+  "installedBytesVerified": true,
+  "host": "owned isolated DSH 3089",
+  "method": "Actual Chrome DevTools resize, native subject selection, native Conversation/Trajectory tab clicks and rendered screenshot inspection after installed package upgrade and cold restart; no CSS injection in final verification",
+  "reproduction": {
+    "viewport": {
+      "width": 1024,
+      "height": 768
+    },
+    "roleWidth": 283.40625,
+    "overflowPixels": 16,
+    "clippedHeaderControl": "native right sidebar toggle",
+    "pass": false
+  },
+  "cause": "Native header corner uses a negative 16px trailing margin, relying on outer native header padding; the embedded seat previously omitted that clearance.",
+  "fix": "Reserve 16px trailing padding in plugin-owned header seat; retain native public chrome/content factories and controls unchanged.",
+  "measurements": [
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "roleWidth": 283.40625,
+      "headerWidth": 283,
+      "headerScrollWidth": 283,
+      "trailingPadding": "16px",
+      "headerControlCount": 7,
+      "clippedControlCount": 0,
+      "inputWithinRole": true,
+      "draftRetained": true,
+      "nativeTabs": [
+        "对话",
+        "轨迹"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 768
+      },
+      "roleWidth": 270.609375,
+      "headerWidth": 271,
+      "headerScrollWidth": 271,
+      "trailingPadding": "16px",
+      "headerControlCount": 7,
+      "clippedControlCount": 0,
+      "inputWithinRole": true,
+      "draftRetained": true,
+      "nativeTabs": [
+        "对话",
+        "轨迹"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1920,
+        "height": 949
+      },
+      "roleWidth": 641.796875,
+      "headerWidth": 642,
+      "headerScrollWidth": 642,
+      "trailingPadding": "16px",
+      "headerControlCount": 7,
+      "clippedControlCount": 0,
+      "inputWithinRole": true,
+      "draftRetained": true,
+      "nativeTabs": [
+        "对话",
+        "轨迹"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 600,
+        "height": 768
+      },
+      "roleWidth": 542,
+      "headerWidth": 542,
+      "headerScrollWidth": 542,
+      "trailingPadding": "16px",
+      "headerControlCount": 7,
+      "clippedControlCount": 0,
+      "inputWithinRole": true,
+      "draftRetained": true,
+      "nativeTabs": [
+        "对话",
+        "轨迹"
+      ]
+    }
+  ],
+  "nativeTabSwitch": true,
+  "nativeUnsentDraftRetained": true,
+  "limits": [
+    "Idle existing data-analysis teacher Session only; no teaching or model execution certified.",
+    "1920 requested height 1080 produced actual viewport height 949; receipt records measured dimensions.",
+    "600px conversation pane selected manually; no claim of automatic pane or subject restoration.",
+    "Raw screenshots and user data are not included in remote delivery.",
+    "Other teacher subjects, real teaching/material combinations, physical IME and full compatibility matrix remain unverified."
+  ]
+}

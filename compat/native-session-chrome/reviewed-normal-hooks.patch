@@ -1,0 +1,36 @@
+diff --git a/packages/client/ui-conversation/src/client/apply.ts b/packages/client/ui-conversation/src/client/apply.ts
+index c5eee77..3159ec1 100644
+--- a/packages/client/ui-conversation/src/client/apply.ts
++++ b/packages/client/ui-conversation/src/client/apply.ts
+@@ -397,7 +397,9 @@ export function apply(ctx: Context, config: Config = Config({})): void {
+     },
+   }, ConversationHeader)
+ 
+-  const sessionHeaderInject = (sessionId: SessionId, actions: BoundActions<typeof conversationStore>): ConversationSessionHeaderInjected => ({
++  const sessionHeaderInject = (
++    sessionId: SessionId, actions: BoundActions<typeof conversationStore>,
++  ): ConversationSessionHeaderInjected => ({
+     hooks: { conversationViews },
+     open: (id) => { workspaceNavigation.openSession(id) },
+     selectView: (view) => {
+diff --git a/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx b/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx
+index 15e43a0..cafa657 100644
+--- a/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx
++++ b/packages/client/ui-conversation/tests/apply-wiring.client.spec.tsx
+@@ -56,10 +56,14 @@ describe('target-neutral Conversation apply wiring', () => {
+         'conversation.session.header.utilities': { kind: 'list', scope: 'session' },
+         'conversation.session.header.corner': { kind: 'single', scope: 'session' },
+       })
+-      const source = (chrome.inject!(SID, {}) as { hooks: { conversationViews: ObservableSnapshot<readonly ViewTab[]> } }).hooks.conversationViews
++      const injectChrome = chrome.inject as (id: SessionId, actions: object) => {
++        hooks: { conversationViews: ObservableSnapshot<readonly ViewTab[]> }
++      }
++      const chromeSource = injectChrome(SID, {})
++      const source = chromeSource.hooks.conversationViews
+       b.runtime.slots.register({ name: 'conversation.view', id: 'chat', label: 'Chat' }, (() => null) as never)
+       b.runtime.slots.register({ name: 'conversation.view', id: 'trajectory', label: 'Trajectory' }, (() => null) as never)
+-      await vi.waitFor(() => expect(source.getSnapshot().map(tab => tab.id)).toEqual(['chat', 'trajectory']))
++      await vi.waitFor(() =>{  expect(source.getSnapshot().map(tab => tab.id)).toEqual(['chat', 'trajectory']) })
+       await b.feature.dispose()
+       expect(b.runtime.slots.spec('conversation.session.header.actions')).toBeUndefined()
+     } finally { await b.runtime.dispose() }

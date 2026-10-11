@@ -1,0 +1,157 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "cc73c946b04b9193137c4b245cc97365f982daf1",
+  "packageTrees": {
+    "personal-workbench": {
+      "tested": "f22af67ca5a83f47a2985de6336da63715a4b953",
+      "current": "f22af67ca5a83f47a2985de6336da63715a4b953",
+      "equal": true
+    },
+    "kaogong": {
+      "tested": "c6ba7e5c020fd342fedf580545fb938b6b7cde2c",
+      "current": "c6ba7e5c020fd342fedf580545fb938b6b7cde2c",
+      "equal": true
+    },
+    "reading-statistics": {
+      "tested": "53e9d2256504d850017dfdf9058484a30999f103",
+      "current": "53e9d2256504d850017dfdf9058484a30999f103",
+      "equal": true
+    }
+  },
+  "installedArchiveSha256": "caeb76cabd05821c5beec536a45a0bf2b37a1451cbfa0acbeaaf14a2989007c9",
+  "environment": "Same independently installed cc73c94 archive; native sidebar, no Better Sidebar; synthetic isolated empty Sessions",
+  "method": "Create owned recipe through public save/preview/activate; actual browser Create role; stop verified owned Host, move only the new native Session directory to checked in-root backup, restart Host; actual open/retry/more/new/confirm clicks; stop Host and restore entire original directory byte-for-byte",
+  "before": {
+    "status": 200,
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "missing-session-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "b8b32c44-045e-437a-80a2-bcd1b8c12ff2",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    },
+    "alerts": [],
+    "emptyDraft": true,
+    "emptyDraftMethod": "Read visible missing-session-proof region; no messages sent"
+  },
+  "missing": {
+    "status": 409,
+    "error": "Teacher Session missing; retry the same ID or explicitly create a replacement",
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "missing-session-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "b8b32c44-045e-437a-80a2-bcd1b8c12ff2",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    },
+    "alerts": [
+      "Teacher Session missing; retry the same ID or explicitly create a replacement"
+    ],
+    "composers": 0,
+    "buttons": [
+      "恢复验收",
+      "标注画布",
+      "标注记录 (0)",
+      "更换内容",
+      "设置",
+      "放大模块",
+      "重试",
+      "绑定已有会话",
+      ""
+    ]
+  },
+  "retry": {
+    "status": 409,
+    "error": "Teacher Session missing; retry the same ID or explicitly create a replacement",
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "missing-session-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "b8b32c44-045e-437a-80a2-bcd1b8c12ff2",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    }
+  },
+  "replaced": {
+    "status": 200,
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "missing-session-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "e301f7a6-d595-4196-9bf8-eba3e728a6a1",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [
+        "b8b32c44-045e-437a-80a2-bcd1b8c12ff2"
+      ],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    },
+    "alerts": [],
+    "composers": 1,
+    "drafts": [
+      ""
+    ]
+  },
+  "faultInjection": {
+    "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854",
+    "original": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\dsh-home\\sessions\\--D-programming-workspace-my-dsh-.scratch-committed-sidebar-source-1791575691476-.scratch-platform-release-1791575744854-workspace--\\b8b32c44-045e-437a-80a2-bcd1b8c12ff2",
+    "backup": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\missing-session-backup\\b8b32c44-045e-437a-80a2-bcd1b8c12ff2",
+    "files": [
+      {
+        "name": "session.v4.jsonl.zstd",
+        "sha256": "B22B4BEEF38937993D5D287B4E5618AEFB3F8A8EDE5F16D237F5F8DAAF5DCB12"
+      }
+    ],
+    "method": "Host stopped, complete owned empty Session directory moved to checked in-root backup"
+  },
+  "restoration": {
+    "restored": true,
+    "method": "Complete directory restored after Host stopped; all original file hashes unchanged",
+    "sessionId": "b8b32c44-045e-437a-80a2-bcd1b8c12ff2",
+    "filesUnchanged": true
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "modelCalls": 0,
+  "limits": [
+    "No public native delete endpoint was used; this is real persistence record loss injection followed by restoration, not a UI deletion test",
+    "All test Sessions have no completed model turn; no claim of full chat-history restoration",
+    "Archived-session recovery remains covered by the separate role-session-recovery-browser receipt",
+    "Other inaccessible conditions such as native permission denial remain unverified",
+    "Missing error currently uses English wording; it correctly exposes retry/replacement behavior but localization is not certified",
+    "Complete teaching/sidebar matrix, native question/permission/Stop and physical IME remain open",
+    "No source implementation changed and no unchanged test suite was rerun"
+  ]
+}

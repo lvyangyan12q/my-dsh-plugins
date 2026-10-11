@@ -1,0 +1,2 @@
+# Unified diff context may be a single space; preserve the reviewable patch bytes.
+*.patch -text whitespace=-blank-at-eol,-blank-at-eof

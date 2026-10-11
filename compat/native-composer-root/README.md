@@ -1,0 +1,26 @@
+# 历史原生补丁归档：native-composer-root
+
+2026-10-11：用户已恢复原生仓库，本目录仅保留历史实现及证据。当前工作台发布不依赖、不安装这些补丁。不得按下文旧命令修改原生仓库；所有旧安装建议均已撤销。原生公开接口适配与独立无补丁验收以当前规格及11/12工单为准。
+
+---
+
+# Native shared composer views
+
+One Session keeps its existing native Lexical input engine, submit machine, history, attachments and command operations. Multiple native views display its immutable EditorState using event-disabled, read-only Lexical renderers. Pointer or focus gestures move the native input engine to that surface. Reference-chip decorators select the surface's current renderer. Only the view holding the native root binds keyboard handlers and the file picker. Hidden views do not steal automatic focus; a disabled newly mounted view does not override the focused editor's editability.
+
+The original teardown fix remains: an inactive surface cannot detach another view's root. Display renderers carry no draft persistence, undo stack, native input events or submit engine. They use the same ReferenceChipNode and TextRefNode classes and selection-free immutable state; all edits and sends use the original Session editor.
+
+With DSH_SOURCE set to an absolute official checkout, run node scripts/check-native-composer-root.mjs --apply. The fixed seven-file manifest accepts either the original reviewed baseline or the exact earlier teardown adaptation. Initial and upgrade patches are included. Any other local changes are rejected; existing source and tests are backed up before application. Rebuild the native Client. build-release requires verification and never silently applies the adaptation.
+
+Regression coverage: simultaneous draft rendering and focus handoff fail before this change. Two complete native InputBars sharing one SessionInputShell verify one send and both draft clearances, inactive disabled-view guards, active-only clipboard/file-dialog intake, and native reference-chip portals across focus transfers. Focus/InputBar/root suites initially passed 110 tests. After adding a check of live composition listener identities, complete ui-conversation plus native changes-open coverage passes 42 files / 566 tests. That check passes with the original keymap; a speculative guard was removed. Client type checking and bundling pass.
+
+Chrome 3080 acceptance uses the existing reading Session 4a23d578-3204-45b5-a9a6-e1a5793a86e7. Real keyboard entry in the app updates both views; closing the app and typing in main updates its retained hidden app input; reopening preserves the new draft. A single system test message sent from the app completes with the exact requested reply, both drafts clear, and the native history advances from two rounds/two steps to three rounds/three steps. The main input is covered while the app panel is open; clicking that covered geometry is not evidence of main-input editing.
+
+This closes the tested shared composer path, not all platform acceptance requirements. Real native approval/question/Stop gates and the full release audit remain separate.
+
+Exact combined platform native commit `d76d31673e727389321e1da3d6d801a4aee5699b` is also reviewed. Its full file-set hash combination includes the required normal-hook formatting and explicit optional DOM visibility capability typing; original runtime behavior and regression assertions remain. Legacy exact before/after/previous states stay supported; mixed or unrelated local changes remain rejected. Full independent build and installed Browser acceptance are separate.
+
+[The minimal normal-hooks upgrade](reviewed-normal-hooks.patch) is distributable and reconstructs the exact newer state from the reviewed legacy after state. Tests build fixtures from only the existing official base commit plus these repository-owned patches; no unpublished combined-core Git object is required. Apply each with `git apply --check` before application in a clean isolated checkout.
+
+The complete type-checked fixture revision is native `2ea2a7ebf801c7f001a96d676c6fc1fa21ca3445`: the wiring test restores the declared Session injection type and the composer test removes an unused JSX-runtime import. Assertions and production behavior are unchanged. The published normal-hooks patch includes these source-only fixture corrections. Existing native header fixtures also need [the public fixture-contract patch](../../patches/dsh-session-chrome-fixtures.patch).
+

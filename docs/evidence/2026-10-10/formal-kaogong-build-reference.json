@@ -1,0 +1,123 @@
+{
+  "date": "2026-10-10",
+  "comparedImplementationCommit": "439ec4983a7016ca03cb0d810e534311e1f0cc56",
+  "formalProfile": "web (3080)",
+  "formalPluginReferenceResolvesTo": "plugins/kaogong in this repository",
+  "sourceFilesCompared": 28,
+  "sourceFilesChanged": [],
+  "bundles": [
+    {
+      "file": "plugins/kaogong/lib/index.js",
+      "equal": true,
+      "equalIgnoringRegionComments": true,
+      "workspaceSha256": "765b32fceb90fadf2e0e2a4520dfc47fd891ed68795b8e76b6dfd10936fae1a7",
+      "cleanSha256": "765b32fceb90fadf2e0e2a4520dfc47fd891ed68795b8e76b6dfd10936fae1a7",
+      "workspaceLines": 4632,
+      "cleanLines": 4632,
+      "differingLines": []
+    },
+    {
+      "file": "plugins/kaogong/lib/client.js",
+      "equal": false,
+      "equalIgnoringRegionComments": true,
+      "workspaceSha256": "07a471e87451bff1d0cf458610779c621dc1b8fbb412c15c89d584527316faf2",
+      "cleanSha256": "5be310a44bc7dbfbf58306f0cf3623f077481bcd12668c981de0049afdd0837d",
+      "workspaceLines": 7441,
+      "cleanLines": 7441,
+      "differingLines": [
+        {
+          "line": 78,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 1706,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4643,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4655,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4674,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4694,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4712,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4727,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4739,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4761,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4787,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4802,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4834,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4846,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4861,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4887,
+          "regionCommentOnly": true
+        },
+        {
+          "line": 4909,
+          "regionCommentOnly": true
+        }
+      ]
+    }
+  ],
+  "preservedUserFiles": [
+    {
+      "path": "plugins/personal-workbench/src/capability-host.ts",
+      "sha256": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6"
+    },
+    {
+      "path": "plugins/personal-workbench/src/management-view.tsx",
+      "sha256": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/capability-host.test.mjs",
+      "sha256": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1"
+    },
+    {
+      "path": "plugins/personal-workbench/tests/management-ui.test.mjs",
+      "sha256": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+    }
+  ],
+  "conclusion": "The formal Kaogong reference uses the same source and executable code as the clean tested archive. Client byte differences are exclusively bundler region path comments.",
+  "limits": [
+    "This verifies files and plugin reference, not the already-running Host module cache or a fresh formal-browser teaching workflow.",
+    "No formal Host restart, code rebuild, study-data modification, screenshot or browser payload upload was performed.",
+    "Full model teaching, permission, Stop, IME and maximize gates remain incomplete."
+  ]
+}

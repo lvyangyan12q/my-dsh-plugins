@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-10",
+  "baseline": "e987116a0b562b0b8100cd589adcdc9598c00e7a",
+  "sourceFingerprints": {
+    "plugins/kaogong/src/classroom.tsx": "2c389123388601cf0f8db4b36954e24bc20a54cfaf29c6f8971a41ba0b8c2134",
+    "plugins/kaogong/src/learning-styles.ts": "9364ee533097997eab155d631227861e0a17b42aa94642ebda33e4d98d5757e1",
+    "plugins/kaogong/src/standalone-knowledge-reader.tsx": "61e5849aa4495f53b411196654732151d92a52c97b076baffef785d511f2439a",
+    "plugins/kaogong/tests/views.test.mjs": "a1d49b4bd6e66c2e9f700ef8066356bd6aae9acab80288c430e84c657a35df46"
+  },
+  "browser": {
+    "url": "http://127.0.0.1:3088/",
+    "profile": "standalone-proof-clean",
+    "workbenchInstalled": false,
+    "betterSidebarInstalled": false,
+    "data": "existing isolated public synthetic fixture; no study write or model call"
+  },
+  "before": {
+    "viewport": 480,
+    "contentWidth": 282.59375,
+    "imageWidth": 201.203125,
+    "columns": "282.594px 7px 188.406px",
+    "navigationFocus": "BODY after selected button unmounted"
+  },
+  "after": {
+    "viewport": 480,
+    "contentWidth": 478,
+    "bodyScrollWidth": 480,
+    "imageWidth": 396.609375,
+    "imageComplete": true,
+    "naturalWidth": 745,
+    "naturalHeight": 610,
+    "conversationContentSwitch": true,
+    "conversationWidth": 478,
+    "desktop": {
+      "viewport": 1440,
+      "bodyScrollWidth": 1440,
+      "contentWidth": 844.1875,
+      "roleWidth": 562.796875,
+      "columns": "844.188px 7px 562.797px"
+    },
+    "finalInstalledFocus": {
+      "openDetail": "返回资料列表 button",
+      "returnList": "搜索知识库 input",
+      "Escape": "study closes; outer dashboard retained; focus on 打开学习窗口 button"
+    }
+  },
+  "screenshots": {
+    "before": "standalone-material-narrow-before.jpg",
+    "after": "standalone-material-narrow-after.jpg",
+    "scope": "actual element JPEG bytes; after capture precedes duplicate CSS cleanup and selection-focus-only fix, final installed DOM rechecked same layout"
+  },
+  "tests": {
+    "localIntegrated": 287,
+    "passed": 287,
+    "failed": 0,
+    "remoteOnlyCountNotVerified": true,
+    "regression": "built classroom narrow pane and retained role; standalone built document selection focus"
+  },
+  "threePluginBuilds": true,
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "4bbd09a73e9fdc7c2591661da8ae16401209611b5961ec36dd1bd41a29c97424",
+      "0acef74c620704c923082cc0f74b1381e1012d7b0364718477dda6cf29b54641",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "review": {
+    "standards": "no actionable issue after duplicate CSS removed",
+    "spec": "no actionable incremental issue"
+  },
+  "limits": [
+    "No live native teacher in this standalone environment",
+    "Not physical IME proof",
+    "Not complete three-sidebar teaching matrix",
+    "No claim that user 3080 reloaded this final build"
+  ]
+}

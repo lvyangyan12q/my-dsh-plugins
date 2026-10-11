@@ -1,0 +1,22 @@
+{
+  "historicalQuestionFingerprint": "b564dc62ec66",
+  "questionbookPhysicalPage": 225,
+  "questionNumber": 112,
+  "independentExplanationPhysicalPage": 477,
+  "originalAnswerMatchesSource": true,
+  "originalLegacyImageReferencesIncorrectForThisQuestion": true,
+  "completeSourceMaterialAndQuestionCropVisuallyVerified": true,
+  "sourceImageBytesServed": true,
+  "pendingUnchangedAndNotIssued": true,
+  "canonicalBackupUnchanged": true,
+  "privateImagesCommitted": false,
+  "remainingHistoricalQuestionsWithoutThisVerifiedAssociation": 872,
+  "questionbookTextLocator": {
+    "records": 873,
+    "singleHighestCandidate": 364,
+    "multipleHighestCandidates": 5,
+    "noTextCandidate": 504,
+    "candidateIsNotSourceCertification": true
+  },
+  "initialFixtureFailure": "missing unit header; fixed by retaining original JSON unit/global headers before successful proof"
+}

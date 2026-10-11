@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "c2e16f00a099726750acc78dba09e74433c9b494",
+  "sourceSnapshot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791594396410",
+  "tests": {
+    "pass": 299,
+    "fail": 0,
+    "skipped": 0
+  },
+  "releaseVerdict": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "c04ddb82fcf7904fb2d5cefafbcfee30a768844a594649f7e29947ceb87f7fc1",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "userChangesPreserved": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "scope": "Real retained RoleConversation component and server-rendered DisplayModule plus displayModuleContext regressions; clean three-plugin builds and official installed release checks. No new live browser/model teaching acceptance claimed."
+}

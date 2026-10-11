@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-10",
+  "sourceBeforeFix": "9d227fd21369e571bd0aa922cbe602a1a60b348a",
+  "before": {
+    "viewport": "1440x600",
+    "navHeight": 473,
+    "navBottom": 677,
+    "nativeRegionHeight": 0,
+    "nativeFooterBottom": 771
+  },
+  "after": {
+    "desktop": {
+      "viewport": {
+        "width": 1440,
+        "height": 600
+      },
+      "nav": {
+        "y": 270,
+        "height": 180,
+        "bottom": 450,
+        "scrollHeight": 180,
+        "clientHeight": 180
+      },
+      "list": {
+        "y": 321,
+        "height": 35,
+        "bottom": 356,
+        "scrollHeight": 328,
+        "clientHeight": 35
+      },
+      "nativeRegions": [
+        {
+          "y": 204,
+          "height": 66,
+          "bottom": 270,
+          "scrollHeight": 66,
+          "clientHeight": 66
+        },
+        {
+          "y": 450,
+          "height": 94,
+          "bottom": 544,
+          "scrollHeight": 94,
+          "clientHeight": 94
+        }
+      ],
+      "drafts": [
+        {
+          "length": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "length": 27,
+          "sha256": "4f091635e7013eb49c4b30904ed657a783de6504ab794ebc87681433e57bd30f"
+        },
+        {
+          "length": 605,
+          "sha256": "8f45b2d296681fa6c20399ea1505f0328f44fa0110c1e302f2caccc6c3d80d99"
+        },
+        {
+          "length": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    "narrow": {
+      "viewport": {
+        "width": 480,
+        "height": 720
+      },
+      "nav": [
+        {
+          "x": 10,
+          "y": 472,
+          "width": 35,
+          "height": 142,
+          "bottom": 614,
+          "scrollHeight": 142,
+          "clientHeight": 142
+        }
+      ],
+      "nativeRegions": [
+        {
+          "x": 10,
+          "y": 210,
+          "width": 35,
+          "height": 262,
+          "bottom": 472,
+          "scrollHeight": 262,
+          "clientHeight": 262
+        },
+        {
+          "x": 10,
+          "y": 614,
+          "width": 35,
+          "height": 46,
+          "bottom": 660,
+          "scrollHeight": 46,
+          "clientHeight": 46
+        }
+      ]
+    }
+  },
+  "change": "Only plugin-owned navigation constrained to max(150px,30vh); applications scroll independently. Native CSS unchanged.",
+  "tests": {
+    "local": 293,
+    "passed": 293,
+    "includesUncommittedUserManagementTest": true
+  },
+  "review": {
+    "spec": "Short viewport candidate closed after actual browser reproduction and fix",
+    "standards": "Public sidebar extension accepted; mislabeled adapter installation message corrected"
+  },
+  "limits": [
+    "No new model/permission/Stop or physical IME proof",
+    "Latest exact clean source acceptance remains pending",
+    "No new screenshots; narrow mode automatically uses collapsed native rail"
+  ]
+}

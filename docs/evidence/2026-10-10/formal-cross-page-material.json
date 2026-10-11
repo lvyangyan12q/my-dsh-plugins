@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "1efb0f4b377553959fa0679ac3faf84f7a2c4e68",
+  "url": "http://127.0.0.1:3080/",
+  "sample": {
+    "title": "【资料理论讲义】四海2025下半年(1).pdf [PDF 101-131]",
+    "documentId": "83481392-a373-4b90-a642-7ca12e3f9d40",
+    "pageRange": "101-131",
+    "visibleSource": "D:\\programming\\workspace\\kaogong\\讲义\\【资料理论讲义】四海2025下半年(1).pdf#pages=101-131",
+    "sourceMeaning": "Preserved historical source metadata; old directory retained per user. This observation does not certify future deletion-safe canonical source links."
+  },
+  "desktop": {
+    "viewport": "1440x900",
+    "visibleTableCount": 21,
+    "tableWidth": 589.1875,
+    "documentWidth": 589.1875,
+    "loadedImageNaturalWidth": 1137
+  },
+  "narrow": {
+    "viewport": {
+      "width": 480,
+      "height": 720
+    },
+    "bodyScrollWidth": 480,
+    "dialog": {
+      "width": 422,
+      "scrollWidth": 422
+    },
+    "document": {
+      "width": 335,
+      "scrollWidth": 343,
+      "overflowX": "visible"
+    },
+    "firstTable": {
+      "width": 335,
+      "scrollWidth": 441,
+      "rows": 6,
+      "cells": 41
+    },
+    "selectedTitle": [
+      "【资料理论讲义】四海2025下半年(1).pdf [PDF 101-131]"
+    ]
+  },
+  "scroll": {
+    "table": {
+      "scrollLeft": 100,
+      "cellXBefore": 98.5,
+      "cellXAfter": -1.5,
+      "overflowX": "auto",
+      "rows": 6,
+      "cells": 41
+    },
+    "image": {
+      "complete": true,
+      "naturalWidth": 1137,
+      "naturalHeight": 559,
+      "width": 334.96875,
+      "src": "/api/kaogong/document-image?id=83481392-a373-4b90-a642-7ca12e3f9d40&asset=images%2F744cf9a3f5c36c4013aff96c08be6b54ce55d4e821db0a4d133982fd20780637.jpg"
+    },
+    "headings": [
+      "6.2.2 典型真题示例",
+      "例题 8（2021 年浙江）",
+      "例题 10（2015年河南）",
+      "6.3 年均增长量",
+      "6.3.1 年均增量考点介绍",
+      "一、从公式角度看",
+      "二、从语言习惯看",
+      "三、从权威解释看",
+      "③年均增长量情况总结",
+      "6.3.2 典型真题示例",
+      "例题 13（2024 年江苏）",
+      "例题 15（2019年山东）",
+      "6.4 年均增长率",
+      "6.4.1 年均增长率考点介绍",
+      "6.4.2 典型真题示例",
+      "例题 18（2019年江西）",
+      "6.4.3 年均增长率与间隔增长率结合考察",
+      "例题 21（2022年事业单位）",
+      "6.4.4 假设年均增速相同求后期",
+      "第七章 特殊考点：拉动增长、贡献率和容斥问题",
+      "7.1 拉动增长和增量贡献率",
+      "7.1.1 知识点介绍",
+      "②考点细节",
+      "7.1.2 典型真题示例",
+      "例题 1（2022年河南事业单位）",
+      "例题 2（2023福建事业单位）",
+      "例题 3（2020 年深圳市考）",
+      "7.2 容斥问题",
+      "7.2.1 常见考法与思路",
+      "7.2.2 典型真题示例",
+      "例题 5（2025 年联考）",
+      "例题 6（2020 年江苏）",
+      "例题 7（2023 年江苏）",
+      "第八章 资料分析常见“思维陷阱”",
+      "8.1 比较或计数类问题需要注意的“坑”",
+      "8.2 典型真题示例",
+      "例题 2（2022 年联考）",
+      "②注意合计总计行",
+      "③注意首年",
+      "例题 4（2019 年国考）",
+      "④注意单位",
+      "⑤排序顺序坑",
+      "⑥注意图表列举不全",
+      "例题 8（2023 年新疆区考）",
+      "⑦注意时间不匹配",
+      "例题 10（2021年黑龙江公检法）",
+      "8.3 审题时需要注意的思维陷阱“坑”",
+      "8.4 典型真题示例",
+      "⑨注意“是多少倍”“多多少倍”",
+      "⑩注意比重问题的分母",
+      "例题 13（2019年安徽选调）",
+      "例题 14（2024 年福建事业单位）",
+      "⑫注意累计与当期数据的区别",
+      "⑬注意不要遗漏月均计算",
+      "例题 18（2021年事业单位联考）",
+      "例题 19（2021年新疆）",
+      "⑭注意一二月合并统计的情况"
+    ],
+    "drafts": [
+      {
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "length": 27,
+        "sha256": "4f091635e7013eb49c4b30904ed657a783de6504ab794ebc87681433e57bd30f"
+      },
+      {
+        "length": 605,
+        "sha256": "8f45b2d296681fa6c20399ea1505f0328f44fa0110c1e302f2caccc6c3d80d99"
+      },
+      {
+        "length": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "return": {
+    "activeTag": "INPUT",
+    "activeLabel": "搜索知识库",
+    "selectedTitleCleared": true
+  },
+  "messagesSent": 0,
+  "studyRecordsWritten": 0,
+  "viewportRestored": "1440x900",
+  "limits": [
+    "No new screenshot; source PDF pixel/page-break fidelity not certified",
+    "Actual 31-page-range extracted material, not proof of every converted page or figure",
+    "No test or build rerun: no implementation changed",
+    "Physical IME, model interaction and complete teaching/sidebar environment matrix remain unverified"
+  ]
+}

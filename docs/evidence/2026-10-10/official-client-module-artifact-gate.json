@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "2d06641c802475b807130f5f100e0b6ebbfbb7c3",
+  "runtimeVersion": "0.2.0-rc.2",
+  "method": "Use the official ClientModuleSystem and getStaticModules over real built bundle registrations; then resolve exact official CLI-installed package roots and repeat. Artifact require uses only the native seed/module table, never a Node fallback.",
+  "reproduction": {
+    "actualPriorCode": "fd5bd30a5c0b4a58d8bbcf6286c0d02c682ced56",
+    "clientBundleSha256": "3f13d6108fede703c0232c6d1c309a843c12282feb705a9880860bfb2a7599e8",
+    "command": "DSH_SOURCE=<built official runtime> KAOGONG_TEST_TOOLS=<development tools> tsx scripts/check-client-module-artifacts.mjs <retained fd5bd30 clean archive>",
+    "exitCode": 1,
+    "error": "client-modules: require(\"zod\") missed the module table",
+    "fabricatedFactory": false
+  },
+  "installed": [
+    {
+      "officialModuleResolver": true,
+      "officialPlatformSeed": true,
+      "nodeRequireFallback": false,
+      "installedArtifacts": true,
+      "workbenchRegistered": true,
+      "materialized": [
+        "@deepseek-ai/dsh-personal-workbench",
+        "@deepseek-ai/dsh-tool-kaogong",
+        "@deepseek-ai/dsh-reading-statistics"
+      ],
+      "entryActivationTested": false,
+      "cssRenderingTested": false,
+      "modelCalls": 0
+    },
+    {
+      "officialModuleResolver": true,
+      "officialPlatformSeed": true,
+      "nodeRequireFallback": false,
+      "installedArtifacts": true,
+      "workbenchRegistered": false,
+      "materialized": [
+        "@deepseek-ai/dsh-tool-kaogong"
+      ],
+      "entryActivationTested": false,
+      "cssRenderingTested": false,
+      "modelCalls": 0
+    }
+  ],
+  "buildGate": "scripts/build-release.mjs invokes scripts/check-client-module-artifacts.mjs after all three product builds",
+  "releaseGate": "scripts/check-platform-release.mjs invokes the same check with --installed-profile after installed bytes and public types are verified",
+  "fullRegression": {
+    "tests": 328,
+    "passed": 328,
+    "failed": 0,
+    "skipped": 0
+  },
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedClientFactories": true,
+    "standaloneClientFactory": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "daf6f724d0ffcbcdbb1b7d2e55cc858fe678ce4d3b34c45260ebac153ff04bfb",
+      "ce3b1524a705d16a66d6f62993e3956fd0022338d98e476f4e7c018568c84f20",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "limits": [
+    "This is actual official factory materialization in Node with JSDOM, not Cordis entry activation or browser rendering.",
+    "Official platform imports receive inert CSS module bindings; style fidelity, input, native messages and physical IME remain browser gates.",
+    "No Host/model teaching request; real teaching, streaming, permission, Stop and AI generation remain unverified.",
+    "The minimal module graph does not certify every optional plugin injection or hot replacement combination.",
+    "No native core edit, user profile copy, credential, conversation, private source document or raw screenshot included."
+  ]
+}

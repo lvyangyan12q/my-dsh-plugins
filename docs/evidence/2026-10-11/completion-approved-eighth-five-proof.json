@@ -1,0 +1,39 @@
+{
+  "approvedQuestionCount": 5,
+  "questionBookPhysicalPages": [
+    102,
+    104,
+    105,
+    106,
+    112
+  ],
+  "independentExplanationPhysicalPages": [
+    291,
+    297,
+    298,
+    299,
+    300,
+    301,
+    318
+  ],
+  "independentSourceAnswersMatched": [
+    "B",
+    "A",
+    "D",
+    "D",
+    "D"
+  ],
+  "sourceVerifiedOptionRepairs": 2,
+  "sourceDiagramsAndLabelsRestored": true,
+  "completeQuestionAndOptionCropsVisuallyVerified": true,
+  "publicStartSubmitColdRestartRead": true,
+  "publicImageBytesMatched": 5,
+  "originalBankSnapshotsReviewStatusUnchanged": true,
+  "canonicalBackupUnchanged": true,
+  "pendingReviewedOrApproved": false,
+  "privateAssetsCommitted": false,
+  "cumulativeApprovedQuestionCount": 49,
+  "riskCandidatesNotVerifiedInThisSeries": 9,
+  "confirmedOriginalAnswerMismatchNotCorrected": 1,
+  "installedBrowserCoverage": "pending parent; public Host and asset byte validation only"
+}

@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "2ff0e68451be420a5310cab0618fea07e7c5b00c",
+  "url": "http://127.0.0.1:3089/",
+  "archiveSha256": "451d0c06554e9dad2a46307ea325d81af8a36bb543a4ce829a9165d97dd114a5",
+  "problem": "Canvas basic form exposed name but no direct description editor; description required advanced recipe JSON.",
+  "repair": "Add translated multiline description field with existing control styles, controlled draft update and 2000-character schema limit.",
+  "regression": {
+    "boundary": "built registered Client UI",
+    "red": "Application description needs a direct form field, without editing JSON",
+    "green": true,
+    "identityAndModuleCountPreserved": true
+  },
+  "browser": {
+    "method": "Actual DevTools click/type actions: split starter, create manual draft, edit name and description, pick resources inside first module, choose trusted workspace, save, choose another draft and reselect the saved draft.",
+    "checks": {
+      "directDescriptionField": true,
+      "nameSaved": true,
+      "descriptionSaved": true,
+      "nameReopened": true,
+      "descriptionReopened": true,
+      "descriptionLimit": true,
+      "applicationIdentityPreserved": true,
+      "moduleIdentitiesPreserved": true,
+      "splitStarter": true,
+      "resourceModuleConfigured": true,
+      "otherModulePreserved": true,
+      "noImplicitActivation": true
+    }
+  },
+  "limits": [
+    "No new application was activated; this does not establish the complete creation-to-runtime chain.",
+    "No model generation, role creation or Send action occurred.",
+    "The unactivated test draft is retained in the owned isolated data; formal business data and user configuration were not changed.",
+    "Screenshots, raw description text, workspace paths, Session IDs and application/module IDs are omitted from this receipt."
+  ],
+  "validation": {
+    "tests": 306,
+    "passed": 306,
+    "failed": 0,
+    "skipped": 0,
+    "fullTestLogSha256": "005e73af6da2fe0504c8b8bc872794acb605c3ebfc969b90528b59d2758d6e24",
+    "release": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "451d0c06554e9dad2a46307ea325d81af8a36bb543a4ce829a9165d97dd114a5",
+        "c96fc9e0e024a272f75d6c641654add9a02cef98b6d38216b917259121d43e16",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    }
+  }
+}

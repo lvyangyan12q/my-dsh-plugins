@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "d0103bec87eae2930579ab64877fb36be0ef6d61",
+  "environment": "Owned native DSH 3089 profile; no formal 3080 interaction",
+  "observed": {
+    "nativeModelMenuVisible": true,
+    "model": "DeepSeek-V41-Flash",
+    "reasoningLevel": "High",
+    "nativeAccessModeMenuVisible": true,
+    "currentAccessMode": "工作区内修改",
+    "availableAccessModes": [
+      "仅可查看",
+      "工作区内修改",
+      "完全权限"
+    ],
+    "nativeSlashSkillCandidatesVisible": [
+      "workbench-app-build",
+      "workbench-data-display",
+      "workbench-module-generate",
+      "workbench-page-adjust"
+    ]
+  },
+  "unexpectedAction": {
+    "cause": "Enter in the native composer submitted the owned test draft; intended action was only menu inspection.",
+    "submittedTestTurns": 1,
+    "outcome": "Native turn ended in failure because the provider route has no API key.",
+    "noModelResponse": true,
+    "noStopButtonAfterFailure": true,
+    "originalTestDraftRestoredNormalized": true,
+    "formalStudyDataUntouched": true
+  },
+  "limits": [
+    "A failed native turn was attempted; this receipt must not be described as zero submit attempts or successful teaching.",
+    "Skill candidate discovery does not prove instruction injection or successful execution in a real provider turn.",
+    "Access mode choices do not certify every tool permission or interactive approval/question/Stop path.",
+    "No screenshot, raw draft, conversation ID or browser payload is included."
+  ]
+}

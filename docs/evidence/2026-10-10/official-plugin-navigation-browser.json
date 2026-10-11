@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "6a3ecab139de080e6f8cc9a21d64b92a3ac0de65",
+  "archiveSha256": "69989d17aebd8db0c1c814b3621b45f9306ffc3a83042ce8084245684b5d542b",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual browser click in both independent management headers, using clean committed installed archive and public pluginNavigation.openBundle",
+  "observations": {
+    "agentHeaderButtonVisible": true,
+    "skillsHeaderButtonVisible": true,
+    "bothOpenInstalledOwnBundleDetails": true,
+    "ownBundleHeading": "@deepseek-ai/dsh-personal-workbench",
+    "nativeEnableSwitchChecked": true,
+    "managementRegionsAfterNavigation": 0,
+    "nativeSessionTreeRowsBeforeAndAfter": 3
+  },
+  "regression": {
+    "cleanCommittedTests": 308,
+    "failed": 0,
+    "skipped": 0,
+    "compiledUiChecks": "Both headers delegate to own public bundle navigation, retain application draft, close management and create no Sessions"
+  },
+  "limits": [
+    "No configuration edited, credentials copied, plugin toggled or model request sent.",
+    "Real teaching and complete platform acceptance remain unverified.",
+    "User-owned management changes remain uncommitted pending user publication choice."
+  ]
+}

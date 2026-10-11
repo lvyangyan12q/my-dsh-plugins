@@ -1,0 +1,210 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "b7ba8f76dc0be479480aba3802fd9f129daa8356",
+  "installedBytesEqual": true,
+  "archiveSha256": "694f2c63b055916fce8b9efb5d08958d0601fe8270146e0c64e0c067dcb6864d",
+  "profileRoot": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854",
+  "url": "http://127.0.0.1:3089/",
+  "method": "Created isolated application via public recipe save/preview/activate; actual UI create-role button, typed existing native draft, enabled annotations and actual DevTools drag from module heading to composer, typed requirement and clicked append, history/archive/restore buttons, then reload and reopen",
+  "appId": "annotation-proof",
+  "observations": {
+    "saved": {
+      "status": 200,
+      "body": {
+        "records": [
+          {
+            "appId": "annotation-proof",
+            "instanceId": "default",
+            "pageId": "canvas",
+            "recipeVersion": 1,
+            "annotation": {
+              "id": "6dcd0d1e-1a6b-4ec3-88ed-dd0ebf15f0cf",
+              "moduleId": "conversation",
+              "moduleTitle": "标注验收对话",
+              "box": {
+                "x": 58,
+                "y": 78,
+                "width": 756.5,
+                "height": 175
+              },
+              "canvas": {
+                "width": 1640,
+                "height": 834,
+                "scrollX": 0,
+                "scrollY": 0
+              },
+              "text": "标注验收对话\nLifecycle acceptance\nworkspace\n对话\n轨迹",
+              "limited": false,
+              "moduleBounds": {
+                "x": 16,
+                "y": 60,
+                "width": 1608,
+                "height": 758,
+                "focused": false
+              }
+            },
+            "requirement": "标注验收：将这一区域的按钮统一，并保留原生对话和轨迹。",
+            "roleId": "lifecycle-role",
+            "createdAt": "2026-10-09T21:04:28.175Z",
+            "archived": false
+          }
+        ]
+      },
+      "draft": "既有草稿：保留这段内容。\n\n📌 工作台画布标注\n{\"appId\":\"annotation-proof\",\"instanceId\":\"default\",\"recipeVersion\":1,\"pageId\":\"canvas\",\"moduleId\":\"conversation\",\"moduleTitle\":\"标注验收对话\",\"position\":{\"x\":58,\"y\":78,\"width\":756.5,\"height\":175},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"标注验收对话\\nLifecycle acceptance\\nworkspace\\n对话\\n轨迹\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"标注验收：将这一区域的按钮统一，并保留原生对话和轨迹。\"}\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。",
+      "preservedPrefix": true,
+      "statusText": [
+        "已追加到原生会话草稿，尚未发送。"
+      ],
+      "alerts": []
+    },
+    "archived": {
+      "records": [
+        {
+          "appId": "annotation-proof",
+          "instanceId": "default",
+          "pageId": "canvas",
+          "recipeVersion": 1,
+          "annotation": {
+            "id": "6dcd0d1e-1a6b-4ec3-88ed-dd0ebf15f0cf",
+            "moduleId": "conversation",
+            "moduleTitle": "标注验收对话",
+            "box": {
+              "x": 58,
+              "y": 78,
+              "width": 756.5,
+              "height": 175
+            },
+            "canvas": {
+              "width": 1640,
+              "height": 834,
+              "scrollX": 0,
+              "scrollY": 0
+            },
+            "text": "标注验收对话\nLifecycle acceptance\nworkspace\n对话\n轨迹",
+            "limited": false,
+            "moduleBounds": {
+              "x": 16,
+              "y": 60,
+              "width": 1608,
+              "height": 758,
+              "focused": false
+            }
+          },
+          "requirement": "标注验收：将这一区域的按钮统一，并保留原生对话和轨迹。",
+          "roleId": "lifecycle-role",
+          "createdAt": "2026-10-09T21:04:28.175Z",
+          "archived": true
+        }
+      ],
+      "marks": 0,
+      "toolbar": [
+        "标注记录 (0)",
+        "标注记录 (0)"
+      ]
+    },
+    "restored": {
+      "records": [
+        {
+          "appId": "annotation-proof",
+          "instanceId": "default",
+          "pageId": "canvas",
+          "recipeVersion": 1,
+          "annotation": {
+            "id": "6dcd0d1e-1a6b-4ec3-88ed-dd0ebf15f0cf",
+            "moduleId": "conversation",
+            "moduleTitle": "标注验收对话",
+            "box": {
+              "x": 58,
+              "y": 78,
+              "width": 756.5,
+              "height": 175
+            },
+            "canvas": {
+              "width": 1640,
+              "height": 834,
+              "scrollX": 0,
+              "scrollY": 0
+            },
+            "text": "标注验收对话\nLifecycle acceptance\nworkspace\n对话\n轨迹",
+            "limited": false,
+            "moduleBounds": {
+              "x": 16,
+              "y": 60,
+              "width": 1608,
+              "height": 758,
+              "focused": false
+            }
+          },
+          "requirement": "标注验收：将这一区域的按钮统一，并保留原生对话和轨迹。",
+          "roleId": "lifecycle-role",
+          "createdAt": "2026-10-09T21:04:28.175Z",
+          "archived": false
+        }
+      ],
+      "marks": 1,
+      "draft": "既有草稿：保留这段内容。\n\n📌 工作台画布标注\n{\"appId\":\"annotation-proof\",\"instanceId\":\"default\",\"recipeVersion\":1,\"pageId\":\"canvas\",\"moduleId\":\"conversation\",\"moduleTitle\":\"标注验收对话\",\"position\":{\"x\":58,\"y\":78,\"width\":756.5,\"height\":175},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"标注验收对话\\nLifecycle acceptance\\nworkspace\\n对话\\n轨迹\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"标注验收：将这一区域的按钮统一，并保留原生对话和轨迹。\"}\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。"
+    },
+    "reloaded": {
+      "records": [
+        {
+          "appId": "annotation-proof",
+          "instanceId": "default",
+          "pageId": "canvas",
+          "recipeVersion": 1,
+          "annotation": {
+            "id": "6dcd0d1e-1a6b-4ec3-88ed-dd0ebf15f0cf",
+            "moduleId": "conversation",
+            "moduleTitle": "标注验收对话",
+            "box": {
+              "x": 58,
+              "y": 78,
+              "width": 756.5,
+              "height": 175
+            },
+            "canvas": {
+              "width": 1640,
+              "height": 834,
+              "scrollX": 0,
+              "scrollY": 0
+            },
+            "text": "标注验收对话\nLifecycle acceptance\nworkspace\n对话\n轨迹",
+            "limited": false,
+            "moduleBounds": {
+              "x": 16,
+              "y": 60,
+              "width": 1608,
+              "height": 758,
+              "focused": false
+            }
+          },
+          "requirement": "标注验收：将这一区域的按钮统一，并保留原生对话和轨迹。",
+          "roleId": "lifecycle-role",
+          "createdAt": "2026-10-09T21:04:28.175Z",
+          "archived": false
+        }
+      ],
+      "marks": 1,
+      "draft": "既有草稿：保留这段内容。\n\n\n\n\n📌 工作台画布标注\n\n{\"appId\":\"annotation-proof\",\"instanceId\":\"default\",\"recipeVersion\":1,\"pageId\":\"canvas\",\"moduleId\":\"conversation\",\"moduleTitle\":\"标注验收对话\",\"position\":{\"x\":58,\"y\":78,\"width\":756.5,\"height\":175},\"canvas\":{\"width\":1640,\"height\":834,\"scrollX\":0,\"scrollY\":0},\"visibleText\":\"标注验收对话\\nLifecycle acceptance\\nworkspace\\n对话\\n轨迹\",\"embeddedContent\":\"no inaccessible frame in selection\",\"requirement\":\"标注验收：将这一区域的按钮统一，并保留原生对话和轨迹。\"}\n\n请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。",
+      "prefixRetained": true,
+      "requirementRetained": true,
+      "annotationOccurrences": 1,
+      "alerts": []
+    }
+  },
+  "formal3080Changes": 0,
+  "modelMessagesSent": 0,
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "limits": [
+    "No image attachment, pasted image, file occurrence or inaccessible iframe in this new acceptance flow",
+    "Reload retains semantic draft content; rendered native paragraph whitespace changes, so byte-exact draft equality is not claimed after reload",
+    "Created one isolated native role session via explicit UI action; no model response or running cancellation tested",
+    "This proves one rectangle and record persistence across browser reload, not all viewport/scroll/layout-change positioning cases",
+    "Initial test recipe tried a private Reading data connection from a different application; preview correctly rejected it. Final activated recipe contains only role-chat and no data connections",
+    "No source implementation changed or unnecessary tests repeated"
+  ]
+}

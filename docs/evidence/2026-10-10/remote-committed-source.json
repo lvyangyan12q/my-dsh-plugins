@@ -1,0 +1,35 @@
+{
+  "commit": "e9220b27ac2266123021f58093e3a39cfb779298",
+  "source": "git archive HEAD; user uncommitted files excluded",
+  "dependencyMode": "existing public development anchors; installed products built exclusively from committed source",
+  "threePluginBuilds": true,
+  "tests": {
+    "tests": 285,
+    "passed": 285,
+    "failed": 0
+  },
+  "keyboardRegressionIncluded": true,
+  "localTests": {
+    "tests": 286,
+    "passed": 286,
+    "extraTest": "user uncommitted Agent library inventory ownership test"
+  },
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "642f718f76854d51c6a1181cc93298292fd68c654a82daf22396cb5afc18748e",
+      "28817744207bf5f39fa00fcc1f21a76e8c9fad14f5ce393def0754e832984d2c",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  }
+}

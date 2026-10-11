@@ -1,0 +1,380 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "cc73c946b04b9193137c4b245cc97365f982daf1",
+  "preFixSourceCommit": "f2ee7ba30cc78ff2a95fe9e2cfe292acc7df797e",
+  "environment": "Isolated official archive install, native rc.2 sidebar without Better Sidebar, no model calls",
+  "method": "Public native workspace/archiveSession and unarchiveSession HTTP RPC set the test condition; actual browser Retry, New role confirmation dismiss/accept, keyboard existing-session chooser and Bind clicks; same original draft returns after real Host restart",
+  "before": {
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "annotation-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "51c12e1a-5576-47ea-b163-24986c43bf35",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    },
+    "draftLength": 900
+  },
+  "archived": {
+    "status": 200,
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "annotation-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "51c12e1a-5576-47ea-b163-24986c43bf35",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    },
+    "alerts": [
+      "角色会话不可访问。请同 ID 重试或显式新建。"
+    ],
+    "composerCount": 0
+  },
+  "nativeArchive": {
+    "status": 200,
+    "value": {
+      "type": "server-response",
+      "rpcId": "d73f18f0-c62c-4ffd-bca0-47466ef2f9ee",
+      "result": {
+        "ok": true,
+        "value": {
+          "archivedSessionIds": [
+            "51c12e1a-5576-47ea-b163-24986c43bf35"
+          ]
+        }
+      }
+    }
+  },
+  "nativeUnarchive": {
+    "status": 200,
+    "value": {
+      "type": "server-response",
+      "rpcId": "c62c6417-b2e0-493c-b2b3-6026bd550d72",
+      "result": {
+        "ok": true,
+        "value": {
+          "archivedSessionIds": []
+        }
+      }
+    }
+  },
+  "restored": {
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "annotation-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "51c12e1a-5576-47ea-b163-24986c43bf35",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    },
+    "exactDraftRetained": true,
+    "alerts": []
+  },
+  "replacementCancelled": {
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "annotation-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "51c12e1a-5576-47ea-b163-24986c43bf35",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    }
+  },
+  "replacementAccepted": {
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "annotation-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "c22801b2-0ec3-477b-9adb-ce8e4ca5ef45",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "previousSessionIds": [
+        "51c12e1a-5576-47ea-b163-24986c43bf35"
+      ],
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    },
+    "composerEmpty": true,
+    "alerts": []
+  },
+  "attachedOriginal": {
+    "binding": {
+      "version": 1,
+      "key": {
+        "appId": "annotation-proof",
+        "instanceId": "default",
+        "roleId": "lifecycle-role"
+      },
+      "sessionId": "51c12e1a-5576-47ea-b163-24986c43bf35",
+      "presetId": "my-dsh.dependency-lifecycle-acceptance",
+      "phase": "ready",
+      "creation": {
+        "cwd": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      },
+      "previousSessionIds": [
+        "c22801b2-0ec3-477b-9adb-ce8e4ca5ef45"
+      ]
+    },
+    "exactDraftRetained": true,
+    "alerts": []
+  },
+  "ambiguousOptionsBefore": [
+    {
+      "index": 0,
+      "value": "",
+      "label": "选择会话"
+    },
+    {
+      "index": 1,
+      "value": "c22801b2-0ec3-477b-9adb-ce8e4ca5ef45",
+      "label": "workspace · D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+    },
+    {
+      "index": 2,
+      "value": "51c12e1a-5576-47ea-b163-24986c43bf35",
+      "label": "workspace · D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+    },
+    {
+      "index": 3,
+      "value": "session-f72cf264-1f39-4de2-b362-77a5156cab3f",
+      "label": "workspace · D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+    }
+  ],
+  "fixedBrowser": {
+    "distinctLabels": true,
+    "count": 3,
+    "options": [
+      {
+        "id": "c22801b2-0ec3-477b-9adb-ce8e4ca5ef45",
+        "label": "workspace · c22801b2-0ec3-477b-9adb-ce8e4ca5ef45 · D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      },
+      {
+        "id": "51c12e1a-5576-47ea-b163-24986c43bf35",
+        "label": "workspace · 51c12e1a-5576-47ea-b163-24986c43bf35 · D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      },
+      {
+        "id": "session-f72cf264-1f39-4de2-b362-77a5156cab3f",
+        "label": "workspace · session-f72cf264-1f39-4de2-b362-77a5156cab3f · D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\workspace"
+      }
+    ],
+    "alerts": [],
+    "exactDraftRetainedAfterHostRestart": true
+  },
+  "regression": {
+    "browserBefore": "Different native Session IDs have indistinguishable chooser labels",
+    "builtUIBefore": {
+      "passed": 0,
+      "failed": 1
+    },
+    "builtUIAfter": {
+      "passed": 1,
+      "failed": 0
+    },
+    "sourceTests": {
+      "passed": 294,
+      "failed": 0,
+      "skipped": 0,
+      "logPath": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791583278099/.scratch/platform-tests-1791583307677/tests.log",
+      "sha256": "3f1df474551fa96cf19083992f305a3e730f170b54b6bfe820e8683aa56a832e"
+    }
+  },
+  "officialInstalledArchive": {
+    "sourceCommit": "cc73c946b04b9193137c4b245cc97365f982daf1",
+    "root": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854",
+    "archive": {
+      "archive": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791575691476\\.scratch\\platform-release-1791575744854\\dependency-refresh-archives-1791583326616\\deepseek-ai-dsh-personal-workbench-0.1.0.tgz",
+      "sha256": "caeb76cabd05821c5beec536a45a0bf2b37a1451cbfa0acbeaaf14a2989007c9",
+      "files": [
+        "README.md",
+        "THIRD_PARTY_NOTICES.md",
+        "cordis.patch.yml",
+        "lib/annotation-host-DsgTRIb-.mjs",
+        "lib/app-lifecycle-host-lAP-Vjc9.mjs",
+        "lib/capability-catalog-DQ45SlK1.mjs",
+        "lib/capability-domain--ibABfyk.mjs",
+        "lib/client.js",
+        "lib/content-catalog--9KRNrny.mjs",
+        "lib/content-host-ByFRLPGc.mjs",
+        "lib/generation-host-Drp2SfMu.mjs",
+        "lib/index.js",
+        "lib/management-host-CqJwIhTX.mjs",
+        "lib/recipe-host-r-dEn0lZ.mjs",
+        "lib/recipe-role-host-BrP7QIBT.mjs",
+        "lib/recipe-role-policy-Dy1jgWpd.mjs",
+        "lib/recipe-schema-oyBl4vzp.mjs",
+        "lib/recipe-workspace-CqsbxwB6.mjs",
+        "lib/role-bindings-C1BPTC_D.mjs",
+        "lib/role-host-CabAcqK1.mjs",
+        "lib/types/annotation-client.d.ts",
+        "lib/types/annotation-composer.d.ts",
+        "lib/types/annotation-history.d.ts",
+        "lib/types/annotation-host.d.ts",
+        "lib/types/annotation-image-view.d.ts",
+        "lib/types/annotation-image.d.ts",
+        "lib/types/annotation-records-api.d.ts",
+        "lib/types/annotation-view.d.ts",
+        "lib/types/annotation.d.ts",
+        "lib/types/app-lifecycle-api.d.ts",
+        "lib/types/app-lifecycle-host.d.ts",
+        "lib/types/better-sidebar.d.ts",
+        "lib/types/canvas-pane-header.d.ts",
+        "lib/types/capability-catalog.d.ts",
+        "lib/types/capability-domain.d.ts",
+        "lib/types/capability-host.d.ts",
+        "lib/types/client.d.ts",
+        "lib/types/column-divider.d.ts",
+        "lib/types/content-assets.d.ts",
+        "lib/types/content-catalog.d.ts",
+        "lib/types/content-files.d.ts",
+        "lib/types/content-host.d.ts",
+        "lib/types/content-identity.d.ts",
+        "lib/types/content-view.d.ts",
+        "lib/types/control-styles.d.ts",
+        "lib/types/data-visual.d.ts",
+        "lib/types/display-api.d.ts",
+        "lib/types/display-context.d.ts",
+        "lib/types/display-statistics.d.ts",
+        "lib/types/display-store.d.ts",
+        "lib/types/display-view.d.ts",
+        "lib/types/generation-api.d.ts",
+        "lib/types/generation-catalog.d.ts",
+        "lib/types/generation-editor.d.ts",
+        "lib/types/generation-host.d.ts",
+        "lib/types/generation-module-examples.d.ts",
+        "lib/types/independent-management-styles.d.ts",
+        "lib/types/index.d.ts",
+        "lib/types/locale.d.ts",
+        "lib/types/management-api.d.ts",
+        "lib/types/management-domain.d.ts",
+        "lib/types/management-host.d.ts",
+        "lib/types/management-runtime.d.ts",
+        "lib/types/management-view.d.ts",
+        "lib/types/module-action.d.ts",
+        "lib/types/module-context.d.ts",
+        "lib/types/module-session-state.d.ts",
+        "lib/types/native-session-view.d.ts",
+        "lib/types/page-template-view.d.ts",
+        "lib/types/page-template.d.ts",
+        "lib/types/panel-navigation.d.ts",
+        "lib/types/recipe-api.d.ts",
+        "lib/types/recipe-canvas-styles.d.ts",
+        "lib/types/recipe-canvas.d.ts",
+        "lib/types/recipe-client.d.ts",
+        "lib/types/recipe-connections.d.ts",
+        "lib/types/recipe-editor-styles.d.ts",
+        "lib/types/recipe-editor.d.ts",
+        "lib/types/recipe-form.d.ts",
+        "lib/types/recipe-host.d.ts",
+        "lib/types/recipe-module-dialog.d.ts",
+        "lib/types/recipe-module-editor.d.ts",
+        "lib/types/recipe-page-styles.d.ts",
+        "lib/types/recipe-role-editor.d.ts",
+        "lib/types/recipe-role-host.d.ts",
+        "lib/types/recipe-role-policy.d.ts",
+        "lib/types/recipe-role-settings.d.ts",
+        "lib/types/recipe-schema.d.ts",
+        "lib/types/recipe-starters.d.ts",
+        "lib/types/recipe-view.d.ts",
+        "lib/types/recipe-workspace.d.ts",
+        "lib/types/role-attachment.d.ts",
+        "lib/types/role-binding-api.d.ts",
+        "lib/types/role-bindings.d.ts",
+        "lib/types/role-client.d.ts",
+        "lib/types/role-domain.d.ts",
+        "lib/types/role-host.d.ts",
+        "lib/types/role-request.d.ts",
+        "lib/types/role-view.d.ts",
+        "lib/types/sidebar-coexistence-styles.d.ts",
+        "lib/types/task-api.d.ts",
+        "lib/types/task-client.d.ts",
+        "lib/types/task-styles.d.ts",
+        "lib/types/task-view.d.ts",
+        "lib/types/teacher-window.d.ts",
+        "lib/types/workbench-api.d.ts",
+        "lib/types/workbench-skill-api.d.ts",
+        "lib/types/workbench-skills.d.ts",
+        "lib/types/workbench-styles.d.ts",
+        "lib/types/workbench-view.d.ts",
+        "lib/types/workbench.d.ts",
+        "lib/workbench-skill-api-v9BmvcvE.mjs",
+        "lib/workbench-skills-DVi6E0mj.mjs",
+        "package.json",
+        "skills/shared/module-template.html",
+        "skills/workbench-app-build/SKILL.md",
+        "skills/workbench-data-display/SKILL.md",
+        "skills/workbench-module-generate/SKILL.md",
+        "skills/workbench-page-adjust/SKILL.md"
+      ]
+    },
+    "installedBytes": true
+  },
+  "release": {
+    "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791583278099/.scratch/platform-release-1791583356728",
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "caeb76cabd05821c5beec536a45a0bf2b37a1451cbfa0acbeaaf14a2989007c9",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "formal3080": {
+    "pluginTarget": "D:/programming/workspace/my-dsh/plugins/personal-workbench",
+    "buildUpdated": true,
+    "requiresBrowserRefresh": true
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "limits": [
+    "Archived blank test Session was absent from the native sidebar roster; archive/unarchive used real public controllers, not native sidebar clicks",
+    "Actual archived reference, explicit replacement and original attachment verified; deleted/inaccessible non-archived Session recovery remains unproven",
+    "Original and replacement test Sessions have drafts but no completed model turns; full historic conversation retention is not newly proved",
+    "Native question/permission/Stop/streaming close, physical IME and complete three-environment teaching remain open",
+    "Full goal incomplete; previous old-to-new migration receipt remains historical f2ee7ba evidence"
+  ]
+}

@@ -1,0 +1,626 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "9eee3d960aa4378bc5037320fe8ec6d49de5bce8",
+  "installedArchiveSha256": "782c943010ba46c111001f4bd8b89100eed2bce276c7849f041d4de531d102f8",
+  "installedBytesEqual": true,
+  "url": "http://127.0.0.1:3089/",
+  "method": "Actual UI prepare on review then analysis module, edit task/context, empty-task disabled guard, cross-page continued editor, remove context, discard one role without affecting the other, discard final task; public binding reads and read-only DOM geometry",
+  "appId": "handoff-proof",
+  "roles": [
+    "analyst",
+    "reviewer"
+  ],
+  "contextSource": "Declared configured module context (isolated synthetic statistics text), not live display records",
+  "observations": {
+    "before": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [],
+      "alerts": []
+    },
+    "prepared": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": true,
+          "module": "review",
+          "page": "home",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "复核这些统计结果，并标出需要核对的项。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "复核素材：记录 A 为 60 分钟，记录 B 为 90 分钟；统计总计 150 分钟。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "edited": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": true,
+          "module": "review",
+          "page": "home",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "仅复核记录 A，列出需要重新确认的数据。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "用户修订的上下文：记录 A 的分钟数待确认，暂不采用记录 B。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "emptyTask": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": true,
+          "module": "review",
+          "page": "home",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "   "
+            },
+            {
+              "label": "配置的上下文",
+              "text": "用户修订的上下文：记录 A 的分钟数待确认，暂不采用记录 B。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": true
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "twoRoles": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": true,
+          "module": "analysis",
+          "page": "home",
+          "metadata": "目标角色: 分析角色来源: 分析模块 · home/analysis",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "分析已选择的学习内容。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "分析素材：只需判断学习重点。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        },
+        {
+          "visible": true,
+          "module": "review",
+          "page": "home",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "仅复核记录 A，列出需要重新确认的数据。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "用户修订的上下文：记录 A 的分钟数待确认，暂不采用记录 B。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "details": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": false,
+          "module": "analysis",
+          "page": "home",
+          "metadata": "目标角色: 分析角色来源: 分析模块 · home/analysis",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "分析已选择的学习内容。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "分析素材：只需判断学习重点。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        },
+        {
+          "visible": false,
+          "module": "review",
+          "page": "home",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "仅复核记录 A，列出需要重新确认的数据。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "用户修订的上下文：记录 A 的分钟数待确认，暂不采用记录 B。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        },
+        {
+          "visible": true,
+          "module": "review-details",
+          "page": "details",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "仅复核记录 A，列出需要重新确认的数据。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "用户修订的上下文：记录 A 的分钟数待确认，暂不采用记录 B。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "narrowGeometry": {
+      "viewport": {
+        "width": 500,
+        "height": 720
+      },
+      "editor": {
+        "x": 72,
+        "y": 219,
+        "width": 412,
+        "height": 242.5,
+        "right": 484,
+        "bottom": 461.5
+      },
+      "body": {
+        "x": 83,
+        "y": 248.5,
+        "width": 390,
+        "height": 147,
+        "right": 473,
+        "bottom": 395.5,
+        "clientWidth": 385,
+        "scrollWidth": 385,
+        "clientHeight": 147,
+        "scrollHeight": 308
+      },
+      "buttons": [
+        {
+          "text": "移除上下文",
+          "x": 374,
+          "y": 431.390625,
+          "width": 91,
+          "height": 36,
+          "right": 465,
+          "bottom": 467.390625
+        },
+        {
+          "text": "发送任务",
+          "x": 83,
+          "y": 414.5,
+          "width": 78,
+          "height": 36,
+          "right": 161,
+          "bottom": 450.5
+        },
+        {
+          "text": "放弃任务",
+          "x": 169,
+          "y": 414.5,
+          "width": 78,
+          "height": 36,
+          "right": 247,
+          "bottom": 450.5
+        }
+      ],
+      "textareas": [
+        {
+          "label": "任务",
+          "x": 83,
+          "y": 326,
+          "width": 382,
+          "height": 82.390625,
+          "right": 465,
+          "bottom": 408.390625
+        },
+        {
+          "label": "配置的上下文",
+          "x": 83,
+          "y": 474.390625,
+          "width": 382,
+          "height": 82.390625,
+          "right": 465,
+          "bottom": 556.78125
+        }
+      ]
+    },
+    "removed": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": false,
+          "module": "analysis",
+          "page": "home",
+          "metadata": "目标角色: 分析角色来源: 分析模块 · home/analysis",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "分析已选择的学习内容。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "分析素材：只需判断学习重点。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        },
+        {
+          "visible": false,
+          "module": "review",
+          "page": "home",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "仅复核记录 A，列出需要重新确认的数据。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        },
+        {
+          "visible": true,
+          "module": "review-details",
+          "page": "details",
+          "metadata": "目标角色: 复核角色来源: 复核模块 · home/review",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "仅复核记录 A，列出需要重新确认的数据。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "discardedReview": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": false,
+          "module": "analysis",
+          "page": "home",
+          "metadata": "目标角色: 分析角色来源: 分析模块 · home/analysis",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "分析已选择的学习内容。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "分析素材：只需判断学习重点。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "returnedHome": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [
+        {
+          "visible": true,
+          "module": "analysis",
+          "page": "home",
+          "metadata": "目标角色: 分析角色来源: 分析模块 · home/analysis",
+          "textareas": [
+            {
+              "label": "任务",
+              "text": "分析已选择的学习内容。"
+            },
+            {
+              "label": "配置的上下文",
+              "text": "分析素材：只需判断学习重点。"
+            }
+          ],
+          "buttons": [
+            {
+              "text": "移除上下文",
+              "disabled": false
+            },
+            {
+              "text": "发送任务",
+              "disabled": false
+            },
+            {
+              "text": "放弃任务",
+              "disabled": false
+            }
+          ]
+        }
+      ],
+      "alerts": []
+    },
+    "final": {
+      "bindings": {
+        "analyst": {
+          "status": 200,
+          "binding": null
+        },
+        "reviewer": {
+          "status": 200,
+          "binding": null
+        }
+      },
+      "editors": [],
+      "alerts": []
+    }
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "limits": [
+    "No explicit Send task was clicked; correct completed native delivery and model-backed execution remain unproven",
+    "Configured context is covered here; live filtered records/material/provider context follows separate tests and browser evidence",
+    "Requested 480px browser window resolves to actual 500px viewport; receipt reports measured size, not 480px acceptance",
+    "Narrow inline screenshot inspected; geometry proves internal scroll extent and fixed send/discard actions, not physical wheel/IME input",
+    "No production source change or unchanged test-suite rerun; latest 295-test/source release proof remains separate"
+  ]
+}

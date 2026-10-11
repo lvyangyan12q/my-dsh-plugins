@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "0b74885c64b2edf813f1e2740ccb8e09ed52854d",
+  "requirement": "workbench:Implementation Decisions:11",
+  "problem": "External lifecycle disable or application registration withdrawal changes the selected window without advancing focusRevision, leaving keyboard focus in hidden or removed app content.",
+  "repair": "Focus effect also observes the selected window identity; it moves to the visible app center and retains original exit-focus behavior.",
+  "regression": {
+    "boundary": "built registered Client UI and public application registration/lifecycle interfaces",
+    "red": "Disabling the active application must focus the visible application center",
+    "green": true,
+    "externalDisableFocus": true,
+    "draftRetained": true,
+    "registrationWithdrawalFocus": true,
+    "exitReturnsToOriginalEntry": true,
+    "modelOrSessionCalls": 0
+  },
+  "testDevelopment": "The initial generic CSS selectors matched an independent management panel. Corrected to the workspace-specific data-window-mode element, then rebuilt the original implementation to verify RED and rebuilt the repaired implementation to verify GREEN. Initial DOM equality failure formatting stalled the owned test process; it was verified and explicitly terminated, then assertions were changed to booleans.",
+  "validation": {
+    "threePluginMainBuild": true,
+    "threePluginCleanCommitBuild": true,
+    "focusedWindowUiTests": 11,
+    "tests": 306,
+    "pass": 306,
+    "fail": 0,
+    "skipped": 0,
+    "fullLogSha256": "9fc55cba1bb6785f9b1dceddd74a251d6b5ff1de9375e1d191491d9115e1ada3",
+    "officialArchives": true,
+    "authenticatedLifecycle": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "scopedHtmlAssets": true,
+    "userManagementFilesPreserved": true,
+    "modelCalls": 0
+  },
+  "limits": [
+    "No real browser physical-keyboard or IME acceptance is claimed.",
+    "This proof covers these focus transitions; the whole original small-screen, focus and unobscured-content requirement remains partial.",
+    "Original real teaching/model/approval/question/Stop and remaining full-scope gates remain open."
+  ]
+}

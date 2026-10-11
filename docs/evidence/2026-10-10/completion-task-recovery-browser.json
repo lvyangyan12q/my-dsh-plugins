@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "2d06641c802475b807130f5f100e0b6ebbfbb7c3",
+  "installedArchiveSha256": "daf6f724d0ffcbcdbb1b7d2e55cc858fe678ce4d3b34c45260ebac153ff04bfb",
+  "officialCliInstall": true,
+  "allInstalledFilesVerified": true,
+  "browser": "Chrome DevTools on isolated owned DSH 3089",
+  "steps": [
+    "Open existing application role module; prepare a callback-free task using its public button",
+    "Edit task and supplied context through native input controls",
+    "Reload browser and explicitly reopen the same application",
+    "Stop only the identity-verified owned platform-proof Host; restart same isolated profile, reload browser and reopen application",
+    "Discard recovered task using its public button"
+  ],
+  "browserRefresh": {
+    "restoredEditedFields": true,
+    "allFieldsVisible": true,
+    "roleNotCreated": true
+  },
+  "hostColdRestart": {
+    "restoredEditedFields": true,
+    "allFieldsVisible": true,
+    "roleNotCreated": true
+  },
+  "discard": {
+    "ownedTaskCacheCleared": true,
+    "taskEditorAbsent": true,
+    "roleStillUncreated": true
+  },
+  "modelCalls": 0,
+  "formal3080Changed": false,
+  "limits": [
+    "Single callback-free role task and application instance; cross-instance/subject installed-browser isolation remains open.",
+    "No actual send; native permission, teaching, history, streaming and Stop remain open.",
+    "Generation reservation callbacks and explicit re-preparation still need their installed-browser acceptance."
+  ]
+}

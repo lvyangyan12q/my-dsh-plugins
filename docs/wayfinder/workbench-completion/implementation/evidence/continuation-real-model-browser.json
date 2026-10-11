@@ -1,0 +1,583 @@
+{
+  "scope": "Partial real installed DSH acceptance; all completion tickets remain open pending full criteria",
+  "port": 3089,
+  "formal3080Modified": false,
+  "remotePushed": false,
+  "realModelConfiguredByUser": true,
+  "generationSchemaSourceCommit": "4d66ed760e0988821e0657bef65bda5156c572c5",
+  "generationSchemaAcceptance": {
+    "nativeModelGenerated": true,
+    "draftSavedWithoutActivation": true,
+    "pages": 2,
+    "modules": [
+      "website",
+      "resources",
+      "custom-file"
+    ],
+    "previewThenExplicitActivation": true,
+    "websiteIframeRendered": true,
+    "resourcesListedExistingFiles": true,
+    "localHtmlHeadingRendered": "Static assets",
+    "coldRestartRetainedActivatedApplicationAndSelectedPage": true
+  },
+  "nativeExecution": {
+    "realStopObservedAfterCloseAndReopenRunningApplication": true,
+    "nativeChatOutcome": "已停止",
+    "coldRestartPreservedRoleSessionFingerprint": "0f1e622112d35453b4a57a86057085caeb67227072ac62320dbee31d31bb388f",
+    "realKaogongTeachSkillLoaded": true,
+    "realKaogongKnowledgeSearchAndRead": true,
+    "defaultTeacherCompletedExplanation": true,
+    "subjectTeacherReceivedExplicitPreparedLessonTaskAndWaitedForLearner": true,
+    "nativeApprovalStillUnverified": false,
+    "NativeQuestionAnsweredAndToolTaskResumed": true,
+    "ReadOnlyWriteDeniedThenNativeAllowOnceSucceeded": true
+  },
+  "generationRecoverySourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
+  "generationRecoveryAcceptance": {
+    "realTwentyPageDraftCompletedAcrossBrowserRefresh": true,
+    "requirementAndNativeEntryRestored": true,
+    "realRunningGenerationInterruptedByOwnedHostStop": true,
+    "coldRestartStatus": "failed",
+    "coldRestartMessage": "Generation interrupted by Host restart. Review the preserved native Session before explicitly starting again.",
+    "nativeEntryPreserved": true,
+    "explicitRetryEnabled": true,
+    "noAutomaticModelReplay": "UI retains failed outcome rather than starting a new job; native request count still to be reconciled"
+  },
+  "kaogongPartial": {
+    "historicalDataCopiedToOwnedProfileOnly": true,
+    "historicalImageFilesCopied": 411,
+    "lessonCreated": true,
+    "realPracticeSubmissionAndReasonSummarySaved": true,
+    "practiceAnswers": "one incorrect answer and nine unanswered after browser radio automation failed; not accepted as full practice closure",
+    "lessonHomeworkNotCompleted": true,
+    "foundIssues": [
+      "no-match practice remains preparing",
+      "pre-answer option contains explanation annotation"
+    ],
+    "fixesMergedButInstalledRetestPending": true,
+    "UnmatchedPracticeInstalledRetest": {
+      "SourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
+      "LoadingEnded": true,
+      "RetryVisible": true,
+      "BroadenOnlyByExplicitClick": true,
+      "OriginalLessonNotModified": true
+    },
+    "SubsequentFullPractice": {
+      "ActualAnswers": 10,
+      "Unanswered": 0,
+      "Correct": 3,
+      "ScorePercent": 30,
+      "Incorrect": 7,
+      "AllReasonsSaved": true,
+      "SummaryVisible": true,
+      "OriginalRestrictedLessonNotFalselyCompleted": true
+    },
+    "GenericLessonClosure": {
+      "AssociatedActualAnsweredRound": true,
+      "Correct": 3,
+      "Total": 10,
+      "AllIncorrectReasonsSaved": true,
+      "LearnerNotesSaved": true,
+      "ExplicitLearnerConfirmation": true,
+      "CompletedTaskDoesNotClaimLongTermMastery": true,
+      "OriginalRestrictedLessonRemainsUnfinished": true,
+      "ColdRestartPending": false,
+      "ColdRestartCompletedLessonNotesAndOriginalPendingPreserved": true
+    },
+    "CounselorReview": {
+      "PreparedFromActualRound": true,
+      "ExplicitSend": true,
+      "NativeModelCompleted": true,
+      "NoDuplicateSubmission": true,
+      "ContentConsistencyFailure": "One explanation contradicted its source option; remediation and real retry pending",
+      "RealGuidanceRetry": {
+        "InstalledSource": "e9897a74462242e02d6589c1ca040b060ae90d29",
+        "NativeTeachSkillExplicitlyInvoked": true,
+        "ModelCorrectedRomanSet": "I,III -> B",
+        "CorrectOriginalOptionTextQuoted": true,
+        "RoundCounts": "10 = 3 correct + 7 incorrect + 0 unanswered",
+        "RoundAndCumulativeSeparated": true,
+        "OriginalScoreNotChanged": true,
+        "OriginalNarrativeFailureRemainsInHistory": true,
+        "DoesNotGuaranteeAllModelAnswers": true
+      }
+    },
+    "HeadteacherPlan": {
+      "NativePlanViewProgressAndErrorsCalled": true,
+      "ExplicitUserAuthorizedPlanSet": true,
+      "NativePlanSetCalled": true,
+      "ExamDate": "2026-12-01",
+      "DailyModules": 2,
+      "ActualTaskCompletionNotAutomatic": true,
+      "ModelNarrativeConfusesRoundAndCumulative": true,
+      "ColdRestartPending": false,
+      "ColdRestartNativePlanHistoryPreserved": true
+    }
+  },
+  "latestFullGateAtRecoveryCommit": {
+    "tests": 338,
+    "passed": 338,
+    "skipped": 0,
+    "officialArchiveAndColdLifecyclePassed": true,
+    "modelCallsInGate": 0
+  },
+  "ModuleGeneration": {
+    "SourceCommit": "e2aa857e1fc97567cd2a64897a198221071d0abf",
+    "ExplicitPreparedTaskSent": true,
+    "PackagedModuleSkillAndTemplateUsed": true,
+    "NativeWriteToolCreatedScopedHtml": true,
+    "ActualIframeTitle": "专注学习",
+    "ActualStartPausedTimer": true,
+    "NativeTrajectoryIncludesRequestToolInputAndResult": true,
+    "ColdRestartArtifactPending": false,
+    "ColdRestartArtifactRendered": true,
+    "ColdRestartNativeHistoryVisible": true,
+    "StableRoleSessionFingerprint": "7026cddde5c6ada0ad41844cf2f7ff8bd42c7cd20f7e41f46c9139c1e82cea14"
+  },
+  "LatestCommittedGate": {
+    "SourceCommit": "29b051712892b217ccc480889a5c745bd29bc27f",
+    "Tests": 347,
+    "Passed": 347,
+    "Failed": 0,
+    "Skipped": 0,
+    "OfficialReleaseStillRunning": false,
+    "OfficialReleasePassed": true
+  },
+  "ReadingPartial": {
+    "SourceCommit": "c96615aa69a8743a477a450d7b94d11290d17a40",
+    "InitialExampleRecords": 3,
+    "InitialMinutes": 210,
+    "CategoryAndStatusFilterMatched": 1,
+    "MatchedMinutes": 120,
+    "SelectedWaldenDetailRendered": true,
+    "NoMatchClearedDetailListAndStatistics": true,
+    "RuntimeRoleConfigurationSavedPreviewedExplicitlyActivated": true,
+    "PreparedTaskContainedExactSelectedRecordAndFilters": true,
+    "NativeSendPending": false,
+    "ColdRecoveryPending": true,
+    "NativeModelTaskCompleted": true,
+    "ApplicationNativeResultEntryMissing": false,
+    "ApplicationNativeResult": {
+      "InstalledWorkbenchSource": "6f3e471576aad4b55b817cbe0c6f5a4a4add99b5",
+      "ActualModelResultVisible": true,
+      "NativeTitleChatAndTrajectoryVisible": true,
+      "NativeRequestOneVisible": true,
+      "FoldReopenDraftPreserved": true,
+      "OneMountedNativeComponent": true,
+      "NarrowViewport": 480,
+      "NarrowDocumentWidth": 480,
+      "NarrowNativeWidth": 353,
+      "NarrowNativeRight": 442,
+      "OwnedColdPriorModelHistoryRecovered": true,
+      "FullReadingInstanceAndLifecycleStillPending": true
+    }
+  },
+  "DocumentImageRecovery": {
+    "OwnedReferencedAssets": 3097,
+    "HashVerified": true,
+    "ModelAndCredentialPreserved": true,
+    "LiveOwnedConfigOnly": true,
+    "AuthenticatedBrowserRetestPending": false,
+    "AuthenticatedBrowser": {
+      "Http200Images": 6,
+      "ActualLazyImagesLoaded": 6,
+      "NaturalWidths": [
+        776,
+        670,
+        479,
+        734,
+        728,
+        742
+      ],
+      "ExistingUnsubmittedPracticeRecoveredAfterBrowserRefresh": true
+    }
+  },
+  "TeachingGuidanceInstalledSource": "e9897a74462242e02d6589c1ca040b060ae90d29",
+  "LatestColdConfig": {
+    "CurrentUserCredentialPreserved": true,
+    "CurrentModelAndMaterialPatchPreserved": true,
+    "NativeCounselorCorrectionHistoryPreserved": true
+  },
+  "ManualAuthoringPartial": {
+    "InstalledWorkbenchSource": "6f3e471576aad4b55b817cbe0c6f5a4a4add99b5",
+    "ModuleFirstUi": true,
+    "ContentTypes": [
+      "website",
+      "custom-file",
+      "resources",
+      "animation",
+      "role-chat"
+    ],
+    "InvalidNonScriptUrlPreviewRejectedWithModuleIdentity": true,
+    "InvalidPreviewActivationDisabled": true,
+    "SavedDraftPreviewAndExplicitActivation": true,
+    "ActualLocalHtmlHeading": "Static assets",
+    "ActualResourcesListed": [
+      "icon.svg",
+      "index.html",
+      "main.js",
+      "theme.css"
+    ],
+    "ActualAnimationIframeTitle": "动画模块验收",
+    "AnimationAuxiliaryServerTimeoutRecoveredByOwnedProcessRestart": true,
+    "NativeTitleChatTrajectoryComposerVisible": true,
+    "AddedAndRenamedSecondPage": true,
+    "MovedRoleModuleToSecondPosition": true,
+    "FocusModuleTogglePassed": true,
+    "KeyboardSplitWidth": "50 to 55",
+    "SwitchPageAndMinimizeReopenPreservedUnsentDraft": true,
+    "MaximizeRestoreCloseReopenPassed": true,
+    "BrowserReloadPreservedPageSplitAndUnsentDraftAfterLauncherClick": true,
+    "BrowserReloadActiveWindowLost": true,
+    "ActiveWindowFixInstalledRetestPending": true,
+    "StructureTemplateSavedAndReusedAsNewPage": true,
+    "TemplateNewModuleIdsAndTypesObserved": true,
+    "TemplateRemovedUrlsAndFilePathsAndPrivateBinding": true,
+    "IncompleteTemplatePreviewReportedUrlsAndRoleMissing": true,
+    "RuntimeRemainedTwoPagesAfterInvalidDraftSave": true,
+    "RuntimeVersionRemainedOne": true,
+    "SubsequentValidRuntimeEditAndColdRestartPending": true,
+    "FullTicketStillOpen": true
+  },
+  "ManualAuthoringContinuation": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "actualBrowserReloadDirectlyRestoredFocusedWindow": true,
+    "selectedPageSplit55AndUnsentNativeDraftRestored": true,
+    "concurrentRecipeEditorDetectedStaleRevisionAndRejectedSave": true,
+    "refreshedEditorSavedValidOriginalTwoPages": true,
+    "previewThenExplicitActivationOfVersionTwo": true,
+    "runtimeWebsiteTitle": "参考网站 · 修改验收",
+    "narrowViewport480NativeComposerWithinDocument": true,
+    "coldRestartOfVersionTwoPending": false,
+    "coldRestartRetainedSelectedPageSplit55AndNativeUnsentDraft": true,
+    "coldRestartRetainedModifiedWebsiteTitleAndAllFourContentTypes": true
+  },
+  "NativePageAnnotationContinuation": {
+    "arbitraryCanvasPoint": {
+      "x": 820,
+      "y": 507,
+      "width": 0,
+      "height": 0
+    },
+    "targetPage": "home",
+    "targetModule": null,
+    "existingBuilderRoleExplicitlySelected": true,
+    "taskPreparedWithoutAutomaticSend": true,
+    "explicitNativeSendLoadedWorkbenchPageAdjustSkill": true,
+    "modelFirstEditRejectedBecauseFileNotRead": true,
+    "modelReadThenEditedExistingArtifactSuccessfully": true,
+    "actualRenderedTitle": "专注学习 · 已调整",
+    "timerControlsWorkedAfterAdjustment": true,
+    "annotationHistoryRetained": true,
+    "subsequentLongNativeResponseRunningAcrossCloseReopen": true,
+    "nativeStopOutcome": "已停止",
+    "coldRestartOfAdjustedArtifactPending": false,
+    "coldRestartRestoredAdjustedIframeTitleAndTimerControls": true,
+    "savedHistoryEditFeatureNotYetInstalled": true
+  },
+  "ApprovedMaterialBrowserContinuation": {
+    "indexesReloadedThroughNativePluginDisableEnable": true,
+    "previousUnsubmittedRoundRestored": true,
+    "verifiedOriginalQuestionImagesActuallyLoaded": [
+      {
+        "questionId": "sha256:e7b88392bc22527413fd91a8e190065a47c5b17b74cf9252aa23a3494d72fce3",
+        "pdfPage": 49,
+        "naturalWidth": 990,
+        "naturalHeight": 352
+      },
+      {
+        "questionId": "sha256:3e69fe237d33f037a6f7d481f3d395bd6808ccf28d08f9aa658d2c299767f3ce",
+        "pdfPage": 105,
+        "naturalWidth": 980,
+        "naturalHeight": 382
+      }
+    ],
+    "all57ActualBrowserCoverageClaimed": false,
+    "unrelatedTailAnnotationsStillUnderReview": true,
+    "answerConflictRequiresUserDecision": true
+  },
+  "RoleReplacementContinuation": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "sameCurrentSessionAcrossLessonAndReviewPages": "sha256:7e5f76f18a41800dfcec257d2ec68d5788715c5075b9d39cbe82bf9075b0e5e0",
+    "explicitNativeBrowserConfirmShown": true,
+    "dismissPreservedCurrentBindingAndHistory": true,
+    "acceptCreatedNewCurrentSession": "sha256:8700954795366cefb90fb89c102b873aa84ceb2a221ad3254d13eeb999ef7573",
+    "priorCurrentSessionAddedToHistory": true,
+    "priorHistoricalSessionStillListed": "sha256:ddb972fdfc0d76c83ccff0c252038a3d345b8e72f422eed7bd847598c5c1e039",
+    "priorCurrentOpenedInsideApplicationWithOriginalMessageAndMissingCredentialError": true,
+    "noModelSendInThisReplacementCheck": true,
+    "newCurrentColdRecoveryPending": false,
+    "actualBrowserColdRestoredCurrentAndBothHistoricalSessionIds": true
+  },
+  "ExplicitGenerationCancellation": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "requirementTypedInActualApplicationEditor": true,
+    "nativeModelStartedThenExplicitCancelClicked": true,
+    "browserJobOutcome": "生成已取消",
+    "nativeHistoryOpenedAndStopOutcomeObserved": "已停止",
+    "nativeHistoryReportedOneRoundOneStep": true,
+    "persistedJobStatus": "cancelled",
+    "originalNativeSessionIdentityRetained": "sha256:1fbf3758d55dccc637a561ed6e810d8d151effb4452be5f7972012488db5773e",
+    "savedRecipeAbsentForCancelledTarget": true,
+    "existingRuntimeBrowserRecheckPending": false,
+    "coldCancelledStatusRecoveryPending": false,
+    "actualBrowserColdRestoredCancelledStatusRequirementAndNativeHistoryEntry": true
+  },
+  "LatestOwnedColdContinuation": {
+    "stoppedOnlyVerifiedOwned3089Process": true,
+    "persistentDomainFiles": 17,
+    "changedDomainFiles": [],
+    "userConfiguredCredentialsAndPluginPatchExactHashPreserved": true,
+    "actualBrowserRestoredFocusedAiApplicationAndSelectedStaticPage": true,
+    "actualBrowserManualRuntimeRestoredPageSplit55AndUnsentDraft": true,
+    "actualBrowserManualWebsiteTitleAndLocalContentRestored": true,
+    "actualBrowserAdjustedWidgetTitleAndTimerControlsRestored": true,
+    "nativeCancelledGenerationStillShownAsStopped": true,
+    "roleReplacementAndEditorCancelledJobBrowserRecheckPending": false,
+    "actualBrowserNewRoleSessionAndBothHistoricalIdsRestored": true,
+    "actualBrowserCancelledEditorRestoredRequirementStatusAndNativeHistoryEntry": true
+  },
+  "SourceVerifiedTailnotesBrowser": {
+    "sourceCommit": "ca55fb47a0f804234ce62850c26cc838f03ed468",
+    "twoSourceAssetsMergedOnlyIntoOwned3089": true,
+    "bankBackupAndConfigExactHashesUnchangedByMerge": true,
+    "nativePluginDisableEnableReloadedSourceIndexes": true,
+    "previousUnsubmittedPracticeRoundPreserved": true,
+    "loadedOriginalQuestionImages": [
+      {
+        "questionId": "sha256:4e3807517c8e64459826e8cb301248caef33b3b4d73af2a668230a07d3a8d2ae",
+        "pdfPage": 26,
+        "width": 675,
+        "height": 120
+      },
+      {
+        "questionId": "sha256:a52f373e4f0741c6ffbbb5dd2859e70ecfafc4a7bf9a6ae4f01d5fe62e18320f",
+        "pdfPage": 48,
+        "width": 680,
+        "height": 165
+      }
+    ],
+    "priorUnrelatedPdfHeaderAndCommentFootnoteNoLongerRendered": true,
+    "oldQuestionAndOptionAssociationsPreserved": true,
+    "originalAnswersUnchanged": true,
+    "all59ActualBrowserCoverageClaimed": false
+  },
+  "OwnedExternalAnimationActualMotion": {
+    "url": "http://127.0.0.1:3094/",
+    "standaloneOwnedPage": true,
+    "previousHostIframeLoaded": true,
+    "animationName": "slide",
+    "sampleMilliseconds": 650,
+    "xBefore": 157.2215576171875,
+    "xAfter": 169.0834197998047,
+    "reducedMotion": false,
+    "hostIframeInternalMotionMeasured": false
+  },
+  "NarrowKaogongIndependentStudy": {
+    "viewport": {
+      "width": 480,
+      "height": 900
+    },
+    "documentScrollWidth": 480,
+    "dialogLeft": 56,
+    "dialogRight": 480,
+    "overflowControls": [],
+    "openedFromDashboard": true,
+    "switchedToWrongQuestions": true,
+    "weakPointsAndActualAggregateDisplayed": true,
+    "switchedToMaterials": true,
+    "selectedOriginalImportedAnalysis": true,
+    "documentId": "sha256:934c3f2c18b778f93085649dbcf3fb038d040cd6650597c33fd0e3ec1e0b3f62",
+    "documentImages": [
+      {
+        "width": 226,
+        "height": 109,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 173,
+        "height": 156,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 354,
+        "height": 140,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 301,
+        "height": 229,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 557,
+        "height": 334,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 496,
+        "height": 298,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 500,
+        "height": 251,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 334,
+        "height": 259,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      },
+      {
+        "width": 390,
+        "height": 223,
+        "actuallyScrolledAndLoaded": true,
+        "httpStatus": 200,
+        "left": 98,
+        "rightAtMost": 432.985
+      }
+    ],
+    "practiceOriginalFourImagesWithinViewport": true,
+    "escapeClosedAndRestoredOpenButtonFocus": true,
+    "enterReopenedAndFocusedStudyDialog": true,
+    "reopenedStudyPage": "练习",
+    "lastStudyMaterialsPageRestorationClaimed": false,
+    "all59QuestionsBrowserCoverageClaimed": false,
+    "physicalImeClaimed": false
+  },
+  "HeadteacherSingleRoundReadRed": {
+    "viewport": {
+      "width": 480,
+      "height": 900
+    },
+    "nativeTitleVisible": "考公备考计划制定",
+    "nativeTabs": [
+      "对话",
+      "轨迹"
+    ],
+    "oneVisibleComposer": {
+      "left": 73,
+      "right": 452
+    },
+    "explicitReadOnlyCorrectionSent": true,
+    "actualTools": [
+      "kaogong_list_questions",
+      "kaogong_analyze_errors"
+    ],
+    "latestCompletedRoundExpected": {
+      "total": 10,
+      "correct": 3,
+      "wrong": 7,
+      "skipped": 0
+    },
+    "aggregateJudgmentActual": {
+      "total": 20,
+      "correct": 3,
+      "wrong": 8,
+      "skipped": 9
+    },
+    "aggregateAllActual": {
+      "total": 28,
+      "correct": 10,
+      "wrong": 9,
+      "skipped": 9
+    },
+    "modelAdmittedEarlierRoundAggregateMix": true,
+    "modelDidNotReadLatestRound": true,
+    "modelClaimedRoundReadUnavailable": true,
+    "verdict": "failed; implementation assigned; post-install actual model retry required",
+    "businessDomainFiles": 17,
+    "changedDomainFiles": [],
+    "credentialAndPatchHashesPreserved": true
+  },
+  "NarrowNativeKeyboardDraft": {
+    "viewport": {
+      "width": 480,
+      "height": 900
+    },
+    "role": "class-advisor",
+    "draft": "班主任窄屏恢复验收草稿，不发送。\n第二行",
+    "typedViaChromeAutomation": true,
+    "shiftEnterCreatedNewline": true,
+    "backspaceRemovedFinalX": true,
+    "modelNotStarted": true,
+    "actualReloadRestoredDraft": true,
+    "studyDialogRestored": true,
+    "roleConversationRestored": true,
+    "nativeTurnCount": 2,
+    "nativeRequestCount": 6,
+    "physicalChineseImeTested": false
+  },
+  "ActualGenerationNativeJournalReconciliation": {
+    "readOnly": true,
+    "allConcatenatedZstdFramesDecoded": true,
+    "afterActualBrowserReloadAndHostColdRecovery": true,
+    "scopedJobs": [
+      {
+        "status": "completed",
+        "sessionIdentitySha256": "a42569def032aeb1f398adc24b19d3cfb2dc1c1ef6d1091c93c3b32b863017ac",
+        "hasSavedRecipe": true,
+        "hostInterruptionOutcome": false,
+        "completeFrames": 6,
+        "eventCount": 17,
+        "nativeRequestCount": 1,
+        "nativeTurnCount": 1,
+        "journalSha256": "069e31195404536e2843e334fcf1876023b0eb8c347cffa11a1f0a83782450cf"
+      },
+      {
+        "status": "failed",
+        "sessionIdentitySha256": "868f55f04ee5dc501264f7a8f41a5de0a353ace4513300a69ca2aa40dc2b8556",
+        "hasSavedRecipe": false,
+        "hostInterruptionOutcome": true,
+        "completeFrames": 7,
+        "eventCount": 17,
+        "nativeRequestCount": 1,
+        "nativeTurnCount": 1,
+        "journalSha256": "624a9f18a6ae6d1232f6c7a228bb30a0c8a28da0ff008934398a5e50d382366e"
+      },
+      {
+        "status": "cancelled",
+        "sessionIdentitySha256": "1fbf3758d55dccc637a561ed6e810d8d151effb4452be5f7972012488db5773e",
+        "hasSavedRecipe": false,
+        "hostInterruptionOutcome": false,
+        "completeFrames": 7,
+        "eventCount": 18,
+        "nativeRequestCount": 1,
+        "nativeTurnCount": 1,
+        "journalSha256": "3b71e50d5681bd10de5e1fc5043b12cbc791ee4350eaed2b1353bc2711fb8a78"
+      }
+    ],
+    "eachKnownOriginallyStartedOnceAndCurrentlyOneRequest": true,
+    "allOtherSessionsOrServerHttpRequestsClaimed": false
+  },
+  "sanitization": {
+    "localPaths": "owned-workspace",
+    "nativeSessionAndQuestionIdentities": "SHA-256 fingerprints",
+    "rawCredentialsAndMaterialsIncluded": false
+  }
+}

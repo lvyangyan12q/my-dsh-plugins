@@ -1,0 +1,60 @@
+{
+  "browser": "Chrome DevTools, actual DSH http://127.0.0.1:3080/",
+  "capture": "Unmodified screenshots of actual element bounds; not full browser screenshots",
+  "images": [
+    {
+      "path": "docs/evidence/2026-10-05/home.jpg",
+      "bytes": 75364,
+      "sha256": "df9dc8a745ba6866334acb57131c1ed37948dd5cb9c3d09468e9b6bd362ee360"
+    },
+    {
+      "path": "docs/evidence/2026-10-05/reading-before-toolbar.jpg",
+      "bytes": 55913,
+      "sha256": "5cf3fa4811d9ea26e55d186ff3fd2fe2518da89daaaaa9810490ee31a5ab9071"
+    },
+    {
+      "path": "docs/evidence/2026-10-05/reading-after-toolbar.jpg",
+      "bytes": 67932,
+      "sha256": "2db2787186909f23bd79440a1e130e31810a19dfa110939ab41840e418089bea"
+    },
+    {
+      "path": "docs/evidence/2026-10-05/module-picker.jpg",
+      "bytes": 30549,
+      "sha256": "f18f182595c6e8c0e682a24ad3b7860b72c0bfa3c8e8bb91f317126926d4c4b6"
+    },
+    {
+      "path": "docs/evidence/2026-10-05/native-conversation.jpg",
+      "bytes": 80893,
+      "sha256": "1b353a3d8a11a1c58d248219a3113ef6d013479e39e0065f28ca79bac40833a2"
+    }
+  ],
+  "platformTests": {
+    "tests": 280,
+    "passed": 280,
+    "failed": 0
+  },
+  "nativeTests": {
+    "command": "node node_modules/vitest/vitest.mjs run packages/client/ui-conversation/tests packages/client/ui-deliverables/tests/changes-open.host.spec.ts --reporter=dot",
+    "testFiles": 41,
+    "passed": 558,
+    "failed": 0
+  },
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "2d033382b7321d0d6c8f978f55a10375ff2edf017dafdaf12aa2c333caba4d7b",
+      "d4d3c219d8a747653a8c28fcef8aaefb761452c7e191463ee35a1a325a68fc75",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  }
+}

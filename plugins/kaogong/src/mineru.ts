@@ -50,14 +50,18 @@ async function boundedBody(response: Response, max = LIMIT): Promise<Buffer> {
 
 export class Mineru {
   private config: () => MineruConfig
-  private defaultRoot: string
+  private defaultRoot?: string
   private fetcher: typeof fetch
-  constructor(config: () => MineruConfig, defaultRoot: string, fetcher: typeof fetch = fetch) {
+  constructor(config: () => MineruConfig, defaultRoot?: string, fetcher: typeof fetch = fetch) {
     this.config = config
     this.defaultRoot = defaultRoot
     this.fetcher = fetcher
   }
-  root() { return resolve(this.config().outputDir || this.defaultRoot) }
+  root() {
+    const root = this.config().outputDir || this.defaultRoot
+    if (!root || !isAbsolute(root)) throw new Error('Configure mineru.outputDir as an explicit durable absolute directory before reading or parsing documents')
+    return resolve(root)
+  }
   jobDir(id: string) {
     if (!/^[0-9a-f-]{36}$/.test(id)) throw new Error('Invalid MinerU document id')
     return resolve(this.root(), id)
@@ -76,6 +80,7 @@ export class Mineru {
     return result.data
   }
   async start(source: string, subject: string, pages = '1-200') {
+    this.root()
     if (!isAbsolute(source) || extname(source).toLowerCase() !== '.pdf') throw new Error('需要 PDF 的绝对路径')
     if (!subject.trim()) throw new Error('科目不能为空')
     const selected = new Set<number>()

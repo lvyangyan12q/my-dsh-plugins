@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "bf83bebe5b3dac0edc8c194cfc2d3ea59d314757",
+  "problem": "Previous runNode capture retained only the last 32000 characters, so the saved test log silently omitted earlier passing cases.",
+  "change": "Optional full raw output file with paused-pipe backpressure; returned diagnostics remain bounded. Platform test runner now writes the complete log through this option.",
+  "sources": [
+    {
+      "path": "scripts/release-tools.mjs",
+      "normalizedSha256": "e8ec54f67d3b89936ab9afee3ad2a3bd6e8931f09e09f56ced09b78286362ad5"
+    },
+    {
+      "path": "scripts/check-platform-tests.mjs",
+      "normalizedSha256": "34b7deb7e679a79cf215b785820b27bdd3d9a0f47c8353fe52917fb5009a1cdb"
+    },
+    {
+      "path": "tests/release-package.test.mjs",
+      "normalizedSha256": "74b46c39b95ae66dcb188bc1df46fd15c04f8a910f4d99b6c0327934fe08dfc5"
+    },
+    {
+      "path": "plugins/kaogong/tests/platform-integration.test.mjs",
+      "normalizedSha256": "dd02ff98dd83e7520eed00b3fa56de472ed8dfe62744fb6618dd29ae167f48a3"
+    },
+    {
+      "path": "plugins/reading-statistics/tests/reading-platform.test.mjs",
+      "normalizedSha256": "3de3812507ac6427977e81812b724f70997d5a80aab3c6094a68a751e7333b84"
+    }
+  ],
+  "verification": {
+    "focusedRegression": {
+      "red": "ENOENT: complete command log did not exist",
+      "green": true,
+      "preservesFullUtf8": true,
+      "diagnosticTailBounded": true
+    },
+    "fullTests": {
+      "tests": 305,
+      "pass": 305,
+      "fail": 0,
+      "skipped": 0,
+      "logBytes": 36187,
+      "logSha256": "4879eca83649d436f8c8ebe0626490bfcb7fa90d7a3b88a5852147f1a1d35f0c",
+      "openingPassingCaseRetained": true,
+      "noReplacementCharacters": true,
+      "previouslyTruncatedPassingCases": [
+        "both applications consume shared display components; Kaogong filters stats/list/detail with complete body and historical image and zero AI",
+        "built teaching prepare survives pages; edited task and removable document enter only the exact native subject teacher on explicit send",
+        "two real prepared owners race for one durable review claim; only one enters native send, and admission failure safely retries its original reservation",
+        "review completion projection failure retains an admitted marker across a new view; synchronization never re-sends or restores the sent task",
+        "full command log preserves early output and UTF-8 beyond the diagnostic tail"
+      ]
+    },
+    "release": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "f140c26e2490326ef83f311245bad4dc72926481d1b5dec72a3c31df8970f128",
+        "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    },
+    "preservedUserFiles": [
+      "plugins/personal-workbench/src/capability-host.ts",
+      "plugins/personal-workbench/src/management-view.tsx",
+      "plugins/personal-workbench/tests/capability-host.test.mjs",
+      "plugins/personal-workbench/tests/management-ui.test.mjs"
+    ]
+  },
+  "limits": [
+    "The earlier 304-test summary was valid; this change repairs its incomplete retained per-case log, not a discovered application runtime failure.",
+    "The teaching integration cases use native-interface fixtures and do not prove a real provider teaching/question/permission/Stop run.",
+    "No model request, screenshot, raw conversation draft or browser payload was generated or uploaded in this verification.",
+    "Screenshots, physical IME and the full original native teaching/sidebar release matrix remain incomplete."
+  ]
+}

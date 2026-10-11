@@ -1,0 +1,163 @@
+{
+  "auditedHead": "dd06f79a0e131ce4b1e2e3209c1d44154b23deb7",
+  "testedImplementation": "b7ba8f76dc0be479480aba3802fd9f129daa8356",
+  "method": "Read actual assertions and scoped installed/browser receipts; matched exact passed clean-source tests and normalized current source text; classify each exact canonical story without closing whole tasks",
+  "testLog": {
+    "path": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791577064169/.scratch/platform-tests-1791577107072/tests.log",
+    "sha256": "c9222fa20777bc1211c051b244cca6153d7e8afbbc71ebcdef57b72333260b64",
+    "requiredPassedTests": [
+      "application status refresh updates unchanged running recipe dependency projection and retains open app draft",
+      "ordinary template and connection form save a draft, preview without replacing running app, explicitly activate, disable and restore after restart",
+      "built reading adapter and public renderer share filters/selection, isolate instances and expose loading/empty/failure without AI",
+      "canvas creation retains stable panes and requires save and preview before explicit activation",
+      "a second application enters the platform without app-specific platform conditions",
+      "application availability disables entry without deleting mounted draft or role owner"
+    ]
+  },
+  "hashes": {
+    "plugins/personal-workbench/src/workbench-view.tsx": {
+      "currentBytes": "6e0ce17c003dfc64b72735a3af829df2e471c31dbd3e39aaf43ff7b798b08442",
+      "testedBytes": "673d26059e93fbeb25f345f189121e7a5f67a080bc7eb5c3d49f48fff2ae3796",
+      "normalizedText": "79c308b2b4e477f1f4fdd6d7e1536c228e76fefda9b829c1b62b7c56134b1623"
+    },
+    "plugins/personal-workbench/src/recipe-client.tsx": {
+      "currentBytes": "47e179d23a00df8082b490c21f99c272ddda1c8b8bfcc897539b3ecf4e5efbaa",
+      "testedBytes": "fa49b64ac39dbf16b2837f6f31e2e8b5f7b9fd2115a17661098c930c12ae334c",
+      "normalizedText": "a7d8f2d7ff8c2ab77890878b1b180c928a323f5f0fd1646d24688ee6856e28e8"
+    },
+    "plugins/personal-workbench/src/recipe-editor.tsx": {
+      "currentBytes": "a5f8f0b143ed1f4906b91dd60f3700366c30c370e809bb779ea3702067053957",
+      "testedBytes": "a5f8f0b143ed1f4906b91dd60f3700366c30c370e809bb779ea3702067053957",
+      "normalizedText": "a8a9ee73ba01e83fb3926a82aff27264ec8faf3068001ceef912abcaa6d5f074"
+    },
+    "plugins/personal-workbench/src/recipe-host.ts": {
+      "currentBytes": "c893080cab089ece4a474b6c4b3c686788eee11424e68ff8b72aadf23b4cd302",
+      "testedBytes": "ab94cf6a7231e81e07d34ac25bdbf16e300a37330b28f006415e82a087b88e29",
+      "normalizedText": "c893080cab089ece4a474b6c4b3c686788eee11424e68ff8b72aadf23b4cd302"
+    },
+    "plugins/personal-workbench/tests/workbench-ui.test.mjs": {
+      "currentBytes": "ef7f7eb57c73c8b88117b6f5026bf6d89615209c82b25873c4f73d3306fa568e",
+      "testedBytes": "5545ecfc4bb69f0698531b2d89cc1c2dac9e829324301728e5807e944f9ce592",
+      "normalizedText": "ef7f7eb57c73c8b88117b6f5026bf6d89615209c82b25873c4f73d3306fa568e"
+    },
+    "plugins/personal-workbench/tests/recipe-editor.test.mjs": {
+      "currentBytes": "a9557b62055248e0381d165844d5b3f83efa06c68aec569b33fcbfd3acd6758a",
+      "testedBytes": "2f2c36b5c1dabb166c2a74099d48266a0208619c791ff200af46231a0e943496",
+      "normalizedText": "a9557b62055248e0381d165844d5b3f83efa06c68aec569b33fcbfd3acd6758a"
+    },
+    "plugins/reading-statistics/src/reading-host.ts": {
+      "currentBytes": "e208021883831ca243b4210e07282cf64c2f295ee3c2ddd2b04bdf394934b4aa",
+      "testedBytes": "e208021883831ca243b4210e07282cf64c2f295ee3c2ddd2b04bdf394934b4aa",
+      "normalizedText": "166bf657a29ad3d8efe8bdb2b20410d89f4e71030c521d613526104509cf8120"
+    },
+    "plugins/reading-statistics/tests/reading-platform.test.mjs": {
+      "currentBytes": "3de3812507ac6427977e81812b724f70997d5a80aab3c6094a68a751e7333b84",
+      "testedBytes": "9a6b15fd1b62f336480ee28c201ce8b9f0d418c5f2138fa729f29827334b65cf",
+      "normalizedText": "3de3812507ac6427977e81812b724f70997d5a80aab3c6094a68a751e7333b84"
+    }
+  },
+  "decisions": [
+    {
+      "id": "workbench:User Stories:1",
+      "status": "satisfied for primary DSH sidebar entry: actual 3080 Workbench navigation opens shared applications; no claim about the entire Better Sidebar teaching matrix",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/sidebar-short-viewport.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:1",
+      "status": "satisfied for multiple installed/recipe applications in one center: actual formal 3080 and isolated installed 3089 include Kaogong, Reading and custom HTML",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:2",
+      "status": "satisfied for additive native menu preservation: public sections seat, native CSS unchanged, real desktop/short/narrow workspace and footer reachable",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/native-sidebar-sections.json",
+        "docs/evidence/2026-10-10/sidebar-short-viewport.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:9",
+      "status": "satisfied for explicit activation: actual 3089 repair requires Save and Preview before Activate; old running version preserved until explicit click",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:10",
+      "status": "satisfied for configuration/dependency inspection: actual installed view displays app/page/role/module/data/Agent/Skill identities and unavailable reasons, refresh reflects same-capability restoration",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:12",
+      "status": "satisfied at user-visible entry/readiness lifecycle: actual built Client rejects disabled opening before/after restart; official installed lifecycle persists disable state; no native task cancellation claim",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:14",
+      "status": "satisfied for no-AI display application: actual isolated installed Reading opens three records and statistics without model route; no Session/model operation performed",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:20",
+      "status": "satisfied for reuse of managed capabilities: actual public management creates Agent/Skill, running recipe references unchanged managed identifiers, disable/restore affects projected dependencies; native conversation execution remains separate",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:28",
+      "status": "satisfied for absent module/capability reasons and repair: actual module-label/preview rejection, Agent missing draft error and runtime Skill availability/recovery remain visible without a blank application",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/module-type-fallback.json",
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json",
+        "docs/evidence/2026-10-10/live-capability-browser-recovery.json"
+      ]
+    },
+    {
+      "id": "platform:User Stories:4",
+      "status": "partial: actual editable form name changes and explicit save/preview/activation asserted in clean Client tests; complete current rendered name/description editing not separately observed",
+      "evidencePaths": []
+    },
+    {
+      "id": "platform:User Stories:15",
+      "status": "partial: built Reading with real Host filters science to 1/60 and literature selection coherently; independent current-browser filter-to-stat interaction not re-certified in this audit",
+      "evidencePaths": []
+    },
+    {
+      "id": "platform:User Stories:16",
+      "status": "partial at first-release list/detail scope: real Host-backed built Client selection updates detail and filter clears out-of-scope selection; real map explicitly deferred by user and full rendered scope remains separate",
+      "evidencePaths": []
+    },
+    {
+      "id": "platform:User Stories:17",
+      "status": "partial: real Host-backed built Client shows deferred loading, empty, failure/retry and withdrawn source states; complete current browser error/loading visual gate not closed",
+      "evidencePaths": []
+    },
+    {
+      "id": "platform:User Stories:25",
+      "status": "satisfied for display selection/filter no-AI contract: actual built Client restricts HTTP paths and throws for every unauthorized AI/Session call; filter/selection/loading/retry complete with zero forbidden calls; actual no-AI installed app agrees",
+      "evidencePaths": [
+        "docs/evidence/2026-10-10/dependency-draft-browser-recovery.json"
+      ]
+    }
+  ],
+  "limits": [
+    "Canonical 123-item scope unchanged",
+    "No native model question/permission/Stop or physical IME proof",
+    "Complete teaching/sidebar environment matrix and visual screenshots remain incomplete",
+    "Four uncommitted management modifications excluded from clean test evidence"
+  ]
+}

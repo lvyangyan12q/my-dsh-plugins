@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "f2ee7ba30cc78ff2a95fe9e2cfe292acc7df797e",
+  "cleanSourceRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791580740945",
+  "userDirtyExcludedFromCleanAcceptance": true,
+  "build": "scripts/build-release.mjs: three plugins, native compatibility checks, declarations and source consumer checks passed",
+  "tests": {
+    "logPath": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791580740945/.scratch/platform-tests-1791580833503/tests.log",
+    "passed": 294,
+    "failed": 0,
+    "skipped": 0
+  },
+  "sourceUIRegression": {
+    "before": {
+      "passed": 3,
+      "failed": 1
+    },
+    "after": {
+      "passed": 4,
+      "failed": 0
+    }
+  },
+  "isolatedInstalledArchive": {
+    "sha256": "ac65c078b9c95805829c9ade55b483ac7f59cb63bbc7f5d3e4b3d0f79fc862ff",
+    "bytesEqual": true,
+    "root": "D:/programming/workspace/my-dsh/.scratch/committed-sidebar-source-1791575691476/.scratch/platform-release-1791575744854",
+    "url": "http://127.0.0.1:3089/"
+  },
+  "browser": {
+    "before": "Error: Annotation overlay covers 28px of wrapped toolbar",
+    "after": {
+      "viewport": {
+        "width": 480,
+        "height": 720
+      },
+      "toolbarBottom": 183,
+      "toolbarHeight": 72,
+      "aimTop": 183,
+      "gap": 0,
+      "alerts": []
+    },
+    "editor": {
+      "toolbarBottom": 155,
+      "editor": {
+        "left": 104,
+        "top": 165,
+        "right": 464,
+        "bottom": 621
+      },
+      "gap": 10
+    },
+    "history": {
+      "toolbarBottom": 155,
+      "editor": {
+        "left": 104,
+        "top": 165,
+        "right": 464,
+        "bottom": 636
+      },
+      "gap": 10,
+      "recordsVisible": true,
+      "draftPrefixRetained": true
+    },
+    "narrow": {
+      "viewport": {
+        "width": 480,
+        "height": 720
+      },
+      "app": {
+        "left": 56,
+        "top": 54,
+        "width": 424,
+        "height": 666,
+        "right": 480,
+        "bottom": 720
+      },
+      "pageWidth": 480,
+      "marks": 0
+    },
+    "wide": {
+      "viewport": {
+        "width": 1920,
+        "height": 945
+      },
+      "marks": 2,
+      "recordsVisible": true,
+      "alerts": []
+    }
+  },
+  "formal3080": {
+    "pluginLink": "C:/Users/pc-zzy/.dsh/profiles/web/node_modules/@deepseek-ai/dsh-personal-workbench",
+    "target": "D:\\programming\\workspace\\my-dsh\\plugins\\personal-workbench",
+    "buildUpdated": true,
+    "preservedUserFiles": {
+      "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+      "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+      "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+      "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+    },
+    "requiresBrowserRefresh": true,
+    "liveRuntimeAfterRefreshNotClaimed": true
+  },
+  "imageAcceptance": {
+    "passed": false,
+    "reason": "Chrome DevTools upload_file rejected both main repository path and provider screenshot relative path as outside configured workspace roots",
+    "consequence": "A subsequent batched append created only a second text annotation in the isolated app; no screenshot was attached. This is not image acceptance."
+  },
+  "limits": [
+    "Complete native model teaching/permission/question/Stop and physical IME gates remain open",
+    "Exact-source full cold-release/legacy-upgrade runtime is not rerun in this specific UI repair receipt",
+    "Generic package npm build hit an existing optional Better Sidebar contextual typing issue; the repository formal build-release type/source/consumer workflow passed",
+    "No formal 3080 study data or messages changed; no models called",
+    "Viewport proof is bounded to this application at 480x720 and restoring 1920x945, not all layouts"
+  ]
+}

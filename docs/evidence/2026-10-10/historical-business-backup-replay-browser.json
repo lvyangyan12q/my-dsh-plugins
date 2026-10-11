@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "56c595246059fd82609b6b2c13361abee4f8410e",
+  "method": "Restore the actual 2026-10-02 historical four-domain business backup into owned isolated installed DSH, actual native application entry and ten-question UI submission; independently compare stored answers with original historical bank; no source records or IDs exported.",
+  "historicalComparisons": [
+    {
+      "domain": "kaogong_bank",
+      "version": 2,
+      "globalEqual": true,
+      "tables": [
+        {
+          "table": "questions",
+          "historicalCount": 3994,
+          "currentCount": 3994,
+          "missing": 0,
+          "changed": 0
+        }
+      ]
+    },
+    {
+      "domain": "kaogong_knowledge",
+      "version": 1,
+      "globalEqual": true,
+      "tables": [
+        {
+          "table": "entries",
+          "historicalCount": 72,
+          "currentCount": 72,
+          "missing": 0,
+          "changed": 0
+        }
+      ]
+    },
+    {
+      "domain": "kaogong_notebook",
+      "version": 1,
+      "globalEqual": true,
+      "tables": [
+        {
+          "table": "questions",
+          "historicalCount": 8,
+          "currentCount": 18,
+          "missing": 0,
+          "changed": 0
+        }
+      ]
+    },
+    {
+      "domain": "kaogong_progress",
+      "version": 1,
+      "globalEqual": true,
+      "tables": [
+        {
+          "table": "days",
+          "historicalCount": 216,
+          "currentCount": 216,
+          "missing": 0,
+          "changed": 0
+        }
+      ]
+    }
+  ],
+  "practice": {
+    "roundCount": 2,
+    "submittedRoundCount": 1,
+    "submittedQuestionCount": 10,
+    "answerCount": 10,
+    "independentlyCalculatedCorrect": 1,
+    "independentlyCalculatedRate": 0.1,
+    "nextRoundQuestionCount": 10,
+    "nextRoundOverlap": 0,
+    "scoreWrittenToDisk": true
+  },
+  "formalBusinessHashesUnchanged": true,
+  "sourceQuality": {
+    "missingDiagramPlaceholderDetected": true,
+    "footerTextInOptionsDetected": true,
+    "fullQuestionFidelityPassed": false
+  },
+  "limits": [
+    "This is one concrete backup restore replay, not arbitrary historical migration/rollback or a complete question/material fidelity certificate.",
+    "No model request; real teacher coaching and complete original end-to-end AI chain remain unverified.",
+    "Raw original business content, diagrams, answers, paths and record IDs are excluded from remote evidence."
+  ],
+  "coldRestart": {
+    "historyRoundCount": 2,
+    "submittedRoundCount": 1,
+    "unsubmittedRoundCount": 1,
+    "restoredTotalCount": 10,
+    "restoredCorrectCount": 1,
+    "restoredAccuracyRate": 0.1
+  },
+  "browser": {
+    "beforeSubmitQuestionCount": 10,
+    "beforeSubmitRadioCount": 40,
+    "answersOrExplanationVisibleBeforeSubmit": false,
+    "answersVisibleAfterSubmit": true,
+    "explicitContinueCreatesNewRound": true,
+    "modelSendClicked": false
+  },
+  "rollback": {
+    "sixOwnedBusinessDomainsRestored": true,
+    "ownedPluginConfigurationRestoredByteIdentically": true,
+    "formalBusinessHashesUnchanged": true,
+    "temporaryReplayPracticeCacheRemoved": true
+  }
+}

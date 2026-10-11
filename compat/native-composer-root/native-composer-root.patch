@@ -1,0 +1,376 @@
+diff --git a/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx b/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx
+--- a/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx
++++ b/packages/client/ui-conversation/src/client/input/editor/ComposerContentEditable.tsx
+@@ -4,4 +4,3 @@
+- * same DOM inert (the no-session Workspace-trigger state), so switching
+- * between the two never swaps the element tree. Editability has ONE writer:
+- * this component reflects the `editable` prop onto the editor; nothing else
+- * calls setEditable.
++ * same DOM inert (the no-session Workspace-trigger state). Multiple views
++ * display the same immutable draft; only the surface owning the native root
++ * sets editability and receives native input events.
+@@ -11,0 +11 @@ import type { LexicalEditor } from 'lexical'
++import { activateDraftSurface, registerDraftSurface } from './composer-surfaces.ts'
+@@ -18,0 +19,2 @@ export interface ComposerContentEditableProps extends HTMLAttributes<HTMLDivElem
++  /** Display editor for the view-local native decorator portals. */
++  readonly onViewEditorChange?: (editor: LexicalEditor | null) => void
+@@ -26 +28 @@ export interface ComposerContentEditableProps extends HTMLAttributes<HTMLDivElem
+-export function ComposerContentEditable({ editor, editable, ...rest }: ComposerContentEditableProps): ReactNode {
++export function ComposerContentEditable({ editor, editable, onViewEditorChange, onFocusCapture, onPointerDownCapture, ...rest }: ComposerContentEditableProps): ReactNode {
+@@ -27,0 +30,3 @@ export function ComposerContentEditable({ editor, editable, ...rest }: ComposerC
++  const surface = useRef<ReturnType<typeof registerDraftSurface> | null>(null)
++  const changed = useRef(onViewEditorChange)
++  changed.current = onViewEditorChange
+@@ -31,2 +36,3 @@ export function ComposerContentEditable({ editor, editable, ...rest }: ComposerC
+-    editor.setRootElement(el)
+-    return () => { editor.setRootElement(null) }
++    const binding = registerDraftSurface(editor, el, editable, value => { changed.current?.(value) })
++    surface.current = binding
++    return () => { surface.current = null; binding.dispose() }
+@@ -35 +41 @@ export function ComposerContentEditable({ editor, editable, ...rest }: ComposerC
+-    if (editor !== null) editor.setEditable(editable)
++    surface.current?.setEditable(editable)
+@@ -45,0 +52,8 @@ export function ComposerContentEditable({ editor, editable, ...rest }: ComposerC
++      onFocusCapture={event => {
++        if (editor !== null) activateDraftSurface(editor, event.currentTarget)
++        onFocusCapture?.(event)
++      }}
++      onPointerDownCapture={event => {
++        if (editor !== null) activateDraftSurface(editor, event.currentTarget)
++        onPointerDownCapture?.(event)
++      }}
+diff --git a/packages/client/ui-conversation/src/client/input/editor/DraftEditor.tsx b/packages/client/ui-conversation/src/client/input/editor/DraftEditor.tsx
+--- a/packages/client/ui-conversation/src/client/input/editor/DraftEditor.tsx
++++ b/packages/client/ui-conversation/src/client/input/editor/DraftEditor.tsx
+@@ -1 +1,2 @@
+-/** Stateless text-area presentation over the InputBar's borrowed editor. */
++/** Text-area presentation and view-local decorators over the Session's borrowed editor. */
++import { useState } from 'react'
+@@ -28 +29 @@ export interface DraftEditorProps {
+- * @param props - borrowed editor and presentation values; this component owns no Hooks.
++ * @param props - borrowed editor and presentation values; display-only mirror selection stays local to this view.
+@@ -34,0 +36 @@ export function DraftEditor({
++  const [viewEditor, setViewEditor] = useState(editor)
+@@ -40,0 +43 @@ export function DraftEditor({
++          onViewEditorChange={setViewEditor}
+@@ -59 +62 @@ export function DraftEditor({
+-        <DecoratorPortals editor={workspaceTrigger ? null : editor} />
++        <DecoratorPortals editor={workspaceTrigger ? null : viewEditor} />
+diff --git a/packages/client/ui-conversation/src/client/input/editor/composer-surfaces.ts b/packages/client/ui-conversation/src/client/input/editor/composer-surfaces.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/client/ui-conversation/src/client/input/editor/composer-surfaces.ts
+@@ -0,0 +1,103 @@
++/** One Session input engine, with read-only Lexical renderers for its other native views. */
++import { $createParagraphNode, $getRoot, createEditor, SKIP_DOM_SELECTION_TAG } from 'lexical'
++import type { LexicalEditor } from 'lexical'
++import { ReferenceChipNode } from './chip-node.tsx'
++import { TextRefNode } from './text-ref.ts'
++
++interface Surface {
++  readonly root: HTMLDivElement
++  readonly mirror: LexicalEditor
++  readonly changed: (editor: LexicalEditor) => void
++  editable: boolean
++}
++
++interface Surfaces {
++  readonly seats: Set<Surface>
++  readonly dispose: () => void
++}
++
++const owners = new WeakMap<LexicalEditor, Surfaces>()
++
++function refresh(editor: LexicalEditor, seats: ReadonlySet<Surface>): void {
++  const root = editor.getRootElement()
++  for (const seat of seats) {
++    if (seat.root === root) {
++      editor.setEditable(seat.editable)
++      seat.changed(editor)
++    } else {
++      if (seat.mirror.getRootElement() !== seat.root) seat.mirror.setRootElement(seat.root)
++      const state = editor.getEditorState().clone(null)
++      if (state.isEmpty()) {
++        seat.mirror.update(() => { $getRoot().clear().append($createParagraphNode()) }, { discrete: true, tag: SKIP_DOM_SELECTION_TAG })
++      } else {
++        seat.mirror.setEditorState(state, { tag: SKIP_DOM_SELECTION_TAG })
++      }
++      seat.changed(seat.mirror)
++    }
++  }
++}
++
++/**
++ * Transfer only the native editing engine to the requested resident surface.
++ * @param editor - authoritative Session editor.
++ * @param root - the surface receiving the user gesture.
++ */
++export function activateDraftSurface(editor: LexicalEditor, root: HTMLElement): void {
++  const owner = owners.get(editor)
++  const seat = owner === undefined ? undefined : [...owner.seats].find(value => value.root === root)
++  if (seat === undefined || editor.getRootElement() === root) return
++  // Detach the display-only renderer before installing the native event engine.
++  seat.mirror.setRootElement(null)
++  editor.setRootElement(root)
++}
++
++/**
++ * Register a native input surface without creating another draft or submit engine.
++ * @param editor - authoritative Session editor.
++ * @param root - resident contenteditable host.
++ * @param editable - this view's editing permission.
++ * @param changed - select the editor used for this view's decorator portals.
++ * @returns view-local permission update and cleanup operations.
++ */
++export function registerDraftSurface(
++  editor: LexicalEditor,
++  root: HTMLDivElement,
++  editable: boolean,
++  changed: (editor: LexicalEditor) => void,
++): { setEditable(value: boolean): void; dispose(): void } {
++  let owner = owners.get(editor)
++  if (owner === undefined) {
++    const seats = new Set<Surface>()
++    const offRoot = editor.registerRootListener(() => { refresh(editor, seats) })
++    const offUpdate = editor.registerUpdateListener(() => { refresh(editor, seats) })
++    owner = { seats, dispose: () => { offRoot(); offUpdate() } }
++    owners.set(editor, owner)
++  }
++  const seat: Surface = {
++    root, editable, changed,
++    mirror: createEditor({
++      namespace: 'dsh-composer-display', nodes: [ReferenceChipNode, TextRefNode],
++      editable: false, disableEvents: true, onError: error => { throw error },
++    }),
++  }
++  owner.seats.add(seat)
++  const activeRoot = editor.getRootElement()
++  if (activeRoot !== null && activeRoot.contains(root.ownerDocument.activeElement)) refresh(editor, owner.seats)
++  else activateDraftSurface(editor, root)
++  const currentOwner = owner
++  return {
++    setEditable(value) {
++      seat.editable = value
++      if (editor.getRootElement() === root) editor.setEditable(value)
++    },
++    dispose() {
++      currentOwner.seats.delete(seat)
++      seat.mirror.setRootElement(null)
++      if (editor.getRootElement() === root) editor.setRootElement(null)
++      if (currentOwner.seats.size === 0) {
++        currentOwner.dispose()
++        owners.delete(editor)
++      }
++    },
++  }
++}
+diff --git a/packages/client/ui-conversation/src/client/input/editor/view-binding.ts b/packages/client/ui-conversation/src/client/input/editor/view-binding.ts
+--- a/packages/client/ui-conversation/src/client/input/editor/view-binding.ts
++++ b/packages/client/ui-conversation/src/client/input/editor/view-binding.ts
+@@ -9,0 +10,10 @@ import { registerComposerKeymap } from './keymap.ts'
++/** Install a view's native input handlers only while it owns the editor root. */
++function bindActiveDraftView(editor: LexicalEditor, scrollRef: RefObject<HTMLDivElement>, bind: () => () => void): () => void {
++  let off: (() => void) | undefined
++  const offRoot = editor.registerRootListener(root => {
++    off?.()
++    off = root !== null && scrollRef.current?.contains(root) === true ? bind() : undefined
++  })
++  return () => { offRoot(); off?.() }
++}
++
+@@ -91,0 +102,2 @@ export function installDraftFilePicker(
++  editor: LexicalEditor | null,
++  scrollRef: RefObject<HTMLDivElement>,
+@@ -93 +105,2 @@ export function installDraftFilePicker(
+-  return keyboard.bindFilePicker({
++  if (editor === null) return () => {}
++  return bindActiveDraftView(editor, scrollRef, () => keyboard.bindFilePicker({
+@@ -96 +109 @@ export function installDraftFilePicker(
+-  })
++  }))
+@@ -109,0 +123 @@ export function installDraftKeymap(
++  scrollRef: RefObject<HTMLDivElement>,
+@@ -111 +125 @@ export function installDraftKeymap(
+-  return registerComposerKeymap(editor, {
++  return bindActiveDraftView(editor, scrollRef, () => registerComposerKeymap(editor, {
+@@ -144 +158 @@ export function installDraftKeymap(
+-  })
++  }))
+diff --git a/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx b/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx
+--- a/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx
++++ b/packages/client/ui-conversation/src/client/skeleton/InputBar.tsx
+@@ -32,0 +33 @@ import { DraftEditor } from '../input/editor/DraftEditor.tsx'
++import { activateDraftSurface } from '../input/editor/composer-surfaces.ts'
+@@ -180,0 +182,3 @@ export const InputBar = memo(function InputBar({
++    const root = scrollRef.current?.querySelector<HTMLElement>('[data-composer-input]')
++    if (root === null || root === undefined || root.checkVisibility?.() === false) return
++    activateDraftSurface(editor, root)
+@@ -258,2 +262,2 @@ export const InputBar = memo(function InputBar({
+-    return installDraftFilePicker(keyboard, gate, fileInputRef)
+-  }, [keyboard])
++    return installDraftFilePicker(keyboard, gate, fileInputRef, editor, scrollRef)
++  }, [keyboard, editor])
+@@ -263 +267 @@ export const InputBar = memo(function InputBar({
+-    return installDraftKeymap(editor, keyboard, gate)
++    return installDraftKeymap(editor, keyboard, gate, scrollRef)
+@@ -355 +359,10 @@ export const InputBar = memo(function InputBar({
+-    <div className={clsx(css.root, variant === 'hero' && css.hero)}>
++    <div className={clsx(css.root, variant === 'hero' && css.hero)}
++      onPointerDownCapture={() => {
++        const root = scrollRef.current?.querySelector<HTMLElement>('[data-composer-input]')
++        if (editor !== null && root !== null && root !== undefined) activateDraftSurface(editor, root)
++      }}
++      onFocusCapture={() => {
++        const root = scrollRef.current?.querySelector<HTMLElement>('[data-composer-input]')
++        if (editor !== null && root !== null && root !== undefined) activateDraftSurface(editor, root)
++      }}
++    >
+diff --git a/packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx b/packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx
+new file mode 100644
+--- /dev/null
++++ b/packages/client/ui-conversation/tests/composer-root-ownership.client.spec.tsx
+@@ -0,0 +1,54 @@
++// @vitest-environment jsdom
++import * as React from 'react'
++import { afterEach, expect, it } from 'vitest'
++import { act, cleanup, render } from '@testing-library/react'
++import { $createParagraphNode, $createTextNode, $getRoot, createEditor } from 'lexical'
++import { ComposerContentEditable } from '../src/client/input/editor/ComposerContentEditable.tsx'
++
++afterEach(cleanup)
++
++function fixture() {
++  const editor = createEditor({ namespace: 'shared-root-regression', onError: error => { throw error } })
++  const first = render(<ComposerContentEditable editor={editor} editable aria-label="main" />)
++  const second = render(<ComposerContentEditable editor={editor} editable aria-label="app" />)
++  return { editor, first, second, firstRoot: first.getByRole('textbox', { name: 'main' }), secondRoot: second.getByRole('textbox', { name: 'app' }) }
++}
++
++it('does not detach the active app composer when the earlier main composer unmounts', () => {
++  const f = fixture()
++  expect(f.editor.getRootElement()).toBe(f.secondRoot)
++  f.first.unmount()
++  expect(f.editor.getRootElement()).toBe(f.secondRoot)
++  act(() => f.editor.update(() => {
++    $getRoot().clear().append($createParagraphNode().append($createTextNode('still attached')))
++  }, { discrete: true }))
++  expect(f.secondRoot.textContent).toBe('still attached')
++  f.second.unmount()
++  expect(f.editor.getRootElement()).toBeNull()
++})
++
++it('does not detach a different root after an explicit ownership transfer', () => {
++  const f = fixture()
++  act(() => f.editor.setRootElement(f.firstRoot))
++  f.second.unmount()
++  expect(f.editor.getRootElement()).toBe(f.firstRoot)
++  f.first.unmount()
++  expect(f.editor.getRootElement()).toBeNull()
++})
++
++it('renders the same canonical draft in both mounted native composer roots', () => {
++  const f = fixture()
++  act(() => f.editor.update(() => {
++    $getRoot().clear().append($createParagraphNode().append($createTextNode('one Session draft')))
++  }, { discrete: true }))
++  expect(f.firstRoot.textContent).toBe('one Session draft')
++  expect(f.secondRoot.textContent).toBe('one Session draft')
++})
++
++it('focus transfers the canonical input engine back from app to main', () => {
++  const f = fixture()
++  act(() => { f.firstRoot.focus() })
++  expect(f.editor.getRootElement()).toBe(f.firstRoot)
++  act(() => { f.secondRoot.focus() })
++  expect(f.editor.getRootElement()).toBe(f.secondRoot)
++})
+diff --git a/packages/client/ui-conversation/tests/input-bar.client.spec.tsx b/packages/client/ui-conversation/tests/input-bar.client.spec.tsx
+--- a/packages/client/ui-conversation/tests/input-bar.client.spec.tsx
++++ b/packages/client/ui-conversation/tests/input-bar.client.spec.tsx
+@@ -1779,0 +1780,86 @@ it('places context usage below the composer and hides it until the activity clos
++
++describe('same Session in two native InputBars', () => {
++  it('sends the canonical draft once from main even while the other view is disabled', async () => {
++    const main = bench({ draft: 'one canonical message' })
++    const app = render(<InputBar {...main.props} disabled />)
++    const appRoot = app.container.querySelector<HTMLDivElement>('[data-composer-input]')!
++    expect(appRoot.textContent).toBe('one canonical message')
++    act(() => { main.textarea.focus() })
++    expect(main.shell.editor.getRootElement()).toBe(main.textarea)
++    expect(main.shell.editor.isEditable()).toBe(true)
++    fireEvent.keyDown(main.textarea, { key: 'Enter', keyCode: 13 })
++    await act(async () => {})
++    expect(main.sink).toHaveBeenCalledOnce()
++    expect(main.sink).toHaveBeenCalledWith('one canonical message', [], 'queue', expect.any(AbortSignal))
++    expect(main.textarea.textContent).toBe('')
++    expect(appRoot.textContent).toBe('')
++  })
++
++  it('routes clipboard intake and file dialogs only through the active view', () => {
++    const intakeMain = vi.fn(() => null)
++    const intakeApp = vi.fn(() => null)
++    const main = bench({ addFiles: intakeMain })
++    const app = render(<InputBar {...main.props} addFiles={intakeApp} />)
++    const appRoot = app.container.querySelector<HTMLDivElement>('[data-composer-input]')!
++    const mainPicker = vi.spyOn(main.view.container.querySelector<HTMLInputElement>('input[type="file"]')!, 'click')
++    const appPicker = vi.spyOn(app.container.querySelector<HTMLInputElement>('input[type="file"]')!, 'click')
++    onTestFinished(() => { mainPicker.mockRestore(); appPicker.mockRestore() })
++    const file = new File(['test'], 'test.txt', { type: 'text/plain' })
++    const paste = (root: HTMLElement) => fireEvent.paste(root, { clipboardData: {
++      items: [{ kind: 'file', getAsFile: () => file }], getData: () => '',
++    } })
++    act(() => { main.textarea.focus() })
++    paste(main.textarea)
++    expect(intakeMain).toHaveBeenCalledOnce()
++    expect(intakeApp).not.toHaveBeenCalled()
++    expect(main.shell.pickFiles()).toBe(true)
++    expect(mainPicker).toHaveBeenCalledOnce()
++    expect(appPicker).not.toHaveBeenCalled()
++    act(() => { appRoot.focus() })
++    paste(appRoot)
++    expect(intakeMain).toHaveBeenCalledOnce()
++    expect(intakeApp).toHaveBeenCalledOnce()
++    expect(main.shell.pickFiles()).toBe(true)
++    expect(appPicker).toHaveBeenCalledOnce()
++  })
++
++  it('renders native reference chip decorators in both views and after focus handoff', () => {
++    const main = bench()
++    const app = render(<InputBar {...main.props} />)
++    const appRoot = app.container.querySelector<HTMLDivElement>('[data-composer-input]')!
++    act(() => {
++      main.shell.setDraft('@w1')
++      main.shell.insertReference({ source: 'reference', ref: 'w1', label: '会话一', appearance: 'session', clipboardText: '@w1' },
++        { start: 0, end: 3, draftRev: main.shell.snapshot.draftRev })
++    })
++    for (const view of [main.view, app]) {
++      expect(view.container.querySelector('[data-composer-chip]')?.textContent).toBe('会话一')
++      expect(view.container.querySelector('[data-composer-chip] svg')).not.toBeNull()
++    }
++    act(() => { main.textarea.focus(); appRoot.focus() })
++    for (const view of [main.view, app]) expect(view.container.querySelector('[data-composer-chip]')?.textContent).toBe('会话一')
++    expect(main.shell.snapshot.occurrences).toHaveLength(1)
++    expect(main.shell.snapshot.draft).toBe('@w1 ')
++  })
++})
++
++it('does not retain the previous view composition watcher during root handoff', () => {
++  const main = bench()
++  render(<InputBar {...main.props} />)
++  const live = new Set<EventListenerOrEventListenerObject>()
++  const originalAdd = main.textarea.addEventListener.bind(main.textarea)
++  const originalRemove = main.textarea.removeEventListener.bind(main.textarea)
++  const add = vi.spyOn(main.textarea, 'addEventListener').mockImplementation((name, listener, options) => {
++    if (name === 'compositionstart') live.add(listener)
++    originalAdd(name, listener, options)
++  })
++  const remove = vi.spyOn(main.textarea, 'removeEventListener').mockImplementation((name, listener, options) => {
++    if (name === 'compositionstart') live.delete(listener)
++    originalRemove(name, listener, options)
++  })
++  onTestFinished(() => { add.mockRestore(); remove.mockRestore() })
++  act(() => { main.textarea.focus() })
++  // addEventListener may be invoked twice with the same callback. Count live
++  // identities after removals, as the browser does, rather than registrations.
++  expect(live.size).toBe(2)
++})

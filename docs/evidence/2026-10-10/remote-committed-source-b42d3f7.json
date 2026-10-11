@@ -1,0 +1,102 @@
+{
+  "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-source-b42d3f7-1791573001975",
+  "commit": "b42d3f75ab599cdaa31fdad4d982811aeafcbee4",
+  "remote": "b42d3f75ab599cdaa31fdad4d982811aeafcbee4",
+  "source": "git archive exact verified remote commit; user dirty files excluded",
+  "dependencyMode": "existing public development dependency anchors",
+  "verifiedAt": "2026-10-09T19:18:22.299Z",
+  "threePluginBuilds": true,
+  "tests": {
+    "tests": 291,
+    "passed": 291,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "logSha256": "6b4d580bb1bdb9339257f13ac4e7eddbcb4e4172bbeea7a38eaaf07557571754",
+    "testRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-source-b42d3f7-1791573001975\\.scratch\\platform-tests-1791573078679"
+  },
+  "release": {
+    "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-source-b42d3f7-1791573001975\\.scratch\\platform-release-1791573125954",
+    "verdictSha256": "381fbaea456443921db8c6ba42ba729a3971868f65b5d2ddfbe3d6260ba105df",
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "f24bacff08f185c84313122b4691b0df692df94f854c4c2c6c4c04ba9ae2e52b",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "legacyUpgrade": {
+    "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-source-b42d3f7-1791573001975\\.scratch\\release-1791573276427",
+    "verdictSha256": "ec83a5e8f90c00a97db0744b0e2b6a35b9aa3e20174f74096b6941c6a22e3235",
+    "officialOfflineInstall": true,
+    "normalPeerPolicy": true,
+    "installedConsumers": true,
+    "upgrade": true,
+    "uninstallReinstall": true,
+    "nativePreStep": true,
+    "modelCalls": 0,
+    "browserAcceptance": "pending",
+    "completedNativeTurn": "pending",
+    "archives": [
+      "f24bacff08f185c84313122b4691b0df692df94f854c4c2c6c4c04ba9ae2e52b",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a"
+    ],
+    "oldArchives": [
+      {
+        "path": "C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/personal-workbench/worktrees/agent-skill-management/.scratch/ticket09-final/archives/deepseek-ai-dsh-personal-workbench-0.1.0.tgz",
+        "sha256": "4472374b208c3826bd35a58b7cb0f4c16d09cd42b9598763b0ce134fe8aebb37"
+      },
+      {
+        "path": "C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.scratch/personal-workbench/worktrees/homework-continuation/plugins/kaogong/lib/deepseek-ai-dsh-tool-kaogong-0.1.0.tgz",
+        "sha256": "60cac91152739b474fadd685378916c579bc2d379c4b4734e40c863d78800b94"
+      }
+    ]
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": {
+      "userSha256": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+      "archivedCommittedSha256": "ed9a9fea43032d87658142779b76724c7cca8ac48b22822ba12595be14f2a79a",
+      "gitObjectSha256": "ee21b0b0b95d72a13c7b92b7cf0865bfb8b217201325d140983304247e3ee7ef",
+      "normalizedTextMatchesCommit": true,
+      "excludedUncommittedChanges": true
+    },
+    "plugins/personal-workbench/src/management-view.tsx": {
+      "userSha256": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+      "archivedCommittedSha256": "51688f6437efce193c1c3295ce48ad88eb108553f9a21d668a23e615ebfaa7e4",
+      "gitObjectSha256": "37e5a252939669a3dcb2e1e76030e0af79d73435c86b10915dc9751f7da99a5e",
+      "normalizedTextMatchesCommit": true,
+      "excludedUncommittedChanges": true
+    },
+    "plugins/personal-workbench/tests/capability-host.test.mjs": {
+      "userSha256": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+      "archivedCommittedSha256": "b3aa88912876c7866f31a9412e3c356d1c1ca4d92f617dcf3992e06824dab9bd",
+      "gitObjectSha256": "9f3ec2acbcc1b05f9cf40b30b83af38552a723fa46b5fba7afc744b7b5dc982c",
+      "normalizedTextMatchesCommit": true,
+      "excludedUncommittedChanges": true
+    },
+    "plugins/personal-workbench/tests/management-ui.test.mjs": {
+      "userSha256": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937",
+      "archivedCommittedSha256": "bac0c6d36d90e2e9a660de2f92240cfb134925317ac282e30ae8e59e45ffb12e",
+      "gitObjectSha256": "3f1d0465fc3d0d333a47faf17293f9823eaf9d2b72b9715bd83852cf881cb4b7",
+      "normalizedTextMatchesCommit": true,
+      "excludedUncommittedChanges": true
+    }
+  },
+  "limits": [
+    "Existing public dependency anchors; not fresh registry resolution",
+    "Synthetic legacy/reading install data; zero model calls",
+    "No successful current native question/approval/Stop, full teaching sidebar matrix or physical IME claim",
+    "Formal rendered dependency recovery and native sidebar class-selector replacement remain open"
+  ]
+}

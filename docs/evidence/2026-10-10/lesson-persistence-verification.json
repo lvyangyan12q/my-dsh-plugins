@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "439ec4983a7016ca03cb0d810e534311e1f0cc56",
+  "environment": "Isolated native DSH rc.2 on port 3091; exact tested archives installed offline",
+  "installedArchives": [
+    {
+      "sha256": "13993b2c22037247bb8c5d2745f44914c455058c98bafb0f0f7944f7dc03b64f"
+    },
+    {
+      "sha256": "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a"
+    }
+  ],
+  "source": [
+    {
+      "path": "plugins/kaogong/src/lessons.ts",
+      "normalizedSha256": "9624789024c2036a28d07771af8eb13ba0d67eef07023207793f34dac177c057"
+    },
+    {
+      "path": "plugins/kaogong/src/lesson-panel.tsx",
+      "normalizedSha256": "4cbeef01b7074fd74b88d91172f97817ca2d20199d7f7f31adb46e3729833431"
+    },
+    {
+      "path": "plugins/kaogong/src/lesson-schema.ts",
+      "normalizedSha256": "b7aedc9b460051b1c9e12f831f08c55386e3326c3b5cbf7b0e431a5236c7b35e"
+    },
+    {
+      "path": "plugins/kaogong/tests/lessons.test.mjs",
+      "normalizedSha256": "3741ff3e00adc7535b447ac3b3c0873bebc83b3d3d14b4734992f676a92728e1"
+    }
+  ],
+  "verification": {
+    "createdViaClassroomForm": true,
+    "summaryWithoutPracticeCannotComplete": true,
+    "linkedPreviouslyVerifiedPracticeRound": true,
+    "realPractice": {
+      "total": 10,
+      "correct": 1,
+      "reflectionsComplete": true
+    },
+    "explicitLearnerConfirmationSaved": true,
+    "coldHostRestartSameLessonObjectiveAndRound": true,
+    "completedStateAndSummaryRecovered": true,
+    "visibleClassroomRecovered": {
+      "visiblePanel": true,
+      "completedLabel": true,
+      "notesRecovered": true,
+      "confirmationDisabled": true,
+      "nativeWorkspaceNavigation": true
+    },
+    "sharedSummaryHasTranscript": false,
+    "sharedSummaryHasAnswerDetails": false
+  },
+  "priorPracticeEvidence": "docs/evidence/2026-10-10/kaogong-practice-browser.json",
+  "limits": [
+    "This run reuses the previously submitted real ten-question round and its saved reflections; it does not claim a new ten-question submission.",
+    "No model teaching, counselor response, permission, Stop, IME, map or Better Sidebar acceptance is claimed.",
+    "No screenshot, conversation draft text, lesson title, Session ID or raw browser payload is included in this remote-safe receipt.",
+    "The local workspace Kaogong Client byte differences were subsequently verified as region path comments only; source and executable code match the clean archive. This run still certifies the isolated browser, not the formal running Host."
+  ],
+  "formalReferenceEvidence": "docs/evidence/2026-10-10/formal-kaogong-build-reference.json"
+}

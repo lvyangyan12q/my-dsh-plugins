@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "0d80eb923d5241c828eaecfb32705948bcff1492",
+  "host": "owned isolated installed DSH 3089",
+  "method": "Actual UI creates a classroom, saves a learner summary, starts a ten-question homework practice, selects observed A options, submits, links the committed round and explicitly confirms completion. Public lesson API and exact disk record checked before and after browser reload and owned Host cold restart.",
+  "initial": {
+    "completed": false,
+    "linkedRounds": 0,
+    "canConfirm": false
+  },
+  "guard": {
+    "confirmWithoutLinkedPracticeStatus": 409,
+    "completionAfterRejectedRequest": false
+  },
+  "disk": {
+    "diskLessonCount": 1,
+    "completed": true,
+    "linkedRounds": 1,
+    "total": 10,
+    "correct": 1,
+    "independentBankScoreMatches": true,
+    "requireReflections": false,
+    "summarySaved": true
+  },
+  "repeatConfirmation": {
+    "status": 200,
+    "completionRecordUnchanged": true,
+    "linkedRounds": 1
+  },
+  "browserReload": {
+    "readStatus": 200,
+    "sameCurrentLesson": true,
+    "objectiveExact": true,
+    "summaryExact": true,
+    "completed": true,
+    "linkedRounds": 1
+  },
+  "coldHost": {
+    "readStatus": 200,
+    "objectiveExact": true,
+    "summaryExact": true,
+    "completed": true,
+    "linkedRounds": 1,
+    "renderedObjective": true,
+    "renderedSummary": true,
+    "renderedCompletedLabel": true,
+    "completedSelectedOption": true,
+    "confirmButtonDisabled": true,
+    "coldDiskRecordExact": true,
+    "lessonCount": 1,
+    "completionProofCount": 1
+  },
+  "rollback": {
+    "sixOwnedBusinessDomainsRestored": true,
+    "formalBusinessHashesUnchanged": true,
+    "configurationRestored": true
+  },
+  "temporaryMatchingPracticeCacheRemoved": true,
+  "modelCalls": 0,
+  "limits": [
+    "This concrete classroom opts out of mandatory wrong-answer reflections; default required-reflection completion is not certified by this browser run.",
+    "The all-A answers are explicit isolated acceptance inputs, not the user's actual learning performance or evidence of mastery.",
+    "No teacher model call or completed teaching transcript; real coaching, streaming, permission and Stop remain separate open gates.",
+    "Raw original questions, answers, lesson IDs, private source files and screenshots are excluded from remote delivery.",
+    "This proves classroom record persistence for the tested workflow; arbitrary migration and the complete original release scope remain unverified."
+  ]
+}

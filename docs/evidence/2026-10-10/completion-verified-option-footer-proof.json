@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-11",
+  "sourcePdfSha256": "325c434db73c47ffb9446c8bde385a0bef64567da01759ea3d65948eec2c6875",
+  "sourcePdfPage": 29,
+  "originalStemSha256": "92bf28aac6110e2b9a7d6d69affbe48c99e9f225198e30ff0a017bc83d75b3a9",
+  "originalOptionsSha256": "bbd9a95daa9e6b9e797f5cfdf34f4ebe158b7931a5cc79fca58b8c36ca1c806c",
+  "sourceIdentityMethod": "Unique stem chunks in real MinerU page_idx plus manual original PDF page and affected option inspection",
+  "affectedOptionVisualMatchAfterExactTerminalAdOnly": true,
+  "verifiedHistoricalAssociationCount": 1,
+  "publicSourceHostHTTP": {
+    "start": true,
+    "submit": true,
+    "readAfterColdRestart": true,
+    "returnedOriginalHistoricalQuestions": 1,
+    "preSubmitResultNull": true,
+    "unaffectedOptionsUnchanged": true,
+    "originalBankRecordUnchanged": true,
+    "originalIssuedSnapshotOptionsUnchanged": true,
+    "gradingAnswerAndExplanationUnchanged": true
+  },
+  "historicalBackupHashUnchanged": true,
+  "privateMaterialsUploaded": false,
+  "modelCalls": 0,
+  "actualInstalledBrowserAcceptance": false,
+  "limitations": [
+    "One confirmed terminal advertisement only; not the complete question-bank repair",
+    "One unaffected option did not match a preliminary transcribed visual comparison; it remains unchanged pending exact source review",
+    "Whole-bank original image associations, other advertising/footer rows, and visual/narrow-screen acceptance remain open",
+    "Source PDF hash and page provide provenance metadata, not automatic PDF authenticity verification"
+  ],
+  "sourcePageContainsOnlyQuestionsAndOptions": true,
+  "codeFileSha256": {
+    "plugins\\kaogong\\src\\index.ts": "c85bd37ef5af6754f5cf9af8d5fc6e8ce41e2696e249a684a8de81c45fbf3587",
+    "plugins\\kaogong\\src\\practice-rounds.ts": "e12340cc566803586801302428136e1f2e1ef9543a67350a83a96cf730757c11",
+    "plugins\\kaogong\\src\\verified-practice-materials.ts": "eaa0a0eb09850c60a0df8887e55fb097856938ebbcdb7ef573bf4413997a24fd"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-10",
+  "method": "Restore only missing referenced historical analysis page PNGs from two existing source PDFs after independent source calibration. Existing render engine and one-based page references reused; exclusive create prevents overwrite. Re-run skips all created files.",
+  "groups": [
+    {
+      "group": "analysis600",
+      "restoredImages": 149,
+      "sourcePdfSha256": "b934286af7e658aee0469d9c8ae94471caa34d91ff2c651f46bffef9bcacc446",
+      "sourcePages": 392,
+      "scale": 2,
+      "calibration": "Page 5 rendered bytes exactly match pre-existing historical image"
+    },
+    {
+      "group": "analysis1200",
+      "restoredImages": 29,
+      "sourcePdfSha256": "027ffa9f2c4ed788bc3722e1502b78384615ce52a60fd50415b2ed014b0ae5f5",
+      "sourcePages": 644,
+      "scale": 2,
+      "calibration": "Page 9 visually matches stored group 116–120 and distinctive values; restored bytes match reviewed source render"
+    }
+  ],
+  "totalRestored": 178,
+  "existingImagesOverwritten": 0,
+  "currentBusinessDomainHashesUnchanged": true,
+  "allRestoredPngHeadersAndDimensionsValid": true,
+  "restoredAssetManifestSha256": "98ab0b88d26589a90e7416006ad034105c14feb4018d1e4301a731776831ff52",
+  "storedImageReferencesBefore": {
+    "unique": 183,
+    "missing": 178
+  },
+  "storedImageReferencesAfter": {
+    "unique": 183,
+    "missing": 0
+  },
+  "visualSamplesReviewed": [
+    "analysis600 source page 5 versus existing page 5",
+    "restored analysis600 page 6",
+    "analysis1200 source page 9 versus stored material group"
+  ],
+  "cleanupRepair": "Initial helper used an unsupported PDFDocumentProxy.destroy method after generating assets; changed to PDFDocumentLoadingTask.destroy. Both complete idempotent reruns exited successfully.",
+  "practicePolicy": "No frontend restriction changed: unverified full analysis page images remain excluded from exercise stems because they contain answers and commentary. These restored historical assets are not certified answer-free material crops.",
+  "limits": [
+    "Real PDFs and PNGs remain local ignored materials; no book content, raw bank records or credentials are uploaded.",
+    "No runtime browser image-route test or all-page visual review is claimed in this receipt.",
+    "No bulk OCR/import, bank-ID/option/answer edits, old-path cleanup, or formal Host restart.",
+    "Full original-material fidelity, arbitrary migration replay and full real-provider acceptance remain incomplete."
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-05",
+  "runtime": "http://127.0.0.1:3080/",
+  "sessionId": "4a23d578-3204-45b5-a9a6-e1a5793a86e7",
+  "roleReadStatus": 200,
+  "inputMethod": "Chrome DevTools click, Control+A, Backspace, type_text; no DOM-only fill",
+  "appToMain": {
+    "bothVisibleText": "系统双视图同步验收：从应用输入，暂不发送。",
+    "appFocused": true
+  },
+  "mainToApp": {
+    "text": "系统双视图同步验收：主会话真实输入，暂不发送。",
+    "mainFocusedAfterClosingApp": true,
+    "hiddenAppSameText": true,
+    "reopenedAppSameText": true
+  },
+  "send": {
+    "prompt": "系统双视图发送验收：不要使用工具，不要修改文件或业务数据，只回复“双视图同步通过”。",
+    "response": "双视图同步通过",
+    "beforeRounds": 2,
+    "afterRounds": 3,
+    "beforeSteps": 2,
+    "afterSteps": 3,
+    "visibleReplyCopies": 2,
+    "mainTextContent": "",
+    "appTextContent": "",
+    "mainInnerText": "\n",
+    "appInnerText": ""
+  },
+  "checks": {
+    "nativeFocused": {
+      "files": 3,
+      "tests": 110
+    },
+    "nativeConversationAndChangesOpen": {
+      "files": 42,
+      "tests": 566
+    },
+    "clientTypecheck": true,
+    "clientBundle": true,
+    "pluginReleaseBuild": true,
+    "initialAndPriorUpgradeFixture": true,
+    "existingChromeAdapterFixture": true,
+    "standardsReview": "no actionable findings",
+    "specReview": "no actionable findings",
+    "liveCompositionListeners": {
+      "expected": 2,
+      "actual": 2,
+      "originalKeymapAlsoPassed": true,
+      "speculativeGuardRemoved": true
+    }
+  },
+  "limits": [
+    "Main input is covered while the app overlay is open; attempts to click covered geometry do not prove focus transfer.",
+    "The shared-composer path is accepted; broader native approvals/questions/Stop and full-platform release requirements remain pending.",
+    "No claim of raw innerText byte equality: the mirror displays an empty paragraph newline."
+  ],
+  "preservedUserAgentFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  }
+}

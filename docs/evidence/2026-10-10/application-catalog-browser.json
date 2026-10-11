@@ -1,0 +1,1208 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "9eee3d960aa4378bc5037320fe8ec6d49de5bce8",
+  "cleanSourceRoot": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791584765948",
+  "method": "Real Chrome DevTools clicks/fill in installed isolated DSH; DOM/public localStorage reads only; no synthetic events or model turns",
+  "url": "http://127.0.0.1:3089/",
+  "installedArchive": {
+    "sha256": "782c943010ba46c111001f4bd8b89100eed2bce276c7849f041d4de531d102f8",
+    "bytesEqual": true
+  },
+  "regression": {
+    "before": "Built UI 0/1: catalog Exercise,Alpha disagreed with sidebar Alpha,Exercise; actual installed browser had zero move controls and different card/sidebar order",
+    "after": "Built UI 1/1; clean-source full suite 295/295, no failures/skips; all three builds, declarations and source consumers passed"
+  },
+  "observations": {
+    "initial": {
+      "cards": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics",
+        "HTML assets"
+      ],
+      "sidebar": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics",
+        "HTML assets"
+      ],
+      "appPreferences": {},
+      "tools": [
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: HTML assets",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: HTML assets",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "moved": {
+      "cards": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "HTML assets",
+        "阅读统计 / Reading statistics"
+      ],
+      "sidebar": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "HTML assets",
+        "阅读统计 / Reading statistics"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": false,
+          "hidden": false,
+          "order": 3
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: HTML assets",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "favorited": {
+      "cards": [
+        "HTML assets",
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "sidebar": [
+        "HTML assets",
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": true,
+          "hidden": false,
+          "order": 3
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: HTML assets",
+          "disabled": false,
+          "pressed": "true"
+        },
+        {
+          "label": "隐藏应用: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: HTML assets",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: HTML assets",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "hidden": {
+      "cards": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "sidebar": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": true,
+          "hidden": true,
+          "order": 3
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "search": {
+      "cards": [
+        "阅读统计 / Reading statistics"
+      ],
+      "sidebar": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": true,
+          "hidden": true,
+          "order": 3
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "reloaded": {
+      "cards": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "sidebar": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": true,
+          "hidden": true,
+          "order": 3
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "restored": {
+      "cards": [
+        "HTML assets",
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "sidebar": [
+        "HTML assets",
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": true,
+          "hidden": false,
+          "order": 3
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: HTML assets",
+          "disabled": false,
+          "pressed": "true"
+        },
+        {
+          "label": "隐藏应用: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: HTML assets",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: HTML assets",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "unfavorited": {
+      "cards": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "HTML assets",
+        "阅读统计 / Reading statistics"
+      ],
+      "sidebar": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "HTML assets",
+        "阅读统计 / Reading statistics"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": false,
+          "hidden": false,
+          "order": 3
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: HTML assets",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    },
+    "movedDown": {
+      "cards": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics",
+        "HTML assets"
+      ],
+      "sidebar": [
+        "标注闭环验收",
+        "考公学习",
+        "缺失会话恢复验收",
+        "阅读统计 / Reading statistics",
+        "HTML assets"
+      ],
+      "appPreferences": {
+        "annotation-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 0
+        },
+        "kaogong": {
+          "favorite": false,
+          "hidden": false,
+          "order": 1
+        },
+        "missing-session-proof": {
+          "favorite": false,
+          "hidden": false,
+          "order": 2
+        },
+        "release-html": {
+          "favorite": false,
+          "hidden": false,
+          "order": 4
+        },
+        "reading-statistics": {
+          "favorite": false,
+          "hidden": false,
+          "order": 3
+        }
+      },
+      "tools": [
+        {
+          "label": "收藏: 标注闭环验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 标注闭环验收",
+          "disabled": true,
+          "pressed": null
+        },
+        {
+          "label": "下移: 标注闭环验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 考公学习",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 考公学习",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 缺失会话恢复验收",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: 阅读统计 / Reading statistics",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "收藏: HTML assets",
+          "disabled": false,
+          "pressed": "false"
+        },
+        {
+          "label": "隐藏应用: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "上移: HTML assets",
+          "disabled": false,
+          "pressed": null
+        },
+        {
+          "label": "下移: HTML assets",
+          "disabled": true,
+          "pressed": null
+        }
+      ]
+    }
+  },
+  "preservedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "formal3080": "Existing plugin Junction points to main repository, rebuilt with preserved user changes; browser refresh not exercised this round",
+  "limits": [
+    "Better Sidebar comparator is shared and built, but its actual rendered Tab is not covered by this no-Better-Sidebar browser proof",
+    "Search query and show-hidden checkbox are transient; favorite, hidden and manual order are persistent",
+    "Full teaching, native question/permission/Stop, physical IME and broader requirements remain open"
+  ],
+  "release": {
+    "root": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791584765948\\.scratch\\platform-release-1791585077842",
+    "verdict": {
+      "officialOfflineArchiveInstall": true,
+      "dependencyMode": "existing public dependency links; products installed from exact archives",
+      "compatibilityExemptions": 0,
+      "installedBytes": true,
+      "installedConsumers": true,
+      "authenticatedLifecycle": true,
+      "installedHtmlAssets": true,
+      "coldRestart": true,
+      "readingUninstallReinstall": true,
+      "fixture": "public synthetic reading records",
+      "modelCalls": 0,
+      "archives": [
+        "782c943010ba46c111001f4bd8b89100eed2bce276c7849f041d4de531d102f8",
+        "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+        "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+      ]
+    },
+    "verdictSha256": "56a6d15256423a42aa91c60b64c57a85d39fa7ea65e25740486f484246746b06"
+  },
+  "tests": {
+    "path": "D:\\programming\\workspace\\my-dsh\\.scratch\\committed-sidebar-source-1791584765948\\.scratch\\platform-tests-1791584794931\\tests.log",
+    "sha256": "a41705df4846765430f159fd9553d1d5a552ae0955d3c19706a4ffa4b82e962f",
+    "passed": 295,
+    "failed": 0,
+    "skipped": 0
+  }
+}

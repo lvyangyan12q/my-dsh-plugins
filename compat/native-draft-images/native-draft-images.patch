@@ -1,0 +1,75 @@
+diff --git a/packages/client/ui-conversation/src/client/service.ts b/packages/client/ui-conversation/src/client/service.ts
+--- a/packages/client/ui-conversation/src/client/service.ts
++++ b/packages/client/ui-conversation/src/client/service.ts
+@@ -40,6 +40,10 @@ import type { InputSubmitMode } from './contract/composer-submission.ts'
+ export interface IConversation {
+   /** The per-session input machine registry (SessionInputResolver face). */
+   readonly input: SessionInputResolver
++  /** Stage browser images in an existing Session draft without sending or changing its text.
++   * @returns an idempotent rollback which removes only this call's unsent images.
++   */
++  stageImages?(sessionId: SessionId, files: readonly File[]): () => void
+   /**
+    * The per-session composer-block registry: how a plugin the composer
+    * cannot import makes a session's input inert with its own reason.
+@@ -296,6 +300,28 @@ export class ConversationController extends Service implements IConversation {
+     return { kind: 'success' }
+   }
+ 
++  /** Stage only image drafts on an already mounted Session; never start an upload or prompt. */
++  stageImages(sessionId: SessionId, files: readonly File[]): () => void {
++    const scope = this.ctx.sessions.scope(sessionId)
++    if (scope === undefined) throw new Error('conversation: target Session input unavailable')
++    if (files.length === 0 || files.some(file => !isImageMediaType(file.type))) throw new Error('conversation: image files required')
++    const input = this.input.for(scope)
++    if (!['plain', 'claimed'].includes(input.state.getSnapshot().phase)) throw new Error('conversation: target draft is busy')
++    const drafts = this.createDrafts(sessionId, files)
++    if (!input.addAttachments(drafts.map(draft => draft.id))) {
++      this.releaseDraftAttachments(drafts)
++      throw new Error('conversation: target draft refused images')
++    }
++    let released = false
++    return () => {
++      if (released) return
++      released = true
++      for (const draft of drafts) {
++        if (input.removeAttachment(draft.id)) this.releaseDraftAttachment(draft.id)
++      }
++    }
++  }
++
+   /**
+    * Create runtime-only draft attachments. Files whose browser MIME is an
+    * accepted image type become image drafts (object URL preview, bytes sent
+diff --git a/packages/client/ui-conversation/tests/service-orchestration.client.spec.ts b/packages/client/ui-conversation/tests/service-orchestration.client.spec.ts
+--- a/packages/client/ui-conversation/tests/service-orchestration.client.spec.ts
++++ b/packages/client/ui-conversation/tests/service-orchestration.client.spec.ts
+@@ -54,6 +54,28 @@ async function bench(maxConcurrentFileUploads = 2) {
+ }
+ 
+ describe('ConversationController', () => {
++  it('stages images through the public Session face and rolls back only its own unsent images', async () => {
++    const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:staged-image')
++    const revoked = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
++    const b = await bench()
++    try {
++      b.shell.setDraft('keep original draft')
++      const existing = new File(['first'], 'existing.png', { type: 'image/png' })
++      const first = b.root.stageImages('s1' as SessionId, [existing])
++      const original = b.shell.snapshot.attachmentIds
++      const rollback = b.root.stageImages('s1' as SessionId, [new File(['second'], 'region.png', { type: 'image/png' })])
++      expect(b.shell.snapshot.draft).toBe('keep original draft')
++      expect(b.shell.snapshot.attachmentIds).toHaveLength(2)
++      rollback(); rollback()
++      expect(b.shell.snapshot.attachmentIds).toEqual(original)
++      expect(b.prompt).not.toHaveBeenCalled()
++      expect(() => b.root.stageImages('s1' as SessionId, [new File(['text'], 'note.txt', { type: 'text/plain' })])).toThrow('image files required')
++      first()
++      b.reference.release()
++      expect(() => b.root.stageImages('s1' as SessionId, [existing])).toThrow('unavailable')
++    } finally { await b.runtime.dispose(); created.mockRestore(); revoked.mockRestore() }
++  })
++
+   it('does not revive a withdrawn generation when an old input submits before scoped cleanup', async () => {
+     const b = await bench()
+     try {

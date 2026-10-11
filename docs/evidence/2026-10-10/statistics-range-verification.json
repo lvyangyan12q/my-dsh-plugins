@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-10",
+  "implementationCommit": "439ec4983a7016ca03cb0d810e534311e1f0cc56",
+  "tests": {
+    "pass": 302,
+    "fail": 0,
+    "skipped": 0
+  },
+  "testLogSha256": "54b052d7478438559b0b7c60b5dda84ba2c57a96eb8059537bf36a09843ff2de",
+  "releaseVerdict": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "13993b2c22037247bb8c5d2745f44914c455058c98bafb0f0f7944f7dc03b64f",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "protectedUserFileHashes": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "regressions": [
+    "Actual server-rendered statistics card and displayModuleContext fail before repair for a representable sum with intermediate overflow",
+    "Actual sum card does not show Infinity for an unrepresentable total; other count card stays usable, context is unavailable with range reason",
+    "Filtering to one record restores the total and usable context without model calls"
+  ],
+  "scope": "Synthetic numeric tests and exact clean-source three-plugin builds/official installed release checks. No new live browser, teaching or physical IME acceptance. Pending screenshot/browser materials are excluded from this delivery."
+}

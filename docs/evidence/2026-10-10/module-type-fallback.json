@@ -1,0 +1,98 @@
+{
+  "baselineCommit": "e1d63614c5ec81328a9a610f36d49e4c34212d2f",
+  "sourceHashes": {
+    "plugins/personal-workbench/src/recipe-canvas.tsx": "e2d33de9de3f187e5a33d128398ceaf59b08dcfc2796c840db6a75a39d44a255",
+    "plugins/personal-workbench/tests/recipe-canvas.test.mjs": "bd158de54af48a0993e76c80d92af03e09ef8035081d4c563fcfe19e7dee0fe7"
+  },
+  "observedBug": "Unknown module summary exposed recipeModuleunregistered instead of a readable localized type",
+  "fix": "Use the complete supported contentTypes catalog for existing translations; preserve external/unknown type and configuration and show localized Content type plus original identifier",
+  "regressions": {
+    "unknownType": {
+      "red": "unknown module must show a readable type",
+      "green": true
+    },
+    "supportedTypes": {
+      "red": "supported list must retain its localized label",
+      "types": [
+        "list",
+        "detail",
+        "filter"
+      ],
+      "green": true
+    },
+    "focused": {
+      "tests": 3,
+      "passed": 3
+    },
+    "localIntegrated": {
+      "tests": 291,
+      "passed": 291,
+      "failed": 0,
+      "skipped": 0
+    },
+    "remoteOnlyCount": "Not rerun for this implementation; local total includes one user uncommitted management test"
+  },
+  "threePluginBuilds": true,
+  "release": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "dc6fd97f712890205ec4128286fa6a5ccd9bdb031f2a960de94bbae7be6af7d1",
+      "6ade6644691999ff02f8534506abd32a7480fa8e635ab597bf59958b4d9994eb",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "browser": {
+    "url": "http://127.0.0.1:3089/",
+    "isolatedContext": "current-archive-dependency-acceptance",
+    "profile": "platform-proof",
+    "officialWorkbenchArchiveSha256": "dc6fd97f712890205ec4128286fa6a5ccd9bdb031f2a960de94bbae7be6af7d1",
+    "installedHostClientBytesEqual": true,
+    "beforeLabel": "recipeModuleunregistered",
+    "afterLabel": "内容类型: unregistered",
+    "previewError": "配方操作失败: Unavailable module: unregistered",
+    "activateDisabled": true,
+    "draftRevision": 3,
+    "draftVersion": 2,
+    "runningVersion": 1,
+    "ownedRecords": 3,
+    "totalMinutes": 210,
+    "averageMinutes": 70,
+    "oldRunningApplicationOpens": true,
+    "visibleTypes": [
+      "detail",
+      "filter",
+      "list",
+      "stats"
+    ],
+    "modelCalls": 0,
+    "formal3080DataUnchanged": true
+  },
+  "reviews": {
+    "standards": "no new actionable finding",
+    "spec": "P3 incomplete picker list fixed with full catalog; no remaining incremental finding"
+  },
+  "desktopIme": {
+    "status": "unverified",
+    "attempts": 3,
+    "resetAttempted": true,
+    "error": "trusted Node process exited unexpectedly; kernel reset, rerun your request",
+    "windowsInputActions": 0
+  },
+  "limits": [
+    "Unknown installed extension types remain editable; this fallback does not decide Host availability",
+    "Only the absent-module failure/recovery path was observed; missing Agent/Skill native recovery remains separate",
+    "No real native model question, Stop, three-environment teaching or physical IME acceptance claim",
+    "No new screenshot captured; actual AX and DOM plus public authenticated responses recorded"
+  ],
+  "userFileHashesPreserved": true
+}

@@ -1,0 +1,11 @@
+# Saved annotation editing — partial regression
+
+Actual installed acceptance found saved annotation history offered archive/restore but no edit entry. The specification requires editing, canceling, saving and reopening saved notes.
+
+The existing public Host HTTP seam first rejected an update with 400, and the rendered AnnotationLayer UI first failed because its saved record had no edit button. Both now pass: open history, edit the requirement/target role, cancel without writing, save changes independently, reopen the updated record, then explicitly append that saved request to the native draft. Editing and saving never acquire a role or call the model. Appending reuses the existing revision-checked native insertion bridge; it neither replaces the current draft nor submits it.
+
+The Host update action accepts only identity/version, requirement and role. It reads the existing record and preserves annotation ID, captured module/page/geometry/context, creation date and archive state. Missing records, obsolete recipe versions, removed modules and missing roles fail explicitly. Older-version history remains readable rather than being moved to the current recipe. At append time the visible geometry/scroll must still match the captured annotation; otherwise the record remains unchanged and the target-change message is shown.
+
+Directed public Host/UI/native bridge regressions passed 21/21, including actual storage reopen, cancellation, save without native insertion, separate insertion, missing targets, changed versions/layouts and existing draft references/images. Independent personal-workbench Host/Client build, source types, declarations and public consumer checks passed. No formal/plugin profile, browser, core, installation or model execution was changed.
+
+Ticket 06 remains open. Actual installed Browser must verify cancel/save/reopen independently of an existing native draft, then explicitly append, retain the draft prefix, and exercise a moved-layout or obsolete-version failure. Screenshot attachments are not persisted in history, consistent with the existing screenshot contract; saved-record editing updates text/role only. Actual model execution/page-adjustment evidence and all remaining ticket criteria are evaluated separately.
