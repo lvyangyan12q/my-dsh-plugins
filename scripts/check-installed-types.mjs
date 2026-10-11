@@ -3,10 +3,12 @@ import { mkdir, readFile, readdir, symlink, cp, writeFile, realpath, mkdtemp } f
 import { createRequire } from 'node:module'
 import { resolve, join, dirname, relative, isAbsolute } from 'node:path'
 import { runNode } from './release-tools.mjs'
+import { selectedNativeVersion } from './native-version-matrix.mjs'
 
 /** The products come only from the installed pair; first-party types use the same built CLI installation anchor. */
 export async function checkInstalledTypes(home, source, root, env) {
   home = resolve(home); source = resolve(source); root = resolve(root)
+  const runtimeVersion = await selectedNativeVersion(source)
   const consumer = await mkdtemp(join(root, 'type-consumer-'))
   const modules = join(consumer, 'node_modules')
   await mkdir(join(modules, '@deepseek-ai'), { recursive: true }); await mkdir(join(modules, '@types'), { recursive: true })
@@ -32,7 +34,7 @@ export async function checkInstalledTypes(home, source, root, env) {
     let manifest
     try { manifest = JSON.parse(await readFile(join(packageRoot, 'package.json'), 'utf8')) } catch (error) { if (error.code === 'ENOENT') continue; throw error }
     if (!manifest.name?.startsWith('@deepseek-ai/') || !manifest.exports?.['.']?.types) continue
-    assert(manifest.version === '0.2.0-rc.2' || !manifest.name.startsWith('@deepseek-ai/dsh-'), 'First-party type anchor must match rc.2')
+    assert(manifest.version === runtimeVersion || !manifest.name.startsWith('@deepseek-ai/dsh-'), 'First-party type anchor must match the exact selected native runtime')
     await link(packageRoot, join(modules, ...manifest.name.split('/')))
   }
   const require = createRequire(join(source, 'packages/client/ui-renderer/package.json'))
@@ -43,4 +45,5 @@ export async function checkInstalledTypes(home, source, root, env) {
   await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, noEmit: true, skipLibCheck: false, jsx: 'react-jsx', types: ['node'], lib: ['ES2024', 'DOM', 'DOM.Iterable', 'ESNext.Disposable'] }, include: ['consumer.mts'] }))
   await runNode([resolve(source, 'node_modules/typescript/bin/tsc'), '-p', join(consumer, 'tsconfig.json')], { cwd: consumer, env })
 }
+
 

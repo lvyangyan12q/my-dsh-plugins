@@ -74,19 +74,19 @@
     "zod": "^4.4.3"
   },
   "optionalDependencies": {
-    "@deepseek-ai/dsh-persona": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-skill-filesystem": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tool-skill": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tool-ask-user": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-persona": "0.2.0-rc.2 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.0-rc.2 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-tool-skill": "0.2.0-rc.2 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-tool-ask-user": "0.2.0-rc.2 || 0.2.1-alpha.2",
     "@deepseek-ai/dsh-personal-workbench": "0.1.0"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.4",
-    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-client-ui-sidebar": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-client-ui-workspace": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-agent-preset-registry": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-client-ui-sidebar": "0.2.0-rc.2 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-client-ui-workspace": "0.2.0-rc.2 || 0.2.1-alpha.2",
+    "@deepseek-ai/dsh-agent-preset-registry": "0.2.0-rc.2 || 0.2.1-alpha.2",
     "@deepseek-ai/dsh-personal-workbench": "file:../personal-workbench",
     "@types/react": "~18.3.1",
     "@types/node": "^24.0.0",
@@ -101,6 +101,7 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "4.0.4",
-    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2"
+    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2 || 0.2.1-alpha.2"
   }
 }
+
