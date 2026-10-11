@@ -2,6 +2,11 @@ import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import { readFileSync } from 'node:fs'
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createHash } from 'node:crypto'
+import { loadVerifiedPracticeMaterials, loadVerifiedPracticeOptions } from '../src/verified-practice-materials.ts'
 import vm from 'node:vm'
 
 // Test tools are development-only; the official runtime remains an explicit integration input.
@@ -39,23 +44,23 @@ const dashboard = {
 }
 let calls
 const fixtureRoundId = '00000000-0000-4000-8000-000000000001'
-function mockApi() {
+function mockApi(projectedQuestion) {
   calls = []
   let round
   const score = { roundId: fixtureRoundId, projection: 'complete', review: 'ready', totalCount: 1, correctCount: 0, accuracyRate: 0,
-    results: [{ id: 'fixture-1', subject, stem: '原题材料', options: ['A. 10%', 'B. 20%'], source: '原题来源', userAnswer: 'A', knowledgePoint: '增长率', correct: false, correctAnswer: 'B', explanation: '测试解析' }] }
+    results: [{ id: 'fixture-1', subject: projectedQuestion?.subject ?? subject, stem: projectedQuestion?.stem ?? '原题材料', options: projectedQuestion?.options ?? ['A. 10%', 'B. 20%'], source: '原题来源', userAnswer: 'A', knowledgePoint: '增长率', correct: false, correctAnswer: 'B', explanation: '测试解析' }] }
   globalThis.fetch = async (url, options = {}) => {
     const body = options.body ? JSON.parse(options.body) : undefined
     calls.push({ url, body })
     let value
-    if (url === '/api/kaogong/dashboard') value = dashboard
+    if (url === '/api/kaogong/dashboard') value = projectedQuestion ? { ...dashboard, todayPlan: { ...dashboard.todayPlan, items: dashboard.todayPlan.items.map(item => ({ ...item, subject: projectedQuestion.subject })) }, modules: dashboard.modules.map(item => ({ ...item, subject: projectedQuestion.subject })) } : dashboard
     else if (url === '/api/kaogong/lesson/list') value = []
     else if (url === '/api/kaogong/lesson/current') value = null
     else if (url === '/api/kaogong/practice/start') value = {
       roundId: fixtureRoundId, context: { subject: body.subject, title: body.title ?? '模块练习', limit: 10, ...(body.knowledgePoint ? { knowledgePoint: body.knowledgePoint } : {}) }, result: null, reflections: [],
       reason: '练习', totalAvailable: 1, returned: 1, cycled: Boolean(body.previousRoundId),
-      questions: [{ id: 'fixture-1', subject, knowledgePoint: '增长率', difficulty: 'easy',
-        stem: '<table><tr><td>材料表格</td></tr></table>\n\n![材料](/api/kaogong/material-image?asset=verified%2Ffixture.png)', options: ['A. 10%', 'B. 20%'] }],
+      questions: [{ id: 'fixture-1', subject: projectedQuestion?.subject ?? subject, knowledgePoint: '增长率', difficulty: 'easy',
+        stem: projectedQuestion?.stem ?? '<table><tr><td>材料表格</td></tr></table>\n\n![材料](/api/kaogong/material-image?asset=verified%2Ffixture.png)', options: projectedQuestion?.options ?? ['A. 10%', 'B. 20%'] }],
     }
     else if (url === '/api/kaogong/practice/submit') { value = { ...score }; round.result = value }
     else if (url === '/api/kaogong/practice/reflection') value = {
@@ -858,4 +863,35 @@ test('independent learning reopens its selected page instead of the unchanged ou
   fireEvent.click(screen.getByRole('button',{name:'打开学习窗口'}))
   assert.equal(screen.getByRole('button',{name:'讲义',exact:true}).getAttribute('aria-pressed'),'true','a fresh display owner preserves the closed-window page preference')
   assert.equal(calls.some(row=>row.url.endsWith('/start')||row.url.endsWith('/submit')),false,'view restoration must not create or grade a practice round')
+})
+
+for (const questionSubject of ['行测-数量关系', '行测-资料分析']) test(`graded ${questionSubject} details retain verified original image and options after round read`, async () => {
+  const folder = await mkdtemp(join(tmpdir(), 'graded-source-ui-'))
+  const sha = value => createHash('sha256').update(value).digest('hex')
+  const stem = '合成原始题面，历史图片路径缺失', originalOptions = ['A. 10%', 'B. 20%', 'C. 30%', 'D. 40% 公考最新资料、更新进度微信 SKA674'], cleanOptions = ['A. 10%', 'B. 20%', 'C. 30%', 'D. 40%']
+  const bytes = Buffer.from('synthetic content-pinned image fixture'), asset = 'verified/graded-source.png'
+  const common = { questionId: 'fixture-1', stemSha256: sha(stem), sourcePdfSha256: sha('synthetic original PDF'), sourcePage: 7 }
+  try {
+    await mkdir(join(folder, 'verified')); await writeFile(join(folder, asset), bytes)
+    await writeFile(join(folder, 'verified/associations.json'), JSON.stringify({ version: 1, associations: [{ ...common, asset, assetSha256: sha(bytes), displayMode: 'source-image' }] }))
+    await writeFile(join(folder, 'verified/option-repairs.json'), JSON.stringify({ version: 1, associations: [{ ...common, optionsSha256: sha(JSON.stringify(originalOptions)), optionIndices: [0, 1, 2, 3], sourceOptions: cleanOptions }] }))
+    const materialStem = await loadVerifiedPracticeMaterials(folder), materialOptions = await loadVerifiedPracticeOptions(folder)
+    mockApi({ subject: questionSubject, stem: materialStem('fixture-1', stem), options: materialOptions('fixture-1', stem, originalOptions) })
+    let mounted = render(React.createElement(client.KaogongView, { onOpenTeacher() {} }))
+    fireEvent.click(await screen.findByRole('button', { name: '开始 10 题练习' }))
+    const answer = await screen.findByRole('radio', { name: 'A. 10%' }); assert.equal(screen.getAllByRole('radio').length, 4); assert.ok(screen.getByRole('img', { name: '已核验原题图示 · PDF 第 7 页' })); assert.equal(screen.queryByText(/正确答案/), null)
+    fireEvent.click(answer); fireEvent.click(screen.getByRole('button', { name: '提交判分' }))
+    await screen.findByText('0/1 题正确，正确率 0%')
+    const verify = () => {
+      const details = document.querySelector('details'); assert.ok(details); fireEvent.click(details.querySelector('summary'))
+      const image = details.querySelector('img'); assert.ok(image, 'graded details must display the verified original question image')
+      assert.equal(image.getAttribute('src'), '/api/kaogong/material-image?asset=verified%2Fgraded-source.png'); assert.match(image.alt, /PDF 第 7 页/)
+      for (const option of cleanOptions) assert.ok(details.textContent.includes(option))
+      assert.ok(!details.textContent.includes('[图片引用不可用]')); assert.ok(!details.textContent.includes('SKA674')); assert.match(details.textContent, /正确答案：B。测试解析/)
+    }
+    verify(); mounted.unmount(); mounted = render(React.createElement(client.KaogongView, { onOpenTeacher() {} }))
+    await screen.findByText('0/1 题正确，正确率 0%'); verify()
+    assert.equal(calls.filter(call => call.url.endsWith('/submit')).length, 1); assert.equal(calls.filter(call => call.url.endsWith('/read')).length, 1)
+    assert.deepEqual(originalOptions, ['A. 10%', 'B. 20%', 'C. 30%', 'D. 40% 公考最新资料、更新进度微信 SKA674'])
+  } finally { cleanup(); await rm(folder, { recursive: true, force: true }) }
 })
