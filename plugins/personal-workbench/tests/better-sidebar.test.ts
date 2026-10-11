@@ -228,7 +228,8 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     mounted = 'dormant'
     for (const fn of mountedListeners) fn()
     assert.deepEqual(inventory.map(row => row.tabId), ['native-unrelated-tab', 'new-catalog-tab'], 'Future public adoption cleans only retired catalog records, preserving newly opened catalogs')
-    assert.equal(status(), 'sidebarCleanupPending', 'Legacy adopted-only close cannot certify durable retirement')
+    assert.equal(status(), null, 'No known active close remains; missing optional retirement is not an actionable warning')
+    assert.equal(JSON.parse(dom.window.localStorage.getItem('personal-workbench/catalog-retirement/v1')!).requested, true, 'Historical retirement intent remains stored without touching native layout storage')
     await provider.dispose()
     assert.deepEqual(inventory.map(row => row.tabId), ['native-unrelated-tab'])
     await nativeProvider.dispose()
@@ -294,3 +295,5 @@ test('built optional adapter shares the owner and cleans scopes across absent, u
     }
   }
 })
+
+

@@ -105,10 +105,13 @@ export class CatalogRetirement {
         catch { /* Close handlers may refuse removal. Keep the marker and retry on a public change. */ }
       }
       const remaining = this.native.openTabs.getSnapshot()
-      this.pending = this.pending.filter(row => remaining.some(tab => tab.kind === catalogKind && tab.sessionId === row.sessionId && tab.tabId === row.tabId))
-      // Adopted-only close cannot certify dormant persistence or undo retirement.
+      const activePending = this.pending.some(row => remaining.some(tab => tab.kind === catalogKind && tab.sessionId === row.sessionId && tab.tabId === row.tabId))
+      // Keep known historical identities so later public adoption can close them.
+      // Missing optional kind-wide retirement cannot certify dormant persistence,
+      // but is not an actionable failure when no known active close remains.
       this.persist()
-      this.report(this.requested || this.pending.length > 0 || this.storageUnavailable)
+      this.report(activePending || this.storageUnavailable)
     } finally { this.cleaning = false }
   }
 }
+

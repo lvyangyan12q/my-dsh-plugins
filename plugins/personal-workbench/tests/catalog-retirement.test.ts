@@ -23,7 +23,7 @@ function nativeFixture() {
   return { native, emit: () => { for (const listener of listeners) listener() }, reject: (value: boolean) => { rejectClose = value } }
 }
 
-test('legacy scoped cleanup retries refused closes while keeping the unverified durable retirement pending', () => {
+test('public scoped cleanup retries refused closes and retains historical markers without an unsupported-API warning', () => {
   const fixture = nativeFixture()
   let value: string | null = null
   let pending = false
@@ -36,7 +36,9 @@ test('legacy scoped cleanup retries refused closes while keeping the unverified 
   fixture.reject(false)
   fixture.emit()
   assert.deepEqual(fixture.native.openTabs.getSnapshot().map(tab => tab.tabId), ['file'])
-  assert.equal(pending, true)
+  assert.equal(pending, false)
+  assert.equal(JSON.parse(value!).requested, true)
+  assert.deepEqual(JSON.parse(value!).tabs, [{sessionId:'main',tabId:'catalog'}])
   detach()
 })
 
@@ -130,13 +132,13 @@ test('a saved durable failure retries through the public capability and clears o
 })
 
 
-test('a legacy or unknown native capability cannot erase a durable kind-wide failure with no occurrence ids', () => {
+test('missing or unknown optional capability preserves history without asking users to upgrade native', () => {
   const fixture = nativeFixture()
   let saved = JSON.stringify({ version: 2, requested: true, tabs: [] }), pending = false
   const native = { ...fixture.native, retirementVersion: 2, retireTabsByKind: () => assert.fail('Unknown capability version') }
   const retirement = new CatalogRetirement({ getItem: () => saved, setItem: (_key, raw) => { saved = raw } }, value => { pending = value })
   retirement.attach(native)
-  assert.equal(pending, true)
+  assert.equal(pending, false)
   assert.equal(JSON.parse(saved).requested, true)
   assert.deepEqual(fixture.native.openTabs.getSnapshot().map(tab => tab.tabId), ['catalog', 'file'])
 })
@@ -159,3 +161,4 @@ test('restored own storage clears recovery uncertainty only after a verified ret
   assert.equal(pending, false)
   assert.equal(JSON.parse(saved!).requested, false)
 })
+
