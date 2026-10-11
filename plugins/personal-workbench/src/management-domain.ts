@@ -1,9 +1,9 @@
-import {workbenchInstanceIdentity} from './instance-identity.ts'
+import {workbenchInstanceMaxLength} from './instance-identity.ts'
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
 import { z } from 'zod'
 import type { SkillAssignment } from './management-api.ts'
 
-export const managementKey = z.object({ appId: z.string().min(1).max(200), instanceId: workbenchInstanceIdentity,
+export const managementKey = z.object({ appId: z.string().min(1).max(200), instanceId: z.string().min(1).max(workbenchInstanceMaxLength),
   roleId: z.string().min(1).max(200), subject: z.string().min(1).max(200).optional() }).strict()
 export const skillName = z.string().max(128).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
 export const assignedNames = z.array(skillName).max(32).refine(names => new Set(names).size === names.length, 'Duplicate Skill name')

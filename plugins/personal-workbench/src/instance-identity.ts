@@ -1,4 +1,7 @@
-import {z} from 'zod'
+import type {WorkbenchInstanceId} from './workbench-api.ts'
 
-/** Same stable identity boundary for window intent and persisted instance/role records. */
-export const workbenchInstanceIdentity=z.string().min(1).max(200)
+/** Host and Client share the same stable identity length without a browser schema dependency. */
+export const workbenchInstanceMaxLength=200
+export function isWorkbenchInstanceId(value:unknown):value is WorkbenchInstanceId {
+  return typeof value==='string'&&value.length>=1&&value.length<=workbenchInstanceMaxLength
+}

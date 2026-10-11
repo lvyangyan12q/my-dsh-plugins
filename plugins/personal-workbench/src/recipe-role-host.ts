@@ -1,4 +1,4 @@
-import {workbenchInstanceIdentity} from './instance-identity.ts'
+import {workbenchInstanceMaxLength} from './instance-identity.ts'
 import {recipeRolePolicy} from './recipe-role-policy.ts'
 import {selectRecipeWorkspace,checkInstanceWorkspace} from './recipe-workspace.ts'
 import type { Context } from '@deepseek-ai/cordis'
@@ -8,7 +8,7 @@ import { z } from 'zod'
 import type { RoleBindingKey, RoleDefinition } from './role-binding-api.ts'
 import { bindingKey } from './role-bindings.ts'
 import { withCapabilityCatalog } from './capability-catalog.ts'
-const instanceSchema=z.object({appId:z.string().min(1).max(200),instanceId:workbenchInstanceIdentity,cwd:z.string().min(1)}).strict()
+const instanceSchema=z.object({appId:z.string().min(1).max(200),instanceId:z.string().min(1).max(workbenchInstanceMaxLength),cwd:z.string().min(1)}).strict()
 export const recipeInstancesDomain=defineDomain({name:'personal_workbench_recipe_instances',version:1,tables:{instances:domainTable<string,z.infer<typeof instanceSchema>>(instanceSchema)}})
 export interface RecipeRoles { workspace(appId:string,instanceId:string):Promise<string>; register(key:RoleBindingKey, explicitEnsure?:boolean):Promise<void>; validate(definition:RoleDefinition):Promise<void> }
 declare module '@deepseek-ai/cordis' { interface Context { personalWorkbenchRecipeRoles:RecipeRoles } }

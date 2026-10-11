@@ -167,7 +167,7 @@ test('public openApp rejects invalid instance identity before publishing and ret
  const workbench=new Workbench(),storage=memory(),persisted=new Workbench(storage)
  workbench.registerApp(app);persisted.registerApp(app)
  const before=workbench.getSnapshot()
- for(const id of ['', 'x'.repeat(201)]){assert.throws(()=>workbench.openApp(app.id,id as WorkbenchInstanceId),/Too (small|big)/);assert.equal(workbench.getSnapshot(),before)}
+ for(const id of ['', 'x'.repeat(201)]){assert.throws(()=>workbench.openApp(app.id,id as WorkbenchInstanceId),/Invalid instance ID/);assert.equal(workbench.getSnapshot(),before)}
  const identity='second / 学习' as WorkbenchInstanceId
  persisted.openApp(app.id,identity)
  persisted.openApp(app.id,identity)

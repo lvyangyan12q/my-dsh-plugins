@@ -3,10 +3,10 @@ import { RecipeEditor } from './recipe-editor.tsx'
 import { useEffect, useRef, useState } from 'react'
 import { BookOpen, GraduationCap, Briefcase, Notebook, LayoutGrid, Bot, Sparkles, X, Minus, Maximize2, Minimize2, Star, Eye, EyeOff, ArrowUp, ArrowDown, Search, Settings } from 'lucide-react'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { WorkbenchAppDefinition, WorkbenchIcon, WorkbenchInstanceId } from './workbench-api.ts'
+import type { WorkbenchAppDefinition, WorkbenchIcon } from './workbench-api.ts'
 import type { Workbench } from './workbench.ts'
 import { windowKey } from './workbench.ts'
-import { workbenchInstanceIdentity } from './instance-identity.ts'
+import { isWorkbenchInstanceId } from './instance-identity.ts'
 import { workspaceStyles } from './workbench-styles.ts'
 import { ManagementCatalogView } from './management-view.tsx'
 import type { PanelNavigation } from './panel-navigation.ts'
@@ -39,10 +39,10 @@ function InstanceOpener({app,disabled,openApp,t}:{app:WorkbenchAppDefinition;dis
   const [error,setError]=useState<string|null>(null)
   return <form onSubmit={event=>{
     event.preventDefault();setError(null)
-    if(!workbenchInstanceIdentity.safeParse(identity).success){setError(t('appInstanceInvalid'));return}
-    try{openApp(app.id,identity as WorkbenchInstanceId)}catch{setError(t('appInstanceOpenFailed'))}
+    if(!isWorkbenchInstanceId(identity)){setError(t('appInstanceInvalid'));return}
+    try{openApp(app.id,identity)}catch{setError(t('appInstanceOpenFailed'))}
   }}>
-    <label>{t('appInstanceId')}<input aria-label={t('appInstanceId')+': '+app.name} value={identity} disabled={disabled} onChange={event=>{setIdentity(event.target.value);setError(null)}} /></label>
+    <label className="pwb-field">{t('appInstanceId')}<input aria-label={t('appInstanceId')+': '+app.name} value={identity} disabled={disabled} onChange={event=>{setIdentity(event.target.value);setError(null)}} /></label>
     <p>{t('appInstanceHelp')}</p>
     <button data-pwb-button type="submit" disabled={disabled} aria-label={t('appOpenInstance')+': '+app.name}>{t('appOpenInstance')}</button>
     {error&&<p role="alert">{error}</p>}

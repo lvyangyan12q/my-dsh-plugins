@@ -1,4 +1,4 @@
-import { workbenchInstanceIdentity } from './instance-identity.ts'
+import { isWorkbenchInstanceId } from './instance-identity.ts'
 import type { PersonalWorkbench, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId } from './workbench-api.ts'
 
 import type { AppLifecycleState } from './app-lifecycle-api.ts'
@@ -162,7 +162,7 @@ export class Workbench implements PersonalWorkbench {
   /** Reflect the native main-panel selection without resetting the focused window or catalog. */
   readonly setVisible = (visible: boolean): void => { if (this.snapshot.visible !== visible) this.publish({ visible }) }
   readonly openApp = (appId: WorkbenchAppId, instanceId = defaultInstance): void => {
-    workbenchInstanceIdentity.parse(instanceId)
+    if(!isWorkbenchInstanceId(instanceId)) throw new Error('Invalid instance ID: expected 1–200 characters')
     const definition = this.definitions.get(appId)
     if (!definition || this.disposed) throw new Error(`Application unavailable: ${appId}`)
     if(!this.isEnabled(appId)) {
