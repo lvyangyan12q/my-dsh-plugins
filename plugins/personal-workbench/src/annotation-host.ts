@@ -7,7 +7,7 @@ import type {} from './app-lifecycle-api.ts'
 const id=z.string().min(1).max(200),number=z.number().finite().min(0).max(100000)
 const scope={appId:id,instanceId:id,pageId:id}
 const annotation=z.object({id,moduleId:id.nullable(),moduleTitle:z.string().max(500),box:z.object({x:number,y:number,width:number,height:number}).strict(),canvas:z.object({width:number.positive(),height:number.positive(),scrollX:number,scrollY:number}).strict(),text:z.string().max(2000),limited:z.boolean(),moduleBounds:z.object({x:z.number().finite().min(-100000).max(100000),y:z.number().finite().min(-100000).max(100000),width:number,height:number,focused:z.boolean()}).strict().optional()}).strict()
-const screenshot=z.object({name:z.string().min(1).max(200),type:z.enum(['image/png','image/jpeg','image/webp']),data:z.string().min(4).max(11184812).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/).refine(value=>Buffer.byteLength(value,'base64')<=8*1024*1024)}).strict()
+const screenshot=z.object({name:z.string().min(1).max(200),type:z.enum(['image/png','image/jpeg','image/webp']),data:z.string().min(4).max(11184812).regex(/^[A-Za-z0-9+/]+={0,2}$/).refine(value=>value.length%4===0).refine(value=>Buffer.byteLength(value,'base64')<=8*1024*1024)}).strict()
 const fields={screenshot:screenshot.optional(),recipeVersion:z.number().int().positive(),annotation,requirement:z.string().trim().min(1).max(2000),roleId:id}
 const requestSchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('list'),...scope}).strict(),
@@ -42,6 +42,9 @@ export async function installAnnotationRecords(ctx:Context){
      const key=JSON.stringify([data.appId,data.instanceId,data.pageId,mark.id]),existing=table.get(key)
      if(existing&&existing.recipeVersion!==data.recipeVersion)throw Error('Annotation belongs to an earlier page version')
      if(!existing&&list().length>=200)throw Error('This page has reached its 200 annotation limit')
+     const imageBytes=(image:z.infer<typeof screenshot>|undefined)=>image?Buffer.byteLength(image.data,'base64'):0
+     const used=list().reduce((total,row)=>total+(row.annotation.id===mark.id?0:imageBytes(row.screenshot)),0)
+     if(used+imageBytes(data.screenshot)>16*1024*1024)throw Error('This page has a 16 MiB screenshot budget. Choose a smaller screenshot or save this annotation without a screenshot.')
      const {action,...record}=data;await table.put(key,{...record,createdAt:existing?.createdAt??new Date().toISOString(),archived:false})
     }else if(data.action==='update'){
      const key=JSON.stringify([data.appId,data.instanceId,data.pageId,data.id]),record=table.get(key)

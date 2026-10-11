@@ -35,18 +35,19 @@ test('composer reveal aborts while waiting for mount without touching another ro
 })
 
 test('save failure and page closure during a delayed save never append to a native draft',async()=>{
- for(const scenario of ['failure','closure']){
+ for(const scenario of ['failure','closure','capacity']){
   const f=await fixture(),canvas=React.createRef(),originalFetch=globalThis.fetch;let finish,appended=0
   const wait=new Promise(resolve=>{finish=resolve})
-  globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);if(request.action==='list')return {ok:true,json:async()=>({records:[]})};if(scenario==='failure')throw Error('Storage unavailable');await wait;return {ok:true,json:async()=>({records:[{...request,createdAt:'2026-10-04',archived:false}]})}}
+  globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);if(request.action==='list')return {ok:true,json:async()=>({records:[]})};if(scenario==='failure')throw Error('Storage unavailable');if(scenario==='capacity')return {ok:false,json:async()=>({error:'This page has a 16 MiB screenshot budget. Choose a smaller screenshot or save this annotation without a screenshot.'})};await wait;return {ok:true,json:async()=>({records:[{...request,createdAt:'2026-10-04',archived:false}]})}}
   const ctx={get:()=>({append:async()=>{appended++;return 'session'}})},render=active=>f.root.render(React.createElement('div',{ref:canvas},React.createElement('section',{'data-module-id':'web'},'Visible'),React.createElement(AnnotationLayer,{canvas,recipe,pageId:'home',instanceId:'default',active,ctx,t:k=>k})))
   try{
    await act(async()=>render(true));canvas.current.getBoundingClientRect=()=>({left:0,top:0,width:800,height:600});canvas.current.querySelector('section').getBoundingClientRect=()=>({left:0,top:44,right:400,bottom:500,width:400,height:456})
    await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='annotationStart').click())
    const aim=document.querySelector('.pwb-annotation-aim');await act(async()=>{for(const type of ['pointerdown','pointerup'])aim.dispatchEvent(new f.dom.window.MouseEvent(type,{bubbles:true,clientX:100,clientY:100,button:0}))})
+   if(scenario==='capacity'){const input=document.querySelector('input[type=file]');Object.defineProperty(input,'files',{configurable:true,value:[new File(['image'],'saved-region.png',{type:'image/png'})]});await act(async()=>input.dispatchEvent(new f.dom.window.Event('change',{bubbles:true})))}
    const input=document.querySelector('textarea');await act(async()=>{Object.getOwnPropertyDescriptor(f.dom.window.HTMLTextAreaElement.prototype,'value').set.call(input,'Keep this requirement');input.dispatchEvent(new f.dom.window.Event('input',{bubbles:true}))})
    await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='annotationAppend').click())
-   if(scenario==='failure'){assert.match(document.body.textContent,/Storage unavailable/);assert.equal(document.querySelector('textarea').value,'Keep this requirement')}
+   if(scenario==='failure'||scenario==='capacity'){assert.match(document.body.textContent,scenario==='failure'?/Storage unavailable/:/16 MiB screenshot budget/);if(scenario==='capacity'){assert.ok(document.querySelector('img[alt=annotationImagePreview]'));assert.match(document.body.textContent,/saved-region.png/)}assert.equal(document.querySelector('textarea').value,'Keep this requirement')}
    else{await act(async()=>render(false));await act(async()=>{finish();await wait})}
    assert.equal(appended,0)
   }finally{finish();await f.close();globalThis.fetch=originalFetch}

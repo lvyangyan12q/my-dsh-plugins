@@ -75,3 +75,13 @@ test('editing a saved annotation preserves target, geometry and archive state ac
  const root=await mkdtemp(join(tmpdir(),'annotation-image-host-'));let f;const screenshot={name:'region.png',type:'image/png',data:'iVBORw0KGgo='};
  try{f=await fixture(root,recipe());const saved=await f.call({...save,screenshot});assert.equal(saved.status,200);assert.deepEqual(saved.value.records[0].screenshot,screenshot);await f.close();f=await fixture(root,recipe());assert.deepEqual((await f.call({...scope,action:'list'})).value.records[0].screenshot,screenshot);const updated=await f.call({...scope,action:'update',id:'mark-one',recipeVersion:1,requirement:'New request',roleId:'maker'});assert.deepEqual(updated.value.records[0].screenshot,screenshot);assert.equal((await f.call({...save,screenshot:{...screenshot,type:'image/svg+xml'}})).status,400);assert.equal((await f.call({...save,screenshot:{...screenshot,data:'not base64!'}})).status,400)}finally{await f?.close();await rm(root,{recursive:true,force:true})}
  })
+
+ test('page screenshot budget refuses growth without losing notes and credits replacements',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'annotation-capacity-'));let f;const image=bytes=>({name:'region.png',type:'image/png',data:Buffer.alloc(bytes).toString('base64')}),mark=id=>({...save,annotation:{...save.annotation,id}});
+ try{f=await fixture(root,recipe());const first=await f.call({...mark('first'),screenshot:image(8*1024*1024)});assert.equal(first.status,200,first.value.error);assert.equal((await f.call({...mark('second'),screenshot:image(8*1024*1024)})).status,200);
+ const overflow=await f.call({...mark('third'),screenshot:image(1024*1024)});assert.equal(overflow.status,409);assert.match(overflow.value.error,/16 MiB.*smaller screenshot/i);assert.equal((await f.call({...scope,action:'list'})).value.records.length,2);
+ assert.equal((await f.call({...mark('first'),screenshot:image(8*1024*1024)})).status,200,'Replacing the same image must not double count it');assert.equal((await f.call(mark('text-only'))).status,200,'Text-only notes remain available at the image budget');
+ assert.equal((await f.call({...mark('first'),screenshot:image(7*1024*1024)})).status,200);assert.equal((await f.call({...mark('third'),screenshot:image(1024*1024)})).status,200,'Replacing with a smaller image releases capacity');
+ await f.close();f=await fixture(root,recipe());const reopened=(await f.call({...scope,action:'list'})).value.records;assert.equal(reopened.length,4);assert.equal(Buffer.byteLength(reopened.find(r=>r.annotation.id==='first').screenshot.data,'base64'),7*1024*1024);
+ }finally{await f?.close();await rm(root,{recursive:true,force:true})}
+ })
