@@ -65,7 +65,7 @@ export function apply(ctx: Context, config: Config): void {
     res.writeHead(503, { 'content-type': 'application/json', 'cache-control': 'no-store' })
     res.end(JSON.stringify({ error: 'Teacher role services unavailable' }))
   } }), 'personal-workbench: optional role route')
-  ctx.inject(['storageDomain', 'sessionController', 'sessionPersistence', 'agentPresets', 'skills', 'connection'], child => {
+  ctx.inject(['storageDomain', 'sessionController', 'sessionPersistence', 'agentPresets', 'skills', 'connection', 'workspaceRegistry'], child => {
     child.effect(async function* () {
       try {
         const { installRoles } = await import('./role-host.ts')
