@@ -20,7 +20,7 @@ test('package includes public client declarations, declares shared UI runtime an
   const files = pack.files.map(file => file.path)
   assert.equal(files.some(file => file.startsWith('lib/typecheck/')), false)
   assert.equal(files.some(file => /lib\/(?:runtime-|npm-cache)/.test(file)), false)
-  for (const name of ['dsh-persona', 'dsh-skill-filesystem', 'dsh-tool-skill']) assert.equal(manifest.optionalDependencies[`@deepseek-ai/${name}`], '0.2.0-rc.2')
+  for (const name of ['dsh-persona', 'dsh-skill-filesystem', 'dsh-tool-skill']) assert.equal(manifest.optionalDependencies[`@deepseek-ai/${name}`], '0.2.0-rc.2 || 0.2.1-alpha.2')
   for (const file of ['roles/personas/老师.md', 'roles/personas/班主任.md', 'roles/personas/辅导员.md', 'roles/skills/kaogong-teach/SKILL.md']) assert.ok(files.includes(file), file)
   const host = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
   const chunk = host.match(/import\("\.\/(role-definitions-[^"]+\.mjs)"\)/)?.[1]
@@ -32,3 +32,4 @@ test('package includes public client declarations, declares shared UI runtime an
   assert.equal(files.some(file => /^(src|scripts|tests)\//.test(file) || file.endsWith('.map') || file === 'roles/cordis.yml'), false)
   assert.match(readFileSync(new URL('../lib/types/client.d.ts', import.meta.url), 'utf8'), /KaogongViewProps/)
 })
+
