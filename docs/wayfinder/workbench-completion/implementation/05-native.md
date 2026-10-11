@@ -65,3 +65,9 @@ blocked_by: [workbench-completion-roles]
 ## 2026-10-11 无补丁原生空白会话归属修复
 
 实页发现：应用已有角色 Session 可在嵌入区编辑未发送草稿，但公开导航打开同 ID 后原生显示“选择工作区”且输入失效。只读持久化核对：Session cwd 与既有原生 Workspace path 一致，而该 Workspace 的 sessionIds 未包含角色 Session。原生 blank Conversation 必须有工作区归属才启用 composer，故不是导航丢失 ID。角色创建在 header flush 后经公开 Workspace.attachSession 归属既有工作区；读取旧 ready 绑定同样修复缺失归属。缺失或改变工作区明确报错，不新建工作区、不替代 Session、不发送消息。公开 Host 回归须配合无补丁实页复验，工单保持 open。
+
+## 2026-10-11 alpha 公共 Skill / 生成契约兼容
+
+alpha 原生 tool-skill、Subagents 新增 workingDirectory 公共依赖；测试按真实 native WorkingDirectory / FS / Projection 装配。spawn_teammate 名称未改变，Schedule 工具已移至独立 tool-schedule。生产分配 Skill 的发现和管理目录使用公开 Session projection workingDirectory，rc2 保持原始 cwd 回退；仍以原 Agent scope 发现、原生 loader 注入，并验证指令消息，不能仅凭 body 可读声称激活。新增有效目录变更行为先失败再修复，原 Session identity/header 和 scope 不变。
+
+独立未修改 alpha（d743267）聚焦 30/30；rc2 29 通过、仅 alpha 目录能力 1 skip、0 失败。独立产品完整构建及平台全量 411/411 通过；未进行 alpha 安装 / 实页 / 真实模型验收，本工单仍 open。生成守卫继续拒绝真实 Schedule、Team、global、late scoped 和 nested 工具，模型工具目录为空，无原生策略覆盖。考公只沿用现存回归夹具，没有执行考公流程或改题库。

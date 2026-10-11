@@ -25,7 +25,11 @@ export function installAssignmentRuntime(ctx: Context, read: (key: string) => Sk
     const names = [...new Set([...reusableNames, ...(match ? [...(match.definition.skillNames ?? []), ...(read(bindingKey(match.definition.key))?.names ?? [])] : [])])]
     if (!names.length) { admitted.set(agent, turn); return next() }
     const registry = ctx.agentPresets.serviceFor(agent, 'skills') ?? ctx.skills
-    const snapshot = await registry.snapshot({ cwd: agent.session.header.cwd, scope: agent, signal })
+    // Alpha records directory transitions in the public Session projection; rc2 retains header cwd.
+    const observed = await ctx.sessionController.projections({ sessionId: agent.id }, signal)
+    const current = observed?.values['workingDirectory']
+    const cwd = typeof current === 'string' ? current : agent.session.header.cwd
+    const snapshot = await registry.snapshot({ cwd, scope: agent, signal })
     if (!snapshot.complete) throw new Error('Assigned role Skill catalog is incomplete')
     const catalog = snapshot.skills
     for (const name of names) {
