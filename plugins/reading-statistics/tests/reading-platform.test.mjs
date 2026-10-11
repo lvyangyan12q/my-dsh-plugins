@@ -50,10 +50,17 @@ async function client(host) {
   const commands = entries.find(entry => entry.options.name === 'main' && entry.options.key === 'personal-workbench').options.inject()
   const { createRoot } = require('react-dom/client'), root = createRoot(dom.window.document.getElementById('mount'))
   const render = async element => { await act(async () => { root.render(element) }) }
-  const flush = () => act(async () => { await new Promise(resolve => setTimeout(resolve, 15)) })
+  const flush = async () => {
+    const deadline = Date.now() + 5000
+    do {
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 15)) })
+      if (!dom.window.document.querySelector('[data-reading-editor][aria-busy="true"]')) return
+    } while (Date.now() < deadline)
+    assert.fail('Reading editor did not finish its visible load or mutation')
+  }
   const click = async text => { const button = [...dom.window.document.querySelectorAll('button')].find(button => button.textContent === text); assert.ok(button, text); assert.equal(button.disabled, false, text); await act(async () => button.click()); await flush() }
   const select = async (label, value) => { const element = dom.window.document.querySelector('select[aria-label="' + label + '"]'); assert.ok(element, label); await act(async () => { element.value = value; element.dispatchEvent(new dom.window.Event('change', { bubbles: true })) }); await flush() }
-  return { platform, reading, workbench, commands, document: dom.window.document, render, flush, click, select, fail: value => { fail = value }, forbidden: () => forbidden, close: async () => { await act(async () => root.unmount()); for (const dispose of cleanups.reverse()) dispose(); dom.window.close(); for (const [key, descriptor] of original) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key] } } }
+  return { platform, reading, workbench, commands, document: dom.window.document, render, flush, click, select, fail: value => { fail = value }, forbidden: () => forbidden, close: async () => { await flush(); await act(async () => root.unmount()); for (const dispose of cleanups.reverse()) dispose(); dom.window.close(); for (const [key, descriptor] of original) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key] } } }
 }
 
 test('reading domain persists own instances; previews are read-only and unavailable connections refuse activation', async () => {
