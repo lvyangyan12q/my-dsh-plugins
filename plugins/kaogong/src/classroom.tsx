@@ -31,7 +31,7 @@ const taskTranslate = (key: string) => taskLabels[key] ?? key
 /** Both surfaces share the existing owner. The native pane stays mounted across page changes. */
 export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> & Partial<PropsRenderFactories> & { onOpenTeacher?: KaogongViewProps['onOpenTeacher']; ctx?: ClientContext }) {
   const [studyOpen, setStudyOpen] = useBusinessState('study.open', false)
-  const [studyPage, setStudyPage] = useBusinessState('study.page', 'classroom')
+  const [studyPage, setStudyPage] = useBusinessState('study.page', null)
   const [studyPane, setStudyPane] = useBusinessState('study.pane', 'content')
   const [narrow, setNarrow] = useState(() => typeof window.matchMedia === 'function' && window.matchMedia('(max-width:760px)').matches)
   useEffect(() => {
@@ -80,13 +80,13 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
     <style>{learningStyles}</style>
     <header className="kg-study-toolbar">
       <div><strong>{studyOpen ? '学习窗口' : '考公学习'}</strong><span>{studyOpen ? '专注课堂、资料与老师对话' : '查看进度，进入独立窗口学习'}</span></div>
-      {studyOpen ? <button data-pwb-button type="button" onClick={closeStudy} aria-label="关闭学习窗口"><X size={16} />返回统计面板</button> : <button data-pwb-button data-variant="primary" ref={studyLauncher} type="button" className="kg-study-launch" onClick={() => { if (['practice', 'materials', 'errors'].includes(props.pageId ?? '')) setStudyPage(props.pageId!); setStudyPane('content'); setStudyOpen(true) }}><Maximize2 size={16} />打开学习窗口</button>}
+      {studyOpen ? <button data-pwb-button type="button" onClick={closeStudy} aria-label="关闭学习窗口"><X size={16} />返回统计面板</button> : <button data-pwb-button data-variant="primary" ref={studyLauncher} type="button" className="kg-study-launch" onClick={() => { if (studyPage === null) setStudyPage(['practice', 'materials', 'errors'].includes(props.pageId ?? '') ? props.pageId! : 'classroom'); setStudyPane('content'); setStudyOpen(true) }}><Maximize2 size={16} />打开学习窗口</button>}
     </header>
     {studyOpen && <nav className="kg-study-pages" aria-label="学习窗口页面">{[{ id: 'classroom', label: '课堂' }, { id: 'materials', label: '讲义' }, { id: 'practice', label: '练习' }, { id: 'errors', label: '错题' }].map(page => <button data-pwb-button type="button" key={page.id} aria-pressed={studyPage === page.id} onClick={() => { setStudyPage(page.id); setStudyPane('content') }}>{page.label}</button>)}</nav>}
     {studyOpen && narrow && <nav className="kg-study-pane-tabs" aria-label="学习内容与对话"><button data-pwb-button type="button" aria-pressed={studyPane === 'content'} onClick={() => setStudyPane('content')}>学习内容</button><button data-pwb-button type="button" aria-pressed={studyPane === 'conversation'} onClick={() => setStudyPane('conversation')}>角色对话</button></nav>}
     <div ref={root} className="kg-classroom" style={{ gridTemplateColumns: studyOpen ? `minmax(0, ${leftWidth}fr) 7px minmax(0, ${100 - leftWidth}fr)` : 'minmax(0, 1fr)', minWidth: 0, minHeight: 0, height: '100%', width: '100%', flex: 1 }}>
     <style>{`.kg-classroom{display:grid;letter-spacing:0}.kg-classroom>div,.kg-classroom>aside{min-width:0;min-height:0;overflow:auto}.kg-classroom>aside{border-left:1px solid #ddd}.kg-classroom h1{font-size:18px!important;overflow-wrap:anywhere}.kg-classroom header{flex-wrap:wrap}.kg-classroom button{max-width:100%;white-space:normal;overflow-wrap:anywhere}.kg-divider{cursor:col-resize;background:#eef0f3;touch-action:none}.kg-divider:hover,.kg-divider:focus-visible{background:#93b4f5;outline:none}`}</style>
-    <div className="kg-study-content"><KaogongView {...props} focusedStudy={studyOpen} pageId={studyOpen ? studyPage : props.pageId} onSelectPage={studyOpen ? setStudyPage : props.onSelectPage} onOpenTeacher={teach} /></div>
+    <div className="kg-study-content"><KaogongView {...props} focusedStudy={studyOpen} pageId={studyOpen ? studyPage ?? 'classroom' : props.pageId} onSelectPage={studyOpen ? setStudyPage : props.onSelectPage} onOpenTeacher={teach} /></div>
     <div hidden={!studyOpen} style={{ display: studyOpen ? 'block' : 'none' }} role="separator" aria-label="调整学习内容与角色对话宽度" aria-orientation="vertical" aria-valuemin={35} aria-valuemax={70} aria-valuenow={leftWidth} tabIndex={0} className="kg-divider"
       onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId) }}
       onPointerMove={event => { if (!event.currentTarget.hasPointerCapture(event.pointerId)) return; const rect = root.current?.getBoundingClientRect(); if (rect?.width) resize((event.clientX - rect.left) / rect.width * 100) }}

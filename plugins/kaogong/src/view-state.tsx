@@ -20,7 +20,7 @@ type ViewValues = {
   integration: { service: PersonalWorkbench } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: PersonalWorkbenchRoles | null; tasks: PersonalWorkbenchTasks | null
-  'study.open': boolean; 'study.page': string; 'study.pane': 'content' | 'conversation'
+  'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
   'roles.selected': RoleBindingKey
   'roles.opened': RoleBindingKey[]
   'lesson.view': LessonView | null
@@ -47,7 +47,7 @@ export class KaogongViewState {
   private saveDisplayChoices() {
     const selected = this.cell('roles.selected', { appId: 'kaogong', instanceId: 'default', roleId: 'teacher' }).value
     if (!selected || selected.appId !== 'kaogong' || selected.instanceId !== 'default') return
-    const page = this.cell('study.page', 'classroom').value
+    const page = this.cell('study.page', null).value
     if (page !== 'classroom' && page !== 'materials' && page !== 'practice' && page !== 'errors') return
     const roleId = selected.roleId
     if (roleId !== 'teacher' && roleId !== 'class-advisor' && roleId !== 'counselor') return
