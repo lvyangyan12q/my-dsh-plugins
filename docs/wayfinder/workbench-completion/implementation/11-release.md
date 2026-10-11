@@ -11,7 +11,7 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 <!-- native-compatible-plan -->
 ## 当前执行范围（2026-10-11）
 
-状态：open；等待无原生补丁适配及对应验收。
+状态：open；已有无原生补丁平台实页部分证据，以下完整标准仍需逐项验收。
 
 支持的精确候选为未补丁0.2.0-rc.2（639ed015）与0.2.1-alpha.2（d743267388）；当前原生只读检出为后者，历史恢复记录保留；安装包只含插件，不含原生源码/lib补丁。验收依赖缺失、兼容入口、升级/回滚、卸载重装及数据保留；平台阶段与包含考公的完整阶段分开记录，不提前关闭本工单。
 
@@ -60,3 +60,10 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 ### 原生版本候选矩阵
 版本预检只允许0.2.0-rc.2与0.2.1-alpha.2；三个产品native声明仅列这两个精确版本。所有First-party类型锚点及运行时版本必须严格等于选定runtime，不能以另一个候选版本混用。alpha产品2d212ab的干净构建、全量回归及官方安装消费者三门禁均status0，已完成自有验收实例受保护冷升级；真实完整Browser链、回滚与卸载重装仍待验，不能据此关闭11。其他版本明确拒绝，无兼容豁免。
 
+
+
+## 2026-10-11 平台实页增量（分版本，不关单）
+
+产品源码1ab23ed针对独立未补丁 alpha 原生d743：build-release、check-platform-tests、check-platform-release 三门禁均status0，包含公开类型和官方安装消费者检查；不沿用另一版本包冒称当前通过。自有 alpha 冷升级1ab正在执行，尚未依据此记录宣称安装完成。
+
+实际2d212ab受保护冷重启保留生成内容、两条标注、会话/轨迹及文字草稿。正式等价混合依赖候选仍有21项 strict 原生声明错误，启动和页面显示不消除该门禁失败。官方 remove/卸载 CLI 实际失败，已安全回滚，不把它算卸载重装通过。原始123标准、无补丁公共限制与完整升级回滚链仍保留。[分版本实页证据](evidence/2026-10-11-unpatched-live.md#2026-10-11-平台收尾增量汇总)。

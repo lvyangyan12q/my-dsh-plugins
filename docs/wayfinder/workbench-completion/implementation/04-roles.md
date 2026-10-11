@@ -11,7 +11,7 @@ blocked_by: []
 <!-- native-compatible-plan -->
 ## 当前执行范围（2026-10-11）
 
-状态：open；等待无原生补丁适配及对应验收。
+状态：open；已有无原生补丁平台实页部分证据，以下完整标准仍需逐项验收。
 
 仅管理入口创建的Agent/Skill进入可复用公共目录；应用私有角色与能力保持应用归属。角色绑定通过已有公开能力完成，不扩展原生角色服务；保留已有Agent管理改动。
 
@@ -45,3 +45,10 @@ blocked_by: []
 ## 2026-10-10 partial installed checkpoint
 
 Official installed archive at `2d06641c802475b807130f5f100e0b6ebbfbb7c3` preserves a publicly prepared, user-edited ordinary task and context after browser refresh and Host cold restart. Reopening the application displays the exact fields; role creation remains available and no send occurred. Public discard removes the task editor and owned cache. [Actual browser receipt](../../../evidence/2026-10-10/completion-task-recovery-browser.json). Cross-instance, callback recovery, binding/history/permission and remaining full ticket criteria remain open.
+
+
+## 2026-10-11 平台实页增量（分版本，不关单）
+
+alpha 产品2d212ab：管理入口逐项关闭 Agent 和 Skill 的 userInvocable，应用公开 Retry 明确显示对应缺失能力，旧绑定/历史保留；恢复后同角色可用，不删除能力或直接编辑存储。跨页面复用同一角色会话；新建角色会话的原生确认取消保留当前会话/草稿，确认生成新会话，应用内历史查看保留旧会话与未发送文字。此处是 Session 替换，不能计作管理 Agent 更换。
+
+源码1ab23ed：现有应用私有角色通过同应用/角色/preset、无学科公开投影保留，不加入公共复用列表；不可用、跨应用/角色/学科及公共 Agent 停用回归15/15。安装后的实际下一版编辑复验尚待。并发、跨实例、完整任务与能力更换标准仍 open。[分版本实页证据](evidence/2026-10-11-unpatched-live.md#2026-10-11-平台收尾增量汇总)。
