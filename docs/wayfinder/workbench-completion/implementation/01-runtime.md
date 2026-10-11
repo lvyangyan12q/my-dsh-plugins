@@ -72,3 +72,7 @@ Official archive at `2d06641c802475b807130f5f100e0b6ebbfbb7c3` passed the adopte
 ### 旧侧栏标签兼容恢复
 未补丁原生缺少可选kind-wide注销接口时，仅用公开closeIn关闭已知标签，保留插件自身历史标记以便以后相同标签被公开adopt后重试。没有实际待关闭标签或存储失败时不提示永久警告，不要求升级或修改原生。仍不能据此证明休眠持久布局全部清理，相关范围继续待验收。
 
+
+### 审查修复：避免新增无法持久注销的侧栏标签
+BetterSidebar适配现在同时观察原生sidebarRight，仅显式提供public retirementVersion=1及retireTabsByKind的环境注册新catalog。未补丁rc.2/alpha不注册该标签，原生main/panellist入口继续可用；既有标签由独立观察器按已知身份执行公开closeIn，不修改旧布局存储。此前混合补丁能力的适配器历史夹具保留为historical，当前回归通过真实Cordis证明能力缺失不注册、显式能力可注册、能力失去即注销。8项legacy清理回归仍默认执行。原生实页与卸载恢复验收由主流程继续，不据此关单。
+
