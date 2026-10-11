@@ -6,7 +6,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 import vm from 'node:vm'
 
 /** Materialize exact built factories with the official browser resolver; never use Node require as a fallback. */
-export async function checkClientModuleArtifacts({ root, runtime, workbench = true, profileRoot }) {
+export async function checkClientModuleArtifacts({ root, runtime, workbench = true, profileRoot, readingLifecycle = false }) {
   assert(runtime, 'Set DSH_SOURCE to the built official DSH checkout')
   const tools = createRequire(join(process.env.KAOGONG_TEST_TOOLS ?? runtime, 'package.json'))
   const { JSDOM } = tools('jsdom')
@@ -24,7 +24,7 @@ export async function checkClientModuleArtifacts({ root, runtime, workbench = tr
     const { ClientModuleSystem } = await import(pathToFileURL(join(runtime, 'packages/client/modules/src/client/system.ts')).href)
     const { parseBootManifest } = await import(pathToFileURL(join(runtime, 'packages/client/modules/src/client/manifest.ts')).href)
     const { getStaticModules } = await import(pathToFileURL(join(runtime, 'packages/client/web/src/seed.ts')).href)
-    const products = workbench ? ['personal-workbench', 'kaogong', 'reading-statistics'] : ['kaogong']
+    const products = workbench ? ['personal-workbench', 'kaogong', 'reading-statistics'] : ['kaogong', 'reading-statistics']
     const profile = profileRoot ? createRequire(join(profileRoot, 'package.json')) : null
     const names = { 'personal-workbench': '@deepseek-ai/dsh-personal-workbench', kaogong: '@deepseek-ai/dsh-tool-kaogong', 'reading-statistics': '@deepseek-ai/dsh-reading-statistics' }
     const packageRoot = name => profile ? dirname(profile.resolve(names[name] + '/package.json')) : join(root, 'plugins', name)
@@ -48,10 +48,34 @@ export async function checkClientModuleArtifacts({ root, runtime, workbench = tr
       assert.equal(typeof value.apply, 'function', pkg.name + ' public Client apply')
       assert.equal(loader.importError(pkg.manifest.name), undefined)
       if (pkg.name === 'kaogong') assert.equal(typeof value.KaogongViewState, 'function')
+      if (pkg.name === 'reading-statistics' && readingLifecycle) {
+        const { Context } = getStaticModules()['@deepseek-ai/cordis']
+        const context = new Context()
+        try {
+          const entry = await context.plugin(value)
+          assert.equal(entry.state, 2, 'reading native entry is ACTIVE without the optional platform service')
+          if (workbench) {
+            const platform = await loader.import('@deepseek-ai/dsh-personal-workbench/client')
+            const visible = () => platform.listDisplaySources('reading-statistics').length
+            assert.equal(visible(), 0)
+            const provide = child => child.reflect.provide('personalWorkbench', {})
+            let provider = await context.plugin(provide)
+            await new Promise(resolve => setImmediate(resolve))
+            assert.equal(visible(), 1, 'optional platform service registers reading without recreating its entry')
+            await provider.dispose()
+            assert.equal(visible(), 0, 'lost optional platform withdraws the adapter')
+            assert.equal(entry.state, 2, 'reading native entry stays ACTIVE after platform loss')
+            provider = await context.plugin(provide)
+            await new Promise(resolve => setImmediate(resolve))
+            assert.equal(visible(), 1, 'returning platform registers exactly one adapter')
+            await provider.dispose()
+          }
+        } finally { await context.fiber.dispose() }
+      }
       loaded.push(pkg.manifest.name)
     }
     return { officialModuleResolver: true, officialPlatformSeed: true, nodeRequireFallback: false,
-      installedArtifacts: !!profile, workbenchRegistered: workbench, materialized: loaded, entryActivationTested: false, cssRenderingTested: false, modelCalls: 0 }
+      installedArtifacts: !!profile, workbenchRegistered: workbench, materialized: loaded, entryActivationTested: false, readingEntryActivationTested: readingLifecycle, cssRenderingTested: false, modelCalls: 0 }
   } finally {
     css.deregister()
     dom.window.close()
