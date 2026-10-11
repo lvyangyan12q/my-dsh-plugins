@@ -131,6 +131,8 @@ function renderStem(stem: string) {
 
 /** Issued and graded questions share the same verified-image boundary; document tables remain intact. */
 function renderQuestionStem(question: Pick<PracticeQuestion, 'stem'>) {
+  // Ordinary text retains its original renderer; only rich material needs the document parser.
+  if (!/[\[\]<>\r\n!*#_|`~]/.test(question.stem)) return renderStem(question.stem)
   const content = question.stem.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (reference, alt: string, source: string) => {
     const image = materialImageUrl(source)
     return image ? `![${alt}](${image})` : reference
