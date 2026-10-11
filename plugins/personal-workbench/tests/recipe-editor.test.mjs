@@ -62,3 +62,22 @@ test('unsaved canvas configuration survives leaving the native main panel and br
   assert.equal(calls.some(c=>['save','activate','start'].includes(c.action)),false);
  }finally{if(root)await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
 });
+for (const dirty of [false, true]) test(dirty ? 'target editor preserves an unsaved older cached recipe and its stale revision conflict' : 'target editor upgrades an old activated cache without losing module configuration', async () => {
+ const dom=new JSDOM('<div id="mount"></div>',{url:'http://localhost'}),original=new Map()
+ for(const[name,value]of Object.entries({window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true})){original.set(name,Object.getOwnPropertyDescriptor(globalThis,name));Object.defineProperty(globalThis,name,{configurable:true,writable:true,value})}
+ const running={schemaVersion:1,appId:'cache-app',version:4,name:'Cache app',description:'',pages:[{id:'home',label:'Home',layout:'grid',modules:[{id:'web',type:'website',title:'Saved module',config:{url:'https://example.com'}}]}],connections:[],roles:[]}
+ const cached=structuredClone(running);if(dirty)cached.pages[0].modules[0].title='Unsaved personal title'
+ const key='personal-workbench.authoring.v1.'+JSON.stringify(['cache-app','home','web'])
+ window.localStorage.setItem(key,JSON.stringify({selected:'cache-app',text:JSON.stringify(cached),revision:7}))
+ const oldFetch=globalThis.fetch,calls=[];globalThis.fetch=async(_url,options)=>{const request=JSON.parse(options.body);calls.push(request);return{ok:request.action!=='save',json:async()=>request.action==='catalog'?{recipes:[{appId:running.appId,revision:8,draft:running,running}]}:request.action==='save'?{error:'Recipe revision conflict'}:{workspaces:[]}}}
+ const{createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'))
+ try{
+  await act(async()=>root.render(React.createElement(RecipeEditor,{target:{appId:'cache-app',pageId:'home',moduleId:'web',changeContent:false},t:k=>k,refresh:async()=>{}})))
+  const recovered=JSON.parse(window.localStorage.getItem(key))
+  assert.equal(JSON.parse(recovered.text).version,dirty?4:5)
+  assert.equal(recovered.revision,dirty?7:8)
+  assert.equal(document.querySelector('input[aria-label="moduleTitle: web"]').value,dirty?'Unsaved personal title':'Saved module')
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='recipeSave').click())
+  assert.equal(calls.find(r=>r.action==='save').expectedRevision,dirty?7:8)
+ }finally{await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch;for(const[name,value]of original){if(value)Object.defineProperty(globalThis,name,value);else delete globalThis[name]}}
+})
