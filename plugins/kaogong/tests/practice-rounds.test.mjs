@@ -445,3 +445,27 @@ test('only a bounded bibliography descriptor can contain analysis while source s
     for (const [index, source] of sources.entries()) assert.equal(app.bank.get(`source-leak-${index}`).source, source)
   } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
 })
+
+test('a reviewed one-question answer correction affects future rounds without rewriting previous scoring identities', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'practice-answer-correction-')); let app = await boot(root)
+  try {
+    const original = { ...bankRow(), correctAnswer: 'C', options: ['A. 1', 'B. 2', 'C. 3'], explanation: 'Original conflicting source is retained', reviewStatus: 'approved' }
+    await app.bank.put('q', original)
+    const issued = await app.service.start(context)
+    const originalScore = await app.service.submit(issued.roundId, answers(issued, 'C'))
+    assert.equal(originalScore.correctCount, 1)
+    assert.equal(originalScore.results[0].correctAnswer, 'C')
+    await app.bank.put('q', { ...original, correctAnswer: 'B' })
+    assert.deepEqual((await app.service.read(issued.roundId)).result, originalScore)
+    const next = await app.service.start(context)
+    assert.doesNotMatch(JSON.stringify(next), /correctAnswer|Original conflicting source/)
+    const nextScore = await app.service.submit(next.roundId, answers(next, 'B'))
+    assert.equal(nextScore.correctCount, 1)
+    assert.equal(nextScore.results[0].correctAnswer, 'B')
+    assert.equal(nextScore.results[0].explanation, original.explanation)
+    await app.close(); app = await boot(root)
+    assert.deepEqual((await app.service.read(issued.roundId)).result, originalScore)
+    assert.deepEqual((await app.service.read(next.roundId)).result, nextScore)
+    assert.deepEqual(app.bank.get('q'), { ...original, correctAnswer: 'B' })
+  } finally { await app.close(); await rm(root, { recursive: true, force: true }) }
+})
