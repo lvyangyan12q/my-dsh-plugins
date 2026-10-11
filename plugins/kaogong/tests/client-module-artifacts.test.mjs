@@ -12,8 +12,10 @@ test('three built Client factories resolve through the actual native platform se
   assert.equal(result.modelCalls,0)
 })
 
-test('standalone Kaogong factory tolerates an absent optional workbench without unregistered Node dependencies', async()=>{
+test('independent Kaogong and reading factories tolerate an absent optional workbench without unregistered Node dependencies', async()=>{
   const result=await checkClientModuleArtifacts({root,runtime,workbench:false})
-  assert.deepEqual(result.materialized,['@deepseek-ai/dsh-tool-kaogong'])
+  assert.deepEqual(result.materialized,['@deepseek-ai/dsh-tool-kaogong','@deepseek-ai/dsh-reading-statistics'])
+  assert.equal(result.nodeRequireFallback,false)
+  assert.equal(result.modelCalls,0)
   assert.equal(result.workbenchRegistered,false)
 })
