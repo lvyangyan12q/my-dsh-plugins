@@ -13,7 +13,7 @@ test('subject and role selection retain keyboard focus across an embedded compos
  // It does not claim to run the native Lexical editor or an actual Host request.
  function Composer({id}){const ref=useRef(null);useEffect(()=>{ref.current.focus()},[id]);return React.createElement('textarea',{ref,defaultValue:drafts.get(id),onKeyDown:event=>{if(event.key==='Enter'){sent.push({id,draft:event.currentTarget.value});event.preventDefault()}}})}
  const key={appId:'kaogong',instanceId:'default',roleId:'teacher'}
- const props={active:false,t:k=>k,useSessionStatus:()=>undefined,commands:{open:()=>Promise.resolve()},mountRole:()=>()=>{},SessionProvider:({children})=>children,renderFactorySlot:()=>null}
+ const props={active:true,t:k=>k,useSessionStatus:()=>undefined,commands:{open:()=>Promise.resolve()},mountRole:()=>()=>{},SessionProvider:({children})=>children,renderFactorySlot:()=>null}
  const{createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('mount'))
  const render=async(bindingKey,id)=>act(async()=>root.render(React.createElement(RoleConversation,{...props,bindingKey,useRoles:select=>select(new Map([[roleKey(bindingKey),{binding:{sessionId:id,presetId:'preset',phase:'ready'},busy:false,error:null,window:{phase:'open',reference:{sessionId:id}}}]])),renderSlot:()=>React.createElement(Composer,{key:id,id})})))
  const enter=()=>document.activeElement.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Enter',bubbles:true}))
