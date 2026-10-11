@@ -47,3 +47,8 @@ blocked_by: [workbench-completion-runtime, workbench-completion-generation, work
 验收基线改为未经工作台补丁的原生HEAD639ed015397290b3745d163aafe02ffee4aa3f84。此前native2ea补丁运行时上的406回归及实页结果只保留为历史证据，不能证明无补丁兼容。取消强制sidebar.sections、conversation.session.chrome、stageImages、retireTabsByKind及composer修改的安装/构建前提。后续在干净原生上重新构建、官方安装和完整平台闭环；缺失可选能力明确说明并保持入口/数据。不能用夹具新增这些服务来冒称兼容。
 
 本工单保持open。详细原生改动清单见[恢复与后续适配](../native-restoration.md)。考公专项暂缓，已有数据与历史证据保留。
+
+## 无补丁发布前置调整
+发布构建移除四个原生补丁检查前置，默认回归移除补丁安装器夹具。保留独立官方runtime版本/CLI只读预检、公开类型编译、Client模块解析、安装字节及consumer验证；历史compat目录不再作为安装指南。rc.2无补丁验证和用户当前alpha.2的正式兼容是分别的证据，不能混用。
+
+

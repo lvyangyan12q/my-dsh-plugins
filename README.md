@@ -23,7 +23,7 @@ pnpm start
 
 应用平台的扩展与验证步骤见 [开发流程](docs/application-platform-extension.md) 和 [验收证据](docs/application-platform-acceptance.md)。阅读模板需要安装 `@deepseek-ai/dsh-reading-statistics` 并应用其 bundle patch；保存和预览草稿后仍需显式启用。
 
-原生侧栏需应用 [通用插件区域兼容补丁](compat/native-sidebar-sections/README.md) 并构建原生 Client；工作台大菜单使用 `sidebar.sections`，不修改原生 footer 或内部 CSS 类名。发布构建会校验该前提。
+工作台通过原生公开面板、会话与布局能力接入；不得给原生源码或 lib 打补丁。compat/native-* 仅为历史归档，不是安装步骤。发布构建使用独立已构建原生运行时，继续执行公开类型、客户端模块和官方安装验证。当前发布基线为未补丁 rc.2；用户原生已升级的 alpha.2 需要独立兼容验收后才能正式部署。
 
 ## 菜单
 
@@ -45,3 +45,4 @@ pnpm start
 - 旧 `D:/programming/workspace/kaogong` 已成为指向资料目录的 Windows Junction。保留该链接，因为历史会话头记录的工作目录不可修改。
 
 原始 PDF、讲义、题目、历史解析结果和旧辅助环境已完整搬入资料目录。资料、凭据与 `.local` 备份不提交到 Git。正式 profile 只引用 `plugins` 中的新插件代码。迁移记录在 `.local/paths.json`，接口和数据校验在 `.local/startup-verification.json`。
+

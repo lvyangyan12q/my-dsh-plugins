@@ -1,3 +1,9 @@
+# 历史原生补丁归档：native-session-chrome
+
+2026-10-11：用户已恢复原生仓库，本目录仅保留历史实现及证据。当前工作台发布不依赖、不安装这些补丁。不得按下文旧命令修改原生仓库；所有旧安装建议均已撤销。原生公开接口适配与独立无补丁验收以当前规格及11/12工单为准。
+
+---
+
 # Native Session chrome adapter
 
 The workbench embeds the existing DSH conversation body and native Session header under one SessionProvider. Stock rc.2 exposes the body factory but owns the header beneath the main conversation. Declaring that header again from a plugin fails slot ownership validation. This patch introduces `conversation.session.chrome`, a session-scoped factory rendering the same native title, navigation, utilities and action components. The resident header delegates to it. Chat, trajectory, approvals, tool cards, menus and Session records are not reimplemented.
@@ -15,3 +21,4 @@ Exact combined platform native commit `d76d31673e727389321e1da3d6d801a4aee5699b`
 [The minimal normal-hooks upgrade](reviewed-normal-hooks.patch) is distributable and reconstructs the exact newer state from the reviewed legacy after state. Tests build fixtures from only the existing official base commit plus these repository-owned patches; no unpublished combined-core Git object is required. Apply each with `git apply --check` before application in a clean isolated checkout.
 
 The complete type-checked fixture revision is native `2ea2a7ebf801c7f001a96d676c6fc1fa21ca3445`: the wiring test restores the declared Session injection type and the composer test removes an unused JSX-runtime import. Assertions and production behavior are unchanged. The published normal-hooks patch includes these source-only fixture corrections. Existing native header fixtures also need [the public fixture-contract patch](../../patches/dsh-session-chrome-fixtures.patch).
+
