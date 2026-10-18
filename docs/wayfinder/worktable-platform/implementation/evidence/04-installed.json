@@ -86,11 +86,44 @@
     "native workspace list/baseline group/model remain available; no app role Session created"
   ],
   "limitations": [
-    "HTML5 drag attempt did not trigger reliable UI change; not recorded as passed. Retained for ticket11 browser acceptance; public move/swap behavior tests supplement only.",
+    "Initial CUA HTML5 drag attempts did not trigger; subsequent Chrome DevTools actual tab move and pane swap passed. Ticket11 still reruns integrated acceptance.",
     "No data-grants, role/AI execution, multi-process durability or upgrade/rollback pass claimed."
   ],
   "authorCommit": "b76ad754db85e5d9201430705dc58dace9c28119",
   "auxiliaryChecks": [
     "real split.tsx public moveTab/swapPanes/openTab/onSpecMutated preserve application instance/view/tab identities; not a manual drag claim"
-  ]
+  ],
+  "realChromeDrag": {
+    "date": "2026-10-19",
+    "packageSha": "07f1a07f05619f492fff5900702211310cc71816b4d757b0d6496b7d9e4e2891",
+    "instanceId": "bf04d329-1b65-4f40-92a1-6081d544c1ce",
+    "project": "阅读拖放验收",
+    "explicitExampleInitialization": true,
+    "tabMovedFromFirstToSecondPane": true,
+    "panesSwapped": true,
+    "before": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n[{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"e0907242-e994-4fad-b78e-90ebe94a244d\",\"top\":221,\"text\":\"阅读统计\\n搜索\\n分类\\n全部分类\\n文学 Literature\\n科学 Science\\n状态\\n全部状态\\n正在阅读\\n已读完\\n书籍\\n3\\n阅读分钟\\n210\\nWalden / 瓦尔登湖 · 120 分钟\\nOn th\"},{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"021d3d5c-fc41-4b7e-938e-85086ea296ef\",\"top\":483,\"text\":\"书籍\\n3\\n阅读分钟\\n210\"}]\n```"
+        }
+      ]
+    },
+    "after": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"visibleViews\":[{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"021d3d5c-fc41-4b7e-938e-85086ea296ef\",\"top\":221,\"text\":\"书籍\\n3\\n阅读分钟\\n210\"},{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"e0907242-e994-4fad-b78e-90ebe94a244d\",\"top\":483,\"text\":\"阅读统计\\n搜索\\n分类\\n全部分类\\n文学 Literature\\n科学 Science\\n状态\\n全部状态\\n正在阅读\\n已读完\\n书籍\\n3\\n阅读分钟\\n210\\nWalden / 瓦尔登湖 · 120 分钟\\nOn th\"}],\"durableViews\":[{\"id\":\"e0907242-e994-4fad-b78e-90ebe94a244d\",\"type\":\"page\"},{\"id\":\"2e3cf6a5-c4f2-4b5c-b3ae-5965f531f059\",\"type\":\"page\"},{\"id\":\"021d3d5c-fc41-4b7e-938e-85086ea296ef\",\"type\":\"stats\"}],\"nativeConversationStillVisible\":true}\n```"
+        }
+      ]
+    },
+    "afterSwapFilter": {
+      "search": "Walden",
+      "books": 1,
+      "minutes": 120,
+      "bothViews": true
+    },
+    "nativeReplyStillVisible": true,
+    "screenshot": "C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable-04-real-drag.jpg"
+  }
 }
