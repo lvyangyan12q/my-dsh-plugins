@@ -3,8 +3,8 @@ id: worktable-framework-06
 title: 角色会话隔离与能力复用
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: role_capabilities
 blocked_by: [worktable-framework-04]
 ---
 
@@ -14,7 +14,7 @@ blocked_by: [worktable-framework-04]
 
 **Blocked by:** [深度应用接入与同实例多视图](04-deep-views.md)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 应用实例的角色通过稳定身份关联原生会话，读取/创建/重试/替换语义分开。
 - [ ] 重复和真实并发创建收敛到同一角色绑定；不同项目或实例默认隔离，替换保留旧历史并需明确操作。

@@ -3,8 +3,8 @@ id: worktable-framework-05
 title: 实例授权、数据联动与显式共享
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: data_grants
 blocked_by: [worktable-framework-04]
 ---
 
@@ -14,7 +14,7 @@ blocked_by: [worktable-framework-04]
 
 **Blocked by:** [深度应用接入与同实例多视图](04-deep-views.md)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 深度应用的列表、筛选、统计和详情使用同一实例数据上下文，多个视图正确联动。
 - [ ] 共享资源由数据所属应用管理；用户可以显式引用同一资料源而不复制整库。
