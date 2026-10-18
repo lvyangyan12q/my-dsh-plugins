@@ -20,10 +20,10 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
   const mounted=useRef(true)
   useEffect(()=>{mounted.current=true;request().then(s=>{if(mounted.current)setSnapshot(s)}).catch(e=>{if(mounted.current)setError(e.message)});return()=>{mounted.current=false}},[])
   async function perform(operation:()=>Promise<void>){setBusy(true);setError('');try{await operation()}catch(e:any){if(mounted.current)setError(e.message)}finally{if(mounted.current)setBusy(false)}}
-  async function open(application:any,create:boolean){await perform(async()=>{
-    let instance=create?null:await request({action:'latest',appId:application.id,projectId:props.projectId})
+  async function open(application:any,create:boolean,selected?:any){await perform(async()=>{
+    let instance=selected??(create?null:await request({action:'latest',appId:application.id,projectId:props.projectId}))
     if(!instance){if(!create)throw new Error('没有可继续的实例，请显式新建。');instance=await request({action:'create',appId:application.id,projectId:props.projectId})}
-    if(!create)await request({action:'resume',instanceId:instance.id})
+    if(!create){instance=await request({action:'resume',instanceId:instance.id});if(instance.appId!==application.id||instance.projectId!==props.projectId)throw new Error('实例归属已改变，请重新打开应用目录。')}
     const state=await request();let view=create?null:state.views.find((v:any)=>v.instanceId===instance.id)
     if(!view)view=await request({action:'view',instanceId:instance.id})
     if(mounted.current)props.onOpen(contentOf(application,instance,view))
@@ -33,13 +33,15 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
     <p className="dsh-wt_appHint">{props.projectId?'在当前项目继续或明确新建实例。':'先使用应用，实例将标记为未归属项目。'}</p>
     {!snapshot&&!error&&<p role="status">正在读取应用…</p>}
     {snapshot?.applications.map((application:any)=>{
-      const latest=snapshot.instances.filter((i:any)=>i.appId===application.id&&i.projectId===props.projectId).sort((a:any,b:any)=>b.lastOpenedAt-a.lastOpenedAt)[0]
+      const instances=snapshot.instances.filter((i:any)=>i.appId===application.id&&i.projectId===props.projectId).sort((a:any,b:any)=>b.lastOpenedAt-a.lastOpenedAt)
+      const latest=instances[0]
       return <div className="dsh-wt_appCard" key={application.id}>
         <strong>{application.title}</strong><small>{application.kind==='deep'?'应用':'网页'} · {application.id}</small>
         <div className="dsh-wt_appLine">
           <button type="button" className="dsh-wt_appPrimary" disabled={busy} onClick={()=>open(application,!latest)}>{latest?'继续最近实例':'新建实例'}</button>
           {latest&&<button type="button" disabled={busy} onClick={()=>open(application,true)}>新建独立实例</button>}
         </div>
+        {instances.length>1&&<details><summary>其他实例（{instances.length-1}）</summary><div className="dsh-wt_appForm">{instances.slice(1).map((instance:any)=><button type="button" key={instance.id} title={instance.id} disabled={busy} onClick={()=>open(application,false,instance)}>恢复实例 {instance.id.slice(0,8)}</button>)}</div></details>}
       </div>
     })}
     {snapshot?.applications.length===0&&<p>还没有接入应用。可先登记一个独立网页。</p>}
