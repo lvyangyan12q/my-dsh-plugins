@@ -3,8 +3,8 @@ id: worktable-framework-03
 title: 网页应用与未归属实例接入
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: framework_web_entry
 blocked_by: [worktable-framework-01, worktable-framework-02]
 ---
 
@@ -14,7 +14,7 @@ blocked_by: [worktable-framework-01, worktable-framework-02]
 
 **Blocked by:** [保护本地改动并验证派生基线](01-baseline.md)、[确认项目、应用与实例的关键交互原型](02-prototype.md)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 通过公开注册接入一个真实网页应用，可独立打开并明确标记未归属实例。
 - [ ] 用户可关联到一个项目且保留实例身份，不移动资料、不重建会话；同实例不能同时归属多个项目。
