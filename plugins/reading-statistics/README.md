@@ -33,23 +33,35 @@ live preferences and notifications; this is not a cross-window synchronization o
 full durable-recovery protocol. Host records remain durable across restarts.
 Late reads and mutations are fenced by instance identity and request generation.
 
-## Optional legacy recipe entry
+## Instance sharing (05)
 
-An explicitly installed personal-workbench can still register the original reading
-recipe/data-source/editor adapter. That optional service lifecycle is separate from
-Worktable and is never loaded by the new deep path. Selecting its legacy template
-explicitly initializes examples in `default`; existing IDs and records are retained.
-Legacy preview remains read-only and reads the legacy default snapshot.
+Use the full page's **资料共享** disclosure. Select a target reading instance and
+confirm read-only sharing. The owner can separately allow create/update/delete or
+revoke the reference. Business records remain only in the owner instance. Other
+instances do not inherit the reference, filters, selection or sessions. Use
+**刷新资料与权限** / **刷新共享状态** after changes in another browser window.
+Revocation blocks future access and late reads; it does not erase native AI history.
+An already-started write can commit before revocation takes effect; its response
+explicitly reports committed status and withholds data if access changed meanwhile.
 
-## Build and tests
+Writes require the editor's captured business revision and current connection
+revision. Stale edits fail visibly without retrying over newer records. Original
+reading_statistics v1 business rows are unchanged; conflict counters live in a
+separate reading_statistics_revisions domain, paired with a content digest.
 
-Build with `tsdown -c tsdown.config.ts`. The package includes only `lib`, this README,
-`cordis.patch.yml` and package metadata. Set `DSH_SOURCE` to the built official runtime
-for `tsx --test tests/*.test.mjs`. On a fresh worktree, `READING_LEGACY_ROOT` can point
-to a checkout with built personal-workbench/kaogong clients for compatibility tests;
-those artifact bytes are read without modifying their source or loading the old UI
-in the new application. `KAOGONG_TEST_TOOLS` can identify the existing test tool root.
+## Legacy pairing and validation
 
-The route retains same-origin authentication, strict bounded JSON, read-only preview
-and explicit deletion confirmation. Per-instance resource authorization, concurrent
-revision conflict handling and cross-window synchronization belong to later work.
+The arbitrary-instance-ID `/api/reading-statistics/data` route now returns 403.
+Existing default/other records remain in their original domain. Optional old recipe
+registration is retained, but its old arbitrary-ID data adapter cannot read/write
+through this version. Pair this reading package with the 05 Worktable resource
+service; no legacy personal-workbench frontend is loaded by the deep path.
+
+Build with `tsdown -c tsdown.config.ts`; typecheck uses the existing optional legacy
+type declarations only. Set DSH_SOURCE to the built official runtime and run
+`tsx --test tests/data-grants.test.mjs tests/data-grants-ui.test.mjs` for current
+resource-owner and React auxiliary tests. Historical reading-platform/deep-views
+fixtures are retained with their original pre-05 API assumptions; their arbitrary-ID
+success expectations are incompatible with the deliberate 403 change and are not
+reported as passing 05 tests. Final installed UI verification is a separate root
+acceptance step, including refresh/restart and version-pairing checks for ticket09.
