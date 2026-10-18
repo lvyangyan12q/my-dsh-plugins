@@ -15,7 +15,7 @@
 
 必须有完整 `page`；视图局部键不可重复，协议版本不兼容、重复贡献或已登记的网页身份冲突均拒绝。普通网页管理HTTP不支持贡献深度组件。撤销仅撤销定义可用性，耐久实例及视图记录保留；重新贡献同一应用后恢复原有身份。贡献定义不冒充独立安装的应用：插件缺失时原有视图明确不可用。
 
-`createInstance(appId, projectId|null)` 只在显式新建调用。`latest`/`resume` 继续03语义；`createView(instanceId, viewType='page')` 只接受声明的视图键，返回新viewId和原instanceId。`resolveView(viewId)` 返回 `{application, instance, view}`。目录及快照包含活跃贡献，贡献定义本身随插件生命周期重新建立。
+`createInstance(appId, projectId|null)` 只在显式新建调用。`latest`/`resume` 继续03语义；`createView(instanceId, viewType='page')` 只接受声明的视图键，返回新viewId和原instanceId。`resolveView(viewId)` 返回 `{application, instance, view}`。目录及快照包含活跃贡献，贡献定义本身随插件生命周期重新建立。深度应用ID以`deepApplicationIds`附加到schema1配置中耐久预留；撤销/重启后不可改成同ID普通网页，否则旧实例会被静默重定向。深度贡献与网页登记在同一写入队列内检查冲突并提交，提交成功后才发布内存贡献。
 
 ## 客户端贡献
 

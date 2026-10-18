@@ -16,12 +16,13 @@ export class ApplicationDirectory {
     try { const data=JSON.parse(await readFile(this.file,'utf8')); if(data.schema!==1) throw new Error('unsupported schema'); return data }
     catch(error) { if(error.code==='ENOENT') return {schema:1,applications:[],instances:[],views:[]}; throw new ApplicationError('storage-unavailable','应用状态无法读取；原数据保留。',503) }
   }
-  async change(operation) {
+  async change(operation,committed=()=>{}) {
     const result=this.pending.then(async()=>{
       const data=await this.read(); const value=operation(data)
       const temporary=this.file+'.'+randomUUID()+'.tmp'
       try { await mkdir(dirname(this.file),{recursive:true}); await writeFile(temporary,JSON.stringify(data,null,2),'utf8'); await rename(temporary,this.file) }
       catch { throw new ApplicationError('storage-unavailable','应用状态未保存，请重试。',503) }
+      committed(value)
       return structuredClone(value)
     })
     this.pending=result.catch(()=>{}); return result
@@ -33,11 +34,14 @@ export class ApplicationDirectory {
     const ids=new Set()
     const views=definition.views.map(view=>{if(typeof view.id!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(view.id)||ids.has(view.id)||typeof view.title!=='string'||!view.title.trim())throw new ApplicationError('invalid-definition','应用视图定义无效。');ids.add(view.id);return {id:view.id,title:view.title.trim()}})
     if(!ids.has('page'))throw new ApplicationError('invalid-definition','深度应用必须提供完整页面。')
-    await this.pending
-    const stored=await this.read()
-    if(stored.applications.some(app=>app.id===definition.id)||this.contributions.has(definition.id))throw new ApplicationError('application-conflict','应用标识已被插件贡献。',409)
     const clean={id:definition.id,title:definition.title.trim(),version:definition.version,protocolVersion:1,kind:'deep',views}
-    this.contributions.set(clean.id,clean)
+    // Reserve the identity in the same queue as website registration; publish only after durable commit.
+    await this.change(data=>{
+      if(data.applications.some(app=>app.id===clean.id)||this.contributions.has(clean.id))throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409)
+      data.deepApplicationIds??=[]
+      if(!data.deepApplicationIds.includes(clean.id))data.deepApplicationIds.push(clean.id)
+      return clean
+    },()=>this.contributions.set(clean.id,clean))
     return ()=>{if(this.contributions.get(clean.id)===clean)this.contributions.delete(clean.id)}
   }
   async register(definition) {
@@ -46,7 +50,7 @@ export class ApplicationDirectory {
     let url
     try {url=websiteEntry(definition.url,this.hostOrigin)} catch(error) {throw new ApplicationError('unsafe-entry',error.message)}
     const clean={id:definition.id,title:definition.title.trim(),version:definition.version,protocolVersion:1,kind:'web',url}
-    return this.change(data=>{ if(this.contributions.has(clean.id)||data.applications.some(a=>a.id===clean.id)) throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409);data.applications.push(clean);return clean })
+    return this.change(data=>{ if(data.deepApplicationIds?.includes(clean.id)||this.contributions.has(clean.id)||data.applications.some(a=>a.id===clean.id)) throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409);data.applications.push(clean);return clean })
   }
   async catalog() { await this.pending; return structuredClone(this.available(await this.read())) }
   async unregister(appId) {return this.change(data=>{if(this.contributions.has(appId))throw new ApplicationError('contribution-owned','请由贡献应用的插件生命周期撤销入口。',409);this.application(data,appId);data.applications=data.applications.filter(a=>a.id!==appId);return {id:appId,removed:true}})}

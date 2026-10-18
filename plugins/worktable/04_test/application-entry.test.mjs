@@ -143,3 +143,35 @@ test('a plugin cannot replace an already registered website identity or silently
     assert.equal((await apps.resolveView(view.id)).application.kind,'web')
   } finally {await rm(dir,{recursive:true,force:true})}
 })
+
+test('concurrent deep and website registration never acquire the same identity',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-registration-race-'))
+  try {
+    const apps=new ApplicationDirectory(join(dir,'apps.json'))
+    for(let index=0;index<100;index++){
+      const id='competing-'+index
+      const results=await Promise.allSettled([
+        apps.contribute({id,title:'Plugin',version:'1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'Page'}]}),
+        apps.register({id,title:'Website',version:'1',protocolVersion:1,kind:'web',url:'https://example.com/'})
+      ])
+      assert.equal(results.filter(result=>result.status==='fulfilled').length,1,'exactly one definition owns '+id)
+      assert.equal(results.find(result=>result.status==='rejected').reason.code,'application-conflict')
+      if(results[0].status==='fulfilled')results[0].value()
+    }
+  } finally {await rm(dir,{recursive:true,force:true})}
+})
+
+test('withdrawing and restarting a deep plugin cannot redirect its retained instances to a website',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-reserved-'))
+  try {
+    const file=join(dir,'apps.json'),apps=new ApplicationDirectory(file)
+    const definition={id:'reading',title:'Plugin',version:'1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'Page'}]}
+    const withdraw=await apps.contribute(definition),instance=await apps.createInstance('reading',null),view=await apps.createView(instance.id)
+    withdraw()
+    const next=new ApplicationDirectory(file)
+    await assert.rejects(()=>next.register({id:'reading',title:'Website',version:'1',protocolVersion:1,kind:'web',url:'https://example.com/'}),{code:'application-conflict'})
+    await assert.rejects(()=>next.resolveView(view.id),{code:'application-missing'})
+    await next.contribute(definition)
+    assert.equal((await next.resolveView(view.id)).application.kind,'deep')
+  } finally {await rm(dir,{recursive:true,force:true})}
+})
