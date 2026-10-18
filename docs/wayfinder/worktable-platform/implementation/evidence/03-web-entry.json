@@ -81,7 +81,31 @@
       },
       "lateResponseRegression": "real-React-old-RED-new-GREEN-and-independent-review",
       "nativeAndUpstreamUnchanged": true,
-      "ticket03Passed": true
+      "ticket03Passed": true,
+      "readOnlyHttpPermissionChecks": [
+        {
+          "route": "/api/worktable/fs",
+          "origin": "null",
+          "status": 403
+        },
+        {
+          "route": "/api/worktable/write",
+          "origin": "null",
+          "status": 403,
+          "body": "empty object; no target path"
+        },
+        {
+          "route": "/api/worktable/applications",
+          "origin": "null",
+          "status": 403
+        },
+        {
+          "route": "/api/worktable/fs",
+          "origin": "same-origin without auth cookie",
+          "status": 401
+        }
+      ],
+      "screenshot": "worktable-03-installed-flow.jpg"
     }
   ]
 }
