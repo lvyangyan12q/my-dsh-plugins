@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import type { ReadingRecord } from './reading-api.ts'
 import { requestReading, subscribeReading, notifyReading, type DataConnection } from './reading-data-client.ts'
 import { ReadingSharing } from './reading-sharing.tsx'
@@ -62,6 +62,10 @@ export function createReadingViews() {
     let state = states.get(instance.id)
     if (!state) { state = new InstanceState(instance.id, view.id, () => states.delete(instance.id)); states.set(instance.id, state) }
     const snapshot = useSyncExternalStore(state.subscribe, state.getSnapshot, state.getSnapshot)
+    const actionKey = application.id + ':' + instance.id + ':' + view.id
+    const actionOwner = useRef({ key: actionKey, active: false })
+    if (actionOwner.current.key !== actionKey) { actionOwner.current.active = false; actionOwner.current = { key: actionKey, active: false } }
+    useEffect(() => { const owner = { key: actionKey, active: true }; actionOwner.current = owner; return () => { owner.active = false } }, [actionKey])
     if (application.id !== 'reading-statistics') return <p role="alert">阅读视图属于阅读统计应用。</p>
     const records = snapshot.records.filter(record => (!snapshot.category || record.category === snapshot.category) && (!snapshot.status || record.status === snapshot.status) && (!snapshot.search || (record.title + ' ' + record.author).toLocaleLowerCase().includes(snapshot.search.toLocaleLowerCase())))
     const selected = records.find(record => record.id === snapshot.selected)
@@ -79,7 +83,7 @@ export function createReadingViews() {
       </div></>}
       {kind !== 'list' && <dl style={{ display: 'flex', gap: 24 }}><div><dt>书籍</dt><dd data-stat="books">{records.length}</dd></div><div><dt>阅读分钟</dt><dd data-stat="minutes">{records.reduce((sum, record) => sum + record.minutes, 0)}</dd></div></dl>}
       {kind !== 'stats' && <><ul>{records.map(record => <li key={record.id}><button aria-pressed={snapshot.selected === record.id} onClick={() => state.set({ selected: record.id })}>{record.title}</button> · {record.minutes} 分钟</li>)}</ul>{!records.length && snapshot.phase === 'ready' && <p>尚无匹配的阅读记录。</p>}{selected && <article data-reading-selection><h3>{selected.title}</h3><p>{selected.author}</p><p>{selected.notes}</p></article>}</>}
-      {kind === 'page' && snapshot.phase === 'ready' && <><button disabled={!!snapshot.connection} onClick={() => { void requestReading({ action: 'initialize', instanceId: instance.id, viewId: view.id, expectedRevision: snapshot.revision, expectedConnectionRevision: snapshot.connection?.revision, seed: 'examples' }).catch(error => state.publish({ phase: 'error', error: String(error) })) }}>初始化示例记录</button><ReadingRecordEditor key={instance.id} appId={application.id} instanceId={instance.id} preview={false} viewId={view.id} readOnly={!!snapshot.connection && !snapshot.connection.allowedActions.includes('update')} standalone/></>}
+      {kind === 'page' && snapshot.phase === 'ready' && <><button disabled={!!snapshot.connection} onClick={() => { const owner = actionOwner.current, generation = state.generation; void requestReading({ action: 'initialize', instanceId: instance.id, viewId: view.id, expectedRevision: snapshot.revision, expectedConnectionRevision: snapshot.connection?.revision, seed: 'examples' }).catch(error => { if (owner.active && actionOwner.current === owner && generation === state.generation) state.publish({ phase: 'error', error: String(error) }) }) }}>初始化示例记录</button><ReadingRecordEditor key={instance.id} appId={application.id} instanceId={instance.id} preview={false} viewId={view.id} readOnly={!!snapshot.connection && !snapshot.connection.allowedActions.includes('update')} standalone/></>}
     </section>
   }
   const Page = (props: Props) => <ReadingView {...props} kind="page"/>

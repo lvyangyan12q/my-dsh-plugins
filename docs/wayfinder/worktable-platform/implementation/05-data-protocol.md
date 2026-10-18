@@ -41,10 +41,23 @@ Operator准入和实例授权分开。普通网页既不能使用非深度view�
 
 真实安装由root独占Host/浏览器执行：A录入/示例→B/C空→A共享B→B只读、C空→HTTP未授权写拒绝→A授予B编辑→B保存后A更新、B自有库仍空→撤销后B记录清空且后续读写失败→刷新及Host重启后复验。已进入原生AI的历史不删除；本工单不发送AI、不扩展原生执行。
 
-## 本地最终产物检查（辅助，非真实UI验收）
+## 首个候选本地产物检查（辅助，非真实UI验收）
 
 2026-10-19，独立05工作树。`npm run pack`唯一Worktable入口通过120项源契约（含05 HTTP/授权/竞态）、构建/语法、精确7文件、独立临时npm安装/服务端import、客户端工厂、安装产物8项锚点与3组home回归。双资产SHA-256均为`e2eee4ebfb2c84760ab30658764e8754efc04e7254e1ba420df4a6cde2b80d7c`。
 
 阅读`check-types.mjs`通过（DSH_SOURCE指向官方已构建runtime；READING_LEGACY_ROOT指向已有legacy声明的checkout，仅使用类型，不加载前台）。`tsx --test tests/data-grants.test.mjs tests/data-grants-ui.test.mjs`共5项通过。tsdown实际构建并npm pack后tar清单精确6文件：README.md、cordis.patch.yml、package.json、lib/client.js、lib/index.js、lib/reading-host-4C2dNE-n.mjs。没有src或map。固定/版本化阅读tgz同SHA-256：`e3a6d3a1dff5159ccb5e4f934f999dddf8c1d3eb26aeb781de5b42fb9c2f222c`。独立临时npm安装（ignore-scripts、omit optional、legacy-peer-deps并显式安装已测zod4.4.3）后import与实际client factory/深度视图注册通过；storage-domain声明仍精确`0.2.0-rc.2`。这不代替官方profile实际加载可选storage依赖，或旧版个人工作台端到端兼容证明。
 
 未改原生/3080/原Worktable，未启动任何Host或浏览器、未安装到用户profile、未发送原生会话。生成包保留在本工作树各插件dist内，交root最终真实安装验收。05状态仍在实施中。
+
+
+## 独立复审与可读目标补丁候选
+
+root实际安装首个候选后反馈：共享目标不应显示内部layout UUID。此补丁以目录内真实projectId相等关系仅生成“同项目 / 其他项目 / 未归属 · 实例短ID”，不从目录推身份，也不传native Context；真实授权仍使用原稳定实例ID。UI测试包含相同项目、其他项目、未归属目标并断言可读选项。
+
+独立复审复现owner重载撤回动作后旧grant仍可调用的漏洞；公开ResourceDirectory测试先RED，再将共享路径也逐次校验当前handler.actions后GREEN，撤回动作不会进入mutate。旧持久授权不是owner新版本动作声明的替代。
+
+复审也发现共享管理晚失败/初始化晚失败可能污染已切换视图。实际React测试先分别复现RED：A的延迟共享失败进入D页面；D页面已切换而同实例stats还存活时，旧初始化失败把stats标错。Sharing管理/加载现在携带当前instance+view生命周期token和AbortSignal，释放后不setState/notify；初始化catch同时检查来源view生命周期与数据generation。两项均GREEN，读取与旧实例状态不串。只对05四个新增mjs文件归一LF，避免新blob中的CRLF被diff --check判尾随空白，不变更全局属性。
+
+本补丁Worktable唯一npm run pack通过121项源测试、精确7文件、独立安装/import/factory及安装产物8锚点/3组home。当前固定/版本化双资产SHA-256均为`ea2cb32e22953a90595d751cf18281a91a5ca44115578e15fa3ea3eb14c674fd`。阅读当前5项测试（扩展UI场景）、check-types、tsdown、精确6文件、独立安装/import/factory通过；当前阅读双资产SHA-256均为`07e6193925911a177f03e9bbb6367375f77383ea6f6af09bfb7fefc2d1d90c10`。业务owner chunk仍为reading-host-4C2dNE-n.mjs，storage-domain仍精确官方0.2.0-rc.2。
+
+此处只记录辅助补丁结果；root继续用新候选实际浏览器复验目标选择、写入和撤销，05未因此关单。
