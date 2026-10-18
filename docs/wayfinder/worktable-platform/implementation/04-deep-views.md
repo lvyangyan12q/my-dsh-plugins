@@ -29,8 +29,10 @@ blocked_by: [worktable-framework-03]
 
 ## 2026-10-19 实施候选（待真实UI验收）
 
-公开深度贡献、阅读自有完整页/统计/列表、同实例共享状态和生命周期已实现；最终平台`npm run pack`114项及产物门禁通过，阅读新旧18项与类型/构建通过。预审发现的并发登记P1已公开行为RED→GREEN修复，并耐久预留深度身份，避免撤销/重启后同ID变网页。详见[最小深度协议](04-deep-protocol.md)与[机器证据](evidence/04-deep-views.json)。
+公开深度贡献、阅读自有完整页/统计/列表、同实例共享状态和生命周期已实现；最终平台`npm run pack`115项及产物门禁通过，阅读新旧18项与类型/构建通过。预审发现的并发登记P1已公开行为RED→GREEN修复，并耐久预留深度身份，避免撤销/重启后同ID变网页。详见[最小深度协议](04-deep-protocol.md)与[机器证据](evidence/04-deep-views.json)。
 
 本工单保持in-progress，以上复选框待root对最终两包在3091的真实完整用户流程确认后才勾选；候选测试不替代安装UI验收，05/06/07/08及正式发布身份不在本次结论内。
 
 真实安装暴露旧阅读候选的native依赖范围会被标准npm解析为alpha2，使rc2默认存储及原生投影服务不可用。已将storage-domain与host-webserver精确锁定已测rc2，并补实际tgz解包清单的npm标准选择RED→GREEN回归；新阅读SHA及旧候选失败记录保留于机器证据。原生源码和业务数据未由本实施任务修改，最终候选仍待root官方CLI重装及真实UI确认。
+
+真实UI已观察A实例2条记录/75分钟与同实例统计、列表筛选共享，显式B为空；但旧候选缺少从B选择旧A的入口。已增当前app+project作用域的折叠“其他实例”，真实React连公开Host验证A→显式B→恢复A原view，不新增A或会话。应用容器按钮/表单已改官方实际主题token，修复亮色黑字深底；两项最终目验仍由root使用新07f1…平台包执行。新增applicationViews.tsx已转LF，全分支diff --check通过。
