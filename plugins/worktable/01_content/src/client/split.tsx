@@ -788,7 +788,7 @@ export const splitStore: SplitState = {
     const root = findConversationRoot()
     if (!root) return false
     const { header, viewArea } = resolveAnchor(root)
-    this.spec = { ...spec, chatSide: spec.chatSide === 'left' ? 'left' : 'right' }
+    this.spec = { ...spec, title: spec.id === '__wt_unassigned_applications__' ? '应用视图' : spec.title, chatSide: spec.chatSide === 'left' ? 'left' : 'right' }
     // 向后兼容归一化：单内容声明 → 一个标签页
     const normalize = (p: SplitPane): SplitPane => {
       if (p.tabs && p.tabs.length > 0) return p
@@ -897,6 +897,10 @@ export const splitStore: SplitState = {
     this.yieldObserver.observe(viewArea, { attributes: true, attributeFilter: ['style'] })
     this.active = true
     this.notify()
+    // An explicit layout activation resumes its visible application views, including cached layers.
+    const panes = [...(this.spec?.top ?? []), ...(this.spec?.main ?? []), ...(this.spec?.left ? [this.spec.left] : [])]
+    const viewIds = panes.map(p => p.tabs?.[p.active ?? 0]?.content).filter((c): c is ApplicationContent => c?.kind === 'application').map(c => c.viewId)
+    try { window.dispatchEvent(new CustomEvent('dsh:application-layout-opened', { detail: { viewIds } })) } catch {}
     return true
   },
 
@@ -2817,9 +2821,14 @@ function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number }
 }
 
 /** 单个标签页的内容渲染 */
-function PaneTabBody(props: { tab: PaneTab; row: PaneRow; index: number; paneTitle?: string; reloadKey: number }) {
+function PaneTabBody(props: { tab: PaneTab; row: PaneRow; index: number; layoutId: string; paneId: string; paneTitle?: string; reloadKey: number }) {
   const content = props.tab.content
-  if (content.kind === 'application') return <ApplicationPane content={content} projects={splitEnv?.custom?.getProjects?.() ?? []} onOpen={(next) => splitStore.openTab(props.row, props.index, next)} reloadKey={props.reloadKey} />
+  if (content.kind === 'application') return <ApplicationPane content={content} projects={splitEnv?.custom?.getProjects?.() ?? []} onOpen={(next) => {
+    if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
+    const target = props.row === 'left' ? splitStore.spec.left : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
+    if (target?.id !== props.paneId || !target.tabs?.some(t => t.id === props.tab.id && t.content.kind === 'application' && t.content.viewId === content.viewId)) return
+    splitStore.openTab(props.row, props.index, next)
+  }} reloadKey={props.reloadKey} />
   if (content.kind === 'iframe') {
     return <IframePane url={content.url} title={content.title ?? props.tab.title} reloadKey={props.reloadKey} />
   }
@@ -2850,13 +2859,13 @@ function refreshableTab(t: PaneTab): boolean {
 
 /** 窗内容：标签页模型（无标签 = 6 选 1 选择器；标签可切换/关闭，关完回到选择器）
  *  网页类标签最左侧固定一个 ↻ 刷新按钮（标签名之前），点击重挂载该标签内容。 */
-function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number }) {
+function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number; layoutId: string }) {
   const { pane, row, index } = props
   const tabs = pane.tabs ?? []
   const active = Math.min(pane.active ?? 0, Math.max(0, tabs.length - 1))
   const [reloadKeys, setReloadKeys] = useState<Record<string, number>>({})
   if (tabs.length === 0) {
-    return <PanePicker row={row} index={index} />
+    return <PanePicker row={row} index={index} layoutId={props.layoutId} paneId={pane.id} />
   }
   const refreshTab = (t: PaneTab) => {
     setReloadKeys((m) => ({ ...m, [t.id]: (m[t.id] ?? 0) + 1 }))
@@ -2904,14 +2913,14 @@ function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number }) {
         })}
       </div>
       )}
-      <PaneTabBody tab={tabs[active]} row={row} index={index} paneTitle={pane.title} reloadKey={reloadKeys[tabs[active].id] ?? 0} />
+      <PaneTabBody key={tabs[active].content.kind === 'application' ? tabs[active].content.instanceId + ':' + tabs[active].content.viewId : tabs[active].id} tab={tabs[active]} row={row} index={index} layoutId={props.layoutId} paneId={pane.id} paneTitle={pane.title} reloadKey={reloadKeys[tabs[active].id] ?? 0} />
     </>
   )
 }
 
 /** 未指派内容：4 选 1 选择器。按钮固定大小、整体居中；
  * 按窗位宽高比自适应排列：宽窗横排 4 连 / 方窗 2×2 / 竖窗竖排。 */
-function PanePicker(props: { row: PaneRow; index: number }) {
+function PanePicker(props: { row: PaneRow; index: number; layoutId: string; paneId: string }) {
   const [applications, setApplications] = useState(false)
   const [mode, setMode] = useState<'row' | 'grid' | 'col'>('grid')
   const hostRef = useRef<HTMLDivElement | null>(null)
@@ -2931,8 +2940,12 @@ function PanePicker(props: { row: PaneRow; index: number }) {
   }, [])
   const pick = (content: SplitContent) => splitStore.openTab(props.row, props.index, content)
   const availableProjects = splitEnv?.custom?.getProjects?.() ?? []
-  const currentProject = availableProjects.some(p => p.id === splitStore.spec?.id) ? splitStore.spec!.id : null
-  if (applications) return <ApplicationPicker projectId={currentProject} onCancel={() => setApplications(false)} onOpen={pick} />
+  const currentProject = availableProjects.some(p => p.id === props.layoutId) ? props.layoutId : null
+  if (applications) return <ApplicationPicker projectId={currentProject} onCancel={() => setApplications(false)} onOpen={(next) => {
+    if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
+    const target = props.row === 'left' ? splitStore.spec.left : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
+    if (target?.id === props.paneId) pick(next)
+  }} />
   return (
     <div ref={hostRef} className={'dsh-wt_panePicker dsh-wt_panePicker-' + mode}>
       <button type="button" className="dsh-wt_panePick" onClick={() => setApplications(true)}><span aria-hidden>▦</span>应用</button>
@@ -3035,7 +3048,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
         <span className="dsh-wt_paneTitle">{it.pane.title}</span>
       </div>
       )}
-      <PaneBody pane={it.pane} row={row} index={index} />
+      <PaneBody pane={it.pane} row={row} index={index} layoutId={spec.id} />
       {!singleConsole && (
         <>
         <button

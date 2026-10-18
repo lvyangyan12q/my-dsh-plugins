@@ -47,6 +47,9 @@ export class ApplicationDirectory {
     projectId=projectScope(projectId)
     return this.change(data=>{ this.application(data,appId); const record={id:randomUUID(),appId,projectId,revision:1,createdAt:Date.now(),lastOpenedAt:nextUse(data)}; data.instances.push(record);return record })
   }
+  async resume(id) {
+    return this.change(data=>{const instance=this.instance(data,id);this.application(data,instance.appId);instance.lastOpenedAt=nextUse(data);return instance})
+  }
   async attach(id,projectId,revision) {
     projectId=projectScope(projectId,true)
     return this.change(data=>{

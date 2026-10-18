@@ -61,6 +61,7 @@ export function mountApplications(ctx) {
           result=await service.attach(body.instanceId,body.projectId,body.revision);break
         }
         case 'view': result=await service.createView(body.instanceId);break
+        case 'resume': result=await service.resume(body.instanceId);break
         case 'resolve': result=await service.resolveView(body.viewId);break
         default: throw new ApplicationError('unknown-action','应用操作不受支持。')
       }

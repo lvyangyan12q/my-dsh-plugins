@@ -2595,7 +2595,7 @@ function buildCustomLayoutPrompt(req: string): string {
           <ApplicationLauncher onOpen={(content: ApplicationContent) => {
             const id = '__wt_unassigned_applications__'
             if (!(splitStore.active && splitStore.spec?.id === id)) {
-              splitStore.open({ id, title: '应用 · 未归属项目', top: null, main: [{ id: 'application-entry', title: '应用', min: 240, tabs: [] }], chatWidth: { default: 480, min: 240, max: 1200 } })
+              splitStore.open({ id, title: '应用视图', top: null, main: [{ id: 'application-entry', title: '应用', min: 240, tabs: [] }], chatWidth: { default: 480, min: 240, max: 1200 } })
             }
             splitStore.openTab('main', 0, content)
           }} />

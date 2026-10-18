@@ -14,6 +14,24 @@ test('registered website is listed with its stable application identity', async 
   } finally {await rm(dir,{recursive:true,force:true})}
 })
 
+test('explicit resume makes an older instance latest without replacing its view or making queries write',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-resume-'))
+  try {
+    const apps=new ApplicationDirectory(join(dir,'apps.json'))
+    await apps.register({id:'web',title:'Example',version:'1.0.0',protocolVersion:1,kind:'web',url:'https://example.com/'})
+    const first=await apps.createInstance('web','project-one');const firstView=await apps.createView(first.id)
+    const second=await apps.createInstance('web','project-one');await apps.createView(second.id)
+    assert.equal((await apps.latest('web','project-one')).id,second.id)
+    await apps.resolveView(firstView.id)
+    assert.equal((await apps.latest('web','project-one')).id,second.id)
+    const resumed=await apps.resume(first.id)
+    assert.equal(resumed.id,first.id)
+    assert.equal((await apps.latest('web','project-one')).id,first.id)
+    assert.equal((await apps.resolveView(firstView.id)).view.id,firstView.id)
+    assert.equal((await apps.snapshot()).views.length,2)
+  } finally {await rm(dir,{recursive:true,force:true})}
+})
+
 test('project scope is explicit and malformed scopes cannot create an instance',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'worktable-scope-'))
   try {
