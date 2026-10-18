@@ -14,6 +14,30 @@ test('registered website is listed with its stable application identity', async 
   } finally {await rm(dir,{recursive:true,force:true})}
 })
 
+test('project scope is explicit and malformed scopes cannot create an instance',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-scope-'))
+  try {
+    const apps=new ApplicationDirectory(join(dir,'apps.json'))
+    await apps.register({id:'web',title:'Example',version:'1.0.0',protocolVersion:1,kind:'web',url:'https://example.com/'})
+    await assert.rejects(()=>apps.createInstance('web',{id:'project-one'}),{code:'invalid-project'})
+    await assert.rejects(()=>apps.createInstance('web',''),{code:'invalid-project'})
+    assert.equal((await apps.snapshot()).instances.length,0)
+  } finally {await rm(dir,{recursive:true,force:true})}
+})
+
+test('removing a registration preserves instance and view identities and reports the missing application',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-missing-'))
+  try {
+    const apps=new ApplicationDirectory(join(dir,'apps.json'))
+    await apps.register({id:'web',title:'Example',version:'1.0.0',protocolVersion:1,kind:'web',url:'https://example.com/'})
+    const instance=await apps.createInstance('web',null);const view=await apps.createView(instance.id)
+    await apps.unregister('web')
+    await assert.rejects(()=>apps.resolveView(view.id),{code:'application-missing'})
+    const snapshot=await apps.snapshot()
+    assert.equal(snapshot.instances[0].id,instance.id);assert.equal(snapshot.views[0].id,view.id)
+  } finally {await rm(dir,{recursive:true,force:true})}
+})
+
 test('separate profiles do not share instances and failed saving never reports a new instance',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'worktable-profiles-'))
   try {
@@ -55,6 +79,7 @@ test('unassigned website instance attaches without changing identity and resumes
     const attached=await apps.attach(initial.id,'project-one',initial.revision)
     assert.equal(attached.id,initial.id)
     assert.equal(attached.projectId,'project-one')
+    assert.deepEqual(await apps.attach(initial.id,'project-one',initial.revision),attached)
     assert.equal((await new ApplicationDirectory(file).latest('reading-web','project-one')).id,initial.id)
     assert.equal(await apps.latest('reading-web','project-two'),null)
     await assert.rejects(()=>apps.attach(initial.id,'project-two',attached.revision),{code:'project-conflict'})

@@ -2,12 +2,40 @@ import {join,isAbsolute} from 'node:path'
 import {ApplicationDirectory,ApplicationError} from './applications.mjs'
 import {websiteEntry} from './web-policy.mjs'
 
+/** Local facade only: never modifies the host's shared webServer service. */
+export function protectWorktableRoutes(ctx,server) {
+  function rejection(req){
+    let connection;try{connection=ctx.get?.('connection')}catch{}
+    if(!connection?.admit)return 503
+    const result=connection.admit(req);return 'rejection' in result?result.rejection:null
+  }
+  return {
+    register(route){
+      if(route.path==='/api/worktable/health'||route.path==='/api/worktable/template')return server.register(route)
+      return server.register({...route,handler:async(req,res)=>{
+        const status=rejection(req)
+        if(status){res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify({error:status===503?'当前宿主缺少公开认证接口，文件与工具访问不可用。':'请使用已登录的DSH工作台访问此功能。'}));return}
+        return route.handler(req,res)
+      }})
+    },
+    ...(typeof server.registerUpgrade==='function'?{registerUpgrade(route){return server.registerUpgrade({...route,handler:(req,socket,head)=>{
+      const status=rejection(req);if(status){socket.end('HTTP/1.1 '+status+' Forbidden\r\nConnection: close\r\n\r\n');return}return route.handler(req,socket,head)
+    }})}}:{})
+  }
+}
+
 /** New API owns its authentication; webServer.register itself is not an auth fence. */
 export function mountApplications(ctx) {
-  let profile,connection
-  try {profile=ctx.get?.('profileContext');connection=ctx.get?.('connection')} catch {}
-  const service=profile?.dir && isAbsolute(profile.dir)?new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json')):null
-  if(service) ctx.provide('worktableApplications',service)
+  let service=null,connection=null
+  // Parent Worktable remains mounted while the optional platform dependency fiber waits.
+  ctx.inject(['profileContext','connection'],platformCtx=>{
+    const profile=platformCtx.profileContext
+    if(!profile?.dir||!isAbsolute(profile.dir))return
+    const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'))
+    service=owned;connection=platformCtx.connection
+    platformCtx.provide('worktableApplications',owned)
+    platformCtx.effect(()=>()=>{if(service===owned){service=null;connection=null}},'worktable: release application service')
+  })
   const dispose=ctx.webServer.register({kind:'exact',path:'/api/worktable/applications',handler:async(req,res)=>{
     const send=(status,body)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(body))}
     try {
@@ -17,6 +45,7 @@ export function mountApplications(ctx) {
       if(req.method==='GET') return send(200,await service.snapshot())
       if(req.method!=='POST') return send(405,{error:'此入口仅支持GET和POST。'})
       if(!String(req.headers['content-type']??'').startsWith('application/json')) return send(415,{error:'应用操作需要JSON请求。'})
+      req.setEncoding('utf8')
       let text='';for await(const chunk of req){text+=chunk;if(Buffer.byteLength(text)>65536) throw new ApplicationError('request-too-large','应用请求过大。',413)}
       let body;try{body=JSON.parse(text)}catch{throw new ApplicationError('invalid-request','应用请求格式无效。')}
       let result

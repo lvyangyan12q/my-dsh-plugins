@@ -57,7 +57,8 @@
     "test:details": "node ../04_test/session-details.test.mjs",
     "test:transport": "node ../04_test/host-transport.test.mjs",
     "test:widget": "node ../04_test/widget-mount.test.mjs",
-    "verify:remote": "node verify-remote.mjs"
+    "verify:remote": "node verify-remote.mjs",
+    "test:applications": "node --test ../04_test/application-entry.test.mjs ../04_test/application-http.test.mjs"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",

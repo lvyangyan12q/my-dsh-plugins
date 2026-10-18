@@ -1,5 +1,19 @@
 # dsh-worktable（工作台）
 
+## 本地派生框架增量（工单03，待真实安装验收）
+
+以受保护基线提交8f614b3为来源；当前源码含合法派生改动，不再声称与原始快照逐文件相同。原始来源及MIT许可见上级UPSTREAM-SNAPSHOT.json和README。以下旧版验收说明保留其原版本范围，不代表本次框架已通过。
+
+- 工作台标题行“应用”入口可先使用未归属实例；已有项目的空模块也可选“应用”，沿用现有布局和标签。应用注册是按需展开的小表单。
+- 同项目继续最近实例；新建独立实例、添加同实例视图是不同操作。未归属实例可显式关联一个项目，保留实例身份，不创建会话或移动资料。
+- 应用定义、实例与视图引用由当前profile的公开profileContext.dir下worktable-platform/applications.v1.json保存；浏览器仍只保存既有布局和展示偏好。不复制业务数据。
+- 新接入普通网页采用无allow-same-origin的sandbox，不接原生桥，不允许DSH同源地址、凭据或token查询入口；只保证入口和布局，不承诺网页内部状态共享。网页拒嵌/失效可外部打开；iframe加载事件不证明业务可用。
+- 应用管理与既有文件/终端等敏感插件路由使用公开connection.admit认证；缺少当前profile或公开认证能力时明确不可用，不回退全局数据或无认证访问。此增量契约针对独立的官方0.2.0-rc.2验收实例；未重验旧版和桌面。
+- 公共Host服务worktableApplications提供register/catalog/latest/createInstance/attach/createView/resolveView/unregister/snapshot。协议版本当前为1；注册撤销保留实例和视图引用，缺应用会明确报错。此为首阶段接缝，最终冻结在工单10进行。
+- 本次8条公开契约行为测试是辅助证据；pack包括原回归和新增测试、最终包结构与独立安装检查。真实页面操作、普通网页权限、重启恢复由独立Host继续验收，工单03不因构建/测试成功关闭。深度共享、数据授权和原生AI属于后续工单。
+
+持久化分工和边界记录于源码目录 plugins/worktable/02_process/PRD.md。
+
 > DeepSeek Harness 侧边栏的 agent 级项目容器（应用抽屉）。纯增量插件，不替换、不禁用任何官方插件。
 
 ## 是什么

@@ -1,6 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import { execFile } from 'node:child_process'
-import { mountApplications } from './framework/host.mjs'
+import { mountApplications, protectWorktableRoutes } from './framework/host.mjs'
 import { readdirSync, realpathSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, resolve as pathResolve, sep } from 'node:path'
@@ -251,7 +251,8 @@ function setupTerminal(webServer: any, ctx: any) {
 }
 
 export function apply(ctx: Context) {
-  const webServer = (ctx as any).webServer
+  const originalServer = (ctx as any).webServer
+  const webServer = originalServer ? protectWorktableRoutes(ctx, originalServer) : null
   if (!webServer) {
     ctx.logger?.warn('[dsh-worktable] ctx.webServer 不可用（headless profile？），跳过服务端路由')
     return
