@@ -3,8 +3,8 @@ id: worktable-framework-01
 title: 保护本地改动并验证派生基线
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: worktable_baseline_implementer
 blocked_by: []
 ---
 
@@ -14,7 +14,7 @@ blocked_by: []
 
 **Blocked by:** None (can start immediately)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 保留上游本地源码、清单、未跟踪修复和现有编译产物的精确检查点，并识别许可证与来源；原文件和六项历史变更不受影响。
 - [ ] 从受保护快照形成自己的派生插件，在已记录的未经修改DSH候选中独立构建、官方安装并打开工作台。

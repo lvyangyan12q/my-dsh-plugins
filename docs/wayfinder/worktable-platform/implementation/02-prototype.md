@@ -3,8 +3,8 @@ id: worktable-framework-02
 title: 确认项目、应用与实例的关键交互原型
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: worktable_interaction_prototype
 blocked_by: []
 ---
 
@@ -14,7 +14,7 @@ blocked_by: []
 
 **Blocked by:** None (can start immediately)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 可演示无项目原生AI入口、打开未归属实例、创建项目、显式关联实例和项目内多应用组织。
 - [ ] 重复打开恢复最近实例，新建实例与添加同实例视图区分；明确展示实例归属和共享权限。
