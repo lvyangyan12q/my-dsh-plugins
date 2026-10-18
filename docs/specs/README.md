@@ -18,3 +18,7 @@
 - [安装与兼容说明](../workbench-install-compatibility.md)
 
 阅读顺序：当前进度 → 完整闭环Spec → 路径图 → 对应工单。用户最新优先完成工作台平台，考公专项暂缓；原规格范围保持。
+
+## Worktable 基线框架规格
+
+[基于 Worktable 的 AI 工作台框架与应用接入规格](../wayfinder/worktable-platform/framework-spec.md)：本轮已确认产品与架构的增量规格。主验收接缝已由用户确认，状态open、标签ready-for-agent；不替代原123项要求，不代表已经迁移或验收通过。

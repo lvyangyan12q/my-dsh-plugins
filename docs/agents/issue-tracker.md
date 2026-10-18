@@ -47,3 +47,13 @@ See [full-scope audit](../full-scope-audit.md) and its 123-entry canonical requi
 ## Workbench completion planning (2026-10-10)
 
 The user confirmed the full destination and installed-DSH user-flow testing seams. [工作台完整闭环与交付规格](../wayfinder/workbench-completion/spec.md) is a supplemental ready-for-agent implementation spec; it preserves the original 123 requirements. [工作台完整闭环与交付决策地图](../wayfinder/workbench-completion/map.md) tracks unresolved route decisions separately. Its child frontmatter uses parent, labels, status, assignee and blocked_by; query open unclaimed children whose blockers are closed. Local tracked docs are used as in the earlier application-platform effort, avoiding an ignored-only planning artifact. Wayfinder tickets carry only wayfinder labels, never ready-for-agent. Map completion is planning completion, not implementation acceptance. Historical maps and user edits remain intact.
+
+## Worktable 基线定位与实现路径
+
+用户确认以 Worktable 为代码基线后，新的[基于 Worktable 的 AI 应用工作台定位与实现路径](../wayfinder/worktable-platform/map.md)采用同一本地 frontmatter 跟踪约定。仅已确认的基线决策关闭；产品定位仍待讨论，后续工单通过 blocked_by 排列。旧规格、123项要求及历史验收保持，不据此宣布实施完成。
+
+## Worktable AI 框架规格
+
+本地规格身份为worktable-ai-framework-spec，标题为[基于 Worktable 的 AI 工作台框架与应用接入规格](../wayfinder/worktable-platform/framework-spec.md)。遵循现有frontmatter跟踪；用户已确认真实安装用户流程为主验收入口；当前status=open、唯一triage标签ready-for-agent。规格已发布到本地跟踪器，不把规划资产或提交记录当实施完成。
+
+Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续阶段。原14张实施工单仅为未批准草案，须据新边界重排后再发布；本轮只记录决策与ADR，不发布实施工单。
