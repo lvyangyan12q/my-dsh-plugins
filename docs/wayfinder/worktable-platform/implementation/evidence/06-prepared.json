@@ -3,16 +3,64 @@
   "status": "implementation-prepared-real-host-acceptance-pending",
   "date": "2026-10-19",
   "base": "ed6ca9dda80523ea735c3e1b9260e86cfbc1005d",
-  "sourceHead": "d6aa25393c962bd0ca27cfd02761bcb287ad2257",
+  "sourceHead": "2785f8ade4c850886e4ea4fb3f424b9403f34baa",
   "mergedIntegration": "9c110c6fd3a9b0f851e47f9b82dfb7d7a9142102",
   "redGreen": [
-    {"seam":"role lifecycle", "red":"roles.mjs missing", "green":"passive read, same-owner concurrent ensure convergence, instance isolation"},
-    {"seam":"durable recovery and ownership", "red":"retry and attach methods missing", "green":"same-ID restart retry, revision guard, explicit replacement history, reverse current/history ownership"},
-    {"seam":"capability provenance", "red":"capabilities.mjs missing", "green":"management records only, private owner isolation, disabled capability rejection"},
-    {"seam":"native rc.2 adapter", "red":"role-native.mjs missing", "green":"allocated identity, exact preset, explicit registered Workspace, flush order"},
-    {"seam":"React role panel", "red":"after installing lockfile dependencies, rolePanel.tsx missing", "green":"passive view read, same-ID native navigation, unmount does not Stop"},
-    {"seam":"explicit Agent replacement", "red":"Missing expected rejection on ensure with a different Agent", "green":"replacement-required rejection"},
-    {"seam":"resolution versus replacement", "red":"replacement overtook an in-flight native binding revalidation", "green":"resolve/open/history serialize with all role mutations"}
+    {
+      "seam": "role lifecycle",
+      "red": "roles.mjs missing",
+      "green": "passive read, same-owner concurrent ensure convergence, instance isolation"
+    },
+    {
+      "seam": "durable recovery and ownership",
+      "red": "retry and attach methods missing",
+      "green": "same-ID restart retry, revision guard, explicit replacement history, reverse current/history ownership"
+    },
+    {
+      "seam": "capability provenance",
+      "red": "capabilities.mjs missing",
+      "green": "management records only, private owner isolation, disabled capability rejection"
+    },
+    {
+      "seam": "native rc.2 adapter",
+      "red": "role-native.mjs missing",
+      "green": "allocated identity, exact preset, explicit registered Workspace, flush order"
+    },
+    {
+      "seam": "React role panel",
+      "red": "after installing lockfile dependencies, rolePanel.tsx missing",
+      "green": "passive view read, same-ID native navigation, unmount does not Stop"
+    },
+    {
+      "seam": "explicit Agent replacement",
+      "red": "Missing expected rejection on ensure with a different Agent",
+      "green": "replacement-required rejection"
+    },
+    {
+      "seam": "resolution versus replacement",
+      "red": "replacement overtook an in-flight native binding revalidation",
+      "green": "resolve/open/history serialize with all role mutations"
+    },
+    {
+      "seam": "intent readiness",
+      "red": "resolve/open incorrectly accepted a never-created intent",
+      "green": "both reject before native validation unless phase=ready"
+    },
+    {
+      "seam": "Skill invocation mode",
+      "red": "user-only Skill wrongly accepted for automatic role loading",
+      "green": "role Skills require modelInvocable; direct user lookup requires userInvocable"
+    },
+    {
+      "seam": "explicit native base and compatibility",
+      "red": "legacy Agent accepted without explicit base selection",
+      "green": "legacy records retain old composition, explicit saved workspace-basic-v1 checked by public live inventory"
+    },
+    {
+      "seam": "management base selector",
+      "red": "visible explicit base selector missing",
+      "green": "React edit preserves existing instructions and revision while requiring an explicit choice"
+    }
   ],
   "supplementaryFilesystemChecks": [
     "Actual filesystem obstruction after native create leaves durable intent; explicit retry reuses its ID",
@@ -22,17 +70,71 @@
   "pack": {
     "command": "npm run pack",
     "cwd": "plugins/worktable/01_content",
-    "sourceRegressionTests": {"passed":126,"failed":0,"newRoleTests":10},
+    "sourceRegressionTests": {
+      "passed": 132,
+      "failed": 0,
+      "newRoleTests": 16
+    },
     "independentInstallImport": "passed",
     "clientFactoryOnInstalledArtifact": "passed",
-    "installedAnchorDomScenarios":8,
-    "installedServerHomeScenarios":3,
-    "sha256":"9899996b57946b1a7f854b811cda8d426c9fc41c2945ec4832ed3401415f3db7",
-    "assets":["dist/v0.4.0/dsh-worktable.tgz","dist/v0.4.0/dsh-worktable-0.4.0.tgz"],
-    "exactFiles":["package/LICENSE","package/lib/client.js","package/lib/index.js","package/dsh.plugin.json","package/package.json","package/README.md","package/cordis.patch.yml"]
+    "installedAnchorDomScenarios": 8,
+    "installedServerHomeScenarios": 3,
+    "sha256": "eb99bb44c18b9af2685afe3b0f11d484adb33d7f8ec3d49f2815cc840be0c311",
+    "assets": [
+      "dist/v0.4.0/dsh-worktable.tgz",
+      "dist/v0.4.0/dsh-worktable-0.4.0.tgz"
+    ],
+    "exactFiles": [
+      "package/LICENSE",
+      "package/lib/client.js",
+      "package/lib/index.js",
+      "package/dsh.plugin.json",
+      "package/package.json",
+      "package/README.md",
+      "package/cordis.patch.yml"
+    ]
   },
-  "realHostAcceptance":"Root owns the official unpatched 0.2.0-rc.2 runtime, installation and browser; not performed by this implementer.",
-  "pendingRealUi":["management Agent and Skill creation/reuse/disable", "reading role contribution from ticket 05", "native workspace unavailable rejection then explicit registration", "same-instance two-view same Session", "different-instance Session isolation", "blank Session survives Host restart", "unsent native draft reopens and remains isolated", "explicit replacement retains reopenable native history"],
-  "limits":["native navigation only; no embedded second composer", "no cross-browser realtime text collaboration claim", "no old personal-workbench record migration", "task preparation/send/approval/Stop remain ticket 07", "native authority in tests is controlled and is not actual model execution evidence"],
-  "ticketClosed":false
+  "realHostAcceptance": "Root owns the official unpatched 0.2.0-rc.2 runtime, installation and browser; not performed by this implementer.",
+  "pendingRealUi": [
+    "management Agent and Skill creation/reuse/disable",
+    "reading role contribution from ticket 05",
+    "native workspace unavailable rejection then explicit registration",
+    "same-instance two-view same Session",
+    "different-instance Session isolation",
+    "blank Session survives Host restart",
+    "unsent native draft reopens and remains isolated",
+    "explicit replacement retains reopenable native history"
+  ],
+  "limits": [
+    "native navigation only; no embedded second composer",
+    "no cross-browser realtime text collaboration claim",
+    "no old personal-workbench record migration",
+    "task preparation/send/approval/Stop remain ticket 07",
+    "native authority in tests is controlled and is not actual model execution evidence"
+  ],
+  "ticketClosed": false,
+  "officialRc2Contract": {
+    "source": "D:/programming/workspace/my-dsh/.scratch/native-unpatched-clean-1791697941186",
+    "version": "0.2.0-rc.2",
+    "environmentVariable": "WORKTABLE_NATIVE_RC2_ROOT",
+    "publicFunctions": [
+      "entryListProblem",
+      "definitionComposition"
+    ],
+    "actualSourceExecuted": true,
+    "skipped": 0,
+    "liveInventory": "Mandatory at managed save/use via compositionInventory; root real Host validation remains pending",
+    "baseComposition": "workspace-basic-v1",
+    "nativeModules": [
+      "@deepseek-ai/dsh-tool-fs",
+      "@deepseek-ai/dsh-tool-fs-search",
+      "@deepseek-ai/dsh-tool-ask-user",
+      "@deepseek-ai/dsh-tool-skill",
+      "@deepseek-ai/dsh-persona"
+    ]
+  },
+  "supersededCandidate": {
+    "sha256": "9899996b57946b1a7f854b811cda8d426c9fc41c2945ec4832ed3401415f3db7",
+    "reason": "Independent review found missing ready gate, native base tools and invocation-mode mismatch; no real role/model acceptance claimed"
+  }
 }
