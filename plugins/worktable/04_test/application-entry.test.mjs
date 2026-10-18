@@ -108,3 +108,38 @@ test('unassigned website instance attaches without changing identity and resumes
     assert.equal((await apps.resolveView(second.id)).instance.id,initial.id)
   } finally {await rm(dir,{recursive:true,force:true})}
 })
+
+test('trusted deep contribution restores the same instance and declared modules across plugin lifecycles',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-deep-'))
+  try {
+    const file=join(dir,'apps.json'),apps=new ApplicationDirectory(file)
+    const definition={id:'reading-statistics',title:'阅读',version:'0.1.0',protocolVersion:1,kind:'deep',views:[{id:'page',title:'完整页'},{id:'stats',title:'统计'}]}
+    const withdraw=await apps.contribute(definition)
+    assert.equal((await apps.catalog())[0].kind,'deep')
+    await assert.rejects(()=>apps.unregister(definition.id),{code:'contribution-owned'})
+    const first=await apps.createInstance(definition.id,'project-one'),other=await apps.createInstance(definition.id,'project-two')
+    const page=await apps.createView(first.id,'page'),stats=await apps.createView(first.id,'stats')
+    assert.equal((await apps.resolveView(stats.id)).instance.id,first.id)
+    assert.equal((await apps.resolveView(stats.id)).view.type,'stats')
+    assert.notEqual(other.id,first.id)
+    await assert.rejects(()=>apps.createView(first.id,'unknown'),{code:'view-unsupported'})
+    withdraw()
+    await assert.rejects(()=>apps.resolveView(page.id),{code:'application-missing'})
+    assert.equal((await apps.snapshot()).instances.length,2)
+    const next=new ApplicationDirectory(file);await next.contribute(definition)
+    assert.equal((await next.resolveView(stats.id)).instance.id,first.id)
+    assert.equal((await next.latest(definition.id,'project-two')).id,other.id)
+    await assert.rejects(()=>next.contribute(definition),{code:'application-conflict'})
+  } finally {await rm(dir,{recursive:true,force:true})}
+})
+
+test('a plugin cannot replace an already registered website identity or silently retarget its saved views',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-conflict-'))
+  try {
+    const apps=new ApplicationDirectory(join(dir,'apps.json'))
+    await apps.register({id:'reading',title:'Existing website',version:'1',protocolVersion:1,kind:'web',url:'https://example.com/'})
+    const instance=await apps.createInstance('reading',null),view=await apps.createView(instance.id)
+    await assert.rejects(async()=>apps.contribute({id:'reading',title:'Plugin',version:'1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'Page'}]}),{code:'application-conflict'})
+    assert.equal((await apps.resolveView(view.id)).application.kind,'web')
+  } finally {await rm(dir,{recursive:true,force:true})}
+})

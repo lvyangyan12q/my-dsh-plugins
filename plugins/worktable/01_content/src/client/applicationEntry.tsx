@@ -1,4 +1,6 @@
 import {useEffect,useRef,useState} from 'react'
+import {DeepApplicationView} from './applicationViews'
+export {applicationViews} from './applicationViews'
 import {websiteEntry,WEBSITE_SANDBOX} from '../framework/web-policy.mjs'
 
 export type ApplicationContent={kind:'application';appId:string;instanceId:string;viewId:string;title:string}
@@ -33,7 +35,7 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
     {snapshot?.applications.map((application:any)=>{
       const latest=snapshot.instances.filter((i:any)=>i.appId===application.id&&i.projectId===props.projectId).sort((a:any,b:any)=>b.lastOpenedAt-a.lastOpenedAt)[0]
       return <div className="dsh-wt_appCard" key={application.id}>
-        <strong>{application.title}</strong><small>网页 · {application.id}</small>
+        <strong>{application.title}</strong><small>{application.kind==='deep'?'应用':'网页'} · {application.id}</small>
         <div className="dsh-wt_appLine">
           <button type="button" className="dsh-wt_appPrimary" disabled={busy} onClick={()=>open(application,!latest)}>{latest?'继续最近实例':'新建实例'}</button>
           {latest&&<button type="button" disabled={busy} onClick={()=>open(application,true)}>新建独立实例</button>}
@@ -60,8 +62,8 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
 
 export function ApplicationPane(props:{content:ApplicationContent;projects:Project[];onOpen:Open;reloadKey:number}){
   const [resolved,setResolved]=useState<any>(null),[error,setError]=useState(''),[projectId,setProjectId]=useState(''),[busy,setBusy]=useState(false)
-  const [loaded,setLoaded]=useState(false)
-  const mounted=useRef(true),generation=useRef(0),pending=useRef<AbortController|null>(null)
+  const [loaded,setLoaded]=useState(false),[viewType,setViewType]=useState('page')
+  const mounted=useRef(true),generation=useRef(0),ownership=useRef(0),pending=useRef<AbortController|null>(null)
   async function refresh(resume=false){
     const current=++generation.current
     pending.current?.abort()
@@ -71,36 +73,38 @@ export function ApplicationPane(props:{content:ApplicationContent;projects:Proje
       if(resume)await request({action:'resume',instanceId:props.content.instanceId},controller.signal)
       const value=await request({action:'resolve',viewId:props.content.viewId},controller.signal)
       if(value.view.id!==props.content.viewId||value.instance.id!==props.content.instanceId||value.application.id!==props.content.appId)throw new Error('视图身份不一致，请从应用入口重新打开。')
-      websiteEntry(value.application.url,window.location.origin)
+      if(value.application.kind!=='deep')websiteEntry(value.application.url,window.location.origin)
       if(owns()){setResolved(value);setError('')}
     }catch(e:any){if(owns()){setResolved(null);setError(e.message)}}
   }
   useEffect(()=>{
-    mounted.current=true;setResolved(null);setError('');void refresh(true)
+    mounted.current=true;ownership.current++;setResolved(null);setError('');setBusy(false);setViewType('page');setProjectId('');void refresh(true)
     const changed=()=>void refresh()
     const opened=(event:Event)=>{if((event as CustomEvent).detail?.viewIds?.includes(props.content.viewId))void refresh(true)}
     window.addEventListener('dsh:applications-changed',changed)
     window.addEventListener('dsh:application-layout-opened',opened)
-    return()=>{mounted.current=false;generation.current++;pending.current?.abort();window.removeEventListener('dsh:applications-changed',changed);window.removeEventListener('dsh:application-layout-opened',opened)}
+    return()=>{mounted.current=false;ownership.current++;generation.current++;pending.current?.abort();window.removeEventListener('dsh:applications-changed',changed);window.removeEventListener('dsh:application-layout-opened',opened)}
   },[props.content.viewId,props.content.instanceId,props.content.appId])
   useEffect(()=>setLoaded(false),[props.reloadKey,props.content.viewId])
-  async function action(operation:()=>Promise<void>){setBusy(true);try{await operation()}catch(e:any){setError(e.message)}finally{if(mounted.current)setBusy(false)}}
+  async function action(operation:()=>Promise<void>){const owner=ownership.current;setBusy(true);try{await operation()}catch(e:any){if(mounted.current&&ownership.current===owner)setError(e.message)}finally{if(mounted.current&&ownership.current===owner)setBusy(false)}}
   const matching=resolved?.view?.id===props.content.viewId&&resolved?.instance?.id===props.content.instanceId&&resolved?.application?.id===props.content.appId
   const instance=matching?resolved.instance:null,application=matching?resolved.application:null
   return <div className="dsh-wt_application">
     <div className="dsh-wt_appToolbar">
       <span>{application?.title??props.content.title} · {instance?.projectId?(props.projects.find(p=>p.id===instance.projectId)?.name??'已关联项目'):'未归属项目'}</span>
-      {matching&&<a href={application.url} target="_blank" rel="noopener noreferrer">外部打开 ↗</a>}
-      {matching&&<button type="button" disabled={busy} onClick={()=>void action(async()=>{const owner=generation.current;const view=await request({action:'view',instanceId:instance.id});if(mounted.current&&generation.current===owner)props.onOpen(contentOf(application,instance,view))})}>添加同实例视图</button>}
+      {matching&&application.kind!=='deep'&&<a href={application.url} target="_blank" rel="noopener noreferrer">外部打开 ↗</a>}
+      {matching&&application.kind==='deep'&&<label>视图<select aria-label="添加视图类型" value={viewType} onChange={e=>setViewType(e.target.value)}>{application.views.map((view:any)=><option key={view.id} value={view.id}>{view.title}</option>)}</select></label>}
+      {matching&&<button type="button" disabled={busy} onClick={()=>void action(async()=>{const owner=ownership.current;const view=await request({action:'view',instanceId:instance.id,viewType:application.kind==='deep'?viewType:'page'});if(mounted.current&&ownership.current===owner)props.onOpen(contentOf(application,instance,view))})}>添加同实例视图</button>}
       <details><summary>实例</summary><div className="dsh-wt_appDetails">
         <small>实例：{props.content.instanceId}</small><small>视图：{props.content.viewId}</small>
         {instance?.projectId===null&&<><label>关联项目<select value={projectId} onChange={e=>setProjectId(e.target.value)}><option value="">选择项目</option>{props.projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
           <button type="button" disabled={!projectId||busy} onClick={()=>void action(async()=>{await request({action:'attach',instanceId:instance.id,projectId,revision:instance.revision});window.dispatchEvent(new Event('dsh:applications-changed'))})}>关联并保留实例</button></>}
-        <p className="dsh-wt_appHint">关闭视图保留实例。普通网页不保证页面内部状态同步。</p>
+        <p className="dsh-wt_appHint">关闭视图保留实例。应用自有状态仅在其声明范围内共享。</p>
       </div></details>
     </div>
     {error&&<p className="dsh-wt_appError" role="alert">{error}<button type="button" onClick={()=>void refresh()}>重试</button></p>}
-    {matching&&<><p className="dsh-wt_appHint">{loaded?'网页框架已载入；跨域内容是否可用需以页面显示为准。':'正在打开网页。'} 若空白、链接失效或提示禁止嵌入，请选择“外部打开”。</p>
+    {matching&&application.kind==='deep'&&<DeepApplicationView key={props.content.viewId} application={application} instance={instance} view={resolved.view} reloadKey={props.reloadKey}/>}
+    {matching&&application.kind!=='deep'&&<><p className="dsh-wt_appHint">{loaded?'网页框架已载入；跨域内容是否可用需以页面显示为准。':'正在打开网页。'} 若空白、链接失效或提示禁止嵌入，请选择“外部打开”。</p>
       <iframe key={props.reloadKey} className="dsh-wt_paneFrame" title={application.title} src={application.url} sandbox={WEBSITE_SANDBOX} referrerPolicy="no-referrer" onLoad={()=>setLoaded(true)} onError={()=>setError('网页暂时无法载入，可重试或外部打开。')} />
     </>}
   </div>

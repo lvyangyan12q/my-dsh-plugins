@@ -11,7 +11,7 @@ function nextUse(data){return data.instances.reduce((time,item)=>Math.max(time,i
 
 /** Profile-owned directory. Public methods return detached records; no DOM or session globals. */
 export class ApplicationDirectory {
-  constructor(file,options={}) { this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve() }
+  constructor(file,options={}) { this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map() }
   async read() {
     try { const data=JSON.parse(await readFile(this.file,'utf8')); if(data.schema!==1) throw new Error('unsupported schema'); return data }
     catch(error) { if(error.code==='ENOENT') return {schema:1,applications:[],instances:[],views:[]}; throw new ApplicationError('storage-unavailable','应用状态无法读取；原数据保留。',503) }
@@ -26,17 +26,32 @@ export class ApplicationDirectory {
     })
     this.pending=result.catch(()=>{}); return result
   }
+  /** Trusted plugin-only registration; disposer never deletes durable instances or views. */
+  async contribute(definition) {
+    if(definition?.protocolVersion!==1) throw new ApplicationError('protocol-incompatible','应用协议版本不兼容。')
+    if(definition.kind!=='deep'||typeof definition.id!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(definition.id)||typeof definition.title!=='string'||!definition.title.trim()||typeof definition.version!=='string'||!definition.version.trim()||!Array.isArray(definition.views)||!definition.views.length||definition.views.length>32) throw new ApplicationError('invalid-definition','深度应用定义无效。')
+    const ids=new Set()
+    const views=definition.views.map(view=>{if(typeof view.id!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(view.id)||ids.has(view.id)||typeof view.title!=='string'||!view.title.trim())throw new ApplicationError('invalid-definition','应用视图定义无效。');ids.add(view.id);return {id:view.id,title:view.title.trim()}})
+    if(!ids.has('page'))throw new ApplicationError('invalid-definition','深度应用必须提供完整页面。')
+    await this.pending
+    const stored=await this.read()
+    if(stored.applications.some(app=>app.id===definition.id)||this.contributions.has(definition.id))throw new ApplicationError('application-conflict','应用标识已被插件贡献。',409)
+    const clean={id:definition.id,title:definition.title.trim(),version:definition.version,protocolVersion:1,kind:'deep',views}
+    this.contributions.set(clean.id,clean)
+    return ()=>{if(this.contributions.get(clean.id)===clean)this.contributions.delete(clean.id)}
+  }
   async register(definition) {
     if(definition?.protocolVersion!==1) throw new ApplicationError('protocol-incompatible','应用协议版本不兼容，当前支持版本1。')
     if(typeof definition.id!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(definition.id) || typeof definition.title!=='string'||!definition.title.trim() || typeof definition.version!=='string'||!definition.version.trim() || definition.kind!=='web') throw new ApplicationError('invalid-definition','请填写应用标识、名称、版本和网页入口。')
     let url
     try {url=websiteEntry(definition.url,this.hostOrigin)} catch(error) {throw new ApplicationError('unsafe-entry',error.message)}
     const clean={id:definition.id,title:definition.title.trim(),version:definition.version,protocolVersion:1,kind:'web',url}
-    return this.change(data=>{ if(data.applications.some(a=>a.id===clean.id)) throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409);data.applications.push(clean);return clean })
+    return this.change(data=>{ if(this.contributions.has(clean.id)||data.applications.some(a=>a.id===clean.id)) throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409);data.applications.push(clean);return clean })
   }
-  async catalog() { await this.pending; return structuredClone((await this.read()).applications) }
-  async unregister(appId) {return this.change(data=>{this.application(data,appId);data.applications=data.applications.filter(a=>a.id!==appId);return {id:appId,removed:true}})}
-  application(data,id) { const found=data.applications.find(a=>a.id===id); if(!found) throw new ApplicationError('application-missing','应用未注册或已移除；实例记录保留。',404); return found }
+  async catalog() { await this.pending; return structuredClone(this.available(await this.read())) }
+  async unregister(appId) {return this.change(data=>{if(this.contributions.has(appId))throw new ApplicationError('contribution-owned','请由贡献应用的插件生命周期撤销入口。',409);this.application(data,appId);data.applications=data.applications.filter(a=>a.id!==appId);return {id:appId,removed:true}})}
+  available(data) {return [...data.applications.filter(a=>!this.contributions.has(a.id)),...this.contributions.values()]}
+  application(data,id) { const found=this.available(data).find(a=>a.id===id); if(!found) throw new ApplicationError('application-missing','应用未注册或已移除；实例记录保留。',404); return found }
   instance(data,id) { const found=data.instances.find(a=>a.id===id); if(!found) throw new ApplicationError('instance-missing','实例不存在；请检查入口。',404); return found }
   async latest(appId,projectId) {
     projectId=projectScope(projectId)
@@ -60,13 +75,13 @@ export class ApplicationDirectory {
       record.projectId=projectId; record.revision++; return record
     })
   }
-  async createView(id) {
-    return this.change(data=>{ const instance=this.instance(data,id);this.application(data,instance.appId); const view={id:randomUUID(),instanceId:id,type:'page'};data.views.push(view);instance.lastOpenedAt=nextUse(data);return view })
+  async createView(id,type='page') {
+    return this.change(data=>{ const instance=this.instance(data,id);const app=this.application(data,instance.appId);if(typeof type!=='string'||(app.kind==='deep'?!app.views.some(v=>v.id===type):type!=='page'))throw new ApplicationError('view-unsupported','应用未声明此视图，请选择可用模块。'); const view={id:randomUUID(),instanceId:id,type};data.views.push(view);instance.lastOpenedAt=nextUse(data);return view })
   }
   async resolveView(id) {
     await this.pending; const data=await this.read();const view=data.views.find(v=>v.id===id)
     if(!view) throw new ApplicationError('view-missing','视图不存在；请从应用入口继续。',404)
     const instance=this.instance(data,view.instanceId);return structuredClone({view,instance,application:this.application(data,instance.appId)})
   }
-  async snapshot() {await this.pending;return structuredClone(await this.read())}
+  async snapshot() {await this.pending;const data=await this.read();return structuredClone({...data,applications:this.available(data)})}
 }
