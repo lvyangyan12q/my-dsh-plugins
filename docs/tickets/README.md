@@ -29,3 +29,7 @@
 最新：[原生恢复与适配调整](../wayfinder/workbench-completion/native-restoration.md)。01/05/06/11/12已记录原生改动、插件替代方向和重新验收要求。
 
 [原生公开接缝盘点](../wayfinder/workbench-completion/native-public-seams.md)给出无补丁原生的可用公开接缝及每项补丁能力的替代/降级结论，是01/05/06适配的公共依据。
+
+## Worktable基线首阶段（2026-10-18）
+
+当前新实施入口为[Worktable AI工作台首阶段11张工单](../wayfinder/worktable-platform/implementation/README.md)，对应已确认框架规格与阶段边界。先行基线保护和交互原型可并行，后续按实际阻塞边领取；本页此前工单保留历史范围及状态，不与新编号混用。

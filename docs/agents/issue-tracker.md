@@ -57,3 +57,7 @@ The user confirmed the full destination and installed-DSH user-flow testing seam
 本地规格身份为worktable-ai-framework-spec，标题为[基于 Worktable 的 AI 工作台框架与应用接入规格](../wayfinder/worktable-platform/framework-spec.md)。遵循现有frontmatter跟踪；用户已确认真实安装用户流程为主验收入口；当前status=open、唯一triage标签ready-for-agent。规格已发布到本地跟踪器，不把规划资产或提交记录当实施完成。
 
 Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续阶段。原14张实施工单仅为未批准草案，须据新边界重排后再发布；本轮只记录决策与ADR，不发布实施工单。
+
+## Worktable首阶段实施图
+
+用户在implement-spec轮明确确认按[首阶段11张实施工单](../wayfinder/worktable-platform/implementation/README.md)发布。集成分支codex/worktable-framework；保留原型评审门槛及真实安装验收，完整搭建器、高级网页桥接和自动追改保留后续。原14张草案未作为实施工单发布；旧规格与旧工单不关闭。
