@@ -103,7 +103,7 @@ export function ApplicationPane(props:{content:ApplicationContent;projects:Proje
       </div></details>
     </div>
     {error&&<p className="dsh-wt_appError" role="alert">{error}<button type="button" onClick={()=>void refresh()}>重试</button></p>}
-    {matching&&application.kind==='deep'&&<DeepApplicationView key={props.content.viewId} application={application} instance={instance} view={resolved.view} reloadKey={props.reloadKey}/>}
+    {matching&&application.kind==='deep'&&<div style={{flex:1,minHeight:0,minWidth:0,overflow:'auto'}}><DeepApplicationView key={props.content.viewId} application={application} instance={instance} view={resolved.view} reloadKey={props.reloadKey}/></div>}
     {matching&&application.kind!=='deep'&&<><p className="dsh-wt_appHint">{loaded?'网页框架已载入；跨域内容是否可用需以页面显示为准。':'正在打开网页。'} 若空白、链接失效或提示禁止嵌入，请选择“外部打开”。</p>
       <iframe key={props.reloadKey} className="dsh-wt_paneFrame" title={application.title} src={application.url} sandbox={WEBSITE_SANDBOX} referrerPolicy="no-referrer" onLoad={()=>setLoaded(true)} onError={()=>setError('网页暂时无法载入，可重试或外部打开。')} />
     </>}
