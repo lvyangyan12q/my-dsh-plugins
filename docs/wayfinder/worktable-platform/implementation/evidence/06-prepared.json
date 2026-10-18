@@ -1,0 +1,37 @@
+{
+  "ticket": "worktable-framework-06",
+  "status": "implementation-prepared-real-host-acceptance-pending",
+  "date": "2026-10-19",
+  "base": "ed6ca9dda80523ea735c3e1b9260e86cfbc1005d",
+  "sourceHead": "f31f7a3b469293e31629d2ffe443e09b0f52194a",
+  "mergedIntegration": "9c110c6fd3a9b0f851e47f9b82dfb7d7a9142102",
+  "redGreen": [
+    {"seam":"role lifecycle", "red":"roles.mjs missing", "green":"passive read, same-owner concurrent ensure convergence, instance isolation"},
+    {"seam":"durable recovery and ownership", "red":"retry and attach methods missing", "green":"same-ID restart retry, revision guard, explicit replacement history, reverse current/history ownership"},
+    {"seam":"capability provenance", "red":"capabilities.mjs missing", "green":"management records only, private owner isolation, disabled capability rejection"},
+    {"seam":"native rc.2 adapter", "red":"role-native.mjs missing", "green":"allocated identity, exact preset, explicit registered Workspace, flush order"},
+    {"seam":"React role panel", "red":"after installing lockfile dependencies, rolePanel.tsx missing", "green":"passive view read, same-ID native navigation, unmount does not Stop"},
+    {"seam":"explicit Agent replacement", "red":"Missing expected rejection on ensure with a different Agent", "green":"replacement-required rejection"}
+  ],
+  "supplementaryFilesystemChecks": [
+    "Actual filesystem obstruction after native create leaves durable intent; explicit retry reuses its ID",
+    "Moved state directory rejects intent write and invokes zero native create commands",
+    "A second live Host store owner is rejected"
+  ],
+  "pack": {
+    "command": "npm run pack",
+    "cwd": "plugins/worktable/01_content",
+    "sourceRegressionTests": {"passed":125,"failed":0,"newRoleTests":9},
+    "independentInstallImport": "passed",
+    "clientFactoryOnInstalledArtifact": "passed",
+    "installedAnchorDomScenarios":8,
+    "installedServerHomeScenarios":3,
+    "sha256":"eda9a6c18e3458e2e830301886d20e467b70f4b6ce2a437cccd34a72a6fe8b7f",
+    "assets":["dist/v0.4.0/dsh-worktable.tgz","dist/v0.4.0/dsh-worktable-0.4.0.tgz"],
+    "exactFiles":["package/LICENSE","package/lib/client.js","package/lib/index.js","package/dsh.plugin.json","package/package.json","package/README.md","package/cordis.patch.yml"]
+  },
+  "realHostAcceptance":"Root owns the official unpatched 0.2.0-rc.2 runtime, installation and browser; not performed by this implementer.",
+  "pendingRealUi":["management Agent and Skill creation/reuse/disable", "reading role contribution from ticket 05", "native workspace unavailable rejection then explicit registration", "same-instance two-view same Session", "different-instance Session isolation", "blank Session survives Host restart", "unsent native draft reopens and remains isolated", "explicit replacement retains reopenable native history"],
+  "limits":["native navigation only; no embedded second composer", "no cross-browser realtime text collaboration claim", "no old personal-workbench record migration", "task preparation/send/approval/Stop remain ticket 07", "native authority in tests is controlled and is not actual model execution evidence"],
+  "ticketClosed":false
+}
