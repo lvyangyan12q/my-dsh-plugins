@@ -125,3 +125,35 @@ test('after opening A then explicitly creating B, the project picker restores ol
     assert.equal((await apps.latest('reading','project-one')).id,a.id)
   } finally {if(root)await act(async()=>root.unmount());globalThis.fetch=previousFetch;await rm(folder,{recursive:true,force:true})}
 })
+
+test('public layout moveTab and swapPanes retain application instance and view identities',()=>{
+  const previousWindow=globalThis.window,previousStorage=Object.getOwnPropertyDescriptor(globalThis,'localStorage')
+  globalThis.window=Object.assign(new EventTarget(),{location:{origin:'http://127.0.0.1:3091'}})
+  Object.defineProperty(globalThis,'localStorage',{configurable:true,value:{getItem:()=>null,setItem:()=>{}}})
+  try {
+    // Evaluate the complete real layout module, without extracting or replacing its commands.
+    const built=buildSync({entryPoints:[join(packageRoot,'src/client/split.tsx')],bundle:true,platform:'node',format:'cjs',jsx:'automatic',external:['react','react/jsx-runtime','xterm'],write:false})
+    const layout={exports:{}}
+    new Function('require','module','exports',built.outputFiles[0].text)(name=>name==='xterm'?{Terminal:class{}}:require(name),layout,layout.exports)
+    const {splitStore:store}=layout.exports
+    const page={kind:'application',appId:'reading',instanceId:'instance-A',viewId:'view-A-page',title:'Reading'}
+    const stats={kind:'application',appId:'reading',instanceId:'instance-A',viewId:'view-A-stats',title:'Reading'}
+    const other={kind:'application',appId:'reading',instanceId:'instance-B',viewId:'view-B-page',title:'Reading'}
+    // Public state fixture: only exercise layout commands; native DOM anchoring has its own gate.
+    store.spec={id:'project-one',title:'Project',top:[{id:'top',title:'Top',tabs:[]}],main:[{id:'first',title:'First',tabs:[]},{id:'second',title:'Second',tabs:[]}]}
+    const saved=[];store.onSpecMutated=spec=>saved.push(structuredClone(spec))
+    store.openTab('top',0,page);store.openTab('main',0,stats);store.openTab('main',1,other)
+    const tabId=store.spec.top[0].tabs[0].id
+    store.moveTab('top',0,tabId,'main',1)
+    assert.equal(store.spec.top[0].tabs.length,0)
+    assert.deepEqual(store.spec.main[1].tabs.map(tab=>tab.content),[other,page])
+    assert.equal(store.spec.main[1].tabs[1].id,tabId)
+    store.swapPanes('main',0,'main',1)
+    assert.deepEqual(store.spec.main[0].tabs.map(tab=>tab.content),[other,page])
+    assert.deepEqual(store.spec.main[1].tabs.map(tab=>tab.content),[stats])
+    assert.equal(store.spec.main[0].tabs[1].id,tabId)
+    store.openTab('main',0,page)
+    assert.equal(store.spec.main[0].tabs.length,2,'reopening the moved view does not duplicate it')
+    assert.deepEqual(saved.at(-1).main[0].tabs.map(tab=>tab.content),[other,page])
+  } finally {globalThis.window=previousWindow;if(previousStorage)Object.defineProperty(globalThis,'localStorage',previousStorage);else delete globalThis.localStorage}
+})
