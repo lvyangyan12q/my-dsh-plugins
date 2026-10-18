@@ -2,8 +2,8 @@
   "date": "2026-10-19",
   "ticket": "worktable-framework-04",
   "status": "in-progress",
-  "sourceCommit": "724499732d61afaea33b727c26ca67d9f86c5421",
-  "readingCommit": "9bbd2e164370c690641359bc6683355cd4e25413",
+  "sourceCommit": "a13fc13ed85cb4b7fc34a98889bd57d476fee71e",
+  "readingCommit": "a13fc13ed85cb4b7fc34a98889bd57d476fee71e",
   "integrationMerged": "8d62be8bbee9b6ee323c3dff15af21b1d6c935ad",
   "primaryInstalledUIAcceptance": "pending-root-final-two-package-install-on-isolated-3091",
   "platform": {
@@ -24,23 +24,25 @@
       "plugins/worktable/01_content/dist/v0.4.0/dsh-worktable-0.4.0.tgz"
     ],
     "sha256": "13bc7702537435b22d80f27ac945c1e4b81674b31fb26b69e68b8a46be519ccb",
-    "supersededCandidate": "027408067213effc88402499958c4b6a672bcd75c462612ff74e07053b6c8463"
+    "supersededCandidate": "027408067213effc88402499958c4b6a672bcd75c462612ff74e07053b6c8463",
+    "rootReportedOfficialInstalledFilesMatched": 7
   },
   "reading": {
     "version": "0.1.0",
     "build": "tsdown -c tsdown.config.ts passed",
     "typeCheck": "tsc --noEmit passed",
     "tests": {
-      "passed": 17,
+      "passed": 18,
       "failed": 0,
       "independentlyRerunAfterPlatformRaceFix": true,
       "DSH_SOURCE": "D:/programming/workspace/my-dsh/.scratch/native-unpatched-clean-1791697941186",
       "READING_LEGACY_ROOT": "D:/programming/workspace/my-dsh",
       "KAOGONG_TEST_TOOLS": "D:/programming/workspace/my-dsh",
-      "legacyArtifactsReadOnly": true
+      "legacyArtifactsReadOnly": true,
+      "independentlyRerunAfterNativeDependencyFix": true
     },
     "artifact": "plugins/reading-statistics/.checks/deepseek-ai-dsh-reading-statistics-0.1.0.tgz",
-    "sha256": "54d9e95729ae15eb1ff4ac5602362b76d30d20821c930e98cee5f61db29055b5",
+    "sha256": "a77613f53c130d9df32c0e7445c9ebae7499ac89cc1549ab6b6eed01a92f35a2",
     "files": [
       "package/README.md",
       "package/cordis.patch.yml",
@@ -54,6 +56,24 @@
     "offlineCache": {
       "zod": "highest observed cached 4.6.4 satisfies ^4.4.3",
       "storageDomain": "not found in npm cache; official rc2 base provides service; final profile module resolution requires actual installation check"
+    },
+    "previousCandidates": [
+      {
+        "sha256": "54d9e95729ae15eb1ff4ac5602362b76d30d20821c930e98cee5f61db29055b5",
+        "nativeInstallationAcceptance": false,
+        "rootObserved": "Standard npm selected storage-domain alpha2 from rc2||alpha2. Official rc2 Host disabled that incompatible plugin; native workspace/session projection services became pending and session list appeared empty. Root reported records were not deleted and had not created reading records.",
+        "resolution": "Both storage-domain optional dependency and host-webserver peer pinned to exact 0.2.0-rc.2. No native patch or allow-version bypass."
+      }
+    ],
+    "nativeVersionSelection": {
+      "testedRuntime": "0.2.0-rc.2",
+      "storageDomainOptional": "0.2.0-rc.2",
+      "hostWebserverPeer": "0.2.0-rc.2",
+      "cordisPeer": "4.0.4",
+      "test": "npm pack -> extract actual package.json -> npm-pick-manifest for every native dependency/optional/peer against rc2 and alpha2 with latest=alpha2 -> selects rc2; official compatibility accepts rc2 and rejects alpha2",
+      "red": "Final packed old manifest selected 0.2.1-alpha.2",
+      "green": true,
+      "rootFinalReinstall": "pending"
     }
   },
   "redGreen": [
@@ -96,6 +116,11 @@
       "behavior": "reading multi-view identity, preference sharing and response fences",
       "red": "missing registration; stale same-instance read replaced saved snapshot",
       "green": true
+    },
+    {
+      "behavior": "final packed native dependencies preserve tested rc2 during standard npm installation",
+      "red": "npm-pick-manifest selected alpha2 from the actual packed old manifest; actual Host installation independently reproduced incompatibility",
+      "green": true
     }
   ],
   "implementedBoundaries": {
@@ -123,5 +148,6 @@
     "Move tabs/panes, close all views, force pool eviction, reopen latest, refresh; preserve instance/view identities and reading records.",
     "Explicitly create a new instance and open in another project; expect empty records and independent preferences.",
     "Verify native dialogue remains available without duplicate Sessions and no legacy personal-workbench frontend is loaded."
-  ]
+  ],
+  "readingImplementationCommit": "9bbd2e164370c690641359bc6683355cd4e25413"
 }
