@@ -3,8 +3,8 @@ id: worktable-framework-04
 title: 深度应用接入与同实例多视图
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: reading_deep_application
 blocked_by: [worktable-framework-03]
 ---
 
@@ -14,7 +14,7 @@ blocked_by: [worktable-framework-03]
 
 **Blocked by:** [网页应用与未归属实例接入](03-web-entry.md)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 一个真实深度应用能提供完整页面和可嵌入模块，通过统一注册进入已有项目；无需加载旧工作台前台。
 - [ ] 同实例两个视图共享已声明的工作状态；移动标签、改变窗格或重复打开不新建实例和会话。
