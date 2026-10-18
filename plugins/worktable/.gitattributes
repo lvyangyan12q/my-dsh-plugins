@@ -1,0 +1,7 @@
+# Preserve frozen upstream bytes across checkouts; provenance compares exact source bytes.
+* -text
+
+# Imported frozen upstream files retain their existing final blank line.
+/LICENSE whitespace=-blank-at-eof
+/AGENTS.md whitespace=-blank-at-eof
+/01_content/verify-remote.mjs whitespace=-blank-at-eof
