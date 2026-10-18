@@ -4,7 +4,7 @@ import type {} from '@deepseek-ai/dsh-client-connection'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
 import { z } from 'zod'
-import { readingAppId, readingResource, readingIdentityMaxLength, readingIdentityPattern } from './reading-api.ts'
+import { readingIdentityMaxLength, readingIdentityPattern } from './reading-api.ts'
 import type { ReadingInstance, ReadingRecord } from './reading-api.ts'
 const identity = z.string().min(1).max(readingIdentityMaxLength).regex(readingIdentityPattern)
 const recordSchema = z.object({ id: identity, title: z.string().max(200), author: z.string().max(200), category: z.string().max(100), status: z.enum(['reading', 'finished']), minutes: z.number().int().min(0).max(1000000), notes: z.string().max(4000) }).strict()
@@ -17,8 +17,6 @@ const examples = (): ReadingRecord[] => [
 ]
 export async function installReading(ctx: Context) {
   const domain = await ctx.storageDomain.open(readingDomain), table = domain.table('instances')
-  const disposers: (() => void)[] = []
-  try { disposers.push(ctx.personalWorkbenchRecipes.registerDataSource({ appId: readingAppId, resource: readingResource })); disposers.push(ctx.personalWorkbenchRecipes.registerModule({ id: 'reading-record-editor', validate: (_module, recipe) => recipe.appId === readingAppId ? [] : ['Reading editor belongs to reading-statistics'] })) } catch (error) { for (const dispose of disposers.reverse()) dispose(); await domain.close(); throw error }
   let closing = false, tail = Promise.resolve()
   const requests = new Set<Promise<void>>()
   const read = (instanceId: string): ReadingInstance => structuredClone(table.get(identity.parse(instanceId)) ?? { instanceId, initialized: false, records: [] })
@@ -65,5 +63,5 @@ export async function installReading(ctx: Context) {
       respond(200, { version: 1, instance: data.action === 'read' ? read(data.preview ? 'default' : data.instanceId) : data.action === 'initialize' ? await initialize(data.instanceId, data.seed) : await mutate(data) })
     } catch (error) { respond(409, { error: error instanceof Error ? error.message : 'Reading request failed' }) }
   }
-  return { read, initialize, handle: (req: IncomingMessage, res: ServerResponse) => { if (closing) { res.writeHead(503); res.end(); return Promise.resolve() } const task = dispatch(req, res); requests.add(task); void task.finally(() => requests.delete(task)).catch(() => {}); return task }, dispose: async () => { closing = true; for (const dispose of disposers.reverse()) dispose(); await Promise.allSettled([...requests, tail]); await domain.close() } }
+  return { read, initialize, handle: (req: IncomingMessage, res: ServerResponse) => { if (closing) { res.writeHead(503); res.end(); return Promise.resolve() } const task = dispatch(req, res); requests.add(task); void task.finally(() => requests.delete(task)).catch(() => {}); return task }, dispose: async () => { closing = true; await Promise.allSettled([...requests, tail]); await domain.close() } }
 }

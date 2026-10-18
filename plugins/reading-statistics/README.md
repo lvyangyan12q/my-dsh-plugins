@@ -1,29 +1,53 @@
 # Reading statistics
 
-Independent example application for Workbench display modules. Its `reading_statistics`
-Host storage domain owns reading records by instance ID. Recipes only declare an owned
-`reading-records` connection; the platform contains no reading business conditions.
+Reading owns its `reading_statistics` version 1 Host storage domain and all records.
+The data owner requires native `storageDomain` and authenticated `connection` services;
+the official web/base runtime provides both. No Session or model request is created.
 
-Build with the repository `scripts/build-release.mjs` and `DSH_SOURCE` pointing to the
-already-built official runtime. Register/install `@deepseek-ai/dsh-personal-workbench`
-before this package, add this package to the profile and apply its `cordis.patch.yml`.
-The Client manifest injects the Workbench package; Host storage and authenticated
-connection services are required. Installation creates no Session or model request.
-Workbench is an independent optional package dependency (`0.1.0`), with a local
-development reference matching Kaogong. It is installed explicitly before this
-package; the Client injection and Host service requirement still require it.
-Only native DSH runtime packages belong in the runtime peer compatibility check.
+## Worktable deep application
 
-In the application center open the recipe editor, choose **阅读统计应用 / Reading statistics app**.
-This explicitly initializes public-domain example reading records for the default
-instance only, idempotently. Save the draft, preview its filters/statistics/list/detail,
-then explicitly activate. A template selection never changes the running recipe.
-The ordinary data connection form can remove, add and reconnect the owned source.
-Disabled apps retain their recipes and reading records and can be restored normally.
+Install this package alongside Worktable and apply its `cordis.patch.yml`. No legacy
+personal-workbench installation or client injection is required. Host contributes
+`reading-statistics` through `worktableApplications`; the client contributes `page`,
+`stats` and `list` through `worktableApplicationViews`. Each adapter unregisters
+independently when its platform service disappears and restores when it returns.
+The business data owner remains available independently of either adapter.
 
-Other instances start empty. The authenticated `/api/reading-statistics/data` route
-accepts `initialize` with an instance ID and `seed: "examples" | "empty"`; each instance
-initializes independently. `read` never creates records. Preview reads a snapshot of
-default data, stores its interaction state separately, and cannot initialize records.
-The route uses the native authenticated same-origin request gate and bounded JSON.
-No map service, credentials, private-app reads or AI invocation is included.
+Choose Reading statistics in the Worktable application entry and explicitly create
+an instance. Open its full page, statistics or list views. The full page owns search,
+category/status filters, selection and record management. All views of the same
+instance share filters and selection. Other instances start empty. Use **新增阅读记录**
+to add your own record, or **初始化示例记录** to explicitly initialize three public-domain
+examples in this instance. Initialization is idempotent and never copies `default`.
+The full page does not provide a second instance switcher or native session layout.
+
+Closing every view aborts reads, releases all reading subscriptions, removes the
+inactive state owner and releases its record snapshots. Remounting reads current
+Host records. Presentation preferences use a versioned browser-local key per instance,
+with a bounded 64-instance in-memory fallback. They survive view closure and adapter
+re-registration. A browser storage write failure is visible in the UI; fallback
+preferences may be lost on refresh or eviction. Separate windows have independent
+live preferences and notifications; this is not a cross-window synchronization or
+full durable-recovery protocol. Host records remain durable across restarts.
+Late reads and mutations are fenced by instance identity and request generation.
+
+## Optional legacy recipe entry
+
+An explicitly installed personal-workbench can still register the original reading
+recipe/data-source/editor adapter. That optional service lifecycle is separate from
+Worktable and is never loaded by the new deep path. Selecting its legacy template
+explicitly initializes examples in `default`; existing IDs and records are retained.
+Legacy preview remains read-only and reads the legacy default snapshot.
+
+## Build and tests
+
+Build with `tsdown -c tsdown.config.ts`. The package includes only `lib`, this README,
+`cordis.patch.yml` and package metadata. Set `DSH_SOURCE` to the built official runtime
+for `tsx --test tests/*.test.mjs`. On a fresh worktree, `READING_LEGACY_ROOT` can point
+to a checkout with built personal-workbench/kaogong clients for compatibility tests;
+those artifact bytes are read without modifying their source or loading the old UI
+in the new application. `KAOGONG_TEST_TOOLS` can identify the existing test tool root.
+
+The route retains same-origin authentication, strict bounded JSON, read-only preview
+and explicit deletion confirmation. Per-instance resource authorization, concurrent
+revision conflict handling and cross-window synchronization belong to later work.

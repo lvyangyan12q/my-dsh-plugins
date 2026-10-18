@@ -2,21 +2,25 @@ import { useEffect, useRef, useState } from 'react'
 import type { RecipeModuleProps, WorkbenchAppId, WorkbenchInstanceId } from '@deepseek-ai/dsh-personal-workbench/client'
 import type { ReadingRecord } from './reading-api.ts'
 import { readingAppId, validReadingIdentity, readingIdentityMaxLength } from './reading-api.ts'
-import { requestReading, recordOrigin } from './reading-data-client.ts'
+import { requestReading, recordOrigin, subscribeReading } from './reading-data-client.ts'
 type Fields = Omit<ReadingRecord, 'id'>
 const empty = (): Fields => ({ title: '', author: '', category: '', status: 'reading', minutes: 0, notes: '' })
-export function ReadingRecordEditor({ appId, instanceId, preview, ctx }: RecipeModuleProps) {
+export function ReadingRecordEditor({ appId, instanceId, preview, ctx, standalone = false }: { appId: string; instanceId: string; preview: boolean; ctx?: RecipeModuleProps['ctx']; standalone?: boolean }) {
   const [targetInstance, setTargetInstance] = useState(instanceId)
-  const activeScope = useRef(`${appId}:${instanceId}:${preview}`)
-  activeScope.current = `${appId}:${instanceId}:${preview}`
+  const scopeKey = `${appId}:${instanceId}:${preview}`
+  const owner = useRef({ key: scopeKey, token: {} })
+  if (owner.current.key !== scopeKey) owner.current = { key: scopeKey, token: {} }
+  const activeScope = useRef(owner.current.token)
+  activeScope.current = owner.current.token
+  const readGeneration = useRef(0)
   const [records,setRecords] = useState<ReadingRecord[]>([]), [busy,setBusy] = useState(false), [error,setError] = useState(''), [editing,setEditing] = useState<string|null|undefined>(), [fields,setFields] = useState(empty), [deleting,setDeleting] = useState<string>(), [notice,setNotice] = useState('')
-  const read = async (signal?: AbortSignal) => { setBusy(true); setError(''); try { const row=await requestReading({action:'read',instanceId,preview},signal); if(!signal?.aborted)setRecords(row.records) } catch(e) { if(!signal?.aborted)setError(e instanceof Error?e.message:String(e)) } finally { if(!signal?.aborted)setBusy(false) } }
-  useEffect(()=>{setTargetInstance(instanceId);setEditing(undefined);setDeleting(undefined);setNotice('');const controller=new AbortController();if(appId===readingAppId)void read(controller.signal);return()=>controller.abort()},[appId,instanceId,preview])
-  const mutate = async (body: Record<string,unknown>) => { if(preview||busy)return; const scope = activeScope.current;setBusy(true);setError('');try {const row=await requestReading({...body,action:String(body.action),instanceId,preview});if(activeScope.current!==scope)return;setRecords(row.records);setEditing(undefined);setDeleting(undefined);setNotice('阅读记录已保存')}catch(e){if(activeScope.current===scope)setError(e instanceof Error?e.message:String(e))}finally{if(activeScope.current===scope)setBusy(false)} }
+  const read = async (signal?: AbortSignal) => { const scope = activeScope.current, generation = ++readGeneration.current; setBusy(true); setError(''); try { const row=await requestReading({action:'read',instanceId,preview},signal); if(!signal?.aborted&&activeScope.current===scope&&readGeneration.current===generation)setRecords(row.records) } catch(e) { if(!signal?.aborted&&activeScope.current===scope&&readGeneration.current===generation)setError(e instanceof Error?e.message:String(e)) } finally { if(!signal?.aborted&&activeScope.current===scope&&readGeneration.current===generation)setBusy(false) } }
+  useEffect(()=>{setTargetInstance(instanceId);setEditing(undefined);setDeleting(undefined);setNotice('');const token=activeScope.current;const controller=new AbortController();if(appId===readingAppId)void read(controller.signal);const unsubscribe=subscribeReading({instanceId,preview},()=>{void read(controller.signal)});return()=>{if(activeScope.current===token)activeScope.current={};controller.abort();unsubscribe()}},[appId,instanceId,preview])
+  const mutate = async (body: Record<string,unknown>) => { if(preview||busy)return; const scope = activeScope.current;setBusy(true);setError('');try {const row=await requestReading({...body,action:String(body.action),instanceId,preview});if(activeScope.current!==scope)return;readGeneration.current++;setRecords(row.records);setEditing(undefined);setDeleting(undefined);setNotice('阅读记录已保存')}catch(e){if(activeScope.current===scope)setError(e instanceof Error?e.message:String(e))}finally{if(activeScope.current===scope)setBusy(false)} }
   if(appId!==readingAppId)return <p role="alert">阅读管理模块属于阅读统计应用。</p>
   return <section data-reading-editor aria-busy={busy} style={{display:'grid',gap:12,minWidth:0}}>
-    <p>实例：{instanceId} · 默认三条为示例；自录记录独立保存，可按“来源”筛选统计。</p>
-    {!preview&&<form style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'end'}} onSubmit={event=>{event.preventDefault();if(preview||busy||!validReadingIdentity(targetInstance))return;try{if(!ctx?.personalWorkbench)throw new Error('工作台服务暂不可用，请恢复插件后重试');ctx.personalWorkbench.openApp(readingAppId as WorkbenchAppId,targetInstance as WorkbenchInstanceId)}catch(e){setError(e instanceof Error?e.message:String(e))}}}><label>阅读实例 ID<input aria-label="阅读实例 ID" maxLength={readingIdentityMaxLength} value={targetInstance} onChange={event=>setTargetInstance(event.target.value)} placeholder="例如 default 或 second"/></label><button data-pwb-button type="submit" disabled={busy||!validReadingIdentity(targetInstance)}>打开阅读实例</button><small>仅支持英文、数字、下划线、点和短横线，最多 160 字符；新实例为空，不自动复制示例。</small></form>}
+    <p>实例：{instanceId} · 阅读记录独立保存。示例仅在显式初始化后创建。</p>
+    {!preview&&!standalone&&<form style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'end'}} onSubmit={event=>{event.preventDefault();if(preview||busy||!validReadingIdentity(targetInstance))return;try{if(!ctx?.personalWorkbench)throw new Error('工作台服务暂不可用，请恢复插件后重试');ctx.personalWorkbench.openApp(readingAppId as WorkbenchAppId,targetInstance as WorkbenchInstanceId)}catch(e){setError(e instanceof Error?e.message:String(e))}}}><label>阅读实例 ID<input aria-label="阅读实例 ID" maxLength={readingIdentityMaxLength} value={targetInstance} onChange={event=>setTargetInstance(event.target.value)} placeholder="例如 default 或 second"/></label><button data-pwb-button type="submit" disabled={busy||!validReadingIdentity(targetInstance)}>打开阅读实例</button><small>仅支持英文、数字、下划线、点和短横线，最多 160 字符；新实例为空，不自动复制示例。</small></form>}
     {preview&&<p role="status">预览只读，启用后可管理此实例的阅读记录。</p>}
     {error&&<div role="alert"><p>{error}</p><button data-pwb-button disabled={busy} onClick={()=>{setDeleting(undefined);void read()}}>重试加载阅读记录</button></div>}
     {notice&&<p role="status">{notice}</p>}

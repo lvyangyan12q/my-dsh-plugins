@@ -5,6 +5,7 @@ export async function requestReading(body: { action: string; instanceId: string;
   const response = await fetch('/api/reading-statistics/data', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), signal })
   const data = await response.json()
   if (!response.ok || data.version !== 1 || !data.instance || !Array.isArray(data.instance.records)) throw new Error(data.error ?? 'Reading data unavailable')
+  if (data.instance.instanceId !== (body.preview && body.action === 'read' ? 'default' : body.instanceId)) throw new Error('Reading response instance mismatch')
   if (body.action !== 'read') for (const listener of listeners) if (listener.instanceId === body.instanceId) listener.notify()
   return data.instance
 }

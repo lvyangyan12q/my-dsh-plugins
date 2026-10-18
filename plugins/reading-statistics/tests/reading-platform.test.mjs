@@ -10,6 +10,7 @@ import { runInNewContext } from 'node:vm'
 import { JSDOM } from 'jsdom'
 import { installRecipes } from '../../personal-workbench/src/recipe-host.ts'
 import { installAppLifecycle } from '../../personal-workbench/src/app-lifecycle-host.ts'
+import { installLegacyReading } from '../src/index.ts'
 import { installReading } from '../src/reading-host.ts'
 const source = process.env.DSH_SOURCE; assert.ok(source)
 const official = createRequire(resolve(source, 'packages/client/ui-renderer/package.json'))
@@ -27,6 +28,7 @@ async function host(root) {
   let rejection
   const face = { storageDomain: facility, connection: { requestRejection: () => rejection }, reflect: { provide: () => () => {} }, get: () => undefined }
   const recipes = await installRecipes(face), apps = await installAppLifecycle(face), reading = await installReading({ ...face, personalWorkbenchRecipes: recipes.service })
+  const disposeLegacy = installLegacyReading({ personalWorkbenchRecipes: recipes.service })
   const call = async (url, data, method = 'POST') => {
     const owner = url.endsWith('/recipes') ? recipes : url.endsWith('/apps') ? apps : reading
     const req = Readable.from([typeof data === 'string' ? data : JSON.stringify(data)]); req.method = method; req.headers = { 'content-type': 'application/json' }
@@ -34,7 +36,7 @@ async function host(root) {
     await owner.handle(req, { setHeader: () => {}, writeHead: code => { status = code }, end: text => { value = text ? JSON.parse(text) : undefined } })
     return { status, value }
   }
-  return { recipes, apps, reading, call, deny: code => { rejection = code }, close: async () => { await reading.dispose(); await apps.dispose(); await recipes.dispose(); await ctx.fiber.dispose() } }
+  return { recipes, apps, reading, call, deny: code => { rejection = code }, close: async () => { disposeLegacy(); await reading.dispose(); await apps.dispose(); await recipes.dispose(); await ctx.fiber.dispose() } }
 }
 async function client(host) {
   const dom = new JSDOM('<div id="mount"></div>', { url: 'http://localhost' }), original = new Map()
@@ -42,7 +44,7 @@ async function client(host) {
   let platform, reading, workbench, forbidden = 0, fail = false
   const fetch = async (url, options) => { if (url === '/api/personal-workbench/annotations' && JSON.parse(options.body).action === 'list') return { ok: true, json: async () => ({ records: [] }) };  if (url === '/api/reading-statistics/data' && fail) throw new Error('Reading backend failed'); if (!['/api/reading-statistics/data', '/api/personal-workbench/recipes', '/api/personal-workbench/apps'].includes(url)) { forbidden++; throw new Error('AI/Session request forbidden') } const result = await host.call(url, JSON.parse(options.body)); return { ok: result.status === 200, json: async () => result.value } }
   const load = async (file, dependency) => { let api; const window = Object.assign(dom.window, { __ModuleLoader__: { load: ({ factory }) => { api = factory(name => name === '@deepseek-ai/dsh-personal-workbench/client' ? dependency : require(name)) } } }); runInNewContext(await readFile(file, 'utf8'), { window, document: dom.window.document, console, AbortController, structuredClone, crypto: globalThis.crypto, fetch }); return api }
-  platform = await load(new URL('../../personal-workbench/lib/client.js', import.meta.url)); reading = await load(new URL('../lib/client.js', import.meta.url), platform)
+  platform = await load(process.env.READING_LEGACY_ROOT ? resolve(process.env.READING_LEGACY_ROOT, 'plugins/personal-workbench/lib/client.js') : new URL('../../personal-workbench/lib/client.js', import.meta.url)); reading = await load(new URL('../lib/client.js', import.meta.url), platform)
   const entries = [], cleanups = [], provided = new Map()
   const ctx = { get: name => provided.get(name), inject: (services, install) => { if (services.every(name => provided.has(name))) install(ctx) }, effect: run => { const dispose = run(); if (typeof dispose === 'function') cleanups.push(dispose); return dispose }, reflect: { provide: (name, value) => { provided.set(name, value); if (name === 'personalWorkbench') workbench = value; return () => { provided.delete(name) } } }, sessions: { retain: () => { forbidden++; throw new Error('No Sessions') } }, workspaces: { list: { getSnapshot: () => ({ phase: 'ready', state: 'idle', archivedSessionIds: [] }), subscribe: () => () => {} } }, locale: { register: () => () => {} }, slots: { inject: (_key, install) => { const dispose = install(); if (dispose) cleanups.push(dispose) }, register: (options, component) => { const entry = { options, component }; entries.push(entry); return () => { entries.splice(entries.indexOf(entry), 1) } } } }
   platform.apply(ctx); reading.apply(ctx)

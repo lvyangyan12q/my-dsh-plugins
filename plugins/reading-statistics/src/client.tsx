@@ -5,6 +5,7 @@ import type { AppRecipe, DisplayData } from '@deepseek-ai/dsh-personal-workbench
 import { readingAppId, readingResource } from './reading-api.ts'
 import type { ReadingInstance } from './reading-api.ts'
 import { requestReading as request, subscribeReading, recordOrigin } from './reading-data-client.ts'
+import { createReadingViews } from './reading-views.tsx'
 import { ReadingRecordEditor } from './reading-record-editor.tsx'
 // Only the optional UI adapter waits for the platform; reading data stays application-owned.
 export const inject: string[] = []
@@ -15,7 +16,11 @@ export function readingRecipe(): AppRecipe {
   return { schemaVersion: 1, appId: readingAppId, version: 1, name: '阅读统计 / Reading statistics', description: '独立阅读记录。示例数据由阅读应用初始化；浏览与筛选不使用 AI。', pages: [{ id: 'library', label: '阅读 / Reading', layout: 'grid', modules: [{ id: 'reading.editor', type: 'reading-record-editor', title: '阅读记录管理', config: {} }, ...(['filter', 'stats', 'list', 'detail'] as const).map(type => ({ id: 'reading.' + type, type, title: ({ filter: '筛选 / Filter', stats: '统计 / Statistics', list: '书籍 / Books', detail: '详情 / Detail' })[type], connectionId: 'reading-data', config: {} }))] }], connections: [{ id: 'reading-data', sourceAppId: readingAppId, resource: readingResource }], roles: [] }
 }
 export function apply(ctx: Context) {
-  if (!ctx.get('personalWorkbench')) ctx.logger?.warn('阅读统计工作台入口暂不可用，请启用工作台插件后重试；阅读记录仍保留。')
+  ctx.inject(['worktableApplicationViews'], child => child.effect(() => {
+    const owner = createReadingViews()
+    const dispose = child.get('worktableApplicationViews').register(readingAppId, owner.views)
+    return () => { dispose(); owner.dispose() }
+  }, 'reading worktable views'))
   ctx.inject(['personalWorkbench'], child => {
     const { registerDisplaySource, registerRecipeTemplate, registerRecipeModuleRenderer } = require('@deepseek-ai/dsh-personal-workbench/client')
     child.effect(() => registerRecipeModuleRenderer('reading-record-editor', ReadingRecordEditor, { title: '阅读记录管理', appIds: [readingAppId] }), 'reading record editor')
