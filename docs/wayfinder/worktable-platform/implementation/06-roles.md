@@ -35,3 +35,7 @@ role_capabilities工作树从集成ed6ca9dda80523ea735c3e1b9260e86cfbc1005d干�
 交付入口仍仅 `01_content/npm run pack`，新增role回归纳入该门禁。真实UI操作由主验收Host进行：应用目录打开Agent/Skills管理，建立reading-helper；阅读应用视图展开应用角色，首次若应用声明的cwd未登记原生Workspace明确拒绝且无Session创建；用户显式登记该工作区后创建；多视图重开同ID、跨实例不同ID、重启恢复空白Session、未发送草稿恢复及替换历史、停用拒绝逐项实页核实后才可勾选。
 
 当前06不包含发送、上下文准备、审批或Stop；没有嵌入composer，原生导航继续使用唯一原生输入席位。未验证跨浏览器文本协作、原personal-workbench记录迁移。没有修改正式原生DSH、3080、旧Worktable及旧数据。
+
+### 独立复审修正，未提前验收
+
+ready gate、Skill实际调用许可、显式最小原生基础能力与旧Agent不增权兼容已分别出现公开行为断言RED并修复GREEN。管理UI追加显式基础能力选择，保留旧reading-helper指令/ID/关联；旧记录须用户保存后才可作为角色Agent使用。新增官方rc.2源码契约测试（非mock register），运行时公开compositionInventory检查真实激活模块。最终新包证据随后以06-prepared.json为准；已安装旧候选不会据此关闭工单。真实文件执行/提问/审批仍待07主Host验收。

@@ -21,3 +21,21 @@ test('opening a role view only reads, native navigation reuses the bound identit
  await act(async()=>root.unmount());assert.ok(actions.every(row=>['list','open'].includes(row.action)))
  }finally{globalThis.fetch=saved}
 })
+test('legacy Agent editing preserves instructions and requires an explicit visible native base selection',async()=>{
+ const saved=globalThis.fetch,actions=[];let root
+ const old={kind:'agent',id:'reading-helper',title:'Reader',content:'Existing instructions.',enabled:true,userInvocable:true,modelInvocable:true,revision:1,skillIds:[]}
+ globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body);actions.push(body);return {ok:true,json:async()=>body.action==='capabilities'?[old]:{...body.capability,revision:2}}}
+ try{
+ await act(async()=>{root=create(React.createElement(module.exports.CapabilityManager));await flush()})
+ await act(async()=>{root.root.findByType('details').props.onToggle({currentTarget:{open:true}});await flush()})
+ await act(async()=>{root.root.findAllByType('button').find(b=>b.children.join('').includes('Reader')).props.onClick();await flush()})
+ const label=root.root.findAllByType('label').find(label=>label.children.some(child=>typeof child==='string'&&child.includes('基础能力')))
+ assert.ok(label,'base composition must be an explicit management choice')
+ const select=label.findByType('select');assert.equal(select.props.value,'')
+ assert.equal(root.root.findByType('textarea').props.value,old.content)
+ await act(async()=>{select.props.onChange({target:{value:'workspace-basic-v1'}});await flush()})
+ await act(async()=>{root.root.findByType('form').props.onSubmit({preventDefault(){}});await flush()})
+ const sent=actions.find(body=>body.action==='capability-save')
+ assert.equal(sent.capability.baseComposition,'workspace-basic-v1');assert.equal(sent.capability.content,old.content);assert.equal(sent.revision,1)
+ }finally{if(root)await act(async()=>root.unmount());globalThis.fetch=saved}
+})

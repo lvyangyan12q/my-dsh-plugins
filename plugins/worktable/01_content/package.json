@@ -58,7 +58,7 @@
     "test:transport": "node ../04_test/host-transport.test.mjs",
     "test:widget": "node ../04_test/widget-mount.test.mjs",
     "verify:remote": "node verify-remote.mjs",
-    "test:roles": "node --test ../04_test/roles.test.mjs ../04_test/capabilities.test.mjs ../04_test/role-native.test.mjs ../04_test/role-panel.test.mjs",
+    "test:roles": "node --test ../04_test/roles.test.mjs ../04_test/capabilities.test.mjs ../04_test/role-native.test.mjs ../04_test/role-panel.test.mjs ../04_test/capability-native.test.mjs",
     "test:applications": "node --test ../04_test/application-entry.test.mjs ../04_test/application-http.test.mjs ../04_test/application-component.test.mjs"
   },
   "peerDependencies": {

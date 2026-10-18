@@ -37,7 +37,7 @@ export function RolePanel({instanceId}:{instanceId:string}){
   <button disabled={busy} onClick={()=>load()}>刷新角色</button>
  </details>
 }
-const blank={kind:'agent',id:'',title:'',description:'',content:'',enabled:true,userInvocable:true,modelInvocable:true,skillIds:[],revision:0}
+const blank={kind:'agent',id:'',title:'',description:'',content:'',enabled:true,userInvocable:true,modelInvocable:true,skillIds:[],baseComposition:'',revision:0}
 export function CapabilityManager(){
  const [rows,setRows]=useState<any[]>([]),[form,setForm]=useState<any>(blank),[error,setError]=useState(''),[busy,setBusy]=useState(false)
  const alive=useRef(true);useEffect(()=>{alive.current=true;return()=>{alive.current=false}},[])
@@ -50,6 +50,7 @@ export function CapabilityManager(){
    <label>类型<select value={form.kind} disabled={form.revision>0} onChange={e=>setForm({...blank,kind:e.target.value})}><option value="agent">Agent</option><option value="skill">Skill</option></select></label>
    <label>标识<input required pattern="[a-z][a-z0-9.-]{0,79}" value={form.id} disabled={form.revision>0} onChange={e=>setForm({...form,id:e.target.value})}/></label>
    <label>名称<input required value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/></label>
+   {form.kind==='agent'&&<label>基础能力<select required value={form.baseComposition??''} onChange={e=>setForm({...form,baseComposition:e.target.value})}><option value="">请选择基础能力</option><option value="workspace-basic-v1">文件读写、检索、提问与Skill（原生权限/审批）</option></select></label>}
    <label>{form.kind==='agent'?'Agent指令':'Skill内容'}<textarea required value={form.content} onChange={e=>setForm({...form,content:e.target.value})}/></label>
    {form.kind==='agent'&&rows.filter(r=>r.kind==='skill').map(skill=><label key={skill.id}><input type="checkbox" checked={form.skillIds.includes(skill.id)} onChange={e=>setForm({...form,skillIds:e.target.checked?[...form.skillIds,skill.id]:form.skillIds.filter((id:string)=>id!==skill.id)})}/>{skill.title}</label>)}
    {(['enabled','userInvocable','modelInvocable'] as const).map((name,i)=><label key={name}><input type="checkbox" checked={form[name]} onChange={e=>setForm({...form,[name]:e.target.checked})}/>{['启用','允许用户调用','允许模型调用'][i]}</label>)}

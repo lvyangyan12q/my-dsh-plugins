@@ -44,3 +44,15 @@ Host服务 `list(instanceId)`、`read(instanceId,roleId)`只读；`ensure(instan
 每个profile只有一个roles.v1.json所有者（含PID锁，另一个活Host拒绝；崩溃PID确认已退出才回收锁）。绑定和普通应用业务state分离。持久intent使用预分配SessionId、原子写入+文件sync后才调用rc.2公开sessionController.create，显式已登记Workspace，sessionPersistence.flush后提交ready。落盘失败保留intent，重试同ID；不以新Session掩盖能力/原生会话缺失。准备操作、视图关闭与恢复均不发送、不Stop、不归档、不删会话。
 
 本轮只有原生导航一个composer，应用角色面板不嵌第二输入框，不复制/覆盖草稿。多视图只导航同Session，跨浏览器文本实时协作未承诺。原生历史和未发送草稿、空白Session跨Host重启恢复必须用最终安装包实页核实，下面辅助测试不代替该验收。任务发送、上下文准备与执行审批属于07。
+
+### 06独立复审修正（2026-10-19，仍待真实Host验收）
+
+`resolve`与`open`只接受phase=ready；预分配ID的intent尚不代表原生会话存在。失败intent必须走显式retry，不能交给07执行或直接导航。历史仍独立按保留ID校验。
+
+公共Agent管理新增显式基础能力选择 `workspace-basic-v1`：固定公共PresetDefinition包含 `@deepseek-ai/dsh-tool-fs`、`dsh-tool-fs-search`、`dsh-tool-ask-user`、`dsh-tool-skill`与`dsh-persona`。它不隐含继承或克隆standard，也不自动导入其他原生Preset为公共能力。文件操作和提问继续经过原生权限/审批服务。保存启用Agent之后及角色复验时，使用rc.2公开 `agentPresets.compositionInventory()` 校验每个必需模块enabled=true、fiberState=2（公开FiberState.ACTIVE）；仅register成功或声明存在不当作可用。没有默认回退。
+
+现有未保存baseComposition的记录恢复原persona+Skill组合，不修改ID、指令、Skills关联或revision；角色使用明确提示进入管理选择基础能力并显式保存。新建/保存Agent必须选择支持的基础组合。停用和Skill记录语义保留。
+
+`worktableCapabilities.validate(ref,appId,cwd,invocation='user')` 按实际调用方式检查管理记录与native Skill：用户直接准备/查询检查userInvocable，角色中供Agent自动加载的Skills检查modelInvocable，仍核对scope、provider与完整目录。user-only Skill不会冒充模型可调用；model-only Skill可在角色中复用而不会被错误的user门禁拒绝。06不执行这些Skills，实际任务发送仍属07。
+
+可选官方源码契约测试用环境变量 `WORKTABLE_NATIVE_RC2_ROOT` 指定官方未修改0.2.0-rc.2源目录；直接导入其公开entryListProblem/definitionComposition，核对真实声明形状与插件层。未设置时该项明确skip；真实挂载状态由运行时inventory门禁与主Host安装验收证明，源码检查不替代模型执行。

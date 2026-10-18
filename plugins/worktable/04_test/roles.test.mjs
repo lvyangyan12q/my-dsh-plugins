@@ -92,3 +92,11 @@ test('binding resolution and explicit replacement cannot overtake each other dur
  const overtook=replaced;release();await resolving;await replacing
  assert.equal(overtook,false)
 }))
+test('resolve and open reject an uncreated intent without treating it as native ready',async()=>setup(async state=>{
+ let inspections=0;state.authority.create=async()=>{throw new Error('create failed')};state.authority.validateExisting=async()=>{inspections++}
+ await assert.rejects(()=>state.roles.ensure(state.instance.id,'assistant'),/create failed/)
+ const intent=(await state.roles.read(state.instance.id,'assistant')).binding
+ await assert.rejects(()=>state.roles.resolve(state.instance.id,'assistant',intent.sessionId,intent.revision),/尚未就绪/)
+ await assert.rejects(()=>state.roles.open(state.instance.id,'assistant',intent.sessionId,intent.revision),/尚未就绪/)
+ assert.equal(inspections,0)
+}))
