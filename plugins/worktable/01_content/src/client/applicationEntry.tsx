@@ -1,0 +1,93 @@
+import {useEffect,useRef,useState} from 'react'
+import {websiteEntry,WEBSITE_SANDBOX} from '../framework/web-policy.mjs'
+
+export type ApplicationContent={kind:'application';appId:string;instanceId:string;viewId:string;title:string}
+type Project={id:string;name:string}
+type Open=(content:ApplicationContent)=>void
+const ENDPOINT='/api/worktable/applications'
+async function request(body?:any){
+  const response=await fetch(ENDPOINT,body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{cache:'no-store'})
+  const value=await response.json();if(!response.ok) throw new Error(value.error??'应用操作失败，请重试。');return value
+}
+function contentOf(application:any,instance:any,view:any):ApplicationContent{return {kind:'application',appId:application.id,instanceId:instance.id,viewId:view.id,title:application.title}}
+
+/** Module-local chooser; no application has layout or native-session ownership. */
+export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCancel:()=>void}){
+  const [snapshot,setSnapshot]=useState<any>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false)
+  const [name,setName]=useState(''),[id,setId]=useState(''),[url,setUrl]=useState('')
+  const mounted=useRef(true)
+  useEffect(()=>{mounted.current=true;request().then(s=>{if(mounted.current)setSnapshot(s)}).catch(e=>{if(mounted.current)setError(e.message)});return()=>{mounted.current=false}},[])
+  async function perform(operation:()=>Promise<void>){setBusy(true);setError('');try{await operation()}catch(e:any){if(mounted.current)setError(e.message)}finally{if(mounted.current)setBusy(false)}}
+  async function open(application:any,create:boolean){await perform(async()=>{
+    let instance=create?null:await request({action:'latest',appId:application.id,projectId:props.projectId})
+    if(!instance){if(!create)throw new Error('没有可继续的实例，请显式新建。');instance=await request({action:'create',appId:application.id,projectId:props.projectId})}
+    const state=await request();let view=create?null:state.views.find((v:any)=>v.instanceId===instance.id)
+    if(!view)view=await request({action:'view',instanceId:instance.id})
+    if(mounted.current)props.onOpen(contentOf(application,instance,view))
+  })}
+  return <section className="dsh-wt_appPanel" aria-label="选择应用">
+    <div className="dsh-wt_appLine"><strong>应用</strong><button type="button" onClick={props.onCancel}>返回模块</button></div>
+    <p className="dsh-wt_appHint">{props.projectId?'在当前项目继续或明确新建实例。':'先使用应用，实例将标记为未归属项目。'}</p>
+    {!snapshot&&!error&&<p role="status">正在读取应用…</p>}
+    {snapshot?.applications.map((application:any)=>{
+      const latest=snapshot.instances.filter((i:any)=>i.appId===application.id&&i.projectId===props.projectId).sort((a:any,b:any)=>b.lastOpenedAt-a.lastOpenedAt)[0]
+      return <div className="dsh-wt_appCard" key={application.id}>
+        <strong>{application.title}</strong><small>网页 · {application.id}</small>
+        <div className="dsh-wt_appLine">
+          <button type="button" className="dsh-wt_appPrimary" disabled={busy} onClick={()=>open(application,!latest)}>{latest?'继续最近实例':'新建实例'}</button>
+          {latest&&<button type="button" disabled={busy} onClick={()=>open(application,true)}>新建独立实例</button>}
+        </div>
+      </div>
+    })}
+    {snapshot?.applications.length===0&&<p>还没有接入应用。可先登记一个独立网页。</p>}
+    <details><summary>接入网页应用</summary>
+      <form className="dsh-wt_appForm" onSubmit={e=>{e.preventDefault();void perform(async()=>{
+        websiteEntry(url,window.location.origin)
+        await request({action:'register',application:{id,title:name,version:'1.0.0',protocolVersion:1,kind:'web',url}})
+        const next=await request();if(mounted.current){setSnapshot(next);setName('');setId('');setUrl('')}
+      })}}>
+        <label>应用名称<input required value={name} onChange={e=>setName(e.target.value)} /></label>
+        <label>应用标识<input required pattern="[a-z][a-z0-9.-]{0,79}" placeholder="reading-web" value={id} onChange={e=>setId(e.target.value)} /></label>
+        <label>网页地址<input required type="url" placeholder="https://" value={url} onChange={e=>setUrl(e.target.value)} /></label>
+        <p className="dsh-wt_appHint">只管理入口和布局。网页内部状态、原生工具与其他实例不共享。</p>
+        <button type="submit" disabled={busy}>登记网页</button>
+      </form>
+    </details>
+    {error&&<p className="dsh-wt_appError" role="alert">{error}</p>}
+  </section>
+}
+
+export function ApplicationPane(props:{content:ApplicationContent;projects:Project[];onOpen:Open;reloadKey:number}){
+  const [resolved,setResolved]=useState<any>(null),[error,setError]=useState(''),[projectId,setProjectId]=useState(''),[busy,setBusy]=useState(false)
+  const [loaded,setLoaded]=useState(false)
+  const mounted=useRef(true)
+  async function refresh(){try{const value=await request({action:'resolve',viewId:props.content.viewId});if(value.instance.id!==props.content.instanceId||value.application.id!==props.content.appId)throw new Error('视图身份不一致，请从应用入口重新打开。');websiteEntry(value.application.url,window.location.origin);if(mounted.current){setResolved(value);setError('')}}catch(e:any){if(mounted.current){setResolved(null);setError(e.message)}}}
+  useEffect(()=>{mounted.current=true;void refresh();const changed=()=>void refresh();window.addEventListener('dsh:applications-changed',changed);return()=>{mounted.current=false;window.removeEventListener('dsh:applications-changed',changed)}},[props.content.viewId,props.content.instanceId,props.content.appId])
+  useEffect(()=>setLoaded(false),[props.reloadKey,props.content.viewId])
+  async function action(operation:()=>Promise<void>){setBusy(true);try{await operation()}catch(e:any){setError(e.message)}finally{if(mounted.current)setBusy(false)}}
+  const instance=resolved?.instance,application=resolved?.application
+  return <div className="dsh-wt_application">
+    <div className="dsh-wt_appToolbar">
+      <span>{application?.title??props.content.title} · {instance?.projectId?(props.projects.find(p=>p.id===instance.projectId)?.name??'已关联项目'):'未归属项目'}</span>
+      {resolved&&<a href={application.url} target="_blank" rel="noopener noreferrer">外部打开 ↗</a>}
+      {resolved&&<button type="button" disabled={busy} onClick={()=>void action(async()=>{const view=await request({action:'view',instanceId:instance.id});if(mounted.current)props.onOpen(contentOf(application,instance,view))})}>添加同实例视图</button>}
+      <details><summary>实例</summary><div className="dsh-wt_appDetails">
+        <small>实例：{props.content.instanceId}</small><small>视图：{props.content.viewId}</small>
+        {instance?.projectId===null&&<><label>关联项目<select value={projectId} onChange={e=>setProjectId(e.target.value)}><option value="">选择项目</option>{props.projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+          <button type="button" disabled={!projectId||busy} onClick={()=>void action(async()=>{await request({action:'attach',instanceId:instance.id,projectId,revision:instance.revision});window.dispatchEvent(new Event('dsh:applications-changed'))})}>关联并保留实例</button></>}
+        <p className="dsh-wt_appHint">关闭视图保留实例。普通网页不保证页面内部状态同步。</p>
+      </div></details>
+    </div>
+    {error&&<p className="dsh-wt_appError" role="alert">{error}<button type="button" onClick={()=>void refresh()}>重试</button></p>}
+    {resolved&&<><p className="dsh-wt_appHint">{loaded?'网页框架已载入；跨域内容是否可用需以页面显示为准。':'正在打开网页。'} 若空白、链接失效或提示禁止嵌入，请选择“外部打开”。</p>
+      <iframe key={props.reloadKey} className="dsh-wt_paneFrame" title={application.title} src={application.url} sandbox={WEBSITE_SANDBOX} referrerPolicy="no-referrer" onLoad={()=>setLoaded(true)} onError={()=>setError('网页暂时无法载入，可重试或外部打开。')} />
+    </>}
+  </div>
+}
+
+export function ApplicationLauncher(props:{onOpen:Open}){
+  const [open,setOpen]=useState(false)
+  return <><button type="button" className="dsh-wt_iconBtn" title="应用（可先使用再关联项目）" aria-label="打开应用目录" onClick={()=>setOpen(true)}>▦</button>
+    {open&&<div className="dsh-wt_appBackdrop" onClick={()=>setOpen(false)}><div className="dsh-wt_appDialog" role="dialog" aria-modal="true" aria-label="应用目录" onClick={e=>e.stopPropagation()} onKeyDown={e=>{if(e.key==='Escape')setOpen(false)}}><ApplicationPicker projectId={null} onCancel={()=>setOpen(false)} onOpen={content=>{setOpen(false);props.onOpen(content)}} /></div></div>}
+  </>
+}

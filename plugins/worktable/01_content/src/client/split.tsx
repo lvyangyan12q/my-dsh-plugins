@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { parentPathOf } from './pathutil'
+import { ApplicationPicker, ApplicationPane, type ApplicationContent } from './applicationEntry'
 import { hostWebSocketUrl, worktableUpgrade } from './hostTransport'
 import { CHANGELOG_V030 } from './changelog'
 import { LOCAL_VERSION, checkUpdate, getAutoCheck, readCache, setAutoCheck as storeAutoCheck, setSkipVersion, type UpdateInfo, type UpdateStatus } from './updateCheck'
@@ -30,6 +31,7 @@ hljs.registerLanguage('json', hljsJson)
 export type BuiltinType = 'browser' | 'anim' | 'explorer' | 'scm' | 'tasks' | 'terminal' | 'custom' | 'console'
 
 export type SplitContent =
+  | ApplicationContent
   | { kind: 'iframe'; url: string; title?: string }
   | { kind: 'builtin'; type: BuiltinType; url?: string }
   | { kind: 'file'; path: string }
@@ -158,6 +160,7 @@ const BUILTIN_LABEL_KEYS: Record<BuiltinType, string> = {
 }
 
 function tabTitleOf(content: SplitContent): string {
+  if (content.kind === 'application') return content.title
   if (content.kind === 'builtin') return T(BUILTIN_LABEL_KEYS[content.type])
   if (content.kind === 'file') return basenameOf(content.path)
   if (content.kind === 'iframe' && content.title) return content.title
@@ -177,6 +180,7 @@ function basenameOf(p: string): string {
 
 /** 内容同一性（openTab 去重：同窗内同内容只保留一个标签，再次打开切过去） */
 function sameContent(a: SplitContent, b: SplitContent): boolean {
+  if (a.kind === 'application' && b.kind === 'application') return a.viewId === b.viewId
   if (a.kind === 'iframe' && b.kind === 'iframe') return a.url === b.url
   if (a.kind === 'file' && b.kind === 'file') return a.path === b.path
   if (a.kind === 'builtin' && b.kind === 'builtin') return a.type === b.type
@@ -2815,6 +2819,7 @@ function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number }
 /** 单个标签页的内容渲染 */
 function PaneTabBody(props: { tab: PaneTab; row: PaneRow; index: number; paneTitle?: string; reloadKey: number }) {
   const content = props.tab.content
+  if (content.kind === 'application') return <ApplicationPane content={content} projects={splitEnv?.custom?.getProjects?.() ?? []} onOpen={(next) => splitStore.openTab(props.row, props.index, next)} reloadKey={props.reloadKey} />
   if (content.kind === 'iframe') {
     return <IframePane url={content.url} title={content.title ?? props.tab.title} reloadKey={props.reloadKey} />
   }
@@ -2840,7 +2845,7 @@ function PaneTabBody(props: { tab: PaneTab; row: PaneRow; index: number; paneTit
 /** 需要标签栏刷新按钮的内容类型：网页类（iframe / 浏览器 / 动画）统一在标签最左放 ↻ */
 function refreshableTab(t: PaneTab): boolean {
   const c = t.content
-  return c.kind === 'iframe' || (c.kind === 'builtin' && (c.type === 'browser' || c.type === 'anim'))
+  return c.kind === 'application' || c.kind === 'iframe' || (c.kind === 'builtin' && (c.type === 'browser' || c.type === 'anim'))
 }
 
 /** 窗内容：标签页模型（无标签 = 6 选 1 选择器；标签可切换/关闭，关完回到选择器）
@@ -2907,6 +2912,7 @@ function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number }) {
 /** 未指派内容：4 选 1 选择器。按钮固定大小、整体居中；
  * 按窗位宽高比自适应排列：宽窗横排 4 连 / 方窗 2×2 / 竖窗竖排。 */
 function PanePicker(props: { row: PaneRow; index: number }) {
+  const [applications, setApplications] = useState(false)
   const [mode, setMode] = useState<'row' | 'grid' | 'col'>('grid')
   const hostRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
@@ -2924,8 +2930,12 @@ function PanePicker(props: { row: PaneRow; index: number }) {
     return () => ro.disconnect()
   }, [])
   const pick = (content: SplitContent) => splitStore.openTab(props.row, props.index, content)
+  const availableProjects = splitEnv?.custom?.getProjects?.() ?? []
+  const currentProject = availableProjects.some(p => p.id === splitStore.spec?.id) ? splitStore.spec!.id : null
+  if (applications) return <ApplicationPicker projectId={currentProject} onCancel={() => setApplications(false)} onOpen={pick} />
   return (
     <div ref={hostRef} className={'dsh-wt_panePicker dsh-wt_panePicker-' + mode}>
+      <button type="button" className="dsh-wt_panePick" onClick={() => setApplications(true)}><span aria-hidden>▦</span>应用</button>
       <button type="button" className="dsh-wt_panePick" onClick={() => pick({ kind: 'builtin', type: 'browser' })}>
         <span aria-hidden>🌐</span>{T('pane.browser')}
       </button>

@@ -2,8 +2,9 @@
 // 否则 xterm 的隐藏输入 textarea 会裸露成左上角的小输入框）
 // @ts-ignore
 import xtermCss from 'xterm/css/xterm.css'
+import { applicationCss } from './applicationStyles'
 
-export const css = xtermCss + '\n' + [
+export const css = xtermCss + applicationCss + '\n' + [
   // 区块整体
   '.dsh-wt_section{box-sizing:border-box;display:flex;flex-direction:column;gap:6px;width:100%;padding:0}',
   '.dsh-wt_float{min-width:176px;max-width:264px;background:var(--dsw-alias-bg-base,#0b0e14);border:1px solid var(--dsw-alias-border-l2,#3a4150);border-radius:10px;padding:8px;box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.4))}',

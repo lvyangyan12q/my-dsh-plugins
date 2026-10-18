@@ -1,5 +1,6 @@
 import { Context } from '@deepseek-ai/cordis'
 import { execFile } from 'node:child_process'
+import { mountApplications } from './framework/host.mjs'
 import { readdirSync, realpathSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, resolve as pathResolve, sep } from 'node:path'
@@ -263,6 +264,8 @@ export function apply(ctx: Context) {
       json(res, 200, { plugin: 'dsh-worktable', version: PLUGIN_VERSION, ok: true })
     },
   })
+
+  mountApplications(ctx)
 
   // 本地文件读取（资源管理器点击 .html 后浏览器标签内打开）
   webServer.register({

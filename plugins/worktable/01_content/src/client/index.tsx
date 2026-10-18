@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { css } from './styles'
 import { NS, zh, en, type WorktableKey } from './locales'
 import { isAbs, joinPath, parentPathOf, basenameOf } from './pathutil'
+import { ApplicationLauncher, type ApplicationContent } from './applicationEntry'
 import { splitStore, SplitWorkspace, setSplitT, setSplitEnv, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
 import { appendHostInput } from './hostInput'
 import { worktableUpgrade } from './hostTransport'
@@ -2591,6 +2592,13 @@ function buildCustomLayoutPrompt(req: string): string {
           >{ICON_SYNC}</button>
         )}
         <div className="dsh-wt_actions">
+          <ApplicationLauncher onOpen={(content: ApplicationContent) => {
+            const id = '__wt_unassigned_applications__'
+            if (!(splitStore.active && splitStore.spec?.id === id)) {
+              splitStore.open({ id, title: '应用 · 未归属项目', top: null, main: [{ id: 'application-entry', title: '应用', min: 240, tabs: [] }], chatWidth: { default: 480, min: 240, max: 1200 } })
+            }
+            splitStore.openTab('main', 0, content)
+          }} />
           <button
             type="button"
             className="dsh-wt_iconBtn"
