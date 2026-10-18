@@ -32,3 +32,15 @@
 `application-entry.test.mjs` 通过公开贡献/创建/解析验证生命周期恢复、项目/显式新实例身份独立和模块类型拒绝；同名已登记网页不能被深度贡献覆盖。`application-component.test.mjs` 使用真实React，验证插件组件接收显式身份、撤销释放挂载且没有Session请求，并保留03迟到响应A/B回归。主验收仍以最终安装包的完整用户路径为准。
 
 应用目录默认继续当前app/project最近实例；卡内折叠“其他实例”仅列同一作用域内较早实例。显式选择旧实例调用resume，并复用其持久viewId；不会新建实例或Session，不复制记录。最新实例始终使用原“继续最近实例”入口。
+
+## 06角色与公共能力（实现已准备，真实安装验收待补）
+
+可信Host插件可选依赖 `worktableRoles`，在同一子ctx生命周期贡献 `contribute(appId,[{id,title,agent:{kind:'agent',source:'managed',id},creation:{cwd:absolutePath},skills?:CapabilityRef[]}])`，返回撤销函数。角色无教学必选字段；完整角色身份为实例ID+角色ID（实例目录验证所属app）。应用私有Agent/Skill通过 `worktableCapabilities.contribute(appId,[{kind,id,title,presetId? ,provider?,enabled,userInvocable,modelInvocable}])` 贡献，仅对同ownerAppId可选；原生安装由所属应用拥有。
+
+公共目录仅来自派生Worktable的“Agent / Skills 管理”保存记录。不会自动导入原生Preset或文件系统Skill，也不加载personal-workbench旧前台或管理执行器。管理保存使用revision，调用许可和停用持久保存。公共Agent注册原生 `worktable.managed.<id>`；Skill核对精确provider和Agent scope、complete目录；同名不同来源拒绝。已有旧personal-workbench记录不静默迁移。
+
+Host服务 `list(instanceId)`、`read(instanceId,roleId)`只读；`ensure(instanceId,roleId,agent?)`显式创建；`retry(instanceId,roleId,sessionId,revision)`仅重试intent同ID；`replace(instanceId,roleId,sessionId,revision,agent?)`显式分配新ID并保留历史；`attach`禁止使用另一角色/实例当前或历史ID；`resolve`给07按revision+SessionID复验；`open`/`history`仅返回受校验当前或历史ID，不创建。应用视图props可选 `roles` 是已绑定该实例的操作facade，无任意Host/native context。HTTP不开放通用native操作或attach。
+
+每个profile只有一个roles.v1.json所有者（含PID锁，另一个活Host拒绝；崩溃PID确认已退出才回收锁）。绑定和普通应用业务state分离。持久intent使用预分配SessionId、原子写入+文件sync后才调用rc.2公开sessionController.create，显式已登记Workspace，sessionPersistence.flush后提交ready。落盘失败保留intent，重试同ID；不以新Session掩盖能力/原生会话缺失。准备操作、视图关闭与恢复均不发送、不Stop、不归档、不删会话。
+
+本轮只有原生导航一个composer，应用角色面板不嵌第二输入框，不复制/覆盖草稿。多视图只导航同Session，跨浏览器文本实时协作未承诺。原生历史和未发送草稿、空白Session跨Host重启恢复必须用最终安装包实页核实，下面辅助测试不代替该验收。任务发送、上下文准备与执行审批属于07。

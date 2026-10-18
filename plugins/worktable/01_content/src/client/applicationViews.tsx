@@ -1,6 +1,7 @@
-import {Component,useSyncExternalStore,type ComponentType,type ReactNode} from 'react'
+import {RolePanel,createRoleFacade} from './rolePanel'
+import {Component,useMemo,useSyncExternalStore,type ComponentType,type ReactNode} from 'react'
 
-export type ApplicationViewProps={application:{id:string;title:string;kind:'deep';views:{id:string;title:string}[]};instance:{id:string;appId:string;projectId:string|null;revision:number};view:{id:string;instanceId:string;type:string}}
+export type ApplicationViewProps={application:{id:string;title:string;kind:'deep';views:{id:string;title:string}[]};instance:{id:string;appId:string;projectId:string|null;revision:number};view:{id:string;instanceId:string;type:string};roles?:ReturnType<typeof createRoleFacade>}
 
 /** Trusted plugin service. Applications own components, state and data; no host context is passed. */
 class ApplicationViews {
@@ -26,7 +27,8 @@ class ViewBoundary extends Component<{children:ReactNode},{error:boolean}>{
 }
 export function DeepApplicationView(props:ApplicationViewProps&{reloadKey:number}){
   useSyncExternalStore(applicationViews.subscribe,applicationViews.getSnapshot,applicationViews.getSnapshot)
+  const roles=useMemo(()=>createRoleFacade(props.instance.id),[props.instance.id])
   const View=applicationViews.resolve(props.application.id,props.view.type)
   if(!props.application.views.some(view=>view.id===props.view.type)||!View)return <p role="alert">应用视图暂不可用，请启用应用插件后重试；实例记录保留。</p>
-  return <ViewBoundary key={props.view.id+':'+props.reloadKey}><View application={props.application} instance={props.instance} view={props.view}/></ViewBoundary>
+  return <ViewBoundary key={props.view.id+':'+props.reloadKey}><div style={{height:"100%",display:"flex",flexDirection:"column",minHeight:0}}><RolePanel key={props.instance.id} instanceId={props.instance.id}/><div style={{flex:1,minHeight:0,overflow:"auto"}}><View application={props.application} instance={props.instance} view={props.view} roles={roles}/></div></div></ViewBoundary>
 }

@@ -1,6 +1,7 @@
 import { Context } from '@deepseek-ai/cordis'
 import { execFile } from 'node:child_process'
 import { mountApplications, protectWorktableRoutes } from './framework/host.mjs'
+import { mountRoles } from './framework/role-host.mjs'
 import { readdirSync, realpathSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, resolve as pathResolve, sep } from 'node:path'
@@ -267,6 +268,7 @@ export function apply(ctx: Context) {
   })
 
   mountApplications(ctx)
+  mountRoles(ctx)
 
   // 本地文件读取（资源管理器点击 .html 后浏览器标签内打开）
   webServer.register({

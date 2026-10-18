@@ -83,7 +83,7 @@ if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
-const compatTests = ['host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs']
+const compatTests = ['host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs']
   .map((file) => join(HERE, '..', '04_test', file))
 const compatRun = spawnSync(process.execPath, ['--test', ...compatTests], { cwd: HERE, stdio: 'inherit' })
 if (compatRun.status !== 0) { console.error('[release-prep] FAIL: session/input compatibility tests'); process.exit(1) }

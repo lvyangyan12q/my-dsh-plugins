@@ -1,3 +1,4 @@
+import {CapabilityManager} from './rolePanel'
 import {useEffect,useRef,useState} from 'react'
 import {DeepApplicationView} from './applicationViews'
 export {applicationViews} from './applicationViews'
@@ -45,6 +46,7 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
       </div>
     })}
     {snapshot?.applications.length===0&&<p>还没有接入应用。可先登记一个独立网页。</p>}
+    <CapabilityManager/>
     <details><summary>接入网页应用</summary>
       <form className="dsh-wt_appForm" onSubmit={e=>{e.preventDefault();void perform(async()=>{
         websiteEntry(url,window.location.origin)
