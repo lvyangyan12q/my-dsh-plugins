@@ -30,7 +30,7 @@ blocked_by: [worktable-framework-04]
 
 role_capabilities工作树从集成ed6ca9dda80523ea735c3e1b9260e86cfbc1005d干净起步。按已确认role lifecycle / capability provenance / rc.2 native adapter / passive role panel公开边界逐片RED→GREEN：首次缺失模块；显式retry/replace/attach尚未实现；公共管理目录尚未实现；native adapter尚未实现；React role panel尚未实现（先补齐lockfile依赖，再确认缺失目标模块的RED）；ensure错误忽略Agent更换选择的真实断言RED，修复后GREEN。
 
-`npm run test:roles`覆盖9项行为：只读零创建与真实Promise并发收敛、实例隔离和关联项目保留Session、intent跨重开同ID retry、revision guard与replace历史、反向current/history ownership、显式Agent替换语义、真实临时文件系统导致ready提交失败仍按同intent恢复、intent写失败零native create和第二Host owner拒绝、公共管理来源/私有owner/停用、rc.2显式Workspace+预分配ID+flush、角色面板只读/同ID原生导航/卸载不Stop。测试中的native authority是受控边界，不作为真实模型或正式Host验收。
+`npm run test:roles`覆盖10项行为：只读零创建与真实Promise并发收敛、实例隔离和关联项目保留Session、intent跨重开同ID retry、revision guard与replace历史、反向current/history ownership、显式Agent替换语义、真实临时文件系统导致ready提交失败仍按同intent恢复、intent写失败零native create和第二Host owner拒绝、公共管理来源/私有owner/停用、rc.2显式Workspace+预分配ID+flush、角色面板只读/同ID原生导航/卸载不Stop、resolve原生复验期间replace不得超越。测试中的native authority是受控边界，不作为真实模型或正式Host验收。
 
 交付入口仍仅 `01_content/npm run pack`，新增role回归纳入该门禁。真实UI操作由主验收Host进行：应用目录打开Agent/Skills管理，建立reading-helper；阅读应用视图展开应用角色，首次若应用声明的cwd未登记原生Workspace明确拒绝且无Session创建；用户显式登记该工作区后创建；多视图重开同ID、跨实例不同ID、重启恢复空白Session、未发送草稿恢复及替换历史、停用拒绝逐项实页核实后才可勾选。
 

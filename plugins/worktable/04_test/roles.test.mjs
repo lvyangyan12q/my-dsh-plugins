@@ -80,3 +80,15 @@ test('failed durable intent writes invoke no native create and another Host owne
  try{await assert.rejects(()=>state.roles.ensure(state.instance.id,'assistant'));assert.equal(calls,0)}finally{await rename(backup,parent)}
  assert.equal((await state.roles.read(state.instance.id,'assistant')).binding,null)
 }))
+test('binding resolution and explicit replacement cannot overtake each other during native revalidation',async()=>setup(async state=>{
+ const ready=await state.roles.ensure(state.instance.id,'assistant')
+ let enter,release;const entered=new Promise(r=>enter=r),gate=new Promise(r=>release=r)
+ state.authority.validateExisting=async()=>{enter();await gate}
+ const resolving=state.roles.resolve(state.instance.id,'assistant',ready.sessionId,ready.revision)
+ await entered
+ let replaced=false
+ const replacing=state.roles.replace(state.instance.id,'assistant',ready.sessionId,ready.revision).then(row=>{replaced=true;return row})
+ await new Promise(r=>setTimeout(r,30))
+ const overtook=replaced;release();await resolving;await replacing
+ assert.equal(overtook,false)
+}))
