@@ -2,7 +2,9 @@
 
 Reading owns its `reading_statistics` version 1 Host storage domain and all records.
 The data owner requires native `storageDomain` and authenticated `connection` services;
-the official web/base runtime provides both. No Session or model request is created.
+the official web/base runtime provides both. Native runtime compatibility is pinned
+to the tested `0.2.0-rc.2` release, including the storage-domain dependency and
+host-webserver peer, so installation cannot select a newer alpha storage provider. No Session or model request is created.
 
 ## Worktable deep application
 
