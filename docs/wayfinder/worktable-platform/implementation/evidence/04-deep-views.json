@@ -1,0 +1,127 @@
+{
+  "date": "2026-10-19",
+  "ticket": "worktable-framework-04",
+  "status": "in-progress",
+  "sourceCommit": "724499732d61afaea33b727c26ca67d9f86c5421",
+  "readingCommit": "9bbd2e164370c690641359bc6683355cd4e25413",
+  "integrationMerged": "8d62be8bbee9b6ee323c3dff15af21b1d6c935ad",
+  "primaryInstalledUIAcceptance": "pending-root-final-two-package-install-on-isolated-3091",
+  "platform": {
+    "version": "0.4.0",
+    "command": "npm run pack",
+    "testCount": 114,
+    "applicationTests": 16,
+    "existingTests": 98,
+    "passed": 114,
+    "failed": 0,
+    "structure": "exactly-7-package-prefixed-files-no-source-no-maps",
+    "cleanTemporaryInstallImport": true,
+    "factoryGate": true,
+    "installedAnchorDOMScenarios": 8,
+    "installedServerHomeScenarios": 3,
+    "artifacts": [
+      "plugins/worktable/01_content/dist/v0.4.0/dsh-worktable.tgz",
+      "plugins/worktable/01_content/dist/v0.4.0/dsh-worktable-0.4.0.tgz"
+    ],
+    "sha256": "13bc7702537435b22d80f27ac945c1e4b81674b31fb26b69e68b8a46be519ccb",
+    "supersededCandidate": "027408067213effc88402499958c4b6a672bcd75c462612ff74e07053b6c8463"
+  },
+  "reading": {
+    "version": "0.1.0",
+    "build": "tsdown -c tsdown.config.ts passed",
+    "typeCheck": "tsc --noEmit passed",
+    "tests": {
+      "passed": 17,
+      "failed": 0,
+      "independentlyRerunAfterPlatformRaceFix": true,
+      "DSH_SOURCE": "D:/programming/workspace/my-dsh/.scratch/native-unpatched-clean-1791697941186",
+      "READING_LEGACY_ROOT": "D:/programming/workspace/my-dsh",
+      "KAOGONG_TEST_TOOLS": "D:/programming/workspace/my-dsh",
+      "legacyArtifactsReadOnly": true
+    },
+    "artifact": "plugins/reading-statistics/.checks/deepseek-ai-dsh-reading-statistics-0.1.0.tgz",
+    "sha256": "54d9e95729ae15eb1ff4ac5602362b76d30d20821c930e98cee5f61db29055b5",
+    "files": [
+      "package/README.md",
+      "package/cordis.patch.yml",
+      "package/package.json",
+      "package/lib/client.js",
+      "package/lib/index.js",
+      "package/lib/reading-host-B9H2xcDy.mjs"
+    ],
+    "legacyProductionDependency": false,
+    "clientManifestInject": [],
+    "offlineCache": {
+      "zod": "highest observed cached 4.6.4 satisfies ^4.4.3",
+      "storageDomain": "not found in npm cache; official rc2 base provides service; final profile module resolution requires actual installation check"
+    }
+  },
+  "redGreen": [
+    {
+      "behavior": "trusted deep contribution and persisted instance/module lifecycle",
+      "red": "contribute is not a function",
+      "green": true
+    },
+    {
+      "behavior": "deep renderer contribution and release with no session request",
+      "red": "public view registry unavailable",
+      "green": true
+    },
+    {
+      "behavior": "same ID existing web cannot be replaced by deep plugin",
+      "red": "missing expected rejection",
+      "green": true
+    },
+    {
+      "behavior": "old A action does not mark replacement B busy or failed",
+      "red": "true !== false for B busy",
+      "green": true
+    },
+    {
+      "behavior": "concurrent deep/web registration acquires exactly one identity",
+      "red": "both succeeded at competing-14 in 100-attempt public test",
+      "green": true
+    },
+    {
+      "behavior": "withdraw/restart cannot retarget retained deep instances to web",
+      "red": "missing expected rejection",
+      "green": true
+    },
+    {
+      "behavior": "reading data owner independent of legacy recipe service",
+      "red": "registerDataSource TypeError with no legacy service",
+      "green": true
+    },
+    {
+      "behavior": "reading multi-view identity, preference sharing and response fences",
+      "red": "missing registration; stale same-instance read replaced saved snapshot",
+      "green": true
+    }
+  ],
+  "implementedBoundaries": {
+    "singleWorktableLayoutOwner": true,
+    "newPathLoadsLegacyWorkbenchClient": false,
+    "displayCreatesSessions": false,
+    "oldReadingDomainAndSchemaRetained": true,
+    "newInstancesDefaultEmpty": true,
+    "lastViewReleasesSubscriptionsAndRecordSnapshots": true,
+    "browserPresentationMemoryFallbackLimit": 64,
+    "businessRecordsOwnedByReadingHost": true
+  },
+  "remaining": [
+    "root actual final two-package installation and user-flow acceptance",
+    "05 resource authorization and revocation",
+    "06 roles and same-session editor arbitration when role views exist",
+    "07 native AI execution/approval/Stop",
+    "08 cross-window synchronization and full durable recovery/concurrency",
+    "09/11 formal derived package identity, upgrade/rollback/release acceptance"
+  ],
+  "uiAcceptanceSteps": [
+    "Open application entry in an existing project; choose reading-statistics and explicitly create an instance.",
+    "Use the application-owned full page: add a reading record or explicitly initialize examples.",
+    "Choose stats/list in 添加视图类型 then 添加同实例视图; compare instance IDs and shared category/status/search/selection.",
+    "Move tabs/panes, close all views, force pool eviction, reopen latest, refresh; preserve instance/view identities and reading records.",
+    "Explicitly create a new instance and open in another project; expect empty records and independent preferences.",
+    "Verify native dialogue remains available without duplicate Sessions and no legacy personal-workbench frontend is loaded."
+  ]
+}
