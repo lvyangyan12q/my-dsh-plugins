@@ -28,3 +28,16 @@ test('official unpatched rc.2 public parser accepts the exact managed definition
  const composition=definitionComposition(definition.plugins,()=>{throw new Error('No expression is allowed in this fixed composition')})
  assert.deepEqual(composition.rows.map(row=>[row.moduleName,row.enabled]),names.map(name=>[name,true]))
 })
+test('a refused native composition reports bounded module facts without instructions or credential-like diagnostic values',async()=>{
+ const row={presetId:'worktable.managed.reader',content:'private instructions must not appear',baseComposition:'workspace-basic-v1'}
+ const registry={compositionInventory:async()=>[{id:row.presetId,broken:'apiKey=fake-sensitive-value '+('pending '.repeat(300)),rows:[{moduleName:'@deepseek-ai/dsh-tool-fs',enabled:true},{moduleName:'native-normalized-fs',enabled:true,fiberState:2}]}]}
+ await assert.rejects(()=>assertManagedComposition(registry,row),error=>{
+  assert.match(error.message,/dsh-tool-fs: enabled=true, state=none/)
+  assert.match(error.message,/dsh-tool-ask-user: missing/)
+  assert.match(error.message,/observed:.*native-normalized-fs/)
+  assert.ok(!error.message.includes('fake-sensitive-value'))
+  assert.ok(!error.message.includes(row.content))
+  assert.ok(error.message.length<1600)
+  return true
+ })
+})

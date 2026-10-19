@@ -13,5 +13,17 @@ export async function assertManagedComposition(registry,row){
  if(row.baseComposition!==WORKSPACE_BASE)reject('base-required','请在Agent管理中显式选择基础能力并保存；原有指令与会话保留。')
  if(typeof registry.compositionInventory!=='function')reject('composition-unavailable','当前宿主缺少rc.2公开能力组合检查接口。')
  const inventory=(await registry.compositionInventory()).find(preset=>preset.id===row.presetId)
- if(!inventory||inventory.broken||WORKSPACE_BASE_MODULES.some(name=>!inventory.rows.some(plugin=>plugin.moduleName===name&&plugin.enabled===true&&plugin.fiberState===2)))reject('composition-unavailable','原生基础能力未完整激活：需要文件读写、检索、提问与Skill工具。')
+ const rows=Array.isArray(inventory?.rows)?inventory.rows:[]
+ if(!inventory||inventory.broken||WORKSPACE_BASE_MODULES.some(name=>!rows.some(plugin=>plugin.moduleName===name&&plugin.enabled===true&&plugin.fiberState===2))){
+  // Bounded public facts only: never serialize the declaration, persona, plugin config or profile.
+  const facts=WORKSPACE_BASE_MODULES.map(name=>{
+   const plugin=rows.find(plugin=>plugin.moduleName===name),label=name.replace('@deepseek-ai/','')
+   if(!plugin)return label+': missing'
+   const enabled=[true,false,'conditional'].includes(plugin.enabled)?String(plugin.enabled):'unknown'
+   return label+': enabled='+enabled+', state='+(Number.isInteger(plugin.fiberState)?plugin.fiberState:'none')
+  }).join('; ')
+  const broken=typeof inventory?.broken==='string'?inventory.broken.replace(/[\r\n\t]+/g,' ').replace(/\b(api[_ -]?key|authorization|password|token|secret)\s*[:=]\s*(?:Bearer\s+)?[^\s,;]+/gi,'$1=<REDACTED>').slice(0,360):''
+  const observed=rows.slice(0,5).map(plugin=>String(plugin.moduleName??'unknown').slice(0,160)+': enabled='+([true,false,'conditional'].includes(plugin.enabled)?String(plugin.enabled):'unknown')+', state='+(Number.isInteger(plugin.fiberState)?plugin.fiberState:'none')).join('; ')
+  reject('composition-unavailable',('原生基础能力未完整激活：需要文件读写、检索、提问与Skill工具。 ['+facts+']'+(broken?' 原生诊断：'+broken:'')+(observed?' observed: '+observed:'')).slice(0,1500))
+ }
 }
