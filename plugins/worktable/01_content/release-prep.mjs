@@ -83,7 +83,7 @@ if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
-const compatTests = ['host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs']
+const compatTests = ['host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs']
   .map((file) => join(HERE, '..', '04_test', file))
 const compatRun = spawnSync(process.execPath, ['--test', ...compatTests], { cwd: HERE, stdio: 'inherit' })
 if (compatRun.status !== 0) { console.error('[release-prep] FAIL: session/input compatibility tests'); process.exit(1) }
@@ -177,6 +177,15 @@ try {
   process.exit(1)
 }
 console.log('[release-prep] client factory gate passed (ModuleLoader id + factory evaluation + inject)')
+// Role navigation must retain the Worktable layout; exercise the installed callback and synchronization functions.
+const navigationTest = join(HERE, '..', '04_test', 'role-navigation.test.mjs')
+const navigationRun = spawnSync(process.execPath, [navigationTest, join(inst, 'node_modules', 'dsh-worktable', 'lib', 'client.js')], { cwd: HERE, stdio: 'pipe', encoding: 'utf8' })
+if (navigationRun.status !== 0) {
+  console.error('[release-prep] FAIL: installed role navigation regression')
+  console.error(navigationRun.stderr || navigationRun.stdout)
+  process.exit(1)
+}
+console.log('[release-prep] role navigation retains layout (installed artifact wiring and functions)')
 
 // ---------- 5c. 分栏引擎 DOM 锚点回归（0.1.1/0.1.2 双会话根结构 + 过渡重锚 + 关闭还原） ----------
 // 评估「安装目录中的最终产物」lib/client.js（与 5b 同一文件），用假 DOM 驱动 splitStore 全路径

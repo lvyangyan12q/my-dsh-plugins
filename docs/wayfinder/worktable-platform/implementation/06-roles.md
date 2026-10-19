@@ -55,3 +55,7 @@ ready gate、Skill实际调用许可、显式最小原生基础能力与旧Agent
 root在combined741f真实安装中显式升级旧Agent失败；诊断候选3d5e返回5模块enabled=true、无fiberState，原生broken准确指向tool-fs-search的sampleOverCapGlobResults必选配置缺失。失败代整体未挂载，inventory退回声明行；不能把无state解释成可绕过的延迟激活。旧管理记录和角色0保留。
 
 最小修复仅给workspace-basic-v1的dsh-tool-fs-search显式配置sampleOverCapGlobResults=false，与官方standard一致。新增测试逐一调用官方rc.2五模块真实Config schema：修前出现相同required错误RED，修后全部GREEN，省略该值的负向控制仍拒绝。仅声明形状测试不能替代插件Config完整性检查。原生ACTIVE/诊断、来源、调用许可等门禁保持；后续由root重新安装验证真实保存和角色路径。
+
+### 角色原生导航保留工作台布局（待root续草稿实页）
+
+root在884b实际完成旧Agent显式升级、同实例两视图同Session、A并发ensure收敛、C冷重启同ID重开；随后发现“打开原生对话”被既有session联动当成外部切换而关闭Worktable。修复仅在角色导航回调中复用现有markPluginSessionOpen后再openHostSession，不更改native或项目binding。源码与旧最终产物的真实回调/helper/sync函数均出现close=1的相同RED；补标记后源码GREEN。回归同时检查项目/布局/实例view对象身份、binding保持和普通手动导航仍可关闭，标记一次消费。唯一pack入口会再次对独立安装产物执行这段接线/函数回归；它不代替root最终浏览器草稿验收。

@@ -66,3 +66,5 @@ Host启动恢复仅逐项register；不调用resolve、compositionInventory、ac
 辅助lifecycle测试直接调用真实mountRoles入口及HTTP路由，用native诊断等待Host-settle门闩复现启动自等，及坏Agent注册/rollback故障验证可修复管理路径；它不是实际官方SDK激活或模型端到端证据。原生Host由主验收统一安装核实。
 
 workspace-basic-v1的原生检索部署选择固定为 `@deepseek-ai/dsh-tool-fs-search` 的 `config:{sampleOverCapGlobResults:false}`，对齐官方standard；该字段是rc.2 Config必选项，不能省略。官方源码契约测试除PresetDefinition形状外逐一解析全部五模块的真实公开Config schema，并保留省略必选值的拒绝控制。诊断错误仍只给有界公开模块事实，不包含persona或配置正文；失败继续拒绝而不自动换Agent/Session。
+
+角色及保留历史的原生打开由Worktable既有插件导航标记保护：先markPluginSessionOpen(sessionId)再公开openHostSession。它只标识这一次由插件发起的切换，供既有会话联动消费，不重绑项目、不改变实例/视图身份、不禁止之后普通原生手动导航关闭项目。完整输入仍只有原生composer。
