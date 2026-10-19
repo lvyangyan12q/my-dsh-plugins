@@ -1,7 +1,7 @@
 {
   "date": "2026-10-19",
   "ticket": "worktable-framework-07",
-  "status": "source-and-package-passed-real-3091-flow-pending",
+  "status": "source-and-package-passed-real-3091-flow-passed",
   "integrationBase": "4ee3f3c6890f23148c976ca5270ecb06a46ade1c",
   "native": {
     "version": "0.2.0-rc.2",
@@ -55,7 +55,7 @@
     "upstreamWrites": 0,
     "formal3080Writes": 0,
     "remoteWrites": 0,
-    "actualModelExecution": "pending root acceptance",
-    "toolQuestionApprovalStop": "pending root acceptance"
+    "actualModelExecution": "root real 3091 acceptance passed; see 07-installed.json",
+    "toolQuestionApprovalStop": "root real 3091 acceptance passed; see 07-installed.json"
   }
 }
