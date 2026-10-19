@@ -3,8 +3,8 @@ id: worktable-framework-07
 title: 数据上下文与原生AI执行闭环
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: native_execution
 blocked_by: [worktable-framework-05, worktable-framework-06]
 ---
 
@@ -14,7 +14,7 @@ blocked_by: [worktable-framework-05, worktable-framework-06]
 
 **Blocked by:** [实例授权、数据联动与显式共享](05-data-grants.md)、[角色会话隔离与能力复用](06-roles.md)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 准备任务展示准确的实例、角色、来源视图及选中记录/筛选上下文；可编辑、移除上下文和放弃。
 - [ ] 准备、打开及恢复不调用模型，显式发送才发起原生任务，失败不换通道重复发送。
