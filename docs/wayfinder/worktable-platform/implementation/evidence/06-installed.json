@@ -1,0 +1,69 @@
+{
+  "ticket": "worktable-framework-06",
+  "date": "2026-10-19",
+  "url": "http://127.0.0.1:3091/",
+  "status": "passed",
+  "nativeVersion": "0.2.0-rc.2",
+  "previousManagedRecords": {
+    "skillRevision": 1,
+    "agentId": "reading-helper",
+    "agentBaseCompositionAbsent": true,
+    "agentRevision": 2,
+    "bindings": 0,
+    "skillId": "reading-summary"
+  },
+  "passed": [
+    "Combined final archive official install and exact7files match",
+    "Real reading C views retain record70minutes",
+    "Role list before create shows no session",
+    "Missing workspace ensure rejected; durable bindings remain0",
+    "Explicit existing Worktable control-room UI new group registers owned workspace directory, creates blank control session without sending",
+    "Old managed Agent preserved id/content/skillIds/revision2; base absent until explicit edit",
+    "Combined real HTTP retained B revoked resource rejection403 with revoked code",
+    "Real UI Agent explicit save succeeds revision3, same id/content/Skill, base workspace-basic-v1",
+    "C explicit role create ready; both real views same session01d15336-c4b9-485d-a0eb-c015001afb29",
+    "A two actual concurrent Host HTTP ensure requests both200 ready revision2 session10fc50bb-6c77-49cf-b3a8-21b3c7c63e59, separate from C",
+    "Actual cold restart before any role message; C same session opens native blank composer with correct Agent and model",
+    "C native composer contains unsent draft: 角色C未发送草稿·仅当前实例; no model sent",
+    "Real A native blank composer does not contain C draft; typed distinct A draft without sending",
+    "Return C restores only C original unsent draft",
+    "Real managed Skill disable makes C role unavailable with explicit reason and disabled open; re-enable restores same binding, no silent replacement",
+    "Final09ad actual A role navigation retains Worktable split and recovers A draft after Host restart",
+    "Final09ad C native draft survives Host restart; same project/view IDs retained",
+    "Chrome D role explicit create9d6f176a-88b9-4363-bcf3-a8910b2c1201",
+    "Chrome real replacement dialog dismiss preserves oldID; accept yields f4fa7581-145e-4881-9380-81d94c8a288b and retains oldID in history",
+    "Chrome real retained-history button opens old native session; current binding remains new; split and both views remain",
+    "Real DOM after history navigation:1 visible native editable composer",
+    "User manually confirmed pending IAB C replacement: revision4 new61483d5f-1a10-40ed-b1d4-accf63124b84, previous01d15336-c4b9-485d-a0eb-c015001afb29 retained; A/D unchanged",
+    "IAB new C current native session opens empty; old C draft not copied",
+    "IAB retained-history button reopens old C session and restores original C draft; split remains and current binding unchanged"
+  ],
+  "pending": [],
+  "formal3080Changes": 0,
+  "nativeSourceChanges": 0,
+  "installedCandidate": {
+    "worktableSha": "09ad25544ce8cc7e8baeba0a8133a162bcdae66ae7ac8c7aee498b14793f3458",
+    "filesMatched": [
+      7,
+      6
+    ],
+    "readingSha": "07e6193925911a177f03e9bbb6367375f77383ea6f6af09bfb7fefc2d1d90c10"
+  },
+  "currentFailure": null,
+  "repairedFindings": [
+    "Required official fs-search sampleOverCapGlobResults config missing; fixed false, strict module gate retained",
+    "Role navigation omitted existing plugin switch marker; fixed without changing native source/project binding"
+  ],
+  "browserLimitations": [
+    "IAB JS confirmation initially blocked automation; user explicitly clicked Confirm, restoring browser control. Real C replacement was verified afterward, not replayed. Chrome D independently verified dismiss and accept."
+  ],
+  "sessions": {
+    "modelMessages": 0,
+    "A": "10fc50bb-6c77-49cf-b3a8-21b3c7c63e59",
+    "DCurrent": "f4fa7581-145e-4881-9380-81d94c8a288b",
+    "C": "61483d5f-1a10-40ed-b1d4-accf63124b84",
+    "DPrevious": "9d6f176a-88b9-4363-bcf3-a8910b2c1201",
+    "CPrevious": "01d15336-c4b9-485d-a0eb-c015001afb29"
+  },
+  "screenshot": "C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable-06-native-role-history.jpg"
+}

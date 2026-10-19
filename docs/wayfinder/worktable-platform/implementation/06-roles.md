@@ -3,7 +3,7 @@ id: worktable-framework-06
 title: 角色会话隔离与能力复用
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 assignee: role_capabilities
 blocked_by: [worktable-framework-04]
 ---
@@ -14,13 +14,13 @@ blocked_by: [worktable-framework-04]
 
 **Blocked by:** [深度应用接入与同实例多视图](04-deep-views.md)。
 
-**Status:** in-progress
+**Status:** closed
 
-- [ ] 应用实例的角色通过稳定身份关联原生会话，读取/创建/重试/替换语义分开。
-- [ ] 重复和真实并发创建收敛到同一角色绑定；不同项目或实例默认隔离，替换保留旧历史并需明确操作。
-- [ ] 公共Agent/Skills可供应用复用；应用私有能力保持所有权，教学专用逻辑不成为所有应用的必选接口。
-- [ ] 禁用、缺失或不可调用能力明确反馈，不自动替换Agent、不新建Session掩盖失败。
-- [ ] 原生会话可重新打开并查看历史；未发送文字、编辑器归属不跨实例混用。
+- [x] 应用实例的角色通过稳定身份关联原生会话，读取/创建/重试/替换语义分开。
+- [x] 重复和真实并发创建收敛到同一角色绑定；不同项目或实例默认隔离，替换保留旧历史并需明确操作。
+- [x] 公共Agent/Skills可供应用复用；应用私有能力保持所有权，教学专用逻辑不成为所有应用的必选接口。
+- [x] 禁用、缺失或不可调用能力明确反馈，不自动替换Agent、不新建Session掩盖失败。
+- [x] 原生会话可重新打开并查看历史；未发送文字、编辑器归属不跨实例混用。
 
 ## Scope and evidence
 
@@ -59,3 +59,15 @@ root在combined741f真实安装中显式升级旧Agent失败；诊断候选3d5e�
 ### 角色原生导航保留工作台布局（待root续草稿实页）
 
 root在884b实际完成旧Agent显式升级、同实例两视图同Session、A并发ensure收敛、C冷重启同ID重开；随后发现“打开原生对话”被既有session联动当成外部切换而关闭Worktable。修复仅在角色导航回调中复用现有markPluginSessionOpen后再openHostSession，不更改native或项目binding。源码与旧最终产物的真实回调/helper/sync函数均出现close=1的相同RED；补标记后源码GREEN。回归同时检查项目/布局/实例view对象身份、binding保持和普通手动导航仍可关闭，标记一次消费。唯一pack入口会再次对独立安装产物执行这段接线/函数回归；它不代替root最终浏览器草稿验收。
+
+## 2026-10-19 最终安装验收与独立复审（关闭06）
+
+最终实现 `f37ab1c083016295f807d852fdb48b8e3e5cec13` 经独立复审及 root 精确批准守护合入。工作台双包 SHA-256 `09ad25544ce8cc7e8baeba0a8133a162bcdae66ae7ac8c7aee498b14793f3458`，由官方 CLI 安装至隔离3091并核对最终7文件；阅读沿用已验收05的 `07e6193925911a177f03e9bbb6367375f77383ea6f6af09bfb7fefc2d1d90c10`。以[最终实页记录](evidence/06-installed.json)为本轮关闭依据；上文准备候选和失败诊断仅保留过程证据。
+
+真实阅读资料保持。角色初次读取无Session；工作目录未登记时创建明确拒绝且耐久绑定仍为0，用户显式登记已有工作目录后再创建。旧reading-helper保留身份、指令与Skill，显式选择基础能力保存成功；同实例两视图共用C角色，A的两个真实并发ensure收敛同ID，A/C独立。未发送任何角色消息即冷重启，原空白会话可恢复并显示正确Agent和模型。A/C分别保留未发送草稿，切换不串位；Skill停用明确阻止使用，恢复后沿同绑定继续，未静默换Agent。
+
+导航复用既有插件切换标记后，真实原生打开和历史打开保持Worktable分栏、项目及视图身份。Chrome D实际取消替换保留旧ID，接受替换产生新ID并保留历史；历史按钮打开旧会话而不改变当前绑定，页面保持唯一原生可编辑composer。IAB确认框先阻塞自动化，随后用户明确点击“确认”；Host实读C为revision4的新绑定，打开当前会话为空输入，打开旧历史恢复原C草稿，分栏保持且A/D绑定未变。该用户确认后的事实与Chrome D取消/接受分别记录，未重放IAB请求或声称此前自动化未阻塞。
+
+独立复审补齐intent就绪、私有owner与管理来源、模型Skill许可、restore可修复诊断及回滚、上下文隔离、真实官方插件Config必填校验。检索配置缺失由实际Host诊断与官方compiled Config复现定位，仅补公开必填值，未放松原生激活门禁。唯一pack入口143项回归及独立安装导航产物门禁通过；reviewer另外离线安装最终tgz并运行安装lib/client.js导航回归，通过布局/视图/binding保持、标记消费与普通手动导航行为断言。资料授权与角色互操作仍不共享会话身份。
+
+本工单角色消息数为0；任务上下文、模型执行、问题、审批和Stop由07另行验收。未承诺跨浏览器草稿实时协作、完整多进程恢复或旧personal-workbench记录迁移。六个历史改动文件受guard保护，原生与原Worktable前后快照保持，未改正式3080或远端。07由root领取，本次仅关闭06。
