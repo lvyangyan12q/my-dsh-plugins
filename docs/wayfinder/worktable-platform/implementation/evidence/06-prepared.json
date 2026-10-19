@@ -3,7 +3,7 @@
   "status": "implementation-prepared-real-host-acceptance-pending",
   "date": "2026-10-19",
   "base": "ed6ca9dda80523ea735c3e1b9260e86cfbc1005d",
-  "sourceHead": "2785f8ade4c850886e4ea4fb3f424b9403f34baa",
+  "sourceHead": "b479eb8a58723483c6fadb2347121662fb5d0671",
   "mergedIntegration": "9c110c6fd3a9b0f851e47f9b82dfb7d7a9142102",
   "redGreen": [
     {
@@ -60,6 +60,26 @@
       "seam": "management base selector",
       "red": "visible explicit base selector missing",
       "green": "React edit preserves existing instructions and revision while requiring an explicit choice"
+    },
+    {
+      "seam": "Host activation recovery",
+      "red": "mountRoles activation blocked behind native inventory awaiting the same Host settle; owner could not provide",
+      "green": "register-only restoration performs zero resolve/inventory/acquireScope calls and still exposes editable bad-Agent records"
+    },
+    {
+      "seam": "restored failure management UI",
+      "red": "registration failure reason absent from rendered management UI",
+      "green": "cause visible and original record remains editable"
+    },
+    {
+      "seam": "native broken activation diagnosis",
+      "red": "explicit resolve reported broken but subsequent management list had no diagnosis",
+      "green": "managed Agent native activation errors become editable per-record diagnoses after explicit validation"
+    },
+    {
+      "seam": "Skill context isolation",
+      "red": "provider mismatch in one cwd poisoned the same Skill in a healthy context",
+      "green": "context-specific Skill failures are not cached globally"
     }
   ],
   "supplementaryFilesystemChecks": [
@@ -71,15 +91,15 @@
     "command": "npm run pack",
     "cwd": "plugins/worktable/01_content",
     "sourceRegressionTests": {
-      "passed": 132,
+      "passed": 135,
       "failed": 0,
-      "newRoleTests": 16
+      "newRoleTests": 19
     },
     "independentInstallImport": "passed",
     "clientFactoryOnInstalledArtifact": "passed",
     "installedAnchorDomScenarios": 8,
     "installedServerHomeScenarios": 3,
-    "sha256": "eb99bb44c18b9af2685afe3b0f11d484adb33d7f8ec3d49f2815cc840be0c311",
+    "sha256": "7f1d95899813962846317fba2cea51642e2ded5f552e5d3c4ccb1deaed5ead3c",
     "assets": [
       "dist/v0.4.0/dsh-worktable.tgz",
       "dist/v0.4.0/dsh-worktable-0.4.0.tgz"
@@ -136,5 +156,22 @@
   "supersededCandidate": {
     "sha256": "9899996b57946b1a7f854b811cda8d426c9fc41c2945ec4832ed3401415f3db7",
     "reason": "Independent review found missing ready gate, native base tools and invocation-mode mismatch; no real role/model acceptance claimed"
+  },
+  "restoreReview": {
+    "supersededSha256": "eb99bb44c18b9af2685afe3b0f11d484adb33d7f8ec3d49f2815cc840be0c311",
+    "issue": "Activation-time native diagnostics may self-await, or one broken Agent may prevent the entire role/capability owner from starting",
+    "fix": "Register-only per-record restoration; failures remain editable; native ACTIVE validation only on post-activation explicit save/use",
+    "lifecycleBoundary": "Actual mountRoles module and its public HTTP route with controlled pending native diagnostics and register/rollback faults",
+    "startupNativeDiagnosticCalls": 0,
+    "verified": [
+      "bad Agent registration does not block profile owner or healthy Skill",
+      "original enabled/content/revision preserved",
+      "explicit successful repair or disable clears diagnosis",
+      "double save and rollback failure keeps original save error and old record",
+      "native register returning broken is diagnosed on later explicit validate",
+      "same-name private Agent is neither poisoned nor disposed",
+      "Skill cwd/provider failure does not poison another instance"
+    ],
+    "limits": "This proves the public lifecycle boundary with controlled native faults, not actual SDK activation or model execution"
   }
 }
