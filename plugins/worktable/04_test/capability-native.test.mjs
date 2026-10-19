@@ -3,6 +3,7 @@ import {test} from 'node:test'
 import {readFile} from 'node:fs/promises'
 import {join} from 'node:path'
 import {pathToFileURL} from 'node:url'
+import {createRequire} from 'node:module'
 import {managedAgentDefinition,assertManagedComposition} from '../01_content/src/framework/capability-native.mjs'
 const names=['@deepseek-ai/dsh-tool-fs','@deepseek-ai/dsh-tool-fs-search','@deepseek-ai/dsh-tool-ask-user','@deepseek-ai/dsh-tool-skill','@deepseek-ai/dsh-persona']
 test('explicit managed base names native filesystem/search/question plugins and rejects merely declared or disabled layers',async()=>{
@@ -40,4 +41,16 @@ test('a refused native composition reports bounded module facts without instruct
   assert.ok(error.message.length<1600)
   return true
  })
+})
+test('official rc.2 plugin Config schemas accept every managed base row including required search deployment choice',{skip:!root},async()=>{
+ const official=createRequire(join(root,'packages/client/ui-renderer/package.json'))
+ const definition=managedAgentDefinition({presetId:'worktable.managed.reader',title:'Reader',content:'Read.',skillIds:[],baseComposition:'workspace-basic-v1'})
+ for(const row of definition.plugins){
+  const plugin=await import(pathToFileURL(official.resolve(row.name)))
+  assert.equal(typeof plugin.Config,'function',row.name+' exposes its public Config schema')
+  if(row.name==='@deepseek-ai/dsh-tool-fs-search')assert.throws(()=>new plugin.Config({}),/sampleOverCapGlobResults/)
+  let parsed
+  assert.doesNotThrow(()=>{parsed=new plugin.Config(row.config??{})},row.name+' managed declaration must satisfy the real native Config schema')
+  if(row.name==='@deepseek-ai/dsh-tool-fs-search')assert.equal(parsed.sampleOverCapGlobResults,false)
+ }
 })

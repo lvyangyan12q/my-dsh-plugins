@@ -64,3 +64,5 @@ Host启动恢复仅逐项register；不调用resolve、compositionInventory、ac
 显式save和角色使用在Host稳定后继续校验真实ACTIVE组合；成功保存或停用清除该项诊断。保存失败且回滚注册也失败时，返回原保存错误并保留旧记录及回滚诊断，用户仍可编辑/停用。只释放自己获得的native注册disposer，不移除冲突的其他owner。管理Agent的全局激活诊断不污染同名应用私有能力；Skill的cwd/provider/scope请求失败不缓存成跨实例全局拒绝。
 
 辅助lifecycle测试直接调用真实mountRoles入口及HTTP路由，用native诊断等待Host-settle门闩复现启动自等，及坏Agent注册/rollback故障验证可修复管理路径；它不是实际官方SDK激活或模型端到端证据。原生Host由主验收统一安装核实。
+
+workspace-basic-v1的原生检索部署选择固定为 `@deepseek-ai/dsh-tool-fs-search` 的 `config:{sampleOverCapGlobResults:false}`，对齐官方standard；该字段是rc.2 Config必选项，不能省略。官方源码契约测试除PresetDefinition形状外逐一解析全部五模块的真实公开Config schema，并保留省略必选值的拒绝控制。诊断错误仍只给有界公开模块事实，不包含persona或配置正文；失败继续拒绝而不自动换Agent/Session。

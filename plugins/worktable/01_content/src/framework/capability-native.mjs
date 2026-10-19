@@ -4,7 +4,7 @@ export const WORKSPACE_BASE_MODULES=Object.freeze(['@deepseek-ai/dsh-tool-fs','@
 /** Explicit versioned capability set, not a clone or implied inheritance of the user's standard preset. */
 export function managedAgentDefinition(row){
  const plugins=[{name:'@deepseek-ai/dsh-tool-skill'},{name:'@deepseek-ai/dsh-persona',config:{prefix:row.content,suffix:row.skillIds.length?'Use assigned Skills when relevant: '+row.skillIds.join(', '):''}}]
- if(row.baseComposition===WORKSPACE_BASE)plugins.unshift(...WORKSPACE_BASE_MODULES.slice(0,3).map(name=>({name})))
+ if(row.baseComposition===WORKSPACE_BASE)plugins.unshift(...WORKSPACE_BASE_MODULES.slice(0,3).map(name=>name==='@deepseek-ai/dsh-tool-fs-search'?{name,config:{sampleOverCapGlobResults:false}}:{name}))
  else if(row.baseComposition!==undefined)reject('base-unsupported','Agent基础能力版本不受支持。')
  return {id:row.presetId,name:row.title,description:row.description,plugins}
 }

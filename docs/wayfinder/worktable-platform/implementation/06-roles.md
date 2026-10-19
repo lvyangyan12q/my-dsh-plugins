@@ -49,3 +49,9 @@ ready gate、Skill实际调用许可、显式最小原生基础能力与旧Agent
 角色分支已合入集成54b68960db4c2097ed0e6e2ad4035c41e4b8e7b6。唯一冲突为release-prep测试名单，取05资料授权与06角色回归并集；无生产行为冲突。combined pack140/140、0skip，精确7文件和独立安装/产物门禁通过；reading源码与已验收05完全一致，公开owner与React UI5项回归通过。独立review追加角色19项、资源5项与互操作probe通过；仅修正06测试一行LF格式，无产品包变更。最终包证据见06-combined-prepared.json。
 
 已读取root的05安装实页证据，但它不代替06实页验收。后续由root安装combined候选验证真实角色、原生草稿/重启/替换历史；本实现者未启动Host、浏览器或模型，未合主线，06继续in-progress。
+
+### 原生配置完整性修正（06实页尚未完成）
+
+root在combined741f真实安装中显式升级旧Agent失败；诊断候选3d5e返回5模块enabled=true、无fiberState，原生broken准确指向tool-fs-search的sampleOverCapGlobResults必选配置缺失。失败代整体未挂载，inventory退回声明行；不能把无state解释成可绕过的延迟激活。旧管理记录和角色0保留。
+
+最小修复仅给workspace-basic-v1的dsh-tool-fs-search显式配置sampleOverCapGlobResults=false，与官方standard一致。新增测试逐一调用官方rc.2五模块真实Config schema：修前出现相同required错误RED，修后全部GREEN，省略该值的负向控制仍拒绝。仅声明形状测试不能替代插件Config完整性检查。原生ACTIVE/诊断、来源、调用许可等门禁保持；后续由root重新安装验证真实保存和角色路径。
