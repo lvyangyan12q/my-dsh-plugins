@@ -1,0 +1,43 @@
+{
+  "ticket": "worktable-framework-06",
+  "status": "combined-prepared-awaiting-06-installed-acceptance",
+  "ticketClosed": false,
+  "mergedIntegration": "54b68960db4c2097ed0e6e2ad4035c41e4b8e7b6",
+  "integrationBranch": "codex/worktable-framework",
+  "packSourceHead": "206b13fe145dfaecfe7b9d8ec73989b8731b96f5",
+  "postPackTestOnlyHead": "a42d0a05f7c6c7ac1d30b662c325858031a018ae",
+  "postPackChange": "Only LF normalization of role-native.test.mjs, then documentation evidence; packaged product source unchanged.",
+  "mergeConflicts": [
+    {"file":"plugins/worktable/01_content/release-prep.mjs","resolution":"Preserve union of accepted ticket-05 data-grants and ticket-06 role regressions; no product behavior conflict."}
+  ],
+  "pack": {
+    "command": "npm run pack",
+    "cwd": "plugins/worktable/01_content",
+    "environment": "WORKTABLE_NATIVE_RC2_ROOT points to official unpatched 0.2.0-rc.2 source",
+    "tests": {"passed":140,"failed":0,"skipped":0,"roleTests":19,"dataGrantTests":5},
+    "independentInstallImport": "passed",
+    "installedClientFactory": "passed",
+    "installedAnchorDomScenarios":8,
+    "installedServerHomeScenarios":3,
+    "sha256":"741f44d622a7bd57e951195315a4538fc3d4534914f5b50dee8330137f5b70e5",
+    "assets":["dist/v0.4.0/dsh-worktable.tgz","dist/v0.4.0/dsh-worktable-0.4.0.tgz"],
+    "exactFiles":["package/LICENSE","package/lib/client.js","package/lib/index.js","package/dsh.plugin.json","package/package.json","package/README.md","package/cordis.patch.yml"]
+  },
+  "reading": {
+    "sourceTree":"dc2f5b426e54ef8e731f91811fedadd13f030b46",
+    "unchangedFromAccepted05":true,
+    "newReadingArtifactRequired":false,
+    "accepted05ArtifactSha256":"07e6193925911a177f03e9bbb6367375f77383ea6f6af09bfb7fefc2d1d90c10",
+    "tests":{"passed":5,"failed":0,"files":["tests/data-grants.test.mjs","tests/data-grants-ui.test.mjs"]},
+    "testBoundary":"Actual reading owner/storage and React UI with official rc.2 dependencies, not an installed Host/browser run.",
+    "optionalContributions":["worktableResources owns reading data independently","worktableRoles contributes assistant keyed by instance with managed reading-helper Agent"]
+  },
+  "accepted05InstalledEvidence": {
+    "path":"C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable-05-installed-evidence.json",
+    "sha256":"2959ae3168383ef01ae217c5cc12b7634dbfcaa1b7765bc211a7f43a3e6d1b83",
+    "status":"Root supplied passed evidence, read before merge; does not establish ticket-06 installed acceptance."
+  },
+  "independentReview": "Reviewer reported 19 role + 5 resource tests and combined interoperability probe passed; only test LF normalization requested and fixed.",
+  "remaining": ["root installs combined Worktable beside unchanged accepted reading artifact", "real same-instance/two-view role binding and cross-instance isolation", "managed capability explicit upgrade and disable", "blank native Session and unsent draft restart/reopen", "explicit replacement and retained history"],
+  "noActions": ["no Host/browser/model started by implementer", "no merge into integration or literal main", "no changes to formal native DSH,3080,original Worktable or old user data"]
+}

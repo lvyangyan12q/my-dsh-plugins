@@ -43,3 +43,9 @@ ready gate、Skill实际调用许可、显式最小原生基础能力与旧Agent
 ### restore P1修正（续工，不关单）
 
 公开mountRoles lifecycle + HTTP测试真实复现诊断等待Host-settle造成owner无法provide的RED；register-only逐项恢复后GREEN。坏Agent仍可列出原数据、明确显示原因并显式修复/停用；保存及rollback双失败、同名私有能力隔离、原生register返回broken后显式validate诊断均已覆盖。管理UI原因显示、Skill上下文失败不全局污染分别RED→GREEN。启动恢复不诊断、不改旧管理记录、不自动增权。新增测试纳入唯一pack门禁；真实Host/模型验收仍交由root。
+
+### 与已验收05合并的候选（不关闭06）
+
+角色分支已合入集成54b68960db4c2097ed0e6e2ad4035c41e4b8e7b6。唯一冲突为release-prep测试名单，取05资料授权与06角色回归并集；无生产行为冲突。combined pack140/140、0skip，精确7文件和独立安装/产物门禁通过；reading源码与已验收05完全一致，公开owner与React UI5项回归通过。独立review追加角色19项、资源5项与互操作probe通过；仅修正06测试一行LF格式，无产品包变更。最终包证据见06-combined-prepared.json。
+
+已读取root的05安装实页证据，但它不代替06实页验收。后续由root安装combined候选验证真实角色、原生草稿/重启/替换历史；本实现者未启动Host、浏览器或模型，未合主线，06继续in-progress。
