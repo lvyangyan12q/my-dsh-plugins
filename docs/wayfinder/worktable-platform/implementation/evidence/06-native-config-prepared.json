@@ -1,43 +1,61 @@
 {
-  "ticket":"worktable-framework-06",
-  "status":"native-config-corrected-prepared-awaiting-root-installed-validation",
-  "ticketClosed":false,
-  "mergedIntegration":"54b68960db4c2097ed0e6e2ad4035c41e4b8e7b6",
-  "packSourceHead":"15c4fe8248241b2576daaf33d59be68e2bf5e353",
-  "realHostFinding":{
-    "reportedBy":"root on its official unpatched rc.2 Host; implementer did not operate Host/browser/model",
-    "failedCombinedSha256":"741f44d622a7bd57e951195315a4538fc3d4534914f5b50dee8330137f5b70e5",
-    "diagnosticSha256":"3d5e949efca4b31767a6f6b24228a5affdb13af8cd48f246b6e2422041fb28f2",
-    "facts":"All five native modules enabled=true with no fiberState; broken identifies dsh-tool-fs-search $.sampleOverCapGlobResults missing required value",
-    "meaning":"The failed preset generation was not mounted; declared inventory rows lacking state did not authorize bypassing the activation gate.",
-    "preservedAfterFailure":"Existing reading-helper remained revision2 without baseComposition; zero role bindings."
+  "ticket": "worktable-framework-06",
+  "status": "root-validated-native-config-role-navigation-blocker-discovered",
+  "ticketClosed": false,
+  "mergedIntegration": "54b68960db4c2097ed0e6e2ad4035c41e4b8e7b6",
+  "packSourceHead": "15c4fe8248241b2576daaf33d59be68e2bf5e353",
+  "realHostFinding": {
+    "reportedBy": "root on its official unpatched rc.2 Host; implementer did not operate Host/browser/model",
+    "failedCombinedSha256": "741f44d622a7bd57e951195315a4538fc3d4534914f5b50dee8330137f5b70e5",
+    "diagnosticSha256": "3d5e949efca4b31767a6f6b24228a5affdb13af8cd48f246b6e2422041fb28f2",
+    "facts": "All five native modules enabled=true with no fiberState; broken identifies dsh-tool-fs-search $.sampleOverCapGlobResults missing required value",
+    "meaning": "The failed preset generation was not mounted; declared inventory rows lacking state did not authorize bypassing the activation gate.",
+    "preservedAfterFailure": "Existing reading-helper remained revision2 without baseComposition; zero role bindings."
   },
-  "fix":{
-    "onlyProductBehaviorChange":"Explicit config.sampleOverCapGlobResults=false on managed workspace-basic-v1 fs-search row, matching official standard",
-    "strictGateUnchanged":true,
-    "noAgentOrSessionFallback":true,
-    "oldManagementRecordsNotEditedByImplementer":true,
-    "boundedPublicFailureFactsRetained":true
+  "fix": {
+    "onlyProductBehaviorChange": "Explicit config.sampleOverCapGlobResults=false on managed workspace-basic-v1 fs-search row, matching official standard",
+    "strictGateUnchanged": true,
+    "noAgentOrSessionFallback": true,
+    "oldManagementRecordsNotEditedByImplementer": true,
+    "boundedPublicFailureFactsRetained": true
   },
-  "redGreen":{
-    "seam":"Actual official rc.2 public Config schema of all five managed plugin rows",
-    "red":"Generated fs-search row threw the exact real Host required-field error",
-    "green":"Every official Config schema accepts its generated row; the parsed search choice is false",
-    "negativeControl":"Official fs-search Config still rejects {} for the missing required choice",
-    "nativeAuthority":"Real compiled official modules, no mock Config/register or gate relaxation"
+  "redGreen": {
+    "seam": "Actual official rc.2 public Config schema of all five managed plugin rows",
+    "red": "Generated fs-search row threw the exact real Host required-field error",
+    "green": "Every official Config schema accepts its generated row; the parsed search choice is false",
+    "negativeControl": "Official fs-search Config still rejects {} for the missing required choice",
+    "nativeAuthority": "Real compiled official modules, no mock Config/register or gate relaxation"
   },
-  "pack":{
-    "command":"npm run pack",
-    "environment":"WORKTABLE_NATIVE_RC2_ROOT points to official unpatched rc.2 source",
-    "tests":{"passed":142,"failed":0,"skipped":0,"roleRelated":21,"resourceRelated":5},
-    "independentInstallImport":"passed",
-    "installedClientFactory":"passed",
-    "installedAnchorDomScenarios":8,
-    "installedServerHomeScenarios":3,
-    "sha256":"884b634aa370b9c2d507b1355d8facab9c55dd89062487313f927bddfb619e39",
-    "assets":["dist/v0.4.0/dsh-worktable.tgz","dist/v0.4.0/dsh-worktable-0.4.0.tgz"],
-    "exactFiles":["package/LICENSE","package/lib/client.js","package/lib/index.js","package/dsh.plugin.json","package/package.json","package/README.md","package/cordis.patch.yml"]
+  "pack": {
+    "command": "npm run pack",
+    "environment": "WORKTABLE_NATIVE_RC2_ROOT points to official unpatched rc.2 source",
+    "tests": {
+      "passed": 142,
+      "failed": 0,
+      "skipped": 0,
+      "roleRelated": 21,
+      "resourceRelated": 5
+    },
+    "independentInstallImport": "passed",
+    "installedClientFactory": "passed",
+    "installedAnchorDomScenarios": 8,
+    "installedServerHomeScenarios": 3,
+    "sha256": "884b634aa370b9c2d507b1355d8facab9c55dd89062487313f927bddfb619e39",
+    "assets": [
+      "dist/v0.4.0/dsh-worktable.tgz",
+      "dist/v0.4.0/dsh-worktable-0.4.0.tgz"
+    ],
+    "exactFiles": [
+      "package/LICENSE",
+      "package/lib/client.js",
+      "package/lib/index.js",
+      "package/dsh.plugin.json",
+      "package/package.json",
+      "package/README.md",
+      "package/cordis.patch.yml"
+    ]
   },
-  "independentReview":"Reviewer independently reproduced then passed actual five-module compiled Config probe; role suite21/21/0skip; final HEAD/hash review requested.",
-  "remaining":"Root must install corrected candidate, retry explicit managed save, then verify real role identity, native draft/restart/replacement/history; schema/pack results do not establish installed acceptance."
+  "independentReview": "Reviewer independently reproduced then passed actual five-module compiled Config probe; role suite21/21/0skip; final HEAD/hash review requested.",
+  "remaining": "Root must install corrected candidate, retry explicit managed save, then verify real role identity, native draft/restart/replacement/history; schema/pack results do not establish installed acceptance.",
+  "supersededBy": "06-navigation-prepared.json"
 }
