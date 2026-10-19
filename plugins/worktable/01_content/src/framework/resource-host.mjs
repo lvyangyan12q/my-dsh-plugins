@@ -1,11 +1,12 @@
+import {readRequestText} from './request-body.mjs'
 import {join} from 'node:path'
 import {ResourceDirectory} from './resources.mjs'
 import {ApplicationError} from './applications.mjs'
 export function mountResources(ctx){
   let service,connection
-  ctx.inject(['worktableApplications','profileContext','connection'],child=>{
+  ctx.inject(['worktableApplications','profileContext','connection','worktableAdmission'],child=>{
     if(!child.worktableApplications||!child.profileContext?.dir)return
-    const owned=new ResourceDirectory(join(child.profileContext.dir,'worktable-platform','resources.v1.json'),child.worktableApplications)
+    const owned=new ResourceDirectory(join(child.profileContext.dir,'worktable-platform','resources.v1.json'),child.worktableApplications,child.worktableAdmission)
     service=owned;connection=child.connection;child.provide('worktableResources',owned)
     child.effect(()=>()=>{if(service===owned){service=undefined;connection=undefined}},'worktable resource lifetime')
   })
@@ -16,7 +17,7 @@ export function mountResources(ctx){
       const admission=connection.admit(req);if('rejection' in admission)return send(admission.rejection,{error:'请登录当前DSH实例。'})
       if(req.method!=='POST')return send(405,{error:'POST required'})
       if(!String(req.headers['content-type']??'').startsWith('application/json'))return send(415,{error:'JSON required'})
-      let text='';for await(const chunk of req){text+=chunk;if(Buffer.byteLength(text)>16384)throw new ApplicationError('request-too-large','请求过大。',413)}
+      const text=await readRequestText(req,16384,()=>new ApplicationError('request-too-large','请求过大。',413))
       let body;try{body=JSON.parse(text)}catch{throw new ApplicationError('invalid-request','JSON无效。')}
       if(!body||typeof body!=='object'||Array.isArray(body))throw new ApplicationError('invalid-request','请求无效。')
       let result

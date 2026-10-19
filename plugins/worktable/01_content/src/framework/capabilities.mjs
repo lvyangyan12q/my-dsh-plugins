@@ -1,9 +1,10 @@
+import {AdmissionGate} from './admission.mjs'
 import {WORKSPACE_BASE,managedAgentDefinition,assertManagedComposition} from './capability-native.mjs'
 import {reject} from './roles.mjs'
 const identity=row=>JSON.stringify([row.kind,row.id])
 /** Public directory is exclusively management provenance, never a projection of all native presets. */
 export class CapabilityDirectory {
- constructor(store,native){this.store=store;this.native=native;this.private=new Map();this.removers=new Map();this.failures=new Map();this.pending=Promise.resolve();this.closing=false}
+ constructor(store,native,gate=new AdmissionGate()){this.gate=gate;this.store=store;this.native=native;this.private=new Map();this.removers=new Map();this.failures=new Map();this.pending=Promise.resolve();this.closing=false}
  async list(appId){const rows=(await this.store.snapshot()).capabilities.map(row=>({...row,...(this.failures.has(identity(row))?{unavailable:this.failures.get(identity(row))}:{})}));return structuredClone([...rows,...(appId?this.private.get(appId)??[]:[])])}
  contribute(appId,definitions){if(this.private.has(appId)||!Array.isArray(definitions))reject('capability-conflict','私有能力重复声明。');const seen=new Set();const rows=definitions.map(row=>{if(!['agent','skill'].includes(row.kind)||typeof row.id!=='string'||!row.id.trim()||seen.has(identity(row))||(row.kind==='agent'?!row.presetId:!row.provider))reject('capability-invalid','私有能力必须声明原生身份与provider。');seen.add(identity(row));return {...structuredClone(row),source:'application',ownerAppId:appId}});this.private.set(appId,rows);return()=>{if(this.private.get(appId)===rows)this.private.delete(appId)}}
  async install(row,verify=false){
@@ -25,7 +26,8 @@ export class CapabilityDirectory {
  }
  /** Host activation must not call native diagnostics: those may await this same Loader activation. */
  async restore(){const rows=await this.list();for(const row of [...rows.filter(row=>row.kind==='skill'),...rows.filter(row=>row.kind==='agent')]){try{await this.install(row)}catch{/* Retain the failed record and its editable per-capability diagnostic. */}}}
- save(input,expectedRevision){if(this.closing)return Promise.reject(new Error('Capabilities unavailable'));const task=this.pending.then(async()=>{
+ save(input,expectedRevision){return this.gate.run(()=>this.saveWithin(input,expectedRevision))}
+ saveWithin(input,expectedRevision){if(this.closing)return Promise.reject(new Error('Capabilities unavailable'));const task=this.pending.then(async()=>{
   if(!['agent','skill'].includes(input?.kind)||! /^[a-z][a-z0-9.-]{0,79}$/.test(input.id)||typeof input.title!=='string'||!input.title.trim()||input.title.length>200||typeof input.content!=='string'||!input.content.trim()||input.content.length>64000||typeof input.enabled!=='boolean'||typeof input.userInvocable!=='boolean'||typeof input.modelInvocable!=='boolean')reject('capability-invalid','请填写能力标识、名称、内容与调用许可。')
   if(input.kind==='agent'&&input.baseComposition!==WORKSPACE_BASE)reject('base-required','请显式选择Agent基础能力。');
   const all=await this.list(),old=all.find(row=>identity(row)===identity(input));if((old?.revision??0)!==expectedRevision)reject('revision-conflict','能力已更新，请刷新。')

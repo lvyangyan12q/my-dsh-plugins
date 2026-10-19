@@ -60,3 +60,16 @@ test('client refuses a response from another owner or consumer instead of remapp
     await assert.rejects(requestReading({action:'read',instanceId:'consumer',viewId:'registered-view'}),/归属不匹配/)
   }finally{globalThis.fetch=previous}
 })
+
+test('reading owns selected/filter task context and pins business revision until native admission releases its lease',async()=>{
+ const folder=await mkdtemp(join(tmpdir(),'reading-task-context-')),ctx=new Context();let owner;
+ try{
+ await ctx.plugin(Storage);ctx.storage.backend.register('json',new JsonStorageBackend(folder));const facility=new DomainFacility(ctx,{backend:'json',routes:{}});ctx.storage.mount('domain',facility);owner=await installReading({storageDomain:facility,connection:{requestRejection:()=>undefined}});
+ const row=await owner.initialize('A','examples');const selection={ids:['walden'],filter:{category:'',status:'finished',search:'Walden'}};
+ const context=owner.resource.taskContext(row,selection);assert.match(context.text,/瓦尔登湖/);assert.doesNotMatch(context.text,/Pride and Prejudice/);assert.deepEqual(JSON.parse(context.text).selectedIds,['walden']);
+ assert.throws(()=>owner.resource.taskContext(row,{...selection,ids:['other-instance-record']}),/已变化/);
+ let entered,release;const started=new Promise(resolve=>entered=resolve);const lease=owner.resource.withTaskLease(async()=>{entered();await new Promise(resolve=>release=resolve)});await started;
+ let changed=false;const update=owner.resource.mutate('A','update',{recordId:'walden',record:{title:'New owner title',author:'',category:'',status:'reading',minutes:5,notes:''}},row.revision,async()=>{}).then(()=>changed=true);
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(changed,false);assert.equal(owner.read('A').records[0].title,'Walden / 瓦尔登湖');release();await lease;await update;assert.equal(owner.read('A').records[0].title,'New owner title');
+ }finally{await owner?.dispose();await ctx.fiber.dispose();await rm(folder,{recursive:true,force:true})}
+})

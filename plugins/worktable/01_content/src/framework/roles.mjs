@@ -1,3 +1,4 @@
+import {AdmissionGate} from './admission.mjs'
 import {open,readFile,rename,mkdir,unlink} from 'node:fs/promises'
 import {dirname,isAbsolute,resolve} from 'node:path'
 import {randomUUID} from 'node:crypto'
@@ -26,7 +27,7 @@ export class RoleStore {
 }
 /** Instance-scoped roles; no task execution, draft, or native cancellation authority. */
 export class RoleDirectory {
- constructor(store,applications,authority){this.store=store;this.applications=applications;this.authority=authority;this.roles=new Map();this.pending=Promise.resolve();this.closing=false}
+ constructor(store,applications,authority,gate=new AdmissionGate()){this.gate=gate;this.store=store;this.applications=applications;this.authority=authority;this.roles=new Map();this.pending=Promise.resolve();this.closing=false}
  contribute(appId,definitions){
   if(this.roles.has(appId)||!Array.isArray(definitions)||definitions.length>32)reject('invalid-role','角色声明无效或重复。')
   const ids=new Set();const rows=definitions.map(row=>{if(!/^[a-z][a-z0-9.-]{0,79}$/.test(row.id)||ids.has(row.id)||!row.title||row.agent?.kind!=='agent'||!row.creation||!isAbsolute(row.creation.cwd))reject('invalid-role','角色需要稳定标识、Agent与明确绝对工作目录。');ids.add(row.id);return structuredClone(row)})
@@ -35,7 +36,8 @@ export class RoleDirectory {
  async definition(instanceId,roleId){const snapshot=await this.applications.snapshot();const instance=snapshot.instances.find(row=>row.id===instanceId);const app=snapshot.applications.find(row=>row.id===instance?.appId);if(!instance||app?.kind!=='deep')reject('instance-unavailable','应用或实例不可用，角色记录保留。');const definition=this.roles.get(instance.appId)?.find(row=>row.id===roleId);if(!definition)reject('role-unavailable','应用未声明此角色。');return {instance,definition}}
  async list(instanceId){const snapshot=await this.applications.snapshot();const instance=snapshot.instances.find(row=>row.id===instanceId);if(!instance)reject('instance-unavailable','实例不存在。');const result=[];for(const row of this.roles.get(instance.appId)??[])result.push({...row,...await this.read(instanceId,row.id)});return structuredClone(result)}
  async read(instanceId,roleId){const {instance,definition}=await this.definition(instanceId,roleId);const binding=(await this.store.snapshot()).bindings.find(row=>row.key===keyOf(instanceId,roleId))??null;let unavailable=null;try{await this.authority.validate({...definition,agent:binding?.agent??definition.agent},instance.appId);if(binding?.phase==='ready')await this.authority.validateExisting(binding)}catch(error){unavailable={code:error.code??'capability-unavailable',reason:error.message}}return {binding,unavailable}}
- serial(operation){if(this.closing)return Promise.reject(new RoleError('unavailable','角色服务已关闭。'));const task=this.pending.catch(()=>{}).then(operation);this.pending=task.catch(()=>{});return task}
+ serial(operation){return this.gate.run(()=>this.serialWithin(operation))}
+ serialWithin(operation){if(this.closing)return Promise.reject(new RoleError('unavailable','角色服务已关闭。'));const task=this.pending.catch(()=>{}).then(operation);this.pending=task.catch(()=>{});return task}
  ensure(instanceId,roleId,agent){return this.serial(async()=>{const current=(await this.store.snapshot()).bindings.find(row=>row.key===keyOf(instanceId,roleId));if(current&&agent&&JSON.stringify([agent.source,agent.ownerAppId??null,agent.id])!==JSON.stringify([current.agent.source,current.agent.ownerAppId??null,current.agent.id]))reject('replacement-required','已有角色更换Agent必须明确替换会话。');if(current?.phase==='intent')reject('retry-required','已有待恢复的创建记录，请显式重试。');return this.finish(instanceId,roleId,agent)})}
  async expected(instanceId,roleId,sessionId,revision){await this.definition(instanceId,roleId);const row=(await this.store.snapshot()).bindings.find(row=>row.key===keyOf(instanceId,roleId));if((row?.sessionId??null)!==sessionId||(row?.revision??0)!==revision)reject('binding-changed','角色绑定已更新，请刷新后重试。');return row}
  retry(instanceId,roleId,sessionId,revision){return this.serial(async()=>{const row=await this.expected(instanceId,roleId,sessionId,revision);if(!row||row.phase!=='intent')reject('retry-unavailable','只有未完成的创建记录可以重试；缺失的历史会话请恢复原文件或明确替换。');return this.finish(instanceId,roleId)})}

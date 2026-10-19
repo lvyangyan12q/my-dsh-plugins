@@ -1,3 +1,4 @@
+import {AdmissionGate} from './admission.mjs'
 import {readFile,writeFile,mkdir,rename} from 'node:fs/promises'
 import {dirname} from 'node:path'
 import {randomUUID} from 'node:crypto'
@@ -5,9 +6,10 @@ import {ApplicationError} from './applications.mjs'
 const fail=(code,message,status=409)=>{throw new ApplicationError(code,message,status)}
 /** Profile owns only references and grants. Resource handlers and business records stay with their app. */
 export class ResourceDirectory {
-  constructor(file,applications){this.file=file;this.applications=applications;this.owners=new Map();this.pending=Promise.resolve()}
+  constructor(file,applications,gate=new AdmissionGate()){this.gate=gate;this.file=file;this.applications=applications;this.owners=new Map();this.pending=Promise.resolve()}
   async read(){try{const data=JSON.parse(await readFile(this.file,'utf8'));if(data.schema!==1||!Array.isArray(data.connections))throw Error();return data}catch(error){if(error.code==='ENOENT')return {schema:1,connections:[]};fail('storage-unavailable','共享配置无法读取；原记录保留。',503)}}
-  change(operation){const task=this.pending.then(async()=>{const data=await this.read(),value=operation(data);const temp=this.file+'.'+randomUUID()+'.tmp';try{await mkdir(dirname(this.file),{recursive:true});await writeFile(temp,JSON.stringify(data,null,2));await rename(temp,this.file)}catch{fail('storage-unavailable','共享操作未保存，请重试。',503)}return structuredClone(value)});this.pending=task.catch(()=>{});return task}
+  change(operation){return this.gate.run(()=>this.changeWithin(operation))}
+  changeWithin(operation){const task=this.pending.then(async()=>{const data=await this.read(),value=operation(data);const temp=this.file+'.'+randomUUID()+'.tmp';try{await mkdir(dirname(this.file),{recursive:true});await writeFile(temp,JSON.stringify(data,null,2));await rename(temp,this.file)}catch{fail('storage-unavailable','共享操作未保存，请重试。',503)}return structuredClone(value)});this.pending=task.catch(()=>{});return task}
   register(owner){if(!owner||typeof owner.appId!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(owner.appId)||typeof owner.resourceId!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(owner.resourceId)||typeof owner.read!=='function'||!Array.isArray(owner.actions)||owner.actions.length>32||owner.actions.some(action=>typeof action!=='string'||action==='read'||!/^[a-z][a-z0-9.-]{0,79}$/.test(action))||(owner.actions.length>0&&typeof owner.mutate!=='function'))fail('invalid-resource','资源声明无效。');const key=owner.appId+':'+owner.resourceId;if(this.owners.has(key))fail('resource-conflict','资源已注册。');const entry={...owner,actions:[...owner.actions]};this.owners.set(key,entry);return ()=>{if(this.owners.get(key)===entry)this.owners.delete(key)}}
   async context(viewId){if(typeof viewId!=='string')fail('instance-context-required','请从已登记的应用视图访问数据。',403);const context=await this.applications.resolveView(viewId);if(context.application.kind!=='deep')fail('deep-context-required','普通网页没有应用数据权限。',403);return context}
   async snapshot(){await this.pending;return structuredClone(await this.read())}
@@ -16,5 +18,27 @@ export class ResourceDirectory {
   revoke(id,revision){return this.change(data=>{const row=data.connections.find(item=>item.id===id);if(!row)fail('reference-missing','共享引用不存在。');if(row.revision!==revision)fail('revision-conflict','共享配置已更新，请刷新。');row.status='revoked';row.revision++;return row})}
   async resolve({viewId,resourceId,action='read',expectedConnectionRevision}){const {instance}=await this.context(viewId);await this.pending;const data=await this.read();const candidates=data.connections.filter(row=>row.consumerInstanceId===instance.id&&row.resourceId===resourceId),row=candidates.find(item=>item.status==='active')??candidates.at(-1);if(row){if(row.consumerAppId!==instance.appId)fail('instance-mismatch','共享实例归属不匹配。',403);if(row.status!=='active')fail('revoked','共享已撤销；后续读取与写入已阻止，已发送的AI历史保留。',403);if(!row.allowedActions.includes(action))fail('action-denied','此共享资料为只读，尚未许可此写入动作。',403);if(expectedConnectionRevision!==undefined&&expectedConnectionRevision!==row.revision)fail('stale-reference','共享权限或来源已改变，请刷新。');if(action!=='read'&&expectedConnectionRevision!==row.revision)fail('stale-reference','写入需要当前共享版本。');const ownerInstance=(await this.applications.snapshot()).instances.find(item=>item.id===row.ownerInstanceId&&item.appId===row.ownerAppId);if(!ownerInstance)fail('instance-missing','资料所属实例不存在。');const handler=this.owners.get(row.ownerAppId+':'+resourceId);if(!handler)fail('owner-unavailable','资源所属应用不可用；数据保留。',503);if(action!=='read'&&!handler.actions.includes(action))fail('action-denied','所属应用已停止提供此动作，请重新配置授权。',403);return {handler,ownerInstanceId:row.ownerInstanceId,connection:row}}
     const handler=this.owners.get(instance.appId+':'+resourceId);if(!handler)fail('owner-unavailable','资源所属应用不可用。',503);if(action!=='read'&&!handler.actions.includes(action))fail('action-denied','不支持此动作。',403);return {handler,ownerInstanceId:instance.id,connection:null}}
+  async captureTaskContexts(viewId,references){
+    if(!Array.isArray(references)||references.length>8)fail('context-invalid','最多附加8组应用资料。');
+    const rows=[];
+    for(const reference of references){
+      if(!reference||typeof reference.resourceId!=='string'||Object.keys(reference).some(key=>!['resourceId','selection'].includes(key))||JSON.stringify(reference).length>4096)fail('context-invalid','资料引用格式无效。');
+      const start=await this.resolve({viewId,resourceId:reference.resourceId,action:'read'});
+      if(typeof start.handler.taskContext!=='function'||typeof start.handler.withTaskLease!=='function')fail('context-unsupported','此应用尚未提供AI上下文协议。');
+      const value=await start.handler.read(start.ownerInstanceId),block=await start.handler.taskContext(value,reference.selection);
+      if(typeof block?.title!=='string'||typeof block?.text!=='string'||block.text.length>16000||typeof value.revision!=='string')fail('context-invalid','应用返回的AI上下文无效或过长。');
+      const current=await this.resolve({viewId,resourceId:reference.resourceId,action:'read'});if(current.handler!==start.handler||current.connection?.id!==start.connection?.id||current.connection?.revision!==start.connection?.revision)fail('stale-reference','资料来源已改变。');
+      const metadata={ownerAppId:start.handler.appId,ownerInstanceId:start.ownerInstanceId,resourceId:reference.resourceId,resourceRevision:value.revision,grantId:start.connection?.id??null,grantRevision:start.connection?.revision??null,selection:reference.selection??null};
+      rows.push({id:reference.resourceId+':'+rows.length,title:block.title,text:block.text,reference:structuredClone(reference),metadata,fingerprint:JSON.stringify([metadata,block.title,block.text])});
+    }
+    if(rows.reduce((size,row)=>size+row.text.length,0)>32000)fail('context-too-large','资料上下文过多，请减少选择。');
+    return rows;
+  }
+  withTaskLease(viewId,references,operation){return this.gate.run(async()=>{
+    const owners=new Map();for(const ref of references){const {handler}=await this.resolve({viewId,resourceId:ref.resourceId,action:'read'});if(typeof handler.withTaskLease!=='function')fail('context-unsupported','应用没有受控AI上下文接缝。');owners.set(handler.withTaskLease,handler)}
+    const ordered=[...owners.values()].sort((a,b)=>(a.appId+':'+a.resourceId).localeCompare(b.appId+':'+b.resourceId));
+    // A stable closure is the owner lease authority; aliases must reuse its function identity.
+    const take=index=>{if(index===ordered.length)return operation();const acquire=ordered[index].withTaskLease;return acquire(()=>take(index+1))};return take(0);
+  })}
   async call(input){const start=await this.resolve(input);const authorize=async()=>{const current=await this.resolve(input);if(current.handler!==start.handler||current.connection?.id!==start.connection?.id||current.connection?.revision!==start.connection?.revision)fail('stale-reference','资料引用已改变，请刷新。')};const value=input.action==='read'?await start.handler.read(start.ownerInstanceId,input.payload):await start.handler.mutate(start.ownerInstanceId,input.action,input.payload,input.expectedRevision,authorize);if(input.action==='read')await authorize();else {try{await authorize()}catch(error){return {value:null,connection:null,committed:true,accessError:error.code,notice:'写入已提交；资料权限随后改变，已停止返回资料。请刷新确认所属实例记录。'}}}return {value,connection:start.connection,committed:input.action!=='read'}}
 }

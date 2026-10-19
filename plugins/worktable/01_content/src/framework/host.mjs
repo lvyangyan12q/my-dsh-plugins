@@ -1,3 +1,4 @@
+import {AdmissionGate} from './admission.mjs'
 import {mountResources} from './resource-host.mjs'
 import {join,isAbsolute} from 'node:path'
 import {ApplicationDirectory,ApplicationError} from './applications.mjs'
@@ -27,14 +28,16 @@ export function protectWorktableRoutes(ctx,server) {
 
 /** New API owns its authentication; webServer.register itself is not an auth fence. */
 export function mountApplications(ctx) {
+  const gate=new AdmissionGate()
   mountResources(ctx)
   let service=null,connection=null
   // Parent Worktable remains mounted while the optional platform dependency fiber waits.
   ctx.inject(['profileContext','connection'],platformCtx=>{
     const profile=platformCtx.profileContext
     if(!profile?.dir||!isAbsolute(profile.dir))return
-    const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'))
+    const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'),{gate})
     service=owned;connection=platformCtx.connection
+    platformCtx.provide('worktableAdmission',gate)
     platformCtx.provide('worktableApplications',owned)
     platformCtx.effect(()=>()=>{if(service===owned){service=null;connection=null}},'worktable: release application service')
   })

@@ -77,7 +77,14 @@ export async function installReading(ctx: Context) {
       respond(403, { code: 'instance-context-required', error: '任意实例ID数据入口已关闭，请从工作台已登记视图访问资料。' }); return
     } catch (error) { respond(409, { error: error instanceof Error ? error.message : 'Reading request failed' }) }
   }
-  return { resource: { appId: 'reading-statistics', resourceId: 'reading-records', actions: ['initialize', 'create', 'update', 'delete'], read, mutate: (instanceId: string, action: string, payload: unknown, revision: string, authorize: () => Promise<void>) => {
+  const withTaskLease = <T,>(operation: () => Promise<T>) => { const task = tail.catch(() => {}).then(async () => { if (closing) throw new Error('Reading data unavailable'); return operation() }); tail = task.then(() => {}, () => {}); return task }
+  return { resource: { withTaskLease, taskContext: (value: ReadingInstance, selection: unknown) => {
+    const chosen = z.object({ ids: z.array(identity).max(50), filter: z.object({ category: z.string().max(400), status: z.string().max(400), search: z.string().max(400) }).strict() }).strict().parse(selection);
+    const matching = value.records.filter(record => (!chosen.filter.category || record.category === chosen.filter.category) && (!chosen.filter.status || record.status === chosen.filter.status) && (!chosen.filter.search || (record.title + ' ' + record.author).toLocaleLowerCase().includes(chosen.filter.search.toLocaleLowerCase())));
+    if (chosen.ids.some(id => !matching.some(record => record.id === id))) throw new Error('所选阅读记录已变化，请重新选择。');
+    const records = chosen.ids.length ? matching.filter(record => chosen.ids.includes(record.id)) : matching.slice(0, 20);
+    return { title: '阅读记录与筛选', text: JSON.stringify({ filter: chosen.filter, selectedIds: chosen.ids, records, truncated: !chosen.ids.length && matching.length > 20 }, null, 2) };
+  }, appId: 'reading-statistics', resourceId: 'reading-records', actions: ['initialize', 'create', 'update', 'delete'], read, mutate: (instanceId: string, action: string, payload: unknown, revision: string, authorize: () => Promise<void>) => {
     const parsed = z.object({ seed: z.enum(['examples','empty']).optional(), record: recordSchema.omit({id:true}).optional(), recordId: identity.optional(), confirmed: z.boolean().optional() }).strict().parse(payload ?? {});
     if (typeof revision !== 'string' || !/^[0-9]+:[a-f0-9]{64}$/.test(revision)) throw new Error('写入需要当前资料版本，请刷新。');
     if (action === 'initialize') return initialize(instanceId, parsed.seed, revision, authorize);

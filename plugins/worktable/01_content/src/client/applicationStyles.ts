@@ -1,4 +1,9 @@
 export const applicationCss=`
+.dsh-wt_taskPanel,.dsh-wt_rolePanel{flex:none;box-sizing:border-box;max-height:48%;overflow:auto;padding:8px 12px;border-bottom:1px solid var(--dsw-alias-border-l1,#ccc)}
+.dsh-wt_taskPanel>summary,.dsh-wt_rolePanel>summary{cursor:pointer;font-weight:600;padding:4px 0}
+.dsh-wt_taskPanel .dsh-wt_appCard{margin:10px 0}
+.dsh-wt_taskPanel textarea{min-height:72px;resize:vertical}
+
 .dsh-wt_appPanel{box-sizing:border-box;display:flex;flex-direction:column;gap:12px;padding:18px;min-width:0;overflow:auto;color:var(--dsw-alias-label-primary,#222);background:var(--dsw-alias-bg-layer-1,#fff);font-size:13px}
 .dsh-wt_appPanel button,.dsh-wt_application button{font:inherit;border:1px solid var(--dsw-alias-border-l2,#565c68);border-radius:6px;padding:6px 10px;background:var(--dsw-alias-bg-layer-3,#f2f2f2);color:var(--dsw-alias-label-primary,#222);cursor:pointer}
 .dsh-wt_appPanel button:disabled,.dsh-wt_application button:disabled{opacity:.5;cursor:default}

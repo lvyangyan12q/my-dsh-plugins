@@ -1,3 +1,4 @@
+import {readRequestText} from './request-body.mjs'
 import {join} from 'node:path'
 import {RoleDirectory,RoleStore,RoleError} from './roles.mjs'
 import {CapabilityDirectory} from './capabilities.mjs'
@@ -5,11 +6,11 @@ import {createRoleAuthority} from './role-native.mjs'
 /** Independent optional fiber; no coupling to legacy workbench or its execution tools. */
 export function mountRoles(ctx){
  let owner=null,closing=false
- ctx.inject(['profileContext','connection','worktableApplications','sessionController','sessionPersistence','workspaceRegistry','agentPresets','skills'],child=>{
+ ctx.inject(['worktableAdmission','profileContext','connection','worktableApplications','sessionController','sessionPersistence','workspaceRegistry','agentPresets','skills'],child=>{
   child.effect(async function*(){
    const store=await RoleStore.open(join(child.profileContext.dir,'worktable-platform','roles.v1.json'))
-   const capabilities=new CapabilityDirectory(store,child)
-   const roles=new RoleDirectory(store,child.worktableApplications,createRoleAuthority(child,capabilities))
+   const capabilities=new CapabilityDirectory(store,child,child.worktableAdmission)
+   const roles=new RoleDirectory(store,child.worktableApplications,createRoleAuthority(child,capabilities),child.worktableAdmission)
    const requests=new Set()
    try{
     await capabilities.restore()
@@ -27,7 +28,7 @@ export function mountRoles(ctx){
   const task=(async()=>{try{
    if(req.method!=='POST')return send(405,{error:'此入口需要POST。'})
    if(!String(req.headers['content-type']??'').startsWith('application/json'))return send(415,{error:'需要JSON请求。'})
-   let text='';for await(const chunk of req){text+=chunk;if(Buffer.byteLength(text)>131072)throw new RoleError('request-too-large','请求过大。')}
+   const text=await readRequestText(req,131072,()=>new RoleError('request-too-large','请求过大。'))
    let body;try{body=JSON.parse(text)}catch{throw new RoleError('invalid-request','JSON格式无效。')}
    const {roles,capabilities}=runtime;let value
    switch(body.action){

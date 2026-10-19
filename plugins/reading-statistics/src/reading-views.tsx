@@ -1,10 +1,10 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { ReadingRecord } from './reading-api.ts'
 import { requestReading, subscribeReading, notifyReading, type DataConnection } from './reading-data-client.ts'
 import { ReadingSharing } from './reading-sharing.tsx'
 import { ReadingRecordEditor } from './reading-record-editor.tsx'
 
-type Props = { application: { id: string }; instance: { id: string }; view: { id: string } }
+type Props = { application: { id: string }; instance: { id: string }; view: { id: string }; tasks?: { prepare(input: {roleId: string; text: string; contexts?: unknown[]}): Promise<unknown> } }
 type Preferences = { category: string; status: string; search: string; selected: string }
 type Snapshot = Preferences & { records: ReadingRecord[]; phase: 'loading' | 'ready' | 'error'; error: string; preferenceWarning: string; revision?: string; connection?: DataConnection | null }
 const emptyPreferences = (): Preferences => ({ category: '', status: '', search: '', selected: '' })
@@ -58,7 +58,8 @@ class InstanceState {
 }
 export function createReadingViews() {
   const states = new Map<string, InstanceState>()
-  function ReadingView({ application, instance, view, kind }: Props & { kind: 'page' | 'stats' | 'list' }) {
+  function ReadingView({ application, instance, view, kind, tasks }: Props & { kind: 'page' | 'stats' | 'list' }) {
+    const [taskError, setTaskError] = useState(''), [preparing, setPreparing] = useState(false)
     let state = states.get(instance.id)
     if (!state) { state = new InstanceState(instance.id, view.id, () => states.delete(instance.id)); states.set(instance.id, state) }
     const snapshot = useSyncExternalStore(state.subscribe, state.getSnapshot, state.getSnapshot)
@@ -72,6 +73,8 @@ export function createReadingViews() {
     return <section data-reading-view={view.id} data-reading-instance={instance.id} aria-busy={snapshot.phase === 'loading'} style={{ display: 'grid', gap: 12, padding: 12, minWidth: 0 }}>
       {kind === 'page' && <ReadingSharing instanceId={instance.id} viewId={view.id}/>}
       <button onClick={() => notifyReading()}>刷新资料与权限</button>
+      {tasks && <button disabled={preparing || snapshot.phase !== 'ready'} onClick={async () => { const owner = actionOwner.current; setPreparing(true); setTaskError(''); try { await tasks.prepare({ roleId: 'assistant', text: selected ? '请分析所选阅读记录，给出下一步阅读建议。' : '请分析当前筛选的阅读记录，给出下一步阅读建议。', contexts: [{ resourceId: 'reading-records', selection: { ids: selected ? [selected.id] : [], filter: { category: snapshot.category, status: snapshot.status, search: snapshot.search } } }] }) } catch (error) { if (owner.active) setTaskError(error instanceof Error ? error.message : String(error)) } finally { if (owner.active) setPreparing(false) } }}>准备阅读AI任务</button>}
+      {taskError && <p role="alert">{taskError}</p>}
       {snapshot.connection && <p role="status">资料来源：{snapshot.connection.ownerInstanceId} · {snapshot.connection.allowedActions.includes('update') ? '已授权编辑' : '只读共享'}</p>}
       {snapshot.preferenceWarning && <p role="status">{snapshot.preferenceWarning}</p>}
       {snapshot.phase === 'loading' && <p role="status">正在加载阅读记录…</p>}

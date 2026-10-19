@@ -1,3 +1,4 @@
+import {AdmissionGate} from './admission.mjs'
 import { readFile, writeFile, rename, mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -11,12 +12,13 @@ function nextUse(data){return data.instances.reduce((time,item)=>Math.max(time,i
 
 /** Profile-owned directory. Public methods return detached records; no DOM or session globals. */
 export class ApplicationDirectory {
-  constructor(file,options={}) { this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map() }
+  constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map() }
   async read() {
     try { const data=JSON.parse(await readFile(this.file,'utf8')); if(data.schema!==1) throw new Error('unsupported schema'); return data }
     catch(error) { if(error.code==='ENOENT') return {schema:1,applications:[],instances:[],views:[]}; throw new ApplicationError('storage-unavailable','应用状态无法读取；原数据保留。',503) }
   }
-  async change(operation,committed=()=>{}) {
+  change(operation,committed=()=>{}) {return this.gate.run(()=>this.changeWithin(operation,committed))}
+  async changeWithin(operation,committed=()=>{}) {
     const result=this.pending.then(async()=>{
       const data=await this.read(); const value=operation(data)
       const temporary=this.file+'.'+randomUUID()+'.tmp'

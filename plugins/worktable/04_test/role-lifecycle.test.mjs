@@ -17,7 +17,7 @@ test('Host activation never waits for its own native diagnostics; a broken Agent
  const native={agentPresets:{register:async row=>{if(row.id===bad.presetId&&failBad)throw new Error('Agent module unavailable');presets.set(row.id,row);return async()=>presets.delete(row.id)},compositionInventory:async()=>{inventoryCalls++;await settled;return [...presets.values()].map(row=>({id:row.id,rows:row.plugins.map(p=>({moduleName:p.name,enabled:true,fiberState:hostSettled?2:0}))}))},resolve:async id=>{resolveCalls++;await settled;if(!presets.has(id))throw new Error('missing Agent');return {id}},acquireScope:async()=>{scopeCalls++;await settled;return {key:{},[Symbol.asyncDispose]:async()=>{}}}},skills:{register:row=>{skills.set(row.name,row);return()=>skills.delete(row.name)},snapshot:async()=>({complete:true,skills:[...skills.values()]}),get:async id=>skills.get(id)}}
  const ctx={...native,profileContext:{dir},connection:{admit:()=>({peer:{}})},worktableApplications:{snapshot:async()=>({applications:[],instances:[]})},sessionController:{},sessionPersistence:{},workspaceRegistry:{list:()=>[]},provide:(name,value)=>services.set(name,value),effect:(factory,label)=>effects.push({factory,label}),inject:(keys,callback)=>callback(ctx),webServer:{register:route=>{routes.push(route);return()=>{}}}}
  let iterator,activation,result,startupTimeout
- async function call(body){const req=Readable.from([Buffer.from(JSON.stringify(body))]);req.method='POST';req.headers={'content-type':'application/json'};const res={writeHead(status){this.status=status},end(text){this.body=JSON.parse(text)}};await routes[0].handler(req,res);return res}
+ async function call(body,split=false){const bytes=Buffer.from(JSON.stringify(body));const req=Readable.from(split?Array.from(bytes).map(byte=>Buffer.from([byte])):[bytes]);req.method='POST';req.headers={'content-type':'application/json'};const res={writeHead(status){this.status=status},end(text){this.body=JSON.parse(text)}};await routes[0].handler(req,res);return res}
  try{
  mountRoles(ctx);iterator=effects.find(effect=>effect.label==='worktable role and capability owner').factory()
  activation=iterator.next().then(value=>({value}),error=>({error}))
@@ -32,6 +32,7 @@ test('Host activation never waits for its own native diagnostics; a broken Agent
  assert.equal(restoredBad.content,bad.content);assert.equal(restoredBad.revision,1);assert.equal(restoredBad.enabled,true)
  await assert.rejects(()=>services.get('worktableCapabilities').validate({kind:'agent',source:'managed',id:'bad'},'app'),/Agent module unavailable/)
  settleHost();failBad=false
+ const chineseContent='你好，保留完整中文技能。';const unicode=await call({action:'capability-save',capability:{kind:'skill',id:'utf8-skill',title:'中文技能',content:chineseContent,enabled:true,userInvocable:true,modelInvocable:true},revision:0},true);assert.equal(unicode.status,200);assert.equal(unicode.body.content,chineseContent)
  const originalResolve=native.agentPresets.resolve
  native.agentPresets.resolve=async id=>id===good.presetId?{id,broken:'Native Agent activation failed'}:originalResolve(id)
  await assert.rejects(()=>services.get('worktableCapabilities').validate({kind:'agent',source:'managed',id:'good'},'app'),/Native Agent activation failed/)
