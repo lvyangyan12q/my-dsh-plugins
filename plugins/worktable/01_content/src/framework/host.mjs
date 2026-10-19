@@ -1,3 +1,4 @@
+import {mountResources} from './resource-host.mjs'
 import {join,isAbsolute} from 'node:path'
 import {ApplicationDirectory,ApplicationError} from './applications.mjs'
 import {websiteEntry} from './web-policy.mjs'
@@ -26,6 +27,7 @@ export function protectWorktableRoutes(ctx,server) {
 
 /** New API owns its authentication; webServer.register itself is not an auth fence. */
 export function mountApplications(ctx) {
+  mountResources(ctx)
   let service=null,connection=null
   // Parent Worktable remains mounted while the optional platform dependency fiber waits.
   ctx.inject(['profileContext','connection'],platformCtx=>{
