@@ -39,3 +39,16 @@ test('legacy Agent editing preserves instructions and requires an explicit visib
  assert.equal(sent.capability.baseComposition,'workspace-basic-v1');assert.equal(sent.capability.content,old.content);assert.equal(sent.revision,1)
  }finally{if(root)await act(async()=>root.unmount());globalThis.fetch=saved}
 })
+test('a failed restored Agent remains editable and displays its registration reason in management',async()=>{
+ const previous=globalThis.fetch;let root
+ const bad={kind:'agent',id:'bad',title:'Broken Agent',content:'Keep original.',revision:1,skillIds:[],enabled:true,userInvocable:true,modelInvocable:true,baseComposition:'workspace-basic-v1',unavailable:{reason:'Agent module unavailable'}}
+ globalThis.fetch=async()=>({ok:true,json:async()=>[bad]})
+ try{
+ await act(async()=>{root=create(React.createElement(module.exports.CapabilityManager));await flush()})
+ await act(async()=>{root.root.findByType('details').props.onToggle({currentTarget:{open:true}});await flush()})
+ assert.ok(JSON.stringify(root.toJSON()).includes('Agent module unavailable'))
+ await act(async()=>{root.root.findAllByType('button').find(button=>button.children.join('').includes('Broken Agent')).props.onClick();await flush()})
+ assert.equal(root.root.findByType('textarea').props.value,bad.content)
+ assert.equal(root.root.findAllByType('button').find(button=>button.children.join('')==='保存修改').props.disabled,false)
+ }finally{if(root)await act(async()=>root.unmount());globalThis.fetch=previous}
+})

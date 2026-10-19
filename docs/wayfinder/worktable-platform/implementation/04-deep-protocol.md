@@ -56,3 +56,11 @@ Host服务 `list(instanceId)`、`read(instanceId,roleId)`只读；`ensure(instan
 `worktableCapabilities.validate(ref,appId,cwd,invocation='user')` 按实际调用方式检查管理记录与native Skill：用户直接准备/查询检查userInvocable，角色中供Agent自动加载的Skills检查modelInvocable，仍核对scope、provider与完整目录。user-only Skill不会冒充模型可调用；model-only Skill可在角色中复用而不会被错误的user门禁拒绝。06不执行这些Skills，实际任务发送仍属07。
 
 可选官方源码契约测试用环境变量 `WORKTABLE_NATIVE_RC2_ROOT` 指定官方未修改0.2.0-rc.2源目录；直接导入其公开entryListProblem/definitionComposition，核对真实声明形状与插件层。未设置时该项明确skip；真实挂载状态由运行时inventory门禁与主Host安装验收证明，源码检查不替代模型执行。
+
+### 06恢复阶段诊断（2026-10-19，真实Host验收仍待补）
+
+Host启动恢复仅逐项register；不调用resolve、compositionInventory、acquireScope或其他可能等待同一Loader激活完成的诊断。注册异常按管理记录身份暂存为unavailable，保留原enabled/content/revision并继续提供角色与管理服务。管理目录本身只读保存记录和已有诊断，不主动触发native诊断。注册返回原生broken而未抛错时，后续显式角色read/validate会获取公开原生原因；该管理Agent诊断随后可在管理列表查看。
+
+显式save和角色使用在Host稳定后继续校验真实ACTIVE组合；成功保存或停用清除该项诊断。保存失败且回滚注册也失败时，返回原保存错误并保留旧记录及回滚诊断，用户仍可编辑/停用。只释放自己获得的native注册disposer，不移除冲突的其他owner。管理Agent的全局激活诊断不污染同名应用私有能力；Skill的cwd/provider/scope请求失败不缓存成跨实例全局拒绝。
+
+辅助lifecycle测试直接调用真实mountRoles入口及HTTP路由，用native诊断等待Host-settle门闩复现启动自等，及坏Agent注册/rollback故障验证可修复管理路径；它不是实际官方SDK激活或模型端到端证据。原生Host由主验收统一安装核实。

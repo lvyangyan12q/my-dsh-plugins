@@ -57,3 +57,15 @@ test('legacy management records retain their old composition and require an expl
  assert.equal(presets.get(old.presetId).plugins.length,5)
  }finally{await capabilities?.dispose();await store?.close();await rm(dir,{recursive:true,force:true})}
 })
+test('a cwd-specific Skill provider mismatch never poisons the same managed Skill in another instance context',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'worktable-skill-context-'));let store,capabilities;const skills=new Map()
+ const native={skills:{snapshot:async()=>({complete:true,skills:[...skills.values()]}),register:row=>{skills.set(row.name,row);return()=>skills.delete(row.name)},get:async(id,options)=>options.cwd==='bad-context'?{...skills.get(id),provider:'other-provider'}:skills.get(id)}}
+ try{
+ store=await RoleStore.open(join(dir,'roles.json'));capabilities=new CapabilityDirectory(store,native)
+ await capabilities.save({kind:'skill',id:'summary',title:'Summary',content:'Summarize.',enabled:true,userInvocable:true,modelInvocable:true},0)
+ const ref={kind:'skill',source:'managed',id:'summary'}
+ await assert.rejects(()=>capabilities.validate(ref,'app','bad-context','user'),/来源不同/)
+ await capabilities.validate(ref,'app','healthy-context','user')
+ assert.equal((await capabilities.list())[0].unavailable,undefined)
+ }finally{await capabilities?.dispose();await store?.close();await rm(dir,{recursive:true,force:true})}
+})

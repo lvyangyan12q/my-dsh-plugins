@@ -23,7 +23,7 @@ export function RolePanel({instanceId}:{instanceId:string}){
   {state?.roles.length===0&&<p>此应用没有声明角色。</p>}
   {state?.roles.map((row:any)=>{const current=row.binding?.agent??row.agent;const agents=state.capabilities.filter((c:any)=>c.kind==='agent');const value=selected[row.id]??refKey(current);return <div className="dsh-wt_appCard" key={row.id}>
    <strong>{row.title}</strong><small>{row.binding?`${row.binding.phase==='ready'?'已关联':'待重试'} · ${row.binding.sessionId}`:'尚未创建会话'}</small>
-   <label>Agent<select value={value} disabled={busy} onChange={e=>setSelected(s=>({...s,[row.id]:e.target.value}))}>{!agents.some((r:any)=>refKey(r)===value)&&<option value={value}>当前Agent不可用</option>}{agents.map((agent:any)=><option value={refKey(agent)} key={refKey(agent)} disabled={!agent.enabled||!agent.userInvocable}>{agent.title} · {agent.source==='managed'?'公共':'应用私有'}{!agent.enabled?'（已停用）':''}</option>)}</select></label>
+   <label>Agent<select value={value} disabled={busy} onChange={e=>setSelected(s=>({...s,[row.id]:e.target.value}))}>{!agents.some((r:any)=>refKey(r)===value)&&<option value={value}>当前Agent不可用</option>}{agents.map((agent:any)=><option value={refKey(agent)} key={refKey(agent)} disabled={!agent.enabled||!agent.userInvocable||!!agent.unavailable}>{agent.title} · {agent.source==='managed'?'公共':'应用私有'}{!agent.enabled?'（已停用）':''}</option>)}</select></label>
    {row.unavailable&&<p role="status">{row.unavailable.reason}</p>}
    <div className="dsh-wt_appLine">
     {!row.binding&&<button disabled={busy} onClick={()=>action(row,'ensure')}>创建角色会话</button>}
@@ -45,7 +45,7 @@ export function CapabilityManager(){
  async function save(){setBusy(true);setError('');try{await roleRequest({action:'capability-save',capability:form,revision:form.revision});if(alive.current){setForm(blank);await load()}}catch(e:any){if(alive.current)setError(e.message)}finally{if(alive.current)setBusy(false)}}
  return <details onToggle={e=>{if(e.currentTarget.open)void load()}}><summary>Agent / Skills 管理</summary><p className="dsh-wt_appHint">此处建立的能力可供应用复用。应用私有能力由所属应用维护。</p>
   {rows.length===0&&<p>还没有通过管理入口建立公共能力。</p>}
-  {rows.map(row=><button key={row.kind+row.id} onClick={()=>setForm(row)}>{row.kind==='agent'?'Agent':'Skill'} · {row.title}{!row.enabled?'（已停用）':''}</button>)}
+  {rows.map(row=><div key={row.kind+row.id}><button onClick={()=>setForm(row)}>{row.kind==='agent'?'Agent':'Skill'} · {row.title}{!row.enabled?'（已停用）':''}</button>{row.unavailable&&<p role="status">{row.unavailable.reason}</p>}</div>)}
   <form className="dsh-wt_appForm" onSubmit={e=>{e.preventDefault();void save()}}>
    <label>类型<select value={form.kind} disabled={form.revision>0} onChange={e=>setForm({...blank,kind:e.target.value})}><option value="agent">Agent</option><option value="skill">Skill</option></select></label>
    <label>标识<input required pattern="[a-z][a-z0-9.-]{0,79}" value={form.id} disabled={form.revision>0} onChange={e=>setForm({...form,id:e.target.value})}/></label>

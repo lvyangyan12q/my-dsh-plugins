@@ -39,3 +39,7 @@ role_capabilities工作树从集成ed6ca9dda80523ea735c3e1b9260e86cfbc1005d干�
 ### 独立复审修正，未提前验收
 
 ready gate、Skill实际调用许可、显式最小原生基础能力与旧Agent不增权兼容已分别出现公开行为断言RED并修复GREEN。管理UI追加显式基础能力选择，保留旧reading-helper指令/ID/关联；旧记录须用户保存后才可作为角色Agent使用。新增官方rc.2源码契约测试（非mock register），运行时公开compositionInventory检查真实激活模块。最终新包证据随后以06-prepared.json为准；已安装旧候选不会据此关闭工单。真实文件执行/提问/审批仍待07主Host验收。
+
+### restore P1修正（续工，不关单）
+
+公开mountRoles lifecycle + HTTP测试真实复现诊断等待Host-settle造成owner无法provide的RED；register-only逐项恢复后GREEN。坏Agent仍可列出原数据、明确显示原因并显式修复/停用；保存及rollback双失败、同名私有能力隔离、原生register返回broken后显式validate诊断均已覆盖。管理UI原因显示、Skill上下文失败不全局污染分别RED→GREEN。启动恢复不诊断、不改旧管理记录、不自动增权。新增测试纳入唯一pack门禁；真实Host/模型验收仍交由root。
