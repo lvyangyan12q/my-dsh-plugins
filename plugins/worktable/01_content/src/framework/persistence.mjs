@@ -33,7 +33,7 @@ export class FileOwner{
 }
 /** One canonical file owner; failed/future input never becomes an empty replacement. */
 export class ProfileFileStore{
- constructor(file,initial,validate){Object.assign(this,{file,initial,validate});this.owner=null;this.readyPromise=null;this.closed=false;this.closePromise=null;this.versions=new WeakMap()}
+ constructor(file,initial,validate,schemas=[1]){Object.assign(this,{file,initial,validate,schemas});this.owner=null;this.readyPromise=null;this.closed=false;this.closePromise=null;this.versions=new WeakMap()}
  async ready(){if(this.closed)throw failure('unavailable','状态所有者已关闭，请重新打开应用。');if(!this.readyPromise){const pending=this.initialize();this.readyPromise=pending;pending.catch(()=>{if(this.readyPromise===pending)this.readyPromise=null})}return this.readyPromise}
  async initialize(){let owner;try{
   owner=await FileOwner.acquire(this.file);this.owner=owner;this.file=owner.file;
@@ -44,7 +44,7 @@ export class ProfileFileStore{
  async publishMarker(marker){const temporary=marker+'.'+randomUUID()+'.tmp';let handle;try{handle=await open(temporary,'wx');await handle.writeFile(JSON.stringify({schema:1}));await handle.sync();await handle.close();handle=null;await this.owner.assert();await rename(temporary,marker);if(process.platform!=='win32'){const directory=await open(dirname(marker),'r');try{await directory.sync()}finally{await directory.close()}}}finally{await handle?.close().catch(()=>{});await unlink(temporary).catch(()=>{})}}
  async load(){let bytes;try{bytes=await readFile(this.file)}catch(error){if(error.code==='ENOENT')throw failure('state-absent','状态文件缺失。');throw failure('storage-unavailable','状态无法读取，原记录保留。')}
   let data;try{data=JSON.parse(bytes.toString('utf8'))}catch{throw failure('storage-invalid','状态内容损坏，原文件保留；请恢复有效副本后重试。')}
-  if(data?.schema!==1)throw failure('schema-incompatible','状态版本不受支持，已停止相关写入并保留原文件。');
+  if(!this.schemas.includes(data?.schema))throw failure('schema-incompatible','状态版本不受支持，已停止相关写入并保留原文件。');
   try{this.validate(data)}catch{throw failure('storage-invalid','状态字段或关联无效，原文件保留；请恢复有效副本后重试。')}
   this.versions.set(data,hash(bytes));return data;
  }

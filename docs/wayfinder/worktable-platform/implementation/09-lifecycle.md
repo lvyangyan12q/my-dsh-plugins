@@ -25,3 +25,7 @@ blocked_by: [worktable-framework-08]
 ## Scope and evidence
 
 依据[框架与应用接入规格](../framework-spec.md)及其中首阶段限定；真实安装用户流程为主接缝，契约测试只作辅助。记录版本、操作、结果与限制；无证据不勾选、不以提交或构建成功关单。保留用户数据、源码改动、原生DSH和历史工单状态。
+
+## Implementation checkpoint（待真实安装验收）
+
+候选产品 0.5.0 已实现 [09 生命周期契约](../09-lifecycle-protocol.md)：持久开关、原生历史交接及可逆 schema1/2 回退门禁。源码/最终包辅助检查不替代官方插件管理真实停用、卸载、升级、失败和回退；当前保持 in-progress，不勾选验收项。Reading 包无改动，沿用08精确归档。

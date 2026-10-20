@@ -1,3 +1,4 @@
+import {TaskHandoff} from './taskHandoff'
 import {CapabilityManager} from './rolePanel'
 import {useEffect,useRef,useState} from 'react'
 import {DeepApplicationView} from './applicationViews'
@@ -37,15 +38,18 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
       const instances=snapshot.instances.filter((i:any)=>i.appId===application.id&&i.projectId===props.projectId).sort((a:any,b:any)=>b.lastOpenedAt-a.lastOpenedAt)
       const latest=instances[0]
       return <div className="dsh-wt_appCard" key={application.id}>
-        <strong>{application.title}</strong><small>{application.kind==='deep'?'应用':'网页'} · {application.id}</small>
+        <strong>{application.title}</strong><small>{application.kind==='deep'?'应用':'网页'} · {application.id}{application.enabled===false?' · 已停用':''}</small>
         <div className="dsh-wt_appLine">
-          <button type="button" className="dsh-wt_appPrimary" disabled={busy} onClick={()=>open(application,!latest)}>{latest?'继续最近实例':'新建实例'}</button>
-          {latest&&<button type="button" disabled={busy} onClick={()=>open(application,true)}>新建独立实例</button>}
+          <button type="button" className="dsh-wt_appPrimary" disabled={busy||(!latest&&application.enabled===false)} onClick={()=>open(application,!latest)}>{latest?'继续最近实例':'新建实例'}</button>
+          {latest&&<button type="button" disabled={busy||application.enabled===false} onClick={()=>open(application,true)}>新建独立实例</button>}
+          <button type="button" disabled={busy} onClick={()=>void perform(async()=>{await request({action:'lifecycle',appId:application.id,enabled:application.enabled===false,revision:application.lifecycleRevision??0});const next=await request();if(mounted.current)setSnapshot(next);window.dispatchEvent(new Event('dsh:applications-changed'))})}>{application.enabled===false?'启用应用':'停用应用'}</button>
         </div>
         {instances.length>1&&<details><summary>其他实例（{instances.length-1}）</summary><div className="dsh-wt_appForm">{instances.slice(1).map((instance:any)=><button type="button" key={instance.id} title={instance.id} disabled={busy} onClick={()=>open(application,false,instance)}>恢复实例 {instance.id.slice(0,8)}</button>)}</div></details>}
       </div>
     })}
     {snapshot?.applications.length===0&&<p>还没有接入应用。可先登记一个独立网页。</p>}
+    {snapshot?.lifecycle?.filter((row:any)=>!snapshot.applications.some((app:any)=>app.id===row.appId)).map((row:any)=><div className="dsh-wt_appCard" key={'missing:'+row.appId}><strong>{row.appId} · 应用插件未加载</strong><p>持久策略：{row.enabled?'已启用':'已停用'}。原数据和原生会话保留；启用策略不会安装插件。</p>{!row.enabled&&<button disabled={busy} onClick={()=>void perform(async()=>{await request({action:'lifecycle',appId:row.appId,enabled:true,revision:row.revision});const next=await request();if(mounted.current)setSnapshot(next);window.dispatchEvent(new Event('dsh:applications-changed'))})}>明确启用此策略</button>}</div>)}
+    <TaskHandoff/>
     <CapabilityManager/>
     <details><summary>接入网页应用</summary>
       <form className="dsh-wt_appForm" onSubmit={e=>{e.preventDefault();void perform(async()=>{
@@ -107,8 +111,9 @@ export function ApplicationPane(props:{content:ApplicationContent;projects:Proje
       </div></details>
     </div>
     {error&&<p className="dsh-wt_appError" role="alert">{error}<button type="button" onClick={()=>void refresh()}>重试</button></p>}
-    {matching&&application.kind==='deep'&&<div style={{flex:1,minHeight:0,minWidth:0,overflow:'auto'}}><DeepApplicationView key={props.content.viewId} application={application} instance={instance} view={resolved.view} reloadKey={props.reloadKey}/></div>}
-    {matching&&application.kind!=='deep'&&<><p className="dsh-wt_appHint">{loaded?'网页框架已载入；跨域内容是否可用需以页面显示为准。':'正在打开网页。'} 若空白、链接失效或提示禁止嵌入，请选择“外部打开”。</p>
+    {matching&&application.enabled===false&&<div className="dsh-wt_appPanel"><p>应用已停用。新实例、新任务已阻止；已有原生会话不会自动停止。</p><TaskHandoff/></div>}
+    {matching&&application.enabled!==false&&application.kind==='deep'&&<div style={{flex:1,minHeight:0,minWidth:0,overflow:'auto'}}><DeepApplicationView key={props.content.viewId} application={application} instance={instance} view={resolved.view} reloadKey={props.reloadKey}/></div>}
+    {matching&&application.enabled!==false&&application.kind!=='deep'&&<><p className="dsh-wt_appHint">{loaded?'网页框架已载入；跨域内容是否可用需以页面显示为准。':'正在打开网页。'} 若空白、链接失效或提示禁止嵌入，请选择“外部打开”。</p>
       <iframe key={props.reloadKey} className="dsh-wt_paneFrame" title={application.title} src={application.url} sandbox={WEBSITE_SANDBOX} referrerPolicy="no-referrer" onLoad={()=>setLoaded(true)} onError={()=>setError('网页暂时无法载入，可重试或外部打开。')} />
     </>}
   </div>
