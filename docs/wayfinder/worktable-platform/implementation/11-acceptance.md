@@ -3,7 +3,7 @@ id: worktable-framework-11
 title: 首阶段完整验收与渐进迁移清单
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 assignee: acceptance
 blocked_by: [worktable-framework-09, worktable-framework-10]
 ---
@@ -14,14 +14,14 @@ blocked_by: [worktable-framework-09, worktable-framework-10]
 
 **Blocked by:** [停用、升级与回退的数据保护](09-lifecycle.md)、[第二应用独立接入并冻结首版协议](10-protocol.md)。
 
-**Status:** in-progress
+**Status:** closed
 
-- [ ] 在精确记录的官方安装组合上完成已确认F01-F08及F10-F13首阶段用户流程，不用测试夹具代替真实网页和深度应用。
-- [ ] 完成桌面/窄屏、键盘、焦点、滚动、主题及原生菜单检查；普通网页未经授权不能取得平台能力。
-- [ ] 逐项映射原123条要求和本规格49条用户故事为首阶段已验、当前未验或后续保留，不删旧需求或假关旧工单。
-- [ ] 完整搭建器、高级网页桥接、自动追改继续列后续，首阶段通过不等于完整规格完成。
-- [ ] 记录未决兼容/原生能力限制、保护校验和回退指引；按固定基线进行Standards与Spec两轴审查并修复发现。
-- [ ] 只有实际证据齐全才关闭本阶段工单；正式3080、原生运行目录切换和远程发布不作为本工单的默示动作。
+- [x] 在精确记录的官方安装组合上完成已确认F01-F08及F10-F13首阶段用户流程，不用测试夹具代替真实网页和深度应用。
+- [x] 完成桌面/窄屏、键盘、焦点、滚动、主题及原生菜单检查；普通网页未经授权不能取得平台能力。
+- [x] 逐项映射原123条要求和本规格49条用户故事为首阶段已验、当前未验或后续保留，不删旧需求或假关旧工单。
+- [x] 完整搭建器、高级网页桥接、自动追改继续列后续，首阶段通过不等于完整规格完成。
+- [x] 记录未决兼容/原生能力限制、保护校验和回退指引；按固定基线进行Standards与Spec两轴审查并修复发现。
+- [x] 只有实际证据齐全才关闭本阶段工单；正式3080、原生运行目录切换和远程发布不作为本工单的默示动作。
 
 ## Scope and evidence
 
@@ -58,3 +58,19 @@ root在真实500×844窗口发现工作台模块只剩60px宽；0.7实页菜单�
 
 
 整体Spec审查P2修正（Notes0.1.2）：mounted权限矩阵先证明read+create被误禁新建、read+update被误开新建，再改为新草稿按create、已有草稿按update，归档按archive独立检查。四组真实挂载组件＋临时隔离资源fixture验证允许控件和精确请求action，不对真实profile创建共享授权。Host授权/revision规则与Worktable0.7.2运行字节保持；root实际安装复验与最终审查回执另记。
+
+## 2026-10-20 最终首阶段验收（关闭11）
+
+root已完成隔离3091最终官方安装与实际使用验收，精确实现 `14e828d75be56463969b2eff72552ffc814c3273` 已保护合入；Worktable0.7.2/Notes0.1.2/Reading三包锁定于[E11不可变实测记录](evidence/11-installed.json)，SHA256 `5a38cc46c9e5780aadd05f3f5f09b8293bb166bdfac1ea48dc277005f6b530cf`。本节补全上方历史“待验”检查点，而不抹去发现和修复过程。
+
+最终390×844浏览器可用模块334px，模块/原生视图切换、单composer、hidden/inert恢复与选择/退出控件可见；明暗主题、Tab/ShiftTab/方向键、Enter退出、Esc关闭重开及应用/原生独立滚动实际通过。原生先focus→narrow点击Reading搜索→回1280仍为该搜索INPUT，旧native焦点不抢回；最终菜单与项目双向通过。截图保留[缺陷前](evidence/worktable-11-narrow-before.jpg)、[窄屏修复后](evidence/worktable-11-narrow-after.jpg)、[深色修复后](evidence/worktable-11-narrow-dark-after.jpg)；版本范围见E11，不将旧候选截图外推为所有最终行为。
+
+基本标注实页选目标、编辑要求、追加原生草稿稳定ID通过，未发送模型；移动/替换拒绝保草稿由公开目标与installed React回调辅助验证，未声称实页边拖边编辑。普通网页实际内容保留sandbox/no-referrer，无凭据401、null-origin403。高级桥接及完整F09仍后续。
+
+最终冷启动六平台文件逐一hash、Notes业务hash、实例/任务payload、角色Session及权限保持，12实例/15任务、原生输入10/1/0，无重放。N1完整页与summary均2 active且原selected恢复，Esc关闭重开保持；Reading4条/108分钟及旧未发送草稿不变。Notes0.1.2实际owner新增/编辑/归档合成note011776d0可恢复，保留旧两条active和选择，不冒称旧资料被零变更地删除或迁移。
+
+[两轴审查](11-review.md)使用用户基线485b38c到14e828d：Standards首轮0hard/1P3启发式accepted-without-code-change；Spec首轮1P2修复后独立4/4 mounted矩阵通过，最终两轴0actionable。作者181/18零skip与独立包字节/回调检查是辅助，真实模型与提问/审批/Stop按07/09/10版本限定证据，不虚构最终组合再次执行。
+
+[完整172条映射](11-acceptance-mapping.md)与[机器映射](11-acceptance-mapping.json)保留ID/原文/来源/hash/顺序，66首阶段已验、94当前未验、12后续。旧123分类不增加；考公/旧资料、不可逆迁移、未知升级等未验继续保留。额外Notes共享具体授权pending、未建grant或执行，05 Reading主共享证据独立保留。Windows浏览器尺寸不外推原生桌面应用或macOS。
+
+回退依[09指引](../09-lifecycle-protocol.md)，首版接口依[10 SDK](10-sdk-contract.md)。本次仅关闭首阶段11实施工单，完整framework-spec仍OPEN且未修改，旧工单不假关。六历史dirty、clean index及native/upstream经前后guard保护；未改正式3080、原生运行目录、远端，预览迁至C后的工作树清理由root另行安排，本次不清理。

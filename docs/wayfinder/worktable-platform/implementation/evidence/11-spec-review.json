@@ -1,0 +1,26 @@
+{
+  "axis": "Spec",
+  "baseline": "485b38cfd9a5d10de5a668ea4864246d4b1ebea7",
+  "head": "5ee0e08d0f501fe9eb46ee7f18adb6684569ef2e",
+  "findings": [
+    {
+      "priority": 2,
+      "title": "Gate Notes creation by its own granted action",
+      "file": "plugins/project-notes/src/notes-views.tsx",
+      "line": 27,
+      "relatedLine": 41,
+      "spec": "docs/wayfinder/worktable-platform/implementation/05-data-protocol.md:15",
+      "detail": "The shared new/edit fieldset checks only update permission. A read+create grant cannot create; read+update erroneously offers create.",
+      "action": "Gate by create for new drafts and update for existing drafts; verify action-specific fixtures without granting live permissions."
+    }
+  ],
+  "followup": {
+    "head": "14e828d75be56463969b2eff72552ffc814c3273",
+    "status": "resolved",
+    "outstandingFindings": 0,
+    "independentTest": "node --import tsx --test tests/notes-permissions.test.mjs",
+    "passed": 4,
+    "failed": 0,
+    "scope": "No added product scope; no real grant, Host/profile/browser change or live-sharing acceptance"
+  }
+}

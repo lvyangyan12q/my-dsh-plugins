@@ -1,0 +1,42 @@
+{
+  "axis": "Standards",
+  "base": "485b38cfd9a5d10de5a668ea4864246d4b1ebea7",
+  "head": "5ee0e08d0f501fe9eb46ee7f18adb6684569ef2e",
+  "hard_violations": [],
+  "final_followup": {
+    "from": "5ee0e08d0f501fe9eb46ee7f18adb6684569ef2e",
+    "head": "14e828d75be56463969b2eff72552ffc814c3273",
+    "changed_files_reviewed": 6,
+    "new_hard_violations": [],
+    "new_actionable_findings": [],
+    "worktable_runtime_delta": false,
+    "result": "Notes permission gates, mounted tests, version and documentation changes add no standards issue. STD-01 remains accepted without code change. Tests were inspected, not rerun."
+  },
+  "findings": [
+    {
+      "id": "STD-01",
+      "disposition": "accepted-without-code-change",
+      "disposition_reason": "Substantive byte-reading, cancellation and draining mechanisms are already shared by readRequestText and RequestLifetime. Remaining route policy differs intentionally; whole-route abstraction would require substantial configuration and could obscure security and lifecycle boundaries. No current remediation or repeated tests required; reconsider only for demonstrated policy drift.",
+      "priority": 3,
+      "kind": "judgement",
+      "smell": "possible Duplicated Code",
+      "file": "plugins/worktable/01_content/src/framework/task-host.mjs",
+      "line": 18,
+      "end_line": 25,
+      "related": [
+        {
+          "file": "plugins/worktable/01_content/src/framework/role-host.mjs",
+          "line": 26,
+          "end_line": 35
+        }
+      ],
+      "reason": "Authenticated JSON request boundary repeats across route modules, scattering changes to admission, parsing and shutdown behavior.",
+      "recommendation": "Consider a shared small route boundary with per-route limits and dispatch; preserve explicit availability and lifetime ownership.",
+      "validation": "Parameterized HTTP tests for authentication, unavailable owner, malformed and oversized JSON, and shutdown during an incomplete request body."
+    }
+  ],
+  "limitations": [
+    "Targeted framework standards review; no runtime writes or tests.",
+    "Native-skin CSS rule scope ambiguous; not raised as a hard violation."
+  ]
+}

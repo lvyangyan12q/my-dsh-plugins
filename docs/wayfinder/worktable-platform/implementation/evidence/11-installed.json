@@ -1,0 +1,31 @@
+{
+  "ticket": "worktable-framework-11",
+  "date": "2026-10-20",
+  "status": "actual-acceptance-complete-pending-documentation-and-cleanup",
+  "host": "http://127.0.0.1:3091/",
+  "nativeVersion": "0.2.0-rc.2",
+  "integrationSource": "14e828d75be56463969b2eff72552ffc814c3273",
+  "installed": {
+    "worktable": {"version":"0.7.2","sha256":"3b71dc04cb00675a372e687b04d25a7fd192c149f3eda0d2f2c0233f092aee42","files":9},
+    "notes": {"version":"0.1.2","sha256":"9c6e2424d4d5307d276c30ac0605266351130d7bdfcc230eef4bb7a36459c30c","files":5},
+    "readingSha256":"639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41",
+    "officialCli":true,"exactInstalledBytesCompared":true,"installScriptsDisabled":true
+  },
+  "actualUi": {
+    "nativePanelSingleClick":true,"projectReturnSingleClick":true,
+    "repeatNavigation":"Three actual round trips in0.7; both directions rechecked on final0.7.2. No native panel overwrite.",
+    "annotation":{"finalVersion":"0.7.2","sourceProject":"layout-f401fe82-0747-4da9-bea7-6c02a43c20bc","sourceInstance":"6d2a7de1-9699-4895-b805-3358dc15d2d8","sourceView":"688f773f-54fa-4743-8fa5-e81b20fec525","actualCanvasHeadingPicked":true,"editableRequirementConfirmed":true,"nativeDraftContainsStableProjectPaneTabAppInstanceViewIds":true,"modelSent":false,"ownDraftCleared":true,"movementAndReplacementBoundary":"Actual installed React callback auxiliary tests; not a claim of dragging a module while editing the live annotation."},
+    "narrow":{"actualViewport":[390,844],"visibleModuleWidth":334,"eachModuleCanBeSelected":true,"nativeFullWidthCanBeSelected":true,"singleNativeComposer":true,"hiddenModulesInert":true,"lightAndDarkReadable":true,"selectorAndExitWithinViewport":true,"screenshots":["worktable-11-narrow-after.jpg","worktable-11-narrow-dark-after.jpg"]},
+    "focus":{"sequence":"Focus native composer at1280 -> narrow390 -> focus Reading search input -> restore1280.","actualResult":"Focus remains INPUT aria-label搜索阅读记录; native visibility and inert restored.","keyboard":"Selector Tab reaches exit; ShiftTab returns selector; ArrowUp/Down switches modules and native; Tab+Enter on confirmed exit closes split; IAB Escape closes and reopening retains summary/selection.","physicalIme":"Prior user report remains version-scoped; no new physical IME claim."},
+    "independentScroll":{"applicationBefore":0,"applicationAfter":100,"nativeUnchangedAt":6722,"nativeAfterOwnScroll":5838,"applicationUnchangedAt":100,"bothOriginalPositionsRestored":true},
+    "website":{"actualContent":"Example Domain","sandbox":"allow-scripts allow-forms allow-popups","referrerPolicy":"no-referrer","realNoCredentialStatus":401,"realNullOriginStatus":403,"advancedBridge":false},
+    "reading":{"instance":"845cb81e-ffab-4ea2-adb7-793267b5aea2","records":4,"minutes":108,"recentRollbackRecord":"64082e26-3a5f-419c-a38a-f84954290fcc","nativeSession":"10fc50bb-6c77-49cf-b3a8-21b3c7c63e59","preexistingUnsentDraftPreserved":true,"draftModified":false},
+    "notesFinalOwnerCrud":{"version":"0.1.2","actualCreateEditArchive":true,"syntheticRecord":"011776d0-1bc8-4550-9d88-202c9829283a","syntheticRecordArchivedRecoverably":true,"oldTwoActiveNotesRetained":true,"oldSelectionRestored":"项目甲·框架接入","summaryAfterCold":{"activeNotes":2,"sameSelection":true},"newGrantCreated":false}
+  },
+  "finalColdRecovery":{"recordedOwnedProcessOnly":true,"notGracefulDisposalClaim":true,"instances":12,"tasks":15,"platformSixFileAndExistingPayloadComparisonsEqual":true,"notesBusinessHashEqual":true,"roleSessionIdsEqual":true,"nativeUserMessages":{"readingA":10,"notesN1":1,"notesN2":0},"nativeSandboxAndApprovalEqual":true,"noTaskOrModelReplay":true,"actualN1PageAndSummaryReopened":true},
+  "versionedEarlierEvidence":{"realModelAndPrivatePublicSkills":"10-installed.json: Worktable0.6/Notes0.1.1 actual native skill calls and model result; later Notes delta only permission display, Worktable client navigation/responsiveness.","nativeQuestionApprovalStop":"07-installed.json and09-installed.json actual native flows; do not replace these with a new fabricated final-version model run.","lifecycleAndRollback":"09-installed.json actual disable/uninstall/reinstall and schema2 refusal/schema1 reversible rollback retaining recent108-minute data; no unknown future migration claim.","primaryReadShareAndRevoke":"05-installed.json actual Reading grant/revoke; additional Notes sharing not authorized or performed."},
+  "auxiliary":{"worktableSourceTests":181,"notesSourceTests":18,"skipped":0,"notesPermissionMatrixIndependent":4,"installedFactoryCallbacksAndByteComparison":true,"theseDoNotReplaceActualUi":true},
+  "twoAxisReview":{"base":"485b38cfd9a5d10de5a668ea4864246d4b1ebea7","initialHead":"5ee0e08d0f501fe9eb46ee7f18adb6684569ef2e","finalHead":"14e828d75be56463969b2eff72552ffc814c3273","standards":{"hardViolations":0,"initialHeuristicSuggestions":1,"STD01Disposition":"Accepted without code change after independent review: readRequestText and RequestLifetime already share safety; route-specific policies justify explicit boundaries.","outstandingActionable":0},"spec":{"initialP2":1,"fix":"Notes new draft uses create, existing draft uses update; archive independent.","independentlyRetestedMountedMatrix":4,"outstanding":0}},
+  "protection":{"nativeSourceWrites":0,"upstreamWorktableWrites":0,"formal3080Writes":0,"remoteWrites":0,"sixPreexistingUserChangesPreserved":true,"priorVersionArchivesRetained":true},
+  "limits":["Complete framework specification remains OPEN; full builder, automatic generation/revision and advanced website bridge remain future scope.","Kaogong and old materials/scores migration are not claimed accepted.","Additional Notes N1-to-N2 sharing was rejected by automatic review before mutation and remains unperformed pending specific user authorization; existing primary Reading evidence is separate.","Actual browser viewport tests on Windows do not prove native desktop-app or macOS acceptance.","Old0.7 pre-freeze local candidate014f was repacked before archival; only its recorded digest and explanation remain, not its binary. Frozen0.7/0.7.1/0.7.2 releases are separately retained.","Irreversible business migrations and unknown future incompatible upgrades were not performed."]
+}
