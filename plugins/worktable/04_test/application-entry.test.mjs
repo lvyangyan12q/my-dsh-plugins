@@ -90,7 +90,7 @@ test('registration rejects duplicate identities, incompatible versions and nativ
 test('unassigned website instance attaches without changing identity and resumes after restart', async () => {
   const dir=await mkdtemp(join(tmpdir(),'worktable-entry-'))
   try {
-    const file=join(dir,'apps.json'); const apps=new ApplicationDirectory(file)
+    const file=join(dir,'apps.json'); let apps=new ApplicationDirectory(file)
     await apps.register({id:'reading-web',title:'阅读网页',version:'1.0.0',protocolVersion:1,kind:'web',url:'https://example.com/'})
     assert.equal(await apps.latest('reading-web',null),null)
     const initial=await apps.createInstance('reading-web',null)
@@ -98,7 +98,7 @@ test('unassigned website instance attaches without changing identity and resumes
     assert.equal(attached.id,initial.id)
     assert.equal(attached.projectId,'project-one')
     assert.deepEqual(await apps.attach(initial.id,'project-one',initial.revision),attached)
-    assert.equal((await new ApplicationDirectory(file).latest('reading-web','project-one')).id,initial.id)
+    await apps.close();apps=new ApplicationDirectory(file);assert.equal((await apps.latest('reading-web','project-one')).id,initial.id)
     assert.equal(await apps.latest('reading-web','project-two'),null)
     await assert.rejects(()=>apps.attach(initial.id,'project-two',attached.revision),{code:'project-conflict'})
     const independent=await apps.createInstance('reading-web','project-one')
@@ -126,7 +126,7 @@ test('trusted deep contribution restores the same instance and declared modules 
     withdraw()
     await assert.rejects(()=>apps.resolveView(page.id),{code:'application-missing'})
     assert.equal((await apps.snapshot()).instances.length,2)
-    const next=new ApplicationDirectory(file);await next.contribute(definition)
+    await apps.close();const next=new ApplicationDirectory(file);await next.contribute(definition)
     assert.equal((await next.resolveView(stats.id)).instance.id,first.id)
     assert.equal((await next.latest(definition.id,'project-two')).id,other.id)
     await assert.rejects(()=>next.contribute(definition),{code:'application-conflict'})
@@ -168,7 +168,7 @@ test('withdrawing and restarting a deep plugin cannot redirect its retained inst
     const definition={id:'reading',title:'Plugin',version:'1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'Page'}]}
     const withdraw=await apps.contribute(definition),instance=await apps.createInstance('reading',null),view=await apps.createView(instance.id)
     withdraw()
-    const next=new ApplicationDirectory(file)
+    await apps.close();const next=new ApplicationDirectory(file)
     await assert.rejects(()=>next.register({id:'reading',title:'Website',version:'1',protocolVersion:1,kind:'web',url:'https://example.com/'}),{code:'application-conflict'})
     await assert.rejects(()=>next.resolveView(view.id),{code:'application-missing'})
     await next.contribute(definition)

@@ -36,7 +36,7 @@ test('Host references use real reading owner; revoke fences queued writes and ne
     const first=owner.resource.mutate(a.id,'create',{record:{...record,title:'Before revoke'}},owner.read(a.id).revision,async()=>{started();await block});await entered
     const queued=request(bv.id,'create',{payload:{record:{...record,title:'Must not commit'}},expectedRevision:owner.read(a.id).revision,expectedConnectionRevision:writable.revision});const outcome=queued.catch(error=>error)
     await grants.revoke(writable.id,writable.revision);release();await first;assert.equal((await outcome).code,'revoked');assert.equal(owner.read(a.id).records.length,2);await assert.rejects(request(bv.id,'read'),{code:'revoked'})
-    const reloaded=new ResourceDirectory(join(folder,'grants.json'),apps);reloaded.register(owner.resource);await assert.rejects(reloaded.call({viewId:bv.id,resourceId:'reading-records',action:'read'}),{code:'revoked'});assert.equal(owner.read(a.id).records[0].minutes,40)
+    await grants.close();const reloaded=new ResourceDirectory(join(folder,'grants.json'),apps);reloaded.register(owner.resource);await assert.rejects(reloaded.call({viewId:bv.id,resourceId:'reading-records',action:'read'}),{code:'revoked'});assert.equal(owner.read(a.id).records[0].minutes,40)
   }finally{await owner?.dispose();await ctx.fiber.dispose();await rm(folder,{recursive:true,force:true})}
 })
 

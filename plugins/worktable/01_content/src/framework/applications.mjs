@@ -1,6 +1,6 @@
+import {applicationState} from './state-schema.mjs'
 import {AdmissionGate} from './admission.mjs'
-import { readFile, writeFile, rename, mkdir } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import {ProfileFileStore} from './persistence.mjs'
 import { randomUUID } from 'node:crypto'
 import { websiteEntry } from './web-policy.mjs'
 
@@ -12,18 +12,14 @@ function nextUse(data){return data.instances.reduce((time,item)=>Math.max(time,i
 
 /** Profile-owned directory. Public methods return detached records; no DOM or session globals. */
 export class ApplicationDirectory {
-  constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map() }
-  async read() {
-    try { const data=JSON.parse(await readFile(this.file,'utf8')); if(data.schema!==1) throw new Error('unsupported schema'); return data }
-    catch(error) { if(error.code==='ENOENT') return {schema:1,applications:[],instances:[],views:[]}; throw new ApplicationError('storage-unavailable','应用状态无法读取；原数据保留。',503) }
-  }
-  change(operation,committed=()=>{}) {return this.gate.run(()=>this.changeWithin(operation,committed))}
+  constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map(); this.closing=false; this.store=new ProfileFileStore(file,()=>({schema:1,applications:[],instances:[],views:[]}),applicationState) }
+  async read() {if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.store.read()}
+  close(){if(!this.closePromise){this.closing=true;this.closePromise=this.gate.run(async()=>{await this.pending;await this.store.close()})}return this.closePromise}
+  change(operation,committed=()=>{}) {if(this.closing)return Promise.reject(new ApplicationError('unavailable','应用状态所有者已关闭。',503));return this.gate.run(()=>{if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.changeWithin(operation,committed)})}
   async changeWithin(operation,committed=()=>{}) {
     const result=this.pending.then(async()=>{
       const data=await this.read(); const value=operation(data)
-      const temporary=this.file+'.'+randomUUID()+'.tmp'
-      try { await mkdir(dirname(this.file),{recursive:true}); await writeFile(temporary,JSON.stringify(data,null,2),'utf8'); await rename(temporary,this.file) }
-      catch { throw new ApplicationError('storage-unavailable','应用状态未保存，请重试。',503) }
+      await this.store.write(data)
       committed(value)
       return structuredClone(value)
     })

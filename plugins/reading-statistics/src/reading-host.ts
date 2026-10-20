@@ -21,7 +21,7 @@ export async function installReading(ctx: Context) {
   let revisions: Awaited<ReturnType<typeof ctx.storageDomain.open<typeof revisionDomain>>>
   try { revisions = await ctx.storageDomain.open(revisionDomain) } catch (error) { await domain.close(); throw error }
   const revisionTable = revisions.table('instances')
-  let closing = false, tail = Promise.resolve()
+  let closing = false, tail = Promise.resolve(), disposePromise: Promise<void> | undefined
   const requests = new Set<Promise<void>>()
   const read = (instanceId: string): ReadingInstance => {
     const row = structuredClone(table.get(identity.parse(instanceId)) ?? { instanceId, initialized: false, records: [] })
@@ -90,5 +90,5 @@ export async function installReading(ctx: Context) {
     if (action === 'initialize') return initialize(instanceId, parsed.seed, revision, authorize);
     if (!['create','update','delete'].includes(action)) throw new Error('不支持此阅读动作。');
     return mutate({ ...parsed, instanceId, action }, revision, authorize)
-  } }, read, initialize, handle: (req: IncomingMessage, res: ServerResponse) => { if (closing) { res.writeHead(503); res.end(); return Promise.resolve() } const task = dispatch(req, res); requests.add(task); void task.finally(() => requests.delete(task)).catch(() => {}); return task }, dispose: async () => { closing = true; await Promise.allSettled([...requests, tail]); await domain.close(); await revisions.close() } }
+  } }, read, initialize, handle: (req: IncomingMessage, res: ServerResponse) => { if (closing) { res.writeHead(503); res.end(); return Promise.resolve() } const task = dispatch(req, res); requests.add(task); void task.finally(() => requests.delete(task)).catch(() => {}); return task }, dispose: () => { if (!disposePromise) { closing = true; disposePromise = (async () => { await Promise.allSettled([...requests, tail]); const closed = await Promise.allSettled([domain.close(), revisions.close()]); const failures = closed.filter((result): result is PromiseRejectedResult => result.status === 'rejected'); if (failures.length) throw new AggregateError(failures.map(result => result.reason), 'Reading storage cleanup failed; both handles were processed') })() } return disposePromise } }
 }

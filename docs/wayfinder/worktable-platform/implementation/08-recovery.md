@@ -25,3 +25,9 @@ blocked_by: [worktable-framework-05, worktable-framework-07]
 ## Scope and evidence
 
 依据[框架与应用接入规格](../framework-spec.md)及其中首阶段限定；真实安装用户流程为主接缝，契约测试只作辅助。记录版本、操作、结果与限制；无证据不勾选、不以提交或构建成功关单。保留用户数据、源码改动、原生DSH和历史工单状态。
+
+## Implementation checkpoint（待真实安装验收）
+
+已实现 [08 持久化与恢复契约](../08-recovery-protocol.md)：平台规范路径唯一所有者、有效死 PID 恢复、代际正文取消与排空、失败/未知状态保留、覆盖层重挂恢复，以及 Reading 全量清理。公开源码与最终产物检查见后续精确证据；本工单继续 in-progress，真实 3091 重启与业务/会话核对由主验收执行后记录，当前不勾选验收项。
+
+最终候选辅助检查：Worktable `npm run pack` 165/165、零 skip，最终 7 文件安装/导入及工厂、导航、DOM8、目录3通过；Reading 官方域/实际页面/收尾 7/7，最终 6 文件独立安装逐字节比对与导入通过。Worktable 双资产 SHA256 `23fccc1a1a2082cf653264928e1ec3d2d782c794f8e948d86e271710c76fed73`；Reading 双资产 SHA256 `639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41`。完整本地辅助证据 `C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable08-final-receipt.json`；未以辅助检查替代 3091 重启验收。

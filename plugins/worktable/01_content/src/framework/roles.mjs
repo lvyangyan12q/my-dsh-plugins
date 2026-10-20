@@ -1,29 +1,19 @@
 import {AdmissionGate} from './admission.mjs'
-import {open,readFile,rename,mkdir,unlink} from 'node:fs/promises'
-import {dirname,isAbsolute,resolve} from 'node:path'
+import {ProfileFileStore} from './persistence.mjs'
+import {roleState} from './state-schema.mjs'
+import {isAbsolute} from 'node:path'
 import {randomUUID} from 'node:crypto'
 export class RoleError extends Error {constructor(code,message){super(message);this.code=code;this.status=409}}
 export const reject=(code,message)=>{throw new RoleError(code,message)}
 const keyOf=(instanceId,roleId)=>JSON.stringify([instanceId,roleId])
-/** One profile owner; durable writes settle before native commands. A second Host is rejected. */
-export class RoleStore {
- static async open(file){
-  file=resolve(file);await mkdir(dirname(file),{recursive:true})
-  const lock=file+'.lock';let handle
-  try{handle=await open(lock,'wx')}catch(error){
-   if(error.code!=='EEXIST')throw error
-   let owner;try{owner=JSON.parse(await readFile(lock,'utf8'));process.kill(owner.pid,0)}catch(failure){if(failure.code==='ESRCH'){await unlink(lock);return RoleStore.open(file)}throw new RoleError('owner-unavailable','角色状态所有者无法验证，请先关闭另一个Host。')}
-   throw new RoleError('owner-conflict','此profile的角色状态已有Host所有者。')
-  }
-  await handle.writeFile(JSON.stringify({pid:process.pid}));await handle.sync();await handle.close()
-  const store=new RoleStore(file,lock)
-  try{await store.read();return store}catch(error){await unlink(lock);throw error}
- }
- constructor(file,lock){this.file=file;this.lock=lock;this.pending=Promise.resolve();this.closed=false}
- async read(){try{const data=JSON.parse(await readFile(this.file,'utf8'));if(data.schema!==1||!Array.isArray(data.bindings)||!Array.isArray(data.capabilities))throw new Error('invalid state');return data}catch(error){if(error.code==='ENOENT')return {schema:1,bindings:[],capabilities:[]};throw new RoleError('storage-unavailable','角色状态无法读取，原记录保留。')}}
- change(operation){if(this.closed)return Promise.reject(new RoleError('unavailable','角色状态已关闭。'));const task=this.pending.then(async()=>{const data=await this.read();const result=await operation(data);const temp=this.file+'.'+randomUUID()+'.tmp';let handle;try{handle=await open(temp,'wx');await handle.writeFile(JSON.stringify(data,null,2));await handle.sync();await handle.close();handle=null;await rename(temp,this.file)}finally{await handle?.close();await unlink(temp).catch(()=>{})}return structuredClone(result)});this.pending=task.catch(()=>{});return task}
+/** Canonical profile-file owner. Native identities settle only after durable state writes. */
+export class RoleStore{
+ static async open(file){const store=new RoleStore(file);await store.owner.ready();return store}
+ constructor(file){this.owner=new ProfileFileStore(file,()=>({schema:1,bindings:[],capabilities:[]}),roleState);this.file=file;this.pending=Promise.resolve();this.closed=false}
+ read(){return this.owner.read()}
+ change(operation){if(this.closed)return Promise.reject(new RoleError('unavailable','角色或任务状态已关闭。'));const task=this.pending.then(async()=>{const data=await this.read();const result=await operation(data);await this.owner.write(data);return structuredClone(result)});this.pending=task.catch(()=>{});return task}
  async snapshot(){await this.pending;return structuredClone(await this.read())}
- async close(){this.closed=true;await this.pending;await unlink(this.lock)}
+ close(){if(!this.closePromise){this.closed=true;this.closePromise=(async()=>{await this.pending;await this.owner.close()})()}return this.closePromise}
 }
 /** Instance-scoped roles; no task execution, draft, or native cancellation authority. */
 export class RoleDirectory {
@@ -47,5 +37,5 @@ export class RoleDirectory {
  open(instanceId,roleId,sessionId,revision){return this.serial(async()=>{const row=await this.expected(instanceId,roleId,sessionId,revision);if(!row)reject('binding-missing','角色没有会话。');if(row.phase!=='ready')reject('role-not-ready','角色会话尚未就绪，请先显式重试创建。');const state=await this.read(instanceId,roleId);if(state.unavailable)reject('role-unavailable',state.unavailable.reason);return {sessionId:row.sessionId}})}
  history(instanceId,roleId,sessionId,revision,historicalId){return this.serial(async()=>{const row=await this.expected(instanceId,roleId,sessionId,revision);if(!row?.previousSessionIds.includes(historicalId))reject('history-unavailable','此会话不属于角色保留历史。');return {sessionId:historicalId}})}
  async finish(instanceId,roleId,selectedAgent){const {instance,definition}=await this.definition(instanceId,roleId);let row=(await this.store.snapshot()).bindings.find(row=>row.key===keyOf(instanceId,roleId));const capability=await this.authority.validate({...definition,agent:row?.agent??selectedAgent??definition.agent},instance.appId);if(row?.presetId&&row.presetId!==capability.presetId)reject('agent-changed','角色Agent身份已改变，请明确替换。');if(row?.phase==='ready'){await this.authority.validateExisting(row);return row}if(!row){row={key:keyOf(instanceId,roleId),appId:instance.appId,instanceId,roleId,revision:1,sessionId:randomUUID(),presetId:capability.presetId,agent:selectedAgent??definition.agent,creation:definition.creation,phase:'intent',previousSessionIds:[]};await this.store.change(data=>{data.bindings.push(row);return row})}const id=await this.authority.create(row);if(id!==row.sessionId)reject('native-identity','原生会话身份不匹配。');const ready={...row,phase:'ready',revision:row.revision+1};await this.store.change(data=>{data.bindings[data.bindings.findIndex(saved=>saved.key===row.key)]=ready;return ready});return ready}
- async dispose(){this.closing=true;await this.pending;await this.store.close()}
+ dispose(){if(!this.disposePromise){this.closing=true;this.disposePromise=this.gate.run(async()=>{await this.pending;await this.store.close()})}return this.disposePromise}
 }

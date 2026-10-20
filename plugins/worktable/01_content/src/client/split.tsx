@@ -3169,7 +3169,8 @@ function SplitWorkspace() {
   const poolRef = useRef<Map<string, PoolItem>>(new Map())
   const [, setPoolTick] = useState(0)
 
-  useEffect(() => splitStore.subscribe(() => {
+  useEffect(() => {
+    const sync = () => {
     const spec = splitStore.spec
     if (splitStore.active && spec) {
       poolRef.current.set(spec.id, {
@@ -3197,7 +3198,11 @@ function SplitWorkspace() {
       topWs: [...splitStore.topWs],
     })
     setPoolTick((t) => t + 1)
-  }), [])
+    }
+    const unsubscribe = splitStore.subscribe(sync)
+    sync() // The native slot may mount after the project was opened, or remount during recovery.
+    return unsubscribe
+  }, [])
 
   useEffect(() => {
     if (!snap.active) return

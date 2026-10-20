@@ -1,3 +1,4 @@
+import {RequestLifetime} from './request-lifetime.mjs'
 import {readRequestText} from './request-body.mjs'
 import {join} from 'node:path'
 import {TaskDirectory,TaskStore} from './tasks.mjs'
@@ -9,8 +10,8 @@ export function mountTasks(ctx){
   child.effect(async function*(){
    const store=await TaskStore.open(join(child.profileContext.dir,'worktable-platform','tasks.v1.json'));
    const tasks=new TaskDirectory(store,{gate:child.worktableAdmission,applications:child.worktableApplications,roles:child.worktableRoles,resources:child.worktableResources,native:{prompt:(request,signal)=>child.sessionController.prompt(request,signal),flush:()=>child.sessionPersistence.flush(),cancel:request=>child.sessionController.cancel(request)}});
-   const runtime={tasks,connection:child.connection,requests:new Set()};owner=runtime;child.provide('worktableTasks',tasks);
-   yield async()=>{if(owner===runtime)owner=null;await Promise.allSettled([...runtime.requests]);await store.close()}
+   const lifetime=new RequestLifetime();const runtime={tasks,connection:child.connection,requests:lifetime.requests,lifetime};owner=runtime;try{child.provide('worktableTasks',tasks)}catch(error){if(owner===runtime)owner=null;try{await lifetime.close(()=>tasks.close())}catch(cleanupError){throw new AggregateError([error,cleanupError],'任务启动失败；清理也有失败，请检查全部诊断。')}throw error}
+   yield async()=>{if(owner===runtime)owner=null;await lifetime.close(()=>tasks.close())}
   },'worktable durable task owner')
  });
  const remove=ctx.webServer.register({kind:'exact',path:'/api/worktable/tasks',handler:async(req,res)=>{
@@ -19,10 +20,10 @@ export function mountTasks(ctx){
   const admitted=runtime.connection.admit(req);if('rejection' in admitted)return send(admitted.rejection,{error:'请登录当前DSH。'});
   const request=(async()=>{try{
    if(req.method!=='POST')return send(405,{error:'POST required'});if(!String(req.headers['content-type']??'').startsWith('application/json'))return send(415,{error:'JSON required'});
-   const text=await readRequestText(req,180000,()=>new RoleError('request-too-large','任务请求过大。'));
+   const text=await readRequestText(req,180000,()=>new RoleError('request-too-large','任务请求过大。'),runtime.lifetime.controller.signal);
    let body;try{body=JSON.parse(text)}catch{throw new RoleError('invalid-request','JSON格式无效。')};
    if(!body||Array.isArray(body)||typeof body!=='object'||Object.keys(body).some(key=>!['action','viewId','id','revision','roleId','text','contexts'].includes(key)))throw new RoleError('invalid-request','不能在任务请求中指定任意实例、会话或发送通道。');
-   const {tasks}=runtime;const context=await tasks.applications.resolveView(body.viewId);if(context.application.kind!=='deep')throw new RoleError('deep-required','网页没有任务执行权限。');
+   runtime.lifetime.check();const {tasks}=runtime;const context=await tasks.applications.resolveView(body.viewId);if(context.application.kind!=='deep')throw new RoleError('deep-required','网页没有任务执行权限。');
    if(!['prepare','list'].includes(body.action)){const row=await tasks.find(body.id);if(row.instanceId!==context.instance.id)throw new RoleError('task-owner','任务不属于当前应用实例。')}
    let value;switch(body.action){
     case 'list':value=await tasks.list(body.viewId);break;

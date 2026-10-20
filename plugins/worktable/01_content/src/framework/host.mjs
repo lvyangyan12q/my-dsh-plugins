@@ -1,3 +1,5 @@
+import {RequestLifetime} from './request-lifetime.mjs'
+import {readRequestText} from './request-body.mjs'
 import {AdmissionGate} from './admission.mjs'
 import {mountResources} from './resource-host.mjs'
 import {join,isAbsolute} from 'node:path'
@@ -28,51 +30,38 @@ export function protectWorktableRoutes(ctx,server) {
 
 /** New API owns its authentication; webServer.register itself is not an auth fence. */
 export function mountApplications(ctx) {
-  const gate=new AdmissionGate()
-  mountResources(ctx)
-  let service=null,connection=null
-  // Parent Worktable remains mounted while the optional platform dependency fiber waits.
+  const gate=new AdmissionGate();mountResources(ctx);let owner=null,closing=false;
   ctx.inject(['profileContext','connection'],platformCtx=>{
-    const profile=platformCtx.profileContext
-    if(!profile?.dir||!isAbsolute(profile.dir))return
-    const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'),{gate})
-    service=owned;connection=platformCtx.connection
-    platformCtx.provide('worktableAdmission',gate)
-    platformCtx.provide('worktableApplications',owned)
-    platformCtx.effect(()=>()=>{if(service===owned){service=null;connection=null}},'worktable: release application service')
-  })
+    const profile=platformCtx.profileContext;if(!profile?.dir||!isAbsolute(profile.dir))return;
+    const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'),{gate});
+    const runtime={service:owned,connection:platformCtx.connection,lifetime:new RequestLifetime()};owner=runtime;
+    platformCtx.provide('worktableAdmission',gate);platformCtx.provide('worktableApplications',owned);
+    platformCtx.effect(()=>async()=>{if(owner===runtime)owner=null;await runtime.lifetime.close(()=>owned.close())},'worktable: release application service');
+  });
   const dispose=ctx.webServer.register({kind:'exact',path:'/api/worktable/applications',handler:async(req,res)=>{
-    const send=(status,body)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(body))}
-    try {
-      if(!connection?.admit || !service) return send(503,{code:'host-capability-missing',error:'当前宿主缺少公开认证或profile接口，应用管理不可用；原工作台仍可使用。'})
-      const admitted=connection.admit(req)
-      if('rejection' in admitted) return send(admitted.rejection,{code:'unauthorized',error:'请先登录当前DSH实例。'})
-      if(req.method==='GET') return send(200,await service.snapshot())
-      if(req.method!=='POST') return send(405,{error:'此入口仅支持GET和POST。'})
-      if(!String(req.headers['content-type']??'').startsWith('application/json')) return send(415,{error:'应用操作需要JSON请求。'})
-      req.setEncoding('utf8')
-      let text='';for await(const chunk of req){text+=chunk;if(Buffer.byteLength(text)>65536) throw new ApplicationError('request-too-large','应用请求过大。',413)}
-      let body;try{body=JSON.parse(text)}catch{throw new ApplicationError('invalid-request','应用请求格式无效。')}
-      let result
-      switch(body.action){
-        case 'register': {
-          try{websiteEntry(body.application?.url,new URL('http://'+req.headers.host).origin)}catch(error){throw new ApplicationError('unsafe-entry',error.message)}
-          result=await service.register(body.application);break
+    const send=(status,body)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(body))};const runtime=owner;
+    try{
+      if(closing||!runtime?.connection?.admit)return send(503,{code:'host-capability-missing',error:'应用服务暂不可用，原记录保留。'});
+      const admitted=runtime.connection.admit(req);if('rejection' in admitted)return send(admitted.rejection,{code:'unauthorized',error:'请先登录当前DSH实例。'});
+      const value=await runtime.lifetime.run(async()=>{
+        const service=runtime.service;
+        if(req.method==='GET')return service.snapshot();
+        if(req.method!=='POST')throw new ApplicationError('method-not-allowed','此入口仅支持GET和POST。',405);
+        if(!String(req.headers['content-type']??'').startsWith('application/json'))throw new ApplicationError('json-required','应用操作需要JSON请求。',415);
+        const text=await readRequestText(req,65536,()=>new ApplicationError('request-too-large','应用请求过大。',413),runtime.lifetime.controller.signal);
+        let body;try{body=JSON.parse(text)}catch{throw new ApplicationError('invalid-request','应用请求格式无效。')};runtime.lifetime.check();
+        switch(body.action){
+          case 'register':try{websiteEntry(body.application?.url,new URL('http://'+req.headers.host).origin)}catch(error){throw new ApplicationError('unsafe-entry',error.message)}return service.register(body.application);
+          case 'create':return service.createInstance(body.appId,body.projectId??null);
+          case 'latest':return service.latest(body.appId,body.projectId??null);
+          case 'attach':if(typeof body.projectId!=='string'||!body.projectId.trim())throw new ApplicationError('invalid-project','请选择关联项目。');return service.attach(body.instanceId,body.projectId,body.revision);
+          case 'view':return service.createView(body.instanceId,body.viewType??'page');
+          case 'resume':return service.resume(body.instanceId);
+          case 'resolve':return service.resolveView(body.viewId);
+          default:throw new ApplicationError('unknown-action','应用操作不受支持。');
         }
-        case 'create': result=await service.createInstance(body.appId,body.projectId??null);break
-        case 'latest': result=await service.latest(body.appId,body.projectId??null);break
-        case 'attach': {
-          if(typeof body.projectId!=='string'||!body.projectId.trim()) throw new ApplicationError('invalid-project','请选择关联项目。')
-          result=await service.attach(body.instanceId,body.projectId,body.revision);break
-        }
-        case 'view': result=await service.createView(body.instanceId,body.viewType??'page');break
-        case 'resume': result=await service.resume(body.instanceId);break
-        case 'resolve': result=await service.resolveView(body.viewId);break
-        default: throw new ApplicationError('unknown-action','应用操作不受支持。')
-      }
-      return send(200,result)
-    } catch(error){return send(error.status??500,{code:error.code??'application-failed',error:error.status?error.message:'应用操作失败；原记录保留，请重试。'})}
-  }})
-  ctx.effect(()=>dispose,'worktable: authenticated applications API')
-  return service
+      });send(200,value);
+    }catch(error){send(error.status??500,{code:error.code??'application-failed',error:error.status?error.message:'应用操作失败；原记录保留，请重试。'})}
+  }});
+  ctx.effect(()=>()=>{closing=true;dispose()},'worktable: authenticated applications API');return owner?.service??null;
 }

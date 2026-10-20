@@ -1,15 +1,16 @@
 import {AdmissionGate} from './admission.mjs'
-import {readFile,writeFile,mkdir,rename} from 'node:fs/promises'
-import {dirname} from 'node:path'
+import {ProfileFileStore} from './persistence.mjs'
+import {resourceState} from './state-schema.mjs'
 import {randomUUID} from 'node:crypto'
 import {ApplicationError} from './applications.mjs'
 const fail=(code,message,status=409)=>{throw new ApplicationError(code,message,status)}
 /** Profile owns only references and grants. Resource handlers and business records stay with their app. */
 export class ResourceDirectory {
-  constructor(file,applications,gate=new AdmissionGate()){this.gate=gate;this.file=file;this.applications=applications;this.owners=new Map();this.pending=Promise.resolve()}
-  async read(){try{const data=JSON.parse(await readFile(this.file,'utf8'));if(data.schema!==1||!Array.isArray(data.connections))throw Error();return data}catch(error){if(error.code==='ENOENT')return {schema:1,connections:[]};fail('storage-unavailable','共享配置无法读取；原记录保留。',503)}}
-  change(operation){return this.gate.run(()=>this.changeWithin(operation))}
-  changeWithin(operation){const task=this.pending.then(async()=>{const data=await this.read(),value=operation(data);const temp=this.file+'.'+randomUUID()+'.tmp';try{await mkdir(dirname(this.file),{recursive:true});await writeFile(temp,JSON.stringify(data,null,2));await rename(temp,this.file)}catch{fail('storage-unavailable','共享操作未保存，请重试。',503)}return structuredClone(value)});this.pending=task.catch(()=>{});return task}
+  constructor(file,applications,gate=new AdmissionGate()){this.gate=gate;this.file=file;this.applications=applications;this.owners=new Map();this.pending=Promise.resolve();this.closing=false;this.inFlight=new Set();this.store=new ProfileFileStore(file,()=>({schema:1,connections:[]}),resourceState)}
+  async read(){if(this.closing)fail('unavailable','资料授权所有者已关闭。',503);return this.store.read()}
+  change(operation){if(this.closing)return Promise.reject(new ApplicationError('unavailable','资料授权所有者已关闭。',503));return this.gate.run(()=>{if(this.closing)fail('unavailable','资料授权所有者已关闭。',503);return this.changeWithin(operation)})}
+  changeWithin(operation){const task=this.pending.then(async()=>{const data=await this.read(),value=operation(data);await this.store.write(data);return structuredClone(value)});this.pending=task.catch(()=>{});return task}
+  close(){if(!this.closePromise){this.closing=true;this.closePromise=this.gate.run(async()=>{await this.pending;await Promise.allSettled([...this.inFlight]);await this.store.close()})}return this.closePromise}
   register(owner){if(!owner||typeof owner.appId!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(owner.appId)||typeof owner.resourceId!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(owner.resourceId)||typeof owner.read!=='function'||!Array.isArray(owner.actions)||owner.actions.length>32||owner.actions.some(action=>typeof action!=='string'||action==='read'||!/^[a-z][a-z0-9.-]{0,79}$/.test(action))||(owner.actions.length>0&&typeof owner.mutate!=='function'))fail('invalid-resource','资源声明无效。');const key=owner.appId+':'+owner.resourceId;if(this.owners.has(key))fail('resource-conflict','资源已注册。');const entry={...owner,actions:[...owner.actions]};this.owners.set(key,entry);return ()=>{if(this.owners.get(key)===entry)this.owners.delete(key)}}
   async context(viewId){if(typeof viewId!=='string')fail('instance-context-required','请从已登记的应用视图访问数据。',403);const context=await this.applications.resolveView(viewId);if(context.application.kind!=='deep')fail('deep-context-required','普通网页没有应用数据权限。',403);return context}
   async snapshot(){await this.pending;return structuredClone(await this.read())}
@@ -40,5 +41,6 @@ export class ResourceDirectory {
     // A stable closure is the owner lease authority; aliases must reuse its function identity.
     const take=index=>{if(index===ordered.length)return operation();const acquire=ordered[index].withTaskLease;return acquire(()=>take(index+1))};return take(0);
   })}
-  async call(input){const start=await this.resolve(input);const authorize=async()=>{const current=await this.resolve(input);if(current.handler!==start.handler||current.connection?.id!==start.connection?.id||current.connection?.revision!==start.connection?.revision)fail('stale-reference','资料引用已改变，请刷新。')};const value=input.action==='read'?await start.handler.read(start.ownerInstanceId,input.payload):await start.handler.mutate(start.ownerInstanceId,input.action,input.payload,input.expectedRevision,authorize);if(input.action==='read')await authorize();else {try{await authorize()}catch(error){return {value:null,connection:null,committed:true,accessError:error.code,notice:'写入已提交；资料权限随后改变，已停止返回资料。请刷新确认所属实例记录。'}}}return {value,connection:start.connection,committed:input.action!=='read'}}
+  call(input){if(this.closing)return Promise.reject(new ApplicationError('unavailable','资料授权所有者已关闭。',503));const task=this.callWithin(input);this.inFlight.add(task);void task.finally(()=>this.inFlight.delete(task)).catch(()=>{});return task}
+  async callWithin(input){const start=await this.resolve(input);const authorize=async()=>{const current=await this.resolve(input);if(current.handler!==start.handler||current.connection?.id!==start.connection?.id||current.connection?.revision!==start.connection?.revision)fail('stale-reference','资料引用已改变，请刷新。')};const value=input.action==='read'?await start.handler.read(start.ownerInstanceId,input.payload):await start.handler.mutate(start.ownerInstanceId,input.action,input.payload,input.expectedRevision,authorize);if(input.action==='read')await authorize();else {try{await authorize()}catch(error){return {value:null,connection:null,committed:true,accessError:error.code,notice:'写入已提交；资料权限随后改变，已停止返回资料。请刷新确认所属实例记录。'}}}return {value,connection:start.connection,committed:input.action!=='read'}}
 }
