@@ -23,7 +23,7 @@ export function mountTasks(ctx){
    const text=await readRequestText(req,180000,()=>new RoleError('request-too-large','任务请求过大。'),runtime.lifetime.controller.signal);
    let body;try{body=JSON.parse(text)}catch{throw new RoleError('invalid-request','JSON格式无效。')};
    if(!body||Array.isArray(body)||typeof body!=='object'||Object.keys(body).some(key=>!['action','viewId','id','revision','roleId','text','contexts'].includes(key)))throw new RoleError('invalid-request','不能在任务请求中指定任意实例、会话或发送通道。');
-   runtime.lifetime.check();const {tasks}=runtime;const context=await tasks.applications.resolveView(body.viewId);if(context.application.kind!=='deep')throw new RoleError('deep-required','网页没有任务执行权限。');
+   runtime.lifetime.check();const {tasks}=runtime;if(body.action==='handoff')return send(200,await tasks.handoff());if(body.action==='handoff-open')return send(200,await tasks.openSession(body.id));if(body.action==='handoff-stop')return send(200,await tasks.stopSession(body.id));const historical=['list','open','stop'].includes(body.action),context=await (historical&&tasks.applications.resolveStoredView?tasks.applications.resolveStoredView(body.viewId):tasks.applications.resolveView(body.viewId));if(!historical&&context.application.kind!=='deep')throw new RoleError('deep-required','网页没有任务执行权限。');
    if(!['prepare','list'].includes(body.action)){const row=await tasks.find(body.id);if(row.instanceId!==context.instance.id)throw new RoleError('task-owner','任务不属于当前应用实例。')}
    let value;switch(body.action){
     case 'list':value=await tasks.list(body.viewId);break;

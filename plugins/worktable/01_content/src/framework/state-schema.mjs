@@ -4,6 +4,7 @@ const id=value=>typeof value==='string'&&/^[a-z][a-z0-9.-]{0,79}$/.test(value)
 const revision=value=>Number.isSafeInteger(value)&&value>=1
 const unique=(rows,key)=>{expect(Array.isArray(rows));const ids=new Set();for(const row of rows){const value=key(row);expect(text(value)&&!ids.has(value));ids.add(value)}return ids}
 export function applicationState(data){
+ const policies=data.lifecycle??[];unique(policies,row=>row.appId);for(const row of policies)expect(id(row.appId)&&typeof row.enabled==='boolean'&&revision(row.revision));expect(data.schema===(policies.some(row=>!row.enabled)?2:1));
  unique(data.applications,row=>row.id);const instances=unique(data.instances,row=>row.id);unique(data.views,row=>row.id);
  const reserved=data.deepApplicationIds??[];expect(Array.isArray(reserved)&&new Set(reserved).size===reserved.length&&reserved.every(id));
  for(const row of data.applications){expect(id(row.id)&&row.kind==='web'&&row.protocolVersion===1&&text(row.title)&&text(row.version)&&typeof row.url==='string');const url=new URL(row.url);expect(['http:','https:'].includes(url.protocol)&&!url.username&&!url.password&&!reserved.includes(row.id))}

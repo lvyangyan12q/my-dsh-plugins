@@ -54,6 +54,7 @@ export function mountApplications(ctx) {
         switch(body.action){
           case 'register':try{websiteEntry(body.application?.url,new URL('http://'+req.headers.host).origin)}catch(error){throw new ApplicationError('unsafe-entry',error.message)}return service.register(body.application);
           case 'create':return service.createInstance(body.appId,body.projectId??null);
+          case 'lifecycle':return service.setEnabled(body.appId,body.enabled,body.revision);
           case 'latest':return service.latest(body.appId,body.projectId??null);
           case 'attach':if(typeof body.projectId!=='string'||!body.projectId.trim())throw new ApplicationError('invalid-project','请选择关联项目。');return service.attach(body.instanceId,body.projectId,body.revision);
           case 'view':return service.createView(body.instanceId,body.viewType??'page');

@@ -1,0 +1,22 @@
+{
+  "ticket":"worktable-framework-09",
+  "date":"2026-10-20",
+  "host":"http://127.0.0.1:3091/",
+  "sourceCommit":"30b05d0ac60345dbffdadaf2e2067b145168ce75",
+  "worktableVersion":"0.5.0",
+  "worktableSha256":"896c81bbc6526355889c07ef79137f31595a92c67250b0221e7353ff59176799",
+  "readingSha256":"639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41",
+  "officialInstallExactFiles":7,
+  "upgrade":{"from":"0.4.0","instances":10,"existingTasks":11,"nativeUserMessages":8,"preserved":["instance IDs","views","connections","role bindings","task IDs and frozen payloads","reading records and revisions","four managed capabilities"]},
+  "realNativeDisable":{"sessionId":"10fc50bb-6c77-49cf-b3a8-21b3c7c63e59","taskId":"98030790-1ea0-463f-8a45-4120ecca086f","requestId":"240797c4-6102-44a7-87b7-9cb2268a7bfe","question":"应用停用后是否继续","observed":"Already waiting native question remained after app disable; global persistent handoff opened same native session; native answer submitted and completed without files."},
+  "disabledNegative":{"create":409,"prepare":409,"dedicatedPreparedTaskId":"a913cc98-4307-429c-ba35-f468ebc5fd20","submit":409,"code":"application-disabled","oldPreparedSampleNeverSubmitted":true},
+  "incompatibleRollback":{"oldVersion":"0.4.0","oldSha256":"c05049edcaccd43e42baff90f18311fe85457b38963ade6ea03a393b964fe5ac","schema":2,"actualOldPackageResponse":503,"code":"schema-incompatible","allSixStateFileHashesEqual":true,"reinstallRestoredDisabledPolicy":true},
+  "compatibleRollback":{"explicitAllEnable":true,"schema":1,"newBusinessRecord":"64082e26-3a5f-419c-a38a-f84954290fcc","readingCount":4,"readingMinutes":108,"actualOldPackageUiConfirmed":true,"newDataNotRolledBack":true,"identityTaskGrantRecordComparisonsPassed":true},
+  "officialManager":{"readingSwitchDisabledConfirmed":true,"missingContributionNotice":true,"globalNativeHandoffStillOpenedSameSession":true,"liveUninstallDidNotRemoveStartedBundle":true,"officialOfflineCliRemoveWorktableExit":0,"unrelatedDependenciesPreserved":true,"nativeUiAfterUninstall":{"worktableEntryAbsent":true,"sameSessionPresent":true,"unsentNativeDraftPreserved":true},"sameShaOfficialReinstall":true,"snapshotComparisonsAfterUninstallAndReinstallPassed":true},
+  "stopAfterDisable":{"actualNativeWaitingQuestion":true,"globalHandoffStopClicked":true,"nativeUi":"已停止","pendingQuestionRemoved":true,"noFilesRequested":true},
+  "final":{"applicationEnabled":true,"instances":10,"tasks":14,"nativeUserMessages":10,"nativeSandbox":"workspace-write","nativeApproval":"ask","readingCount":4,"readingMinutes":108,"managedCapabilities":4},
+  "limits":["Native manager offers no asynchronous uninstall veto; explicit handoff is preparation, not automatic completion.","Started bundles need offline official CLI removal in this runtime; live manager attempt retained package.","Process restarts used exact owned PID termination, not graceful disposal.","No disk or ACL fault was injected into real profile; publication failures are auxiliary contract tests.","CLI first rejected unsupported remove flags and then mismatched store; only explicit existing store/cache options succeeded; no source patch."],
+  "nativeSourceChanges":0,"upstreamSourceChanges":0,"formal3080Changes":0,"remoteWrites":0,
+  "privateSnapshotPrefix":"worktable-09-",
+  "independentReview":"worktable-09-final-review-private.md"
+}
