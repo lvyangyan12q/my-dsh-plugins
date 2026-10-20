@@ -5,7 +5,9 @@ export function describeProtocol():ProtocolDescriptor
 export function requireProtocol(value:unknown,required?:readonly string[]):ProtocolDescriptor
 export interface ProtocolService {describe():ProtocolDescriptor}
 export interface ApplicationDefinition {id:string;title:string;version:string;protocolVersion:1;kind:'deep';views:{id:string;title:string}[]}
-export interface Application extends ApplicationDefinition {enabled?:boolean;lifecycleRevision?:number}
+export interface DeepApplication extends ApplicationDefinition {enabled?:boolean;lifecycleRevision?:number}
+export interface WebApplication {id:string;title:string;version:string;protocolVersion:1;kind:'web';url:string;enabled?:boolean;lifecycleRevision?:number}
+export type Application=DeepApplication|WebApplication
 export interface ApplicationInstance {id:string;appId:string;projectId:string|null;revision:number}
 export interface ApplicationView {id:string;instanceId:string;type:string}
 export type Disposer=()=>void|Promise<void>
@@ -18,9 +20,9 @@ export interface ApplicationDirectory {
  setEnabled?(appId:string,enabled:boolean,revision:number):Promise<unknown>
 }
 export type CapabilityRef={kind:'agent'|'skill';id:string}&({source:'managed'}|{source:'application';ownerAppId:string})
-export interface PrivateCapability {kind:'agent'|'skill';id:string;title:string;presetId?:string;provider?:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}
+export type PrivateCapability={id:string;title:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}&({kind:'agent';presetId:string}|{kind:'skill';provider:string})
 export interface CapabilityDirectory {contribute(appId:string,definitions:PrivateCapability[]):Disposer;list(appId?:string):Promise<unknown[]>}
-export interface RoleDefinition {id:string;title:string;agent:CapabilityRef;creation:{cwd:string};skills?:CapabilityRef[]}
+export interface RoleDefinition {id:string;title:string;agent:CapabilityRef&{kind:'agent'};creation:{cwd:string};skills?:(CapabilityRef&{kind:'skill'})[]}
 export interface RoleDirectory {contribute(appId:string,definitions:RoleDefinition[]):Disposer}
 export interface ResourceValue {revision:string}
 export interface ResourceOwner<T extends ResourceValue=ResourceValue> {
@@ -33,8 +35,8 @@ export interface ResourceOwner<T extends ResourceValue=ResourceValue> {
 export interface ResourceDirectory {register<T extends ResourceValue>(owner:ResourceOwner<T>):Disposer}
 export interface TaskContextRef {resourceId:string;selection?:unknown}
 export interface TaskFacade {prepare(input:{roleId:string;text:string;contexts?:TaskContextRef[]}):Promise<unknown>}
-export interface RoleFacade {read(roleId:string):Promise<unknown>;ensure(roleId:string,agent?:CapabilityRef):Promise<unknown>;retry(roleId:string,sessionId:string,revision:number):Promise<unknown>;replace(roleId:string,sessionId:string,revision:number,agent?:CapabilityRef):Promise<unknown>;open(roleId:string,sessionId:string,revision:number):Promise<void>}
-export interface ApplicationViewProps {application:Application;instance:ApplicationInstance;view:ApplicationView;roles?:RoleFacade;tasks?:TaskFacade}
+export interface RoleFacade {read(roleId:string):Promise<unknown>;ensure(roleId:string,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;retry(roleId:string,sessionId:string,revision:number):Promise<unknown>;replace(roleId:string,sessionId:string,revision:number,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;open(roleId:string,sessionId:string,revision:number):Promise<void>}
+export interface ApplicationViewProps {application:DeepApplication;instance:ApplicationInstance;view:ApplicationView;roles?:RoleFacade;tasks?:TaskFacade}
 export interface ApplicationViews extends ProtocolService {register(appId:string,views:Record<string,ComponentType<ApplicationViewProps>>):Disposer}
 /** Optional Cordis services. Inject before use; absence is not permission to invent a fallback. */
 declare module '@deepseek-ai/cordis' {interface Context {

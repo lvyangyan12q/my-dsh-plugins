@@ -9,5 +9,5 @@ export function installNoteCapabilities(ctx:Pick<Context,'skills'|'worktableCapa
   const removeDirectory=ctx.worktableCapabilities.contribute('project-notes',[{kind:'skill',id:privateSkillId,title:'项目便签整理格式',provider:'project-notes',enabled:true,userInvocable:false,modelInvocable:true}])
   let closed:Promise<void>|undefined
   return ()=>closed??=Promise.allSettled([Promise.resolve().then(removeDirectory),Promise.resolve().then(removeNative)]).then(results=>{const failures=results.filter(r=>r.status==='rejected');if(failures.length)throw new AggregateError(failures.map(r=>(r as PromiseRejectedResult).reason),'便签私有能力释放失败；其余清理已尝试。')})
- }catch(error){removeNative();throw error}
+ }catch(error){try{removeNative()}catch(cleanup){throw new AggregateError([error,cleanup],'便签私有能力启动及清理均失败。')}throw error}
 }

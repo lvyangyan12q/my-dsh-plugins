@@ -31,3 +31,10 @@ test('a preexisting same-name native Skill cannot be claimed or removed by the a
   await dispose();dispose=undefined;assert.equal((await skills.get('project-notes-format')).provider,'foreign-owner');foreign()
  }finally{await dispose?.();await store?.close();await ctx.fiber.dispose();await rm(folder,{recursive:true,force:true})}
 })
+test('startup preserves both directory conflict and failing native cleanup diagnostics',async()=>{
+ const folder=await mkdtemp(resolve(tmpdir(),'notes-startup-failure-'));let store;
+ try{
+  store=await RoleStore.open(resolve(folder,'roles.json'));const directory=new CapabilityDirectory(store,{});const existing=directory.contribute('project-notes',[]);
+  assert.throws(()=>installNoteCapabilities({worktableCapabilities:directory,skills:{register:()=>()=>{throw Error('native cleanup failed')}}}),error=>error instanceof AggregateError&&error.errors.length===2&&error.errors[0].code==='capability-conflict'&&error.errors[1].message==='native cleanup failed');existing()
+ }finally{await store?.close();await rm(folder,{recursive:true,force:true})}
+})

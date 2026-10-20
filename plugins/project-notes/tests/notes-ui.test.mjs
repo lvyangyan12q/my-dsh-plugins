@@ -39,3 +39,15 @@ test('closing the editor while its authorized write returns still updates the su
   assert.match(visible(summary.toJSON()),/便签：1/)
  }finally{release?.();await act(async()=>{page?.unmount();summary?.unmount()});views?.dispose();globalThis.fetch=previous;await f.close()}
 })
+test('revoked shared notes disappear from full page and same-instance summary after refresh while the rejection remains visible',async()=>{
+ const f=await fixture(),previous=globalThis.fetch,pending=new Set();let page,summary,views;
+ async function settle(){while(pending.size)await act(async()=>{await Promise.all([...pending])})}
+ try{
+  globalThis.fetch=(_url,options)=>{const task=f.resources.call(JSON.parse(options.body)).then(value=>({ok:true,json:async()=>value}),e=>({ok:false,json:async()=>({error:e.message})}));pending.add(task);void task.finally(()=>pending.delete(task));return task}
+  const a=await f.instance('A'),b=await f.instance('B'),r=f.owner.resource;const empty=await r.read(a.instance.id);await r.mutate(a.instance.id,'create',{note:{title:'SHARED_SECRET_TITLE',body:'Source content'}},empty.revision,async()=>{});
+  const grant=await f.resources.share({ownerViewId:a.view.id,consumerInstanceId:b.instance.id,resourceId:r.resourceId}),view=await f.apps.createView(b.instance.id,'summary');views=createNotesViews();
+  await act(async()=>{page=Renderer.create(h(views.views.page,b));summary=Renderer.create(h(views.views.summary,{...b,view}))});await settle();assert.match(visible(page.toJSON()),/SHARED_SECRET_TITLE/);assert.match(visible(summary.toJSON()),/便签：1/)
+  await f.resources.revoke(grant.id,grant.revision);await act(async()=>{page.root.findAllByType('button').find(button=>button.children.join('')==='刷新便签与权限').props.onClick()});await settle();
+  assert.doesNotMatch(visible(page.toJSON()),/SHARED_SECRET_TITLE/);assert.match(visible(page.toJSON()),/撤销/);assert.match(visible(summary.toJSON()),/便签：0/);assert.doesNotMatch(visible(summary.toJSON()),/SHARED_SECRET_TITLE/)
+ }finally{await act(async()=>{page?.unmount();summary?.unmount()});views?.dispose();globalThis.fetch=previous;await f.close()}
+})

@@ -8,11 +8,11 @@ const note=z.object({id,title:z.string().trim().min(1).max(200),body:z.string().
 const row=z.object({instanceId:id,generation:z.number().int().min(0),notes:z.array(note).max(2000)}).strict()
 const domainDefinition=defineDomain({name:'project_notes',version:1,tables:{instances:domainTable<string,z.infer<typeof row>>(row)}})
 export type Note=z.infer<typeof note>
-export type NotesSnapshot={instanceId:string;notes:Note[];revision:string;assistant?:{configured:boolean;skillIds:string[]}}
+export type NotesSnapshot={schemaVersion:1;instanceId:string;notes:Note[];revision:string;assistant?:{configured:boolean;skillIds:string[]}}
 export async function installNotes(ctx:Pick<Context,'storageDomain'>,assistant:()=>{configured:boolean;skillIds:string[]}=()=>({configured:false,skillIds:[]})){
  const domain=await ctx.storageDomain.open(domainDefinition),table=domain.table('instances')
  let tail:Promise<unknown>=Promise.resolve(),closing=false,closed:Promise<void>|undefined
- const read=(instanceId:string):NotesSnapshot=>{id.parse(instanceId);const value=structuredClone(table.get(instanceId)??{instanceId,generation:0,notes:[]});return {instanceId,notes:value.notes,revision:value.generation+':'+createHash('sha256').update(JSON.stringify(value)).digest('hex'),assistant:assistant()}}
+ const read=(instanceId:string):NotesSnapshot=>{id.parse(instanceId);const value=structuredClone(table.get(instanceId)??{instanceId,generation:0,notes:[]});return {schemaVersion:1,instanceId,notes:value.notes,revision:value.generation+':'+createHash('sha256').update(JSON.stringify(value)).digest('hex'),assistant:assistant()}}
  const enqueue=<T,>(operation:()=>Promise<T>):Promise<T>=>{if(closing)return Promise.reject(new Error('便签资料已退出，记录保留。'));const task=tail.catch(()=>{}).then(operation);tail=task;return task}
  const withTaskLease=<T,>(operation:()=>Promise<T>)=>enqueue(operation)
  const resource:ResourceOwner<NotesSnapshot>={appId:'project-notes',resourceId:'project-notes-records',actions:['create','update','archive'],read,withTaskLease,

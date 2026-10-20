@@ -25,9 +25,9 @@ export function apply(ctx:Context,config:Config){
   try{remove=child.worktableResources.register(owner.resource)}catch(error){try{await owner.dispose()}catch(cleanup){throw new AggregateError([error,cleanup],'便签启动及清理均失败。')}throw error}
   yield async()=>{const results=await Promise.allSettled([Promise.resolve().then(()=>remove?.()),owner.dispose()]);const errors=results.filter(r=>r.status==='rejected');if(errors.length)throw new AggregateError(errors.map(r=>(r as PromiseRejectedResult).reason),'便签资源释放失败；其余清理已尝试。')}
  },'project notes owned data'))
- ctx.inject(['worktableCapabilities','worktableRoles','skills','worktableProtocol'],child=>child.effect(()=>{
+ ctx.inject(['worktableCapabilities','worktableRoles','skills','worktableProtocol'],child=>child.effect(async function*(){
   requireProtocol(child.worktableProtocol.describe(),['application-private-capability-v1','instance-role-v1']);const removeCapabilities=installNoteCapabilities(child);let removeRole:Disposer|undefined
-  try{if(role){removeRole=child.worktableRoles.contribute('project-notes',[role]);roleContributed=true}}catch(error){void removeCapabilities();throw error}
-  return async()=>{roleContributed=false;const results=await Promise.allSettled([Promise.resolve().then(()=>removeRole?.()),removeCapabilities()]);const errors=results.filter(r=>r.status==='rejected');if(errors.length)throw new AggregateError(errors.map(r=>(r as PromiseRejectedResult).reason),'便签角色能力释放失败。')}
+  try{if(role){removeRole=child.worktableRoles.contribute('project-notes',[role]);roleContributed=true}}catch(error){try{await removeCapabilities()}catch(cleanup){throw new AggregateError([error,cleanup],'便签角色启动及能力清理均失败。')}throw error}
+  yield async()=>{roleContributed=false;const results=await Promise.allSettled([Promise.resolve().then(()=>removeRole?.()),removeCapabilities()]);const errors=results.filter(r=>r.status==='rejected');if(errors.length)throw new AggregateError(errors.map(r=>(r as PromiseRejectedResult).reason),'便签角色能力释放失败。')}
  },'project notes role and private skill'))
 }
