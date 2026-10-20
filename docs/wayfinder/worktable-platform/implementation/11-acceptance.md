@@ -33,7 +33,7 @@ blocked_by: [worktable-framework-09, worktable-framework-10]
 
 用户明确指定最终Standards/Spec两轴审查固定基线为 `485b38cfd9a5d10de5a668ea4864246d4b1ebea7`（本轮开始前），不采用旧c44基线。root实际发现的两项原生全局面板/项目导航缺陷纳入11修复，再完成最终UI与两轴审查，不提前宣称F13或全阶段通过。
 
-额外Notes N1→N2共享操作此前被自动审核在变更前拒绝，用户具体授权仍pending；尚无grant、不操作、不宣称该案例通过，获许可后再补验。05 Reading共享/撤销与10自主owner-source接入的既有证据保持原范围。
+额外Notes N1→N2共享操作此前被自动审核在变更前拒绝，当时用户具体授权仍pending、尚无grant，未操作；现用户已明确授权限定两条合成内容，实际只读引用及撤销补验见E11S。05 Reading共享/撤销与10自主owner-source接入的既有证据保持原范围。
 
 领取前保护guard已核六个历史改动、干净index及native/upstream状态；本次仅修改本工单与README，不改代码、Host、正式3080或远端，不关闭任何验收项或完整规格。
 
@@ -71,6 +71,18 @@ root已完成隔离3091最终官方安装与实际使用验收，精确实现 `1
 
 [两轴审查](11-review.md)使用用户基线485b38c到14e828d：Standards首轮0hard/1P3启发式accepted-without-code-change；Spec首轮1P2修复后独立4/4 mounted矩阵通过，最终两轴0actionable。作者181/18零skip与独立包字节/回调检查是辅助，真实模型与提问/审批/Stop按07/09/10版本限定证据，不虚构最终组合再次执行。
 
-[完整172条映射](11-acceptance-mapping.md)与[机器映射](11-acceptance-mapping.json)保留ID/原文/来源/hash/顺序，66首阶段已验、94当前未验、12后续。旧123分类不增加；考公/旧资料、不可逆迁移、未知升级等未验继续保留。额外Notes共享具体授权pending、未建grant或执行，05 Reading主共享证据独立保留。Windows浏览器尺寸不外推原生桌面应用或macOS。
+[完整172条映射](11-acceptance-mapping.md)与[机器映射](11-acceptance-mapping.json)保留ID/原文/来源/hash/顺序，66首阶段已验、94当前未验、12后续。旧123分类不增加；考公/旧资料、不可逆迁移、未知升级等未验继续保留。额外Notes共享此前授权pending未建grant；现限定两条内容已明确授权补验见E11S，05 Reading主共享证据独立保留。Windows浏览器尺寸不外推原生桌面应用或macOS。
 
 回退依[09指引](../09-lifecycle-protocol.md)，首版接口依[10 SDK](10-sdk-contract.md)。本次仅关闭首阶段11实施工单，完整framework-spec仍OPEN且未修改，旧工单不假关。六历史dirty、clean index及native/upstream经前后guard保护；未改正式3080、原生运行目录、远端，预览迁至C后的工作树清理由root另行安排，本次不清理。
+
+## 2026-10-20 用户明确授权后的Notes限定共享补验
+
+[E11S不可变补充实测](evidence/11-authorized-notes-sharing.json)，SHA256 `049f07b05df7d100a7feb9de49eab336f7e66b2f6449ea1bdbe95a3d6408839d`，记录此前pending转为用户明确授权后的实际操作。原[E11](evidence/11-installed.json)的SHA256仍为 `5a38cc46c9e5780aadd05f3f5f09b8293bb166bdfac1ea48dc277005f6b530cf`，原12实例冷启与当时授权待定事实不改写。
+
+授权仅限N1原两条合成便签。N1另有一条归档测试记录，因此没有对N1整实例建grant；显式建立未归属合成来源N3 `c8ef612b-b90f-48d5-9aa0-5df5192d1238`，只复制经内容核对一致的原批准两条title/body，再由既有N2 `d8760a94-d344-4e51-a9a8-e4e970170327`引用N3。来源setup的显式复制与consumer不复制业务行是不同动作，不声称N1整实例或额外归档记录被授权。
+
+grant `1ea40812-e906-4dcc-84fb-d83ee04b5b37` 仅read，rev1 active→rev2 revoked。N2完整页与同实例summary真实显示两条来源便签、只读禁写，写入HTTP403；撤销并显式刷新两视图均0条及撤销提示，不静默回退N2自有那一条。撤销后读/写403，精确owned3091冷启后API403且summary仍0及撤销提示。
+
+N2自有业务revision前后精确为 `1:eaf037570b1116acc9c6fa269ff86a1404b2904bed9a6cabbfcdb1bdb32efebe`，旧note85110fac未复制或修改；N1原3条/active2保持，N3仅2条。roles、tasks及Reading两业务文件hash不变，原生输入10/1/0，不自动创建Session或模型请求。新增来源及两个视图是明确补验setup，后续inventory为13实例/15任务；原E11的12实例是此前真实版本证据，不能替换为13。
+
+源包仍Worktable0.7.2+Notes0.1.2，未改代码、不可变E11或原两轴JSON。172条分类保持66/94/12，旧未验不提升；11继续closed，完整framework spec继续OPEN。没有扩大create/update/archive授权，没有N1整实例grant，不清理、不改正式3080或远端。

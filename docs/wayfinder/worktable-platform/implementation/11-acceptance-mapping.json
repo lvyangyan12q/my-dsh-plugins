@@ -405,6 +405,15 @@
           "limits"
         ]
       }
+    ],
+    "11S": [
+      {
+        "label": "E11S",
+        "path": "evidence/11-authorized-notes-sharing.json",
+        "sha256": "049f07b05df7d100a7feb9de49eab336f7e66b2f6449ea1bdbe95a3d6408839d",
+        "kind": "user-explicitly-authorized-supplemental-actual",
+        "originalE11ImmutableSha256": "5a38cc46c9e5780aadd05f3f5f09b8293bb166bdfac1ea48dc277005f6b530cf"
+      }
     ]
   },
   "promotedIds": [
@@ -419,7 +428,7 @@
     "11已按root批准完成canonical归档并关闭；完整framework spec保持OPEN",
     "172条ID/原文/来源/原hash及顺序完整保持；旧123条分类未提升",
     "framework19完整failed/unread矩阵、27真实磁盘故障、37可选通用控件库、44全部旧资料迁移、48不可逆业务迁移、49未知升级仍当前未验；23/32后续保留",
-    "Notes额外共享自动审核拒绝，具体用户授权pending，无grant、不操作、不宣称通过；05Reading主共享验收保留原范围",
+    "历史上Notes补充共享曾在变更前被自动审核拒绝、待具体用户许可；现用户已明确授权并完成E11S限定两条合成便签只读共享及撤销补验。N1整实例未授权、未共享。 E11S为N3限定来源引用而非N1整实例；grant已撤销，无写权限扩大。",
     "稳定标注移动是公开目标回归，替换拒绝含实际installed React回调；不得写成实页边拖边编辑",
     "genericcontract无教学耦合不等于Kaogong专项通过；考公/搭建器/自动追改/高级网页桥接按原边界保留",
     "Standards0hard，STD-01P3由独立reviewer接受保持显式策略/shared readRequestText+RequestLifetime；Spec唯一P2在14e828d经独立4/4 mounted矩阵复验解决，不新增真实grant",
@@ -436,7 +445,7 @@
     },
     {
       "flow": "F04/F05",
-      "check": "第二项目Notes新实例及角色/任务隔离；显式新建与继续不混淆；未归属实例关联项目保ID。引用来源/只读拒写/撤销拒读复核且不复制记录或会话。 10已验N1/N2自主业务/会话隔离；Notes额外共享须先获具体许可，当前不执行。"
+      "check": "第二项目Notes新实例及角色/任务隔离；显式新建与继续不混淆；未归属实例关联项目保ID。引用来源/只读拒写/撤销拒读复核且不复制记录或会话。 10已验N1/N2自主业务/会话隔离；历史Notes额外共享当时待许可；现E11S限定两条合成来源已获具体授权、只读引用及撤销通过，N1整实例未授权/未共享。"
     },
     {
       "flow": "F06/F07",
@@ -1635,8 +1644,8 @@
       "id": "platform:Implementation Decisions:6",
       "originalCell": "- 业务数据由应用拥有，数据连接具有明确来源和可用状态。默认不直接读取其他应用私有数据；跨应用读取必须通过声明的连接。<br>[原始位置](D:/programming/workspace/my-dsh/docs/wayfinder/application-platform/platform-spec.md:61)",
       "status": "当前未验",
-      "evidence": "G05-share; G05-owner; T10; E10（仅10声明范围）",
-      "remaining": "Reading owner和显式共享、未授权写/伪造owner拒绝已验；原条跨应用业务私有数据隔离仍需10第二应用证明，不把跨实例证据扩成跨应用。 10补证：Notes自有业务与Reading并存保持Reading4/108，owner/shape/权限辅助负控已验；Notes额外N1→N2共享未经用户具体授权，未建grant，不扩为共享实际通过。",
+      "evidence": "G05-share; G05-owner; T10; E10（仅10声明范围）; E11S（同应用跨实例限定补证，不提升分类）",
+      "remaining": "Reading owner和显式共享、未授权写/伪造owner拒绝已验；原条跨应用业务私有数据隔离仍需10第二应用证明，不把跨实例证据扩成跨应用。 10补证：Notes自有业务与Reading并存保持Reading4/108，owner/shape/权限辅助负控已验；当时Notes额外共享待具体授权，未建grant。现E11S限定两条合成内容经N3只读引用N2并撤销，N1整实例未共享；这是同应用跨实例补证，仍不把它扩成任意跨应用schema连接通过。",
       "originalText": "- 业务数据由应用拥有，数据连接具有明确来源和可用状态。默认不直接读取其他应用私有数据；跨应用读取必须通过声明的连接。",
       "source": "docs/wayfinder/application-platform/platform-spec.md",
       "line": 61,
@@ -1954,8 +1963,8 @@
       "id": "framework:User Stories:12",
       "originalCell": "As a user, I want explicit data sharing, so that using one application does not reveal another project's records or conversations.<br>[原始位置](D:/programming/workspace/my-dsh/docs/wayfinder/worktable-platform/framework-spec.md:63)",
       "status": "首阶段已验",
-      "evidence": "G05-share; G05-owner; N07-revoke; E10（仅10声明范围）",
-      "remaining": "默认只读显式资源引用，consumer无业务副本；未授权/撤销拒绝，真实发送前撤销也不入原生。 10补证：E10 limits：Notes额外共享被审核在变更前拒绝，用户具体授权pending，未建grant；既有已验仅05 Reading，不扩成Notes共享通过。",
+      "evidence": "G05-share; G05-owner; N07-revoke; E10（仅10声明范围）; E11S read-only/revoke/cold-denial",
+      "remaining": "默认只读显式资源引用，consumer无业务副本；未授权/撤销拒绝，真实发送前撤销也不入原生。 10补证：E10 limits：当时Notes补验待具体授权而未建grant，05 Reading主证据独立保留。现E11S仅两条批准合成内容经N3只读引用N2并撤销，完整页/summary撤销后0+提示、无自有数据fallback、读写403和冷启拒绝；未对N1整实例授权。",
       "originalText": "As a user, I want explicit data sharing, so that using one application does not reveal another project's records or conversations.",
       "source": "docs/wayfinder/worktable-platform/framework-spec.md",
       "line": 63,
@@ -1965,8 +1974,8 @@
       "id": "framework:User Stories:13",
       "originalCell": "As a user, I want to reference shared source material, so that isolation does not duplicate my entire library.<br>[原始位置](D:/programming/workspace/my-dsh/docs/wayfinder/worktable-platform/framework-spec.md:64)",
       "status": "首阶段已验",
-      "evidence": "G05-share; G05-owner; N07-revoke; E10（仅10声明范围）",
-      "remaining": "默认只读显式资源引用，consumer无业务副本；未授权/撤销拒绝，真实发送前撤销也不入原生。 10补证：E10 limits：无Notes grant或其不复制共享资料实际证据；既有05 Reading来源引用主证据保持。",
+      "evidence": "G05-share; G05-owner; N07-revoke; E10（仅10声明范围）; E11S dedicated source/consumer exact revision",
+      "remaining": "默认只读显式资源引用，consumer无业务副本；未授权/撤销拒绝，真实发送前撤销也不入原生。 10补证：E10 limits：当时无Notes grant实际证据；现E11S consumer引用专门N3来源、不复制/修改N2原业务行，N3显式setup仅复制用户批准的原两条合成title/body。既有05 Reading主证据保持，非N1整实例授权。",
       "originalText": "As a user, I want to reference shared source material, so that isolation does not duplicate my entire library.",
       "source": "docs/wayfinder/worktable-platform/framework-spec.md",
       "line": 64,
@@ -2218,8 +2227,8 @@
       "id": "framework:User Stories:36",
       "originalCell": "As an application developer, I want read and write access distinguished, so that a display integration does not gain arbitrary file or tool permissions.<br>[原始位置](D:/programming/workspace/my-dsh/docs/wayfinder/worktable-platform/framework-spec.md:87)",
       "status": "首阶段已验",
-      "evidence": "W03-deny; G05-owner; N07-control",
-      "remaining": "普通网页原生调用拒绝、共享read/write显式分开；原生文件审批未被资源授权绕过。",
+      "evidence": "W03-deny; G05-owner; N07-control; E11S read200/write403/revoked403",
+      "remaining": "普通网页原生调用拒绝、共享read/write显式分开；原生文件审批未被资源授权绕过。 用户明确授权后的E11S仅read，写入403，撤销/冷启读写拒绝，未扩大create/update/archive。",
       "originalText": "As an application developer, I want read and write access distinguished, so that a display integration does not gain arbitrary file or tool permissions.",
       "source": "docs/wayfinder/worktable-platform/framework-spec.md",
       "line": 87,
@@ -2437,5 +2446,26 @@
     "candidateStatusLabelsRemoved": true,
     "sourceAfter10Sha256": "70394aac8c89a777a36e6cb342e74c895892af6d842f4f00d127c2b0e11f4797",
     "sourcePreparationSha256": "d8633f391ad302098600fb779631b0eb162f0857fbe678c6270a468d4f4f5154"
+  },
+  "authorizedNotesSharingSupplement": {
+    "humanAuthorization": "received; exactly two original synthetic note titles/bodies readonly then revoke",
+    "sourceInstance": "c8ef612b-b90f-48d5-9aa0-5df5192d1238",
+    "originalN1WholeInstanceShared": false,
+    "consumerInstance": "d8760a94-d344-4e51-a9a8-e4e970170327",
+    "grant": "1ea40812-e906-4dcc-84fb-d83ee04b5b37",
+    "revisions": [
+      1,
+      2
+    ],
+    "finalStatus": "revoked",
+    "recipientOwnBusinessRevision": "1:eaf037570b1116acc9c6fa269ff86a1404b2904bed9a6cabbfcdb1bdb32efebe",
+    "finalInventory": {
+      "instances": 13,
+      "newViews": 2,
+      "tasks": 15
+    },
+    "originalE11Inventory": 12,
+    "packageChanges": false,
+    "classificationsUnchanged": true
   }
 }
