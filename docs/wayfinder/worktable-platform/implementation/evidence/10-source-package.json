@@ -1,5 +1,5 @@
 {
-  "status": "prepared-source-and-package-only-real-installation-pending",
+  "status": "historical-candidate-superseded-by-notes-config-fix",
   "sourceHead": "ad56b65c78ed19a2b1b3fcaf231322b5f80d6727",
   "integrationBase": "b1ecc5a9dc0eb39c80063ce32c6be6772bfd1b18",
   "sourceTrees": {
@@ -100,5 +100,6 @@
     "no generic foreign-schema data browser/converter claimed",
     "no real Host/browser/profile/credentials/3080/remote actions by author",
     "ticket10 remains in-progress; no merge authorization"
-  ]
+  ],
+  "supersededBy": "10-config-prepared.json"
 }

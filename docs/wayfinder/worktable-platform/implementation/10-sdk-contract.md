@@ -73,7 +73,7 @@ owner的 `withTaskLease(operation)` 是稳定闭包，同一业务写队列中�
 
 角色Skills的引用验证包括实际Agent scope/provider/complete/modelInvocable；用户直接调用检查userInvocable。**引用验证不是模型已加载的证明，也不会自动把所有引用拼进persona。** 应用任务可显式请求加载，实际tool-skill轨迹仍须最终实页验证。缺公共或私有能力显示原因，禁止换Agent/通道继续。
 
-Project Notes例子：managedAgentId/managedSkillId/roleWorkspace默认空，由用户在原生插件配置明确填写；私有project-notes-format由应用注册、model-only、provider project-notes。公共能力可以跨应用复用，但原生历史按实例隔离。项目便签不自动回写AI回复。
+Project Notes例子：managedAgentId/managedSkillId/roleWorkspace默认空，由用户在原生“插件”→Project Notes→project-notes行“配置”明确填写并保存；私有project-notes-format由应用注册、model-only、provider project-notes。公共能力可以跨应用复用，但原生历史按实例隔离。项目便签不自动回写AI回复。
 
 ## 必须拒绝的反例
 
@@ -93,3 +93,5 @@ Project Notes例子：managedAgentId/managedSkillId/roleWorkspace默认空，由
 10辅助测试使用公开服务/真实React/官方StorageDomain与SkillRegistry；native prompt故障及准入并发是系统边界受控替身，不等于真实模型执行。最终独立包安装、精确文件/类型消费、两个应用同时运行、应用私有与managed Skill真实加载、实例隔离/恢复由root验收。未完成前本合同仍候选，不关闭10或完整framework spec。
 
 10发布前发现Windows死所有者回收目录rename可瞬态EPERM，使两个竞争者本次均拒绝（未发生双写）。本阶段最薄修复仅Win32、仅dead-lock→stale的EPERM/EBUSY：持回收门闩进行10/25/50ms有界等待，最多4次，每次复验门闩token/PID与旧锁格式/token/PID且PID仍dead；EACCES、未知、换代立即拒绝，永久失败保留原锁与业务字节并释放自己的门闩。确定性公开fs.rename故障RED→GREEN及200轮真实directory/legacy双进程竞争均保持恰一个owner、下一次acquire和原字节。故障句柄来源未确定，不能归因为某个进程；这不是放松保守PID复用拒绝或自动重放业务操作。
+
+真实安装发现仅导出普通Config不会自动生成原生表单。Notes0.1.1新增官方plugins.row.config页面，使用原生传入ConfigPageForm一次提交三个路径与编辑起点revision；只有该三个字段为volatile，Host读取get并处理loader/volatile-update，序列更新本应用角色声明，不重挂业务Domain、不ensure或替换已有Session。Settings→内置插件仍是只读清单。配置页失败保留草稿，未知settingsVersion保留原fail-closed门禁。更正包与官方配置链路辅助证据见[evidence/10-config-prepared.json](evidence/10-config-prepared.json)，尚不代替root真实表单/Skill验收。
