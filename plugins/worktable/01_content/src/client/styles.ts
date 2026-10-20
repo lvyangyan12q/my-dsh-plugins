@@ -88,6 +88,7 @@ export const css = xtermCss + applicationCss + '\n' + [
   // 分栏工作区（M1 通用引擎）
   '.dsh-wt_splitBar{display:flex;align-items:center;gap:10px;height:26px;padding:0 10px;box-sizing:border-box;border-bottom:1px solid var(--dsw-alias-border-l1,#262b36);background:var(--dsw-alias-bg-base,#0b0e14)}',
   '.dsh-wt_splitTitle{flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--dsw-alias-label-primary,#e6e8eb);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+  '.dsh-wt_narrowSelect{flex:1;min-width:0;max-width:calc(100% - 36px);height:30px;padding:2px 6px;border:1px solid var(--dsw-alias-border-l1,#526077);border-radius:4px;background:var(--dsw-alias-bg-base,#0b0e14);color:var(--dsw-alias-label-primary,#e6e8eb);font:inherit}',
   '.dsh-wt_splitClose{flex:none;display:flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border:none;border-radius:4px;background:transparent;color:var(--dsw-alias-label-secondary,#9aa4b2);font-size:12px;cursor:pointer}',
   '.dsh-wt_splitClose:hover{color:var(--dsw-alias-label-primary,#e6e8eb);background:var(--dsw-alias-fill-l1,rgba(255,255,255,.06))}',
   // 窗格容器：无圆角、无描边，直角贴齐分隔细线；底色保持不透明（标题栏/标签栏是 2% 浅色底，
