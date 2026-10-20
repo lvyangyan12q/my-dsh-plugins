@@ -33,3 +33,6 @@
 源码测试中，官方StorageDomain与SkillRegistry实际运行，Task native prompt仍是受控系统边界。真实安装/模型Skill加载/原生执行由root独立验收，不以此README或测试退出码宣称通过。应用尚属10候选，不关闭工单。
 
 配置页使用官方 `plugins.row.config` 与该行原生 Settings/ConfigEditor；三个字段作为 volatile 引用一次携带读取时 revision 保存，陈旧版本拒绝并保留草稿。Settings→内置插件是只读清单，不是填写位置。保存不创建/更换会话或发送消息，角色声明生效后刷新便签与权限；已绑定角色需要变更 Agent 时仍须明确替换，旧历史不会被改写。配置服务不可用时明确显示原因，不写 profile 文件绕过。settingsVersion仍是普通配置门禁，不在本页编辑。
+
+
+0.1.2修正共享资料的动作权限展示：新建草稿按create许可，已有便签编辑按update许可，归档按archive许可分别控制。界面只提交被许可的明确动作；Host原有授权与revision校验继续生效，权限不因编辑器状态获得提升。

@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-project-notes",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "lib/index.js",
   "description": "Independent project notes with Worktable v1 page, summary and task context",
