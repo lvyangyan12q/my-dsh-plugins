@@ -2,7 +2,7 @@
 
 当前交付是 **Worktable 派生 AI 工作台的首阶段框架**。首阶段 11 张实施工单已关闭，完整规格仍 open；完整搭建器、AI 生成追改和考公迁移尚未交付。后续新应用既可以直接开发接入，也可以在未来搭建器完成后组合生成。
 
-代码与本页所在分支：[`codex/worktable-framework`](https://github.com/lvyangyan12q/my-dsh-plugins/tree/codex/worktable-framework)，代码与验收记录检查点为 `b99cdcd5c40a64d6036d1ac65af23a105854c53f`。本次提交仅补充文档。该分支已推送，不代表已经合入 main、发布 npm/GitHub Release 或同步正式 3080。
+代码与本页所在分支：[`codex/worktable-framework`](https://github.com/lvyangyan12q/my-dsh-plugins/tree/codex/worktable-framework)，代码与验收记录检查点为 `b99cdcd5c40a64d6036d1ac65af23a105854c53f`。本次提交仅补充文档。该分支已推送，不代表已经合入 main 或发布 npm/GitHub Release。3080 后续已获用户明确授权切换，见下方运行状态；代码与原完整验收仍固定于上述检查点。
 
 ## 明天从这里开始
 
@@ -49,7 +49,9 @@ git status --short --branch
 
 ## 运行和部署状态
 
-- 独立验收用未经工作台补丁的官方 **DSH 0.2.0-rc.2**；3091 已按用户要求停止，文档交接不重启。3080 未执行本阶段同步，不宣称正式实例已是最终包。
+- 独立完整验收用未经工作台补丁的官方 **DSH 0.2.0-rc.2**；3091 已按用户要求停止。初次交接后，用户明确要求3080只加载我们的最新版，已通过原生官方CLI安装精确 **Worktable 0.7.2** 归档（9文件逐字节一致），仍从 `D:/programming/workspace/deepseek-harness` 源码启动3080。当前宿主为 **0.2.1-alpha.2**；健康接口、旧菜单消失、实际控制室打开及唯一原生输入框检查通过，不能代替rc.2完整验收或宣称alpha.2全功能兼容。
+- 用户web profile中旧 `personal-workbench`、旧Reading和旧考公接入已从激活列表移除并标为disabled，保留软件、配置、资料和数据；原版Worktable0.4链接已替换为0.7.2安装包。没有同时加载两种Worktable，其他插件保留。配置和锁文件的切换前备份在本机，未提交用户profile或凭据，也未新增版本豁免。
+- 当前alpha.2下无关插件仍有独立提示：Better Sidebar等待`webRuntime`、Modlens的settings注册形状不符；本次未补丁修复这些第三方插件。若对比侧栏样式，需区分它们与工作台加载状态。
 - 3095 是本机交互原型，展示方向经用户确认；它不执行真实 AI，也不是办公室可直接访问的部署。原型单独分支保留，按工单约束不并入产品集成分支；阅读 [02 原型记录](implementation/02-prototype.md)和 [11 中实际页面证据](implementation/11-acceptance.md)即可继续。
 - 办公室需要本地配置可用模型、兼容的官方原生构建及公共依赖。不要将验收机 profile 整体覆盖到办公机，也不要把密钥提交到 Git。
 - 仓库根 README 的旧 `pnpm start`、`personal-workbench` 安装命令属于旧平台，不能证明新 Worktable 派生包已安装。新包按 [SDK 合同](implementation/10-sdk-contract.md)及对应插件脚本构建；Worktable 唯一打包入口是包根目录的 `npm run pack`，随后在隔离 profile 用官方 CLI 安装并检查实际页面。

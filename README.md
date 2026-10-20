@@ -4,7 +4,7 @@
 
 本轮以 **Worktable 派生 AI 工作台**为代码基线，源码在 [plugins/worktable/01_content](plugins/worktable/01_content/)，独立应用示例为 [Project Notes](plugins/project-notes/) 与 [Reading](plugins/reading-statistics/)。代码与文档位于 `codex/worktable-framework` 分支；首阶段11张工单已关闭，完整spec仍open。
 
-明天接续先读 **[交接与代码位置](docs/wayfinder/worktable-platform/handoff.md)**、**[实现技术路线及后续待办](docs/wayfinder/worktable-platform/technical-roadmap.md)**、[完整框架spec](docs/wayfinder/worktable-platform/framework-spec.md)和[首阶段工单](docs/wayfinder/worktable-platform/implementation/README.md)。3080未同步本阶段最终包；3091验收实例已按用户要求停止。
+明天接续先读 **[交接与代码位置](docs/wayfinder/worktable-platform/handoff.md)**、**[实现技术路线及后续待办](docs/wayfinder/worktable-platform/technical-roadmap.md)**、[完整框架spec](docs/wayfinder/worktable-platform/framework-spec.md)和[首阶段工单](docs/wayfinder/worktable-platform/implementation/README.md)。3080已于本日获用户授权切换至0.7.2，仅完成当前alpha.2宿主的安装/加载/控制室页面检查；完整阶段验收仍以rc.2记录为准。3091验收实例已按用户要求停止。
 
 以下插件列表、根目录启动/安装命令及旧菜单说明保留为 **personal-workbench 旧平台记录**，不能用它们判断新派生包已安装。新旧代码并存不是两套前台一起运行，考公专项仍暂缓。新包接入与运行边界见交接文档。
 

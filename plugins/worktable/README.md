@@ -2,7 +2,7 @@
 
 ## 当前派生版本 · 2026-10-20
 
-当前实现为Worktable0.7.2；插件包根仍是`01_content/`。公开SDK协议v1、精确9文件打包约束及运行边界以[SDK合同](../../docs/wayfinder/worktable-platform/implementation/10-sdk-contract.md)为准；下文0.4.0/7文件等为最初基线记录。完整接续见[交接](../../docs/wayfinder/worktable-platform/handoff.md)、[技术路线与待办](../../docs/wayfinder/worktable-platform/technical-roadmap.md)及[首阶段验收](../../docs/wayfinder/worktable-platform/implementation/11-acceptance.md)。首阶段工单已closed，完整spec仍open；未同步正式3080。
+当前实现为Worktable0.7.2；插件包根仍是`01_content/`。公开SDK协议v1、精确9文件打包约束及运行边界以[SDK合同](../../docs/wayfinder/worktable-platform/implementation/10-sdk-contract.md)为准；下文0.4.0/7文件等为最初基线记录。完整接续见[交接](../../docs/wayfinder/worktable-platform/handoff.md)、[技术路线与待办](../../docs/wayfinder/worktable-platform/technical-roadmap.md)及[首阶段验收](../../docs/wayfinder/worktable-platform/implementation/11-acceptance.md)。首阶段工单已closed，完整spec仍open；3080已于本日按用户要求安装精确0.7.2包并完成当前alpha.2加载/控制室检查，完整阶段验收仍为rc.2，详情见交接。
 
 下文历史本地检查点路径不是办公室依赖；11个实施临时工作树已授权清理，保留分支、来源清单和本地发布归档。不要从历史段落推定原型、临时目录或旧命令仍可直接执行。
 
