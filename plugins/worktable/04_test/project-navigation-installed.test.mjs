@@ -47,6 +47,18 @@ try{
  await act(async()=>{frameWidth=1200;store.syncAnchor();await flush()})
  assert.equal(nativeBody.inert,false);assert.equal(nativeBody.style.visibility,'');assert.equal(overlay.root.findAllByProps({'aria-label':'切换模块或原生对话'}).length,0)
  assert.equal(document.activeElement,nativeInput);assert.equal(nativeInput.value,'Untouched native draft')
+ await act(async()=>{frameWidth=444;store.syncAnchor();await flush()})
+ const moduleInput=document.createElement('input');moduleInput.value='Active Notes draft';document.body.append(moduleInput);moduleInput.focus()
+ await act(async()=>{frameWidth=1200;store.syncAnchor();await flush()})
+ assert.equal(document.activeElement,moduleInput,'resizing back to desktop must not steal the users new module editing focus')
+ assert.equal(moduleInput.value,'Active Notes draft');assert.equal(nativeInput.value,'Untouched native draft')
+ nativeInput.focus()
+ await act(async()=>{frameWidth=444;store.syncAnchor();await flush()})
+ moduleInput.focus();moduleInput.blur()
+ await act(async()=>{frameWidth=1200;store.syncAnchor();await flush()})
+ assert.equal(document.activeElement,document.body,'a user focus transfer remains authoritative even after the new field blurs')
+ moduleInput.remove()
+
 
  const annot=()=>overlay.root.findAllByType('button').find(b=>b.props.className==='dsh-wt_annotBtn')
  await act(async()=>{annot().props.onClick();await flush()})

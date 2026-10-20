@@ -112,6 +112,7 @@ type SplitState = {
   savedNativeVisibility: string
   savedNativeInert: boolean
   savedNativeFocus: HTMLElement | null
+  nativeFocusListener: ((event: FocusEvent) => void) | null
   restoreNativeView(): void
   setNarrowView(paneId: string | null): void
   restoreSessionOnClose: boolean
@@ -786,6 +787,7 @@ export const splitStore: SplitState = {
   savedNativeVisibility: '',
   savedNativeInert: false,
   savedNativeFocus: null,
+  nativeFocusListener: null,
   observer: null,
   fallback: null,
   yieldObserver: null,
@@ -1004,9 +1006,12 @@ export const splitStore: SplitState = {
     this.viewArea.style.visibility = this.savedNativeVisibility
     this.viewArea.inert = this.savedNativeInert
     this.nativeHidden = false
+    if (this.nativeFocusListener) document.removeEventListener('focusin', this.nativeFocusListener)
+    this.nativeFocusListener = null
     const focus = this.savedNativeFocus
     this.savedNativeFocus = null
-    if (focus?.isConnected && !this.savedNativeInert) focus.focus()
+    const neutral = !document.activeElement || document.activeElement === document.body || document.activeElement === document.documentElement
+    if (focus?.isConnected && !this.savedNativeInert && neutral) focus.focus()
   },
 
   setNarrowView(paneId) {
@@ -1035,6 +1040,13 @@ export const splitStore: SplitState = {
           const active = document.activeElement
           this.savedNativeFocus = active instanceof HTMLElement && viewArea.contains(active) ? active : null
           this.nativeHidden = true
+          // Moving into any visible module/control transfers focus ownership to the user.
+          // Even if that new field later blurs to body, resize must not revive an old editor.
+          this.nativeFocusListener = event => {
+            const target = event.target as Node | null
+            if (target && target !== document.body && target !== document.documentElement && !viewArea.contains(target)) this.savedNativeFocus = null
+          }
+          document.addEventListener('focusin', this.nativeFocusListener)
         }
         viewArea.style.visibility = 'hidden'
         viewArea.inert = true
