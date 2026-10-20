@@ -1,6 +1,6 @@
-# Worktable 深度应用SDK v1（10候选，待真实双应用验收冻结）
+# Worktable 深度应用SDK v1（10真实双应用验收冻结）
 
-只描述公开接缝。当前第二应用Project Notes与Reading共同验证，10尚未通过真实最终安装；历史04/05文档中的候选“待验”段是实施记录，最终通过范围见各自installed证据。以下不是完整搭建器、通用数据转换器或高级网页桥接交付。
+只描述公开接缝。第二应用Project Notes与Reading已共同完成10真实最终安装验收；历史04/05文档中的候选“待验”段是实施记录，最终通过范围见各自installed证据。以下不是完整搭建器、通用数据转换器或高级网页桥接交付。
 
 ## 消费入口与版本
 
@@ -90,8 +90,16 @@ Project Notes例子：managedAgentId/managedSkillId/roleWorkspace默认空，由
 
 原生plugin-manager没有live卸载否决hook，平台不能声称拦住直接停用/移除。卸载应用前利用平台交接目录处理原生问题/审批/Stop；整个Worktable被移除时仍可使用原生会话列表和控制。清单不是任务已完成/安全交接的证明。09真实安装/失败降版/兼容回退证据只证明09组合，不能代替包含Notes/SDK的10实页验收。08持久所有权/排空及进程终止后原生TOOL_OUTCOME_UNKNOWN边界继续适用，不重建未恢复的pending问题，业务Domain不承诺任意多Host共享backend写。
 
-10辅助测试使用公开服务/真实React/官方StorageDomain与SkillRegistry；native prompt故障及准入并发是系统边界受控替身，不等于真实模型执行。最终独立包安装、精确文件/类型消费、两个应用同时运行、应用私有与managed Skill真实加载、实例隔离/恢复由root验收。未完成前本合同仍候选，不关闭10或完整framework spec。
+10辅助测试使用公开服务/真实React/官方StorageDomain与SkillRegistry；native prompt故障及准入并发是系统边界受控替身，不等于真实模型执行。最终独立包安装、精确文件/类型消费、两个应用同时运行、应用私有与managed Skill真实加载、实例隔离/恢复已由root在3091验收，见下方最终证据。仅冻结本合同声明的v1范围，完整framework spec仍OPEN，待11最终验收。
 
 10发布前发现Windows死所有者回收目录rename可瞬态EPERM，使两个竞争者本次均拒绝（未发生双写）。本阶段最薄修复仅Win32、仅dead-lock→stale的EPERM/EBUSY：持回收门闩进行10/25/50ms有界等待，最多4次，每次复验门闩token/PID与旧锁格式/token/PID且PID仍dead；EACCES、未知、换代立即拒绝，永久失败保留原锁与业务字节并释放自己的门闩。确定性公开fs.rename故障RED→GREEN及200轮真实directory/legacy双进程竞争均保持恰一个owner、下一次acquire和原字节。故障句柄来源未确定，不能归因为某个进程；这不是放松保守PID复用拒绝或自动重放业务操作。
 
-真实安装发现仅导出普通Config不会自动生成原生表单。Notes0.1.1新增官方plugins.row.config页面，使用原生传入ConfigPageForm一次提交三个路径与编辑起点revision；只有该三个字段为volatile，Host读取get并处理loader/volatile-update，序列更新本应用角色声明，不重挂业务Domain、不ensure或替换已有Session。Settings→内置插件仍是只读清单。配置页失败保留草稿，未知settingsVersion保留原fail-closed门禁。更正包与官方配置链路辅助证据见[evidence/10-config-prepared.json](evidence/10-config-prepared.json)，尚不代替root真实表单/Skill验收。
+真实安装发现仅导出普通Config不会自动生成原生表单。Notes0.1.1新增官方plugins.row.config页面，使用原生传入ConfigPageForm一次提交三个路径与编辑起点revision；只有该三个字段为volatile，Host读取get并处理loader/volatile-update，序列更新本应用角色声明，不重挂业务Domain、不ensure或替换已有Session。Settings→内置插件仍是只读清单。配置页失败保留草稿，未知settingsVersion保留原fail-closed门禁。更正包与官方配置链路辅助证据见[evidence/10-config-prepared.json](evidence/10-config-prepared.json)，保留为辅助过程记录；真实表单及Skill结果见下方最终证据。
+
+## 2026-10-20 最终冻结范围与实测边界
+
+最终源码 `4e7df6f830b7096f2a8a41738ccd17b30900278a`、Worktable0.6.0 SHA256 `bb645b7cc3afd3e9919ab5f0ee570ea04296c2fe4b4294bbc4e5032f79aa8aa9`、Notes0.1.1 SHA256 `adb9271b63828a8614efb6d44435564dc5d7b0f9bc3390a9e6e6a50cc66abe0d` 经官方CLI精确9/5安装、真实双应用与独立复审后批准保护合入。[最终实际记录](evidence/10-installed.json)与[关闭说明](10-protocol.md)为本版冻结依据。
+
+实际原生行配置保存不创建Session或任务；N1显式发送后，原生轨迹同时加载project-notes provider的私有Skill及worktable-managed provider的公共Skill，所选便签整理不自动写业务。N2为独立空Session；冷启动、Notes贡献开关与历史交接保持业务hash/身份/原生计数。旧0.1.0缺配置页的实际失败及0.1.1修复保留，不用辅助测试覆盖真实缺口。
+
+Notes额外跨实例共享案例被自动审核在变更前拒绝，具体用户授权仍待提供，未建grant、未宣称通过；05 Reading共享主验收已过。普通网页、通用schema适配/组件库、任意多Host业务backend均不在本版承诺。两项原生菜单/项目导航缺陷交11修复，最终UI及Standards/Spec两轴审查仍待11，以用户指定485b38c基线执行；完整framework spec保持OPEN。
