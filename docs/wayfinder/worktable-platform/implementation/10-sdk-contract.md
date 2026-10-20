@@ -6,6 +6,8 @@
 
 `dsh-worktable/sdk` 是浏览器安全的ESM子路径，导出 `PROTOCOL_VERSION`、`describeProtocol()`、`requireProtocol(descriptor,requiredFeatures)` 及独立 `.d.ts`。类型包含ApplicationDefinition/ApplicationViewProps/ResourceOwner/CapabilityRef/RoleDefinition及服务接口，提供公开Cordis服务augmentation。应用不得import平台src、实现类、全局React变量或旧personal-workbench声明。
 
+运行期helper应由应用bundler纳入自己的产物，示例Notes的build.mjs已这样做；不能把 `dsh-worktable/sdk` 留作ModuleLoader外部require并假设存在同名工厂。只有类型的import会被正常擦除。独立消费者类型检查须安装SDK及官方Cordis/React公共peer types，不使用legacy路径映射。目录snapshot/resolveView的Application是Deep|Web判别联合，访问views前先检查kind；ApplicationViewProps的application仅为Deep。
+
 Host注入 `worktableProtocol` 后调用 `.describe()`；Client注入 `worktableApplicationViews` 后调用 `.describe()`。返回 `{protocolVersion:1,features:string[]}` 的独立副本。先 `requireProtocol(actual,required)`；未知协议、错误shape、缺required feature明确拒绝，探测不建实例、不创建Session、不读业务资料、不发送。只有既有接口并不表示权限已授予。
 
 当前feature：`application-registration-v1`、`instance-view-v1`、`resource-reference-v1`、`instance-role-v1`、`application-private-capability-v1`、`prepared-task-v1`。应用生命周期feature须等09实际实现合入后按合同补充，不凭包版本或应用配置schema猜能力。框架协议、应用包version、应用配置settingsVersion、业务domain version与平台私有存储schema分开处理。

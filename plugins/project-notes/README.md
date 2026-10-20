@@ -23,7 +23,7 @@
 
 包使用 `dsh-worktable/sdk` 的公开类型/无副作用协议检查及Cordis可选服务，不导入平台或Reading私有模块，不依赖legacy类型映射。客户端仅注册page/summary，布局和原生输入仍归平台。
 
-资源只支持 `project-notes-records` 自有便签schema与同应用显式共享。引用保持owner/consumer归属；默认只读，动作需单独授权。页中没有通用跨应用共享浏览器；未知resource/schema或Reading记录不会被自动当便签复制或转换。同源可信插件不是恶意插件的安全沙箱。
+资源只支持 `project-notes-records` 自有便签响应schemaVersion1与同应用显式共享；未知版本明确拒绝。引用保持owner/consumer归属；默认只读，动作需单独授权。页中没有通用跨应用共享浏览器；未知resource/schema或Reading记录不会被自动当便签复制或转换。同源可信插件不是恶意插件的安全沙箱。刷新遇撤销/访问失败会清除当前列表、版本及引用展示，保留错误；未保存本地编辑不会被当作有效业务记录自动发送。
 
 普通网页没有这些深度服务。跨浏览器不承诺实时推送，可显式“刷新便签与权限”。只支持单个官方StorageDomain facility业务所有者，不承诺两个独立Host共享任意backend并发写。关闭视图/撤销注册不会删除业务行或Stop原生任务。
 
