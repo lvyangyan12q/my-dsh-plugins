@@ -27,7 +27,8 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "node --import tsx --test tests/*.test.mjs",
-    "check": "node check-types.mjs"
+    "check": "node check-types.mjs",
+    "pack": "node release-prep.mjs"
   },
   "dependencies": {
     "zod": "4.4.3"
