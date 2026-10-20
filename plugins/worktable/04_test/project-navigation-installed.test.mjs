@@ -44,6 +44,3 @@ try{
  const before=opened.length;await act(async()=>{store.close();await flush()});assert.equal(opened.length,before+1,'explicit close keeps existing restore intent')
  console.log('installed client callback gate passed: native panel reveal/leave/reopen, stable IDs, explicit restore; annotation replacement refused with draft preserved; explicit annotation fills native draft only')
 }finally{window.__dshWorktable?.splitStore.close(false);if(overlay)await act(async()=>overlay.unmount());if(root)await act(async()=>root.unmount());for(const f of cleanup.reverse())f();await flush();dom.window.close();for(const[name,descriptor]of saved)if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name]}
-
-
-
