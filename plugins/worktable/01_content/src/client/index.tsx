@@ -1,3 +1,4 @@
+import { createProjectNavigation, waitForConversationAnchor } from './projectNavigation'
 import {configureTaskFacts} from './taskPanel'
 import {configureRoleNavigation} from './rolePanel'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -6,7 +7,7 @@ import { NS, zh, en, type WorktableKey } from './locales'
 import { isAbs, joinPath, parentPathOf, basenameOf } from './pathutil'
 import {applicationViews} from './applicationViews'
 import { ApplicationLauncher, type ApplicationContent } from './applicationEntry'
-import { splitStore, SplitWorkspace, setSplitT, setSplitEnv, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
+import { findConversationRoot, splitStore, SplitWorkspace, setSplitT, setSplitEnv, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
 import { appendHostInput } from './hostInput'
 import { worktableUpgrade } from './hostTransport'
 import { WidgetMountRegistry, newWidgetId, widgetManifestPath, type WidgetBinding } from './widgetMount'
@@ -1042,6 +1043,31 @@ function RenameInput(props: { initial: string; placeholder: string; onCommit: (v
 }
 
 function WorktableSection(props: any) {
+  const [navigationError, setNavigationError] = useState('')
+  const projectNavigation = useRef<ReturnType<typeof createProjectNavigation> | null>(null)
+  if (!projectNavigation.current) projectNavigation.current = createProjectNavigation({
+    getLayout: () => { try { return clientCtx?.get?.('layout') ?? clientCtx?.layout } catch { return undefined } },
+    hasAnchor: () => !!findConversationRoot(),
+    reveal: id => { if (id !== currentSessionOf(sessionBridge?.list?.getSnapshot?.())) markPluginSessionOpen(id); return openHostSession(clientCtx, sessionBridge?.sessions, id) },
+    waitForAnchor: signal => waitForConversationAnchor(() => !!findConversationRoot(), signal),
+    report: error => setNavigationError(error.message),
+  })
+  useEffect(() => () => projectNavigation.current?.dispose(), [])
+  // Native global navigation owns the main panel. Closing the split must not reveal a session again.
+  useEffect(() => {
+    let layout: any
+    try { layout = clientCtx?.get?.('layout') ?? clientCtx?.layout } catch {}
+    const info = layout?.panelInfo
+    if (!info?.subscribe) return
+    return info.subscribe(() => {
+      if (info.getSnapshot()?.activePanelId != null && splitStore.active) splitStore.close(false)
+    })
+  }, [])
+  const revealProject = (bound: string | null | undefined, mount: () => void) => {
+    setNavigationError('')
+    const current = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
+    return projectNavigation.current!.open(bound ?? current, mount)
+  }
   const wide = props.wide !== false
   const renderProjectSlot = typeof props.renderSlot === 'function' ? props.renderSlot : null
   /** locale 座席 t；宿主未安装 locale 服务时回退 zh 词典（保持独立可用）。 */
@@ -1442,10 +1468,10 @@ function WorktableSection(props: any) {
   useEffect(() => splitStore.subscribe(() => {
     setActiveSplitId(splitStore.active && splitStore.spec ? splitStore.spec.id : null)
     if (!splitStore.active) {
-      if (!suppressRestoreRef.current) {
-        const prev = projectAttachRef.sessionId
-        if (prev) { try { openHostSession(clientCtx, sessionBridge?.sessions, prev) } catch {} }
-      }
+      projectNavigation.current?.close({
+        restore: splitStore.restoreSessionOnClose && !suppressRestoreRef.current,
+        previousSessionId: projectAttachRef.sessionId,
+      })
       projectAttachRef.sessionId = null
       projectAttachRef.attached = null
     }
@@ -1630,13 +1656,15 @@ function buildCustomLayoutPrompt(req: string): string {
   /** 分栏工作区入口（M1 引擎）：项目卡片调用 openSplit(spec) 打开声明式布局；
    * 若该 id 存在视图覆盖（用户在设置里变更过视图），用覆盖布局替换打开。
    * 若项目绑定了会话，打开后右侧对话窗自动切换过去。 */
-  const openSplit = useCallback((spec: LayoutSpec) => {
+  const openSplit = useCallback(async (spec: LayoutSpec) => {
     engineIdsRef.current.add(spec.id)
-    splitStore.open(projects.views[spec.id] ?? spec)
+    const before = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
+    const target = projectsRef.current.projects.bindings[spec.id] ?? before
+    if (!await revealProject(target, () => { splitStore.open(projectsRef.current.projects.views[spec.id] ?? spec) })) return
     if (splitStore.active && splitStore.spec?.id === spec.id) {
       // 记录打开前会话（关项目时回切）与该项目「归属会话」（切到别的会话 = 自动关项目）
       let prev: string | null = null
-      try { prev = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null } catch {}
+      try { prev = before } catch {}
       projectAttachRef.sessionId = prev
       projectAttachRef.attached = projectsRef.current.projects.bindings[spec.id] ?? prev
       const bound = projectsRef.current.projects.bindings[spec.id]
@@ -1651,17 +1679,19 @@ function buildCustomLayoutPrompt(req: string): string {
   }, [projects.views])
 
   /** 打开「工作台」控制室：已绑定 → 打开并切换绑定对话；explicitBound 供强制绑定流程传入刚绑定的会话 */
-  const openConsole = useCallback((explicitBound?: string | null) => {
+  const openConsole = useCallback(async (explicitBound?: string | null) => {
     const saved = projects.views[CONSOLE_ID]
     // 自愈：坏存档（旧版关掉控制室标签导致窗格退化成选择器）→ 重建默认面板并写回
     const broken = !specHasConsoleTab(saved)
     const spec = broken ? buildConsoleSpec((k) => t(k as WorktableKey)) : (saved as LayoutSpec)
     if (broken) persistProjects((prev) => ({ ...prev, views: { ...prev.views, [CONSOLE_ID]: spec } }))
     engineIdsRef.current.add(CONSOLE_ID)
-    splitStore.open(spec)
+    const before = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
+    const target = explicitBound !== undefined ? explicitBound : projectsRef.current.projects.bindings[CONSOLE_ID]
+    if (!await revealProject(target ?? before, () => { splitStore.open(spec) })) return
     if (splitStore.active && splitStore.spec?.id === CONSOLE_ID) {
       let prev: string | null = null
-      try { prev = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null } catch {}
+      try { prev = before } catch {}
       projectAttachRef.sessionId = prev
       const bound = explicitBound !== undefined ? explicitBound : projectsRef.current.projects.bindings[CONSOLE_ID]
       projectAttachRef.attached = bound ?? prev
@@ -2546,6 +2576,7 @@ function buildCustomLayoutPrompt(req: string): string {
       : bottomInset > 0 ? { marginBottom: bottomInset } : undefined
     return (
       <div ref={rootRef} className="dsh-wt_section dsh-wt_rail" style={railStyle}>
+        {navigationError && <div role="alert" style={{ padding: 8, whiteSpace: 'normal' }}>{navigationError}</div>}
         <div className="dsh-wt_divider" />
         <div className="dsh-wt_railBox">
           {railItems.length > 0
@@ -2562,6 +2593,7 @@ function buildCustomLayoutPrompt(req: string): string {
 
   return (
     <div ref={rootRef} className={'dsh-wt_section' + (isFloat ? ' dsh-wt_float' : '')} style={isFloat ? floatStyle : dockedStyle}>
+      {navigationError && <div role="alert" style={{ padding: 8, whiteSpace: 'normal' }}>{navigationError}</div>}
       <div className="dsh-wt_divider" />
       <div className="dsh-wt_header">
         <button
@@ -2595,10 +2627,10 @@ function buildCustomLayoutPrompt(req: string): string {
           >{ICON_SYNC}</button>
         )}
         <div className="dsh-wt_actions">
-          <ApplicationLauncher onOpen={(content: ApplicationContent) => {
+          <ApplicationLauncher onOpen={async (content: ApplicationContent) => {
             const id = '__wt_unassigned_applications__'
             if (!(splitStore.active && splitStore.spec?.id === id)) {
-              splitStore.open({ id, title: '应用视图', top: null, main: [{ id: 'application-entry', title: '应用', min: 240, tabs: [] }], chatWidth: { default: 480, min: 240, max: 1200 } })
+              if (!await revealProject(null, () => { splitStore.open({ id, title: '应用视图', top: null, main: [{ id: 'application-entry', title: '应用', min: 240, tabs: [] }], chatWidth: { default: 480, min: 240, max: 1200 } }) })) return
             }
             splitStore.openTab('main', 0, content)
           }} />

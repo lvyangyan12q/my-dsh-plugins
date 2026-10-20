@@ -83,7 +83,7 @@ if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
-const compatTests = ['host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs']
+const compatTests = ['project-navigation.test.mjs', 'annotation-target.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs']
   .map((file) => join(HERE, '..', '04_test', file))
 const compatRun = spawnSync(process.execPath, ['--test', ...compatTests], { cwd: HERE, stdio: 'inherit' })
 if (compatRun.status !== 0) { console.error('[release-prep] FAIL: session/input compatibility tests'); process.exit(1) }
@@ -205,6 +205,15 @@ if (anchorRun.status !== 0) {
   process.exit(1)
 }
 console.log('[release-prep] split anchor dom tests passed (8 scenarios, on installed artifact)')
+const nativePanelTest = join(HERE, '..', '04_test', 'project-navigation-installed.test.mjs')
+const nativePanelRun = spawnSync(process.execPath, [nativePanelTest, join(inst, 'node_modules', 'dsh-worktable', 'lib', 'client.js')], { cwd: HERE, stdio: 'pipe', encoding: 'utf8' })
+if (nativePanelRun.status !== 0) {
+  console.error('[release-prep] FAIL: installed native-panel/annotation callback gate')
+  console.error(nativePanelRun.stderr || nativePanelRun.stdout)
+  process.exit(1)
+}
+console.log('[release-prep] installed native-panel/annotation callbacks passed (actual client factory and React UI)')
+
 
 // ---------- 5d. 服务端数据目录解析回归（loadPkg ↔ resolveDshHomeSafe 循环调用修复） ----------
 // 评估「安装目录中的最终产物」lib/index.js；官方路径 / 包不可解析兜底 / ~ 与相对路径展开

@@ -240,16 +240,17 @@ test('real project opening retains failed pending reads and retries on the next 
     if (failure === 'read') f.files.set(widgetManifestPath(b), async () => { throw new Error('read failed') })
     const open = evaluate(section(indexSource, '  const openSplit = useCallback(', '\n  /** 打开「工作台」控制室') + '\nexport { openSplit }', {
       useCallback: fn => fn, engineIdsRef: { current: new Set() }, projects: { views: {} }, splitStore: f.splitStore,
-      currentSessionOf: () => null, sessionBridge: null, projectAttachRef: {}, projectsRef: { current: { projects: { bindings: {} } } },
+      currentSessionOf: () => null, sessionBridge: null, projectAttachRef: {}, projectsRef: { current: { projects: { bindings: {}, views: {} } } },
+      revealProject: async (_target, mount) => { mount(); return true },
       ackProjectNotify() {}, pendingMountRef: f.pendingMountRef, applyWidgetManifest: f.apply, persistPendingWidgets() {},
     }).openSplit
-    open(f.specs.A)
+    await open(f.specs.A)
     await new Promise(resolve => setImmediate(resolve))
     assert.equal(f.calls.length, 0, failure)
     assert.ok(f.pendingMountRef.current[b.bindingId], failure + ' keeps retry record')
     f.splitStore.active = false
     f.files.set(widgetManifestPath(b), resultOf(b))
-    open(f.specs.A)
+    await open(f.specs.A)
     await new Promise(resolve => setImmediate(resolve))
     assert.equal(f.calls.length, 1, failure)
     assert.equal(f.pendingMountRef.current[b.bindingId], undefined, failure + ' clears only on success')

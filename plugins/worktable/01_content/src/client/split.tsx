@@ -1,3 +1,4 @@
+import { captureAnnotationTarget, resolveAnnotationTarget, type AnnotationTarget } from './annotationTarget'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { parentPathOf } from './pathutil'
 import { ApplicationPicker, ApplicationPane, type ApplicationContent } from './applicationEntry'
@@ -106,7 +107,8 @@ type SplitState = {
   onPaneContentEdited: ((projectId: string, paneId: string) => void) | null
   listeners: Set<() => void>
   open(spec: LayoutSpec): boolean
-  close(): void
+  restoreSessionOnClose: boolean
+  close(restoreSession?: boolean): void
   syncAnchor(): void
   refreshGeom(): void
   applyMargin(): void
@@ -320,6 +322,8 @@ function setDropTarget(t: { row: PaneRow; index: number } | null) {
 
 /** ——「指哪打哪」标注引擎：按钮 → 蓝色冒泡光标 → 点击弹输入框 → ✓ 打包进对话框（不发送） —— */
 type AnnotState = {
+  target: AnnotationTarget | null
+  error: string
   on: boolean
   started: boolean
   drawing: boolean
@@ -335,7 +339,7 @@ type AnnotState = {
   resp: string
   stat: string
 }
-let annotState: AnnotState = { on: false, started: false, drawing: false, px: 0, py: 0, bx0: 0, by0: 0, bx1: 0, by1: 0, ex: 0, ey: 0, draft: '', resp: '', stat: '' }
+let annotState: AnnotState = { target: null, error: '', on: false, started: false, drawing: false, px: 0, py: 0, bx0: 0, by0: 0, bx1: 0, by1: 0, ex: 0, ey: 0, draft: '', resp: '', stat: '' }
 const annotListeners = new Set<() => void>()
 function setAnnot(patch: Partial<AnnotState>) {
   annotState = { ...annotState, ...patch }
@@ -344,9 +348,9 @@ function setAnnot(patch: Partial<AnnotState>) {
 function subscribeAnnot(fn: () => void) { annotListeners.add(fn); return () => { annotListeners.delete(fn) } }
 
 /** 进入瞄准模式（resp = 窗口编号等上下文，由调用方拼好） */
-function startAnnot(resp: string) {
+function startAnnot(resp: string, target: AnnotationTarget) {
   document.body.classList.add('dsh-wt-annotating')
-  setAnnot({ on: true, started: false, drawing: false, resp, stat: '', draft: '' })
+  setAnnot({ on: true, started: false, drawing: false, resp, target, error: '', stat: '', draft: annotState.on ? annotState.draft : '' })
 }
 function cancelAnnot() {
   document.body.classList.remove('dsh-wt-annotating')
@@ -376,6 +380,7 @@ function windowLabelOf(row: PaneRow, index: number): string {
         label += '）'
       }
       else if (c.kind === 'file') label += '（文件）'
+      else if (c.kind === 'application') label += '（应用 ' + c.title + '）'
     } catch {}
   }
   return label
@@ -517,7 +522,16 @@ function fillHostInput(text: string): boolean {
 /** ✓ 确认：打包并注入，不发送 */
 function confirmAnnot() {
   const s = annotState
-  const text = '📌 标注-' + s.resp + '\n' + (s.stat || '') + '\n要求：' + (s.draft.trim() || '（未填写）')
+  let resolved: ReturnType<typeof resolveAnnotationTarget>
+  try {
+    if (!s.target) throw new Error('标注缺少稳定目标，请重新选择模块；要求草稿已保留。')
+    resolved = resolveAnnotationTarget(s.target, splitStore.spec)
+  } catch (error) {
+    setAnnot({ error: error instanceof Error ? error.message : String(error) })
+    return
+  }
+  const identity = { ...resolved.target, originalPaneId: resolved.target.paneId, paneId: resolved.paneId }
+  const text = '📌 标注-' + s.resp + '\n稳定目标：' + JSON.stringify(identity) + '\n' + (s.stat || '') + '\n要求：' + (s.draft.trim() || '（未填写）')
     + '\n【工作台标注·已定位，直接作答，无需再问；仅当确实无法从标注定位时才问一次。数据缺失或标注标注读取受限时，如实说明无法确定，禁止编造数值；可建议提供截图或使用视觉模型会话】'
   const ok = fillHostInput(text)
   if (!ok) {
@@ -654,6 +668,7 @@ function AnnotationOverlay() {
           if (e.key === 'Escape') cancelAnnot()
         }}
       />
+      {s.error && <div role="alert" style={{ maxWidth: 300, whiteSpace: 'normal' }}>{s.error}</div>}
       <div className="dsh-wt_annotBtns">
         <button type="button" className="dsh-wt_annotOk" title={T('annot.ok')} aria-label={T('annot.ok')} onClick={confirmAnnot}>✓</button>
         <button type="button" className="dsh-wt_annotNo" title={T('annot.cancel')} aria-label={T('annot.cancel')} onClick={cancelAnnot}>✕</button>
@@ -665,7 +680,7 @@ function AnnotationOverlay() {
 /** 找到会话根容器：data-phase 元素中排除输入框、取含子元素者。
  * DSH 0.1.1-rc.2 与 0.1.2-rc.1 的会话阶段一致：active（有消息）/ hero（无会话或空会话）/ settling（过渡）。
  * 优先 active，其次 hero（空会话/无会话时也能打开分栏），settling 兜底（锚定后由观察器修正）。 */
-function findConversationRoot(): HTMLElement | null {
+export function findConversationRoot(): HTMLElement | null {
   const candidates = Array.from(document.querySelectorAll<HTMLElement>('[data-phase]'))
   const ok = (el: HTMLElement) => el.tagName !== 'TEXTAREA' && el.tagName !== 'INPUT'
     && el.children.length >= 1 && !/input/i.test(String(el.className))
@@ -737,7 +752,7 @@ function persistSaved(layoutId: string, s: { chatW: number; topH: number; leftW:
 /** 共享互斥协议：其他接入本协议的分栏引擎声明占用时，本引擎让位（同一时刻仅一个分栏工作区） */
 window.addEventListener('dsh:split-claim', ((e: any) => {
   const id = e?.detail?.id
-  if (splitStore.active && id && id !== splitStore.spec?.id) splitStore.close()
+  if (splitStore.active && id && id !== splitStore.spec?.id) splitStore.close(false)
 }) as EventListener)
 
 export const splitStore: SplitState = {
@@ -774,7 +789,7 @@ export const splitStore: SplitState = {
         this.close()
         return true
       }
-      this.close()
+      this.close(false)
     }
     // 跨插件互操作桥：自带分栏实现的入驻插件（未接入共享引擎）打开时，运行时点击其关闭按钮让位
     try {
@@ -891,7 +906,7 @@ export const splitStore: SplitState = {
       if (this.viewArea.style.marginLeft !== this.lastMarginLeft
         || this.viewArea.style.marginRight !== this.lastMarginRight
         || this.viewArea.style.marginTop !== this.lastMarginTop) {
-        this.close()
+        this.close(false)
       }
     })
     this.yieldObserver.observe(viewArea, { attributes: true, attributeFilter: ['style'] })
@@ -909,7 +924,7 @@ export const splitStore: SplitState = {
     if (!this.active) return
     const next = findConversationRoot()
     if (!next) {
-      this.close()
+      this.close(false)
       return
     }
     const ph = next.dataset.phase
@@ -1317,7 +1332,9 @@ export const splitStore: SplitState = {
     persistSaved(this.spec.id, { chatW: this.chatW, topH: this.topH, leftW: this.leftW, paneWs: this.paneWs, topWs: this.topWs, leftWs: this.leftWs })
   },
 
-  close() {
+  restoreSessionOnClose: true,
+  close(restoreSession = true) {
+    this.restoreSessionOnClose = restoreSession
     if (this.root && this.root.isConnected) {
       if (this.savedWidthVar) this.root.style.setProperty('--dsh-chat-user-width', this.savedWidthVar)
       else this.root.style.removeProperty('--dsh-chat-user-width')
@@ -1358,7 +1375,7 @@ export const splitStore: SplitState = {
 if (typeof document !== 'undefined' && document.body) {
   const taObserver = new MutationObserver(() => {
     if (!splitStore.active) return
-    if (document.querySelector('.ta_split')) splitStore.close()
+    if (document.querySelector('.ta_split')) splitStore.close(false)
   })
   taObserver.observe(document.body, { childList: true, subtree: true })
 }
@@ -3068,7 +3085,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
           className="dsh-wt_annotBtn"
           title={T('annot.label')}
           aria-label={T('annot.label')}
-          onClick={() => startAnnot(windowLabelOf(row, index))}
+          onClick={() => startAnnot(windowLabelOf(row, index), captureAnnotationTarget(splitStore.spec, row, index))}
         >
           <svg viewBox="0 0 16 16" aria-hidden><path d="M2 5.6c0-1.2 1-2.2 2.2-2.2h7.6c1.2 0 2.2 1 2.2 2.2v3.6c0 1.2-1 2.2-2.2 2.2H7.5L5 13.6l.3-2.4H4.2c-1.2 0-2.2-1-2.2-2.2z" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" /></svg>
         </button>
