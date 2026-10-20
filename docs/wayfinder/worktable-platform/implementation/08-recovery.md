@@ -3,7 +3,7 @@ id: worktable-framework-08
 title: 持久化、并发与冷恢复
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 assignee: recovery
 blocked_by: [worktable-framework-05, worktable-framework-07]
 ---
@@ -14,13 +14,13 @@ blocked_by: [worktable-framework-05, worktable-framework-07]
 
 **Blocked by:** [实例授权、数据联动与显式共享](05-data-grants.md)、[数据上下文与原生AI执行闭环](07-native-execution.md)。
 
-**Status:** in-progress
+**Status:** closed
 
-- [ ] 真实应用项目、未归属实例、显式关联、授权、数据状态和角色引用在刷新/Host重启后正确恢复。
-- [ ] 平台配置、浏览器偏好、应用业务记录与原生会话分别归属；不清理浏览器存储作为恢复捷径。
-- [ ] 视图被淘汰和重新挂载后恢复到同一实例，会话与业务数据不会依赖仅存组件内存。
-- [ ] 并发修改及存储失败有明确冲突/错误与重试路径，不静默覆盖较新数据或报告虚假成功。
-- [ ] 重启中断的任务不伪报成功，用户仍能在原生会话找回状态；保护近期业务数据、原生历史与凭据。
+- [x] 真实应用项目、未归属实例、显式关联、授权、数据状态和角色引用在刷新/Host重启后正确恢复。
+- [x] 平台配置、浏览器偏好、应用业务记录与原生会话分别归属；不清理浏览器存储作为恢复捷径。
+- [x] 视图被淘汰和重新挂载后恢复到同一实例，会话与业务数据不会依赖仅存组件内存。
+- [x] 并发修改及存储失败有明确冲突/错误与重试路径，不静默覆盖较新数据或报告虚假成功。
+- [x] 重启中断的任务不伪报成功，用户仍能在原生会话找回状态；保护近期业务数据、原生历史与凭据。
 
 ## Scope and evidence
 
@@ -33,3 +33,17 @@ blocked_by: [worktable-framework-05, worktable-framework-07]
 最终候选辅助检查：Worktable `npm run pack` 166/166、零 skip，最终 7 文件安装/导入及工厂、导航、DOM8、目录3通过；Reading 官方域/实际页面/收尾 7/7，最终 6 文件独立安装逐字节比对与导入通过。Worktable 双资产 SHA256 `c05049edcaccd43e42baff90f18311fe85457b38963ade6ea03a393b964fe5ac`；Reading 双资产 SHA256 `639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41`。完整本地辅助证据 `C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable08-final-receipt.json`；未以辅助检查替代 3091 重启验收。
 
 真实验收发现已关联网页虽保留记录，但已填充模块缺少无损重开入口；本候选新增标签栏“＋应用”，复用项目作用域目录，继续原实例/视图并保留已有模块。实际 React 与真实临时平台目录回归验证追加、去重和跨项目晚响应隔离；新候选仍须正式安装后复验，不沿用旧包的通过结论。
+
+## 2026-10-20 最终安装验收与独立复审（关闭08）
+
+最终实现 `5d86166fb5b1f1e5ec905231375e6f780d78e503` 经独立复审及 root 精确批准，由保护 guard 快进合入。工作台双包 SHA-256 `c05049edcaccd43e42baff90f18311fe85457b38963ade6ea03a393b964fe5ac`、阅读双包 `639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41`，官方 CLI 安装至隔离3091并核对7/6文件。[最终实页记录](evidence/08-installed.json)、[原生中断轨迹截图](evidence/worktable-08-final-recovery.jpg)与[早期候选记录](evidence/worktable-08-initial-installed-evidence.json)保留版本范围和发现过程；最终记录中的合并元数据在保护合并后补充，原始root证据摘要随附。
+
+最终候选两次冷启动及工作区池6个实际淘汰/重挂后，10个实例、11条任务、来源ID与payload摘要、角色绑定、授权和业务行保持；A保留3条共96分钟的近期记录。active A→D资料读取200，仍默认只读、直接写403；C已撤销资料读取403。未归属网页显式关联A项目后instance77615f9e/view48c030e3保持，原已填充Reading view239d保留。标签栏“＋应用”从当前项目目录恢复原关联网页并追加，重复恢复去重，实际冷启动及池淘汰后两个标签仍在；没有为了恢复而清浏览器存储、复制整profile或新建实例。
+
+持久prepared任务27e74e4b仍未发送。两次真实原生ask_user_question已到等待状态，再终止root拥有的精确3091进程并冷启动；最后一次固定task5dcf2707/request9019db2b/session10fc50bb保持，原生输入8→8，无自动重放。原生轨迹对两次中断均显示TOOL_OUTCOME_UNKNOWN，等待问题没有被伪造恢复；任务accepted仅代表先前准入，当前未运行不当作业务成功，原任务/历史会话仍可打开，A未发送草稿保持。这里验证的是进程终止后的恢复，不能称作正常排空退出。
+
+真实两页面并发编辑近期记录：第二页先保存15→16（总计96），第一页旧草稿17被明确拒绝并保留草稿，取消后显式刷新仍是16/96。该冲突实测发生在早期0ca候选，其后最终5d仅改应用恢复入口、样式及对应测试/文档，后端源码和lib/index逐字节未变；最终候选又复验业务、资料权限和任务冷恢复。写失败、死PID竞争与排空的故障验证使用公开owner/HTTP合成夹具，没有对真实profile修改ACL或制造磁盘故障。
+
+两项早审P2经公开行为回归修复：初始化标记部分写失败不再留下截断有效标记，恢复介质后可普通重开；启动与清理双失败保留聚合诊断，其余资源仍收尾。锁释放清理异常、双进程竞争、旧代重复close、HTTP正文退役、在途native准入保留写owner、TaskStore服务发布失败收尾均有辅助回归。独立reviewer在0ca冻结源码执行53项Worktable和7项Reading回归；5d窄增量执行18项实际React/身份回归及最终包导航1/DOM8，server-home3沿用逐字节相同server包，不将重叠测试重复计数。作者唯一pack入口最终166项及安装/工厂/产物门禁通过。
+
+明确边界：浏览器重载后可先显示原生路由，用户显式点击当前项目恢复相同视图，不承诺自动重开最后覆盖层。原生pending问题不承诺在进程终止后继续等待；未知工具结果保留轨迹且不自动重发。旧07不能理解08目录锁，不把不兼容回退当作成功；兼容升级/回退由09另验。任意独立Host共享同一阅读业务backend并发写入不受支持。六个历史改动文件及原生/upstream快照经guard保持，未改正式3080或远端。此次仅关闭08，不领取或关闭09/10。
