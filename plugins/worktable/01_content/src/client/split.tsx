@@ -2864,6 +2864,10 @@ function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number; layoutI
   const tabs = pane.tabs ?? []
   const active = Math.min(pane.active ?? 0, Math.max(0, tabs.length - 1))
   const [reloadKeys, setReloadKeys] = useState<Record<string, number>>({})
+  const [addingApplication, setAddingApplication] = useState(false)
+  useEffect(() => setAddingApplication(false), [props.layoutId, pane.id])
+  const projects = splitEnv?.custom?.getProjects?.() ?? []
+  const currentProject = projects.some(p => p.id === props.layoutId) ? props.layoutId : null
   if (tabs.length === 0) {
     return <PanePicker row={row} index={index} layoutId={props.layoutId} paneId={pane.id} />
   }
@@ -2877,6 +2881,7 @@ function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number; layoutI
     <>
       {!singleConsole && !pane.collapsed && (
       <div className="dsh-wt_tabBar">
+        <button type="button" className="dsh-wt_tabAdd" aria-label="添加应用" title="添加应用（保留当前标签）" onClick={() => setAddingApplication(true)}>＋应用</button>
         {tabs.map((t, i) => {
           // 控制室标签不可关闭：关掉后窗格变选择器，用户回不到控制室（不可逆操作）
           const locked = t.content?.kind === 'builtin' && t.content.type === 'console'
@@ -2913,6 +2918,13 @@ function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number; layoutI
         })}
       </div>
       )}
+      {addingApplication && <div className="dsh-wt_appBackdrop" onClick={() => setAddingApplication(false)}><div className="dsh-wt_appDialog" role="dialog" aria-modal="true" aria-label="添加应用" onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === 'Escape') setAddingApplication(false) }}><ApplicationPicker key={props.layoutId + ':' + pane.id} projectId={currentProject} onCancel={() => setAddingApplication(false)} onOpen={next => {
+        if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
+        const target = row === 'left' ? splitStore.spec.left : row === 'top' ? splitStore.spec.top?.[index] : splitStore.spec.main[index]
+        if (target?.id !== pane.id) return
+        splitStore.openTab(row, index, next)
+        setAddingApplication(false)
+      }} /></div></div>}
       <PaneTabBody key={tabs[active].content.kind === 'application' ? tabs[active].content.instanceId + ':' + tabs[active].content.viewId : tabs[active].id} tab={tabs[active]} row={row} index={index} layoutId={props.layoutId} paneId={pane.id} paneTitle={pane.title} reloadKey={reloadKeys[tabs[active].id] ?? 0} />
     </>
   )

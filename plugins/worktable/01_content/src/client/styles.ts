@@ -169,6 +169,8 @@ export const css = xtermCss + applicationCss + '\n' + [
   '.dsh-wt_collapseBtnCollapsed{color:var(--dsw-alias-label-secondary,#9aa4b2)}',
   '.dsh-wt_paneFrame{flex:1;width:100%;border:0;background:#010409;min-height:0}',
   // iframe 内容标签：容器 + 右上角常驻刷新按钮
+  '.dsh-wt_tabAdd{flex:none;padding:3px 7px;border:1px solid var(--dsw-alias-border-l2,#565c68);border-radius:4px;background:var(--dsw-alias-fill-l1,rgba(255,255,255,.08));color:var(--dsw-alias-label-primary,#ddd);font-size:11px;line-height:1.3;white-space:nowrap;cursor:pointer}',
+  '.dsh-wt_tabAdd:hover{color:var(--dsw-alias-state-accent-primary,#4f8ef7)}',
   '.dsh-wt_tabRefresh{flex:none;width:14px;height:14px;padding:0;border:none;border-radius:3px;background:transparent;color:var(--dsw-alias-label-tertiary,#6e7683);font-size:10px;line-height:1;cursor:pointer}',
   '.dsh-wt_tabRefresh:hover{color:var(--dsw-alias-state-accent-primary,#4f8ef7);background:var(--dsw-alias-fill-l1,rgba(255,255,255,.08))}',
   // 分隔条：热区保持 4px 宽（好拖），视觉上只在中间画 1px 细实线；hover 时细线变主题蓝高亮 + 微光
