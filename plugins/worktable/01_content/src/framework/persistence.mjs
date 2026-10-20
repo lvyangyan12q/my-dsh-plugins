@@ -8,6 +8,17 @@ const alive=pid=>{try{process.kill(pid,0);return true}catch(error){if(error.code
 async function lockRecord(path){const info=await lstat(path);const value=JSON.parse(await readFile(info.isDirectory()?join(path,'owner.json'):path,'utf8'));if(!Number.isSafeInteger(value.pid)||value.pid<1||info.isDirectory()&&(value.schema!==1||typeof value.token!=='string'))throw failure('owner-unavailable','锁记录无法验证，原文件保留；请检查锁并确认已有Host已关闭。');return {value,directory:info.isDirectory()}}
 async function createLock(path,record){await mkdir(path);let handle;try{handle=await open(join(path,'owner.json'),'wx');await handle.writeFile(JSON.stringify(record));await handle.sync();await handle.close();handle=null}catch(error){await handle?.close().catch(()=>{});await unlink(join(path,'owner.json')).catch(()=>{});await rmdir(path).catch(()=>{});throw error}}
 async function releaseLock(path,record){const current=await lockRecord(path).catch(error=>{if(error.code==='ENOENT')return null;throw error});if(!current)return;if(!current.directory||current.value.token!==record.token)throw failure('owner-lost','存储锁已属于另一代所有者，拒绝删除或继续写入。');const released=path+'.released-'+record.token;try{await rename(path,released)}catch{throw failure('owner-release-failed','所有者释放失败，锁记录保留；请检查存储后重新启动。')}await unlink(join(released,'owner.json')).catch(()=>{});await rmdir(released).catch(()=>{})}
+// Windows can temporarily refuse a dead-lock directory rename. Retain the recovery
+// gate throughout the bounded wait; a changed or unverifiable generation is never moved.
+async function retireDeadLock(lock,current,recovery,recoveryRecord){
+ const stale=lock+'.stale-'+randomUUID(),delays=[10,25,50];
+ for(let attempt=0;;attempt++){
+  const gate=await lockRecord(recovery),observed=await lockRecord(lock);
+  if(!gate.directory||gate.value.token!==recoveryRecord.token||gate.value.pid!==recoveryRecord.pid||observed.directory!==current.directory||observed.value.pid!==current.value.pid||observed.value.token!==current.value.token)throw failure('owner-lost','恢复期间锁身份已变化，拒绝移动另一代锁。');
+  if(alive(observed.value.pid))throw failure('owner-conflict','恢复期间已有Host所有者，拒绝移动其锁。');
+  try{await rename(lock,stale);return}catch(error){if(process.platform!=='win32'||!['EPERM','EBUSY'].includes(error.code)||attempt>=delays.length)throw error;await new Promise(resolve=>setTimeout(resolve,delays[attempt]))}
+ }
+}
 export class FileOwner{
  static async acquire(file){
   await mkdir(dirname(file),{recursive:true});let canonical;
@@ -22,7 +33,7 @@ export class FileOwner{
    try{
     const current=await lockRecord(lock).catch(error=>{if(error.code==='ENOENT')return null;throw error});
     if(current&&alive(current.value.pid))throw failure('owner-conflict','此持久路径已有Host所有者，请先关闭另一个Host。');
-    if(current)await rename(lock,lock+'.stale-'+randomUUID());
+    if(current)await retireDeadLock(lock,current,recovery,recoveryRecord);
    }finally{await releaseLock(recovery,recoveryRecord)}
   }
   throw failure('owner-conflict','存储所有权正在变化，请检查已有Host并重试。');

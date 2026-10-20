@@ -17,7 +17,7 @@ export interface ApplicationDirectory {
  createInstance(appId:string,projectId:string|null):Promise<ApplicationInstance>
  createView(instanceId:string,viewType?:string):Promise<ApplicationView>
  resolveView(viewId:string):Promise<{application:Application;instance:ApplicationInstance;view:ApplicationView}>
- setEnabled?(appId:string,enabled:boolean,revision:number):Promise<unknown>
+ setEnabled?(appId:string,enabled:boolean,revision:number):Promise<{appId:string;enabled:boolean;revision:number}>
 }
 export type CapabilityRef={kind:'agent'|'skill';id:string}&({source:'managed'}|{source:'application';ownerAppId:string})
 export type PrivateCapability={id:string;title:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}&({kind:'agent';presetId:string}|{kind:'skill';provider:string})

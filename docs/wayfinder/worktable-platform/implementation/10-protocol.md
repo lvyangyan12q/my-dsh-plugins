@@ -25,3 +25,7 @@ blocked_by: [worktable-framework-08]
 ## Scope and evidence
 
 依据[框架与应用接入规格](../framework-spec.md)及其中首阶段限定；真实安装用户流程为主接缝，契约测试只作辅助。记录版本、操作、结果与限制；无证据不勾选、不以提交或构建成功关单。保留用户数据、源码改动、原生DSH和历史工单状态。
+
+## Prepared candidate
+
+Project Notes与公开SDK候选实现见[10接入合同](10-sdk-contract.md)。已合入09最终生命周期实现；产品Worktable0.6.0首次发布SDK子路径，Notes要求>=0.6.0。源码/包门禁仅辅助，真实双应用、公共与应用私有Skill加载、跨实例/冷恢复待root最终安装验收；本工单保持in-progress，未勾选真实结果。

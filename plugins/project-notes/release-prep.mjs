@@ -15,8 +15,18 @@ const testOutput=run(process.execPath,['--import','tsx','--test',...tests]);proc
 run(process.execPath,[join(here,'check-types.mjs')]);run(process.execPath,[join(here,'build.mjs')])
 const work=mkdtempSync(join(tmpdir(),'project-notes-release-')),pack=JSON.parse(run(process.execPath,[npm,'pack','--ignore-scripts','--json','--pack-destination',work]))[0],archive=join(work,pack.filename)
 const expected=['README.md','cordis.patch.yml','lib/client.js','lib/index.js','package.json'];assert.deepEqual(pack.files.map(file=>file.path).sort(),[...expected].sort())
+let incompatibleCombinationRejected=false
+if(process.env.INCOMPATIBLE_WORKTABLE_PACKAGE){
+ const oldArchive=resolve(process.env.INCOMPATIBLE_WORKTABLE_PACKAGE),wrong=join(work,'incompatible-consumer');mkdirSync(wrong);writeFileSync(join(wrong,'package.json'),JSON.stringify({name:'notes-incompatible-consumer',version:'0.0.0',private:true,type:'module'}));
+ run(process.execPath,[npm,'install',oldArchive,'--offline','--ignore-scripts','--omit=optional','--no-audit','--no-fund'],{cwd:wrong})
+ writeFileSync(join(wrong,'business-record.json'),'{"recentNote":"must remain unchanged"}');const oldPackage=readFileSync(join(wrong,'package.json')),business=readFileSync(join(wrong,'business-record.json'));
+ writeFileSync(join(wrong,'no-sdk.mjs'),"import assert from 'node:assert/strict';await assert.rejects(import('dsh-worktable/sdk'),e=>e.code==='ERR_PACKAGE_PATH_NOT_EXPORTED');");run(process.execPath,[join(wrong,'no-sdk.mjs')],{cwd:wrong});
+ const rejected=spawnSync(process.execPath,[npm,'install',oldArchive,archive,'--offline','--ignore-scripts','--omit=optional','--no-audit','--no-fund'],{cwd:wrong,encoding:'utf8'});
+ assert.notEqual(rejected.status,0,'09 without SDK must not install alongside Notes');assert.match(rejected.stdout+rejected.stderr,/ERESOLVE/);assert.match(rejected.stdout+rejected.stderr,/dsh-worktable/);
+ assert.deepEqual(readFileSync(join(wrong,'package.json')),oldPackage);assert.deepEqual(readFileSync(join(wrong,'business-record.json')),business);assert.equal(existsSync(join(wrong,'node_modules/@deepseek-ai/dsh-project-notes/package.json')),false);incompatibleCombinationRejected=true
+}
 const consumer=join(work,'consumer');mkdirSync(consumer);writeFileSync(join(consumer,'package.json'),JSON.stringify({name:'notes-independent-consumer',version:'0.0.0',private:true,type:'module'}))
-run(process.execPath,[npm,'install',resolve(worktable),archive,'--offline','--ignore-scripts','--omit=optional','--legacy-peer-deps','--no-audit','--no-fund'],{cwd:consumer})
+run(process.execPath,[npm,'install',resolve(worktable),archive,'--offline','--ignore-scripts','--omit=optional','--no-audit','--no-fund'],{cwd:consumer})
 // The consumer is outside the monorepo. Supply actual official public host peer packages,
 // not legacy aliases or profile data. Production resolution is verified separately by root.
 const peers={'@deepseek-ai/cordis':join(source,'vendor/cordis'),'@deepseek-ai/schemastery':join(source,'vendor/schemastery'),'@deepseek-ai/dsh-storage-domain':join(source,'packages/storage/storage-domain'),'@types/react':dirname(require.resolve('@types/react/package.json')),'@types/node':dirname(require.resolve('@types/node/package.json'))}
@@ -40,5 +50,5 @@ run(process.execPath,[require.resolve('typescript/bin/tsc'),join(consumer,'consu
 const pkg=JSON.parse(readFileSync(join(here,'package.json'),'utf8')),dist=join(here,'dist','v'+pkg.version);mkdirSync(dist,{recursive:true})
 const versioned=join(dist,pack.filename),fixed=join(dist,'deepseek-ai-dsh-project-notes.tgz');copyFileSync(archive,versioned);copyFileSync(archive,fixed)
 const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');assert.equal(hash(versioned),hash(fixed))
-const receipt={status:'source-package-only-real-host-pending',testFiles:tests.length,testCases:Number(testOutput.match(/(?:ℹ|#)\s*tests\s+(\d+)/)?.[1])||null,files:expected,archiveSha256:hash(fixed),worktableSha256:hash(worktable),installedBytesMatched:5,installedImport:true,clientFactory:true,publicConsumerTypes:true,nativePeerSource:resolve(source),legacyAlias:false,consumer,formal3080Writes:0,remoteWrites:0}
+const receipt={status:'source-package-only-real-host-pending',testFiles:tests.length,testCases:Number(testOutput.match(/(?:ℹ|#)\s*tests\s+(\d+)/)?.[1])||null,files:expected,archiveSha256:hash(fixed),worktableSha256:hash(worktable),installedBytesMatched:5,installedImport:true,clientFactory:true,publicConsumerTypes:true,incompatibleCombinationRejected,npmLegacyPeerBypass:false,nativePeerSource:resolve(source),legacyAlias:false,consumer,formal3080Writes:0,remoteWrites:0}
 mkdirSync(join(here,'.checks'),{recursive:true});writeFileSync(join(here,'.checks/release-receipt.json'),JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt,null,2))

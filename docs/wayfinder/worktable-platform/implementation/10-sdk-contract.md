@@ -10,9 +10,11 @@
 
 Host注入 `worktableProtocol` 后调用 `.describe()`；Client注入 `worktableApplicationViews` 后调用 `.describe()`。返回 `{protocolVersion:1,features:string[]}` 的独立副本。先 `requireProtocol(actual,required)`；未知协议、错误shape、缺required feature明确拒绝，探测不建实例、不创建Session、不读业务资料、不发送。只有既有接口并不表示权限已授予。
 
-当前feature：`application-registration-v1`、`instance-view-v1`、`resource-reference-v1`、`instance-role-v1`、`application-private-capability-v1`、`prepared-task-v1`。应用生命周期feature须等09实际实现合入后按合同补充，不凭包版本或应用配置schema猜能力。框架协议、应用包version、应用配置settingsVersion、业务domain version与平台私有存储schema分开处理。
+当前feature：`application-registration-v1`、`instance-view-v1`、`resource-reference-v1`、`instance-role-v1`、`application-private-capability-v1`、`prepared-task-v1`、`application-lifecycle-v1`。09已合入，生命周期feature对应实际setEnabled合同。产品0.6.0首次发布./sdk；09产品0.5.0没有该子路径，Notes peer最低0.6.0，独立安装须拒绝错误组合。包范围仅作安装前依赖门槛，运行仍需协议与feature检查，不能从版本或应用配置schema猜实际能力。框架协议、应用包version、应用配置settingsVersion、业务domain version与平台私有存储schema分开处理。
 
 SDK扩展采取同协议新增可选feature、消费者按所需feature检查；不兼容的必需字段/语义变化需新协议或明确迁移。没有“假定所有未来版本兼容”的承诺。公共声明描述公开合同，不暴露内部存储锁或lifecycle数组给应用写入。
+
+0.6.0公开SDK必需两项替代旧7文件约束，保持唯一Worktable `npm run pack` 的**精确9文件白名单**：LICENSE、README.md、cordis.patch.yml、dsh.plugin.json、lib/client.js、lib/index.js、lib/sdk.js、lib/sdk.d.ts、package.json（归档均加package/前缀）。不是宽松匹配lib目录，源码和map仍拒绝。原生皮肤、ModuleLoader握手、React/native external、独立安装逐字节比对/导入、工厂和导航/DOM锚点/目录回归门禁继续保留；不修改AGENTS.md。Notes自己的唯一pack另用精确5文件：README.md、cordis.patch.yml、lib/client.js、lib/index.js、package.json。
 
 ## 最小Host贡献
 
@@ -84,6 +86,10 @@ Project Notes例子：managedAgentId/managedSkillId/roleWorkspace默认空，由
 
 ## 生命周期与证据
 
-09的公开enabled/lifecycleRevision/setEnabled及历史handoff语义由09最终合同承接；不把内部schema写入权交给应用。停用阻止新实例/新任务，保留既有原生控制；移除插件前需有序交接。08持久所有权/排空和原生未知结果边界继续适用，业务Domain不承诺任意多Host共享backend写。
+已合入[09最终合同](../09-lifecycle-protocol.md)：描述符enabled/lifecycleRevision，`setEnabled(appId,enabled,expectedRevision)`返回 `{appId,enabled,revision}`，陈旧版本拒绝。SDK保持该方法可选以便调用方检测feature及方法存在；不把内部schema写入权交给应用。停用阻止新实例/prepare/尚未准入submit及角色新建/替换，保留既有原生控制和旧task/role身份交接；组件缺失也不改历史Session。平台应用配置只有显式停用时schema2、全部显式启用后才回schema1，应用不直接读写它。无业务域迁移。
+
+原生plugin-manager没有live卸载否决hook，平台不能声称拦住直接停用/移除。卸载应用前利用平台交接目录处理原生问题/审批/Stop；整个Worktable被移除时仍可使用原生会话列表和控制。清单不是任务已完成/安全交接的证明。09真实安装/失败降版/兼容回退证据只证明09组合，不能代替包含Notes/SDK的10实页验收。08持久所有权/排空及进程终止后原生TOOL_OUTCOME_UNKNOWN边界继续适用，不重建未恢复的pending问题，业务Domain不承诺任意多Host共享backend写。
 
 10辅助测试使用公开服务/真实React/官方StorageDomain与SkillRegistry；native prompt故障及准入并发是系统边界受控替身，不等于真实模型执行。最终独立包安装、精确文件/类型消费、两个应用同时运行、应用私有与managed Skill真实加载、实例隔离/恢复由root验收。未完成前本合同仍候选，不关闭10或完整framework spec。
+
+10发布前发现Windows死所有者回收目录rename可瞬态EPERM，使两个竞争者本次均拒绝（未发生双写）。本阶段最薄修复仅Win32、仅dead-lock→stale的EPERM/EBUSY：持回收门闩进行10/25/50ms有界等待，最多4次，每次复验门闩token/PID与旧锁格式/token/PID且PID仍dead；EACCES、未知、换代立即拒绝，永久失败保留原锁与业务字节并释放自己的门闩。确定性公开fs.rename故障RED→GREEN及200轮真实directory/legacy双进程竞争均保持恰一个owner、下一次acquire和原字节。故障句柄来源未确定，不能归因为某个进程；这不是放松保守PID复用拒绝或自动重放业务操作。
