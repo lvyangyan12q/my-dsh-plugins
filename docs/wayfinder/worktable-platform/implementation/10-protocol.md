@@ -3,8 +3,8 @@ id: worktable-framework-10
 title: 第二应用独立接入并冻结首版协议
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
-assignee: null
+status: in-progress
+assignee: second_application
 blocked_by: [worktable-framework-08]
 ---
 
@@ -14,7 +14,7 @@ blocked_by: [worktable-framework-08]
 
 **Blocked by:** [持久化、并发与冷恢复](08-recovery.md)。
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 - [ ] 另一个真实开发应用依据接入文档通过注册接入，主要增加应用自身代码，不修改工作台核心私有分支。
 - [ ] 验证完整页面和模块、实例上下文、数据源及需要时的角色任务可以按声明复用。
