@@ -1,3 +1,4 @@
+import {describeProtocol} from '../sdk.mjs'
 import {RequestLifetime} from './request-lifetime.mjs'
 import {readRequestText} from './request-body.mjs'
 import {AdmissionGate} from './admission.mjs'
@@ -35,7 +36,7 @@ export function mountApplications(ctx) {
     const profile=platformCtx.profileContext;if(!profile?.dir||!isAbsolute(profile.dir))return;
     const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'),{gate});
     const runtime={service:owned,connection:platformCtx.connection,lifetime:new RequestLifetime()};owner=runtime;
-    platformCtx.provide('worktableAdmission',gate);platformCtx.provide('worktableApplications',owned);
+    platformCtx.provide('worktableAdmission',gate);platformCtx.provide('worktableApplications',owned);platformCtx.provide('worktableProtocol',Object.freeze({describe:describeProtocol}));
     platformCtx.effect(()=>async()=>{if(owner===runtime)owner=null;await runtime.lifetime.close(()=>owned.close())},'worktable: release application service');
   });
   const dispose=ctx.webServer.register({kind:'exact',path:'/api/worktable/applications',handler:async(req,res)=>{

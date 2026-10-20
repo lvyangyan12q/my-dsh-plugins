@@ -7,7 +7,7 @@
  * 运行时用 Blob URL 起 module worker（不依赖服务端路由，F5 即生效）。
  */
 import { build } from 'esbuild'
-import { readFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, mkdirSync, copyFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -57,3 +57,6 @@ await build({
 })
 
 console.log('[dsh-worktable build] done: lib/index.js, lib/client.js')
+
+copyFileSync(join(here,'src/sdk.mjs'),join(here,'lib/sdk.js'))
+copyFileSync(join(here,'src/sdk.d.ts'),join(here,'lib/sdk.d.ts'))

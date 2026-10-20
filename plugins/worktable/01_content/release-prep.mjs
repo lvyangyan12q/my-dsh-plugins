@@ -3,7 +3,7 @@
  *
  * 职责边界（与 Codex 审阅结论一致）：
  *   - 只负责：版本一致性检查 → 构建 → 语法检查 → npm pack →
- *     结构清单断言（package/ 前缀 + 精确 7 文件 + 无源码/无 .map）→
+ *     结构清单断言（package/ 前缀 + 精确 9 文件 + 无源码/无 .map）→
  *     独立临时目录真实安装 + import() 断言 → 双资产从同一已验证包复制 → SHA-256 输出。
  *   - 绝不执行：git 操作 / push / tag / gh release / 任何对外发布动作。
  *   - 任何断言失败 = 进程以非零码退出，绝不输出"验收通过"。
@@ -83,7 +83,7 @@ if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
-const compatTests = ['host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs']
+const compatTests = ['host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs']
   .map((file) => join(HERE, '..', '04_test', file))
 const compatRun = spawnSync(process.execPath, ['--test', ...compatTests], { cwd: HERE, stdio: 'inherit' })
 if (compatRun.status !== 0) { console.error('[release-prep] FAIL: session/input compatibility tests'); process.exit(1) }
@@ -120,6 +120,8 @@ const EXPECTED = [
   'package/dsh.plugin.json',
   'package/lib/client.js',
   'package/lib/index.js',
+  'package/lib/sdk.js',
+  'package/lib/sdk.d.ts',
   'package/package.json',
 ]
 const ok = entries.length === EXPECTED.length &&
@@ -131,7 +133,7 @@ if (!ok) {
   console.error('  got: ' + entries.join(', '))
   process.exit(1)
 }
-console.log('[release-prep] structure check passed (7 files, no src/, no .map)')
+console.log('[release-prep] structure check passed (9 files, no src/, no .map)')
 
 // ---------- 5. 独立临时目录真实安装 + import() 断言 ----------
 const inst = join(work, 'inst')
@@ -146,6 +148,8 @@ writeFileSync(assertJs, [
   "const TARGET_VERSION = " + JSON.stringify(VERSION),
   "const m = await import('dsh-worktable')",
   "const fails = []",
+  "const sdk=await import('dsh-worktable/sdk')",
+  "sdk.requireProtocol(sdk.describeProtocol(),['application-registration-v1','prepared-task-v1'])",
   "if (typeof m.apply !== 'function') fails.push('apply not function: ' + typeof m.apply)",
   "if (!Array.isArray(m.inject)) fails.push('inject not array')",
   "if (!m.inject.includes('webServer')) fails.push('server inject missing webServer')",

@@ -1,3 +1,4 @@
+import {describeProtocol} from '../sdk.mjs'
 import {TaskPanel,createTaskFacade} from './taskPanel'
 import {RolePanel,createRoleFacade} from './rolePanel'
 import {Component,useMemo,useSyncExternalStore,type ComponentType,type ReactNode} from 'react'
@@ -6,6 +7,7 @@ export type ApplicationViewProps={application:{id:string;title:string;kind:'deep
 
 /** Trusted plugin service. Applications own components, state and data; no host context is passed. */
 class ApplicationViews {
+  describe=describeProtocol
   private entries=new Map<string,Record<string,ComponentType<ApplicationViewProps>>>()
   private listeners=new Set<()=>void>()
   private revision=0
