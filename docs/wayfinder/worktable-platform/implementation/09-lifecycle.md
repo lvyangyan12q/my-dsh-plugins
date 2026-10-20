@@ -29,3 +29,5 @@ blocked_by: [worktable-framework-08]
 ## Implementation checkpoint（待真实安装验收）
 
 候选产品 0.5.0 已实现 [09 生命周期契约](../09-lifecycle-protocol.md)：持久开关、原生历史交接及可逆 schema1/2 回退门禁。源码/最终包辅助检查不替代官方插件管理真实停用、卸载、升级、失败和回退；当前保持 in-progress，不勾选验收项。Reading 包无改动，沿用08精确归档。
+
+辅助检查：Worktable 0.5.0 `npm run pack` 170/170、零 skip，最终 7 文件安装/导入、工厂、保留布局导航、DOM8、目录3通过；双资产 SHA256 `896c81bbc6526355889c07ef79137f31595a92c67250b0221e7353ff59176799`。Reading 未重建，沿用08归档 SHA256 `639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41`。精确源码与包字节清单：`C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable09-final-receipt.json`。此清单不代表真实官方管理验收已执行。
