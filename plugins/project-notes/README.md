@@ -1,4 +1,4 @@
-# 项目便签
+# 项目便签 0.1.1
 
 独立的便签应用，接入 Worktable 协议1。完整页编辑标题、正文和归档状态；“便签摘要”模块显示同实例筛选后的数量与选择。业务记录归自己的官方 `project_notes` StorageDomain v1；不同实例不共用记录。
 
@@ -6,14 +6,13 @@
 
 ## 可选整理助手
 
-安装不自动选择公共能力、不创建会话、不发送消息。原生插件配置中显式填写：
+安装不自动选择公共能力、不创建会话、不发送消息。原生左侧“插件”→已安装的 Project Notes → `project-notes` 行“配置”，显式填写后点击“保存角色配置”：
 
-- `settingsVersion`：1。
 - `managedAgentId`：Worktable公共管理中已保存、启用且适用的通用Agent精确ID。
 - `managedSkillId`：同目录中适用、允许模型调用的公共Skill精确ID。
 - `roleWorkspace`：原生已登记Workspace的绝对路径；普通目录存在不等于已登记。
 
-三个字段缺失时便签仍可浏览编辑，助手未配置。原生角色面板再显式创建角色会话。修改已有角色Agent需要明确替换，保留原会话历史，不会自动迁移。
+`settingsVersion`仍为1，不在表单中编辑。三个字段缺失时便签仍可浏览编辑，助手未配置。原生角色面板再显式创建角色会话。修改已有角色Agent需要明确替换，保留原会话历史，不会自动迁移。
 
 本应用注册私有 `project-notes-format` Skill（provider `project-notes`，model-only），仅贡献应用owner目录，不写入公共管理。角色还显式引用用户选择的公共Skill。原生实际加载须由 `tool-skill` 轨迹证明，引用通过不等于模型已经加载。
 
@@ -32,3 +31,5 @@
 在本目录 `npm run build` 生成Host ESM和客户端ModuleLoader工厂；`npm run test` 需 `DSH_SOURCE` 指向官方已构建rc.2。严格类型检查使用发布SDK声明及官方native public types，不借用旧personal-workbench声明。
 
 源码测试中，官方StorageDomain与SkillRegistry实际运行，Task native prompt仍是受控系统边界。真实安装/模型Skill加载/原生执行由root独立验收，不以此README或测试退出码宣称通过。应用尚属10候选，不关闭工单。
+
+配置页使用官方 `plugins.row.config` 与该行原生 Settings/ConfigEditor；三个字段作为 volatile 引用一次携带读取时 revision 保存，陈旧版本拒绝并保留草稿。Settings→内置插件是只读清单，不是填写位置。保存不创建/更换会话或发送消息，角色声明生效后刷新便签与权限；已绑定角色需要变更 Agent 时仍须明确替换，旧历史不会被改写。配置服务不可用时明确显示原因，不写 profile 文件绕过。settingsVersion仍是普通配置门禁，不在本页编辑。

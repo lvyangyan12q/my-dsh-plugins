@@ -37,11 +37,11 @@ writeFileSync(join(consumer,'assert.mjs'),`import assert from 'node:assert/stric
 import {readFileSync} from 'node:fs';import {runInNewContext} from 'node:vm';import {createRequire} from 'node:module';
 import {requireProtocol,describeProtocol} from 'dsh-worktable/sdk';
 import {apply,Config,name} from '@deepseek-ai/dsh-project-notes';
-assert.equal(name,'project-notes');assert.equal(typeof apply,'function');assert.equal(new Config({}).managedAgentId,'');requireProtocol(describeProtocol(),['prepared-task-v1']);
+assert.equal(name,'project-notes');assert.equal(typeof apply,'function');assert.equal(new Config({}).managedAgentId.get(),'');requireProtocol(describeProtocol(),['prepared-task-v1']);
 const toolRequire=createRequire(${JSON.stringify(join(here,'package.json'))});let factory,registered,removed=0;
 runInNewContext(readFileSync(${JSON.stringify(join(installed,'lib/client.js'))},'utf8'),{window:{__ModuleLoader__:{load(value){assert.equal(value.id,'@deepseek-ai/dsh-project-notes');factory=value.factory}}},console});
 const client=factory(id=>{if(!['react','react/jsx-runtime'].includes(id))throw Error('Unexpected runtime dependency '+id);return toolRequire(id)});
-const cleanups=[];client.apply({inject(keys,fn){assert.deepEqual(Array.from(keys),['worktableApplicationViews']);fn({worktableApplicationViews:{describe:describeProtocol,register(id,views){assert.equal(id,'project-notes');registered=views;return()=>{removed++}}},effect(fn){cleanups.push(fn())}})}});
+const cleanups=[];client.apply({inject(keys,fn){if(Array.from(keys)[0]==='slots'){fn({slots:{inject(name,register){assert.equal(name,'plugins.row.config');return register()},register(entry,body){assert.equal(entry.key,'@deepseek-ai/dsh-project-notes#project-notes');assert.equal(typeof body,'function');return()=>{}}}});return}assert.deepEqual(Array.from(keys),['worktableApplicationViews']);fn({worktableApplicationViews:{describe:describeProtocol,register(id,views){assert.equal(id,'project-notes');registered=views;return()=>{removed++}}},effect(fn){cleanups.push(fn())}})}});
 assert.equal(typeof registered.page,'function');assert.equal(typeof registered.summary,'function');for(const cleanup of cleanups)await cleanup();assert.equal(removed,1);
 `)
 run(process.execPath,[join(consumer,'assert.mjs')],{cwd:consumer})

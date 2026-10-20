@@ -14,7 +14,7 @@ test('full page writes real owned notes, summary shares selection and another in
   const a=await f.instance('project-A'),b=await f.instance('project-B'),summaryView=await f.apps.createView(a.instance.id,'summary');views=createNotesViews();
   await act(async()=>{page=Renderer.create(h(views.views.page,{...a,tasks:{prepare:async input=>{prepared.push(input)}}}));summary=Renderer.create(h(views.views.summary,{...a,view:summaryView}));other=Renderer.create(h(views.views.page,b))})
   await settle()
-  const input=label=>page.root.findByProps({'aria-label':label});
+  const input=label=>page.root.findByProps({'aria-label':label});for(const label of ['搜索便签','显示归档','便签标题','便签正文']){const control=input(label);assert.ok(control.props.id);assert.equal(page.root.findByProps({htmlFor:control.props.id}).type,'label')}assert.equal(input('显示归档').props.type,'checkbox');
   await act(async()=>{input('便签标题').props.onChange({target:{value:'核对合同'}});input('便签正文').props.onChange({target:{value:'周五前核对金额和交付日期。'}})})
   await act(async()=>{await page.root.findByProps({'aria-label':'保存便签'}).props.onClick()})
   await settle()
