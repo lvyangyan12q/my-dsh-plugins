@@ -1,5 +1,11 @@
 # Worktable 派生基线
 
+## 当前派生版本 · 2026-10-20
+
+当前实现为Worktable0.7.2；插件包根仍是`01_content/`。公开SDK协议v1、精确9文件打包约束及运行边界以[SDK合同](../../docs/wayfinder/worktable-platform/implementation/10-sdk-contract.md)为准；下文0.4.0/7文件等为最初基线记录。完整接续见[交接](../../docs/wayfinder/worktable-platform/handoff.md)、[技术路线与待办](../../docs/wayfinder/worktable-platform/technical-roadmap.md)及[首阶段验收](../../docs/wayfinder/worktable-platform/implementation/11-acceptance.md)。首阶段工单已closed，完整spec仍open；未同步正式3080。
+
+下文历史本地检查点路径不是办公室依赖；11个实施临时工作树已授权清理，保留分支、来源清单和本地发布归档。不要从历史段落推定原型、临时目录或旧命令仍可直接执行。
+
 本目录是 AI 工作台框架的代码基线；原工作台 personal-workbench 继续保留，未将其前台带入本派生。
 
 ## 来源与保护

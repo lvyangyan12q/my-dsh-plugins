@@ -1,5 +1,11 @@
 # 当前工单
 
+## 当前实施结果 · 2026-10-20
+
+[Worktable派生框架首阶段01—11](../wayfinder/worktable-platform/implementation/README.md)均已closed；完整framework spec继续open。最新[交接](../wayfinder/worktable-platform/handoff.md)与[后续待办/建议路线](../wayfinder/worktable-platform/technical-roadmap.md)已整理，建议尚未发布为新工单。
+
+以下为旧personal-workbench完整闭环12张工单。其编号与新首阶段11张分属不同清单，原open/暂缓状态保留；“所有工单open”仅指该旧清单，不代表新阶段未实施。逐条完成范围以[172项验收映射](../wayfinder/worktable-platform/implementation/11-acceptance-mapping.md)为准。
+
 <!-- native-compatible-plan -->
 ## 当前执行基线
 

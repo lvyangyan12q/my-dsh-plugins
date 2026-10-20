@@ -1,5 +1,13 @@
 # my-dsh
 
+## 当前入口 · 2026-10-20
+
+本轮以 **Worktable 派生 AI 工作台**为代码基线，源码在 [plugins/worktable/01_content](plugins/worktable/01_content/)，独立应用示例为 [Project Notes](plugins/project-notes/) 与 [Reading](plugins/reading-statistics/)。代码与文档位于 `codex/worktable-framework` 分支；首阶段11张工单已关闭，完整spec仍open。
+
+明天接续先读 **[交接与代码位置](docs/wayfinder/worktable-platform/handoff.md)**、**[实现技术路线及后续待办](docs/wayfinder/worktable-platform/technical-roadmap.md)**、[完整框架spec](docs/wayfinder/worktable-platform/framework-spec.md)和[首阶段工单](docs/wayfinder/worktable-platform/implementation/README.md)。3080未同步本阶段最终包；3091验收实例已按用户要求停止。
+
+以下插件列表、根目录启动/安装命令及旧菜单说明保留为 **personal-workbench 旧平台记录**，不能用它们判断新派生包已安装。新旧代码并存不是两套前台一起运行，考公专项仍暂缓。新包接入与运行边界见交接文档。
+
 文档入口：[当前进度与待办](docs/STATUS.md) · [规格](docs/specs/README.md) · [工单](docs/tickets/README.md) · [验收](docs/verification/README.md) · [历史](docs/archive/README.md)
 
 DSH 的本地插件仓库。

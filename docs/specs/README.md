@@ -1,5 +1,9 @@
 # 当前规格与设计
 
+## 当前框架入口 · 2026-10-20
+
+当前派生实现以[Worktable AI工作台框架spec](../wayfinder/worktable-platform/framework-spec.md)为增量规格，[实现技术路线](../wayfinder/worktable-platform/technical-roadmap.md)与[交接](../wayfinder/worktable-platform/handoff.md)记录代码和后续缺口。首阶段11张工单已closed，完整spec仍open；不替代或自动关闭以下旧完整闭环规格。以下“尚未迁移/验收”的旧段落按其历史日期和版本读取。
+
 <!-- native-compatible-plan -->
 ## 生效顺序
 

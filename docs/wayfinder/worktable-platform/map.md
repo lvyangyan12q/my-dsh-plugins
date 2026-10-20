@@ -5,6 +5,10 @@ labels: [wayfinder:map]
 status: open
 ---
 
+## 当前实现接续 · 2026-10-20
+
+本地图保留最初定位和决策历史；其后的“仅规划/尚未实施”按当时阶段读取。实际已完成Worktable派生框架首阶段11张工单，SDK v1已冻结。当前入口为[接续交接](handoff.md)、[实现技术路线与后续待办](technical-roadmap.md)、[完整框架spec](framework-spec.md)与[实施结果](implementation/README.md)。完整spec和本地图继续open，旧要求、未验项与后续范围保留；首阶段关闭不表示完整搭建器或全部迁移完成。
+
 ## Destination
 
 明确基于 Worktable 的通用 AI 应用工作台定位、应用模型、接入方式及迁移验收路径，形成可继续细化为可执行规格的共同决策。路线清楚不等于实现或交付完成。

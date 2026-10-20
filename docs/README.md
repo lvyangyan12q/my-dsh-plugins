@@ -1,5 +1,7 @@
 # 文档导航
 
+2026-10-20最新入口：[工作台交接](wayfinder/worktable-platform/handoff.md) · [实现技术路线与后续待办](wayfinder/worktable-platform/technical-roadmap.md) · [框架spec](wayfinder/worktable-platform/framework-spec.md) · [首阶段11张工单](wayfinder/worktable-platform/implementation/README.md)。
+
 日常只看 [进度与待办 STATUS](STATUS.md)。
 
 | 分类 | 入口 |

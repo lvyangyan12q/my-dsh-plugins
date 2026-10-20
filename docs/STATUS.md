@@ -1,5 +1,17 @@
 # 工作台进度与待办
 
+## 最新状态 · 2026-10-20
+
+Worktable派生框架首阶段01—11工单已closed，代码与验收记录检查点`b99cdcd`已推送`origin/codex/worktable-framework`，未合入main。最终Worktable0.7.2、Notes0.1.2与固定Reading组合、SDK协议v1见[验收](wayfinder/worktable-platform/implementation/11-acceptance.md)。当前完整framework spec仍open，旧12张工单与123项原要求不自动关闭。
+
+优先阅读：[接续交接与代码位置](wayfinder/worktable-platform/handoff.md)、[实现技术路线及后续待办](wayfinder/worktable-platform/technical-roadmap.md)、[完整框架spec](wayfinder/worktable-platform/framework-spec.md)、[11张工单](wayfinder/worktable-platform/implementation/README.md)、[两轴审查](wayfinder/worktable-platform/implementation/11-review.md)。
+
+172条映射为66首阶段已验/94当前未验/12后续保留；新框架49条为41/6/2。计数不是独立缺陷数，具体边界以[逐项映射](wayfinder/worktable-platform/implementation/11-acceptance-mapping.md)为准。完整搭建器、AI生成追改、通用展示组件库、未知升级与旧资料迁移仍有缺口；考公专项暂缓。后续建议已记入技术路线，本次未发布新工单。
+
+3091真实验收使用官方未补丁DSH0.2.0-rc.2，现已按用户要求停止；3080未同步本阶段最终包；3095仅本机交互原型。11个临时工作树已获授权清理，保留分支、38份本地发布归档与验收数据。未修改原生仓库或原上游插件。本次更新仅文档交接，不重启实例。
+
+**下面所有较早日期的“尚未实施/未推送/open”均为当时状态记录，不覆盖本段当前状态；旧版personal-workbench的兼容和启动记录不等于新派生框架验收。**
+
 ## 2026-10-18：Worktable 基线框架规格
 
 用户已确认以Worktable为基线、AI工作台为主、模块化内核及应用独立接入；项目可组合应用，实例状态与会话默认隔离、数据显式共享，同实例多视图共享状态。[框架与应用接入规格](wayfinder/worktable-platform/framework-spec.md)已发布到本地跟踪器，status=open、ready-for-agent。主验收为真实安装的完整用户流程，用户已明确确认；尚未冻结脏工作树基线、实施迁移或验证新组合。后续按[决策地图](wayfinder/worktable-platform/map.md)保留未决接入及交互事项。旧规格、原123项要求及历史验收继续保留，不据新规格关单。本轮仅文档写入，没有产品代码、原生、3080或远程变更。
