@@ -41,3 +41,6 @@ resume是显式使用动作，更新最近使用顺序而不新建实例/视图�
 ### Candidate0.9.0：组合模块生成元数据
 
 组合自定义模块的生成状态由profile下`worktable-platform/generations.v1.json`独立schema1 owner持久化；项目/实例/视图/页面/模块及draft revision/version/config fingerprint固定，不复用旧widget自动挂载状态。任务首次含受管preparation时，独立tasks.v1.json升sticky schema2，只有TaskStore接入1/2；旧角色/capability仍schema1。旧插件回退必须拒绝新版任务文件并保留字节，不能清空/降级/自动重发。生成目录由原生角色cwd明确批准，固定`.worktable-generated/<generationId>/result.json`及同目录HTML，路径realpath/大小/类型/hash围栏在预览和应用重验。只显式写draft，不自动activate或停止/删除原生会话；原生对应请求的aborted/未知结束不产生应用权。完整实际模型闭环待15最终验收，不将源码门禁当实页通过。
+
+
+0.9.0候选修正：共享recipe仅存custom通用managedGeneration标记，不存原始路径/私有generationId/hash。AppStore的可选generatedBindings按instance/page/module持久化draft与active引用；保存草稿与该实例draft绑定同事务，带明确viewId启用与该实例active交换同事务。其他实例不继承/替换产物，准备/Stop/仅应用草稿保持旧active。应用schema3/4保留；旧0.8.4无raw path拒显，TaskStore2仍拒旧任务reader。

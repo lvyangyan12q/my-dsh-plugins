@@ -46,8 +46,8 @@
     "Actual historical0.8.4 public reader executes schema2 refusal preserving file bytes; this is source proof, not an installed frozen-old-package claim."
   ],
   "sourceGate": {
-    "tests": 227,
-    "pass": 227,
+    "tests": 234,
+    "pass": 234,
     "fail": 0,
     "skip": 0,
     "environment": "WORKTABLE_NATIVE_RC2_ROOT points to independent official rc.2 source",
@@ -59,5 +59,17 @@
     ],
     "packExecuted": false
   },
-  "rollbackSticky": "After owned task discard and a subsequent ordinary task, schema remains2; actual historical0.8.4 public RoleStore code rejects unchanged bytes; current TaskStore reopens both records. Default RoleStore still accepts only1."
+  "rollbackSticky": "After owned task discard and a subsequent ordinary task, schema remains2; actual historical0.8.4 public RoleStore code rejects unchanged bytes; current TaskStore reopens both records. Default RoleStore still accepts only1.",
+  "supersedingReviewCorrections": {
+    "unreleasedOriginalCandidate": "9e35e7e619df92d160d0e6ba2e27f843a75fda77",
+    "legacyRendererRed": "Actual historical0.8.4 CompositionCanvas made1 raw artifact fetch from the initial applied config.",
+    "legacyRendererGreen": "Applied shared config has no artifactPath/generationId/artifactSha256, including pre-existing legacy path removal; old component makes0 file requests, renders0 iframe and reports missing artifact path.",
+    "instanceBindings": "AppStore generatedBindings keyed by app/instance/page/module keeps draft/active IDs+hash privately scoped; shared recipe only carries managedGeneration:true.",
+    "atomicity": "Draft marker+instance pending binding share application save transaction; explicit verified-view composition activation publishes only that instance active references in the same transaction.",
+    "activePreservation": "New prepare/Stop/draft do not invalidate existing active output; A/B Sessions/outputs independent; no-view activation publishes no pending binding; same-instance view refresh is scoped.",
+    "api": "artifact(viewId,pageId,moduleId) resolves active binding and private ledger; no client private ID/path or raw fallback.",
+    "pendingAdmission": "Trusted generation-owner async ledger/role/task/native/file validation before activation; owner identity, current refs/OCC and immediate revokedSet checked inside same app-store commit. Missing owner and stopped pending fail closed; already-active historical read remains independent.",
+    "lateUi": "RED retained Private A requirement in view B; identity/open-lifetime epochs and busy/error/notice/requirements resets prevent cross-view and same-view-close/reopen late UI contamination.",
+    "stopRace": "Actual public activation waits on a delayed native inspect boundary; concurrent TaskDirectory Stop completes without waiting on the platform gate, and final synchronous commit refuses publishing. Current running/active remains unchanged."
+  }
 }

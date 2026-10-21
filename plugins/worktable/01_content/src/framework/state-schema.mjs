@@ -1,3 +1,4 @@
+import {validateGenerated} from './generated-bindings.mjs'
 import {validatePresentationStates} from './composition-state.mjs'
 import {validateCompositions} from './composition-schema.mjs'
 const expect=value=>{if(!value)throw Error('invalid state')}
@@ -8,7 +9,7 @@ const unique=(rows,key)=>{expect(Array.isArray(rows));const ids=new Set();for(co
 export function applicationState(data){
  const policies=data.lifecycle??[];unique(policies,row=>row.appId);for(const row of policies)expect(id(row.appId)&&typeof row.enabled==='boolean'&&revision(row.revision));validateCompositions(data.compositions??[]);expect(data.schema===(data.presentationStates?.length?4:data.compositions?.length?3:policies.some(row=>!row.enabled)?2:1));
  unique(data.applications,row=>row.id);const instances=unique(data.instances,row=>row.id);unique(data.views,row=>row.id);
- validatePresentationStates(data.presentationStates??[],data);
+ validatePresentationStates(data.presentationStates??[],data);validateGenerated(data.generatedBindings??[],data);
  const reserved=data.deepApplicationIds??[];expect(Array.isArray(reserved)&&new Set(reserved).size===reserved.length&&reserved.every(id));
  for(const row of data.applications){expect(id(row.id)&&row.kind==='web'&&row.protocolVersion===1&&text(row.title)&&text(row.version)&&typeof row.url==='string');const url=new URL(row.url);expect(['http:','https:'].includes(url.protocol)&&!url.username&&!url.password&&!reserved.includes(row.id))}
  for(const row of data.compositions??[])expect(!reserved.includes(row.appId)&&!data.applications.some(app=>app.id===row.appId));
