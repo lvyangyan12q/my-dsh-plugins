@@ -19,6 +19,21 @@ export interface ApplicationDirectory {
  resolveView(viewId:string):Promise<{application:Application;instance:ApplicationInstance;view:ApplicationView}>
  setEnabled?(appId:string,enabled:boolean,revision:number):Promise<{appId:string;enabled:boolean;revision:number}>
 }
+/** Opt-in, owner-executed migration. inspect must be read-only and safe under a resource authorization callback (no recursive business-lease acquisition). */
+export interface MigrationInspection {dataVersion:string;revision:string}
+export interface MigrationSource {appId:string;instanceId:string;fromApplicationVersion:string;toApplicationVersion:string;fromDataVersion:string;dataRevision:string}
+export interface MigrationProposal extends MigrationSource {toDataVersion:string;impact:string;irreversible:boolean;recovery:string}
+export interface MigrationPlan extends MigrationProposal {id:string;viewId:string;revision:number;status:'prepared'|'executing'|'unknown'|'applied'|'failed'|'recovering'|'recovered'|'discarded';notice?:string}
+export interface MigrationOwner {
+ applicationVersions:string[]
+ inspect(instanceId:string):MigrationInspection|Promise<MigrationInspection>
+ plan(source:MigrationSource):MigrationProposal|Promise<MigrationProposal>
+ /** Must atomically validate expected dataRevision under its business lease before writes. */
+ execute(plan:MigrationPlan):Promise<void>
+ /** Explicit recovery must validate recoveryDataRevision and prove an old or target version endpoint. */
+ recover?(plan:MigrationPlan&{recoveryDataRevision:string}):Promise<{applicationVersion:string}>
+}
+export interface MigrationDirectory {contribute(appId:string,owner:MigrationOwner):Disposer}
 export type CapabilityRef={kind:'agent'|'skill';id:string}&({source:'managed'}|{source:'application';ownerAppId:string})
 export type PrivateCapability={id:string;title:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}&({kind:'agent';presetId:string}|{kind:'skill';provider:string})
 export interface CapabilityDirectory {contribute(appId:string,definitions:PrivateCapability[]):Disposer;list(appId?:string):Promise<unknown[]>}
@@ -44,6 +59,7 @@ export interface ApplicationViews extends ProtocolService {register(appId:string
 declare module '@deepseek-ai/cordis' {interface Context {
  worktableProtocol:ProtocolService
  worktableApplications:ApplicationDirectory
+ worktableMigrations:MigrationDirectory
  worktableApplicationViews:ApplicationViews
  worktableResources:ResourceDirectory
  worktableRoles:RoleDirectory

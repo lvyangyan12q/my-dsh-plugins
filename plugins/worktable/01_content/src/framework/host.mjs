@@ -1,3 +1,5 @@
+import {MigrationDirectory} from './migrations.mjs'
+import {mountMigrationRoutes} from './migration-host.mjs'
 import {mountCompositions} from './composition-host.mjs'
 import {describeProtocol} from '../sdk.mjs'
 import {RequestLifetime} from './request-lifetime.mjs'
@@ -32,13 +34,14 @@ export function protectWorktableRoutes(ctx,server) {
 
 /** New API owns its authentication; webServer.register itself is not an auth fence. */
 export function mountApplications(ctx) {
-  const gate=new AdmissionGate();mountResources(ctx);mountCompositions(ctx);let owner=null,closing=false;
+  const gate=new AdmissionGate();mountResources(ctx);mountCompositions(ctx);let owner=null,closing=false;mountMigrationRoutes(ctx,()=>closing?null:owner);
   ctx.inject(['profileContext','connection'],platformCtx=>{
     const profile=platformCtx.profileContext;if(!profile?.dir||!isAbsolute(profile.dir))return;
     const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'),{gate});
-    const runtime={service:owned,connection:platformCtx.connection,lifetime:new RequestLifetime()};owner=runtime;
-    platformCtx.provide('worktableAdmission',gate);platformCtx.provide('worktableApplications',owned);platformCtx.provide('worktableProtocol',Object.freeze({describe:describeProtocol}));
-    platformCtx.effect(()=>async()=>{if(owner===runtime)owner=null;await runtime.lifetime.close(()=>owned.close())},'worktable: release application service');
+    const migrations=new MigrationDirectory(join(profile.dir,'worktable-platform','migrations.v1.json'),owned,{gate});owned.setReadinessGuard(appId=>migrations.assertReady(appId));
+    const runtime={service:owned,migrations,connection:platformCtx.connection,lifetime:new RequestLifetime()};owner=runtime;
+    platformCtx.provide('worktableMigrations',migrations);platformCtx.provide('worktableAdmission',gate);platformCtx.provide('worktableApplications',owned);platformCtx.provide('worktableProtocol',Object.freeze({describe:describeProtocol}));
+    platformCtx.effect(()=>async()=>{if(owner===runtime)owner=null;await runtime.lifetime.close(async()=>{const errors=[];try{await migrations.close()}catch(error){errors.push(error)}try{await owned.close()}catch(error){errors.push(error)}if(errors.length)throw new AggregateError(errors,'应用与迁移状态关闭失败')})},'worktable: release application service');
   });
   const dispose=ctx.webServer.register({kind:'exact',path:'/api/worktable/applications',handler:async(req,res)=>{
     const send=(status,body)=>{res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(body))};const runtime=owner;

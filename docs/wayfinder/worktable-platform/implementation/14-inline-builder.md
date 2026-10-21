@@ -49,3 +49,5 @@ blocked_by: [worktable-framework-12, worktable-framework-13]
 npm ci按锁安装58项；源码全部204项GREEN、零skip（WORKTABLE_NATIVE_RC2_ROOT指向独立未经补丁rc.2源码，首轮2项未设该变量的skip不计已验，正确变量复跑后均执行）。开发bundle build/check、实际工厂、现有project-navigation-installed及collapsed-project回归通过。这些是源码/模拟原生DOM辅助证据，未打包/部署/重启3091/改3080，正式UI仍由root最终唯一pack安装后验收。新版本候选曾预留0.8.1；如18先冻结0.8.2，按集成最终分配更高版本，冻结资产不覆盖。
 
 唯一pack门禁新增12的compositions/composition-http、16的storage-refusal-http及14公开state/template/source/reference/editor/runtime测试；collapsed-project针对安装后的最终bundle追加门禁，不以源码字符串测试数组。完整framework spec与15/17/19保持原未验范围。
+
+2026-10-21合并18：集成4ae55729d43a581413bb1cc31d8839c549e0f188已合入本工单分支，冲突按双方已验证意图保留schema4实例状态与readiness、CompositionView与MigrationPanel、SDK可选features及全部pack门禁。统一候选0.8.3；0.8.1/0.8.2均未由本分支打包或冻结，既有0.8.0不覆盖。合并后仅补实际冲突涉及的46项应用/资源/SDK/组合/迁移回归，全部通过且零skip；build/check、真实工厂求值与折叠菜单/中文组合Escape、现有导航窄屏标注回调通过。未重复声称204源码全量属于新合并版，未pack或部署，14/18仍待root最终产物实际用户流程。

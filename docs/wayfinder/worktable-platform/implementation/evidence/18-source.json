@@ -1,0 +1,60 @@
+{
+  "ticket": "worktable-framework-18",
+  "status": "candidate-source-only",
+  "candidateVersion": "0.8.2",
+  "installedAcceptance": false,
+  "red": [
+    {
+      "seam": "ResourceDirectory.call",
+      "observed": "Missing expected rejection for managed failed source read before guards"
+    },
+    {
+      "seam": "MigrationPanel final TSX module",
+      "observed": "Could not resolve missing migrationPanel.tsx after dependency setup"
+    },
+    {
+      "seam": "public SDK requireProtocol",
+      "observed": "application-migration-v1 missing before feature addition"
+    }
+  ],
+  "green": {
+    "command": "node --test plugins/worktable/04_test/migration*.test.mjs plugins/worktable/04_test/migrations.test.mjs plugins/worktable/04_test/application-http.test.mjs plugins/worktable/04_test/data-grants.test.mjs plugins/worktable/04_test/lifecycle.test.mjs plugins/worktable/04_test/task-host.test.mjs plugins/worktable/04_test/recovery-host.test.mjs",
+    "tests": 26,
+    "pass": 26,
+    "fail": 0,
+    "skip": 0
+  },
+  "behavior": [
+    "durable execution intent survives actual child-process death without replay",
+    "independent final server/client application factories, React-only client external",
+    "real synthetic owner file partial failure, checkpoint recovery, explicit second conversion",
+    "consumer/source read+write refusal and explicit recovery",
+    "owner lease plus migration intent authorize concurrency completes without deadlock"
+  ],
+  "boundaries": [
+    "no installation, model, native/upstream/3080 or existing business data changes",
+    "application-wide conservative gate checks all adopted baselines; unadopted instances are not certified",
+    "native plugin-manager replacement and trusted owner private writes are outside platform admission fence",
+    "owner inspect is read-only and safe under resource authorization; execute/recover atomically check expected revision in business lease",
+    "ticket remains open pending official archive actual UI acceptance"
+  ],
+  "fixture": "plugins/worktable/04_test/fixtures/migration-owner/README.md",
+  "releaseCompatibilityGate": {
+    "source": "01_content/release-prep.mjs compatTests (only test command extracted; pack not executed)",
+    "tests": 206,
+    "pass": 206,
+    "fail": 0,
+    "skip": 0,
+    "officialParserEnvironment": "WORKTABLE_NATIVE_RC2_ROOT=D:/programming/workspace/my-dsh/.scratch/native-unpatched-clean-1791697941186",
+    "initialFailure": "Existing storage-refusal HTTP test used Fetch with an OS-assigned browser-forbidden port; switched its test client to node:http without altering real route/file-lock behavior."
+  },
+  "candidateBuild": {
+    "version": "0.8.2",
+    "commands": [
+      "npm run build",
+      "npm run check"
+    ],
+    "pass": true,
+    "archiveCreated": false
+  }
+}

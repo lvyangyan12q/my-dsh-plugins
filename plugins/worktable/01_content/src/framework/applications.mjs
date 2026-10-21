@@ -14,6 +14,7 @@ function nextUse(data){return data.instances.reduce((time,item)=>Math.max(time,i
 /** Profile-owned directory. Public methods return detached records; no DOM or session globals. */
 export class ApplicationDirectory {
   constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map(); this.closing=false; this.store=new ProfileFileStore(file,()=>({schema:1,applications:[],instances:[],views:[]}),applicationState,[1,2,3,4]) }
+  setReadinessGuard(guard){if(typeof guard!=='function')throw new TypeError('Readiness guard required');this.readinessGuard=guard;return()=>{if(this.readinessGuard===guard)this.readinessGuard=null}}
   async read() {if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.store.read()}
   close(){if(!this.closePromise){this.closing=true;this.closePromise=this.gate.run(async()=>{await this.pending;await this.store.close()})}return this.closePromise}
   change(operation,committed=()=>{}) {if(this.closing)return Promise.reject(new ApplicationError('unavailable','应用状态所有者已关闭。',503));return this.gate.run(()=>{if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.changeWithin(operation,committed)})}
@@ -57,7 +58,8 @@ export class ApplicationDirectory {
   lifecycle(data,appId){const row=data.lifecycle?.find(row=>row.appId===appId);return {enabled:row?.enabled??true,lifecycleRevision:row?.revision??0}}
   setEnabled(appId,enabled,revision){return this.change(data=>{if(typeof enabled!=='boolean'||!Number.isSafeInteger(revision)||revision<0)throw new ApplicationError('invalid-lifecycle','停用操作需要明确状态与版本。');if(![...data.applications.map(a=>a.id),...(data.deepApplicationIds??[]),...(data.compositions??[]).filter(row=>row.running).map(row=>row.appId),...(data.lifecycle??[]).map(row=>row.appId)].includes(appId))throw new ApplicationError('application-missing','应用身份不存在。',404);const current=this.lifecycle(data,appId);if(current.lifecycleRevision!==revision)throw new ApplicationError('revision-conflict','应用状态已改变，请刷新。',409);data.lifecycle??=[];const next={appId,enabled,revision:revision+1},index=data.lifecycle.findIndex(row=>row.appId===appId);if(index<0)data.lifecycle.push(next);else data.lifecycle[index]=next;data.schema=data.presentationStates?.length?4:data.compositions?.length?3:data.lifecycle.some(row=>!row.enabled)?2:1;return next})}
   assertAvailable(data,appId){const app=this.application(data,appId);if(!app.enabled)throw new ApplicationError('application-disabled','应用已停用；新实例和新任务已阻止，历史原生会话保留。',409);return app}
-  async assertEnabled(appId){await this.pending;return structuredClone(this.assertAvailable(await this.read(),appId))}
+  async assertReadiness(appId){await this.readinessGuard?.(appId)}
+  async assertEnabled(appId){await this.pending;await this.assertReadiness(appId);return structuredClone(this.assertAvailable(await this.read(),appId))}
   async resolveStoredView(id){await this.pending;const data=await this.read(),view=data.views.find(row=>row.id===id);if(!view)throw new ApplicationError('view-missing','持久视图不存在。',404);return structuredClone({view,instance:this.instance(data,view.instanceId)})}
 
   application(data,id) { const found=this.available(data).find(a=>a.id===id); if(!found) throw new ApplicationError('application-missing','应用未注册或已移除；实例记录保留。',404); return found }
@@ -69,7 +71,7 @@ export class ApplicationDirectory {
   }
   async createInstance(appId,projectId) {
     projectId=projectScope(projectId)
-    return this.change(data=>{ this.assertAvailable(data,appId); const record={id:randomUUID(),appId,projectId,revision:1,createdAt:Date.now(),lastOpenedAt:nextUse(data)}; data.instances.push(record);return record })
+    return this.gate.run(async()=>{await this.readinessGuard?.(appId);return this.changeWithin(data=>{ this.assertAvailable(data,appId); const record={id:randomUUID(),appId,projectId,revision:1,createdAt:Date.now(),lastOpenedAt:nextUse(data)}; data.instances.push(record);return record })})
   }
   async resume(id) {
     return this.change(data=>{const instance=this.instance(data,id);this.application(data,instance.appId);instance.lastOpenedAt=nextUse(data);return instance})
