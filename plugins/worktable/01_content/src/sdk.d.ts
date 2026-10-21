@@ -53,7 +53,8 @@ export interface ResourceOwner<T extends ResourceValue=ResourceValue> {
  taskContext?(value:T,selection:unknown):{title:string;text:string}|Promise<{title:string;text:string}>
  withTaskLease?<R>(operation:()=>Promise<R>):Promise<R>
 }
-export interface ResourceDirectory {register<T extends ResourceValue>(owner:ResourceOwner<T>):Disposer;catalog?():Promise<{appId:string;appTitle:string;instanceId:string;projectId:string|null;viewId:string;resourceId:string;descriptor?:ResourceDescriptor}[]>}
+export interface ResourceConnectionStatus {status:'active'|'revoked'|'none'|'owned'|'different-source';connection:{id:string;revision:number;status:'active'|'revoked';allowedActions:string[]}|null}
+export interface ResourceDirectory {connection?(input:{viewId:string;ownerViewId:string;resourceId:string}):Promise<ResourceConnectionStatus>;register<T extends ResourceValue>(owner:ResourceOwner<T>):Disposer;catalog?():Promise<{appId:string;appTitle:string;instanceId:string;projectId:string|null;viewId:string;resourceId:string;descriptor?:ResourceDescriptor}[]>}
 export interface TaskContextRef {resourceId:string;selection?:unknown}
 export interface TaskFacade {prepare(input:{roleId:string;text:string;contexts?:TaskContextRef[]}):Promise<unknown>}
 export interface RoleFacade {read(roleId:string):Promise<unknown>;ensure(roleId:string,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;retry(roleId:string,sessionId:string,revision:number):Promise<unknown>;replace(roleId:string,sessionId:string,revision:number,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;open(roleId:string,sessionId:string,revision:number):Promise<void>}

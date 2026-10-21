@@ -35,3 +35,9 @@ blocked_by: [worktable-framework-14, worktable-framework-16]
 源码辅助证据见[evidence/17-source.json](evidence/17-source.json)。真实Chrome纯合成双站点验证了后代漏洞RED→GREEN、普通/受限CSP双probe、无opt-in拒绝、302/self-navigation、Worker/Object以及cookie主机布尔正反对照；仅为隔离辅助，不是安装DSH的F14。独立合作站点的复验入口见插件04_test/fixtures/web-bridge/README.md。最终包/3091读取与准备、错误窗口/实例、撤销/关闭/重开、真实任务归属尚由root验证，未执行pack/install/restart/model/push，不关闭本票。
 
 普通网页入口补充保护：真实Chrome的原opaque sandbox仍发送同hostname跨端口合成HttpOnly/SameSite=Strict Cookie。经root明确收窄，websiteEntry有Host origin时也拒同normalized hostname；公开注册/HTTP/旧URL实际renderer RED→GREEN，保留旧URL和资料，不自动改写。已保存127.0.0.1跨端口应用需显式改用localhost等独立hostname。辅助服务/标签和合成Cookie哨兵均已清理，3091/3080不动。
+
+## 0.9.2 资料引用撤销补充（源码候选，保持open）
+
+实际F14发现网站模块缺少资料引用撤销入口。现仅展开“网站能力”时查询当前消费视图、所选来源视图与resourceId的授权元数据；不调用全局snapshot、不读取业务资料。界面显示只读/未授权/已撤销/自有/其他来源状态，提供独立“撤销此实例资料引用”。撤销沿用既有revision控制及局部通知，不删已准备任务、不自动发送或Stop；其原生发送仍由既有资料grant复验拒绝。权限回执与模块代际及查询epoch绑定，替换模块的晚回执不可污染新视图；撤桥接先清理旧错误。须root安装0.9.2实际读→准备→界面撤资料→原生提交拒绝后补证，当前不关闭17。
+
+源码复验：unique release source gate 260/260，零skip；build/check及实际构建client factory（real React、原external白名单）通过。新增Host受控元数据正反用例确认不调用Owner.read、不返回其他来源grant字段；React验证独立资料撤销和跨模块晚回执。此处仍为源码辅助，不替代0.9.2实际安装验收。
