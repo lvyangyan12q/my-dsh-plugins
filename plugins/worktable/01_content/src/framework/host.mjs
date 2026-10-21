@@ -1,3 +1,4 @@
+import {mountWebBridge} from './web-bridge-host.mjs'
 import {MigrationDirectory} from './migrations.mjs'
 import {mountMigrationRoutes} from './migration-host.mjs'
 import {mountCompositions} from './composition-host.mjs'
@@ -34,7 +35,7 @@ export function protectWorktableRoutes(ctx,server) {
 
 /** New API owns its authentication; webServer.register itself is not an auth fence. */
 export function mountApplications(ctx) {
-  const gate=new AdmissionGate();mountResources(ctx);mountCompositions(ctx);let owner=null,closing=false;mountMigrationRoutes(ctx,()=>closing?null:owner);
+  const gate=new AdmissionGate();mountResources(ctx);mountCompositions(ctx);mountWebBridge(ctx);let owner=null,closing=false;mountMigrationRoutes(ctx,()=>closing?null:owner);
   ctx.inject(['profileContext','connection'],platformCtx=>{
     const profile=platformCtx.profileContext;if(!profile?.dir||!isAbsolute(profile.dir))return;
     const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'),{gate});

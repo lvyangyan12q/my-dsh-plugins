@@ -105,3 +105,13 @@ export interface CompositionDirectory {
  activate(input:CompositionRevision):Promise<CompositionRecord>
 }
 declare module '@deepseek-ai/cordis' {interface Context {worktableCompositions:CompositionDirectory}}
+
+/** Optional Host-only website-module capability. Plain websites receive none; browser protocol is documented separately. */
+export interface WebBridgeCapability {id:string;revision:number;epoch:string;viewId:string;moduleId:string;instanceId:string;hostOrigin:string;origin:string;url:string;expiresAt:number;methods:('read-resource'|'prepare-task')[]}
+export interface WebBridgeDirectory {
+ open(input:{viewId:string;moduleId:string;hostOrigin:string;allowRead:boolean;allowPrepare:boolean}):Promise<WebBridgeCapability>
+ revoke(id:string,revision:number):Promise<{revoked:true}>
+ request(input:{capabilityId:string;revision:number;epoch:string;requestId:string;method:'read-resource';params:Record<string,never>}):Promise<unknown>
+ request(input:{capabilityId:string;revision:number;epoch:string;requestId:string;method:'prepare-task';params:{text:string}}):Promise<{taskId:string;revision:number;status:'prepared';notice:string}>
+}
+declare module '@deepseek-ai/cordis' {interface Context {worktableWebBridge:WebBridgeDirectory}}

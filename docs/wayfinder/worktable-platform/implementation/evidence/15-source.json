@@ -46,8 +46,8 @@
     "Actual historical0.8.4 public reader executes schema2 refusal preserving file bytes; this is source proof, not an installed frozen-old-package claim."
   ],
   "sourceGate": {
-    "tests": 237,
-    "pass": 237,
+    "tests": 257,
+    "pass": 257,
     "fail": 0,
     "skip": 0,
     "environment": "WORKTABLE_NATIVE_RC2_ROOT points to independent official rc.2 source",
@@ -78,5 +78,13 @@
     "unavailable": "A ready binding with roles.read.unavailable is refused before filesystem or generation/task writes.",
     "ui": "Related role/application events refresh describe and clear acknowledgement; unrelated instance role events do not replace current confirmation. Prepare sends returned confirmationToken and errors force re-description.",
     "scope": "Optimistic precondition, not authorization token; native task submission/explicit preview/apply/activation boundaries unchanged."
+  },
+  "candidateVersion": "0.9.1",
+  "instanceInFlightCorrection": {
+    "red": "B private generated binding save/activation changed shared recipe revision and incorrectly rejected A in-flight result as generation-target-changed.",
+    "green": "Generation identity includes complete shared draft/running structure fingerprints (including versions and roles), stable slot and instance identity; original recipe revision is retained for audit but private binding OCC changes do not revoke native output.",
+    "occ": "Preview durably records current recipeRevision. Apply must match both that explicit preview revision and current application OCC. An intervening private binding save refuses stale apply without revocation; re-preview permits retry.",
+    "proof": "Public real-file A active/A in-flight plus independent B prepare/preview/apply/activate; second B publication between A preview/apply; A re-preview/apply/activate succeeds and both outputs remain isolated. Actual shared title/structure change still refuses.",
+    "merge": "Integrated bridge46578522e84e334bdcfdea61632daae020a48673; preserved generation preparation owners and third-argument trusted web source, both runtime branches, SDK features and regression gate union."
   }
 }

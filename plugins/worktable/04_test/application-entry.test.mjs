@@ -80,7 +80,7 @@ test('registration rejects duplicate identities, incompatible versions and nativ
     await apps.register(definition)
     await assert.rejects(()=>apps.register(definition),{code:'application-conflict'})
     await assert.rejects(()=>apps.register({...definition,id:'other',protocolVersion:2}),{code:'protocol-incompatible'})
-    for(const url of ['javascript:alert(1)','data:text/html,test','file:///C:/test','https://user:pass@example.com/','http://127.0.0.1:3091/api/worktable/file','https://example.com/?token=secret']) {
+    for(const url of ['javascript:alert(1)','data:text/html,test','file:///C:/test','https://user:pass@example.com/','http://127.0.0.1:3091/api/worktable/file','http://127.0.0.1:18573/','https://example.com/?token=secret']) {
       await assert.rejects(()=>apps.register({...definition,id:'unsafe',url}),{code:'unsafe-entry'})
     }
     assert.deepEqual((await apps.catalog()).map(a=>a.id),['web'])

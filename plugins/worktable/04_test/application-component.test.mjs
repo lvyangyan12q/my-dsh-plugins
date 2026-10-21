@@ -157,3 +157,9 @@ test('public layout moveTab and swapPanes retain application instance and view i
     assert.deepEqual(saved.at(-1).main[0].tabs.map(tab=>tab.content),[other,page])
   } finally {globalThis.window=previousWindow;if(previousStorage)Object.defineProperty(globalThis,'localStorage',previousStorage);else delete globalThis.localStorage}
 })
+
+test('legacy same-cookie-host web entry renders an actionable error without issuing its iframe or rewriting stored URL',async()=>{
+ const oldWindow=globalThis.window,oldFetch=globalThis.fetch;globalThis.window=Object.assign(new EventTarget(),{location:{origin:'http://127.0.0.1:3091'}});const record={view:{id:'legacy-view',instanceId:'legacy-instance'},instance:{id:'legacy-instance',projectId:null,revision:1},application:{id:'legacy-site',title:'Legacy local site',kind:'web',url:'http://127.0.0.1:18573/'}};let root
+ globalThis.fetch=async()=>({ok:true,json:async()=>structuredClone(record)})
+ try{await act(async()=>{root=renderer.create(React.createElement(ApplicationPane,{content:{kind:'application',appId:'legacy-site',instanceId:'legacy-instance',viewId:'legacy-view',title:'Legacy local site'},projects:[],onOpen(){},reloadKey:0}));await flush()});assert.equal(root.root.findAllByType('iframe').length,0);assert.match(JSON.stringify(root.toJSON()),/不同主机名/);assert.equal(record.application.url,'http://127.0.0.1:18573/')}finally{if(root)await act(async()=>root.unmount());globalThis.window=oldWindow;globalThis.fetch=oldFetch}
+})

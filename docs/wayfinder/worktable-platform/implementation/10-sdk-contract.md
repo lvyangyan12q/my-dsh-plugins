@@ -148,3 +148,19 @@ Generation correction: shared recipe custom config contains only a pathless mana
 
 
 Generation prepare additionally requires the exact confirmationToken returned by current describe. This is a nonsecret optimistic fingerprint of target/recipe, role/binding/Session revisions and canonical roots, not an authorization capability. Stale facts or unavailable role refuse before mkdir/ledger/task. UI related role/application changes invalidate acknowledgement; browser input still cannot choose root or Session.
+## 17可选合作网页桥接（源码候选，F14尚待安装验收）
+
+feature `controlled-web-bridge-v1`。只支持当前组合deep应用的网站模块；独立kind:web应用、custom HTML和普通网页保持无能力，不放宽Role/Task/Resource全局deep限制。Host在模块中显式选择只读当前connectionId资源和/或准备给当前roleId的任务；目标来自running recipe与当前view，网页不能选择原生会话、实例、角色、资源或文件路径。角色须已由Host显式创建就绪；共享资料须预先明确授予当前consumer实例。模板不复制能力，刷新、关闭、导航及重启后重新确认。能力最多十分钟、64个唯一请求，读取返回上限64KiB；错误不自动重试。
+
+安全边界：桥接网站必须不同normalized hostname，同主机不同port也拒绝（DSH官方浏览器认证Cookie是host-only、HttpOnly、SameSite=Strict、Path=/，不按端口隔离）。当前实际辅助验证为DSH来源127.0.0.1、合作站点localhost；普通网页入口同样拒同hostname跨端口：原sandbox真实初次导航仍会发送同属性合成Cookie。旧URL/资料保留，但不会继续发iframe请求；用户须显式改为localhost等不同hostname，平台不自动重写或放宽Cookie。可信wrapper采用HTTP响应CSP，frame-src只给精确合作来源，固定nonce脚本不代理外部HTML；合作iframe另外必须接受`csp`嵌入强制政策（Allow-CSP-From设为Host origin）：脚本/样式/图片/连接限本站，frame/worker/object/base/form禁止，sandbox无popup/top-navigation。直接302/self-navigation和外部后代DSH frame都必须被阻止，不能只在load后检查地址。浏览器在启用前须实际执行普通可信probe并阻止script-src-none受限probe；仅存在iframe.csp属性不算通过。不接受CSP/未完成合作协议握手时不显示已连接，六秒后撤销，不降级为有能力的不受控frame。普通网页仍原sandbox/no-referrer。
+
+公开Host服务`worktableWebBridge`的open由可信Host传入viewId/moduleId/hostOrigin/allowRead/allowPrepare；HTTP宿主origin由当前请求推导，不能由浏览器字段覆盖。revoke与prepare提交共享AdmissionGate。能力保存当前instance/view/module/运行版本与lifecycle、role binding、resource grant/owner的指纹；执行前和读取返回后复验。卸载先撤能力再等待请求；异步读取、关闭、替换、停用/再启用和撤销后的迟到结果不回传。已经持久准备或发送的原生任务保留，不把关网页变成Stop。
+
+合作网页协议1：收到可信parent精确Host来源的`worktable:init`（capabilityId/revision/epoch/viewId/moduleId/instanceId/methods）后，向同一个parent和精确targetOrigin回复`worktable:ready`及关联身份。请求`{type:'worktable:request',protocol:1,...关联身份,requestId,method,params}`；method仅`read-resource`、`prepare-task`。读取params必须空对象；准备params仅非空text，最多4000字。wrapper同时验证真实event.origin、event.source、capability/instance/view/module/epoch；Host再验证可信wrapper窗口和来源，再调用有限认证API。错误来源、窗口、代际或身份直接拒绝，不把网页自报origin当认证。禁止通配targetOrigin。
+
+回复为`worktable:response`同capability/revision/epoch/requestId及ok/value或有限错误。读取只返回已选ResourceOwner当前read.value，不返回grant目录或原生历史。准备只返回taskId/revision/prepared及说明，无Session ID。来源写入TaskDirectory.row.source.web，正文明确“不可信网页请求”；contexts不接受网页自带records。模块存在数据连接时，准备固定附加该reference，无论是否另授网页read；来源Owner须支持taskContext/withTaskLease，选择仅来自Host模块config.taskSelection（不能由网页覆盖，平台不猜业务schema），无有效上下文则拒绝。TaskDirectory在原生submit重验该grant，撤资料授权阻止待发任务；撤bridge能力本身仍保留Host准备行供审阅。Host上方原生AI任务面板审阅/编辑/放弃/显式发送，bridge不提供submit、模型或工具方法。已有任务仍按原生身份/权限准入，不因网页关闭取消历史。
+
+实际辅助脚本见`plugins/worktable/04_test/fixtures/web-bridge/README.md`。规范参考：[HTML sandbox](https://html.spec.whatwg.org/multipage/iframe-embed-object.html#attr-iframe-sandbox)、[CSP Embedded Enforcement](https://www.w3.org/TR/2026/WD-csp-embedded-enforcement-20260422/)。这是显式合作接入，不承诺任意网站或未经测试浏览器的高级桥接；反向代理HTTPS origin推导未实测，失败保持关闭。
+
+
+Candidate0.9.1 generation targets retain original revision for audit but compare shared draft/running structure identity, not another instance private binding OCC. Preview records latest recipeRevision; apply requires that exact explicit preview and current OCC. Stale OCC permits re-preview without losing the native result; actual shared structure/version drift still refuses.
