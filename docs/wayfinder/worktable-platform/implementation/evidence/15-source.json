@@ -46,8 +46,8 @@
     "Actual historical0.8.4 public reader executes schema2 refusal preserving file bytes; this is source proof, not an installed frozen-old-package claim."
   ],
   "sourceGate": {
-    "tests": 234,
-    "pass": 234,
+    "tests": 237,
+    "pass": 237,
     "fail": 0,
     "skip": 0,
     "environment": "WORKTABLE_NATIVE_RC2_ROOT points to independent official rc.2 source",
@@ -71,5 +71,12 @@
     "pendingAdmission": "Trusted generation-owner async ledger/role/task/native/file validation before activation; owner identity, current refs/OCC and immediate revokedSet checked inside same app-store commit. Missing owner and stopped pending fail closed; already-active historical read remains independent.",
     "lateUi": "RED retained Private A requirement in view B; identity/open-lifetime epochs and busy/error/notice/requirements resets prevent cross-view and same-view-close/reopen late UI contamination.",
     "stopRace": "Actual public activation waits on a delayed native inspect boundary; concurrent TaskDirectory Stop completes without waiting on the platform gate, and final synchronous commit refuses publishing. Current running/active remains unchanged."
+  },
+  "confirmationPrecondition": {
+    "red": "Public describe followed by role binding replacement previously allowed prepare (missing expected rejection).",
+    "green": "Exact nonsecret describe fingerprint covers target/recipe revision, role definition, binding revision/Session and canonical declared/binding roots. Stale confirmation rejects before mkdir/ledger/task; fresh describe succeeds.",
+    "unavailable": "A ready binding with roles.read.unavailable is refused before filesystem or generation/task writes.",
+    "ui": "Related role/application events refresh describe and clear acknowledgement; unrelated instance role events do not replace current confirmation. Prepare sends returned confirmationToken and errors force re-description.",
+    "scope": "Optimistic precondition, not authorization token; native task submission/explicit preview/apply/activation boundaries unchanged."
   }
 }

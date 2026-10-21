@@ -145,3 +145,6 @@ copyCompositionTemplate(recipe)复制结构/展示映射，清connections、role
 
 
 Generation correction: shared recipe custom config contains only a pathless managed-generation marker, never a private generation ID/hash/path. Optional AppStore generatedBindings scopes pending/active references to instance/page/module. Draft save and explicit verified-view activation each update their bindings in the same existing transaction; no-view activation publishes none, and other instances retain active output. The artifact API derives the active result from the consumer view/page/module. New preparation/Stop/draft changes do not revoke already-active historical output.
+
+
+Generation prepare additionally requires the exact confirmationToken returned by current describe. This is a nonsecret optimistic fingerprint of target/recipe, role/binding/Session revisions and canonical roots, not an authorization capability. Stale facts or unavailable role refuse before mkdir/ledger/task. UI related role/application changes invalidate acknowledgement; browser input still cannot choose root or Session.

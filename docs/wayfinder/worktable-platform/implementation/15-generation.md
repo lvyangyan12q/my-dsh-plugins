@@ -73,3 +73,10 @@ Generation UI now resets busy/error/notice/requirements/root acknowledgement on 
 
 
 Corrected final source gate:234/234 passed with zero failures/skips; actual complete client factory pathless artifact/module callbacks and build/check passed. A public concurrency test delays native inspect during activation, completes Stop without waiting on the platform gate, then verifies the final commit rejects and preserves running/active. Instance-only binding activation can keep the recipe version when structure is identical; only structural changes require version increments. Root actual A/B/model/old-package acceptance remains pending.
+
+
+### Confirmation precondition correction (2026-10-22, source only)
+
+A public stale-confirmation test reproduced preparation after replacement of the acknowledged role binding (RED). Describe now returns a nonsecret exact optimistic-precondition fingerprint covering the target/recipe revision, role definition, binding revision/Session and canonical declared/binding roots. Prepare compares it and rechecks current facts before any output directory, generation row or task is created. Changing binding, recipe or canonical role root rejects with unchanged directories/rows/tasks; a new describe/acknowledgement succeeds. A ready binding with `roles.read.unavailable` also refuses before writes. This fingerprint does not grant authority or choose a root.
+
+Module UI refreshes describe and clears acknowledgement after related application/role changes; unrelated instance role events do not replace this confirmation. Prepare errors require current metadata and acknowledgement again. Actual component callbacks verify the new fingerprint is sent. Final source gate:237/237 passed, zero skips/failures; build/check and the complete final client factory/UI script passed. Ticket15 remains open pending root installed/model acceptance.

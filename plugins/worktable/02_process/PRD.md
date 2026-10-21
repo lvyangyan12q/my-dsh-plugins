@@ -44,3 +44,6 @@ resume是显式使用动作，更新最近使用顺序而不新建实例/视图�
 
 
 0.9.0候选修正：共享recipe仅存custom通用managedGeneration标记，不存原始路径/私有generationId/hash。AppStore的可选generatedBindings按instance/page/module持久化draft与active引用；保存草稿与该实例draft绑定同事务，带明确viewId启用与该实例active交换同事务。其他实例不继承/替换产物，准备/Stop/仅应用草稿保持旧active。应用schema3/4保留；旧0.8.4无raw path拒显，TaskStore2仍拒旧任务reader。
+
+
+生成准备需携带当前describe返回的confirmationToken；它仅是目标/配方/角色绑定/Session/规范目录的乐观前置指纹，不是授权。确认后更换事实或角色不可用时，在mkdir和任务/ledger写入前拒绝，重新描述并显式确认后才能准备。
