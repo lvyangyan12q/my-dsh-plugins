@@ -15,3 +15,5 @@ save仅保存draft；preview验证数据引用与角色但不注册应用、建�
 源码测试：`node --test plugins/worktable/04_test/compositions.test.mjs plugins/worktable/04_test/composition-http.test.mjs`（在仓库根执行）。这是辅助接缝证据，不能关闭12或替代实际安装、模块交互、原生AI闭环。
 
 2026-10-21：Worktable0.8.0在官方rc.2隔离3091实际完成Host7步与重启只读恢复，见[evidence/12-installed.json](evidence/12-installed.json)。12按Host接缝关闭；14/19承担模块内实际用户交互，不把本HTTP证据当完整搭建器通过。
+
+环境补正：12-installed.json的PID27528原生启动器为rc.2，但插件profile实际含alpha.2 fallback/缺invariants，不能称全rc.2。保留原JSON，后续exact公开peer修正后的PID9032新7步及原目标cold恢复见[12-clean-installed.json](evidence/12-clean-installed.json)。新7步目标尚未再次冷启，二者明确区分；12仅Host合同关闭，不覆盖14/19。

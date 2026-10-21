@@ -46,3 +46,13 @@ blocked_by: []
 12关闭仅表示真实安装Host草稿/预览/启用及冷恢复合同通过。模块内编辑、模板复制、公共展示实际操作归14，AI生成追改归15，全链验收归19，均不可继承这份HTTP验收。完整framework spec继续open，考公暂停；未修改3080和原生/上游。
 
 关闭前保护guard在集成daed17d通过：原生/上游无变更、六份历史用户文件hash保持、集成index干净。本候选仅更新12票/12合同/本证据/README对应行，未重写01—11不可变证据。
+
+## 2026-10-21环境归因补正（保留原证据）
+
+上述PID27528的官方rc.2仅准确描述启动器/原生源码版本。后续依赖检查发现独立profile的插件fallback实际解析webserver/storage alpha.2且缺invariants，原12-installed.json属于混合依赖环境，不能继续作为全rc.2依赖环境证明。原证据不改写，SHA256仍为23a2d3fbe53905205034f5c840c2317da665fadefe248f1c6748cbaafb24ccdc。
+
+root在隔离profile通过正常pnpm安装公开exact Cordis4.0.4、Schemastery3.18.4、invariants/storage/webserver/storage-domain0.2.0-rc.2，公开peer检查0问题并冷启PID9032。未改原生源码或冻结Worktable0.8.0归档；三包实际依赖realpath核对由13记录。
+
+[补充实测](evidence/12-clean-installed.json)分开记录：①修正依赖后新target acceptance-composed-1792592058543再次完成7步Host生命周期（16→17实例、26→27视图）；该target是在PID9032启动后建立，尚未再次冷启，coldRecoveryPending仍true。②实施者只GET compositions/applications确认原target acceptance-composed-1792589152356在修正profile冷启后仍running1.1.0/draft1.1.0、revision7，同instance4627e87f-e4ff-412a-a60c-faa84dd8b925和view07a45ebb-fc1a-4b62-97c0-16b9da531e14；未重新setup、未发模型。
+
+两组分别证明clean环境7步与已有状态在clean冷启后保持；不把新target说成已再次冷启。16正在并行执行模型任务，此补验不比较或声称整个profile、任务、Session文件无变化。12Host关闭保持，14/19UI与完整spec仍未验，不扩大原证据范围。
