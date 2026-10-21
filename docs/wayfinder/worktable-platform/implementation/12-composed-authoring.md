@@ -34,3 +34,5 @@ blocked_by: []
 - 新增5项生命周期测试+1项真实注册HTTP处理器测试；补验真实profile路径故障、所有者冲突、依赖失效、版本冲突、预览不建原生会话和更新保留角色绑定。连同既有application-entry/application-http/roles/role-lifecycle/resources回归最终28项通过，零skip。native authority测试替身仅属原生边界辅助，不能替代模型执行。
 - 首次完整build因新工作树缺xterm/markdown-it/highlight.js失败；按原锁`npm ci --ignore-scripts --no-audit --no-fund`补19项依赖后，`npm run build`和`npm run check`均通过。未改manifest/锁、未pack、未覆盖冻结0.7.2发布资产。
 - 仍须root在最终发布版本的隔离官方DSH实际安装后验证Host生命周期。14补实际模块内交互，19补全链证据；本条源码/HTTP夹具结果不等同安装闭环，工单保持open。原生/上游/3080和资料未改。
+
+- SDK补验：公开describeProtocol/requireProtocol消费者要求composed-authoring-v1先RED（明确缺少该feature），sdk.mjs最小追加可选feature后GREEN；组合生命周期/HTTP/SDK共8项通过。保留协议1与其他feature，不声称尚未安装的运行结果。

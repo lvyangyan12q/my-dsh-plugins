@@ -1,3 +1,4 @@
+import {describeProtocol,requireProtocol} from '../01_content/src/sdk.mjs'
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {mkdtemp,rm} from 'node:fs/promises'
@@ -22,3 +23,5 @@ test('public authoring route requires admission and explicitly activates a durab
  assert.equal((await call('POST',{action:'save',appId:'dashboard',expectedRevision:0,recipe:{title:'Dashboard',version:'1.0.0',layout:'grid',pages:[{id:'home',title:'Home',modules:[]}]}})).status,409)
  }finally{await apps.close();await rm(dir,{recursive:true,force:true})}
 })
+
+test('independent composition consumer can require the published optional feature without creating work',()=>{assert.equal(requireProtocol(describeProtocol(),['composed-authoring-v1']).protocolVersion,1)})
