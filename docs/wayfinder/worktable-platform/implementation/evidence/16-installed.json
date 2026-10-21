@@ -1,13 +1,15 @@
 {
   "date": "2026-10-21",
   "ticket": "worktable-framework-16",
-  "status": "passed-with-explicit-upstream-limits",
+  "status": "actual-observed-mixed-runtime-awaiting-clean-dependency-revalidation",
   "sourceIntegration": "9ee9b498eb1f488a10f55fc9e0046d3f4eb80d89",
   "host": {
     "origin": "http://127.0.0.1:3091/",
-    "nativeVersion": "0.2.0-rc.2",
     "nativePatched": false,
-    "runtimeRestartedByThisAgent": false
+    "runtimeRestartedByThisAgent": false,
+    "declaredBootVersion": "0.2.0-rc.2",
+    "resolvedDependencyBoundary": "Root subsequently found native alpha.2 fallback for storage/webserver and missing invariants peer. These live observations are scoped to that mixed resolution, not a pure rc.2 runtime acceptance.",
+    "cleanDependencyRevalidationPending": true
   },
   "archives": [
     {
@@ -223,6 +225,14 @@
     "Running proved by actual saved DOM, not by the failed-state screenshot whose capture completed after retries.",
     "No unknown transport rejection or full disk exhaustion induced in the actual UI run; actual filesystem replacement refusal/recovery is covered.",
     "No Desktop/macOS acceptance, legacy materials migration, formal3080 change or native/upstream patch.",
-    "Complete framework spec remains open; closes only ticket16 as assigned."
-  ]
+    "Complete framework spec and ticket16 remain open pending corrected official runtime dependency/cold-start revalidation."
+  ],
+  "handoffBeforeRuntimeRepair": {
+    "noRunningModelTask": true,
+    "noPendingUserQuestions": true,
+    "temporaryProviderAndSyntheticKeyRemoved": true,
+    "helperProcessStopped": true,
+    "ownChromeTabClosed": true,
+    "safeForRootOwnedRestart": true
+  }
 }
