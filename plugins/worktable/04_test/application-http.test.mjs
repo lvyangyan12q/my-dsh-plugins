@@ -22,6 +22,7 @@ test('registered public route authenticates requests and uses current profile du
     assert.equal((await call('GET')).body.applications[0].id,'web')
     assert.equal((await call('GET')).body.applications[0].title,'阅读')
     assert.equal((await call('POST',{action:'register',application:{id:'native',title:'Native',version:'1.0.0',protocolVersion:1,kind:'web',url:'http://127.0.0.1:3091/'}})).status,400)
+    assert.equal((await call('POST',{action:'register',application:{id:'same-cookie-host',title:'Cookie host',version:'1.0.0',protocolVersion:1,kind:'web',url:'http://127.0.0.1:18573/'}})).status,400)
   } finally {await rm(dir,{recursive:true,force:true})}
 })
 

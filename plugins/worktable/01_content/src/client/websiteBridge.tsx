@@ -1,0 +1,47 @@
+import {useEffect,useRef,useState} from 'react'
+import {controlledWebsiteEntry,websiteEntry,WEBSITE_SANDBOX} from '../framework/web-policy.mjs'
+import {bridgeEnvelope,verifyEmbeddedCsp} from '../framework/web-bridge-protocol.mjs'
+import {platformRequest} from './compositionClient'
+import {signalPreparedTask} from './taskPanel'
+const revoke=(cap:any)=>platformRequest('bridge',{action:'revoke',id:cap.id,revision:cap.revision})
+/** Opt-in is local to this mounted module; a normal website never receives a bridge. */
+export function WebsiteModule({module,recipe,props}:any){
+ const [cap,setCap]=useState<any>(null),[allowRead,setAllowRead]=useState(false),[allowPrepare,setAllowPrepare]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false)
+ const frame=useRef<HTMLIFrameElement|null>(null),current=useRef<any>(null),generation=useRef(0),controllers=useRef(new Set<AbortController>())
+ let url='',invalid='';try{url=websiteEntry(module.config?.url,window.location.origin)}catch(error:any){invalid=error.message}
+ let bridgeReason='';if(url)try{controlledWebsiteEntry(url,window.location.origin)}catch(error:any){bridgeReason=error.message}
+ const ref=recipe.connections?.find((row:any)=>row.id===module.connectionId),role=recipe.roles?.find((row:any)=>row.id===module.roleId)
+ useEffect(()=>{const ticket=++generation.current;setCap(null);setError('');setNotice('');setBusy(false);setAllowRead(false);setAllowPrepare(false);return()=>{if(ticket===generation.current)generation.current++;const old=current.current;current.current=null;if(old)void revoke(old).catch(()=>{});for(const controller of controllers.current)controller.abort();controllers.current.clear()}},[props.view.id,props.instance.id,recipe.version,JSON.stringify(module),JSON.stringify(ref)])
+ async function disable(message='桥接已撤销；重新使用需显式启用。'){
+  const ticket=generation.current,old=current.current;current.current=null;setCap(null);for(const controller of controllers.current)controller.abort();controllers.current.clear();setNotice(message)
+  if(old)try{await revoke(old)}catch{if(ticket===generation.current&&!current.current)setError('撤销回执未确认；本页已移除网页和消息通道。请刷新后重新启用，旧能力十分钟内过期。')}
+ }
+ useEffect(()=>{
+  if(!cap)return
+  const owner=cap,ticket=generation.current;let connected=false;const handshake=setTimeout(()=>{if(!connected&&current.current===owner)void disable('合作网站未完成协议握手或拒绝嵌入CSP，网站能力已关闭。')},6000);const expiry=setTimeout(()=>{if(current.current===owner)void disable('网站能力已过期，请重新确认。')},Math.max(0,owner.expiresAt-Date.now()))
+  const receive=async(event:MessageEvent)=>{
+   if(current.current!==owner||generation.current!==ticket||event.source!==frame.current?.contentWindow||event.origin!==window.location.origin)return
+   const value=event.data
+   if(value?.type==='worktable:ready'&&value.capabilityId===owner.id&&value.revision===owner.revision&&value.epoch===owner.epoch){connected=true;clearTimeout(handshake);setNotice('合作网站已连接，仅开放所选能力；关闭、导航或十分钟后需重新启用。');return}
+   if(value?.type==='worktable:unsupported'&&value.capabilityId===owner.id&&value.revision===owner.revision&&value.epoch===owner.epoch){void disable('浏览器不支持强制嵌入CSP，桥接已关闭。');return}
+   if(value?.type==='worktable:navigated'&&value.capabilityId===owner.id&&value.revision===owner.revision&&value.epoch===owner.epoch){void disable('网站发生导航，桥接已关闭；需要重新确认能力。');return}
+   if(!bridgeEnvelope(event,frame.current?.contentWindow,window.location.origin,owner,'worktable:relay'))return
+   const controller=new AbortController();controllers.current.add(controller)
+   try{
+    const result=await platformRequest('bridge',{action:'request',capabilityId:owner.id,revision:owner.revision,epoch:owner.epoch,requestId:value.requestId,method:value.method,params:value.params},controller.signal)
+    if(current.current!==owner||generation.current!==ticket||event.source!==frame.current?.contentWindow||controller.signal.aborted)return
+    if(value.method==='prepare-task'){signalPreparedTask(props.view.id);setNotice('网页任务已准备，尚未发送。请在上方AI任务中审阅。')}
+    frame.current?.contentWindow?.postMessage({type:'worktable:response',protocol:1,capabilityId:owner.id,revision:owner.revision,epoch:owner.epoch,requestId:value.requestId,ok:true,value:result},window.location.origin)
+   }catch(error:any){if(current.current===owner&&generation.current===ticket&&!controller.signal.aborted){setError(error.message);frame.current?.contentWindow?.postMessage({type:'worktable:response',protocol:1,capabilityId:owner.id,revision:owner.revision,epoch:owner.epoch,requestId:value.requestId,ok:false,error:'操作被拒绝，请在工作台检查能力或资料授权。'},window.location.origin)}}finally{controllers.current.delete(controller)}
+  }
+  window.addEventListener('message',receive);return()=>{clearTimeout(handshake);clearTimeout(expiry);window.removeEventListener('message',receive)}
+ },[cap])
+ async function enable(){const ticket=generation.current;setBusy(true);setError('');try{if(!await verifyEmbeddedCsp())throw Error('当前环境未通过嵌入CSP实际隔离探测，网站能力保持关闭。');if(ticket!==generation.current)return;const next=await platformRequest('bridge',{action:'open',viewId:props.view.id,moduleId:module.id,allowRead,allowPrepare});if(ticket!==generation.current){void revoke(next).catch(()=>{});return}current.current=next;setCap(next);setNotice('能力已授权，正在等待合作网站协议握手；尚未确认连接。')}catch(error:any){if(ticket===generation.current)setError(error.message)}finally{if(ticket===generation.current)setBusy(false)}}
+ async function share(){const ticket=generation.current;setBusy(true);setError('');try{await platformRequest('resources',{operation:'share',ownerViewId:ref.viewId,consumerInstanceId:props.instance.id,resourceId:ref.resourceId});if(ticket===generation.current)setNotice('所选资料已只读引用到当前实例；网站仍需显式启用。')}catch(error:any){if(ticket===generation.current)setError(error.message)}finally{if(ticket===generation.current)setBusy(false)}}
+ if(invalid)return <p role="alert">{invalid}</p>
+ return <div className="dsh-wt_appPanel" style={{padding:0,background:'transparent',overflow:'visible'}}><a href={url} target="_blank" rel="noopener noreferrer">外部打开 ↗</a>
+ <details className="dsh-wt_appDetails" style={{minWidth:0,maxWidth:'100%',boxSizing:'border-box'}}> <summary>网站能力（默认关闭）</summary><p className="dsh-wt_appHint">来源 {new URL(url).origin}。仅限当前模块、实例与所选资料。站点必须使用不同主机名（同主机跨端口仍共享Cookie）。仅支持接受嵌入CSP（Allow-CSP-From）并实现工作台协议的合作网站，脚本/网络限本站，禁止子框架/Worker/Object；独立网页应用不提供桥接；网页不能发送模型、调用工具或读取原生会话。</p><fieldset className="dsh-wt_appForm" disabled={busy||!!cap} style={{border:0,padding:0,minWidth:0}}><label style={{flexDirection:'row',alignItems:'start',gap:8}}><input style={{width:'auto',padding:0,marginTop:2,accentColor:'var(--dsw-alias-state-business-primary,#4566b0)'}} type="checkbox" checked={allowRead} disabled={!ref} onChange={event=>setAllowRead(event.target.checked)}/>只读所选资料 {ref?.resourceId??'（请在模块编辑中选择数据来源）'}</label><label style={{flexDirection:'row',alignItems:'start',gap:8}}><input style={{width:'auto',padding:0,marginTop:2,accentColor:'var(--dsw-alias-state-business-primary,#4566b0)'}} type="checkbox" checked={allowPrepare} disabled={!role} onChange={event=>setAllowPrepare(event.target.checked)}/>准备任务给当前角色 {role?.title??'（请先关联角色并创建会话）'}{ref?'（附所选资料，发送时复验授权）':''}</label></fieldset>{ref&&<p className="dsh-wt_appHint">资料任务需Owner提供受控上下文；可在模块“字段与展示配置”中按该资料协议设置taskSelection。未配置有效选择或不支持时明确拒绝，不猜业务字段。</p>}<p className="dsh-wt_appHint">{bridgeReason|| (busy?'正在处理当前模块的请求…':cap?'能力生效期间不能修改范围，请先撤销。':!allowRead&&!allowPrepare?'选择至少一项能力后才能启用；缺少来源或角色时请先在模块中配置。':'仅共享给当前实例，网站仍需单独显式启用。')}</p><div className="dsh-wt_appLine">{ref&&!cap&&<button type="button" disabled={busy} onClick={share}>授权此实例只读引用</button>}{cap?<button type="button" onClick={()=>disable()}>撤销网站能力</button>:<button className="dsh-wt_appPrimary" type="button" disabled={busy||!!bridgeReason||!allowRead&&!allowPrepare} onClick={enable}>显式启用网站能力</button>}</div></details>
+ {error&&<p className="dsh-wt_appError" role="alert">{error}</p>}{notice&&<p className="dsh-wt_appHint" role="status">{notice}</p>}
+ {cap?<iframe ref={frame} key={cap.id} title="受控桥接网站模块" src={'/api/worktable/bridge/frame?id='+encodeURIComponent(cap.id)} referrerPolicy="no-referrer" style={{width:'100%',height:330,border:0}}/>:<iframe title={module.config?.title??'网站模块'} src={url} sandbox={WEBSITE_SANDBOX} referrerPolicy="no-referrer" style={{width:'100%',height:300,border:0}}/>}
+ </div>
+}

@@ -1,0 +1,168 @@
+{
+  "ticket": "worktable-framework-17",
+  "status": "source-candidate-installed-F14-pending",
+  "date": "2026-10-22",
+  "base": "6e63ea381475b2095f1b6b394d9071497e6b2e58",
+  "candidateVersion": "0.9.0",
+  "nativeSource": "official 0.2.0-rc.2 639ed015397290b3745d163aafe02ffee4aa3f84",
+  "sourceGate": {
+    "passed": 236,
+    "tests": 236,
+    "command": "node worktable-17-source-gate.mjs (unique release-prep compatTests)",
+    "skipped": 0,
+    "failed": 0
+  },
+  "checks": [
+    "npm run build",
+    "npm run check",
+    "exact built client factory with real React; only react/react/jsx-runtime",
+    "existing client-factory negative gate 10/10",
+    "built anchor DOM 8/8",
+    "built server-home 3/3"
+  ],
+  "redGreen": [
+    "missing public service import -> public opt-in consumer grant read",
+    "missing epoch accepted -> explicit epoch required",
+    "caller hostOrigin override accepted -> HTTP host-derived only",
+    "missing requestId accepted -> explicit unique request identifier",
+    "browser params native destination accepted -> bounded methods/params",
+    "unloading owner returned HTTP200 data -> immediate revoke then wait; HTTP403",
+    "late share receipt wrote successor success -> generation/current guard",
+    "prepared resource grant revoked still admitted native -> fixed Owner context reference blocks before prompt",
+    "same cookie hostname cross-port accepted in registry/HTTP/legacy renderer -> explicit different-hostname rejection preserves stored URL",
+    "UTF8 multibyte response bypassed 64KiB -> byte bound",
+    "prepare/revoke gate mutation removed precommit check -> one unwanted prepared row RED; restored -> zero rows GREEN"
+  ],
+  "browserAuxiliary": {
+    "cookieSentinel": {
+      "cleanedAndVerifiedAbsent": true,
+      "SameSite": "Strict",
+      "rawCookieNotLogged": true,
+      "HttpOnly": true,
+      "sameHostnameOtherPort": true,
+      "differentHostname": false,
+      "ordinaryOpaqueSandboxSends": true
+    },
+    "redirectToHost": {
+      "hostRequests": 0,
+      "hostExecutions": 0,
+      "attempts": 1
+    },
+    "externalSelfNavigate": {
+      "hostRequests": 0,
+      "hostExecutions": 0,
+      "attempts": 1
+    },
+    "cspControlExecutesAndRestrictedDoesNot": true,
+    "ownedProcessLastPid": 7556,
+    "ownedTabsClosed": true,
+    "ownedProcessStopped": true,
+    "nestedHostFrame": {
+      "afterRequiredCsp": {
+        "hostRequests": 0,
+        "hostExecutions": 0
+      },
+      "beforeRequiredCsp": {
+        "hostRequests": 1,
+        "hostExecutions": 1
+      }
+    },
+    "workerObject": {
+      "unprotectedControl": {
+        "workerRequests": 1,
+        "workerExecuted": 1,
+        "hostExecuted": 1,
+        "hostRequests": 1
+      },
+      "protected": {
+        "workerRequests": 0,
+        "workerExecuted": 0,
+        "hostExecuted": 0,
+        "hostRequests": 0
+      }
+    },
+    "kind": "real Chrome synthetic sites; not installed DSH F14",
+    "noAllowCspFrom": "blocked",
+    "host": "http://127.0.0.1:18571",
+    "cooperativeSite": "http://localhost:18572"
+  },
+  "scope": {
+    "preparedRows": "bridge revoke preserves; resource revoke blocks source-backed submit",
+    "controls": "no model, install, pack, restart, remote or formal profile operation by this agent",
+    "ordinaryWeb": "same hostname entry now refused, old URL/data retained, sandbox/no-referrer unchanged",
+    "independentWebBridge": false,
+    "nativeSubmit": "not available to website; Host explicit review/send and resource grant recheck",
+    "bridge": "cooperating website module in current composition deep view only; different hostname, embedded CSP required; Host-only task selection",
+    "methods": [
+      "read-resource",
+      "prepare-task"
+    ]
+  },
+  "pending": [
+    "root final combined package and actual 3091 cooperative website F14",
+    "real read/prepare/revoke resource/submit refusal/native ownership",
+    "current-stage complete acceptance and final delivery"
+  ],
+  "localArtifacts": [
+    {
+      "sha256": "c8747d2fa394c2721f7c438db454ad23f536b0454911052402d9c48fd721e17b",
+      "file": "worktable-17-cookie-same-host.private.png"
+    },
+    {
+      "sha256": "3c61467d8e39ee83460105864445dd74bbd4b4e95b458a621261965318940f96",
+      "file": "worktable-17-cookie-different-host.private.png"
+    },
+    {
+      "sha256": "9fe03f54748a470724e6b7bece6819b14b24bb33b4fc43e1a29fa29cb1e0d6d9",
+      "file": "worktable-17-cookie-ordinary-sandbox.private.png"
+    },
+    {
+      "sha256": "c4b467ade9895e2ae9c7eb5d0a56f87e0ec23e02e7a854d11abed2d8c6ffcabb",
+      "file": "worktable-17-csp-descendant-RED.private.png"
+    },
+    {
+      "sha256": "49199d46490e4a5d33301ed7e7906c1c797694e06637fe602f008e5d07e004e1",
+      "file": "worktable-17-csp-descendant-GREEN.private.png"
+    },
+    {
+      "sha256": "44a6a176ebcf4d27d4ebcfa40dd4f1356120c109c9f16de6aeb554987754c327",
+      "file": "worktable-17-csp-localhost-normal.private.png"
+    },
+    {
+      "sha256": "78e156361b83afa60c1c01a9bc28e6067c74b13e558277ca1caef551c5d38a29",
+      "file": "worktable-17-csp-localhost-descendants.private.png"
+    },
+    {
+      "sha256": "3aafdececa8f504752e75e7adee0afac6a5eaf984bdb5cdd33637c5c6b3deb98",
+      "file": "worktable-17-csp-localhost-302.private.png"
+    },
+    {
+      "sha256": "e3797a8e46132a8a70a1789c8b97769034eacfd8f699056ef6e35e0f9b51120a",
+      "file": "worktable-17-csp-localhost-self.private.png"
+    },
+    {
+      "sha256": "cb686bed632ec3f8f5c73d1153185570c1cf67282082f20dd03bae997fb418d0",
+      "file": "worktable-17-csp-localhost-no-optin.private.png"
+    },
+    {
+      "sha256": "2bbd3a5d5bd7ee98d1861e266eb7df922a3bc1af3333eba72d8c97018334243c",
+      "file": "worktable-17-csp-runtime-probe.private.png"
+    },
+    {
+      "sha256": "f22465064292b35416bf1ffef5f50ca722a1256a0f479e9bbc5ba0946dcb5b52",
+      "file": "worktable-17-csp-unprotected-control.private.png"
+    },
+    {
+      "sha256": "6a5100217b6a39835c6ed46e081fdb7e9b423b35d454741276bb1947378ff272",
+      "file": "worktable-17-csp-worker-object.private.png"
+    },
+    {
+      "sha256": "25d3e5ee89ae333082ad7c6b497cfeb1b8d60a8c14ecaf228b47c6fbef364139",
+      "file": "worktable-17-csp-browser-receipt.private.json"
+    },
+    {
+      "sha256": "d0b0b27b3c7d9a4697e17883a9186d43a3ce328b26f6095a0de5374e3f13bde2",
+      "file": "worktable-17-source-gate.private.log"
+    }
+  ]
+}
