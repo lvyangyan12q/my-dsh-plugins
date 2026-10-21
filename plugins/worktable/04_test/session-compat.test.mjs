@@ -199,3 +199,21 @@ test('runtime falls back to legacy on unavailable chat source but not on authori
   assert.equal(sessionRuntimeMs(list(true), 'a', sessions, { binding() { throw new Error('not retained') } }, 1000), 900)
   assert.equal(sessionRuntimeMs(list(true), 'a', sessions, chatTimings(new Map()), 1000), null)
 })
+
+ test('task native facts distinguish observed states without inventing success or confirmed cancellation',()=>{
+ const {readHostTaskFacts,describeNativeTaskState}=module.exports;
+ const ctx={sessions:{binding:()=>({session:{getSnapshot:()=>({lastAgentError:null})}})}};
+ const fact=readHostTaskFacts(ctx,source({running:true}),'a');
+ assert.equal(describeNativeTaskState(fact).state,'running');
+ assert.equal(describeNativeTaskState({running:true,pendingInteraction:{kind:'approval'}}).state,'waiting');
+ assert.equal(describeNativeTaskState({running:false,lastAgentError:'model rejected'}).state,'failed');
+ assert.equal(describeNativeTaskState({running:false,completionUnread:true}).state,'unread');
+ assert.equal(describeNativeTaskState({running:false}).state,'unknown');
+ assert.equal(describeNativeTaskState(null).state,'unknown');
+ const stopped=describeNativeTaskState({running:false},123);
+ assert.equal(stopped.state,'stop-requested');assert.match(stopped.label,/停止请求/);
+ assert.equal(describeNativeTaskState({running:true},123).state,'running');
+ assert.equal(describeNativeTaskState({running:true,lastAgentError:'old error'}).state,'running');
+ assert.equal(describeNativeTaskState({running:false,pendingInteraction:{kind:'question'}},123).state,'waiting');
+ assert.equal(readHostTaskFacts({sessions:{binding(){throw Error('cold')}}},undefined,'a').running,undefined);
+ })
