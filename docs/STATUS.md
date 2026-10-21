@@ -1,5 +1,8 @@
 # 工作台进度与待办
 
+2026-10-22当前前沿：12、13、14、16、18已按各票实际范围关闭；15原生AI生成追改、17受控网页桥接待启动，19等待最终闭环和两轴审查。独立3091已官方安装Worktable0.8.4（SHA256 41993c880f28db940a2a7b8e418cdb8e4cb93af6b9211a5b862a30dacb54fbbf），公开peer检查0；[14真实安装证据](wayfinder/worktable-platform/implementation/evidence/14-installed.json)与[18真实升级证据](wayfinder/worktable-platform/implementation/evidence/18-installed.json)分别限定验收范围。3080仍保持原部署，完整spec仍open；历史映射与较早日期记录不变，本轮增量尚未推送。
+
+
 ## 当前实施 · 2026-10-21
 
 用户已要求继续implement-spec，继续集成分支`codex/worktable-framework`。[后续范围](wayfinder/worktable-platform/continuation-spec.md)和[12—19工单图](wayfinder/worktable-platform/implementation/README.md)为本轮入口；起点`92d14ac`。本段更新时集成`7649c490`：12组合草稿Host合同、13公共展示与独立应用、16原生状态及真实存储故障已验收关闭；14模块内搭建、18升级影响确认已进入独立工作树实施。15等14，17等14+16，19负责最终真实闭环与固定基线两轴审查，尚未关闭。

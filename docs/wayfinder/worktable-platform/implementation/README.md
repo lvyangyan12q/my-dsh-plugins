@@ -8,14 +8,14 @@
 |---|---|---|---|
 | 12 | [组合应用草稿、预览与显式启用](12-composed-authoring.md) | 无 | closed（Host；UI见14/19） |
 | 13 | [公共展示组件与可选主题](13-presentation.md) | 无 | closed（公共控件；实测范围见13） |
-| 14 | [模块内编辑与模板搭建](14-inline-builder.md) | 12、13 | open |
+| 14 | [模块内编辑与模板搭建](14-inline-builder.md) | 12、13 | closed（0.8.4真实模块/模板/数据联动/窄屏验收） |
 | 15 | [原生AI生成追改与稳定产物归属](15-generation.md) | 14 | open |
 | 16 | [原生状态矩阵与存储失败恢复](16-failure-states.md) | 无 | closed |
 | 17 | [显式受控网页桥接](17-web-bridge.md) | 14、16 | open |
 | 18 | [应用升级与迁移影响确认](18-upgrade-protection.md) | 12、16 | closed：独立合成应用真实升级、失败恢复与冷启通过；旧应用迁移不在本次验收内 |
 | 19 | [后续完整实页验收与交接](19-continuation-acceptance.md) | 12、13、14、15、16、17、18 | open |
 
-首次可领取前沿为12、13、16；其余等待对应实际验收。单一集成分支继续`codex/worktable-framework`，不得重置已有用户工作树。
+当前12、13、14、16、18已关闭；可领取前沿为15与17，19等待后续实际验收。单一集成分支继续`codex/worktable-framework`，不得重置已有用户工作树。
 
 ## 首阶段历史与证据
 

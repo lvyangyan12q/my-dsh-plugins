@@ -3,7 +3,7 @@ id: worktable-framework-14
 title: 模块内编辑与模板搭建
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: continuation_authoring
 blocked_by: [worktable-framework-12, worktable-framework-13]
 ---
@@ -18,10 +18,10 @@ blocked_by: [worktable-framework-12, worktable-framework-13]
 
 ## Acceptance
 
-- [ ] 已确认模块内UI用户流程；从空项目新建→模块配置→预览→启用→改草稿，运行版本和Session身份稳定，键盘/窄屏可操作。
-- [ ] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
-- [ ] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
-- [ ] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
+- [x] 已确认模块内UI用户流程；从空项目新建→模块配置→预览→启用→改草稿，运行版本和Session身份稳定，键盘/窄屏可操作。
+- [x] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
+- [x] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
+- [x] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
 
 ## Dependencies
 
@@ -54,3 +54,7 @@ npm ci按锁安装58项；源码全部204项GREEN、零skip（WORKTABLE_NATIVE_R
 
 ### 0.8.4 授权联动修复候选
 真实安装验收发现：模块显式授权后其他同连接模块需手动重试。公开 React 组件回归先失败（未授权被误报为来源不可用），最小修复后 runtime 5/5 通过：成功授权仅广播当前实例、同 connection/source/resource 的刷新；不重复 share，不影响其他实例。读取失败再查询公开授权快照，无 active 引用时明确提示尚未授权。build 通过；未打包或安装，工单仍 open，等待正式 UI 复验。
+
+## 2026-10-22 实际安装闭合
+
+[14-installed.json](evidence/14-installed.json)记录最终0.8.4正式包SHA、root真实数据联动/冷恢复与独立Chrome完整五模块、模板清引用、原生单composer和430窄屏/键盘操作。一次显式授权四卡自动更新已实际复验。此票按模块内手动搭建范围关闭；AI生成追改15、桥接17及完整审查19仍open。无新编辑器物理IME或跨浏览器同步声明。截图导出被工具路径限制拒绝，采用实际AX/DOM几何与公开GET补证，不将源码模拟冒充真实安装。

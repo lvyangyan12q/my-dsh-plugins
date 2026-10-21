@@ -1,0 +1,92 @@
+{
+  "ticket": "worktable-framework-14",
+  "date": "2026-10-22",
+  "method": "Actually installed authenticated DSH UI; root IAB and independent agent Chrome page 2; public GET supplements UI, not substitutes",
+  "runtime": {
+    "url": "http://127.0.0.1:3091/",
+    "dsh": "0.2.0-rc.2 official unpatched",
+    "worktable": "0.8.4",
+    "archiveSha256": "41993c880f28db940a2a7b8e418cdb8e4cb93af6b9211a5b862a30dacb54fbbf",
+    "finalPid": 16572,
+    "publicPeersCheck": 0,
+    "packTests": {
+      "passed": 217,
+      "failed": 0,
+      "skipped": 0
+    },
+    "installedBytes": "root verified final nine SDK/package files; local receipt worktable-084-installed-bytes.private.json"
+  },
+  "source": {
+    "builder": "b164178e736e17a622dd989380e6da57c79829a9",
+    "grantFix": "f3f25cdf567ae81ab7d0b7503ec8cc3369e9ecbd",
+    "tdd": "Ticket records RED→GREEN; runtime grant regression 5/5; source/factory/DOM tests are auxiliary"
+  },
+  "rootActual": [
+    {
+      "steps": "Folded sidebar → add project; dashboard modules configure → save → preview → explicit activate; same version rejected → 1.1.0 accepted",
+      "result": "same instance and both registered view identities preserved"
+    },
+    {
+      "steps": "Two newly-created synthetic Notes records → explicit read share; list selection → detail; explicit filter → statistic 2 to 1; same instance second view",
+      "result": "shared filter/selection, current-consumer authorization; persisted after real restart"
+    },
+    {
+      "steps": "Independent project instance before sharing then one explicit read grant under 0.8.4",
+      "result": "initially no inherited permission/filter/selection; single grant refreshes all four cards to two rows; first project remains independently filtered/selected"
+    }
+  ],
+  "agentActual": {
+    "project": "14模块实页独立验收",
+    "app": "composed-495c29a6-23bb-427f-81b8-7d287d945a00",
+    "recipeVersion": "1.1.0",
+    "steps": [
+      {
+        "action": "Create empty project, choose composed template, add each card type and configure in its own module",
+        "result": "website/custom/resources/animation/conversation all retained; preview has no data loading/session creation; explicit activation renders real content"
+      },
+      {
+        "action": "Website https://example.com/",
+        "result": "real Example Domain page loaded, sandbox allow-scripts allow-forms allow-popups, no same-origin"
+      },
+      {
+        "action": "Animation external GIF",
+        "result": "actual img complete=true naturalWidth=400"
+      },
+      {
+        "action": "Existing synthetic HTML custom artifact, then same HTML from resource card",
+        "result": "both executed parent.document probe and displayed PASS parent origin blocked; sandbox allow-scripts, no same-origin"
+      },
+      {
+        "action": "Resource card refresh, nested directory → child.txt → up; preview.html click",
+        "result": "real directory/file listing and local navigation, no parent layout mutation; local HTML preview in card"
+      },
+      {
+        "action": "Unregistered synthetic C cwd role then change recipe to registered owned workspace and explicitly activate 1.1.0",
+        "result": "unknown cwd create disabled with accurate native registration message; approved cwd enables explicit creation"
+      },
+      {
+        "action": "Explicit role creation → open same native session → switch native conversation/module",
+        "result": "session 4f51358e-181b-406b-bf0c-12ae848f23ec; one native contenteditable composer, no second module composer or model send"
+      },
+      {
+        "action": "430x900 mobile viewport emulate, view runtime/editor; focus app name then Tab; save template draft",
+        "result": "document scrollWidth=430; runtime cards345px; editor374px; Tab focuses application version; controls operational"
+      },
+      {
+        "action": "Copy five-module structure through actual application catalog and save independent draft",
+        "result": "composed-b7b63145-a820-41a4-ae97-6260cc0f2089 revision1; connections=[] roles=[] all five config={}; no running; module ids retained"
+      },
+      {
+        "action": "Copy root synthetic dashboard with nonempty data reference, save only independent draft, public get both",
+        "result": "source composed-9095b5b9-c718-48ac-8084-5905e059df82 revision8/running1.1.0 still connections1; copy composed-a2044a0f-70a2-4576-836c-3c8ac0b7943f revision1 connections=[] roles=[] running=null; all four module connectionId/roleId absent"
+      }
+    ]
+  },
+  "limits": [
+    "No model generation/send: ticket15 remains open; website bridge17 remains open; full acceptance/review19 remains open.",
+    "Physical Chinese IME for new editor not claimed; existing automated composition/Escape test is auxiliary.",
+    "No cross-browser localStorage synchronization claim; Chrome owns independent project and tab.",
+    "Screenshot export tool denied C workspace output; actual AX/DOM/public response observations recorded instead, no screenshot success claim.",
+    "No deployment to3080; native/upstream and six historical user files unchanged; old acceptance mapping untouched."
+  ]
+}
