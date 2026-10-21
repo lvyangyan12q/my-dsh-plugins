@@ -3,7 +3,7 @@ id: worktable-framework-16
 title: 原生状态矩阵与存储失败恢复
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: continuation_failures
 blocked_by: []
 ---
@@ -18,9 +18,9 @@ blocked_by: []
 
 ## Acceptance
 
-- [ ] 原生状态公开适配和实际任务控制；隔离安装profile平台数据目录真实存储失败→明确错误→恢复→重试，状态和旧记录保持。
+- [x] 原生状态公开适配和实际任务控制；隔离安装profile平台数据目录真实存储失败→明确错误→恢复→重试，状态和旧记录保持。
 - [x] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
-- [ ] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
+- [x] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
 - [x] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
 
 ## Dependencies
@@ -47,3 +47,12 @@ root在已安装3091平台文件上做真实Windows拒绝替换：HTTP503/storag
 
 
 root发现原native alpha.2依赖回退后，本工单重新保持open，待独立公开依赖修复、冷启动和必要真实状态复验。此前“关闭”提交仅在子分支、未合入；本纠正明确撤销该结论，不删真实观察。此agent已无进行中任务或待答，专用provider/key/进程清理完毕，自建Chrome页关闭，可交root安全重启隔离实例。
+
+
+## 2026-10-21 独立公开依赖修复后的重新实测与关闭
+
+[新增clean实际记录](evidence/16-clean-installed.json)不改写此前[混合依赖实测](evidence/16-installed.json)。root通过正常registry安装公开peer并冷启独立PID9032，实际各插件解析Cordis4.0.4、Storage/Domain/Webserver/Invariants0.2.0-rc.2且peer检查0。沿用同SHA的Worktable0.8.0、Notes/Reading0.2.0，既有两个合成实例与Session原身份复用；未新建实例/会话/业务记录。
+
+新一轮先观察冷恢复旧任务明确未知；失败Session新显式任务实际localhost13323返回500、原生5/5重试后原生和TaskPanel失败可见；原生运行中实际DOM观察保留说明，不把终态截图冒充运行截图。问答Session新增明确准入纯合成任务，真实待答→切换main但模块保持→从新任务Stop→未读结束提示→打开正确原生Session清除→Turn2 ASK_ABORTED。两任务均零业务context。临时provider、专用合成key、PID17160均清理，自建Chrome页关闭，无待答或运行任务。
+
+root在修复后的同一独立安装profile重新完成真实文件拒绝→HTTP503及旧hash/整个目录保持→释放后同payload200，仅新增一个合成网页应用，实例/视图/模型与ACL无变化。精确来源和SHA见新增JSON。公开原生无确认取消和task级业务成功仍是保留限制；16按此可用合同关闭，完整spec与其他工单不关闭，正式3080不改。
