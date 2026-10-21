@@ -1,5 +1,6 @@
 import * as React from 'react'
 import {useEffect,useRef,useState} from 'react'
+import {GenerationPanel,GeneratedArtifact} from './generationPanel'
 import {createPresentation} from '../sdk.mjs'
 import {websiteEntry,WEBSITE_SANDBOX} from '../framework/web-policy.mjs'
 import {compositionRequest,platformRequest,moduleNames} from './compositionClient'
@@ -59,7 +60,7 @@ function ModuleContent({module,recipe,props,presentation,preview}:any){
  if(preview)return <p>{moduleNames[module.type]} · 预览不读取业务资料、不创建对话；启用后可使用。</p>
  if(['statistics','list','detail','filter'].includes(module.type))return <DataModule module={module} recipe={recipe} props={props} presentation={presentation}/>
  if(module.type==='resources')return <ResourceBrowser path={config.path}/>
- if(module.type==='custom')return <CustomArtifact path={config.artifactPath} title={config.title}/>
+ if(module.type==='custom')return <>{config.generationId?<GeneratedArtifact id={config.generationId} viewId={props.view.id} title={config.title}/>:<CustomArtifact path={config.artifactPath} title={config.title}/>}<GenerationPanel viewId={props.view.id} pageId={props.view.type==='page'?recipe.pages[0].id:props.view.type.slice(5)} moduleId={module.id}/></>
  if(module.type==='website'){let url;try{url=websiteEntry(config.url,window.location.origin)}catch(error:any){return <p role="alert">{error.message}</p>}return <div><a href={url} target="_blank" rel="noopener noreferrer">外部打开 ↗</a><iframe title={config.title??'网站模块'} src={url} sandbox={WEBSITE_SANDBOX} referrerPolicy="no-referrer" style={{width:'100%',height:300,border:0}}/></div>}
  if(module.type==='animation'){let url;try{url=new URL(websiteEntry(config.url,window.location.origin))}catch{return <p role="alert">请配置有效的图片或视频地址。</p>}return config.media==='video'?<video src={url.href} controls preload="metadata" style={{maxWidth:'100%'}}/>:<img src={url.href} alt={config.title??'动画媒体'} style={{maxWidth:'100%'}}/>}
  if(module.type==='conversation')return <ConversationModule module={module} props={props}/>

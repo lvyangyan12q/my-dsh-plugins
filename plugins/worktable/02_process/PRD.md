@@ -36,3 +36,8 @@ resume是显式使用动作，更新最近使用顺序而不新建实例/视图�
 布局仍只有原Worktable splitStore；窗格内组合renderer不调用父row/index改外层内容。模板复制去权限/角色/路径/原生会话等运行身份。来源元数据发现不授权，运行资源调用带consumer view并校验来源，显式read-share另走现有资源所有者；业务记录与原生Session仍由原owner管理。sameinstance两视图通过Host OCC和instance-scoped成功刷新通知共享状态；不承诺跨浏览器实时push。过滤草稿在卡片中显式应用，失败保留输入和旧运行状态。
 
 原生对话模块仅展示/导航同角色Session，不挂第二composer。新custom产物由用户明确选择既有文件，经认证读后opaque sandbox srcDoc承载，未授权同origin/原生API；原legacy iframe不因此被重新宣称隔离。生成/追改15另需稳定归属与显式产物应用，不从本模块绕过任务准入。
+
+
+### Candidate0.9.0：组合模块生成元数据
+
+组合自定义模块的生成状态由profile下`worktable-platform/generations.v1.json`独立schema1 owner持久化；项目/实例/视图/页面/模块及draft revision/version/config fingerprint固定，不复用旧widget自动挂载状态。任务首次含受管preparation时，独立tasks.v1.json升sticky schema2，只有TaskStore接入1/2；旧角色/capability仍schema1。旧插件回退必须拒绝新版任务文件并保留字节，不能清空/降级/自动重发。生成目录由原生角色cwd明确批准，固定`.worktable-generated/<generationId>/result.json`及同目录HTML，路径realpath/大小/类型/hash围栏在预览和应用重验。只显式写draft，不自动activate或停止/删除原生会话；原生对应请求的aborted/未知结束不产生应用权。完整实际模型闭环待15最终验收，不将源码门禁当实页通过。

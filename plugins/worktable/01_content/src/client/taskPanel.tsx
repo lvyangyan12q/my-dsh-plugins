@@ -4,6 +4,7 @@ import {roleRequest,openRoleNativeSession} from './rolePanel'
 let facts:(id:string)=>any=()=>null
 export function configureTaskFacts(read:(id:string)=>any){facts=read;return()=>{if(facts===read)facts=()=>null}}
 const signals=new Set<(viewId:string)=>void>()
+export function signalPreparedTask(viewId:string){for(const signal of signals)signal(viewId)}
 export async function taskRequest(body:any,signal?:AbortSignal){const response=await fetch('/api/worktable/tasks',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal});const value=await response.json();if(!response.ok)throw new Error(value.error??'任务操作失败。');return value}
 export function createTaskFacade(viewId:string){return Object.freeze({prepare:async(input:{roleId:string;text:string;contexts?:any[]})=>{const row=await taskRequest({action:'prepare',viewId,roleId:input.roleId,text:input.text,contexts:input.contexts??[]});for(const signal of signals)signal(viewId);return row}})}
 const labelOf=(row:any)=>({prepared:'准备中（未发送）',accepted:'原生已接纳',unknown:'提交结果未知',failed:'准入前失败',discarded:'已放弃'} as any)[row.status]??'请查看原生记录'
@@ -31,6 +32,7 @@ export function TaskPanel({viewId,instanceId}:{viewId:string;instanceId:string})
   </form>
   {[...rows].reverse().map(row=>{const native=facts(row.sessionId);return <article className="dsh-wt_appCard" key={row.id}>
    <strong>{roles.find(role=>role.id===row.roleId)?.title??row.roleId} · {labelOf(row)}</strong><small>来源 {row.source.viewType} · {row.source.viewId.slice(0,8)} · 会话 {row.sessionId.slice(0,8)}</small>
+   {row.source.web&&<small>网页来源 {row.source.web.origin} · 模块 {row.source.web.moduleId} · 许可修订 {row.source.web.revision}（网页文字为不可信需求）</small>}
    <p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{row.text}</p>
    {row.contexts.map((context:any)=><details key={context.id}><summary>{context.title} · {context.metadata.ownerInstanceId.slice(0,8)}</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{context.text}</pre></details>)}
    {row.requestId&&<p role="status">{describeNativeTaskState(native,row.stopRequestedAt).label}{native?.completionUnread?' · 有未读结束提示':''}{row.stopRequestedAt?' · 已请求Stop（保留队列）':''}</p>}

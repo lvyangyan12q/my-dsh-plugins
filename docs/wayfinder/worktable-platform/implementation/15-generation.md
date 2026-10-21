@@ -4,7 +4,7 @@ title: 原生AI生成追改与稳定产物归属
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
 status: open
-assignee: null
+assignee: continuation_failures
 blocked_by: [worktable-framework-14]
 ---
 
@@ -26,3 +26,31 @@ blocked_by: [worktable-framework-14]
 ## Dependencies
 
 - [14](14-inline-builder.md)
+
+
+## Candidate0.9.0 — source implementation, ticket remains open
+
+Generation is a separate profile-owned metadata ledger (`generations.v1.json`, schema1). It fixes project/app/instance/view/page/module, instance revision, draft recipe revision/version, running version and module fingerprint. The approved output root is resolved from the declared role and verified native binding cwd; the module UI displays it for explicit acknowledgement. Browsers/manifests cannot choose another root or Session. New generation requests revoke predecessors without stopping native work or deleting outputs. A moved view retains its identity; replaced/removed module, changed recipe, reassociated instance or replaced role binding rejects the old task/output.
+
+Preparation creates an owned TaskDirectory row and canonical output instructions. It never sends. Existing TaskPanel opens for review/edit and the separate native-send action; no second conversation composer or direct prompt endpoint was added. Generated task IDs, Session and generation IDs are fixed during prepare; the native request ID is created only by the existing submit operation and linked through the durable task record. The manifest carries generationId/taskId/sessionId, not an invented pre-submit native request ID.
+
+Result checking uses public `sessionController.inspect(sessionId)` after public persistence flush. The matching `user/message.data.source.rpcId` locates the submitted request's turn; only its explicit `turn/end.data.reason.kind === completed` permits file inspection. Missing facts remain pending; aborted/error/unknown endings revoke applicability. Completed is not treated as business success: manifest identity, real files, hashes and explicit human preview/apply are still required. No native SQLite/storageDomain table or private state is read. TaskPanel/historical Stop revokes managed applicability before native cancel; external native Stop is rejected through its corresponding aborted turn fact. Closing a view revokes its live UI callback epoch, does not auto-Stop, and cannot automatically mount/apply a late reply; reopening requires explicit result checking again.
+
+The approved root's `.worktable-generated/<generationId>/result.json` is the only accepted manifest, limited to16KiB. Its HTML artifact must be an existing ordinary `.html`/`.htm` file within that exact generation output directory, at most1MiB, with matching SHA256. Actual realpath checks cover directory junction escape before creating output and before/after reads. Preview records exact manifest/artifact hashes; apply revalidates target, role, request outcome and file bytes. Only the selected module's draft config changes through recipe OCC; running recipe/version activation remains explicit and requires its normal version increment. Durable `applying` is never replayed automatically if a draft commit result becomes uncertain.
+
+Generated HTML uses opaque-origin `sandbox=allow-scripts` without same-origin or host DOM access, plus a restrictive inline CSP (no network connections/child frames/forms/base URLs). Rendering an applied generation uses the dedicated hash-checked result API rather than the general file endpoint. This contract does not make arbitrary generated HTML automatically match host themes: self-contained generated pages must explicitly implement their requested light/dark/responsive design; real browser checks remain pending.
+
+### Metadata rollback boundary
+
+Only TaskStore explicitly supports schemas1/2. Ordinary RoleStore/capability stores remain schema1. The first owned preparation task upgrades its task metadata file to schema2, so the old0.8.4 reader cannot silently ignore preparation guards after rollback. Existing unmanaged task files stay schema1. Restoring an older plugin must retain and refuse this new file; never clear, downgrade or replay it automatically. This is platform metadata compatibility, not business migration. The source gate executes the actual historical0.8.4 public RoleStore code from commit6e63ea3, observes `schema-incompatible` and unchanged bytes, then reopens through the current TaskStore with its owned task intact. Actual frozen-old-package user-path refusal is still a final acceptance item.
+
+### Source checks and installed handoff
+
+TDD slices observed RED missing generation service, then GREEN native preparation with zero prompt calls and stale-module submit refusal; next RED missing preview, then GREEN real HTML/manifest preview and explicit draft apply without changing running. Further public checks cover wrong Session, outside-root files, post-preview byte mutation, real junction escape, native aborted fact, Stop, owner unavailable, persisted preview reopen and new-generation lateness. HTTP rejects arbitrary root/Session fields and cross-instance IDs. UI confirms visible approved root, preview and separate apply; no submit/activate request is issued.
+
+`generation-installed.test.mjs` executes the actual final full ModuleLoader client factory with exact external dependencies and public fake host/HTTP boundaries, opens a real composition custom module, checks root acknowledgement, prepares once and observes the existing TaskPanel wake. It does not prove a running installed DSH or actual model execution. This script is part of the unique release gate against the installed package's client.js; source tests are also included. No package is created or installed by this task.
+
+Root real-model steps: create one new synthetic composition with custom module + declared role/cwd and native role Session; enable it. Open AI生成与追改, read/confirm displayed root, describe generation, prepare only. Review existing AI任务 and explicitly send. Use native question/approval/trajectory/Stop controls as required. Ask the model to write self-contained HTML then result.json (schema1, generationId/taskId/sessionId/artifactPath/actual byte SHA256) under its fixed output directory. On corresponding completed turn, explicitly check/preview; explicitly apply to draft; edit draft to a newer recipe version, preview and enable separately. Then trace a follow-up generation, native other-entry Stop and replaced-target late-output negatives, refresh/cold restoration. Only synthetic files under the root; no Kaogong or user materials. Keep this ticket open until archive/runtime/model/UI evidence is recorded.
+
+
+Final candidate source gate:227/227 passed, zero failures/skips with official rc.2 parser enabled. Build/check and full final client factory module callbacks passed. Managed task schema2 is sticky after discard and later ordinary preparation. [15-source.json](evidence/15-source.json) records source scope; actual installed/model/user-flow evidence is still pending and this ticket remains open.

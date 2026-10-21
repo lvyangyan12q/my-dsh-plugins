@@ -1,0 +1,63 @@
+{
+  "ticket": "worktable-framework-15",
+  "status": "source-candidate-only",
+  "date": "2026-10-22",
+  "version": "0.9.0",
+  "installedAcceptance": false,
+  "red": [
+    {
+      "seam": "GenerationDirectory.prepare + actual TaskDirectory",
+      "observed": "ERR_MODULE_NOT_FOUND generations.mjs before implementation"
+    },
+    {
+      "seam": "real manifest/HTML preview/apply",
+      "observed": "generations.preview is not a function before second slice"
+    }
+  ],
+  "sourceTests": [
+    "generation.test.mjs",
+    "generation-http.test.mjs",
+    "generation-panel.test.mjs",
+    "generation-rollback.test.mjs"
+  ],
+  "finalFactory": "generation-installed.test.mjs: actual ModuleLoader factory, public composition module UI and external fake HTTP/native boundaries; root acknowledgement prepares only and opens existing TaskPanel",
+  "files": {
+    "ledger": "worktable-platform/generations.v1.json schema1",
+    "managedTasks": "tasks.v1.json upgrades to schema2 only for owned preparation; new TaskStore opt-in1/2, normal RoleStore stays1",
+    "output": "role approvedRoot/.worktable-generated/generationId/result.json plus self-contained HTML",
+    "limits": {
+      "manifestBytes": 16384,
+      "htmlBytes": 1048576
+    }
+  },
+  "manifest": {
+    "schema": 1,
+    "generationId": "opaque generated ID",
+    "taskId": "durable native-prepared task ID",
+    "sessionId": "exact role Session",
+    "artifactPath": "absolute HTML path inside this generation output directory",
+    "sha256": "actual HTML byte SHA256 lowercase hex"
+  },
+  "nativeProof": "Public sessionController.inspect after flush; submitted task.requestId matches user/message source.rpcId and corresponding turn/end explicit reason.completed; aborted/unknown/pending do not become success",
+  "preservation": [
+    "No native/upstream/3080 changes, model send, package installation/restart, push or frozen archive changes.",
+    "Old HTML/manifest and native trajectories retained; only explicit current draft module application, no running activation.",
+    "Actual installed DSH/model/approval/Stop/theme/mobile paths remain for root.",
+    "Actual historical0.8.4 public reader executes schema2 refusal preserving file bytes; this is source proof, not an installed frozen-old-package claim."
+  ],
+  "sourceGate": {
+    "tests": 227,
+    "pass": 227,
+    "fail": 0,
+    "skip": 0,
+    "environment": "WORKTABLE_NATIVE_RC2_ROOT points to independent official rc.2 source",
+    "commands": [
+      "unique release-prep compatTests extracted and run with node --test",
+      "npm run build",
+      "npm run check",
+      "node ../04_test/generation-installed.test.mjs lib/client.js"
+    ],
+    "packExecuted": false
+  },
+  "rollbackSticky": "After owned task discard and a subsequent ordinary task, schema remains2; actual historical0.8.4 public RoleStore code rejects unchanged bytes; current TaskStore reopens both records. Default RoleStore still accepts only1."
+}

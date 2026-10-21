@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict'
+import {test} from 'node:test'
+import {Readable} from 'node:stream'
+import {fixture} from './generation-fixture.mjs'
+import {mountGenerations} from '../01_content/src/framework/generation-host.mjs'
+test('authenticated generation API refuses arbitrary root/session and cross-instance result ownership',async()=>{
+ const f=await fixture();const routes=[],iterators=[],disposers=[];let admitted=false,service;
+ try{await f.generations.close();const ctx={profileContext:{dir:f.dir},worktableApplications:f.apps,worktableCompositions:f.compositions,worktableTasks:f.tasks,worktableRoles:f.roles,worktableAdmission:f.apps.gate,connection:{admit:()=>admitted?{}:{rejection:401}},sessionController:{inspect:async()=>({events:[]})},sessionPersistence:{flush:async()=>{}},inject(_names,callback){callback(this)},provide(name,value){if(name==='worktableGenerations')service=value},effect(factory){const result=factory();if(result?.next)iterators.push(result);else if(typeof result==='function')disposers.push(result)},webServer:{register(route){routes.push(route);return()=>{}}}};mountGenerations(ctx);const owner=await iterators[0].next(),route=routes.find(row=>row.path==='/api/worktable/generations');
+  const call=async body=>{const req=Readable.from([JSON.stringify(body)]);req.method='POST';req.headers={'content-type':'application/json'};const res={writeHead(status){this.status=status},end(value){this.value=JSON.parse(value)}};await route.handler(req,res);return res};
+  assert.equal((await call({action:'list',viewId:f.view.id})).status,401);admitted=true;assert.equal((await call({action:'prepare',viewId:f.view.id,pageId:'home',moduleId:'output',description:'Synthetic',rootConfirmed:true,root:'C:/arbitrary'})).status,400);const prepared=await call({action:'prepare',viewId:f.view.id,pageId:'home',moduleId:'output',description:'Synthetic',rootConfirmed:true});assert.equal(prepared.status,200);assert.equal(f.prompts,0);const instance=await f.apps.createInstance('synthetic','project-B'),view=await f.apps.createView(instance.id);const denied=await call({action:'preview',viewId:view.id,id:prepared.value.id});assert.equal(denied.status,403);assert.equal(denied.value.code,'generation-owner');await owner.value();await iterators[0].return();service=null;
+ }finally{await service?.close();for(const dispose of disposers.reverse())dispose();await f.close()}
+})

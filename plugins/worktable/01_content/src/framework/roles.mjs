@@ -8,8 +8,8 @@ export const reject=(code,message)=>{throw new RoleError(code,message)}
 const keyOf=(instanceId,roleId)=>JSON.stringify([instanceId,roleId])
 /** Canonical profile-file owner. Native identities settle only after durable state writes. */
 export class RoleStore{
- static async open(file){const store=new RoleStore(file);await store.owner.ready();return store}
- constructor(file){this.owner=new ProfileFileStore(file,()=>({schema:1,bindings:[],capabilities:[]}),roleState);this.file=file;this.pending=Promise.resolve();this.closed=false}
+ static async open(file){const store=new this(file);await store.owner.ready();return store}
+ constructor(file,schemas=[1]){this.owner=new ProfileFileStore(file,()=>({schema:1,bindings:[],capabilities:[]}),roleState,schemas);this.file=file;this.pending=Promise.resolve();this.closed=false}
  read(){return this.owner.read()}
  change(operation){if(this.closed)return Promise.reject(new RoleError('unavailable','角色或任务状态已关闭。'));const task=this.pending.then(async()=>{const data=await this.read();const result=await operation(data);await this.owner.write(data);return structuredClone(result)});this.pending=task.catch(()=>{});return task}
  async snapshot(){await this.pending;return structuredClone(await this.read())}
