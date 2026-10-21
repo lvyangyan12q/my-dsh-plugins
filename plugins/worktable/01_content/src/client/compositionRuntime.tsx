@@ -17,7 +17,7 @@ function usePresentation(props:any){
 /** Existing user-selected HTML is opaque-origin content; never gets the native cookie/DOM. */
 export function CustomArtifact({path,title}:any){
  const [html,setHtml]=useState<string|null>(null),[error,setError]=useState('')
- useEffect(()=>{let alive=true;const controller=new AbortController();setHtml(null);setError('');if(!path||!isAbs(path)){setError('请选择已存在的HTML产物绝对路径。');return()=>controller.abort()}
+ useEffect(()=>{let alive=true;const controller=new AbortController();setHtml(null);setError('');if(!path||!isAbs(path)||!/[.]html?$/i.test(path)){setError('请选择已存在的HTML产物绝对路径。');return()=>controller.abort()}
  fetch('/api/worktable/file?path='+encodeURIComponent(path),{credentials:'same-origin',signal:controller.signal}).then(async response=>{if(!response.ok)throw new Error('产物无法读取；请核对路径。');return response.text()}).then(text=>{if(alive)setHtml(text)}).catch(error=>{if(alive&&!controller.signal.aborted)setError(error.message)});return()=>{alive=false;controller.abort()}},[path])
  return error?<p role="alert">{error}</p>:html===null?<p role="status">正在读取产物…</p>:<iframe title={title??'自定义产物'} srcDoc={html} sandbox="allow-scripts" referrerPolicy="no-referrer" style={{width:'100%',height:300,border:0}}/>
 }
@@ -60,7 +60,7 @@ function ModuleContent({module,recipe,props,presentation,preview}:any){
  if(module.type==='resources')return <ResourceBrowser path={config.path}/>
  if(module.type==='custom')return <CustomArtifact path={config.artifactPath} title={config.title}/>
  if(module.type==='website'){let url;try{url=websiteEntry(config.url,window.location.origin)}catch(error:any){return <p role="alert">{error.message}</p>}return <div><a href={url} target="_blank" rel="noopener noreferrer">外部打开 ↗</a><iframe title={config.title??'网站模块'} src={url} sandbox={WEBSITE_SANDBOX} referrerPolicy="no-referrer" style={{width:'100%',height:300,border:0}}/></div>}
- if(module.type==='animation'){let url;try{url=new URL(config.url);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw Error()}catch{return <p role="alert">请配置有效的图片或视频地址。</p>}return config.media==='video'?<video src={url.href} controls preload="metadata" style={{maxWidth:'100%'}}/>:<img src={url.href} alt={config.title??'动画媒体'} style={{maxWidth:'100%'}}/>}
+ if(module.type==='animation'){let url;try{url=new URL(websiteEntry(config.url,window.location.origin))}catch{return <p role="alert">请配置有效的图片或视频地址。</p>}return config.media==='video'?<video src={url.href} controls preload="metadata" style={{maxWidth:'100%'}}/>:<img src={url.href} alt={config.title??'动画媒体'} style={{maxWidth:'100%'}}/>}
  if(module.type==='conversation')return <ConversationModule module={module} props={props}/>
  return <p role="alert">模块类型不可用，配置保留。</p>
 }
