@@ -1,3 +1,4 @@
+import {readHostTaskFacts} from './sessionCompat'
 import { createProjectNavigation, waitForConversationAnchor } from './projectNavigation'
 import {configureTaskFacts} from './taskPanel'
 import {configureRoleNavigation} from './rolePanel'
@@ -3206,7 +3207,7 @@ export const inject = ['slots', 'locale', 'sessions', 'conversation', 'workspace
 
 export function apply(ctx: any) {
   ctx.provide('worktableApplicationViews',applicationViews)
-  ctx.effect(()=>configureTaskFacts(id=>{const status=sessionStatusSource?.getSnapshot?.()?.get?.(id);let face:any;try{face=ctx.sessions?.binding?.(id)?.session?.getSnapshot?.()}catch{}return {...status,lastAgentError:face?.lastAgentError??null}}), 'worktable native task status facts')
+  ctx.effect(()=>configureTaskFacts(id=>readHostTaskFacts(ctx,sessionStatusSource,id)), 'worktable native task status facts')
   ctx.effect(()=>configureRoleNavigation(async id=>{markPluginSessionOpen(id);return openHostSession(ctx,ctx.sessions,id)}), 'worktable role native navigation')
   // 自定义窗口 → 宿主会话桥：保存 sessions/conversation/list 服务引用（模块级）
   sessionBridge = { sessions: ctx.sessions ?? null, conversation: ctx.conversation ?? null, list: ctx.sessions?.list ?? null, workspaces: ctx.workspaces ?? null }

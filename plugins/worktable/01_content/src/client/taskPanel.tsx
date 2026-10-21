@@ -1,3 +1,4 @@
+import {describeNativeTaskState} from './sessionCompat'
 import {useEffect,useRef,useState} from 'react'
 import {roleRequest,openRoleNativeSession} from './rolePanel'
 let facts:(id:string)=>any=()=>null
@@ -32,7 +33,7 @@ export function TaskPanel({viewId,instanceId}:{viewId:string;instanceId:string})
    <strong>{roles.find(role=>role.id===row.roleId)?.title??row.roleId} · {labelOf(row)}</strong><small>来源 {row.source.viewType} · {row.source.viewId.slice(0,8)} · 会话 {row.sessionId.slice(0,8)}</small>
    <p style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{row.text}</p>
    {row.contexts.map((context:any)=><details key={context.id}><summary>{context.title} · {context.metadata.ownerInstanceId.slice(0,8)}</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{context.text}</pre></details>)}
-   {row.requestId&&<p role="status">{native?.lastAgentError?'原生错误：'+native.lastAgentError:native?.pendingInteraction?'原生等待问题或审批':native?.running===true?'原生正在运行':native?.running===false?'原生当前未运行；结果请查看轨迹':'原生状态尚未观察，请打开原生对话'}{native?.completionUnread?' · 有未读结束提示':''}{row.stopRequestedAt?' · 已请求Stop（保留队列）':''}</p>}
+   {row.requestId&&<p role="status">{describeNativeTaskState(native,row.stopRequestedAt).label}{native?.completionUnread?' · 有未读结束提示':''}{row.stopRequestedAt?' · 已请求Stop（保留队列）':''}</p>}
    {row.notice&&<p>{row.notice}</p>}{row.requestId&&<p className="dsh-wt_appHint">Stop作用于此原生会话的当前回合，保留排队消息，不回滚已发生的写入。</p>}
    <div className="dsh-wt_appLine">{row.status==='prepared'?<><button disabled={busy} onClick={()=>setEditing(structuredClone(row))}>编辑准备任务</button><button disabled={busy} onClick={()=>action('discard',row)}>放弃</button><button disabled={busy||editing?.id===row.id} onClick={()=>action('submit',row)}>确认发送到原生会话</button></>:row.requestId&&<><button disabled={busy} onClick={()=>action('open',row)}>查看原生对话与轨迹</button>{['accepted','unknown'].includes(row.status)&&<button disabled={busy} onClick={()=>action('stop',row)}>Stop 此原生会话</button>}</>}</div>
   </article>})}
