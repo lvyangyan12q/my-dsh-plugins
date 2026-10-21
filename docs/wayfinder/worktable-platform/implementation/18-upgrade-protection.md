@@ -59,3 +59,6 @@ Independent test-only example: `plugins/worktable/04_test/fixtures/migration-own
 
 
 Final source gate: 206 tests passed, zero failed/skipped, with `WORKTABLE_NATIVE_RC2_ROOT` set to the independent official rc.2 source. Candidate 0.8.2 `npm run build` and `npm run check` passed. The compatibility list now includes the previously omitted composition and actual storage-refusal tests as well as all five new migration test files. No archive was created or installed by this implementation task. Full machine-readable source receipt: [18-source.json](evidence/18-source.json).
+
+
+Installed example correction (ticket remains open): root's official installation of the original example1.0.0 tarball failed native web boot because client.js did not register its package through `window.__ModuleLoader__.load`. The prior source CJS factory test did not establish that loader contract. Final-script test now evaluates without global module/require, observed RED `ReferenceError: module is not defined`, then wraps the actual built artifact with the official loader identity/factory handshake. Corrected example versions are 1.0.1/2.0.1; old1.0.0/2.0.0 archives stay frozen. Source GREEN does not replace root's reinstallation and actual UI verification.

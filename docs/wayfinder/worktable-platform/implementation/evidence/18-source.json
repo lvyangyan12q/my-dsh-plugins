@@ -56,5 +56,16 @@
     ],
     "pass": true,
     "archiveCreated": false
+  },
+  "exampleLoaderCorrection": {
+    "originalInstalledFailure": "Official installation of example1.0.0 did not register its client package with ModuleLoader; original CJS source test was insufficient.",
+    "red": "Final script evaluated only with window.__ModuleLoader__: ReferenceError module is not defined",
+    "fix": "Actual built client wrapper calls ModuleLoader.load with exact package id and a factory-scoped module/exports/require",
+    "newExampleVersions": [
+      "1.0.1",
+      "2.0.1"
+    ],
+    "oldArchivesUnchanged": true,
+    "installedRevalidationPending": true
   }
 }
