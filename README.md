@@ -4,7 +4,7 @@
 
 已按用户要求继续工作台后续实施，唯一集成分支仍为 `codex/worktable-framework`。请先看[当前进度](docs/STATUS.md)、[后续范围](docs/wayfinder/worktable-platform/continuation-spec.md)和[12—19任务图](docs/wayfinder/worktable-platform/implementation/README.md)。首阶段01—11保留关闭；完整规格仍open，考公专项继续暂缓。
 
-隔离3091已通过官方未补丁DSH0.2.0-rc.2安装Worktable0.8.0、Notes0.2.0及Reading0.2.0候选组合并重启。草稿Host生命周期、公共展示和原生状态仍在逐票安装验收中；源码合并不等于工单关闭。3080保持先前0.7.2部署，本轮尚未同步候选，也尚未推送本轮增量。
+隔离3091已通过官方未补丁DSH0.2.0-rc.2安装Worktable0.8.0、Notes0.2.0及Reading0.2.0候选组合并重启。12草稿Host生命周期、13公共展示和16原生状态/存储故障已真实验收关闭；14模块内搭建与18升级影响确认正在实施，15/17/19继续按依赖推进。3080保持先前0.7.2部署，本轮尚未同步候选，也尚未推送本轮增量。
 
 下面2026-10-20入口及旧平台段落是历史记录，不覆盖本段。
 

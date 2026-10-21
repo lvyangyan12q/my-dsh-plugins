@@ -56,3 +56,7 @@ root在隔离profile通过正常pnpm安装公开exact Cordis4.0.4、Schemastery3
 [补充实测](evidence/12-clean-installed.json)分开记录：①修正依赖后新target acceptance-composed-1792592058543再次完成7步Host生命周期（16→17实例、26→27视图）；该target是在PID9032启动后建立，尚未再次冷启，coldRecoveryPending仍true。②实施者只GET compositions/applications确认原target acceptance-composed-1792589152356在修正profile冷启后仍running1.1.0/draft1.1.0、revision7，同instance4627e87f-e4ff-412a-a60c-faa84dd8b925和view07a45ebb-fc1a-4b62-97c0-16b9da531e14；未重新setup、未发模型。
 
 两组分别证明clean环境7步与已有状态在clean冷启后保持；不把新target说成已再次冷启。16正在并行执行模型任务，此补验不比较或声称整个profile、任务、Session文件无变化。12Host关闭保持，14/19UI与完整spec仍未验，不扩大原证据范围。
+
+## 追加：clean新目标真实冷恢复
+
+新clean七步目标于PID29932再次冷启后，经实际Host只读恢复至running1.1.0/revision7，原instance/view保持；重启前后4份平台耐久JSON逐字节一致。见[12-clean-cold](evidence/12-clean-cold.json)。这补齐12-clean-installed中当时仍pending的新目标冷启；旧证据不改写。当前17实例/27视图包含明确的合成验收setup，不能倒写成早期14/24。没有模型发送或业务记录修改，也不扩大14/19验收。原12-installed SHA按Git/LF文本内容计算，Windows CRLF工作树哈希不同不表示证据被修改。

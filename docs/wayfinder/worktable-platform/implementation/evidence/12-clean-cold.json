@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-21",
+  "scope": "clean-public-peers-new-composition-target-cold-recovery",
+  "processId": 29932,
+  "worktableVersion": "0.8.0",
+  "appId": "acceptance-composed-1792592058543",
+  "instanceId": "181810d3-b1c3-458d-9f2f-fbed686ed714",
+  "viewId": "ccba69e0-feba-4d2c-8b04-f0c2157aeecd",
+  "runningVersion": "1.1.0",
+  "draftRevision": 7,
+  "coldRecoveryPassed": true,
+  "durablePlatformJsonFilesUnchanged": 4,
+  "instances": 17,
+  "views": 27,
+  "modelSent": false,
+  "businessChanged": false,
+  "nativeVersion": "0.2.0-rc.2",
+  "peerEnvironment": "Explicit public Cordis4.0.4/Schemastery3.18.4 and DSH0.2.0-rc.2 peers; pnpm peers check passed before cold restart",
+  "archiveSha256": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91",
+  "limitations": [
+    "Host lifecycle only; ticket14 inline builder and ticket19 final workflow remain pending",
+    "Four platform JSON files are the measured durable set; not a claim of every native file remaining byte identical"
+  ]
+}
