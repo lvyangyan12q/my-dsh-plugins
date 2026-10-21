@@ -51,3 +51,6 @@ npm ci按锁安装58项；源码全部204项GREEN、零skip（WORKTABLE_NATIVE_R
 唯一pack门禁新增12的compositions/composition-http、16的storage-refusal-http及14公开state/template/source/reference/editor/runtime测试；collapsed-project针对安装后的最终bundle追加门禁，不以源码字符串测试数组。完整framework spec与15/17/19保持原未验范围。
 
 2026-10-21合并18：集成4ae55729d43a581413bb1cc31d8839c549e0f188已合入本工单分支，冲突按双方已验证意图保留schema4实例状态与readiness、CompositionView与MigrationPanel、SDK可选features及全部pack门禁。统一候选0.8.3；0.8.1/0.8.2均未由本分支打包或冻结，既有0.8.0不覆盖。合并后仅补实际冲突涉及的46项应用/资源/SDK/组合/迁移回归，全部通过且零skip；build/check、真实工厂求值与折叠菜单/中文组合Escape、现有导航窄屏标注回调通过。未重复声称204源码全量属于新合并版，未pack或部署，14/18仍待root最终产物实际用户流程。
+
+### 0.8.4 授权联动修复候选
+真实安装验收发现：模块显式授权后其他同连接模块需手动重试。公开 React 组件回归先失败（未授权被误报为来源不可用），最小修复后 runtime 5/5 通过：成功授权仅广播当前实例、同 connection/source/resource 的刷新；不重复 share，不影响其他实例。读取失败再查询公开授权快照，无 active 引用时明确提示尚未授权。build 通过；未打包或安装，工单仍 open，等待正式 UI 复验。
