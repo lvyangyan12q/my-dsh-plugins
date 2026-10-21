@@ -7,7 +7,7 @@
 | 编号 | 工单 | 阻塞于 | 状态 |
 |---|---|---|---|
 | 12 | [组合应用草稿、预览与显式启用](12-composed-authoring.md) | 无 | closed（Host；UI见14/19） |
-| 13 | [公共展示组件与可选主题](13-presentation.md) | 无 | open |
+| 13 | [公共展示组件与可选主题](13-presentation.md) | 无 | closed（公共控件；实测范围见13） |
 | 14 | [模块内编辑与模板搭建](14-inline-builder.md) | 12、13 | open |
 | 15 | [原生AI生成追改与稳定产物归属](15-generation.md) | 14 | open |
 | 16 | [原生状态矩阵与存储失败恢复](16-failure-states.md) | 无 | open |
@@ -88,3 +88,6 @@ grant `1ea40812-e906-4dcc-84fb-d83ee04b5b37` 仅read，rev1 active→rev2 revoke
 N2自有业务revision前后精确为 `1:eaf037570b1116acc9c6fa269ff86a1404b2904bed9a6cabbfcdb1bdb32efebe`，旧note85110fac未复制或修改；N1原3条/active2保持，N3仅2条。roles、tasks及Reading两业务文件hash不变，原生输入10/1/0，不自动创建Session或模型请求。新增来源及两个视图是明确补验setup，后续inventory为13实例/15任务；原E11的12实例是此前真实版本证据，不能替换为13。
 
 源包仍Worktable0.7.2+Notes0.1.2，未改代码、不可变E11或原两轴JSON。172条分类保持66/94/12，旧未验不提升；11继续closed，完整framework spec继续OPEN。没有扩大create/update/archive授权，没有N1整实例grant，不清理、不改正式3080或远端。
+
+
+2026-10-21：13公共展示完成Worktable0.8.0/Notes0.2.0/Reading0.2.0精确归档与实际安装。先发现混合profile peer缺失/alpha回落，root以明确公开rc2依赖正常修复并冷启；peer检查0及9/5/6字节复核通过，Chrome Notes390/1440明暗与root IAB Reading正常/两应用撤销分别通过，限定范围关闭13。12、13均closed，14前沿解除；完整规格仍open，不把Reading未成功拖窄计入窄屏证据。详见13-clean-installed.json。

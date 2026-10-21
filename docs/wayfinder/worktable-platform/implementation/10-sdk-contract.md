@@ -107,6 +107,8 @@ Notes额外跨实例共享案例被自动审核在变更前拒绝，具体用户
 
 ## 13后续候选：可选公共展示（尚待实际安装验收）
 
+2026-10-21终态补充：本节候选已由Worktable0.8.0与两消费者0.2.0真实安装验收，功能feature及9文件保持；公开类型与API下文有效。终态依赖/字节/实页范围见[13 clean验收](evidence/13-clean-installed.json)，早期候选和混合profile不当作最终成功。
+
 `dsh-worktable/sdk`新增`createPresentation(React)`及可选feature `presentation-components-v1`。应用bundler继续内联SDK，显式传入自己使用的React模块；SDK顶层没有React import、全局React、Host服务或网络副作用，服务端import仍安全。保持精确9文件与同一./sdk入口，无新增ModuleLoader外部依赖。
 
 返回`Surface`、`State`、`Stats`、`List`、`Detail`、`Filters`。全部只消费调用者props；无fetch、数据目录、跨实例状态、授权或Session。数据与筛选、选中值仍由应用owner决定；展示控件的回调不等于资源写权限。
@@ -119,3 +121,6 @@ Notes额外跨实例共享案例被自动审核在变更前拒绝，具体用户
 - `Surface`：可选`theme:'inherit'|'light'|'dark'`，只作用本section；控件采用局部网格/换行、minWidth与长文本换行，无全局CSS或原生皮肤覆盖。真实浏览器窄屏几何与深浅色最终以13安装证据为准。
 
 Reading的page/stats/list与Notes的page/summary已作为源码消费者接入；两者仍拥有原数据、共享撤销处理、偏好、任务上下文及写入规则。无personal-workbench运行导入，也不要求独立应用转换为配方。当前为后续候选，不能反向扩大01—11不可变证据。
+
+
+13终态：工单已按具体实测关闭，非全设备/全主题承诺。Notes公开producer必须指定确切WORKTABLE_PACKAGE与已构建DSH_SOURCE，严格源码/消费者在仓外临时目录正常安装公共peer后检查，记录Cordis/Skill/SDK身份，skipLibCheck=false；不能依赖上级alpha类型。实际ownedprofile的普通pnpm peer检查及解析也已单独修复复验；源检查不替代安装检查。

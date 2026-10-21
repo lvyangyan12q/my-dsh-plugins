@@ -1,0 +1,400 @@
+{
+  "date": "2026-10-21",
+  "ticket": "worktable-framework-13",
+  "status": "mixed-deps-awaiting-reverify",
+  "host": "http://127.0.0.1:3091/",
+  "processId": 27528,
+  "declaredNativeVersion": "0.2.0-rc.2",
+  "installedArtifacts": [
+    {
+      "name": "dsh-worktable",
+      "version": "0.8.0",
+      "archiveSha256": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91",
+      "expectedFiles": 9,
+      "matchedFiles": 9,
+      "files": [
+        {
+          "path": "LICENSE",
+          "bytes": 1083,
+          "sha256": "0c06bb339253ff7c420288915cb224017a187635734cc918b7a4e28504764440"
+        },
+        {
+          "path": "lib/client.js",
+          "bytes": 1542720,
+          "sha256": "bd941c92d59c95ca856fc4fd14dfdb1ddfb426d9f0abc557c336186c0ddb32fd"
+        },
+        {
+          "path": "lib/index.js",
+          "bytes": 151728,
+          "sha256": "f23a2033152f77d11aaa508b3deedbfc613777e4b01cde2edcdde584f2752850"
+        },
+        {
+          "path": "lib/sdk.js",
+          "bytes": 6825,
+          "sha256": "7ed48e98a1b537bc1857bbceb4e72669f70fbc9a8e2f24d5cb697c276e465121"
+        },
+        {
+          "path": "dsh.plugin.json",
+          "bytes": 268,
+          "sha256": "38a1450acd524932fca92aa674d36408008466794ec96c172f6a934d0f7c9895"
+        },
+        {
+          "path": "package.json",
+          "bytes": 3062,
+          "sha256": "ed324fccd4717d06596884aedb281448752fb8ddd70dc0e891fb14ec1b0da7b8"
+        },
+        {
+          "path": "README.md",
+          "bytes": 14071,
+          "sha256": "5b09b3e7314a2d5cd345ca598ad6564166d266b04bee642a04642c73b9f429f8"
+        },
+        {
+          "path": "lib/sdk.d.ts",
+          "bytes": 7017,
+          "sha256": "f93c527f6a4626234fb5a114611f42846ad03228b34de860d41d832a9b22955a"
+        },
+        {
+          "path": "cordis.patch.yml",
+          "bytes": 136,
+          "sha256": "64063099e6504f9e22a59f7787cf66faa3a8b04882492b4312aaae7597ebeb48"
+        }
+      ]
+    },
+    {
+      "name": "@deepseek-ai/dsh-project-notes",
+      "version": "0.2.0",
+      "archiveSha256": "375f1ef756e5da976de2c8286f3dd6d59ad3059fcba41dcd0df242ed05cab17e",
+      "expectedFiles": 5,
+      "matchedFiles": 5,
+      "files": [
+        {
+          "path": "lib/client.js",
+          "bytes": 30683,
+          "sha256": "2f250dbef0b4b3fc4bad4ac54ebbefeb0e8bd3af87b655dc18224cb796ba8d1c"
+        },
+        {
+          "path": "lib/index.js",
+          "bytes": 560780,
+          "sha256": "e985e069ea002cd57c80f9b965ca6aceedc22112e5d6b35988d1103d5c07e8d6"
+        },
+        {
+          "path": "package.json",
+          "bytes": 1669,
+          "sha256": "184531f75bdbaddb73151e01b68c3efde284b98f07f662e0763ca29193651666"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4575,
+          "sha256": "26e46c85cf4c8d04b501667383451f2ba119b8b34d07242106bca65a5169664c"
+        },
+        {
+          "path": "cordis.patch.yml",
+          "bytes": 82,
+          "sha256": "645c01eb98a4f8577ce58ed7134709c3ecb49934b6f4d44c44df735d7003423c"
+        }
+      ]
+    },
+    {
+      "name": "@deepseek-ai/dsh-reading-statistics",
+      "version": "0.2.0",
+      "archiveSha256": "33ade5eabea718f8daed1652fdd675c372b122916064b7b8b8bde95ed49cdf9a",
+      "expectedFiles": 6,
+      "matchedFiles": 6,
+      "files": [
+        {
+          "path": "lib/client.js",
+          "bytes": 47307,
+          "sha256": "c903a9e7cb300913a05e7830bfa44d7f84b0c39dbdde5e17962d9c6964226d55"
+        },
+        {
+          "path": "lib/index.js",
+          "bytes": 2640,
+          "sha256": "576d48b71070ac69c257b8b7b805983a35912bd1bebdd36ddfb2cdc7ef1ba966"
+        },
+        {
+          "path": "package.json",
+          "bytes": 1171,
+          "sha256": "480359058d1332ca1964b2bd9da99752f6f0c6bbd86257f65706ee959c247136"
+        },
+        {
+          "path": "README.md",
+          "bytes": 4517,
+          "sha256": "6b5c07aed04dc52c17d8e3d8067e689780b2185bcdd086ca5e5f83cface6a002"
+        },
+        {
+          "path": "lib/reading-host-C6SMpJcs.mjs",
+          "bytes": 9893,
+          "sha256": "7584465677a0bf05fbe798c1cfaed3970c0b88b603d5ad33921edf535c56c617"
+        },
+        {
+          "path": "cordis.patch.yml",
+          "bytes": 92,
+          "sha256": "0eea9fab5c0110965db1105ccdb0574f677531f5bfff51999e97a293a6ff2325"
+        }
+      ]
+    }
+  ],
+  "actualUi": {
+    "independentChrome": {
+      "reason": "Subagent IAB unavailable; its Browser inventory contains Chrome/Edge only. Chrome authenticated locally without exposing token. No IAB storage was injected or claimed to transfer.",
+      "entry": "public application directory -> continue existing unassigned Notes instance N3",
+      "desktopLight": [
+        1920,
+        889
+      ],
+      "desktopDark": [
+        1440,
+        900
+      ],
+      "narrowLightAndDark": [
+        390,
+        844
+      ],
+      "narrowNotesWidth": 329,
+      "flows": [
+        "actual Notes count2 -> search 明日 -> count1 and no selected item -> select 项目甲·明日计划 -> original body visible",
+        "search no matching synthetic phrase -> count0, no selection or stale detail, explicit 尚无匹配的便签 status",
+        "clear filter -> count2 and existing selected note restored",
+        "resize390x844 ->1440x900 preserves search focus and filter value",
+        "document scrollWidth equals viewport width in the sampled narrow/light/dark states"
+      ],
+      "theme": "CDP prefers-color-scheme changes actual native color-scheme and Notes inherited foreground: light rgb(15,17,21); dark rgb(249,250,251). No global CSS or user preference storage changed.",
+      "writes": "Browser-owned filter/selection preferences only; no business writes, grants or model sends."
+    },
+    "rootIabReported": {
+      "observer": "root agent reports from its actual installed IAB session; not independently reproduced in the Chrome context",
+      "normalNotes": "2 -> search 明日 1/selection none -> select original body",
+      "normalReading": "4 books/108min -> search 书籍乙 ->1/50min -> select author 测试作者乙; original native two-round history retained",
+      "revokedNotesInstance": "d8760a94-d344-4e51-a9a8-e4e970170327",
+      "revokedNotes": "Read rev2 remains revoked. Actual summary and full page show revocation, selection none, no list/detail; title/body/save and prepare-AI disabled; explicit refresh preserves refusal.",
+      "revokedReading": "Actual Reading shows revocation with retry, prepare-AI disabled, no successful zero statistics; refresh preserves error.",
+      "noNewGrantsOrBusinessWrites": true,
+      "readingNarrowLimit": "Root attempted drag but only text selected, no geometry change; Reading390 viewport is not claimed."
+    }
+  },
+  "auxiliaryEvidence": [
+    "13-notes-public-producer.json:19 source/package tests, strict isolated producer and consumer, 5 archive files",
+    "13-reading-bundle.json:public resource entry migration and actual built ModuleLoader factory;9 regressions",
+    "presentation.test.mjs:public ReactDOM controls, field absence/invalid aggregate, retry and explicit Surface API; auxiliary only, not installed browser proof"
+  ],
+  "screenshots": [
+    {
+      "path": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-13-notes-wide-light.jpg",
+      "sha256": "7246a6b276bb55924b094c17f90b831dc574777ecb06ec98868d35445e829935",
+      "bytes": 84309,
+      "viewport": [
+        1920,
+        889
+      ],
+      "scope": "actual installed Chrome page; screenshot kept outside repository"
+    },
+    {
+      "path": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-13-notes-narrow-dark.jpg",
+      "sha256": "0eda19fbdfdd386c2da999c3f941deb17a19f6c445388c67200d9260d2ed5d20",
+      "bytes": 30052,
+      "viewport": [
+        390,
+        844
+      ],
+      "scope": "actual installed Chrome page; screenshot kept outside repository"
+    },
+    {
+      "path": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-13-notes-narrow-light.jpg",
+      "sha256": "1a3ea2db747ce5d5b26fbc22e6228a2c5c5112441d5882af73d60a1e7ba95606",
+      "bytes": 35792,
+      "viewport": [
+        390,
+        844
+      ],
+      "scope": "actual installed Chrome page; screenshot kept outside repository"
+    },
+    {
+      "path": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-13-notes-desktop-dark.jpg",
+      "sha256": "32ff74d84edb7e5479fb992f2e0cf81dab5c59844dfce69e84b7e34b28d2fab0",
+      "bytes": 85472,
+      "viewport": [
+        1440,
+        900
+      ],
+      "scope": "actual installed Chrome page; screenshot kept outside repository"
+    }
+  ],
+  "peerInspection": {
+    "status": "mixed-deps-awaiting-reverify",
+    "pnpmVersion": "11.28.5",
+    "exitCode": 1,
+    "stdout": "Issues with peer dependencies found\n\n✕ missing peer @deepseek-ai/cordis\n  Wanted:\n    ~4.0.4:\n      @deepseek-ai/dsh-storage-domain@0.2.0-rc.2\n    4.0.4:\n      @deepseek-ai/dsh-reading-statistics@0.2.0\n\n✕ missing peer @deepseek-ai/dsh-invariants\n  Wanted:\n    0.2.0-rc.2:\n      @deepseek-ai/dsh-storage-domain@0.2.0-rc.2\n\n✕ missing peer @deepseek-ai/dsh-storage\n  Wanted:\n    0.2.0-rc.2:\n      @deepseek-ai/dsh-storage-domain@0.2.0-rc.2\n\n✕ missing peer @deepseek-ai/dsh-host-webserver\n  Wanted:\n    0.2.0-rc.2:\n      @deepseek-ai/dsh-reading-statistics@0.2.0\n",
+    "readOnlyMetadataMatched": true,
+    "declaredNativeCompatibility": "Official rc2 preflight returns no declared range issue; actual Node resolution below is a separate failed condition. No allow-version exemptions or peer bypass used.",
+    "contexts": [
+      {
+        "name": "dsh-worktable",
+        "version": "0.8.0",
+        "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\dsh-worktable",
+        "declaredPeers": {
+          "@deepseek-ai/cordis": "*",
+          "@deepseek-ai/dsh-client-locale": "*",
+          "@deepseek-ai/dsh-host-webserver": "*"
+        },
+        "declaredNativeCompatibility": null,
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\native-unpatched-clean-1791697941186\\vendor\\cordis"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\@deepseek-ai\\dsh-storage-domain"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "error": "MODULE_NOT_FOUND"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\storage\\storage"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\host\\webserver"
+          }
+        ]
+      },
+      {
+        "name": "@deepseek-ai/dsh-project-notes",
+        "version": "0.2.0",
+        "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\@deepseek-ai\\dsh-project-notes",
+        "declaredPeers": {
+          "@deepseek-ai/cordis": "4.0.4",
+          "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2",
+          "dsh-worktable": ">=0.8.0 <1",
+          "@deepseek-ai/schemastery": "3.18.4"
+        },
+        "declaredNativeCompatibility": null,
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\native-unpatched-clean-1791697941186\\vendor\\cordis"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\@deepseek-ai\\dsh-storage-domain"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "error": "MODULE_NOT_FOUND"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\storage\\storage"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\host\\webserver"
+          }
+        ]
+      },
+      {
+        "name": "@deepseek-ai/dsh-reading-statistics",
+        "version": "0.2.0",
+        "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\@deepseek-ai\\dsh-reading-statistics",
+        "declaredPeers": {
+          "@deepseek-ai/cordis": "4.0.4",
+          "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2",
+          "dsh-worktable": ">=0.8.0 <1"
+        },
+        "declaredNativeCompatibility": null,
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\native-unpatched-clean-1791697941186\\vendor\\cordis"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\@deepseek-ai\\dsh-storage-domain"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "error": "MODULE_NOT_FOUND"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\storage\\storage"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\host\\webserver"
+          }
+        ]
+      },
+      {
+        "name": "@deepseek-ai/dsh-storage-domain",
+        "version": "0.2.0-rc.2",
+        "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\@deepseek-ai\\dsh-storage-domain",
+        "declaredPeers": {
+          "@deepseek-ai/dsh-invariants": "0.2.0-rc.2",
+          "@deepseek-ai/dsh-storage": "0.2.0-rc.2",
+          "@deepseek-ai/cordis": "~4.0.4"
+        },
+        "declaredNativeCompatibility": null,
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\native-unpatched-clean-1791697941186\\vendor\\cordis"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2",
+            "realpath": "D:\\programming\\workspace\\my-dsh\\.scratch\\worktable-foundation-owned-20261018\\dsh-home\\profiles\\web\\node_modules\\@deepseek-ai\\dsh-storage-domain"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "error": "MODULE_NOT_FOUND"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\storage\\storage"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.1-alpha.2",
+            "realpath": "D:\\programming\\workspace\\deepseek-harness\\packages\\host\\webserver"
+          }
+        ]
+      }
+    ],
+    "requiredFollowUp": "Root must normalize explicit official rc2 peer environment, repeat resolution and read-only peers check, cold restart and actual UI before this installed profile is accepted."
+  },
+  "limits": [
+    "13 remains open until peer environment reverified.",
+    "Current UI observations are real but on a mixed dependency profile, not proof of pure rc2 compatibility.",
+    "Only sampled desktop/390 Notes inherit-theme behavior is claimed; no all-device/all-theme claim.",
+    "Explicit Surface light/dark props are auxiliary public component tests; current applications use native inherited theme.",
+    "Reading narrow drag failed and is not counted.",
+    "No model generation was run for this ticket."
+  ],
+  "nativeSourceWrites": 0,
+  "upstreamWrites": 0,
+  "formal3080Writes": 0,
+  "newGrants": 0,
+  "businessMutations": 0,
+  "modelSends": 0,
+  "hashBasis": {
+    "archivesAndScreenshots": "SHA256 of exact raw tgz/JPEG file bytes",
+    "evidenceText": "No self-hash is asserted; any later evidence text SHA is Git/LF commit-byte basis, not a Windows CRLF working-tree hash."
+  }
+}
