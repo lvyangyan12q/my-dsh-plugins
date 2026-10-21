@@ -46,8 +46,8 @@
     "Actual historical0.8.4 public reader executes schema2 refusal preserving file bytes; this is source proof, not an installed frozen-old-package claim."
   ],
   "sourceGate": {
-    "tests": 257,
-    "pass": 257,
+    "tests": 258,
+    "pass": 258,
     "fail": 0,
     "skip": 0,
     "environment": "WORKTABLE_NATIVE_RC2_ROOT points to independent official rc.2 source",
@@ -86,5 +86,11 @@
     "occ": "Preview durably records current recipeRevision. Apply must match both that explicit preview revision and current application OCC. An intervening private binding save refuses stale apply without revocation; re-preview permits retry.",
     "proof": "Public real-file A active/A in-flight plus independent B prepare/preview/apply/activate; second B publication between A preview/apply; A re-preview/apply/activate succeeds and both outputs remain isolated. Actual shared title/structure change still refuses.",
     "merge": "Integrated bridge46578522e84e334bdcfdea61632daae020a48673; preserved generation preparation owners and third-argument trusted web source, both runtime branches, SDK features and regression gate union."
+  },
+  "pendingStructureCorrection": {
+    "red": "After generation draft apply, changing the candidate module roleId to another legal declared role incorrectly allowed activation (missing expected rejection).",
+    "green": "Draft binding persists SHA256 of post-apply module and selected role declaration. Generation owner validates that exact structure against activation candidate before publication; active artifact reads also verify it.",
+    "proof": "Public real-file flow rejects roleId replacement, module config replacement and selected role declaration changes, retaining running/active state; restoring the original post-apply structure plus version increment permits publication.",
+    "compatibility": "Recipe version is outside the slot fingerprint; private binding-only OCC and stable position moves remain compatible. No shared raw path or private generation ID introduced."
   }
 }

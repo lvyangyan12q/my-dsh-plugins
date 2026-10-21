@@ -164,3 +164,6 @@ feature `controlled-web-bridge-v1`。只支持当前组合deep应用的网站模
 
 
 Candidate0.9.1 generation targets retain original revision for audit but compare shared draft/running structure identity, not another instance private binding OCC. Preview records latest recipeRevision; apply requires that exact explicit preview and current OCC. Stale OCC permits re-preview without losing the native result; actual shared structure/version drift still refuses.
+
+
+Pending generated bindings also carry structureSha256 for the post-apply custom module plus its selected role declaration. The activation owner receives the candidate recipe and verifies that structure, excluding normal recipe-version increments and module position. Role/config replacements reject publication; active artifact reads refuse mismatched slot structure.
