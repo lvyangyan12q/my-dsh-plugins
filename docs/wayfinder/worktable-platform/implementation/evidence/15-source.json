@@ -46,8 +46,8 @@
     "Actual historical0.8.4 public reader executes schema2 refusal preserving file bytes; this is source proof, not an installed frozen-old-package claim."
   ],
   "sourceGate": {
-    "tests": 258,
-    "pass": 258,
+    "tests": 262,
+    "pass": 262,
     "fail": 0,
     "skip": 0,
     "environment": "WORKTABLE_NATIVE_RC2_ROOT points to independent official rc.2 source",
@@ -79,7 +79,7 @@
     "ui": "Related role/application events refresh describe and clear acknowledgement; unrelated instance role events do not replace current confirmation. Prepare sends returned confirmationToken and errors force re-description.",
     "scope": "Optimistic precondition, not authorization token; native task submission/explicit preview/apply/activation boundaries unchanged."
   },
-  "candidateVersion": "0.9.1",
+  "candidateVersion": "0.9.3",
   "instanceInFlightCorrection": {
     "red": "B private generated binding save/activation changed shared recipe revision and incorrectly rejected A in-flight result as generation-target-changed.",
     "green": "Generation identity includes complete shared draft/running structure fingerprints (including versions and roles), stable slot and instance identity; original recipe revision is retained for audit but private binding OCC changes do not revoke native output.",
@@ -92,5 +92,15 @@
     "green": "Draft binding persists SHA256 of post-apply module and selected role declaration. Generation owner validates that exact structure against activation candidate before publication; active artifact reads also verify it.",
     "proof": "Public real-file flow rejects roleId replacement, module config replacement and selected role declaration changes, retaining running/active state; restoring the original post-apply structure plus version increment permits publication.",
     "compatibility": "Recipe version is outside the slot fingerprint; private binding-only OCC and stable position moves remain compatible. No shared raw path or private generation ID introduced."
+  },
+  "hashlessManifestCorrection": {
+    "red": "A valid schema2 identity/path manifest without sha256 was refused by the old schema1-only Host.",
+    "green": "Prompt prefers schema2 without sha256. Host bounded real-file preview computes actual HTML SHA256 and persists it with manifest SHA; explicit apply and active reads retain byte/hash checks. Schema1 still requires correct supplied hash; schema2 with sha256 rejects ambiguity.",
+    "proof": "Real-file schema2 preview/apply succeeds; changed HTML or manifest after preview refuses apply; schema1 wrong SHA still rejects. No shell capability or manual user hash required."
+  },
+  "navigationCorrection": {
+    "red": "Actual TaskPanel component with unresolved native navigation thenable kept Stop disabled.",
+    "green": "After authenticated task-open ownership check, navigation is observed asynchronously and no longer holds task operation busy; Stop remains actionable. Late navigation errors are scoped to current view identity.",
+    "boundary": "Official rc2 uiWorkspace.openSession is documented void; no assertion of which runtime navigation route caused the observed long-lived result. Root actual installed appStop recheck pending."
   }
 }

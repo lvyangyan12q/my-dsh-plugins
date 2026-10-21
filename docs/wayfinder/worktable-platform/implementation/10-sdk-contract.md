@@ -167,3 +167,6 @@ Candidate0.9.1 generation targets retain original revision for audit but compare
 
 
 Pending generated bindings also carry structureSha256 for the post-apply custom module plus its selected role declaration. The activation owner receives the candidate recipe and verifies that structure, excluding normal recipe-version increments and module position. Role/config replacements reject publication; active artifact reads refuse mismatched slot structure.
+
+
+Generation candidate0.9.3 prefers manifest schema2: identity fields and artifactPath only, with no sha256 property. Host preview computes and locks artifact/manifest byte hashes; later apply and active reads still require them unchanged. Legacy schema1 supplied SHA is mandatory and checked. This removes shell/hash generation as a role requirement without weakening identity/root/preview checks. TaskPanel native navigation lifetime is independent of operation busy; open ownership validation and scoped async navigation errors remain.

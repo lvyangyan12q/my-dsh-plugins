@@ -47,3 +47,6 @@ resume是显式使用动作，更新最近使用顺序而不新建实例/视图�
 
 
 生成准备需携带当前describe返回的confirmationToken；它仅是目标/配方/角色绑定/Session/规范目录的乐观前置指纹，不是授权。确认后更换事实或角色不可用时，在mkdir和任务/ledger写入前拒绝，重新描述并显式确认后才能准备。
+
+
+0.9.3生成清单首选schema2，仅身份和artifactPath，不填写sha256；Host预览从实际HTML字节算并锁hash，应用/展示继续核对HTML及清单字节。schema1仍验模型所给hash，schema2出现sha256拒绝。无需增加原生shell能力或用户手填hash。TaskPanel打开原生对话的异步返回不持续占任务busy，Stop仍可操作。
