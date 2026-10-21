@@ -27,6 +27,10 @@ export function mountResources(ctx){
       switch(body.operation){
         case 'catalog':result=await service.catalog();break
         case 'snapshot': result=await service.snapshot();break
+        case 'connection': {
+          if(Object.keys(body).some(key=>!['operation','viewId','ownerViewId','resourceId'].includes(key)))throw new ApplicationError('invalid-request','资料权限只能查询当前视图及所选来源。',403)
+          result=await service.connection(body);break
+        }
         case 'share': result=await service.share(body);break
         case 'permissions': result=await service.permissions(body.id,body.revision,body.allowedActions);break
         case 'revoke': result=await service.revoke(body.id,body.revision);break
