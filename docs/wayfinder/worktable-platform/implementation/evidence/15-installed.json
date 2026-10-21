@@ -1,0 +1,274 @@
+{
+  "ticket": "worktable-framework-15",
+  "status": "closed",
+  "acceptedOn": "2026-10-22",
+  "scope": "Actual isolated official DSH installation and native model user flow; final cross-feature19 remains open.",
+  "host": {
+    "port": 3091,
+    "officialVersion": "0.2.0-rc.2",
+    "nativePatched": false,
+    "worktableVersion": "0.9.3",
+    "archiveSha256": "57222fda4d6f4b9310e42baa2c1648372f5ea26a2dc2ae9f049a9497b15abd5b",
+    "publicPeerCheck": "No peer dependency issues found"
+  },
+  "auxiliarySource": {
+    "tests": 262,
+    "pass": 262,
+    "fail": 0,
+    "skip": 0,
+    "buildCheckAndClientFactory": "passed",
+    "actualUserFlowSubstitute": false
+  },
+  "observedByRoot": {
+    "G0": "Historical0.9.1 schema1 model hash blocked: model requested user hash; root Stop retained history and did not hand-fill hash or manifest. Not counted as successful generation.",
+    "G1": "Actual native question, user answer, model HTML plus schema2 manifest; explicit preview/applydraft and separate enable.",
+    "G2": "New generation plus directed TaskPanel Stop retained old active G1 and revoked application right.",
+    "instanceIsolation": "A and B distinct native Sessions. B starts without A output; B independent native generation/preview/application/activation while A in-flight preserves A output and request.",
+    "G3": "A applydraft retained G1 active; explicit editor preview/enable at same recipe1.0.1 switched only A; second A view matched, B unchanged.",
+    "G4": {
+      "generationPrefix": "339f1962",
+      "taskPrefix": "11aac58c",
+      "requestPrefix": "457177d5",
+      "flow": "While native question pending, UI changed module title and saved draft without enable. After answer, model actually completed HTML+manifest. Explicit UI result preview refused changed target; no preview/application occurred. Root explicitly revoked applicability and restored original title; G3 remains running."
+    },
+    "G5": {
+      "generationPrefix": "505fb6b8",
+      "taskPrefix": "3223b044",
+      "requestPrefix": "e3e26438",
+      "flow": "After UI prepare/send, native composer Stop generating (not TaskPanel Stop). Native stopped; explicit UI preview refused aborted/failed/unknown matching turn. Generation revoked and A active G3 hash unchanged."
+    }
+  },
+  "artifactFacts": {
+    "worktable-15-g1-applied093.private.json": {
+      "compositionRevision": 5,
+      "status": 409,
+      "sha256": null
+    },
+    "worktable-15-g1-active-a093.private.json": {
+      "compositionRevision": 9,
+      "status": 200,
+      "sha256": "8ddd1e73aec90b00325b9fbd73364e0d993c33803aa16a358e291594a673bc72"
+    },
+    "worktable-15-g3-draft093.private.json": {
+      "compositionRevision": 14,
+      "status": 200,
+      "sha256": "8ddd1e73aec90b00325b9fbd73364e0d993c33803aa16a358e291594a673bc72"
+    },
+    "worktable-15-g3-active-a093.private.json": {
+      "compositionRevision": 17,
+      "status": 200,
+      "sha256": "ea30ae1548e77b104324977dcb5b0c949ba3a2bb97d21d3dc92d982b78319cdb"
+    },
+    "worktable-15-a-second-view093.private.json": {
+      "compositionRevision": 17,
+      "status": 200,
+      "sha256": "ea30ae1548e77b104324977dcb5b0c949ba3a2bb97d21d3dc92d982b78319cdb"
+    },
+    "worktable-15-b-after-a-g3-active093.private.json": {
+      "compositionRevision": 17,
+      "status": 200,
+      "sha256": "a87d92807b72ba1031a079e8b79f75dec78ac81c3cee49ad4f7b5cdc0de5350a"
+    },
+    "worktable-15-g4-rejected-restored093.private.json": {
+      "compositionRevision": 19,
+      "status": 200,
+      "sha256": "ea30ae1548e77b104324977dcb5b0c949ba3a2bb97d21d3dc92d982b78319cdb"
+    },
+    "worktable-15-g5-native-stop093.private.json": {
+      "compositionRevision": 19,
+      "status": 200,
+      "sha256": "ea30ae1548e77b104324977dcb5b0c949ba3a2bb97d21d3dc92d982b78319cdb"
+    }
+  },
+  "observedByIndependentChrome": {
+    "newSyntheticInstance": "ee76ba23-bd2a-4869-ad18-c898c64104be",
+    "sessionId": "fbd901dd-ee41-4b4c-b284-34d1e477daff",
+    "skill": "Native skill text-organize returned worktable-managed instructions, then organized only supplied synthetic two-item text.",
+    "taskAdmission": "Four new tasks individually prepared, reviewed/saved and explicitly sent in actual TaskPanel; each contexts array empty.",
+    "initialParameterMistake": "Unsupported require_escalated prompt caused zero write calls; retained as setup failure, not approval evidence.",
+    "rejected": "Separate corrected one-write native approval clicked Reject; explicit user-rejected escalation result, no retry; denied marker absent before/after.",
+    "allowed": "Separate new one-write native approval clicked Allow once; Created file, exact synthetic marker content and SHA2561cc33098b2429b7de5489cfef92d82fc2ae61dd5a3d35ec9473dcc219c98a24d; denied remained absent.",
+    "navigation": "After opening native conversation, task Stop remained enabled during native approval. Final UI idle does not imply task success.",
+    "permissions": "Native access mode remained Workspace Write; no global/preset/Agent permission changes or resource grants; website capability remained off."
+  },
+  "preservation": [
+    "Root A/B and independent Chrome Session isolated; native trajectories and output files retained.",
+    "No native/upstream or3080 edits in this ticket; no frozen archive overwritten.",
+    "Only authorized synthetic prompts and marker files; no business/kaogong/user資料 migration."
+  ],
+  "remaining19": [
+    "Final cold recovery/reinstall and frozen0.8.4 actual refusal then0.9.3 restore; source old-reader/renderer tests remain auxiliary.",
+    "Final generated-page light/dark/narrow layout and keyboard/scroll; arbitrary HTML does not automatically inherit style.",
+    "Final cross-feature storage failure/editor recovery, mapping and fixed-baseline two-axis review.",
+    "3080 target host compatibility and deployment separately verified;3091 success is not3080 success.",
+    "Unsent-image/full-titlebar upstream fallback, physical IME/macOS/Desktop/BetterSidebar and paused legacy/kaogong boundaries remain per spec."
+  ],
+  "evidenceReferences": [
+    {
+      "localReceipt": "worktable-15-a-second-view093.private.json",
+      "sha256": "e91eb1b4c5d139406ce740fa11650e8695c2b4bb53e8f4e4c2b88bf6e9629e86",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-allowed-pending.private.png",
+      "sha256": "45838becc44e0701366b49f0cd7d5e6741b166af993df68ecb70d3bbe18189da",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-approval-after.private.json",
+      "sha256": "cd91c0e4cb8cd37dc71f39151752d8bc7df5a934e670b1615a613cd07eb2636f",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-approval-before.private.json",
+      "sha256": "a262ae69d489acd190513955899c6774f87a52cf6e6661c6525aad8fde1972ee",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-b-active093.private.json",
+      "sha256": "79be9aaa69d634724f875e070f7f04dd21a5ae7182a23a3a1a5ce4926e59e866",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-b-after-a-g3-active093.private.json",
+      "sha256": "a8a77c9c8908db47c4c35698cea2070e5f4453eeb838c51ad5788d81af917040",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-b-native-start093.private.json",
+      "sha256": "837e9cf9994f6dbcb4b8b7f23fcc0aa1f3d21a6d81598ef7e95d0b1f0a55dc44",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-b-published-a-inflight093.private.json",
+      "sha256": "b6ebf900fd111895b62ca7f38fe76180b1208047136b9086010976d9a1e4696c",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-b-unactivated093.private.json",
+      "sha256": "72fe126d9fb38cb03c87955db42014f9e7024eaa968e49f97a10f1cc953996f5",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-denied-pending.private.png",
+      "sha256": "8d10f8d74dc02cd5c5a217abac57d140c45db0e90f381d9c88708fee59ba4031",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-directed-stop093.private.ax.txt",
+      "sha256": "ee8a4c6c0390dd831ae5c921ca48c685454371172d22ad2f4b3041c91d89837b",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-directed-stop093.private.png",
+      "sha256": "15eca4dc86a6a46bb33b1a075def8fac602fc966f17ef6fd5dd1038dcd83ed36",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g0-files-stopped091.private.json",
+      "sha256": "e78b6ddbe9de17703cdfc5d883a4acc9e88b7e45cd40856e2cc2b50598742657",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g1-active-a093.private.json",
+      "sha256": "592e2fd3c15b2a2f203a77b1487c1ffc94b5605b9669b8eac870e73254835137",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g1-applied093.private.json",
+      "sha256": "db6ae11ed6ff5f0eb3693dbb29e23823e4e2e415cbe3f02634d5a4af020c7b41",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g2-running-a093.private.json",
+      "sha256": "9d32bc67bfeed8a142efad975479b93ffb18376d38a185f629830b5857d1459e",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g3-active-a093.private.json",
+      "sha256": "092d26c4b8f49afd96f2d432fad2c1026559aa9655bd5dd929f6dfe1a028fc44",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g3-draft093.private.json",
+      "sha256": "6ac0a18826f81f053c406a74b2d4de7712d7d3fb0138abac35fa5d4ccac97300",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g3-second-view093.private.ax.txt",
+      "sha256": "751ecbdc323142222cd85c864a924ef05c63723d13964279e3b29244c475b4c6",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g3-second-view093.private.png",
+      "sha256": "f09870852f6340fd98479d66fa1d398ecc732648d88eaefa970243c708e573de",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g4-rejected-restored093.private.json",
+      "sha256": "97bcd6eb4564de1b28c7dccf1a259a8e6ee63f559814eb9c79675651f4e1b75c",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g4-target-rejected093.private.ax.txt",
+      "sha256": "41a072af2ca0e3310a081d6184420a3a1de89afbf3f6c7cc91ad6c93a643d1fe",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g4-target-rejected093.private.png",
+      "sha256": "82fc83d99ba6c5ed74e29f3dfd5fa3cf875b48d90a20a921386764167ae01466",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g5-native-stop093.private.ax.txt",
+      "sha256": "50cefba9b253dbbeac1853cb6a95fddc5805bba3036a3c723de5ba440089c08d",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-g5-native-stop093.private.json",
+      "sha256": "e2fc454fafa60827fae865baa3f963cb9ea41efd75b10abe6b86d9d20bc39dfa",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-native-approval.private.json",
+      "sha256": "a5f9fe9ee5b935a2f92db6c23010edefad8d9f5fbcfda785d86e712729acb84d",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-native-final.private.ax.txt",
+      "sha256": "7dedb1182dcd9ce3c38cb875c32bd8cb0b4a0770965459e0ac67e77a6d8f2692",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-native-final.private.png",
+      "sha256": "4331ed00f3c0613efe67d1aaabef1681b1c514ce73282c0ce9cd785dea9e67b3",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-native-question093.private.ax.txt",
+      "sha256": "e835ee317af18bd798cedd10a30d2f9fe84cb063411589e6f7515c98698cb3bf",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-15-stop-hash-blocked091.private.json",
+      "sha256": "90efbf0d8ef320fbcb35e9038fab304d3f279dc24078072da89fab296dc365f3",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-continuation-install093.private.log",
+      "sha256": "ac5825959d501e31c16dd8c7ec1ac88465d31ca6634ef1e349509694cbe37deb",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-continuation-pack093.private.log",
+      "sha256": "c839fd4a715f6ee54863dd84e303af6def338794ea8fb3f7a1a5e1caa97cd135",
+      "contentsCommitted": false
+    },
+    {
+      "localReceipt": "worktable-continuation-peers093.private.log",
+      "sha256": "016f6225472efb49745f35bd4567a731b2c2a8311b2dfd2702f83121d1a50785",
+      "contentsCommitted": false
+    }
+  ],
+  "privacy": "Receipt names and hashes only; no auth URLs/tokens, raw native prompts, private absolute profile/output paths or binary screenshots committed."
+}

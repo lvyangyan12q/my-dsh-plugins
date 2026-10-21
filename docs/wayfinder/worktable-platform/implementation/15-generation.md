@@ -3,7 +3,7 @@ id: worktable-framework-15
 title: 原生AI生成追改与稳定产物归属
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: continuation_failures
 blocked_by: [worktable-framework-14]
 ---
@@ -18,10 +18,10 @@ blocked_by: [worktable-framework-14]
 
 ## Acceptance
 
-- [ ] F09实际模型、原生轨迹/问题/审批/Stop及目标替换负例；辅助安装产物回调验证边界，不能单用fixture关单。
-- [ ] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
-- [ ] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
-- [ ] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
+- [x] F09实际模型、原生轨迹/问题/审批/Stop及目标替换负例；辅助安装产物回调验证边界，不能单用fixture关单。
+- [x] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
+- [x] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
+- [x] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
 
 ## Dependencies
 
@@ -103,3 +103,14 @@ The actual installed model role may have read/write/search without shell. The so
 A separate actual component RED reproduced unresolved navigation holding TaskPanel busy and disabling Stop. Task ownership HTTP validation still runs first; opening the native UI is then observed asynchronously rather than holding task-operation busy for its returned lifetime. Stop stays actionable, and late navigation failure cannot overwrite a different view. This does not infer whether the installed route was uiWorkspace or a fallback; official rc2 openSession is void. Root still owns actual installed navigation/Stop verification.
 
 After integrating032a7d64 bridge grant UI, candidate0.9.3 package/manifest/lock identities agree. Combined262/262 source tests, zero skips/failures, build/check and complete generation client factory passed. No pack/install/model send by this source task;15 remains open pending root actual acceptance.
+
+
+## Actual official installation acceptance — 2026-10-22
+
+Closed for ticket15 scope using [15-installed.json](evidence/15-installed.json), independently separating262 source checks from actual official rc.2/Worktable0.9.3 user-flow evidence. Frozen archive SHA256 `57222fda4d6f4b9310e42baa2c1648372f5ea26a2dc2ae9f049a9497b15abd5b`; public peer check found no issues. Historical0.9.1 G0 hash blockage and explicit Stop remain a failed run, not retrospectively successful.
+
+Root actually verified native question→answer→HTML/schema2 manifest→preview→draft→separate enable, independent A/B Sessions and output ownership, B publication while A in flight, G2 directed Stop, and G3 draft preserving old active until explicit same-version1.0.1 enable. Both A views then shared G3 SHA `ea30ae1548e77b104324977dcb5b0c949ba3a2bb97d21d3dc92d982b78319cdb`, while B retained `a87d92807b72ba1031a079e8b79f75dec78ac81c3cee49ad4f7b5cdc0de5350a`. G4 real model output after UI target replacement was refused by explicit preview; applicability was explicitly revoked and original draft restored. G5 was stopped through the native composer; matching aborted-turn preview refused and active G3 remained unchanged.
+
+Independent Chrome actual TaskPanel preparation/review/send loaded text-organize through native Skill, and exercised separate single-operation native Reject and Allow once write approvals using only synthetic markers. Denied marker remained absent, allowed marker exact bytes were verified. A mistaken unsupported permission-enum prompt caused no write and is retained as setup failure. Native access mode stayed Workspace Write; no global permission/grant changed. TaskPanel Stop remained actionable after native navigation and during waiting approval.
+
+This closes15 only.17 and19 remain open. Final19 cold recovery, actual frozen-old-package refusal/restore, final narrow/theme/keyboard cross-feature UI, storage/editor recovery, target3080 host compatibility, review/mapping and delivery remain pending. Original titlebar/image/IME/device/legacy/kaogong limitations remain; no historical172 mapping changed. No source fixture is presented as real installed acceptance.
