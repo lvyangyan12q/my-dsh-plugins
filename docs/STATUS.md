@@ -1,5 +1,15 @@
 # 工作台进度与待办
 
+## 当前实施 · 2026-10-21
+
+用户已要求继续implement-spec。已发布[后续范围](wayfinder/worktable-platform/continuation-spec.md)及[12—19工单图](wayfinder/worktable-platform/implementation/README.md)，继续集成分支`codex/worktable-framework`；本轮起点为`92d14ac`。本段更新时源码已合入`946498b`：12组合草稿Host合同、13公共展示组件与独立应用接入、16原生状态显示；三票均仍open，正在真实安装验收。14等待12+13，18等待12+16，15/17/19继续按图依赖推进。
+
+独立3091运行未经补丁的官方DSH0.2.0-rc.2，已用官方CLI安装Worktable0.8.0、Notes0.2.0、Reading0.2.0并冷启动。Host实测草稿保存/预览不改运行版、显式启用、旧revision与版本冲突拒绝、失效资源拒绝；重启保持由12补证。实页Notes搜索/选择/详情、Reading从4本108分钟筛到1本50分钟与详情联动已见；主题/窄屏/撤销态仍待13证据。原生实际提问等待、Stop后ASK_ABORTED和“已请求Stop/结果未知”已见，failed/unread矩阵尚待16，不能把Stop说成业务成功或确认取消。
+
+候选归档SHA256：Worktable0.8.0 `c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91`；Notes0.2.0 `375f1ef756e5da976de2c8286f3dd6d59ad3059fcba41dcd0df242ed05cab17e`；Reading0.2.0 `33ade5eabea718f8daed1652fdd675c372b122916064b7b8b8bde95ed49cdf9a`。冻结归档不覆盖；后续源码变化须新版本重新发布验收。
+
+3080仍保持先前0.7.2，不提前部署候选；本轮源码/证据尚未推送远端。原生仓库、上游工作台及六份历史用户改动保持，考公暂缓。172项旧映射66/94/12保持，尚未用本轮源码提升验收计数。下面各历史日期按当时版本解读，不覆盖本段。
+
 ## 最新状态 · 2026-10-20
 
 Worktable派生框架首阶段01—11工单已closed，代码与验收记录检查点`b99cdcd`已推送`origin/codex/worktable-framework`，未合入main。最终Worktable0.7.2、Notes0.1.2与固定Reading组合、SDK协议v1见[验收](wayfinder/worktable-platform/implementation/11-acceptance.md)。当前完整framework spec仍open，旧12张工单与123项原要求不自动关闭。

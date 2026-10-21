@@ -1,5 +1,9 @@
 # 工作台接续交接 · 2026-10-20
 
+## 接续实施 · 2026-10-21
+
+工作台后续已进入实施，先读[当前进度](../../STATUS.md)、[后续范围](continuation-spec.md)及[12—19工单图](implementation/README.md)。本轮起点92d14ac，源码已合入组合草稿Host合同、公共展示组件及原生状态修正；独立3091正在验收Worktable0.8.0+Notes/Reading0.2.0。尚未完成模块内搭建、AI生成追改、可选网页桥接与升级影响确认，完整spec保持open。当前候选未部署3080，本轮增量尚未推送；下面2026-10-20检查点与停机信息为历史事实。
+
 当前交付是 **Worktable 派生 AI 工作台的首阶段框架**。首阶段 11 张实施工单已关闭，完整规格仍 open；完整搭建器、AI 生成追改和考公迁移尚未交付。后续新应用既可以直接开发接入，也可以在未来搭建器完成后组合生成。
 
 代码与本页所在分支：[`codex/worktable-framework`](https://github.com/lvyangyan12q/my-dsh-plugins/tree/codex/worktable-framework)，代码与验收记录检查点为 `b99cdcd5c40a64d6036d1ac65af23a105854c53f`。本次提交仅补充文档。该分支已推送，不代表已经合入 main 或发布 npm/GitHub Release。3080 后续已获用户明确授权切换，见下方运行状态；代码与原完整验收仍固定于上述检查点。
