@@ -3,7 +3,7 @@ id: worktable-framework-18
 title: 应用升级与迁移影响确认
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: continuation_failures
 blocked_by: [worktable-framework-12, worktable-framework-16]
 ---
@@ -18,10 +18,10 @@ blocked_by: [worktable-framework-12, worktable-framework-16]
 
 ## Acceptance
 
-- [ ] 公开生命周期/迁移计划合同，真实独立应用升级失败与可验证恢复；合成owner迁移验收不等于旧资料整体迁移完成。
-- [ ] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
-- [ ] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
-- [ ] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
+- [x] 公开生命周期/迁移计划合同，真实独立应用升级失败与可验证恢复；合成owner迁移验收不等于旧资料整体迁移完成。
+- [x] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
+- [x] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
+- [x] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
 
 ## Dependencies
 
@@ -62,3 +62,17 @@ Final source gate: 206 tests passed, zero failed/skipped, with `WORKTABLE_NATIVE
 
 
 Installed example correction (ticket remains open): root's official installation of the original example1.0.0 tarball failed native web boot because client.js did not register its package through `window.__ModuleLoader__.load`. The prior source CJS factory test did not establish that loader contract. Final-script test now evaluates without global module/require, observed RED `ReferenceError: module is not defined`, then wraps the actual built artifact with the official loader identity/factory handshake. Corrected example versions are 1.0.1/2.0.1; old1.0.0/2.0.0 archives stay frozen. Source GREEN does not replace root's reinstallation and actual UI verification.
+
+
+## Installed acceptance completed — 2026-10-22
+
+Root installed official frozen Worktable0.8.4 (`41993c880f28db940a2a7b8e418cdb8e4cb93af6b9211a5b862a30dacb54fbbf`) into the dedicated3091 profile and installed corrected independent example1.0.1→2.0.1 through the native CLI. Public peer check reported no conflicts and the formal release log includes final installed factory/navigation/annotation gates. The original loader-broken1.0.0/2.0.0 archives were hash-verified unchanged; the initial boot failure was recovered by official removal and an owned restart, retaining synthetic data. Earlier source-only/pending notes above describe the historical candidate stage and are superseded by this installed record, not rewritten as earlier successes.
+
+Root actually exercised legacy warnings and explicit adopt; official upgrade with identical old business hash; frozen impact plan and separate irreversible acknowledgement; deliberate checkpoint-writing failure; real new-instance409 with unchanged inventory; refresh/reopen with identical failed revision/hash and no replay; explicit owner recovery to data1 (still migration-required under app2); new plan and explicit second conversion to ready/data2 preserving text. Root-owned cold restart PID16572 retained ready and identical business hash. The same single instance/view survived throughout. No second instance was created after ready, so installed evidence establishes ready/fence-clearance status rather than actual post-recovery creation; source regression covers the latter.
+
+Machine evidence: [18-installed.json](evidence/18-installed.json). It separates root-observed IAB operations, actual installed API receipts, hash-verified local screenshots/archives and source-only crash-intent coverage. Accessibility delta files can say no change and do not independently prove all content. No screenshot binary, token or private configuration is committed.
+
+Closure is limited to the public managed-owner contract and this real independent synthetic app. Existing ownerless apps/old materials/Kaogong remain unmodified and unverified for migration. Native package replacement/trusted owner private writes remain outside the platform fence; explicit owner checkpoint recovery is not a general automatic rollback promise. These limits do not close any broader legacy migration or final delivery work.
+
+
+Root additionally verified all nine whitelist package files in the owned installed `dsh-worktable` directory against the frozen0.8.4 archive:9/9 byte hashes matched; hashed local receipt and per-file hashes are included in18-installed.json.
