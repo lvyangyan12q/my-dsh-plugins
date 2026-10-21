@@ -3,7 +3,7 @@ id: worktable-framework-12
 title: 组合应用草稿、预览与显式启用
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: continuation_authoring
 blocked_by: []
 ---
@@ -18,10 +18,10 @@ blocked_by: []
 
 ## Acceptance
 
-- [ ] 公开草稿生命周期及应用/实例注册合同；实际保存/预览/启用/再次编辑，验证运行版隔离与实例/历史保持。
-- [ ] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
-- [ ] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
-- [ ] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
+- [x] 公开草稿生命周期及应用/实例注册合同；实际保存/预览/启用/再次编辑，验证运行版隔离与实例/历史保持。
+- [x] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
+- [x] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
+- [x] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
 
 ## Dependencies
 
@@ -36,3 +36,13 @@ blocked_by: []
 - 仍须root在最终发布版本的隔离官方DSH实际安装后验证Host生命周期。14补实际模块内交互，19补全链证据；本条源码/HTTP夹具结果不等同安装闭环，工单保持open。原生/上游/3080和资料未改。
 
 - SDK补验：公开describeProtocol/requireProtocol消费者要求composed-authoring-v1先RED（明确缺少该feature），sdk.mjs最小追加可选feature后GREEN；组合生命周期/HTTP/SDK共8项通过。保留协议1与其他feature，不声称尚未安装的运行结果。
+
+## 2026-10-21最终Host安装验收与关闭边界
+
+[精确安装及冷恢复证据](evidence/12-installed.json)：隔离3091，官方未补丁DSH0.2.0-rc.2，Worktable0.8.0归档SHA256 c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91，Notes/Reading0.2.0。root实际认证HTTP完成保存不发布、预览无新实例、旧revision拒绝、显式启用、未升版本拒绝、再次启用身份保持、缺失源拒绝7步。初始13实例/23视图，明确验收setup后14实例/24视图；不将setup计为无新增。
+
+官方Host重启PID27528后，实施者只用GET health/applications/compositions复验：同一app的running1.1.0，draft1.1.0、revision7，原实例4627e87f-e4ff-412a-a60c-faa84dd8b925和视图07a45ebb-fc1a-4b62-97c0-16b9da531e14保持；只读复验前后全部Session文件清单hash和roles/tasks文件hash相同。未新增实例、授权、会话或模型发送。
+
+12关闭仅表示真实安装Host草稿/预览/启用及冷恢复合同通过。模块内编辑、模板复制、公共展示实际操作归14，AI生成追改归15，全链验收归19，均不可继承这份HTTP验收。完整framework spec继续open，考公暂停；未修改3080和原生/上游。
+
+关闭前保护guard在集成daed17d通过：原生/上游无变更、六份历史用户文件hash保持、集成index干净。本候选仅更新12票/12合同/本证据/README对应行，未重写01—11不可变证据。

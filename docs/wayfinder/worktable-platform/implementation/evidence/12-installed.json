@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-21",
+  "host": "http://127.0.0.1:3091/",
+  "nativeVersion": "0.2.0-rc.2",
+  "worktableVersion": "0.8.0",
+  "purpose": "Actual official-installed Host composition HTTP lifecycle; not the14 editor or model flow",
+  "appId": "acceptance-composed-1792589152356",
+  "instanceId": "4627e87f-e4ff-412a-a60c-faa84dd8b925",
+  "viewId": "07a45ebb-fc1a-4b62-97c0-16b9da531e14",
+  "steps": [
+    "save-keeps-running-directory-and-instances",
+    "preview-does-not-activate-or-create-instance",
+    "stale-save-refused",
+    "explicit-activation-publishes-definition",
+    "unchanged-version-refused-and-running-preserved",
+    "activation-keeps-original-instance-and-view",
+    "missing-source-refused-without-replacing-running"
+  ],
+  "before": {
+    "instances": 13,
+    "views": 23
+  },
+  "after": {
+    "instances": 14,
+    "views": 24
+  },
+  "modelRequestSent": false,
+  "sourceDataShared": false,
+  "coldRecoveryPending": false,
+  "archiveSha256": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91",
+  "notesVersion": "0.2.0",
+  "readingVersion": "0.2.0",
+  "coldRecovery": {
+    "processId": 27528,
+    "readOnlyRequests": [
+      "GET /api/worktable/health",
+      "GET /api/worktable/applications",
+      "GET /api/worktable/compositions"
+    ],
+    "runningVersion": "1.1.0",
+    "draftVersion": "1.1.0",
+    "revision": 7,
+    "instancePreserved": true,
+    "viewPreserved": true,
+    "instances": 14,
+    "views": 24,
+    "tasksUnchangedDuringProbe": true,
+    "rolesUnchangedDuringProbe": true,
+    "sessionsUnchangedDuringProbe": true,
+    "sessionFiles": 10,
+    "tasksSha256": "f8ac80a91594748d7d420000d3107708c62a7302f4372e7b20b84282e6085157",
+    "rolesSha256": "47a81a9f8e4f392bbf2d88cb557a88ceb283caf91e2fd08df8398fc83d060dab",
+    "sessionsInventorySha256": "238224b7fd97a3440ec2d6614c0e7b3947f0432bbed4ad0f8b8dd52566d7a30c"
+  },
+  "limitations": [
+    "Ticket12 Host lifecycle only; inline UI and complete builder remain14/19",
+    "No model generation or application data sharing performed",
+    "Prior manually created synthetic setup instance retained; no new setup during cold-recovery probe",
+    "No claim of physical IME, desktop/macOS or paused Kaogong acceptance"
+  ],
+  "sourceIntegration": "946498b53a7a6845087f4ee53d8d09a22223ce12"
+}

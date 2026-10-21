@@ -6,7 +6,7 @@
 
 | 编号 | 工单 | 阻塞于 | 状态 |
 |---|---|---|---|
-| 12 | [组合应用草稿、预览与显式启用](12-composed-authoring.md) | 无 | open |
+| 12 | [组合应用草稿、预览与显式启用](12-composed-authoring.md) | 无 | closed（Host；UI见14/19） |
 | 13 | [公共展示组件与可选主题](13-presentation.md) | 无 | open |
 | 14 | [模块内编辑与模板搭建](14-inline-builder.md) | 12、13 | open |
 | 15 | [原生AI生成追改与稳定产物归属](15-generation.md) | 14 | open |

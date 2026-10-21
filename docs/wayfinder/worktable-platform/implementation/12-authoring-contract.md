@@ -1,4 +1,4 @@
-# 12 组合应用Host合同（源码已实现，安装验收待14/19）
+# 12 组合应用Host合同（Host已实际安装验收；模块交互待14/19）
 
 服务 `worktableCompositions`（公开类型见 `src/sdk.d.ts`）；HTTP `/api/worktable/compositions` 经当前Host `connection.admit`，GET返回记录数组，POST `{action:'get',appId}` 或 `save/preview/activate`。后3项均接收 `{appId,expectedRevision}`；save另传 `recipe`。新app预期revision=0，save和activate均增加revision；preview不增加。get/list是独立副本。缺服务/认证/引用时明确拒绝，无模型发送。
 
@@ -13,3 +13,5 @@ save仅保存draft；preview验证数据引用与角色但不注册应用、建�
 存储仍为profile下worktable-platform/applications.v1.json；含组合记录时schema=3，老版本明确拒绝，不静默回退。新Host保留schema1/2读取。所有者worktable-compositions保留appId防冒领。停用仍走现有lifecycle，卸载/业务数据删除不混同。
 
 源码测试：`node --test plugins/worktable/04_test/compositions.test.mjs plugins/worktable/04_test/composition-http.test.mjs`（在仓库根执行）。这是辅助接缝证据，不能关闭12或替代实际安装、模块交互、原生AI闭环。
+
+2026-10-21：Worktable0.8.0在官方rc.2隔离3091实际完成Host7步与重启只读恢复，见[evidence/12-installed.json](evidence/12-installed.json)。12按Host接缝关闭；14/19承担模块内实际用户交互，不把本HTTP证据当完整搭建器通过。
