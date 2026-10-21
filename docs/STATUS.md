@@ -1,6 +1,6 @@
 # 工作台进度与待办
 
-2026-10-22当前前沿：12、13、14、15、16、18已按各票实际范围关闭；17受控网页桥接继续实际验收，19等待最终闭环和两轴审查。15已在独立官方rc.2/Worktable0.9.3（SHA256 57222fda4d6f4b9310e42baa2c1648372f5ea26a2dc2ae9f049a9497b15abd5b）完成原生生成追改、A/B隔离、目标替换与原生Stop、Skill及单次审批验收，见[15实页证据](wayfinder/worktable-platform/implementation/evidence/15-installed.json)。最终冷启/旧包回退/窄屏明暗和3080目标宿主仍待19；3080保持原部署，完整spec仍open，历史映射不变。
+2026-10-22当前前沿：12、13、14、15、16、17、18已按各票实际范围关闭；19全部依赖已解除，进入最终闭环和两轴审查。15已在独立官方rc.2/Worktable0.9.3（SHA256 57222fda4d6f4b9310e42baa2c1648372f5ea26a2dc2ae9f049a9497b15abd5b）完成原生生成追改、A/B隔离、目标替换与原生Stop、Skill及单次审批验收，见[15实页证据](wayfinder/worktable-platform/implementation/evidence/15-installed.json)。17已在同一0.9.3完成真实合作网页只读两条新合成资料、只准备任务、界面撤资料后读取/原生发送拒绝；独立Chrome补同主机跨端口/缺CSP接纳/302跳宿主拒绝及刷新默认关闭，见[17实页证据](wayfinder/worktable-platform/implementation/evidence/17-installed.json)。最终冷启/旧包回退/剩余窄屏明暗和3080目标宿主仍待19；3080保持原部署，完整spec仍open，历史映射不变。
 
 
 ## 当前实施 · 2026-10-21

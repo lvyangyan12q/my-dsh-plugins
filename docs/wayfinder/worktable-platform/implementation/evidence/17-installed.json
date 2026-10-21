@@ -1,0 +1,261 @@
+{
+  "ticket": "worktable-framework-17",
+  "status": "closed",
+  "acceptedOn": "2026-10-22",
+  "scope": "Installed isolated official rc.2 Worktable limited cooperative-web user flow; final cross-feature19 remains open.",
+  "host": {
+    "port": 3091,
+    "officialVersion": "0.2.0-rc.2",
+    "nativePatched": false,
+    "worktableVersion": "0.9.3",
+    "archiveSha256": "57222fda4d6f4b9310e42baa2c1648372f5ea26a2dc2ae9f049a9497b15abd5b",
+    "installedFiles": {
+      "receipt": "worktable-0.9.3-installed-bytes.private.json",
+      "count": 9,
+      "matches": 9,
+      "files": [
+        {
+          "file": "LICENSE",
+          "sha256": "0c06bb339253ff7c420288915cb224017a187635734cc918b7a4e28504764440",
+          "matches": true
+        },
+        {
+          "file": "lib/client.js",
+          "sha256": "ca1824d0584c2bc82a12a340e88968fbba4b8d146ee750663a796f97ae72e2f3",
+          "matches": true
+        },
+        {
+          "file": "lib/index.js",
+          "sha256": "e9e10dc68591a80246bbb5dcf950f7de0a3c0b144a5ab3eb5311eb189dc924da",
+          "matches": true
+        },
+        {
+          "file": "lib/sdk.js",
+          "sha256": "63f3750b3e1ea2b94f48b252e657af042f2a996f53e93209ff92a87178394e45",
+          "matches": true
+        },
+        {
+          "file": "dsh.plugin.json",
+          "sha256": "d7e2f21542d6dcd27e602c5066ddb017f8f1f06ff8fea27726cd708ea60b0432",
+          "matches": true
+        },
+        {
+          "file": "package.json",
+          "sha256": "c23c6c7ea83aebda1740b1f0927f2ce68aa321452c2f772e9c405368b77ac602",
+          "matches": true
+        },
+        {
+          "file": "README.md",
+          "sha256": "5b09b3e7314a2d5cd345ca598ad6564166d266b04bee642a04642c73b9f429f8",
+          "matches": true
+        },
+        {
+          "file": "lib/sdk.d.ts",
+          "sha256": "4eca6ec6950619632804026fee572bd162f40855f11f2806703ddf95e5d45bc3",
+          "matches": true
+        },
+        {
+          "file": "cordis.patch.yml",
+          "sha256": "64063099e6504f9e22a59f7787cf66faa3a8b04882492b4312aaae7597ebeb48",
+          "matches": true
+        }
+      ]
+    },
+    "historical090InstalledNineFileProofClaimed": false
+  },
+  "sourceAuxiliary": {
+    "final093Tests": 262,
+    "pass": 262,
+    "fail": 0,
+    "skip": 0,
+    "buildCheckAndClientFactory": "passed; only approved React externals",
+    "actualUserFlowSubstitute": false,
+    "redGreen": "17-source.json retains initial public-seam and actual-browser RED/GREEN; 0.9.2 missing scoped metadata and missing React revoke UI RED then GREEN, 260/260 source; final0.9.3 262/262 recorded independently."
+  },
+  "rootActualFlow": {
+    "applicationId": "composed-c32891ca-ee89-4759-8ac2-b89e0420a9aa",
+    "instanceId": "26877177-cfbf-44c3-be49-822b31c5c088",
+    "viewId": "7af776fe-4be8-45bd-94fa-93b06738ac8a",
+    "source": "Only two newly created and explicitly authorized synthetic Notes; no historical business data.",
+    "historical090": {
+      "ordinary": "Default closed, ordinary sandbox and no web abilities",
+      "read": "Explicit consumer read grant and capability opt-in returned exactly two synthetic Notes",
+      "prepare": "One prepared row235275e0 with one Owner reference context, requestId null; webpage response omitted Session and submission authority",
+      "negatives": "Duplicate remained one row; wrong instance, old epoch, forbidden submit and direct-top/window bypass yielded no added task or business result",
+      "resourceRevoke": "Historical scoped API revocation and UI submit refusal kept prepared row and null native requestId; auxiliary only, superseded by final093 user revoke flow"
+    },
+    "final093": {
+      "flow": "Root explicitly authorized selected source in website UI, enabled read+prepare, read exact2 synthetic Notes, prepared new bc5d310f, then clicked revoke this instance resource reference.",
+      "status": "Website UI showed revoked; selected resources.call returned403 revoked; later website read denied; TaskPanel explicit send refused revoked context and requestId remained null.",
+      "task235275e0": {
+        "status": "prepared",
+        "requestId": null,
+        "contextCount": 1
+      },
+      "taskBc5d310f": {
+        "status": "prepared",
+        "requestId": null,
+        "contextCount": 1
+      },
+      "capRevoke": "Root subsequently revoked capability; existing prepared/native history retained, prior duplicate-error cleared.",
+      "globalResourceSnapshotUsed": false,
+      "automaticStopOrSubmission": false
+    }
+  },
+  "independentChromeNegative": {
+    "applicationId": "composed-d3cb745f-ec08-4188-9884-7b30f34869ad",
+    "projectId": "layout-fa4e66ef-03e4-4ae8-99db-34078a90b987",
+    "instanceId": "4849b76b-a5a2-481e-9f6c-7102919013f0",
+    "viewId": "a4f50bc4-8491-4acf-a072-d1136e730c0d",
+    "sessionId": "78a81cfc-eb71-4e1a-9d80-2847cc5362ce",
+    "setup": "UI project, first website/role and save; own-scoped composition save adds remaining three website-only modules, UI activation creates fresh instance; no existing recipe changed",
+    "recipeConnections": [],
+    "sameCookieHost": "Stored127.0.0.1:18573 website showed explicit cookie-host error and no iframe; original URL retained.",
+    "uncooperative": "Explicit UI prepare-only enable led to Chrome blocked child frame because Allow-CSP-From missing; timeout closed bridge with actionable status and ordinary no-authority fallback.",
+    "redirect": "Explicit UI prepare-only enable led to Chrome frame-src http://localhost:18573 refusing redirect to127.0.0.1:3091; timeout closed bridge.",
+    "cooperative": "Real UI opt-in and ready handshake showed connected; website received only prepare-task; no task creation or model submission.",
+    "refresh": "Full browser reload and explicit reopen same project kept instance/view; all capability checkboxes false, no controlled iframe, ordinary sandbox only.",
+    "postRefreshModules": [
+      {
+        "name": "合作刷新检查",
+        "checkboxes": [
+          {
+            "checked": false,
+            "disabled": true
+          },
+          {
+            "checked": false,
+            "disabled": false
+          }
+        ],
+        "iframes": [
+          {
+            "title": "合作刷新检查",
+            "src": "http://localhost:18573/",
+            "sandbox": "allow-scripts allow-forms allow-popups"
+          }
+        ]
+      },
+      {
+        "name": "不合作站点检查",
+        "checkboxes": [
+          {
+            "checked": false,
+            "disabled": true
+          },
+          {
+            "checked": false,
+            "disabled": false
+          }
+        ],
+        "iframes": [
+          {
+            "title": "不合作站点检查",
+            "src": "http://localhost:18573/uncooperative",
+            "sandbox": "allow-scripts allow-forms allow-popups"
+          }
+        ]
+      },
+      {
+        "name": "跳转宿主检查",
+        "checkboxes": [
+          {
+            "checked": false,
+            "disabled": true
+          },
+          {
+            "checked": false,
+            "disabled": false
+          }
+        ],
+        "iframes": [
+          {
+            "title": "跳转宿主检查",
+            "src": "http://localhost:18573/redirect",
+            "sandbox": "allow-scripts allow-forms allow-popups"
+          }
+        ]
+      },
+      {
+        "name": "同主机跨端口检查",
+        "checkboxes": [],
+        "iframes": []
+      }
+    ],
+    "tasksBefore": 0,
+    "tasksAfter": 0,
+    "modelSubmissions": 0,
+    "otherAgentTabsOperated": false
+  },
+  "limits": [
+    "Only composite deep website modules support this stage; independent kind:web remains ordinary without bridge authority.",
+    "Requires cooperative site with Allow-CSP-From and protocol plus actual embedded-CSP probe; no arbitrary-site or cross-browser guarantee.",
+    "DSH and website must use different normalized hostnames, even across ports; no automatic stored-URL rewriting.",
+    "Ordinary opaque-sandbox redirect policy is unchanged; controlled redirect refusal does not claim ordinary frames cannot navigate.",
+    "Web may only read selected consumer-granted resource and prepare bounded untrusted requests for Host-selected role; no submit/model/tool/path/native-session forwarding.",
+    "Source gate and isolated browser fixtures are auxiliary; historical090 API revoke is not substituted for093 actual UI revoke.",
+    "Final cold recovery, rollback, target3080 alpha.2, fixed-baseline two-axis review and complete spec remain19; historical172 mapping and paused Kaogong unchanged."
+  ],
+  "privateReceiptIndex": [
+    {
+      "file": "worktable-17-prepared090.private.json",
+      "sha256": "f67b41b8a7d2722683fa47ce8e53438711b2850681461e15fc2b7da33d5e74d2"
+    },
+    {
+      "file": "worktable-17-prepared090.private.ax.txt",
+      "sha256": "46be28d6daade5f328893771c5cdee73bb308c03f282a4afd824f3b806064305"
+    },
+    {
+      "file": "worktable-17-revoked-submit090.private.json",
+      "sha256": "ebb98e494fd07cdd9157c5aacdefe4eb67f46e066cb91ab1dfba50ebeb60dc28"
+    },
+    {
+      "file": "worktable-17-revoked-submit090.private.ax.txt",
+      "sha256": "f29216ecca78efb4fb1cc96d2091d497cf6b337101605888497ad9d4013b2c01"
+    },
+    {
+      "file": "worktable-17-ui-revoked093.private.json",
+      "sha256": "195003c24179f00690fec194431eba6d63758ae7a6f42fcc674c9787d6357242"
+    },
+    {
+      "file": "worktable-17-ui-revoked093.private.ax.txt",
+      "sha256": "baf4b904a02418e0d2a2a1e895713fe95e9fddfc0bf5aa2e63d253dea26a4d17"
+    },
+    {
+      "file": "worktable-0.9.3-installed-bytes.private.json",
+      "sha256": "11cd0ee14ebbb2693c1767c689bebd083e25e424c3b6aa9608b9b792fe685bd2"
+    },
+    {
+      "file": "worktable-17-final-negative.private.json",
+      "sha256": "f6b19d26ce09c3e6ce746210126cffce254a55efbf44b95bb6481ef6339b9ba3"
+    },
+    {
+      "file": "worktable-17-final-negative-console.private.txt",
+      "sha256": "02c179e8e4ebc00d0ba9d0dde38dea0ddeccd754ab2dd245ba3fd8f5458f3329"
+    },
+    {
+      "file": "worktable-17-negative-uncooperative.private.ax.txt",
+      "sha256": "34193928c3755fd464de8d96eeac5c969f2ff5dd03c3d0d1d442a4f0705a1358"
+    },
+    {
+      "file": "worktable-17-negative-uncooperative.private.jpg",
+      "sha256": "1337f3dae712d21e10d879d0f945b5aa48634bf4dd732a7292add9c02d61b5e0"
+    },
+    {
+      "file": "worktable-17-negative-redirect.private.ax.txt",
+      "sha256": "2cc5d9fc39386abb78af15ecb0115b88174b83c2ccd68187db8c14b8cf9983da"
+    },
+    {
+      "file": "worktable-17-negative-connected.private.ax.txt",
+      "sha256": "ad9a7eda40c77a0a75dfb63a921d3ee52597bb271151c3b9c476b49ebd96ffb1"
+    },
+    {
+      "file": "worktable-17-negative-after-refresh.private.ax.txt",
+      "sha256": "bc68bd898ac04dc295f60751af4e2ad46299fcda49d330447f4cf3a63d21671c"
+    },
+    {
+      "file": "worktable-17-negative-after-refresh.private.jpg",
+      "sha256": "523f23354f5ace963a334d56ae1490c497a993bd4f29faccd0065f9a8932759c"
+    }
+  ]
+}
