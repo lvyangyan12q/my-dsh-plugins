@@ -1,3 +1,4 @@
+import {compositionDefinition} from './composition-schema.mjs'
 import {applicationState} from './state-schema.mjs'
 import {AdmissionGate} from './admission.mjs'
 import {ProfileFileStore} from './persistence.mjs'
@@ -12,7 +13,7 @@ function nextUse(data){return data.instances.reduce((time,item)=>Math.max(time,i
 
 /** Profile-owned directory. Public methods return detached records; no DOM or session globals. */
 export class ApplicationDirectory {
-  constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map(); this.closing=false; this.store=new ProfileFileStore(file,()=>({schema:1,applications:[],instances:[],views:[]}),applicationState,[1,2]) }
+  constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map(); this.closing=false; this.store=new ProfileFileStore(file,()=>({schema:1,applications:[],instances:[],views:[]}),applicationState,[1,2,3]) }
   async read() {if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.store.read()}
   close(){if(!this.closePromise){this.closing=true;this.closePromise=this.gate.run(async()=>{await this.pending;await this.store.close()})}return this.closePromise}
   change(operation,committed=()=>{}) {if(this.closing)return Promise.reject(new ApplicationError('unavailable','应用状态所有者已关闭。',503));return this.gate.run(()=>{if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.changeWithin(operation,committed)})}
@@ -35,7 +36,7 @@ export class ApplicationDirectory {
     const clean={id:definition.id,title:definition.title.trim(),version:definition.version,protocolVersion:1,kind:'deep',views}
     // Reserve the identity in the same queue as website registration; publish only after durable commit.
     await this.change(data=>{
-      if(data.applications.some(app=>app.id===clean.id)||this.contributions.has(clean.id))throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409)
+      if(data.compositions?.some(row=>row.appId===clean.id)||data.applications.some(app=>app.id===clean.id)||this.contributions.has(clean.id))throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409)
       data.deepApplicationIds??=[]
       if(!data.deepApplicationIds.includes(clean.id))data.deepApplicationIds.push(clean.id)
       return clean
@@ -48,13 +49,13 @@ export class ApplicationDirectory {
     let url
     try {url=websiteEntry(definition.url,this.hostOrigin)} catch(error) {throw new ApplicationError('unsafe-entry',error.message)}
     const clean={id:definition.id,title:definition.title.trim(),version:definition.version,protocolVersion:1,kind:'web',url}
-    return this.change(data=>{ if(data.deepApplicationIds?.includes(clean.id)||this.contributions.has(clean.id)||data.applications.some(a=>a.id===clean.id)) throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409);data.applications.push(clean);return clean })
+    return this.change(data=>{ if(data.compositions?.some(row=>row.appId===clean.id)||data.deepApplicationIds?.includes(clean.id)||this.contributions.has(clean.id)||data.applications.some(a=>a.id===clean.id)) throw new ApplicationError('application-conflict','应用标识已注册，请使用不同标识。',409);data.applications.push(clean);return clean })
   }
   async catalog() { await this.pending; return structuredClone(this.available(await this.read())) }
-  async unregister(appId) {return this.change(data=>{if(this.contributions.has(appId))throw new ApplicationError('contribution-owned','请由贡献应用的插件生命周期撤销入口。',409);this.application(data,appId);data.applications=data.applications.filter(a=>a.id!==appId);return {id:appId,removed:true}})}
-  available(data) {return [...data.applications.filter(a=>!this.contributions.has(a.id)),...this.contributions.values()].map(app=>({...app,...this.lifecycle(data,app.id)}))}
+  async unregister(appId) {return this.change(data=>{if(this.contributions.has(appId)||(data.compositions??[]).some(row=>row.appId===appId))throw new ApplicationError('contribution-owned','请由贡献应用的插件生命周期撤销入口。',409);this.application(data,appId);data.applications=data.applications.filter(a=>a.id!==appId);return {id:appId,removed:true}})}
+  available(data) {return [...data.applications.filter(a=>!this.contributions.has(a.id)),...this.contributions.values(),...(data.compositions??[]).filter(row=>row.running).map(compositionDefinition)].map(app=>({...app,...this.lifecycle(data,app.id)}))}
   lifecycle(data,appId){const row=data.lifecycle?.find(row=>row.appId===appId);return {enabled:row?.enabled??true,lifecycleRevision:row?.revision??0}}
-  setEnabled(appId,enabled,revision){return this.change(data=>{if(typeof enabled!=='boolean'||!Number.isSafeInteger(revision)||revision<0)throw new ApplicationError('invalid-lifecycle','停用操作需要明确状态与版本。');if(![...data.applications.map(a=>a.id),...(data.deepApplicationIds??[]),...(data.lifecycle??[]).map(row=>row.appId)].includes(appId))throw new ApplicationError('application-missing','应用身份不存在。',404);const current=this.lifecycle(data,appId);if(current.lifecycleRevision!==revision)throw new ApplicationError('revision-conflict','应用状态已改变，请刷新。',409);data.lifecycle??=[];const next={appId,enabled,revision:revision+1},index=data.lifecycle.findIndex(row=>row.appId===appId);if(index<0)data.lifecycle.push(next);else data.lifecycle[index]=next;data.schema=data.lifecycle.some(row=>!row.enabled)?2:1;return next})}
+  setEnabled(appId,enabled,revision){return this.change(data=>{if(typeof enabled!=='boolean'||!Number.isSafeInteger(revision)||revision<0)throw new ApplicationError('invalid-lifecycle','停用操作需要明确状态与版本。');if(![...data.applications.map(a=>a.id),...(data.deepApplicationIds??[]),...(data.compositions??[]).filter(row=>row.running).map(row=>row.appId),...(data.lifecycle??[]).map(row=>row.appId)].includes(appId))throw new ApplicationError('application-missing','应用身份不存在。',404);const current=this.lifecycle(data,appId);if(current.lifecycleRevision!==revision)throw new ApplicationError('revision-conflict','应用状态已改变，请刷新。',409);data.lifecycle??=[];const next={appId,enabled,revision:revision+1},index=data.lifecycle.findIndex(row=>row.appId===appId);if(index<0)data.lifecycle.push(next);else data.lifecycle[index]=next;data.schema=data.compositions?.length?3:data.lifecycle.some(row=>!row.enabled)?2:1;return next})}
   assertAvailable(data,appId){const app=this.application(data,appId);if(!app.enabled)throw new ApplicationError('application-disabled','应用已停用；新实例和新任务已阻止，历史原生会话保留。',409);return app}
   async assertEnabled(appId){await this.pending;return structuredClone(this.assertAvailable(await this.read(),appId))}
   async resolveStoredView(id){await this.pending;const data=await this.read(),view=data.views.find(row=>row.id===id);if(!view)throw new ApplicationError('view-missing','持久视图不存在。',404);return structuredClone({view,instance:this.instance(data,view.instanceId)})}

@@ -1,3 +1,4 @@
+import {mountCompositions} from './composition-host.mjs'
 import {describeProtocol} from '../sdk.mjs'
 import {RequestLifetime} from './request-lifetime.mjs'
 import {readRequestText} from './request-body.mjs'
@@ -31,7 +32,7 @@ export function protectWorktableRoutes(ctx,server) {
 
 /** New API owns its authentication; webServer.register itself is not an auth fence. */
 export function mountApplications(ctx) {
-  const gate=new AdmissionGate();mountResources(ctx);let owner=null,closing=false;
+  const gate=new AdmissionGate();mountResources(ctx);mountCompositions(ctx);let owner=null,closing=false;
   ctx.inject(['profileContext','connection'],platformCtx=>{
     const profile=platformCtx.profileContext;if(!profile?.dir||!isAbsolute(profile.dir))return;
     const owned=new ApplicationDirectory(join(profile.dir,'worktable-platform','applications.v1.json'),{gate});
