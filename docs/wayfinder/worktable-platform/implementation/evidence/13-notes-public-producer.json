@@ -1,0 +1,52 @@
+{
+  "status": "candidate-source-package-passed-real-host-pending",
+  "date": "2026-10-21",
+  "worktableVersion": "0.8.0",
+  "worktableSha256": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91",
+  "notesVersion": "0.2.0",
+  "notesSha256": "375f1ef756e5da976de2c8286f3dd6d59ad3059fcba41dcd0df242ed05cab17e",
+  "testCases": 19,
+  "failures": 0,
+  "skips": 0,
+  "files": [
+    "README.md",
+    "cordis.patch.yml",
+    "lib/client.js",
+    "lib/index.js",
+    "package.json"
+  ],
+  "installedBytesMatched": 5,
+  "installedImport": true,
+  "clientFactory": true,
+  "producerSourceAndContractTypes": true,
+  "producerSkipLibCheck": false,
+  "publicConsumerTypes": true,
+  "npmLegacyPeerBypass": false,
+  "legacyAlias": false,
+  "nativeVersions": {
+    "@deepseek-ai/cordis": "4.0.4",
+    "@deepseek-ai/schemastery": "3.18.4",
+    "@deepseek-ai/dsh-client-locale": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-skill": "0.2.0-rc.2"
+  },
+  "producerLocation": "system temporary directory outside repository",
+  "sdkLocation": "actual archive install in producer/node_modules/dsh-worktable, no source junction",
+  "incompatibleCombinationRejected": false,
+  "tdd": {
+    "red": "old check-types exited successfully using ancestor alpha declarations but did not produce required official dependency identity proof",
+    "green": "isolated exact SDK archive and explicit public rc.2 peers compile copied application source and public SDK consumer with strict library checks"
+  },
+  "limits": [
+    "No actual host or model run in this subtask.",
+    "Reading final artifact handled separately.",
+    "Optional incompatible old archive case not supplied in this candidate pack.",
+    "Native public package directories come from an already built unpatched rc.2 DSH_SOURCE; no private source-path alias."
+  ],
+  "formal3080Writes": 0,
+  "nativeSourceWrites": 0,
+  "upstreamWrites": 0,
+  "remoteWrites": 0,
+  "cordisIdentity": "producer source, archive SDK and official Skill resolve the same DSH_SOURCE/vendor/cordis public package"
+}

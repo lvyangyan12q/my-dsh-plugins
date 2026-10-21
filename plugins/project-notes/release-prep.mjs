@@ -1,36 +1,33 @@
 import {spawnSync} from 'node:child_process'
-import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,copyFileSync,existsSync,symlinkSync,readdirSync} from 'node:fs'
+import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,copyFileSync,existsSync,readdirSync} from 'node:fs'
 import {dirname,join,resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {tmpdir} from 'node:os'
 import {createHash} from 'node:crypto'
 import {createRequire} from 'node:module'
 import assert from 'node:assert/strict'
+import {installPublicEnvironment} from './public-producer.mjs'
 const here=dirname(fileURLToPath(import.meta.url)),require=createRequire(import.meta.url)
 const source=process.env.DSH_SOURCE,worktable=process.env.WORKTABLE_PACKAGE,npm=process.env.npm_execpath
 assert.ok(source&&worktable&&npm,'Use npm run pack with DSH_SOURCE and exact WORKTABLE_PACKAGE')
 function run(command,args,options={}){const result=spawnSync(command,args,{cwd:here,encoding:'utf8',...options});if(result.error)throw result.error;if(result.status!==0)throw Error([command,...args].join(' ')+'\n'+result.stdout+'\n'+result.stderr);return result.stdout}
 const tests=readdirSync(join(here,'tests')).filter(file=>file.endsWith('.test.mjs')).map(file=>join(here,'tests',file))
 const testOutput=run(process.execPath,['--import','tsx','--test',...tests]);process.stdout.write(testOutput)
-run(process.execPath,[join(here,'check-types.mjs')]);run(process.execPath,[join(here,'build.mjs')])
+const producerReceiptFile=join(here,'.checks/producer-types.json');mkdirSync(dirname(producerReceiptFile),{recursive:true});
+run(process.execPath,[join(here,'check-types.mjs')],{env:{...process.env,NOTES_TYPES_RECEIPT:producerReceiptFile}});const producerTypes=JSON.parse(readFileSync(producerReceiptFile,'utf8'));run(process.execPath,[join(here,'build.mjs')])
 const work=mkdtempSync(join(tmpdir(),'project-notes-release-')),pack=JSON.parse(run(process.execPath,[npm,'pack','--ignore-scripts','--json','--pack-destination',work]))[0],archive=join(work,pack.filename)
 const expected=['README.md','cordis.patch.yml','lib/client.js','lib/index.js','package.json'];assert.deepEqual(pack.files.map(file=>file.path).sort(),[...expected].sort())
 let incompatibleCombinationRejected=false
 if(process.env.INCOMPATIBLE_WORKTABLE_PACKAGE){
  const oldArchive=resolve(process.env.INCOMPATIBLE_WORKTABLE_PACKAGE),wrong=join(work,'incompatible-consumer');mkdirSync(wrong);writeFileSync(join(wrong,'package.json'),JSON.stringify({name:'notes-incompatible-consumer',version:'0.0.0',private:true,type:'module'}));
- run(process.execPath,[npm,'install',oldArchive,'--offline','--ignore-scripts','--omit=optional','--no-audit','--no-fund'],{cwd:wrong})
+ installPublicEnvironment({folder:wrong,source,worktable:oldArchive,npm})
  writeFileSync(join(wrong,'business-record.json'),'{"recentNote":"must remain unchanged"}');const oldPackage=readFileSync(join(wrong,'package.json')),business=readFileSync(join(wrong,'business-record.json'));
  writeFileSync(join(wrong,'no-sdk.mjs'),"import assert from 'node:assert/strict';await assert.rejects(import('dsh-worktable/sdk'),e=>e.code==='ERR_PACKAGE_PATH_NOT_EXPORTED');");run(process.execPath,[join(wrong,'no-sdk.mjs')],{cwd:wrong});
  const rejected=spawnSync(process.execPath,[npm,'install',oldArchive,archive,'--offline','--ignore-scripts','--omit=optional','--no-audit','--no-fund'],{cwd:wrong,encoding:'utf8'});
  assert.notEqual(rejected.status,0,'09 without SDK must not install alongside Notes');assert.match(rejected.stdout+rejected.stderr,/ERESOLVE/);assert.match(rejected.stdout+rejected.stderr,/dsh-worktable/);
  assert.deepEqual(readFileSync(join(wrong,'package.json')),oldPackage);assert.deepEqual(readFileSync(join(wrong,'business-record.json')),business);assert.equal(existsSync(join(wrong,'node_modules/@deepseek-ai/dsh-project-notes/package.json')),false);incompatibleCombinationRejected=true
 }
-const consumer=join(work,'consumer');mkdirSync(consumer);writeFileSync(join(consumer,'package.json'),JSON.stringify({name:'notes-independent-consumer',version:'0.0.0',private:true,type:'module'}))
-run(process.execPath,[npm,'install',resolve(worktable),archive,'--offline','--ignore-scripts','--omit=optional','--no-audit','--no-fund'],{cwd:consumer})
-// The consumer is outside the monorepo. Supply actual official public host peer packages,
-// not legacy aliases or profile data. Production resolution is verified separately by root.
-const peers={'@deepseek-ai/cordis':join(source,'vendor/cordis'),'@deepseek-ai/schemastery':join(source,'vendor/schemastery'),'@deepseek-ai/dsh-storage-domain':join(source,'packages/storage/storage-domain'),'@types/react':dirname(require.resolve('@types/react/package.json')),'@types/node':dirname(require.resolve('@types/node/package.json'))}
-for(const [name,target] of Object.entries(peers)){const dest=join(consumer,'node_modules',name);if(!existsSync(dest)){mkdirSync(dirname(dest),{recursive:true});symlinkSync(resolve(target),dest,'junction')}}
+const consumer=join(work,'consumer');const consumerEnvironment=installPublicEnvironment({folder:consumer,source,worktable,archive,npm});
 const installed=join(consumer,'node_modules/@deepseek-ai/dsh-project-notes')
 for(const file of expected)assert.deepEqual(readFileSync(join(installed,file)),readFileSync(join(here,file)),file+' installed bytes')
 writeFileSync(join(consumer,'assert.mjs'),`import assert from 'node:assert/strict';
@@ -46,9 +43,9 @@ assert.equal(typeof registered.page,'function');assert.equal(typeof registered.s
 `)
 run(process.execPath,[join(consumer,'assert.mjs')],{cwd:consumer})
 copyFileSync(join(here,'tests/sdk-shapes.ts'),join(consumer,'consume.ts'))
-run(process.execPath,[require.resolve('typescript/bin/tsc'),join(consumer,'consume.ts'),'--strict','--noEmit','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','--lib','ES2024,DOM,ESNext.Disposable'],{cwd:consumer})
+run(process.execPath,[createRequire(join(consumer,'package.json')).resolve('typescript/bin/tsc'),join(consumer,'consume.ts'),'--strict','--noEmit','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','--lib','ES2024,DOM,ESNext.Disposable'],{cwd:consumer})
 const pkg=JSON.parse(readFileSync(join(here,'package.json'),'utf8')),dist=join(here,'dist','v'+pkg.version);mkdirSync(dist,{recursive:true})
 const versioned=join(dist,pack.filename),fixed=join(dist,'deepseek-ai-dsh-project-notes.tgz');copyFileSync(archive,versioned);copyFileSync(archive,fixed)
 const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');assert.equal(hash(versioned),hash(fixed))
-const receipt={status:'source-package-only-real-host-pending',testFiles:tests.length,testCases:Number(testOutput.match(/(?:ℹ|#)\s*tests\s+(\d+)/)?.[1])||null,files:expected,archiveSha256:hash(fixed),worktableSha256:hash(worktable),installedBytesMatched:5,installedImport:true,clientFactory:true,publicConsumerTypes:true,incompatibleCombinationRejected,npmLegacyPeerBypass:false,nativePeerSource:resolve(source),legacyAlias:false,consumer,formal3080Writes:0,remoteWrites:0}
+const receipt={status:'source-package-only-real-host-pending',testFiles:tests.length,testCases:Number(testOutput.match(/(?:ℹ|#)\s*tests\s+(\d+)/)?.[1])||null,files:expected,archiveSha256:hash(fixed),worktableSha256:hash(worktable),installedBytesMatched:5,installedImport:true,clientFactory:true,publicConsumerTypes:true,producerTypes,consumerEnvironment,incompatibleCombinationRejected,npmLegacyPeerBypass:false,nativePeerSource:resolve(source),legacyAlias:false,consumer,formal3080Writes:0,remoteWrites:0}
 mkdirSync(join(here,'.checks'),{recursive:true});writeFileSync(join(here,'.checks/release-receipt.json'),JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt,null,2))
