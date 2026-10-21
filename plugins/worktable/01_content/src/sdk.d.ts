@@ -47,3 +47,16 @@ declare module '@deepseek-ai/cordis' {interface Context {
  worktableRoles:RoleDirectory
  worktableCapabilities:CapabilityDirectory
 }}
+/** Optional composition authoring. References describe dependencies, never grant resource access. */
+export type CompositionModuleType='website'|'custom'|'conversation'|'animation'|'resources'|'statistics'|'list'|'detail'|'filter'
+export interface CompositionRecipe {title:string;version:string;layout:'vertical'|'grid'|'split';pages:{id:string;title:string;modules:{id:string;type:CompositionModuleType;config?:Record<string,unknown>;connectionId?:string;roleId?:string}[]}[];connections?:{id:string;viewId:string;resourceId:string}[];roles?:RoleDefinition[]}
+export interface CompositionRecord {appId:string;owner:'worktable-compositions';revision:number;draft:CompositionRecipe;running?:CompositionRecipe}
+export interface CompositionRevision {appId:string;expectedRevision:number}
+export interface CompositionDirectory {
+ list():Promise<CompositionRecord[]>
+ get(appId:string):Promise<CompositionRecord>
+ save(input:CompositionRevision&{recipe:CompositionRecipe}):Promise<CompositionRecord>
+ preview(input:CompositionRevision):Promise<{appId:string;revision:number;recipe:CompositionRecipe;definition:ApplicationDefinition}>
+ activate(input:CompositionRevision):Promise<CompositionRecord>
+}
+declare module '@deepseek-ai/cordis' {interface Context {worktableCompositions:CompositionDirectory}}
