@@ -1,0 +1,228 @@
+{
+  "date": "2026-10-21",
+  "ticket": "worktable-framework-16",
+  "status": "passed-with-explicit-upstream-limits",
+  "sourceIntegration": "9ee9b498eb1f488a10f55fc9e0046d3f4eb80d89",
+  "host": {
+    "origin": "http://127.0.0.1:3091/",
+    "nativeVersion": "0.2.0-rc.2",
+    "nativePatched": false,
+    "runtimeRestartedByThisAgent": false
+  },
+  "archives": [
+    {
+      "name": "Worktable",
+      "version": "0.8.0",
+      "sha256": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91"
+    },
+    {
+      "name": "Project Notes",
+      "version": "0.2.0",
+      "sha256": "375f1ef756e5da976de2c8286f3dd6d59ad3059fcba41dcd0df242ed05cab17e"
+    },
+    {
+      "name": "Reading",
+      "version": "0.2.0",
+      "sha256": "33ade5eabea718f8daed1652fdd675c372b122916064b7b8b8bde95ed49cdf9a"
+    }
+  ],
+  "authorization": "Root delegated explicit synthetic-only tasks through normal Worktable preparation/confirmation; temporary loopback provider/new route and dedicated key cleanup authorized; existing roles/Sessions/default models are not mutation targets.",
+  "sourceEvidence": {
+    "ref": "16-source-failures.json",
+    "scope": "RED/GREEN adapter and 44 auxiliary tests plus isolated mounted-route real Windows FS; separate from this official installation evidence."
+  },
+  "actualUi": {
+    "browser": "Separate CUA Chrome extension tab745172484, session 原生状态验收; only this own tab operated. Chrome DevTools backend profile lock was not bypassed or stopped.",
+    "syntheticRecordsAdded": 0,
+    "tasks": [
+      {
+        "instanceId": "f0ca248f-70c5-4b5e-acc6-c4f817f1b7af",
+        "viewId": "e9219ee1-28b9-4d2b-a3cb-5377306d62ab",
+        "projectId": null,
+        "tasks": [
+          {
+            "id": "c2fcb62f-fe28-44e8-bd67-24135421c9e6",
+            "sessionId": "26e3183d-ce9d-4f67-8075-3b030d6cc9f4",
+            "requestId": "43b5bfb2-50ed-480c-a12d-e03c5df50701",
+            "status": "accepted",
+            "stopRequestedAt": null,
+            "contextCount": 0
+          }
+        ]
+      },
+      {
+        "instanceId": "46e9ed34-d43a-4f0f-8691-e3bd7f82e5c0",
+        "viewId": "3cf663a3-7c2c-4016-b4c9-879c677628dd",
+        "projectId": null,
+        "tasks": [
+          {
+            "id": "9293c7d2-ff61-4ef1-a9e3-8c006e73aca5",
+            "sessionId": "d01fdfed-5bf0-42ac-8b0b-12469af8b26b",
+            "requestId": "73427d33-3c7a-4a05-9c51-4acaf90c675c",
+            "status": "accepted",
+            "stopRequestedAt": 1792591416790,
+            "contextCount": 0
+          }
+        ]
+      }
+    ],
+    "running": {
+      "observed": true,
+      "source": "Actual DOM snapshot after explicit submit showed native Running/Stop generating plus same-Session TaskPanel 原生正在运行.",
+      "screenshotClaim": false,
+      "snapshotKind": "question-running"
+    },
+    "failed": {
+      "observed": true,
+      "sessionId": "26e3183d-ce9d-4f67-8075-3b030d6cc9f4",
+      "source": "Actual native Failed/This turn failed SERVER and TaskPanel 原生错误：500 ... WORKTABLE_SYNTHETIC_PROVIDER_FAILURE displayed together.",
+      "provider": "worktable-local-failure-20261021",
+      "baseURL": "http://127.0.0.1:6081/v1",
+      "network": {
+        "destination": "127.0.0.1 only",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "httpStatus": 500,
+        "requestCount": 7,
+        "nativeRetryLabel": "Retried model request (5/5) · 8s",
+        "noForwarding": true,
+        "noRequestBodyOrHeaderLogging": true
+      },
+      "taskAdmissionRemains": "accepted (correctly not rewritten as business failure/success)"
+    },
+    "waiting": {
+      "observed": true,
+      "sessionId": "d01fdfed-5bf0-42ac-8b0b-12469af8b26b",
+      "model": "Existing commandcode / DeepSeek V4.1 Flash explicitly selected only for this new synthetic Session.",
+      "source": "Actual native question 继续状态验收吗？ with 继续/结束 options, and TaskPanel 原生等待问题或审批.",
+      "noBusinessContext": true
+    },
+    "stopAndUnread": {
+      "observed": true,
+      "steps": [
+        "While dedicated question Session waiting, selected own earlier failed Session as native main; application view stayed on question instance.",
+        "Clicked application TaskPanel Stop 此原生会话 for the dedicated question Session.",
+        "TaskPanel displayed 已提交停止请求；是否取消及执行结果请查看原生轨迹 · 有未读结束提示 · 已请求Stop（保留队列）.",
+        "Opened correct question Session via 查看原生对话与轨迹; unread suffix disappeared.",
+        "Native Chat showed Stopped/interrupted, and native trajectory Inspect showed UserQuestionError: ASK_ABORTED / ask_user_question was aborted before the user answered."
+      ],
+      "noBusinessSuccessClaim": true,
+      "noConfirmedCancellationFieldInvented": true
+    },
+    "unknown": "No idle or unread state is labeled success; execution outcome remains unknown unless actual native trace establishes it. No new ambiguous transport submission was deliberately induced in this UI run."
+  },
+  "officialInstalledStorage": {
+    "source": "Root-owned official3091 profile real-file-lock HTTP test; read-only receipt incorporated by this agent",
+    "receipt": {
+      "date": "2026-10-21",
+      "kind": "official-installed-3091-real-file-refusal",
+      "worktableVersion": "0.8.0",
+      "archiveSha": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91",
+      "refusedStatus": 503,
+      "refusedCode": "storage-unavailable",
+      "oldFileSha": "c3228ddc3482f799fafe96334bc97500f137d450cc8603a226e24b55ca444865",
+      "refusedFileUnchanged": true,
+      "readDirectoryUnchanged": true,
+      "retryStatus": 200,
+      "exactlyOneSyntheticAppAdded": "storage-installed-1792590732225",
+      "instancesUnchanged": true,
+      "viewsUnchanged": true,
+      "aclChanged": false,
+      "nativePatched": false,
+      "modelSent": false,
+      "formal3080Changed": false
+    }
+  },
+  "cleanup": {
+    "temporaryProviderDeletedInNativeSettings": true,
+    "dedicatedSyntheticKeyDeletedWithProvider": true,
+    "modelRowsAfter": [
+      "DeepSeek",
+      "commandcode"
+    ],
+    "helperPid": 8536,
+    "helperStoppedAfterIdentityCheck": true,
+    "port6081NoLongerListening": true,
+    "syntheticSessionsAndTaskAuditRetained": true,
+    "browserRecentSelection": "Native blank new-session picker initially remembered the temporary last selection after route removal; second synthetic Session explicitly selected back to commandcode. This evidence does not claim browser recent-choice state never changed.",
+    "existingProviderAgentSessionSettings": "No edit action targeted existing providers/Agents/Sessions. Existing business/history not used as synthetic task context. Native model picker mutations applied only while the two new dedicated Sessions were selected."
+  },
+  "screenshots": [
+    {
+      "kind": "failed",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-failed.private.png",
+      "sha256": "0a96c4ac50bd87ab3e0b07b67cd63ff87ed40a0240dfd4b4e1c3a175e53f728c",
+      "trackedBinary": false
+    },
+    {
+      "kind": "waiting",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-waiting.private.png",
+      "sha256": "27443d59bcab5a125bb24dfa2452d79bd01b7f7f2c29af0c6a8b123a5f477908",
+      "trackedBinary": false
+    },
+    {
+      "kind": "unread",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-unread.private.png",
+      "sha256": "c1a9576b324116950f189a2f4871a80a4b77c5dc6139bdd39deb6f1620f3d687",
+      "trackedBinary": false
+    },
+    {
+      "kind": "stopped-trajectory",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-stopped-trajectory.private.png",
+      "sha256": "e6a9e0844816a7e288ff08c691d23e49a205189723a1b7989f04c087a1e5e69a",
+      "trackedBinary": false
+    },
+    {
+      "kind": "provider-cleaned",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-provider-cleaned.private.png",
+      "sha256": "9b3fa9a181a97eedc2536777ab9b53cbdc1840ef75d1838798bdfa530ae942d8",
+      "trackedBinary": false
+    }
+  ],
+  "domSnapshots": [
+    {
+      "kind": "failed",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-failed.snapshot.private.txt",
+      "sha256": "99b58d93dbdc567f238462fb622f046884c7524a75850c8822a9a12a820b4203",
+      "tracked": false
+    },
+    {
+      "kind": "question-running",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-question-running.snapshot.private.txt",
+      "sha256": "5cfed3f2819db3a91e844f771d7a3d3ef6fa3ec27b59ef9feb7c20f43b37be89",
+      "tracked": false
+    },
+    {
+      "kind": "waiting",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-waiting.snapshot.private.txt",
+      "sha256": "9183d78896bc07b36b4b6027013827a543f1db14e666f8e374a1bd67eafc448e",
+      "tracked": false
+    },
+    {
+      "kind": "unread",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-unread.snapshot.private.txt",
+      "sha256": "5ebeddc3c6d330f3258fbc86e57922ed732c065e1d89c9a0cdc5c034fd324dde",
+      "tracked": false
+    },
+    {
+      "kind": "unread-cleared",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-unread-cleared.snapshot.private.txt",
+      "sha256": "4776130230d424899b16799a8f7584f46ca3a892f319021b05c9ba6b02aeccc7",
+      "tracked": false
+    },
+    {
+      "kind": "provider-cleaned",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-provider-cleaned.snapshot.private.txt",
+      "sha256": "d9b4723bcd428f1c7fb51701320fb332f89a557fe2a33c9e494d8f9d3c55f731",
+      "tracked": false
+    }
+  ],
+  "boundaries": [
+    "No task-scoped business success inference from session state.",
+    "No public confirmed-cancellation terminal field exists in this host; application shows acknowledged stop request and native trace evidence separately.",
+    "Running proved by actual saved DOM, not by the failed-state screenshot whose capture completed after retries.",
+    "No unknown transport rejection or full disk exhaustion induced in the actual UI run; actual filesystem replacement refusal/recovery is covered.",
+    "No Desktop/macOS acceptance, legacy materials migration, formal3080 change or native/upstream patch.",
+    "Complete framework spec remains open; closes only ticket16 as assigned."
+  ]
+}
