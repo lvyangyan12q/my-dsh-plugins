@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
-import { Readable } from 'node:stream'
+import { ResourceDirectory } from '../../worktable/01_content/src/framework/resources.mjs'
+import {describeProtocol} from '../../worktable/01_content/src/sdk.mjs'
 import { installReading } from '../src/reading-host.ts'
 const source = process.env.DSH_SOURCE; assert.ok(source)
 const official = createRequire(resolve(source, 'packages/client/ui-renderer/package.json'))
@@ -19,13 +20,23 @@ async function host(folder) {
   ctx.storage.backend.register('json', new JsonStorageBackend(folder))
   const facility = new DomainFacility(ctx, { backend: 'json', routes: {} }); ctx.storage.mount('domain', facility)
   const owner = await installReading({ storageDomain: facility, connection: { requestRejection: () => undefined } })
-  const call = async data => {
-    const req = Readable.from([JSON.stringify(data)]); req.method = 'POST'; req.headers = { 'content-type': 'application/json' }
-    let status, value
-    await owner.handle(req, { setHeader() {}, writeHead(code) { status = code }, end(text) { value = JSON.parse(text) } })
-    assert.equal(status, 200); return value.instance
+  const apps=new ApplicationDirectory(join(folder,'apps.json'));
+  await apps.contribute({id:'reading-statistics',title:'Reading',version:'1',protocolVersion:1,kind:'deep',views:['page','stats','list'].map(id=>({id,title:id}))});
+  const grants=new ResourceDirectory(join(folder,'grants.json'),apps);grants.register(owner.resource);const rows=new Map();
+  for(const alias of ['default','new-project','other-project','first','other','fresh','departing','arriving']){
+    const instance=await apps.latest('reading-statistics',alias)??await apps.createInstance('reading-statistics',alias),views={};
+    for(const type of ['page','stats','list'])views[type]=await apps.createView(instance.id,type);
+    rows.set(alias,{instance,views});
   }
-  return { call, close: async () => { await owner.dispose(); await ctx.fiber.dispose() } }
+  const call=async data=>{
+    if(data.operation==='snapshot')return grants.snapshot();
+    if(data.operation==='call')return (await grants.call(data)).value;
+    const {action,instanceId,...payload}=data,view=rows.get(instanceId).views.page;
+    const expectedRevision=action==='read'?undefined:(await grants.call({viewId:view.id,resourceId:'reading-records',action:'read'})).value.revision;
+    return (await grants.call({viewId:view.id,resourceId:'reading-records',action,payload,expectedRevision})).value;
+  };
+  return {call,rows,apps,grants,close:async()=>{await grants.close();await apps.close();await owner.dispose();await ctx.fiber.dispose()}}
+
 }
 test('reading owns records without the legacy recipe service and new instances stay empty', async () => {
   const folder = await mkdtemp(join(tmpdir(), 'reading-deep-')); let server
@@ -53,16 +64,16 @@ async function deepClient(server) {
   const module = { exports: {} }, registrations = new Map(), cleanups = []
   let network = body => server.call(body)
   const requests = []
-  const fetch = async (_url, options) => { const body = JSON.parse(options.body); requests.push({ body, signal: options.signal }); const instance = await network(body, options.signal); return { ok: true, json: async () => ({ version: 1, instance }) } }
+  const fetch=async(url,options={})=>{if(url==='/api/worktable/applications')return {ok:true,json:async()=>server.apps.snapshot()};const body=JSON.parse(options.body);requests.push({body,signal:options.signal});try{const value=await network(body,options.signal);return {ok:true,json:async()=>body.operation==='call'?{value,connection:null}:value}}catch(error){return {ok:false,json:async()=>({error:error.message})}}}
   runInNewContext(bundle.outputFiles[0].text, { module, exports: module.exports, require: name => { assert.notEqual(name, '@deepseek-ai/dsh-personal-workbench/client'); return require(name) }, console, window: dom.window, document: dom.window.document, fetch, AbortController, structuredClone })
-  const services = { worktableApplicationViews: { register(id, views) { assert.equal(registrations.has(id), false); registrations.set(id, views); return () => registrations.delete(id) } } }
+  const services = { worktableApplicationViews: { describe:describeProtocol, register(id, views) { assert.equal(registrations.has(id), false); registrations.set(id, views); return () => registrations.delete(id) } } }
   const ctx = { get: id => services[id], inject: (names, install) => { if (names.every(id => services[id])) install(ctx) }, effect: install => { const dispose = install(); if (typeof dispose === 'function') cleanups.push(dispose) } }
   module.exports.apply(ctx)
   const views = registrations.get('reading-statistics')
   assert.ok(views, 'reading registers public deep views without legacy UI')
   const root = require('react-dom/client').createRoot(dom.window.document.getElementById('mount'))
-  const render = async element => { await act(async () => { root.render(element); await new Promise(resolve => setTimeout(resolve, 10)) }); await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)) }) }
-  const view = (kind, id, key = kind + id) => h(views[kind], { key, application: { id: 'reading-statistics' }, instance: { id, applicationId: 'reading-statistics' }, view: { id: key, kind } })
+  const render=async element=>{await act(async()=>{root.render(element);await new Promise(resolve=>setTimeout(resolve,10))});for(let attempt=0;attempt<50;attempt++){await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10))});if(!dom.window.document.body.textContent.includes('正在加载阅读记录'))break}}
+  const view=(kind,id,key=kind+id)=>h(views[kind],{key,application:{id:'reading-statistics'},instance:server.rows.get(id).instance,view:server.rows.get(id).views[kind]})
   return { view, render, requests, network: callback => { network = callback }, document: dom.window.document, dom, close: async () => { await act(async () => root.unmount()); for (const dispose of cleanups.reverse()) dispose(); dom.window.close(); for (const [key, descriptor] of originals) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key] } } }
 }
 test('registered page/stats/list share filters and selection, isolate instances and restore after all views close', async () => {
@@ -114,8 +125,8 @@ import { requestReading } from '../src/reading-data-client.ts'
 test('reading client rejects a successful response belonging to another instance', async () => {
   const previous = globalThis.fetch
   try {
-    globalThis.fetch = async () => ({ ok: true, json: async () => ({ version: 1, instance: { instanceId: 'default', initialized: true, records: [] } }) })
-    await assert.rejects(requestReading({ action: 'read', instanceId: 'project-book' }), /instance/i)
+    globalThis.fetch = async () => ({ ok: true, json:async()=>({value:{instanceId:'default',initialized:true,records:[]},connection:null}) })
+    await assert.rejects(requestReading({action:'read',instanceId:'project-book',viewId:'registered-view'}), /归属不匹配/)
   } finally { globalThis.fetch = previous }
 })
 
@@ -139,7 +150,7 @@ test('late earlier reads cannot replace a newer saved same-instance editor snaps
   try {
     ui = await deepClient(server)
     let reads = 0
-    ui.network(async body => { const row = await server.call(body); if (body.action === 'read' && ++reads === 1) return new Promise(resolve => { release = () => resolve(row) }); return row })
+    ui.network(async body => { const row = await server.call(body); if (body.action === 'read' && ++reads === 2) return new Promise(resolve => { release = () => resolve(row) }); return row })
     await ui.render(ui.view('page', 'fresh'))
     const initialize = [...ui.document.querySelectorAll('button')].find(button => button.textContent === '初始化示例记录')
     await act(async () => { initialize.click(); await new Promise(resolve => setTimeout(resolve, 20)) })
@@ -158,11 +169,11 @@ test('a late mutation after switching instance cannot publish into the new view 
     const initialize = [...ui.document.querySelectorAll('button')].find(button => button.textContent === '初始化示例记录')
     await act(async () => { initialize.click(); await new Promise(resolve => setTimeout(resolve, 10)) })
     await ui.render(ui.view('page', 'arriving', 'same-pane'))
-    const before = ui.requests.filter(request => request.body.instanceId === 'departing' && request.body.action === 'read').length
-    assert.ok(ui.requests.filter(request => request.body.instanceId === 'departing' && request.body.action === 'read').every(request => request.signal.aborted))
+    const before = ui.requests.filter(request => request.body.viewId === server.rows.get('departing').views.page.id && request.body.action === 'read').length
+    assert.ok(ui.requests.filter(request => request.body.viewId === server.rows.get('departing').views.page.id && request.body.action === 'read').every(request => request.signal.aborted))
     await act(async () => { release(); await new Promise(resolve => setTimeout(resolve, 20)) })
     assert.equal(ui.document.querySelector('[data-stat="books"]').textContent, '0')
     assert.doesNotMatch(ui.document.querySelector('[data-reading-editor]').textContent, /物种起源|已保存/)
-    assert.equal(ui.requests.filter(request => request.body.instanceId === 'departing' && request.body.action === 'read').length, before)
+    assert.equal(ui.requests.filter(request => request.body.viewId === server.rows.get('departing').views.page.id && request.body.action === 'read').length, before)
   } finally { release?.(); await ui?.close(); await server.close(); await rm(folder, { recursive: true, force: true }) }
 })

@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-21",
+  "ticket": "worktable-framework-13",
+  "status": "source-and-built-factory-fixed-awaiting-final-installed-acceptance",
+  "base": "6be87d7cf7fa95f452a0ebadd0efaeeaca00c925",
+  "readingVersion": "0.2.0 (unpacked candidate)",
+  "tdd": {
+    "seam": "Actual tsdown lib/client.js ModuleLoader factory evaluation; no SDK require replacement",
+    "red": "npm run build; node --test tests/client-artifact.test.mjs => 0 passed, 1 failed: Unexpected browser factory dependency: dsh-worktable/sdk, lib/client.js line 31",
+    "fix": "tsdown deps.alwaysBundle includes dsh-worktable package and subpaths for both entry builds, preserving React and optional legacy external contracts",
+    "green": "Same build and factory test => 1 passed, 0 failed; apply registers page/stats/list and lifecycle disposer revokes registration",
+    "observedFactoryDependencies": [
+      "react",
+      "react/jsx-runtime"
+    ],
+    "optionalLegacy": "Legacy client remains a lazy external, is not requested or mocked when its service is absent; an unexpected eager dependency fails the gate."
+  },
+  "artifact": {
+    "path": "plugins/reading-statistics/lib/client.js",
+    "sha256": "c903a9e7cb300913a05e7830bfa44d7f84b0c39dbdde5e17962d9c6964226d55",
+    "scope": "Final compiler output, not npm archive or official installed profile; parent owns final packaging and installation."
+  },
+  "deepViewsRegression": {
+    "before": "Old fixture called installReading.handle with arbitrary instanceId and got 403; missing viewId also rejected by requestReading. These failures were not production authorization defects.",
+    "change": "Only test fixture now registers actual ApplicationDirectory app/instances/views and ResourceDirectory Reading resource against official rc.2 StorageDomain. Client view props and fetch envelopes use registered identities, value/connection, revisions and real resources; cold reopen resolves persisted instance. No production authorization was relaxed.",
+    "lateRead": "Delay editor read after public page read has completed, because current page intentionally hides mutation controls while its own read is loading. Poll visible loading state rather than depend on fixed 20ms filesystem timing.",
+    "green": "node --import tsx --test tests/deep-views.test.mjs tests/data-grants-ui.test.mjs tests/client-artifact.test.mjs => 9 passed, 0 failed, 0 skipped",
+    "limitations": "React auxiliary timing warnings remain possible; these tests are not actual browser installation/model acceptance."
+  },
+  "untouched": [
+    "Worktable frozen 0.8.0 package and source",
+    "native DSH",
+    "upstream Worktable",
+    "3091 and 3080 profiles",
+    "Reading business data",
+    "13 main ticket (parallel owner)"
+  ],
+  "commands": {
+    "DSH_SOURCE": "D:/programming/workspace/my-dsh/.scratch/native-unpatched-clean-1791697941186",
+    "build": "npm run build (plugins/reading-statistics)",
+    "tests": "node --import tsx --test tests/deep-views.test.mjs tests/data-grants-ui.test.mjs tests/client-artifact.test.mjs"
+  }
+}
