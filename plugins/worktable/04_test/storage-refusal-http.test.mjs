@@ -4,7 +4,7 @@ import {mkdtemp,rm,readFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {createHash} from 'node:crypto'
-import {createServer} from 'node:http'
+import {createServer,request} from 'node:http'
 import {spawn} from 'node:child_process'
 import {once} from 'node:events'
 import {mountApplications} from '../01_content/src/framework/host.mjs'
@@ -18,7 +18,8 @@ test('real filesystem write refusal through HTTP preserves old instances and ide
  try{
   mountApplications(ctx);activate(ctx);const route=routes.find(row=>row.path==='/api/worktable/applications');
   server=createServer((req,res)=>route.handler(req,res));server.listen(0,'127.0.0.1');await once(server,'listening');const url='http://127.0.0.1:'+server.address().port;
-  const call=async body=>{const response=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});return {status:response.status,body:await response.json()}};
+  // Node HTTP tests must accept OS-assigned ports, including Fetch's browser-forbidden ports.
+  const call=body=>new Promise((resolve,reject)=>{const req=request(url,{method:'POST',headers:{'content-type':'application/json'}},res=>{let bytes='';res.setEncoding('utf8');res.on('data',chunk=>bytes+=chunk);res.on('end',()=>{try{resolve({status:res.statusCode,body:JSON.parse(bytes)})}catch(error){reject(error)}})});req.on('error',reject);req.end(JSON.stringify(body))});
   const application={id:'synthetic',title:'Synthetic storage check',version:'1',protocolVersion:1,kind:'web',url:'https://example.com/'};
   assert.equal((await call({action:'register',application})).status,200);
   const old=await call({action:'create',appId:'synthetic',projectId:'synthetic-project'});assert.equal(old.status,200);

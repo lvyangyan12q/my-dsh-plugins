@@ -124,3 +124,8 @@ Reading的page/stats/list与Notes的page/summary已作为源码消费者接入�
 
 
 13终态：工单已按具体实测关闭，非全设备/全主题承诺。Notes公开producer必须指定确切WORKTABLE_PACKAGE与已构建DSH_SOURCE，严格源码/消费者在仓外临时目录正常安装公共peer后检查，记录Cordis/Skill/SDK身份，skipLibCheck=false；不能依赖上级alpha类型。实际ownedprofile的普通pnpm peer检查及解析也已单独修复复验；源检查不替代安装检查。
+
+
+### Optional managed migration seam (candidate 0.8.2)
+
+`application-migration-v1` / `worktableMigrations.contribute(appId, owner)` is opt-in and independent of composition schema4. Owners declare supported application versions, read-only inspection, version/revision-frozen impact plans, expected-revision checked execution and optional verified recovery. Platform ledger is `migrations.v1.json`; business data remains owner-managed. Adoption explicitly confirms a current instance baseline, never guesses an old one. Affected instances are inspected individually; the platform conservatively pauses the whole application across projects if any adopted instance is incompatible, unknown or failed. This does not certify unadopted instances. Consumer and source owner resources check readiness without acquiring the platform AdmissionGate under business authorization leases. Inspection must not recursively acquire the lease already held by that authorization callback. Native history/Stop remain; native manager package replacement and trusted owner private writes are outside the fence. Existing ownerless apps remain legacy-unverified. Full candidate contract and outstanding installed acceptance are in ticket18.
