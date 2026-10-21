@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-21",
+  "host": "http://127.0.0.1:3091/",
+  "worktableVersion": "0.8.0",
+  "archiveSha256": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91",
+  "environmentCorrection": {
+    "originalEvidence": "12-installed.json",
+    "originalRuntimeProcessId": 27528,
+    "originalLauncherVersion": "0.2.0-rc.2",
+    "originalProfileDependencyFinding": "Profile fallback resolved webserver/storage alpha.2 and lacked invariants; earlier evidence was mixed dependencies, not an all-rc.2 profile",
+    "correctedRuntimeProcessId": 9032,
+    "correctedProfilePeers": "Cordis4.0.4/Schemastery3.18.4/DSH0.2.0-rc.2",
+    "correctionBy": "Root installed exact public dependencies into independent profile and cold-started; detailed three-package realpath check recorded by ticket13",
+    "nativeSourcePatched": false,
+    "frozenArchiveChanged": false
+  },
+  "cleanLifecycle": {
+    "date": "2026-10-21",
+    "host": "http://127.0.0.1:3091/",
+    "nativeVersion": "0.2.0-rc.2",
+    "worktableVersion": "0.8.0",
+    "purpose": "Actual official-installed Host composition HTTP lifecycle; not the14 editor or model flow",
+    "appId": "acceptance-composed-1792592058543",
+    "instanceId": "181810d3-b1c3-458d-9f2f-fbed686ed714",
+    "viewId": "ccba69e0-feba-4d2c-8b04-f0c2157aeecd",
+    "steps": [
+      "save-keeps-running-directory-and-instances",
+      "preview-does-not-activate-or-create-instance",
+      "stale-save-refused",
+      "explicit-activation-publishes-definition",
+      "unchanged-version-refused-and-running-preserved",
+      "activation-keeps-original-instance-and-view",
+      "missing-source-refused-without-replacing-running"
+    ],
+    "before": {
+      "instances": 16,
+      "views": 26
+    },
+    "after": {
+      "instances": 17,
+      "views": 27
+    },
+    "modelRequestSent": false,
+    "sourceDataShared": false,
+    "coldRecoveryPending": true,
+    "interpretation": "These seven steps occurred after corrected-profile startup. This fresh target has not been cold-started again."
+  },
+  "originalTargetCleanColdRecovery": {
+    "appId": "acceptance-composed-1792589152356",
+    "instanceId": "4627e87f-e4ff-412a-a60c-faa84dd8b925",
+    "viewId": "07a45ebb-fc1a-4b62-97c0-16b9da531e14",
+    "runtimeProcessId": 9032,
+    "runningVersion": "1.1.0",
+    "draftVersion": "1.1.0",
+    "revision": 7,
+    "instancePreserved": true,
+    "viewPreserved": true,
+    "readOnlyRequests": [
+      "GET /api/worktable/applications",
+      "GET /api/worktable/compositions"
+    ],
+    "newSetupPerformed": false,
+    "modelRequestSent": false
+  },
+  "limitations": [
+    "Original12-installed.json remains immutable mixed-profile evidence; do not relabel its environment as all-rc.2",
+    "Fresh clean seven-step target has no further cold-start proof; only original target verified after corrected-profile cold startup",
+    "Ticket16 model work may change tasks/session files concurrently: no whole-profile or task-unchanged claim made here",
+    "Host contract only, inline UI14 and end-to-end19 remain unverified"
+  ]
+}
