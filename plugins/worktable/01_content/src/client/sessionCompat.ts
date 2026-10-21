@@ -147,3 +147,21 @@ export function sessionRuntimeMs(snapshot: any, sid: string, sessions: any, uiCo
   }
   return start == null ? null : Math.max(0, now - start)
 }
+
+/** Read public host snapshots only; never retain or activate a cold session. */
+export function readHostTaskFacts(ctx: any, statusSource: any, id: string): any {
+  let status: any, face: any
+  try { status = statusSource?.getSnapshot?.()?.get?.(id) } catch {}
+  try { face = ctx.sessions?.binding?.(id)?.session?.getSnapshot?.() } catch {}
+  return { ...status, running: status?.running ?? face?.running, lastAgentError: face?.lastAgentError ?? null }
+}
+
+/** Session-wide observations, not a task result. A stop request is not cancellation proof. */
+export function describeNativeTaskState(facts: any, stopRequestedAt?: number): {state:string;label:string} {
+  if (facts?.pendingInteraction) return {state:'waiting',label:'原生等待问题或审批'}
+  if (facts?.running === true) return {state:'running',label:'原生正在运行'}
+  if (facts?.lastAgentError) return {state:'failed',label:'原生错误：'+facts.lastAgentError}
+  if (stopRequestedAt) return {state:'stop-requested',label:'已提交停止请求；是否取消及执行结果请查看原生轨迹'}
+  if (facts?.completionUnread) return {state:'unread',label:'原生有未读结束提示；不代表任务成功'}
+  return {state:'unknown',label:facts?.running === false?'原生当前未运行；执行结果未知，请查看轨迹':'原生状态尚未观察，请打开原生对话'}
+}

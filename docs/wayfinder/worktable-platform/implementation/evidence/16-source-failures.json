@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-21",
+  "ticket": "worktable-framework-16",
+  "status": "source-ready-awaiting-installed-ui",
+  "base": "d64b01ab89fb83c0d0a86adc8268fc8c199bc990",
+  "runtime": {
+    "node": "v25.2.0",
+    "platform": "win32",
+    "hostSource": "unpatched DSH 0.2.0-rc.2 public contracts inspected; no host loaded by these tests"
+  },
+  "nativeStateContract": {
+    "source": "uiSession.sessionStatus.getSnapshot().get(sessionId); sessions.binding(sessionId).session.getSnapshot() only when already retained",
+    "observed": [
+      "running",
+      "pendingInteraction",
+      "completionUnread",
+      "lastAgentError"
+    ],
+    "noColdSessionActivation": true,
+    "notProvidedByHost": [
+      "confirmed cancellation",
+      "business success",
+      "per-task execution result correlation"
+    ],
+    "stop": "A persisted stopRequestedAt is only an acknowledged request; never converted into confirmed cancelled.",
+    "idle": "running=false without another fact remains unknown; unread is independent of success.",
+    "staleError": "A current running/waiting observation wins over lastAgentError; idle errors are explicitly session-wide, not a task outcome."
+  },
+  "red": {
+    "command": "node plugins/worktable/04_test/session-compat.test.mjs",
+    "passed": 20,
+    "failed": 1,
+    "reason": "readHostTaskFacts is not a function (before production adapter added)"
+  },
+  "green": {
+    "command": "node --test plugins/worktable/04_test/{task-host,tasks,recovery,recovery-host,session-compat,task-panel,storage-refusal-http}.test.mjs",
+    "passed": 44,
+    "failed": 0,
+    "skipped": 0,
+    "build": "npm run build passed (development build only, no version or frozen archive changed)"
+  },
+  "filesystem": {
+    "kind": "actual-filesystem-refusal-http",
+    "refusedStatus": 503,
+    "refusedCode": "storage-unavailable",
+    "oldFileHash": "5f52b268c07f6ea5e61ebd8c4dda33da932bf5277a1d7a7159a1a28c527e079a",
+    "oldRecordPreserved": true,
+    "retryStatus": 200,
+    "recordsAfterRetry": 2,
+    "aclChanges": false,
+    "realProfileTouched": false
+  },
+  "filesystemScope": "Real TCP HTTP server mounts the public application route in an isolated synthetic temporary profile. Windows OS handle with FileShare.ReadWrite (not Delete) rejects atomic rename. Existing persistence implementation already satisfies refusal/recovery; no persistence mutation was necessary. No mocked fs, ACL changes, model, production profile or 3091/3080 changes.",
+  "remaining": [
+    "Final versioned installed package and actual 3091 UI/model status matrix are root acceptance work; ticket remains open."
+  ]
+}

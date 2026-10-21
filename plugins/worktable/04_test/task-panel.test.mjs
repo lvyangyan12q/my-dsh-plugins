@@ -19,3 +19,19 @@ test('module prepares with fixed view and context, passive display has no compos
  await act(async()=>root.unmount());assert.equal(actions.some(a=>a.action==='stop'),false);
  }finally{if(root)await act(async()=>root.unmount());globalThis.fetch=saved}
 })
+
+test('native status shown to the user remains session-scoped and idle or Stop never claims success',async()=>{
+ const saved=globalThis.fetch;let root,current={running:true};
+ const dispose=module.exports.configureTaskFacts(()=>current);
+ const row={id:'task',revision:1,status:'accepted',requestId:'request',roleId:'assistant',sessionId:'native-A',source:{viewId:'view-A',viewType:'page'},text:'Observe task',contexts:[]};
+ globalThis.fetch=async(url)=>({ok:true,json:async()=>url.endsWith('/roles')?{roles:[{id:'assistant',title:'Reader'}]}:[row]});
+ try{
+ await act(async()=>{root=create(React.createElement(TaskPanel,{viewId:'view-A',instanceId:'A'}));await flush()});await act(async()=>{root.root.findByType('details').props.onToggle({currentTarget:{open:true}});await flush()});
+ const status=()=>root.root.findAllByProps({role:'status'}).map(p=>p.children.join('')).join(' ');
+ assert.match(status(),/正在运行/);
+ for(const [facts,expected] of [[{running:true,pendingInteraction:{kind:'approval'}},/等待问题或审批/],[{running:false,lastAgentError:'model unavailable'},/model unavailable/],[{running:false,completionUnread:true},/未读结束提示/],[{running:false},/执行结果未知/]]){
+  current=facts;await act(async()=>{root.update(React.createElement(TaskPanel,{viewId:'view-A',instanceId:'A'}));await flush()});assert.match(status(),expected);
+ }
+ row.stopRequestedAt=123;await act(async()=>{root.root.findAllByType('button').find(b=>b.children.join('')==='刷新任务状态').props.onClick();await flush()});assert.match(status(),/停止请求/);assert.doesNotMatch(status(),/已取消|任务成功/);
+ }finally{if(root)await act(async()=>root.unmount());dispose();globalThis.fetch=saved}
+})
