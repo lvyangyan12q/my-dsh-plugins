@@ -17,7 +17,7 @@ export function TaskPanel({viewId,instanceId}:{viewId:string;instanceId:string})
  useEffect(()=>{if(!expanded)return;void load();const timer=setInterval(()=>tick(x=>x+1),1500);return()=>clearInterval(timer)},[expanded,viewId])
  async function load(){const generation=++epoch.current;request.current?.abort();const controller=request.current=new AbortController();try{const [tasks,rs]=await Promise.all([taskRequest({action:'list',viewId},controller.signal),roleRequest({action:'list',instanceId},controller.signal)]);if(active.current&&generation===epoch.current){setRows(tasks);setRoles(rs.roles);setRoleId(current=>current||rs.roles[0]?.id||'')}}catch(e:any){if(active.current&&!controller.signal.aborted)setError(e.message)}}
  async function action(kind:string,row?:any){const owner=identity.current;setBusy(true);setError('');setNotice('');try{const value=await taskRequest({action:kind,viewId,...(row?{id:row.id,revision:row.revision}:{}),...(kind==='prepare'?{roleId,text,contexts:[]}:{}),...(kind==='edit'?{text:editing.text,contexts:editing.contexts.map((c:any)=>({id:c.id,text:c.text}))}:{})});if(!active.current||identity.current!==owner)return;
-  if(kind==='open')await openRoleNativeSession(value.sessionId);
+  if(kind==='open')void openRoleNativeSession(value.sessionId).catch((e:any)=>{if(active.current&&identity.current===owner)setError(e.message)});
   if(kind==='prepare'){setText('');setEditing(value)}
   if(kind==='edit'||kind==='discard'||kind==='submit')setEditing(null);
   if(value.notice)setNotice(value.notice);await load()
