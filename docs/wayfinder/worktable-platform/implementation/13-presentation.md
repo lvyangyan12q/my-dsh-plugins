@@ -26,3 +26,10 @@ blocked_by: []
 ## Dependencies
 
 无；可作为后续首次前沿。
+
+
+## 实施检查点（候选，未关闭）
+
+公开入口选用`createPresentation(React)`而非新增React静态依赖子路径，保持SDK服务端安全与9文件门禁。接口见[SDK候选补充](10-sdk-contract.md#13后续候选可选公共展示尚待实际安装验收)。Reading与Notes只从公开SDK导入；应用数据、角色、持久化和授权保持各自owner。
+
+TDD公开接缝：`04_test/presentation.test.mjs`通过真实ReactDOM挂载/点击选择和select change观察结果。首轮RED为公开createPresentation缺导出；第一片GREEN为字段映射、求和、选择回调与详情缺失字段。第二个RED为未知median聚合仍显示可信数值，GREEN改为明确配置错误。辅助覆盖加载/空/错误不暴露旧资料、重试、有限数字、受控筛选与局部主题。真实窄屏几何、两应用最终安装/精确归档仍交root验收，不以jsdom通过宣称完成。

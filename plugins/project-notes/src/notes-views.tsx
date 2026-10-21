@@ -1,3 +1,6 @@
+import * as React from 'react'
+import {createPresentation} from 'dsh-worktable/sdk'
+const {Stats:DisplayStats,List:DisplayList,Detail:DisplayDetail}=createPresentation(React)
 import {useEffect,useId,useRef,useState,useSyncExternalStore} from 'react'
 import type {ApplicationViewProps} from 'dsh-worktable/sdk'
 import {requestNotes,type NotesData} from './notes-data-client.ts'
@@ -29,16 +32,13 @@ export function createNotesViews(){
   async function write(action:string,payload:unknown,revision:string){setBusy(true);setError('');try{await requestNotes(view.id,instance.id,action,payload,revision,draft.connectionRevision??value.data.connection?.revision);if(!disposed){if(alive.current)setDraft({id:'',title:'',body:'',revision:'',connectionRevision:undefined});await state.reloadActive()}}catch(e){if(alive.current&&!disposed)setError((e as Error).message)}finally{if(alive.current&&!disposed)setBusy(false)}}
   return <section aria-label={summary?'便签摘要':'项目便签'} style={{padding:12,color:'inherit',font:'inherit',minWidth:0,boxSizing:'border-box',overflowWrap:'anywhere'}}>
    <h2>{summary?'便签摘要':application.title}</h2>
-   {value.phase==='loading'&&<p>正在读取便签…</p>}
-   {value.phase==='error'&&<p role="alert">{value.error}</p>}
    {value.warning&&<p role="status">{value.warning}</p>}
-   <p>便签：{notes.length}</p><p>已选：{selected?.title??'无'}</p>
+   <DisplayStats records={notes} phase={value.phase} error={value.error} metrics={[{id:'notes',label:'便签：',aggregate:'count'}]}/><p>已选：{selected?.title??'无'}</p>
    {!summary&&<><label htmlFor={fieldId+'-search'} style={{display:'grid',gap:6,marginBottom:10}}>搜索<input id={fieldId+'-search'} style={{width:'100%',minWidth:0,boxSizing:'border-box'}} aria-label="搜索便签" maxLength={200} value={value.search} onChange={e=>state.set({search:e.target.value})}/></label> <label htmlFor={fieldId+'-archived'} style={{display:'inline-flex',alignItems:'center',gap:6,marginBottom:10,marginRight:10}}><input id={fieldId+'-archived'} aria-label="显示归档" style={{width:'auto',height:'auto',margin:0,flexShrink:0}} type="checkbox" checked={value.includeArchived} onChange={e=>state.set({includeArchived:e.target.checked})}/>显示归档</label>
     <button onClick={()=>void state.reload(view.id)}>刷新便签与权限</button>
     {value.data.connection&&<p>共享来源：{value.data.connection.ownerInstanceId} · {['create','update','archive'].filter(allowed).map(action=>({create:'可新建',update:'可编辑',archive:'可归档'}[action])).join('、')||'只读'}</p>}
-    <ul>{notes.map(n=><li key={n.id}><button aria-label={'选择便签 '+n.title} aria-pressed={n.id===selected?.id} onClick={()=>state.set({selected:n.id})}>{n.title}</button>{n.archived?'（已归档）':''}</li>)}</ul>
-    {!notes.length&&value.phase==='ready'&&<p>尚无匹配的便签。</p>}
-    {selected&&<article><h3>{selected.title}</h3><p style={{whiteSpace:'pre-wrap'}}>{selected.body}</p><button disabled={!allowed('update')||busy} onClick={()=>setDraft({...selected,revision:value.data.revision,connectionRevision:value.data.connection?.revision})}>编辑此便签</button> <button disabled={busy||!allowed('archive')} onClick={()=>void write('archive',{id:selected.id,archived:!selected.archived},value.data.revision)}>{selected.archived?'恢复此便签':'归档此便签'}</button></article>}
+    {value.phase==='ready'&&<DisplayList records={notes} mapping={{id:'id',title:'title',selectionLabel:'选择便签'}} selectedId={selected?.id} onSelect={id=>state.set({selected:id})} phase={value.phase} error={value.error} emptyText="尚无匹配的便签。"/>}
+    {selected&&<article><h3>{selected.title}</h3><DisplayDetail record={selected} fields={[{label:'正文',field:'body'}]}/><button disabled={!allowed('update')||busy} onClick={()=>setDraft({...selected,revision:value.data.revision,connectionRevision:value.data.connection?.revision})}>编辑此便签</button> <button disabled={busy||!allowed('archive')} onClick={()=>void write('archive',{id:selected.id,archived:!selected.archived},value.data.revision)}>{selected.archived?'恢复此便签':'归档此便签'}</button></article>}
     <fieldset style={{minWidth:0,maxWidth:'100%',boxSizing:'border-box',padding:12,margin:'12px 0',border:'1px solid color-mix(in srgb,currentColor 22%,transparent)'}} disabled={busy||!writable||value.phase!=='ready'}><legend>{draft.id?'编辑便签（保留开始编辑时版本）':'新建便签'}</legend>
      <label htmlFor={fieldId+'-title'} style={{display:'grid',gap:6,marginBottom:10}}>标题<input id={fieldId+'-title'} style={{width:'100%',minWidth:0,boxSizing:'border-box'}} aria-label="便签标题" value={draft.title} maxLength={200} onChange={e=>setDraft(s=>({...s,title:e.target.value,revision:s.revision||value.data.revision,connectionRevision:s.revision?s.connectionRevision:value.data.connection?.revision}))}/></label>
      <label htmlFor={fieldId+'-body'} style={{display:'grid',gap:6,marginBottom:10}}>正文<textarea id={fieldId+'-body'} style={{width:'100%',minWidth:0,minHeight:100,boxSizing:'border-box',resize:'vertical'}} aria-label="便签正文" value={draft.body} maxLength={4000} onChange={e=>setDraft(s=>({...s,body:e.target.value,revision:s.revision||value.data.revision,connectionRevision:s.revision?s.connectionRevision:value.data.connection?.revision}))}/></label>

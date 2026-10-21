@@ -103,3 +103,19 @@ Project Notes例子：managedAgentId/managedSkillId/roleWorkspace默认空，由
 实际原生行配置保存不创建Session或任务；N1显式发送后，原生轨迹同时加载project-notes provider的私有Skill及worktable-managed provider的公共Skill，所选便签整理不自动写业务。N2为独立空Session；冷启动、Notes贡献开关与历史交接保持业务hash/身份/原生计数。旧0.1.0缺配置页的实际失败及0.1.1修复保留，不用辅助测试覆盖真实缺口。
 
 Notes额外跨实例共享案例被自动审核在变更前拒绝，具体用户授权仍待提供，未建grant、未宣称通过；05 Reading共享主验收已过。普通网页、通用schema适配/组件库、任意多Host业务backend均不在本版承诺。两项原生菜单/项目导航缺陷交11修复，最终UI及Standards/Spec两轴审查仍待11，以用户指定485b38c基线执行；完整framework spec保持OPEN。
+
+
+## 13后续候选：可选公共展示（尚待实际安装验收）
+
+`dsh-worktable/sdk`新增`createPresentation(React)`及可选feature `presentation-components-v1`。应用bundler继续内联SDK，显式传入自己使用的React模块；SDK顶层没有React import、全局React、Host服务或网络副作用，服务端import仍安全。保持精确9文件与同一./sdk入口，无新增ModuleLoader外部依赖。
+
+返回`Surface`、`State`、`Stats`、`List`、`Detail`、`Filters`。全部只消费调用者props；无fetch、数据目录、跨实例状态、授权或Session。数据与筛选、选中值仍由应用owner决定；展示控件的回调不等于资源写权限。
+
+- `Stats`：`records`及`metrics[{id,label,aggregate:'count'|'sum'|'average',field?}]`。仅使用有限number，不把数字字符串当业务数值；缺失/溢出显示“未提供”，未知聚合或缺必需映射明确错误。
+- `List`：`records`及`mapping{id,title,description?,selectionLabel?}`，`selectedId/onSelect(id)`受控；标识缺失或重复拒绝渲染可选行。字段名为直属字段，不解释路径或执行表达式。
+- `Detail`：`record`及`fields[{field,label}]`；缺失字段显示“未提供”，对象不序列化为HTML或执行。
+- `Filters`：`fields[{id,label,maxLength?,options?:[{value,label}]}]`及`values/onChange(values)`。控件只提交受控值；业务过滤仍由调用者执行，不替应用猜分类或数据范围。
+- `State`或各数据控件的`phase:'loading'|'ready'|'error'`、`error/onRetry`和空态：错误/加载不展示上一次records伪装成功。
+- `Surface`：可选`theme:'inherit'|'light'|'dark'`，只作用本section；控件采用局部网格/换行、minWidth与长文本换行，无全局CSS或原生皮肤覆盖。真实浏览器窄屏几何与深浅色最终以13安装证据为准。
+
+Reading的page/stats/list与Notes的page/summary已作为源码消费者接入；两者仍拥有原数据、共享撤销处理、偏好、任务上下文及写入规则。无personal-workbench运行导入，也不要求独立应用转换为配方。当前为后续候选，不能反向扩大01—11不可变证据。

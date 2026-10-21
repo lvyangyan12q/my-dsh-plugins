@@ -1,3 +1,6 @@
+import * as React from 'react'
+import {createPresentation} from 'dsh-worktable/sdk'
+const {Stats:DisplayStats,List:DisplayList,Detail:DisplayDetail,Filters:DisplayFilters}=createPresentation(React)
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { ReadingRecord } from './reading-api.ts'
 import { requestReading, subscribeReading, notifyReading, type DataConnection } from './reading-data-client.ts'
@@ -79,13 +82,13 @@ export function createReadingViews() {
       {snapshot.preferenceWarning && <p role="status">{snapshot.preferenceWarning}</p>}
       {snapshot.phase === 'loading' && <p role="status">正在加载阅读记录…</p>}
       {snapshot.phase === 'error' && <div role="alert">{snapshot.error}<button onClick={() => void state.reload()}>重试加载阅读视图</button></div>}
-      {kind === 'page' && <><h2>阅读统计</h2><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <label>搜索<input aria-label="搜索阅读记录" value={snapshot.search} maxLength={200} onChange={event => state.set({ search: event.target.value })}/></label>
-        <label>分类<select aria-label="分类筛选" value={snapshot.category} onChange={event => state.set({ category: event.target.value })}><option value="">全部分类</option>{[...new Set(snapshot.records.map(record => record.category))].map(category => <option key={category} value={category}>{category || '未分类'}</option>)}</select></label>
-        <label>状态<select aria-label="状态筛选" value={snapshot.status} onChange={event => state.set({ status: event.target.value })}><option value="">全部状态</option><option value="reading">正在阅读</option><option value="finished">已读完</option></select></label>
-      </div></>}
-      {kind !== 'list' && <dl style={{ display: 'flex', gap: 24 }}><div><dt>书籍</dt><dd data-stat="books">{records.length}</dd></div><div><dt>阅读分钟</dt><dd data-stat="minutes">{records.reduce((sum, record) => sum + record.minutes, 0)}</dd></div></dl>}
-      {kind !== 'stats' && <><ul>{records.map(record => <li key={record.id}><button aria-pressed={snapshot.selected === record.id} onClick={() => state.set({ selected: record.id })}>{record.title}</button> · {record.minutes} 分钟</li>)}</ul>{!records.length && snapshot.phase === 'ready' && <p>尚无匹配的阅读记录。</p>}{selected && <article data-reading-selection><h3>{selected.title}</h3><p>{selected.author}</p><p>{selected.notes}</p></article>}</>}
+      {kind === 'page' && <><h2>阅读统计</h2><DisplayFilters values={{search:snapshot.search,category:snapshot.category,status:snapshot.status}} onChange={values=>state.set(values)} fields={[
+        {id:'search',label:'搜索阅读记录'},
+        {id:'category',label:'分类筛选',options:[{value:'',label:'全部分类'},...[...new Set(snapshot.records.map(record=>record.category))].filter(Boolean).map(category=>({value:category,label:category||'未分类'}))]},
+        {id:'status',label:'状态筛选',options:[{value:'',label:'全部状态'},{value:'reading',label:'正在阅读'},{value:'finished',label:'已读完'}]}
+      ]}/></>}
+      {snapshot.phase==='ready' && kind !== 'list' && <DisplayStats records={records} phase={snapshot.phase} error={snapshot.error} metrics={[{id:'books',label:'书籍',aggregate:'count'},{id:'minutes',label:'阅读分钟',aggregate:'sum',field:'minutes'}]}/>}
+      {snapshot.phase==='ready' && kind !== 'stats' && <><DisplayList records={records} mapping={{id:'id',title:'title',description:'author'}} selectedId={snapshot.selected} onSelect={id=>state.set({selected:id})} phase={snapshot.phase} error={snapshot.error} emptyText="尚无匹配的阅读记录。"/>{selected&&<article data-reading-selection><h3>{selected.title}</h3><DisplayDetail record={selected} fields={[{label:'作者',field:'author'},{label:'笔记',field:'notes'}]}/></article>}</>}
       {kind === 'page' && snapshot.phase === 'ready' && <><button disabled={!!snapshot.connection} onClick={() => { const owner = actionOwner.current, generation = state.generation; void requestReading({ action: 'initialize', instanceId: instance.id, viewId: view.id, expectedRevision: snapshot.revision, expectedConnectionRevision: snapshot.connection?.revision, seed: 'examples' }).catch(error => { if (owner.active && actionOwner.current === owner && generation === state.generation) state.publish({ phase: 'error', error: String(error) }) }) }}>初始化示例记录</button><ReadingRecordEditor key={instance.id} appId={application.id} instanceId={instance.id} preview={false} viewId={view.id} readOnly={!!snapshot.connection && !snapshot.connection.allowedActions.includes('update')} standalone/></>}
     </section>
   }

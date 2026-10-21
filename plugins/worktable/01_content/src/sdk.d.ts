@@ -1,4 +1,4 @@
-import type {ComponentType} from 'react'
+import type {ComponentType,ReactNode,createElement} from 'react'
 export const PROTOCOL_VERSION:1
 export interface ProtocolDescriptor {protocolVersion:number;features:string[]}
 export function describeProtocol():ProtocolDescriptor
@@ -47,3 +47,20 @@ declare module '@deepseek-ai/cordis' {interface Context {
  worktableRoles:RoleDirectory
  worktableCapabilities:CapabilityDirectory
 }}
+
+/** Optional, local-only presentation. Inject the same React used by your application. */
+export type PresentationRecord=object
+export type PresentationPhase='loading'|'ready'|'error'
+export interface PresentationStatus {phase?:PresentationPhase;error?:string;onRetry?:()=>void}
+export interface PresentationMetric {id:string;label:string;aggregate:'count'|'sum'|'average';field?:string}
+export interface PresentationMapping {id:string;title:string;description?:string;selectionLabel?:string}
+export interface PresentationFilter {id:string;label:string;maxLength?:number;options?:{value:string;label:string}[]}
+export interface PresentationComponents {
+ Surface:ComponentType<{theme?:'inherit'|'light'|'dark';children?:ReactNode;label?:string}>
+ State:ComponentType<PresentationStatus&{empty?:boolean;emptyText?:string}>
+ Stats:ComponentType<PresentationStatus&{records?:PresentationRecord[];metrics?:PresentationMetric[]}>
+ List:ComponentType<PresentationStatus&{records?:PresentationRecord[];mapping:PresentationMapping;selectedId?:string;onSelect?:(id:string)=>void;emptyText?:string}>
+ Detail:ComponentType<PresentationStatus&{record?:PresentationRecord;fields?:{label:string;field:string}[];emptyText?:string}>
+ Filters:ComponentType<{fields?:PresentationFilter[];values?:Record<string,string>;onChange?:(values:Record<string,string>)=>void}>
+}
+export function createPresentation(react:{createElement:typeof createElement}):Readonly<PresentationComponents>
