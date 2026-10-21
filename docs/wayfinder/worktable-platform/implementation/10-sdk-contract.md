@@ -124,3 +124,11 @@ Reading的page/stats/list与Notes的page/summary已作为源码消费者接入�
 
 
 13终态：工单已按具体实测关闭，非全设备/全主题承诺。Notes公开producer必须指定确切WORKTABLE_PACKAGE与已构建DSH_SOURCE，严格源码/消费者在仓外临时目录正常安装公共peer后检查，记录Cordis/Skill/SDK身份，skipLibCheck=false；不能依赖上级alpha类型。实际ownedprofile的普通pnpm peer检查及解析也已单独修复复验；源检查不替代安装检查。
+
+## 14新增可选模块搭建合同（源码候选，实际安装范围见14）
+
+协议仍1，新增composition-state-v1与resource-catalog-v1，不从版本或旧7项列表猜可用性。CompositionDirectory.readState(viewId)/updateState({viewId,expectedRevision,scopeId,filters,selectedId})返回{instanceId,revision,scopes}，身份由已登记view推导；模块输入草稿不直接替换其他视图，成功持久后同instance刷新读取，跨instance分离。新增schema4只用于实例展示状态，旧0.8遇4需拒绝并保字节，不能清空或恢复旧整profile。
+
+ResourceOwner可选descriptor:{title,recordsField?}只描述展示入口，不提供业务数据。catalog()列登记来源元数据/引用标识，不调用read或创建grant；未声明descriptor者不能猜业务数组字段。组合运行资源调用必须使用当前consumer viewId，并核验connection.consumerInstanceId/ownerInstanceId与所选来源一致。metadata/配方source viewId从不是消费授权；显式read-share另走已有Host边界，网页默认仍拒deep资源。
+
+copyCompositionTemplate(recipe)复制结构/展示映射，清connections、roles、URL/HTML/路径与运行身份；不复制业务资料、会话或原生凭据。composition:true由唯一应用视图renderer分支承载，不为动态appId建另一套目录。UI模块优先配置、显式preview/activate，角色仍走既有facade/TaskPanel，不能从新模块自动发送模型或搭第二composer。详细源码/真实验收区分见[14](14-inline-builder.md)。

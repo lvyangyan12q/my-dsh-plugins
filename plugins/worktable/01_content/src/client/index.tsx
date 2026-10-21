@@ -2575,7 +2575,7 @@ function buildCustomLayoutPrompt(req: string): string {
             </button>
           </div>
           <div className="dsh-wt_addForm">
-            <input type="text" placeholder={t('add.layoutNamePh')} value={wsName}
+            <input type="text" autoFocus aria-label="项目名称" placeholder={t('add.layoutNamePh')} value={wsName}
               onChange={(e) => { setWsName(e.target.value); setWsError(false) }} />
             <div className="dsh-wt_addFolderRow">
               <span className="dsh-wt_customLabel">{t('add.folderParent')}</span>
