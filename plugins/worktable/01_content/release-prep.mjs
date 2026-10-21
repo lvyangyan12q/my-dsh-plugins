@@ -83,7 +83,7 @@ if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
-const compatTests = ['project-navigation.test.mjs', 'annotation-target.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'presentation.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs']
+const compatTests = ['project-navigation.test.mjs', 'annotation-target.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'presentation.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs', 'compositions.test.mjs', 'composition-http.test.mjs', 'storage-refusal-http.test.mjs', 'composition-state.test.mjs', 'composition-template.test.mjs', 'composition-sources.test.mjs', 'composition-references.test.mjs', 'composition-editor.test.mjs', 'composition-runtime.test.mjs']
   .map((file) => join(HERE, '..', '04_test', file))
 const compatRun = spawnSync(process.execPath, ['--test', ...compatTests], { cwd: HERE, stdio: 'inherit' })
 if (compatRun.status !== 0) { console.error('[release-prep] FAIL: session/input compatibility tests'); process.exit(1) }
@@ -214,6 +214,9 @@ if (nativePanelRun.status !== 0) {
   process.exit(1)
 }
 console.log('[release-prep] installed native-panel/annotation callbacks passed (actual client factory and React UI)')
+const collapsedRun = spawnSync(process.execPath, [join(HERE, '..', '04_test', 'collapsed-project.test.mjs'), join(inst, 'node_modules', 'dsh-worktable', 'lib', 'client.js')], { cwd: HERE, stdio: 'pipe', encoding: 'utf8' })
+if (collapsedRun.status !== 0) { console.error('[release-prep] FAIL: installed collapsed-sidebar project dialog'); console.error(collapsedRun.stderr || collapsedRun.stdout); process.exit(1) }
+console.log('[release-prep] collapsed-sidebar project dialog passed (installed factory/UI)')
 
 
 // ---------- 5d. 服务端数据目录解析回归（loadPkg ↔ resolveDshHomeSafe 循环调用修复） ----------

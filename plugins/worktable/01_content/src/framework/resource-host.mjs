@@ -25,6 +25,7 @@ export function mountResources(ctx){
       if(!body||typeof body!=='object'||Array.isArray(body))throw new ApplicationError('invalid-request','请求无效。')
       runtime.lifetime.check();let result
       switch(body.operation){
+        case 'catalog':result=await service.catalog();break
         case 'snapshot': result=await service.snapshot();break
         case 'share': result=await service.share(body);break
         case 'permissions': result=await service.permissions(body.id,body.revision,body.allowedActions);break

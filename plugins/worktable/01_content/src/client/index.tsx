@@ -2551,6 +2551,84 @@ function buildCustomLayoutPrompt(req: string): string {
     }
   }
 
+  const projectCreationDialogs = <>
+      {addOpen && <div className="dsh-wt_popBackdrop" onClick={() => { invalidatePickState(); setAddOpen(false) }} />}
+      {addOpen && (
+        <div className="dsh-wt_menu dsh-wt_add dsh-wt_pop" role="dialog" aria-modal="true" aria-label="添加项目" onKeyDown={e => { if (e.key === 'Escape' && !(e.nativeEvent as any)?.isComposing) { invalidatePickState(); setAddOpen(false) } }} style={{ position: 'fixed', left: Math.min(popLeft, Math.max(12, window.innerWidth - 372)), top: popTop, width: 360, maxWidth: 'calc(100vw - 24px)', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', zIndex: 80 }}>
+          <span className="dsh-wt_menuLabel">{t('add.chooseLayout')}</span>
+          <div className="dsh-wt_presets">
+            {PRESET_DEFS.map((def) => (
+              <button
+                key={def.id}
+                type="button"
+                className="dsh-wt_preset"
+                data-on={wsPreset === def.id ? 'true' : 'false'}
+                onClick={() => { setWsPreset(def.id); setWsError(false) }}
+              >
+                {presetThumb(def.id)}
+              </button>
+            ))}
+            <button type="button" className="dsh-wt_preset dsh-wt_presetAdd" title={t('customLayout.addTitle')}
+              onClick={() => { invalidatePickState(); setAddOpen(false); setCustomOpen(true) }}>
+              <span className="dsh-wt_presetAddIcon" aria-hidden>＋</span>
+              <span className="dsh-wt_presetAddText">{t('customLayout.add')}</span>
+            </button>
+          </div>
+          <div className="dsh-wt_addForm">
+            <input type="text" placeholder={t('add.layoutNamePh')} value={wsName}
+              onChange={(e) => { setWsName(e.target.value); setWsError(false) }} />
+            <div className="dsh-wt_addFolderRow">
+              <span className="dsh-wt_customLabel">{t('add.folderParent')}</span>
+              <span className={'dsh-wt_addFolderPath' + (wsFolderParent ? '' : ' dsh-wt_addFolderPathNone')} title={wsFolderParent || ''}>
+                {wsFolderParent || t('add.folderNone')}
+              </span>
+              <button type="button" className="dsh-wt_bindFolderChange" disabled={pickBusy}
+                onClick={() => { pickFolder('add', (p) => { setWsFolderParent(p); setWsFolderError(false) }); setWsError(false) }}>
+                {pickBusy ? t('add.folderPicking') : t('add.folderPick')}
+              </button>
+              <button type="button" className="dsh-wt_bindFolderChange" title={t('add.folderManual')}
+                onClick={() => { setManualPathFor(manualPathFor === 'add' ? null : 'add'); setPickErr((prev) => ({ ...prev, add: '' })) }}>{t('add.folderManual')}</button>
+            </div>
+            {pickBusy && <p className="dsh-wt_folderPickHint">{t('add.folderPickerHint')}</p>}
+            {manualPathFor === 'add' && (
+              <div className="dsh-wt_addFolderRow">
+                <input type="text" className="dsh-wt_manualPathInput" placeholder={t('add.folderManualPh')} value={manualPathText}
+                  onChange={(e) => setManualPathText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applyManualPath('add') }} />
+                <button type="button" className="dsh-wt_bindFolderChange" onClick={() => applyManualPath('add')}>{t('add.folderManualOk')}</button>
+              </div>
+            )}
+            {pickErr.add && <p className="dsh-wt_addError">{pickErr.add}</p>}
+            <button type="button" className="dsh-wt_addBtn" onClick={saveLayout}>{t('add.layoutSave')}</button>
+          </div>
+          {wsError && <p className="dsh-wt_addError">{t('add.layoutInvalid')}</p>}
+          {wsFolderError && <p className="dsh-wt_addError">{t('add.folderRequired')}</p>}
+        </div>
+      )}
+
+      {customOpen && <div className="dsh-wt_popBackdrop" style={{ zIndex: 83 }} onClick={() => setCustomOpen(false)} />}
+      {customOpen && (
+        <div className="dsh-wt_menu dsh-wt_pop" style={{ position: 'fixed', left: Math.min(popLeft, Math.max(12, window.innerWidth - 352)), top: popTop, width: 340, maxWidth: 'calc(100vw - 24px)', zIndex: 84 }}>
+          <span className="dsh-wt_menuLabel">✨ {t('customLayout.title')}</span>
+          <textarea
+            className="dsh-wt_customLayoutInput"
+            autoFocus
+            rows={6}
+            placeholder={t('customLayout.placeholder')}
+            value={customLayoutText}
+            onChange={(e) => setCustomLayoutText(e.target.value)}
+          />
+          <button type="button" className="dsh-wt_customLayoutBtn" onClick={copyCustomLayout}>{t('customLayout.copy')}</button>
+          {copiedToast && (
+            <p className={'dsh-wt_customLayoutToast' + (copiedToast === 'fail' ? ' dsh-wt_customLayoutToastFail' : '')}>
+              {copiedToast === 'ok' ? '✅ ' + t('customLayout.copied') : '⚠️ ' + t('customLayout.copyFail')}
+            </p>
+          )}
+        </div>
+      )}
+
+  </>
+
   if (!wide) {
     // 收起态 = 等行高的正方形圆角按钮，中间只留 emoji；点击 = 进入对应项目
     const railItems: { icon: string; name: string; onClick: (e: any) => void }[] = [
@@ -2576,7 +2654,7 @@ function buildCustomLayoutPrompt(req: string): string {
       ? { position: 'fixed' as const, top: float.top, left: railRect.left, width: railRect.width, zIndex: 70 }
       : bottomInset > 0 ? { marginBottom: bottomInset } : undefined
     return (
-      <div ref={rootRef} className="dsh-wt_section dsh-wt_rail" style={railStyle}>
+      <>{projectCreationDialogs}<div ref={rootRef} className="dsh-wt_section dsh-wt_rail" style={railStyle}>
         {navigationError && <div role="alert" style={{ padding: 8, whiteSpace: 'normal' }}>{navigationError}</div>}
         <div className="dsh-wt_divider" />
         <div className="dsh-wt_railBox">
@@ -2588,7 +2666,7 @@ function buildCustomLayoutPrompt(req: string): string {
               ))
             : <span className="dsh-wt_railIcon">≡</span>}
         </div>
-      </div>
+      </div></>
     )
   }
 
@@ -2682,59 +2760,7 @@ function buildCustomLayoutPrompt(req: string): string {
         </div>
       )}
 
-      {addOpen && <div className="dsh-wt_popBackdrop" onClick={() => { invalidatePickState(); setAddOpen(false) }} />}
-      {addOpen && (
-        <div className="dsh-wt_menu dsh-wt_add dsh-wt_pop" style={{ position: 'fixed', left: popLeft, top: popTop, width: 360, zIndex: 80 }}>
-          <span className="dsh-wt_menuLabel">{t('add.chooseLayout')}</span>
-          <div className="dsh-wt_presets">
-            {PRESET_DEFS.map((def) => (
-              <button
-                key={def.id}
-                type="button"
-                className="dsh-wt_preset"
-                data-on={wsPreset === def.id ? 'true' : 'false'}
-                onClick={() => { setWsPreset(def.id); setWsError(false) }}
-              >
-                {presetThumb(def.id)}
-              </button>
-            ))}
-            <button type="button" className="dsh-wt_preset dsh-wt_presetAdd" title={t('customLayout.addTitle')}
-              onClick={() => { invalidatePickState(); setAddOpen(false); setCustomOpen(true) }}>
-              <span className="dsh-wt_presetAddIcon" aria-hidden>＋</span>
-              <span className="dsh-wt_presetAddText">{t('customLayout.add')}</span>
-            </button>
-          </div>
-          <div className="dsh-wt_addForm">
-            <input type="text" placeholder={t('add.layoutNamePh')} value={wsName}
-              onChange={(e) => { setWsName(e.target.value); setWsError(false) }} />
-            <div className="dsh-wt_addFolderRow">
-              <span className="dsh-wt_customLabel">{t('add.folderParent')}</span>
-              <span className={'dsh-wt_addFolderPath' + (wsFolderParent ? '' : ' dsh-wt_addFolderPathNone')} title={wsFolderParent || ''}>
-                {wsFolderParent || t('add.folderNone')}
-              </span>
-              <button type="button" className="dsh-wt_bindFolderChange" disabled={pickBusy}
-                onClick={() => { pickFolder('add', (p) => { setWsFolderParent(p); setWsFolderError(false) }); setWsError(false) }}>
-                {pickBusy ? t('add.folderPicking') : t('add.folderPick')}
-              </button>
-              <button type="button" className="dsh-wt_bindFolderChange" title={t('add.folderManual')}
-                onClick={() => { setManualPathFor(manualPathFor === 'add' ? null : 'add'); setPickErr((prev) => ({ ...prev, add: '' })) }}>{t('add.folderManual')}</button>
-            </div>
-            {pickBusy && <p className="dsh-wt_folderPickHint">{t('add.folderPickerHint')}</p>}
-            {manualPathFor === 'add' && (
-              <div className="dsh-wt_addFolderRow">
-                <input type="text" className="dsh-wt_manualPathInput" placeholder={t('add.folderManualPh')} value={manualPathText}
-                  onChange={(e) => setManualPathText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') applyManualPath('add') }} />
-                <button type="button" className="dsh-wt_bindFolderChange" onClick={() => applyManualPath('add')}>{t('add.folderManualOk')}</button>
-              </div>
-            )}
-            {pickErr.add && <p className="dsh-wt_addError">{pickErr.add}</p>}
-            <button type="button" className="dsh-wt_addBtn" onClick={saveLayout}>{t('add.layoutSave')}</button>
-          </div>
-          {wsError && <p className="dsh-wt_addError">{t('add.layoutInvalid')}</p>}
-          {wsFolderError && <p className="dsh-wt_addError">{t('add.folderRequired')}</p>}
-        </div>
-      )}
+      {projectCreationDialogs}
 
       {iconPick && (
         <>
@@ -3066,27 +3092,6 @@ function buildCustomLayoutPrompt(req: string): string {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {customOpen && <div className="dsh-wt_popBackdrop" style={{ zIndex: 83 }} onClick={() => setCustomOpen(false)} />}
-      {customOpen && (
-        <div className="dsh-wt_menu dsh-wt_pop" style={{ position: 'fixed', left: popLeft, top: popTop, width: 340, zIndex: 84 }}>
-          <span className="dsh-wt_menuLabel">✨ {t('customLayout.title')}</span>
-          <textarea
-            className="dsh-wt_customLayoutInput"
-            autoFocus
-            rows={6}
-            placeholder={t('customLayout.placeholder')}
-            value={customLayoutText}
-            onChange={(e) => setCustomLayoutText(e.target.value)}
-          />
-          <button type="button" className="dsh-wt_customLayoutBtn" onClick={copyCustomLayout}>{t('customLayout.copy')}</button>
-          {copiedToast && (
-            <p className={'dsh-wt_customLayoutToast' + (copiedToast === 'fail' ? ' dsh-wt_customLayoutToastFail' : '')}>
-              {copiedToast === 'ok' ? '✅ ' + t('customLayout.copied') : '⚠️ ' + t('customLayout.copyFail')}
-            </p>
-          )}
         </div>
       )}
 

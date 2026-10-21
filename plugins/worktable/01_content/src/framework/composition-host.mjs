@@ -27,7 +27,7 @@ export function mountCompositions(ctx){
     let input;try{input=JSON.parse(text)}catch{throw new CompositionError('invalid-request','JSON格式无效。')}
     if(!input||typeof input!=='object'||Array.isArray(input))throw new CompositionError('invalid-request','请求无效。')
     runtime.lifetime.check()
-    switch(input.action){case 'get':return runtime.service.get(input.appId);case 'save':return runtime.service.save(input);case 'preview':return runtime.service.preview(input);case 'activate':return runtime.service.activate(input);default:throw new CompositionError('unknown-action','不支持此操作。')}
+    switch(input.action){case 'state-read':return runtime.service.readState(input.viewId);case 'state-save':return runtime.service.updateState(input);case 'get':return runtime.service.get(input.appId);case 'save':return runtime.service.save(input);case 'preview':return runtime.service.preview(input);case 'activate':return runtime.service.activate(input);default:throw new CompositionError('unknown-action','不支持此操作。')}
    });send(200,value)
   }catch(error){send(error.status??500,{code:error.code??'composition-failed',error:error.status?error.message:'组合应用操作失败；原记录保留。'})}
  }}),'worktable authenticated authoring API')

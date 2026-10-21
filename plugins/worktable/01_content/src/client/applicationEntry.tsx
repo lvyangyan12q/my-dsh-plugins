@@ -1,3 +1,4 @@
+import {CompositionEditor} from './compositionEditor'
 import {TaskHandoff} from './taskHandoff'
 import {CapabilityManager} from './rolePanel'
 import {useEffect,useRef,useState} from 'react'
@@ -18,6 +19,7 @@ function contentOf(application:any,instance:any,view:any):ApplicationContent{ret
 /** Module-local chooser; no application has layout or native-session ownership. */
 export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCancel:()=>void}){
   const [snapshot,setSnapshot]=useState<any>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false)
+  const [composing,setComposing]=useState(false)
   const [name,setName]=useState(''),[id,setId]=useState(''),[url,setUrl]=useState('')
   const mounted=useRef(true)
   useEffect(()=>{mounted.current=true;request().then(s=>{if(mounted.current)setSnapshot(s)}).catch(e=>{if(mounted.current)setError(e.message)});return()=>{mounted.current=false}},[])
@@ -30,8 +32,10 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
     if(!view)view=await request({action:'view',instanceId:instance.id})
     if(mounted.current)props.onOpen(contentOf(application,instance,view))
   })}
+  if(composing)return <CompositionEditor projectId={props.projectId} onCancel={()=>setComposing(false)} onOpen={props.onOpen}/>
   return <section className="dsh-wt_appPanel" aria-label="选择应用">
     <div className="dsh-wt_appLine"><strong>应用</strong><button type="button" onClick={props.onCancel}>返回模块</button></div>
+    <button type="button" className="dsh-wt_appPrimary" onClick={()=>setComposing(true)}>组合应用与模板</button>
     <p className="dsh-wt_appHint">{props.projectId?'在当前项目继续或明确新建实例。':'先使用应用，实例将标记为未归属项目。'}</p>
     {!snapshot&&!error&&<p role="status">正在读取应用…</p>}
     {snapshot?.applications.map((application:any)=>{

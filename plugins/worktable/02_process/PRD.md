@@ -28,3 +28,11 @@ register校验稳定应用ID、协议版本和独立http/https入口。createIns
 resume是显式使用动作，更新最近使用顺序而不新建实例/视图；latest、resolveView等查询保持只读。继续入口、组件首次挂载和缓存布局激活接入resume。容器标题固定为中性“应用视图”，归属由实例徽标展示。
 
 应用组件按实例与视图稳定key挂载；每轮读取有独立AbortController和generation，动作只有解析身份匹配当前目标才开放。旧响应即使运输层忽略取消也不得覆盖新目标；新增视图/选择器回包需再次检查布局、窗格和原标签身份。组件回归使用真实React renderer断言可见网页和用户按钮目标；旧85140ab源码可复现失败，修复源码通过。实际Host浏览器验收仍由主任务继续记录。
+
+## 14组合模块与实例展示状态（源码候选，正式安装验收待实施票）
+
+组合配方草稿/运行定义仍使用applications.v1.json同一Host原子所有者（12引入schema3）。14在用户实际更改筛选/选中时增加presentationStates：{instanceId,revision,scopes:{[connectionId或moduleId]:{filters,selectedId}}}；首次写入后schema4，更新配方、停用和恢复均不得降回schema3。通过登记view推导实例，未知/移除scope拒绝新写；移除页面的旧视图显示不可用，不转到第N页。读取过滤掉已移除scope但保留耐久记录，关闭视图不删状态。旧0.8支持到schema3，遇4必须拒绝并保留原文件，不能倒灌旧profile。
+
+布局仍只有原Worktable splitStore；窗格内组合renderer不调用父row/index改外层内容。模板复制去权限/角色/路径/原生会话等运行身份。来源元数据发现不授权，运行资源调用带consumer view并校验来源，显式read-share另走现有资源所有者；业务记录与原生Session仍由原owner管理。sameinstance两视图通过Host OCC和instance-scoped成功刷新通知共享状态；不承诺跨浏览器实时push。过滤草稿在卡片中显式应用，失败保留输入和旧运行状态。
+
+原生对话模块仅展示/导航同角色Session，不挂第二composer。新custom产物由用户明确选择既有文件，经认证读后opaque sandbox srcDoc承载，未授权同origin/原生API；原legacy iframe不因此被重新宣称隔离。生成/追改15另需稳定归属与显式产物应用，不从本模块绕过任务准入。

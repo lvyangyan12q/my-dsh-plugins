@@ -5,7 +5,7 @@ export function describeProtocol():ProtocolDescriptor
 export function requireProtocol(value:unknown,required?:readonly string[]):ProtocolDescriptor
 export interface ProtocolService {describe():ProtocolDescriptor}
 export interface ApplicationDefinition {id:string;title:string;version:string;protocolVersion:1;kind:'deep';views:{id:string;title:string}[]}
-export interface DeepApplication extends ApplicationDefinition {enabled?:boolean;lifecycleRevision?:number}
+export interface DeepApplication extends ApplicationDefinition {composition?:boolean;enabled?:boolean;lifecycleRevision?:number}
 export interface WebApplication {id:string;title:string;version:string;protocolVersion:1;kind:'web';url:string;enabled?:boolean;lifecycleRevision?:number}
 export type Application=DeepApplication|WebApplication
 export interface ApplicationInstance {id:string;appId:string;projectId:string|null;revision:number}
@@ -25,14 +25,16 @@ export interface CapabilityDirectory {contribute(appId:string,definitions:Privat
 export interface RoleDefinition {id:string;title:string;agent:CapabilityRef&{kind:'agent'};creation:{cwd:string};skills?:(CapabilityRef&{kind:'skill'})[]}
 export interface RoleDirectory {contribute(appId:string,definitions:RoleDefinition[]):Disposer}
 export interface ResourceValue {revision:string}
+export interface ResourceDescriptor {title:string;recordsField?:string}
 export interface ResourceOwner<T extends ResourceValue=ResourceValue> {
+ descriptor?:ResourceDescriptor
  appId:string;resourceId:string;actions:string[]
  read(ownerInstanceId:string,payload?:unknown):T|Promise<T>
  mutate?(ownerInstanceId:string,action:string,payload:unknown,expectedRevision:string,authorize:()=>Promise<void>):Promise<T>
  taskContext?(value:T,selection:unknown):{title:string;text:string}|Promise<{title:string;text:string}>
  withTaskLease?<R>(operation:()=>Promise<R>):Promise<R>
 }
-export interface ResourceDirectory {register<T extends ResourceValue>(owner:ResourceOwner<T>):Disposer}
+export interface ResourceDirectory {register<T extends ResourceValue>(owner:ResourceOwner<T>):Disposer;catalog?():Promise<{appId:string;appTitle:string;instanceId:string;projectId:string|null;viewId:string;resourceId:string;descriptor?:ResourceDescriptor}[]>}
 export interface TaskContextRef {resourceId:string;selection?:unknown}
 export interface TaskFacade {prepare(input:{roleId:string;text:string;contexts?:TaskContextRef[]}):Promise<unknown>}
 export interface RoleFacade {read(roleId:string):Promise<unknown>;ensure(roleId:string,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;retry(roleId:string,sessionId:string,revision:number):Promise<unknown>;replace(roleId:string,sessionId:string,revision:number,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;open(roleId:string,sessionId:string,revision:number):Promise<void>}
@@ -70,7 +72,11 @@ export type CompositionModuleType='website'|'custom'|'conversation'|'animation'|
 export interface CompositionRecipe {title:string;version:string;layout:'vertical'|'grid'|'split';pages:{id:string;title:string;modules:{id:string;type:CompositionModuleType;config?:Record<string,unknown>;connectionId?:string;roleId?:string}[]}[];connections?:{id:string;viewId:string;resourceId:string}[];roles?:RoleDefinition[]}
 export interface CompositionRecord {appId:string;owner:'worktable-compositions';revision:number;draft:CompositionRecipe;running?:CompositionRecipe}
 export interface CompositionRevision {appId:string;expectedRevision:number}
+export interface CompositionPresentationState {instanceId:string;revision:number;scopes:Record<string,{filters:Record<string,string>;selectedId:string|null}>}
+export function copyCompositionTemplate(recipe:CompositionRecipe):CompositionRecipe
 export interface CompositionDirectory {
+ readState(viewId:string):Promise<CompositionPresentationState>
+ updateState(input:{viewId:string;expectedRevision:number;scopeId:string;filters:Record<string,string>;selectedId:string|null}):Promise<CompositionPresentationState>
  list():Promise<CompositionRecord[]>
  get(appId:string):Promise<CompositionRecord>
  save(input:CompositionRevision&{recipe:CompositionRecipe}):Promise<CompositionRecord>

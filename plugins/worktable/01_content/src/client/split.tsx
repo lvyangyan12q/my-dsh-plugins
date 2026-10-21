@@ -1,3 +1,4 @@
+import {CompositionEditor} from './compositionEditor'
 import { captureAnnotationTarget, resolveAnnotationTarget, type AnnotationTarget } from './annotationTarget'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { parentPathOf } from './pathutil'
@@ -3020,6 +3021,7 @@ function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number; layoutI
  * 按窗位宽高比自适应排列：宽窗横排 4 连 / 方窗 2×2 / 竖窗竖排。 */
 function PanePicker(props: { row: PaneRow; index: number; layoutId: string; paneId: string }) {
   const [applications, setApplications] = useState(false)
+  const [composing, setComposing] = useState(false)
   const [mode, setMode] = useState<'row' | 'grid' | 'col'>('grid')
   const hostRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
@@ -3039,6 +3041,11 @@ function PanePicker(props: { row: PaneRow; index: number; layoutId: string; pane
   const pick = (content: SplitContent) => splitStore.openTab(props.row, props.index, content)
   const availableProjects = splitEnv?.custom?.getProjects?.() ?? []
   const currentProject = availableProjects.some(p => p.id === props.layoutId) ? props.layoutId : null
+  if (composing) return <CompositionEditor projectId={currentProject} onCancel={() => setComposing(false)} onOpen={next => {
+    if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
+    const target = props.row === 'left' ? splitStore.spec.left : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
+    if (target?.id === props.paneId) pick(next)
+  }}/>
   if (applications) return <ApplicationPicker projectId={currentProject} onCancel={() => setApplications(false)} onOpen={(next) => {
     if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
     const target = props.row === 'left' ? splitStore.spec.left : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
@@ -3046,6 +3053,7 @@ function PanePicker(props: { row: PaneRow; index: number; layoutId: string; pane
   }} />
   return (
     <div ref={hostRef} className={'dsh-wt_panePicker dsh-wt_panePicker-' + mode}>
+      <button type="button" className="dsh-wt_panePick" onClick={() => setComposing(true)}><span aria-hidden>＋</span>组合应用 / 模板</button>
       <button type="button" className="dsh-wt_panePick" onClick={() => setApplications(true)}><span aria-hidden>▦</span>应用</button>
       <button type="button" className="dsh-wt_panePick" onClick={() => pick({ kind: 'builtin', type: 'browser' })}>
         <span aria-hidden>🌐</span>{T('pane.browser')}

@@ -1,9 +1,10 @@
+import {CompositionView} from './compositionEditor'
 import {describeProtocol} from '../sdk.mjs'
 import {TaskPanel,createTaskFacade} from './taskPanel'
 import {RolePanel,createRoleFacade} from './rolePanel'
 import {Component,useMemo,useSyncExternalStore,type ComponentType,type ReactNode} from 'react'
 
-export type ApplicationViewProps={application:{id:string;title:string;kind:'deep';views:{id:string;title:string}[]};instance:{id:string;appId:string;projectId:string|null;revision:number};view:{id:string;instanceId:string;type:string};roles?:ReturnType<typeof createRoleFacade>;tasks?:ReturnType<typeof createTaskFacade>}
+export type ApplicationViewProps={application:{id:string;title:string;kind:'deep';composition?:boolean;version?:string;views:{id:string;title:string}[]};instance:{id:string;appId:string;projectId:string|null;revision:number};view:{id:string;instanceId:string;type:string};roles?:ReturnType<typeof createRoleFacade>;tasks?:ReturnType<typeof createTaskFacade>}
 
 /** Trusted plugin service. Applications own components, state and data; no host context is passed. */
 class ApplicationViews {
@@ -32,7 +33,7 @@ export function DeepApplicationView(props:ApplicationViewProps&{reloadKey:number
   useSyncExternalStore(applicationViews.subscribe,applicationViews.getSnapshot,applicationViews.getSnapshot)
   const roles=useMemo(()=>createRoleFacade(props.instance.id),[props.instance.id])
   const tasks=useMemo(()=>createTaskFacade(props.view.id),[props.view.id])
-  const View=applicationViews.resolve(props.application.id,props.view.type)
+  const View=props.application.composition?CompositionView:applicationViews.resolve(props.application.id,props.view.type)
   if(!props.application.views.some(view=>view.id===props.view.type)||!View)return <p role="alert">应用视图暂不可用，请启用应用插件后重试；实例记录保留。</p>
-  return <ViewBoundary key={props.view.id+':'+props.reloadKey}><div style={{height:"100%",display:"flex",flexDirection:"column",minHeight:0}}><RolePanel key={props.instance.id} instanceId={props.instance.id}/><TaskPanel key={props.view.id} viewId={props.view.id} instanceId={props.instance.id}/><div style={{flex:1,minHeight:0,overflow:"auto"}}><View application={props.application} instance={props.instance} view={props.view} roles={roles} tasks={tasks}/></div></div></ViewBoundary>
+  return <ViewBoundary key={props.view.id+':'+props.reloadKey}><div style={{height:"100%",display:"flex",flexDirection:"column",minHeight:0}}><RolePanel key={props.instance.id} instanceId={props.instance.id}/><TaskPanel key={props.view.id} viewId={props.view.id} instanceId={props.instance.id}/><div style={{flex:1,minHeight:0,overflow:"auto"}}><View application={props.application} instance={props.instance} view={props.view} roles={roles} tasks={tasks} reloadKey={props.reloadKey}/></div></div></ViewBoundary>
 }

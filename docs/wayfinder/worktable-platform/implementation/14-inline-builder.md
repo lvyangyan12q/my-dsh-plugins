@@ -4,7 +4,7 @@ title: 模块内编辑与模板搭建
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
 status: open
-assignee: null
+assignee: continuation_authoring
 blocked_by: [worktable-framework-12, worktable-framework-13]
 ---
 
@@ -27,3 +27,25 @@ blocked_by: [worktable-framework-12, worktable-framework-13]
 
 - [12](12-composed-authoring.md)
 - [13](13-presentation.md)
+
+## 2026-10-21源码实施（真实安装UI待验，保持open）
+
+- 窗格空态新增组合应用/模板，应用目录可继续草稿；Editor在当前模块卡片内选类型/来源/映射/角色/主题，保存、预览和显式启用分离。composition:true走同一DeepApplicationView/实例模型的通用renderer，复用原RolePanel/TaskPanel，保留原窗格网页/动画/资源/终端/自定义入口。
+- 新公开composition-state-v1：state-read/state-save由已登记consumer view推导instance，按稳定connectionId或moduleId作用域共享筛选/选择；OCC、冷恢复、未知view/scope拒绝。首次状态写入才用applications schema4；schema1/2/3继续读，旧0.8不支持4应拒绝而非覆盖。配置保存/停用后保持schema4，未移动业务数据。
+- 资源catalog只返回登记owner/view/resource标识和可选ResourceDescriptor(title/recordsField)，不读业务记录或建grant。未声明元数据者只显示引用标识，手工配置记录字段，不猜应用schema。运行请求以当前consumer view调用resource，复验grant consumer与所选来源所属实例匹配；缺权限时由用户显式read-share，未授写权。模块筛选在卡片中编辑并显式应用，同实例其余视图刷新同一Host状态。
+- website保留sandbox/no-referrer与外部打开；custom仅载入用户选定既有HTML为opaque srcDoc（allow-scripts且无same-origin）；animation实际图片/GIF/video；resources卡片内真实目录/文件列表与局部导航；conversation显示绑定事实并显式创建/打开同一原生会话，无另建输入框。AI生成/追改、附件和完整内嵌标题栏不由此票宣称完成。
+- 公开copyCompositionTemplate只复制结构/展示映射，清除connections、roles、运行身份、HTML/URL与路径。稳定page/module/instance/view保持；旧异步preview不能覆盖后来目标；后端先存后发布。已登记合法70字符资源与公共Agent引用通过实际owner/能力校验，组合自身id仍64，外部引用沿80字符合同。
+- 折叠原生侧栏时插件自身创建项目/自定义布局弹窗提到rail/wide共享分支，不改原生/强展开；窄屏尺寸钳制，组合输入Escape不关闭。自动composition事件仅辅助，未新增物理IME通过声明。
+
+### RED/GREEN与当前验证范围
+
+1. 公开CompositionDirectory state-read缺方法RED→同实例两view共享/跨项目隔离/OCC/冷恢复GREEN。
+2. SDK模板复制缺函数RED→去权限/路径/原生身份与feature GREEN。
+3. 实际客户端工厂折叠菜单点击添加项目不渲染RED→共享插件弹窗GREEN，并验证组合Escape不关闭、正常Escape关闭。
+4. 模块Editor缺入口RED→模块原位网站配置/保存/preview无启用/显式启用GREEN；迟到旧app preview可覆盖新app先RED→代际复验GREEN。
+5. 合法长外部资源引用被误拒绝RED→沿公开80字符身份及真实资源/公共Agent依赖校验GREEN。
+6. 实际bundle factory曾因顶层createPresentation在求值阶段触发React要求而RED；改为实际组件挂载才惰性初始化控制组件，严格ModuleLoader/external门禁GREEN，未放宽门禁。
+
+npm ci按锁安装58项；源码全部204项GREEN、零skip（WORKTABLE_NATIVE_RC2_ROOT指向独立未经补丁rc.2源码，首轮2项未设该变量的skip不计已验，正确变量复跑后均执行）。开发bundle build/check、实际工厂、现有project-navigation-installed及collapsed-project回归通过。这些是源码/模拟原生DOM辅助证据，未打包/部署/重启3091/改3080，正式UI仍由root最终唯一pack安装后验收。新版本候选曾预留0.8.1；如18先冻结0.8.2，按集成最终分配更高版本，冻结资产不覆盖。
+
+唯一pack门禁新增12的compositions/composition-http、16的storage-refusal-http及14公开state/template/source/reference/editor/runtime测试；collapsed-project针对安装后的最终bundle追加门禁，不以源码字符串测试数组。完整framework spec与15/17/19保持原未验范围。

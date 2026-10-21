@@ -1,6 +1,6 @@
 /** Public, browser-safe v1 compatibility handshake. No native execution or state access. */
 export const PROTOCOL_VERSION=1
-const features=Object.freeze(['application-registration-v1','instance-view-v1','resource-reference-v1','instance-role-v1','application-private-capability-v1','prepared-task-v1','application-lifecycle-v1','presentation-components-v1','composed-authoring-v1'])
+const features=Object.freeze(['application-registration-v1','instance-view-v1','resource-reference-v1','instance-role-v1','application-private-capability-v1','prepared-task-v1','application-lifecycle-v1','presentation-components-v1','composed-authoring-v1','composition-state-v1','resource-catalog-v1'])
 export function describeProtocol(){return {protocolVersion:PROTOCOL_VERSION,features:[...features]}}
 export function requireProtocol(descriptor,required=[]){
  if(!descriptor||descriptor.protocolVersion!==PROTOCOL_VERSION||!Array.isArray(descriptor.features)||descriptor.features.some(value=>typeof value!=='string'))throw new Error('工作台接入协议不兼容；请安装支持协议1的工作台，原有数据保留。')
@@ -55,4 +55,15 @@ export function createPresentation(React){
   return h('div',{style:{...container,display:'flex',flexWrap:'wrap',gap:10}},fields.map(item=>h('label',{key:item.id,style:{display:'grid',gap:4,minWidth:0,flex:'1 1 140px'}},item.label,item.options?h('select',{'aria-label':item.label,value:values[item.id]??'',onChange:event=>onChange?.({...values,[item.id]:event.target.value}),style:{...container,width:'100%',padding:6,color:'inherit',background:'transparent',border:'1px solid color-mix(in srgb,currentColor 28%,transparent)',borderRadius:6}},item.options.map(option=>h('option',{key:option.value,value:option.value},option.label))):h('input',{'aria-label':item.label,value:values[item.id]??'',maxLength:item.maxLength??200,onChange:event=>onChange?.({...values,[item.id]:event.target.value}),style:{...container,width:'100%',padding:6,color:'inherit',background:'transparent',border:'1px solid color-mix(in srgb,currentColor 28%,transparent)',borderRadius:6}}))))
  }
  return Object.freeze({Surface,State,Stats,List,Detail,Filters})
+}
+
+/** Copy a presentation structure, not access, paths, payloads or native runtime identities. */
+export function copyCompositionTemplate(recipe){
+ if(!recipe||!Array.isArray(recipe.pages))throw new TypeError('模板结构无效。')
+ const fields=value=>Array.isArray(value)?value.map(item=>Object.fromEntries(['id','label','field','aggregate','value'].filter(key=>typeof item?.[key]==='string').map(key=>[key,item[key]]))):undefined
+ return {title:recipe.title,version:'1.0.0',layout:recipe.layout,pages:recipe.pages.map(page=>({id:page.id,title:page.title,modules:page.modules.map(module=>{
+ const config={};for(const key of ['mapping'])if(module.config?.[key]&&typeof module.config[key]==='object'){config[key]=Object.fromEntries(['id','title','description','selectionLabel'].filter(name=>typeof module.config[key][name]==='string').map(name=>[name,module.config[key][name]]))}
+ for(const key of ['metrics','fields'])if(Array.isArray(module.config?.[key]))config[key]=fields(module.config[key]);if(['inherit','light','dark'].includes(module.config?.theme))config.theme=module.config.theme
+ return {id:module.id,type:module.type,config}
+ })})),connections:[],roles:[]}
 }

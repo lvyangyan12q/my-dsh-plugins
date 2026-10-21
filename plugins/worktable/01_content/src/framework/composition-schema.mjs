@@ -2,6 +2,7 @@ import {isAbsolute} from 'node:path'
 export class CompositionError extends Error {constructor(code,message,status=400){super(message);this.code=code;this.status=status}}
 const fail=(message)=>{throw new CompositionError('invalid-recipe',message)}
 const id=value=>typeof value==='string'&&/^[a-z][a-z0-9.-]{0,63}$/.test(value)
+const externalId=value=>typeof value==='string'&&/^[a-z][a-z0-9.-]{0,79}$/.test(value)
 const text=value=>typeof value==='string'&&value.trim().length>0&&value.length<=4096
 export const MODULE_TYPES=Object.freeze(['website','custom','conversation','animation','resources','statistics','list','detail','filter'])
 export function normalizeRecipe(input){
@@ -10,8 +11,8 @@ export function normalizeRecipe(input){
  for(const page of recipe.pages){if(!page||!id(page.id)||pages.has(page.id)||!text(page.title)||!Array.isArray(page.modules)||page.modules.length>32)fail('页面标识、名称或模块无效。');pages.add(page.id)
  for(const module of page.modules){if(!module||!id(module.id)||modules.has(module.id)||!MODULE_TYPES.includes(module.type)||module.config!==undefined&&(!module.config||typeof module.config!=='object'||Array.isArray(module.config)))fail('模块标识必须唯一，且类型与配置有效。');modules.add(module.id)}}
  for(const name of ['connections','roles']){recipe[name]??=[];if(!Array.isArray(recipe[name])||recipe[name].length>32)fail('数据或角色引用无效。')}
- const connections=new Set();for(const ref of recipe.connections){if(!ref||!id(ref.id)||connections.has(ref.id)||!text(ref.viewId)||!id(ref.resourceId)||Object.keys(ref).some(key=>!['id','viewId','resourceId'].includes(key)))fail('数据连接必须明确来源视图和只读资源。');connections.add(ref.id)}
- const roles=new Set();for(const role of recipe.roles){if(!role||!id(role.id)||roles.has(role.id)||!text(role.title)||!role.agent||!['managed','application'].includes(role.agent.source)||!id(role.agent.id)||role.agent.kind!=='agent'||!role.creation||typeof role.creation.cwd!=='string'||!isAbsolute(role.creation.cwd))fail('角色必须明确Agent来源。');roles.add(role.id)}
+ const connections=new Set();for(const ref of recipe.connections){if(!ref||!id(ref.id)||connections.has(ref.id)||!text(ref.viewId)||!externalId(ref.resourceId)||Object.keys(ref).some(key=>!['id','viewId','resourceId'].includes(key)))fail('数据连接必须明确来源视图和只读资源。');connections.add(ref.id)}
+ const roles=new Set();for(const role of recipe.roles){if(!role||!id(role.id)||roles.has(role.id)||!text(role.title)||!role.agent||!['managed','application'].includes(role.agent.source)||!externalId(role.agent.id)||role.agent.kind!=='agent'||!role.creation||typeof role.creation.cwd!=='string'||!isAbsolute(role.creation.cwd))fail('角色必须明确Agent来源。');roles.add(role.id)}
  for(const page of recipe.pages)for(const module of page.modules){if(module.connectionId!==undefined&&!connections.has(module.connectionId)||module.roleId!==undefined&&!roles.has(module.roleId))fail('模块引用了不存在的数据或角色。')}
  if(JSON.stringify(recipe).length>196608)fail('组合应用配置过大。');return recipe
 }
