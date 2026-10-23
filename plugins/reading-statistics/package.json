@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-reading-statistics",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "description": "Independent reading records with shared Workbench display modules",
   "main": "lib/index.js",
@@ -42,5 +42,16 @@
   "devDependencies": {
     "@deepseek-ai/dsh-personal-workbench": "file:../personal-workbench",
     "dsh-worktable": "file:../worktable/01_content"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-host-webserver": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-storage-domain": {
+      "optional": true
+    }
   }
 }
