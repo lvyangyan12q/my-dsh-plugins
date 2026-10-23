@@ -6,4 +6,8 @@
 
 v2使用显式Node子环境和官方公开home/agents解析探针，真实空profile原生UI通过；Worktable094手动搭建/关联与095目录补修通过。095首次错误store安装保持失败停止记录，再使用同一已有owned store重试成功；9文件一致、peer0、12份选定非空数据路径不变。两个已知失败不从交接记录抹去。
 
-固定485b38c→df5f918两轴代码审查均无新增actionable finding；这不是完整实页交付。Notes021仅冻结未安装；Reading021发布前发现Windows路径import问题正在修正；新alpha.2宿主AI未验，没有复制模型凭据。主3091仍094、正式3080仍072；父19及完整spec保持OPEN，历史172与主STATUS不由本文修改。
+固定485b38c→df5f918两轴代码审查均无新增actionable finding；这不是完整实页交付。Notes/Reading021冻结后已尝试官方安装，包内字节核对通过但最终peer gate失败并保持宿主停止，未作UI或AI验收；新alpha.2宿主AI未验，没有复制模型凭据。主3091仍094、正式3080仍072；父19及完整spec保持OPEN，历史172与主STATUS不由本文修改。
+
+后续source635c722修复Reading发布器Windows路径，28项源码与两宿主public类型门禁通过，最终021包已冻结（哈希见JSON）。官方CLI完成Notes021和Reading021 add、9/5/6文件字节核对后，Reading三个必需host-provided peer缺失使最终peer gate拒绝；宿主保持停止。data/sessions/storages、正式4配置与父仓库2hook/config哈希保持。Reading022仅做新的metadata修正，不能覆盖021；本阶段不称021实际支持。
+
+另有实际095画布标注：点击位置、填写合成要求、明确确认后注入原生输入，保留project/pane/app/instance/view稳定目标；没有发送、0模型调用。原生未发送草稿重启恢复尚未验，注入不等于AI执行通过。父19保持OPEN。

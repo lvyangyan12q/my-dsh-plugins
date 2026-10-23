@@ -47,11 +47,11 @@
     "interpretation": "Read-only code review and source tests are distinct from installed UI/AI acceptance"
   },
   "remaining": [
-    "Notes0.2.1 archive frozen; actual installation/UI pending",
-    "Reading0.2.1 release entry found Windows raw-drive import issue before publication; fix pending at this checkpoint",
-    "Native AI/Skill/approval/Stop/generation on new alpha.2 runtime not validated; no model credentials copied",
-    "Formal3080 deployment and full19 closure remain pending",
-    "Historical172 mappings, main STATUS and full spec are not modified by this supplement"
+    "Reading021 archive generation now passed after635c722 Windows fix, but official final installation peer gate failed and host remained stopped; Reading022 correction pending",
+    "Notes021 official add/byte proof is not accepted installation/UI support when combined final peer gate failed",
+    "New alpha.2 native AI/Skill/approval/Stop/generation unverified; model credential copying not authorized/performed",
+    "Annotation095 native input injection passed; unsent draft recovery after restart unverified",
+    "Formal3080 deployment/full19 closure remain pending; historical172/mainSTATUS untouched"
   ],
   "proofFiles": [
     {
@@ -158,6 +158,72 @@
       "file": "worktable-alpha2-v2-retry095-1792739498197/protected-after-ready.private.json",
       "sha256": "df0021311b7b67f9461f5b4f3ac9062bf46c8f621e3d6ad6aad0fb956cb0f3f2",
       "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-annotation095-unsent.private.ax.txt",
+      "sha256": "4637b0480747cd6dcaa563baefaac93e9840f834561800bc974c5581286c4369",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-annotation095-unsent.private.png",
+      "sha256": "b24f6c286fecdcd2d1d9868f818e081a1ed8b70f40ed48510a05ffe050989acc",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-reading-author-pack021-windows.private.log",
+      "sha256": "9b797b2c2ea9d13ea3d6e0e828686a318d2e56fdaaef79fcccd963fd83b32e46",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-consumers021-1792741057316/install-operation.private.json",
+      "sha256": "edacb5eeaf9dc17cdf0eece5771d1e341969aa8f897539a40078702562e1857f",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-consumers021-1792741057316/installed-byte-proof-peer-rejected.private.json",
+      "sha256": "e34f5365860330a799e991d5e4a306e75bc49b3343332595dd8ffa5e019855c2",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-consumers021-1792741057316/peers.private.log",
+      "sha256": "5ccc5bae172d741fe95505bc7000cd25f79df18dd6dcf766b0db629c1128a796",
+      "contentsCommitted": false
     }
-  ]
+  ],
+  "annotation095": {
+    "status": "actual injection to native unsent composer only",
+    "sequence": [
+      "Clicked canvas location",
+      "Entered synthetic requirement",
+      "Explicitly confirmed injection to native input"
+    ],
+    "stableTargetFields": [
+      "projectId",
+      "paneId",
+      "appId",
+      "instanceId",
+      "viewId"
+    ],
+    "sent": false,
+    "modelCalls": 0,
+    "unsentDraftRestoredAfterRestart": "not verified"
+  },
+  "consumer021": {
+    "sourceCorrection": "635c7222b2994368ecdc6d91dcfe0f043d745613 Windows release-runner file URL fix; Reading28 source checks and two-host public types passed",
+    "frozenArchives": {
+      "notes": "f8f301153eeb78a3d9ee572fb111aa509b3479911d167b98f73187c28cfa5251",
+      "reading": "a2ce88f8aad3150bc5c8d35dcab0553020605c5efb93a107b69cecb9a162a747"
+    },
+    "officialAdd": "Notes021 and Reading021 add completed; Worktable/Notes/Reading installed9/5/6files byte checks passed",
+    "finalResult": "failed-stopped: Reading requires three host-provided native peers; pnpm peer gate rejected installation",
+    "currentlyRunning": false,
+    "uiValidated": false,
+    "aiValidated": false,
+    "preservation": {
+      "worktableDataSessionsStorages": true,
+      "formalFourConfigFiles": true,
+      "parentTwoHookConfigFiles": true
+    },
+    "next": "Reading022 minimal optional-peer metadata correction pending; never overwrite frozen021"
+  }
 }
