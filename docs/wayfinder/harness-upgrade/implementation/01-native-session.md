@@ -7,7 +7,8 @@ status: in-progress
 assignee: null
 blocked_by: []
 implementation_status: implemented
-installed_acceptance: pending
+acceptance_status: pending-installed-native
+target: 0.2.1-rc.3
 ---
 
 # rc.3 原生角色会话公开校验与创建恢复

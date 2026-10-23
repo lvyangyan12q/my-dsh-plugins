@@ -2,8 +2,8 @@
 id: harness-rc3-rich-input
 title: rc.3 原生富文本草稿追加适配
 parent: worktable-ai-framework-spec
-labels: [implementation]
-status: open
+labels: [ready-for-agent]
+status: in-progress
 assignee: null
 blocked_by: []
 implementation_status: implemented
@@ -34,3 +34,8 @@ target: 0.2.1-rc.3
 - [ ] 完整原生对话、轨迹、问题/审批和 Stop 的 HU03 联合验收，由后续安装闭环完成。
 
 本票保持 open，直到实际安装原生验证完成；源码及单元回归通过不构成完整 HU03 完成。
+
+
+## 3097 开发检出点测
+
+2026-10-24：在官方 rc.3 的独立 home 中通过 CLI 注册集成开发检出，实际创建项目并连续两次标注。两条标注均进入同一原生草稿，首条保留、焦点正确、没有发送。一次 Ctrl+Z 没有可见变化，撤销仍为未通过。此次不是最终包验收，混合 chip、附件、跨实例、物理 IME 及完整原生执行仍待验。组合回归 304 项中 302 通过、2 个旧 rc.2 环境检查跳过。

@@ -168,7 +168,7 @@ upgrade_blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-own
 <a id="host-upgrade-requirements"></a>
 ## Harness 升级与考公接入增量（2026-10-24）
 
-本段是本规格本轮升级要求的唯一详细入口。HU 编号是既有要求的版本化复验点，不重编号、删改或新增原 User Stories 的计数，不更改原123条、172条映射或历史验收分类。所有 HU 当前均未实现或未完成 rc.3 验收。
+本段是本规格本轮升级要求的唯一详细入口。HU 编号是既有要求的版本化复验点，不重编号、删改或新增原 User Stories 的计数，不更改原123条、172条映射或历史验收分类。所有 HU 当前均未完成 rc.3 整体验收；独立适配切片的源码与点测进度见本轮实施图。
 
 | 复验点 | 本轮必须满足的行为 | 关联原故事 |
 | --- | --- | --- |
@@ -196,7 +196,7 @@ upgrade_blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-own
 ## Out of Scope
 
 - 修改原生DSH、替换原生源码或编译产物以解锁私有能力；本规格不授权切换3080或新建正式原生运行目录。
-- 本轮直接实施代码、部署、合并远程PR或发布；后续按实现工单及既有授权另行执行。
+- 规格规划本身不执行部署、合并远程 PR 或发布。用户于 2026-10-24 调用 implement-spec 后，已按[独立适配实施图](../harness-upgrade/implementation/README.md)启动公开接口修复；未决的数据接管和交互门槛仍有效，正式切换不据此自动授权。
 - 多人协作、租户系统、应用商店、云托管和商业化机制。
 - 任意数据库/API的通用低代码构建器，以及一句话自动完成任意复杂业务系统的承诺。
 - 自动改写任意跨域网页样式、绕过网页嵌入限制或默认授予网页原生权限。

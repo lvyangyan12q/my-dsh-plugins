@@ -71,3 +71,8 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 ## 旧规格与工单的 rc.3 增量记录
 
 [框架规格 HU01—HU08](../wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements)持有升级详细要求；[实施索引](../wayfinder/worktable-platform/implementation/README.md#host-upgrade-followups)映射原票。旧票的 status、blocked_by 与历史勾选继续表示原阶段，新增 followup_target/status/blocked_by 仅记录升级待办；pending-decisions 不属于可直接领取的实施前沿。当前需先解决 harness-upgrade 地图中的开放决策，随后另行发布可执行升级子票，不把闭合历史票当作新宿主已完成。
+
+
+## rc.3 独立适配实施（2026-10-24）
+
+用户已调用 implement-spec 继续实现。[本轮实施图](../wayfinder/harness-upgrade/implementation/README.md)先启动不依赖数据归属决定的原生会话、混合输入及路由生命周期切片；完整升级策略、考公历史接管与课堂合同仍按开放决策票推进。新票区分 implementation_status 与 acceptance_status，只有真实安装验收后才关闭；不改旧票的历史状态。

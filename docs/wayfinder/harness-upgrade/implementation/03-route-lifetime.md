@@ -6,6 +6,8 @@ labels: [ready-for-agent]
 status: in-progress
 assignee: null
 blocked_by: []
+implementation_status: implemented
+acceptance_status: pending-installed-native
 target: 0.2.1-rc.3
 ---
 
