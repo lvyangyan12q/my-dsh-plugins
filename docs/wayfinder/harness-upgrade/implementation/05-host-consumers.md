@@ -23,7 +23,7 @@ target: 0.2.1-rc.3
 - producer 不再仅接受旧 alpha.2 的依赖身份；从精确归档安装 SDK 与真实 rc.3 公开包，在独立目录以 `skipLibCheck=false` 编译，断言 SDK、应用和 Skill 指向同一个真实 Cordis。没有源树祖先回退、peer bypass 或替代原生声明。
 - Reading 从应用自有的最小结构合同描述可选冻结旧适配器，不再把旧 personal-workbench 生成声明/运行时作为新 SDK 构建前置；未声明任何同名上游替代模块。原有可选旧适配行为保留，其历史工厂资产只用于相应回归。
 - Reading 在公开 Host 应用/资源和客户端视图接入前检查相应协议 feature。缺协议发现时明确拒绝，不误报注册成功；注册或撤销异常仍清理自己的视图状态。`build.mjs` 使用已声明的公开 tsdown JS 入口，消除 Windows shim 和仓库祖先工具依赖。
-- 唯一 Worktable pack 入口加入真实 rc.3 公共 Config/门禁核对与路由生命周期回归；旧 server-home 夹具的 `effect` 从空操作改为执行公开注册回调。此前失败是夹具未激活合法路由，不是将生产注册改回泄漏行为。
+- 唯一 Worktable pack 入口加入真实 rc.3 公共 Config/门禁核对与路由生命周期回归；合入集成分支角色接管切片后，再纳入 role-adoption / role-adoption-http 两项公开回归。旧 server-home 夹具的 `effect` 从空操作改为执行公开注册回调。此前失败是夹具未激活合法路由，不是将生产注册改回泄漏行为。
 - README 记录用户手动在新 home 使用官方 `allow-version <exact package@version> --dsh-version <exact> --accept-risk` / `revoke-version` 的试用与撤销。没有代码自动豁免、复制凭据、迁移正式数据或切换 3080。
 
 ## Evidence · 2026-10-24
