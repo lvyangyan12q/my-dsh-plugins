@@ -13,6 +13,20 @@ export function appendHostInput(bridge: any, text: string, doc: Document = docum
       const state = input?.state?.getSnapshot?.()
       if (!state || typeof state.draft !== 'string' || !Number.isInteger(state.draftRev)
         || !['plain', 'claimed'].includes(state.phase) || !Array.isArray(state.occurrences)) return false
+      if (typeof resolver.requestDraftInitialization === 'function') {
+        // rc.3 owns the full semantic document. InputState expands quote and
+        // command chips too, so its reference-only occurrences cannot recover
+        // an insertion span. Let the public owner append to the exact retained
+        // generation, preserving chips and attachments without flattening.
+        const binding = bridge.sessions?.binding?.(id)
+        if (!binding || binding.sessionId !== id) return false
+        const inserted = resolver.requestDraftInitialization(binding, {
+          prompt: text, whenDraftExists: 'append',
+        }) === 'applied'
+        // Never retry a blocked/preserved/unknown result using another path.
+        if (inserted) { try { input.focus?.() } catch {} }
+        return inserted
+      }
       // DSH 0.1's current-based list uses display-text coordinates. DSH 0.2's
       // mainView list uses one U+FFFC unit per chip in insertion coordinates.
       const compactReferences = typeof snapshot?.current !== 'string'
