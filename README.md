@@ -1,5 +1,11 @@
 # my-dsh
 
+2026-10-24 升级规划入口：[工作台与考公的新 Harness 兼容及迁移路线](docs/wayfinder/harness-upgrade/map.md)。目标先 rc.3，再建立后续升级检查；旧 alpha.2 只留回退包。本任务启动的3080已应用户要求停止，下面启动记录为历史检查点。
+
+2026-10-24：当前原生 rc.3 已官方构建通过并从 D 盘原仓库启动 3080，使用原 C 盘 home；[启动命令、数据保护和插件待适配项](docs/harness-rc3-readiness.md)。下面“尚未启动”的表述保留为此前检查点，不代表当前运行状态。
+
+当前接入请先读[工作台接入说明](docs/worktable-integration.md)：区分原生源码、插件源码、C 盘 profile 与资料目录，逐步说明构建、适配、注册、启动和回退的影响。当前原生已为 0.2.1-rc.3，兼容验收待做，先前实例已停止。历史启动与验收记录不代表 rc.3 已通过。
+
 ## 当前实施 · 2026-10-21
 
 已按用户要求继续工作台后续实施，唯一集成分支仍为 `codex/worktable-framework`。请先看[当前进度](docs/STATUS.md)、[后续范围](docs/wayfinder/worktable-platform/continuation-spec.md)和[12—19任务图](docs/wayfinder/worktable-platform/implementation/README.md)。首阶段01—11保留关闭；完整规格仍open，考公专项继续暂缓。

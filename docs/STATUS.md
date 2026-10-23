@@ -1,5 +1,15 @@
 # 工作台进度与待办
 
+2026-10-24 新一轮 wayfinder：用户确认 rc.3 为首个升级目标，未来版本逐版验证，旧 alpha.2 仅留冻结回退包。[升级与考公接入地图](wayfinder/harness-upgrade/map.md)及[前沿查询](wayfinder/harness-upgrade/README.md)已建立；两张研究票已认领并行，后续用户决策按依赖推进。本轮不实施、不迁移、不操作实例；本任务之前启动的3080已应用户要求停止，用户后来自启状态不作推断。
+
+2026-10-24：原生 rc.3 / 22ddee3792 已在原仓库完成官方构建（10/10），3080 已启动并经浏览器验证，原会话日志及业务数据保持，原生跟踪差异为空。Notes/Reading 兼容跳过、BetterSidebar/Modlens 旧接口问题单列；工作台/考公 rc.3 完整适配仍待规划实施。[启动记录](harness-rc3-readiness.md)。
+
+追加核对后，原生根目录旧 kaogong.cordis.yml 已归档，不再保留在源码目录；正式 profile 配置哈希保持，当前仅保留考公 Skill 历史链接，跟踪文件无差异。[记录](harness-working-tree-inventory.md)。
+
+用户授权清理已完成：原生仓库 316 个 src 编译残留已移至仓库外备份、3 个 vendor 文件已定向恢复至当前 HEAD；跟踪差异为空，仅保留两个考公历史配置，79 份对应源码哈希保持。未重建、安装、迁移或启动；rc.3 适配验收仍待做。[清理记录](harness-working-tree-inventory.md)。
+
+2026-10-23 新宿主适配前：当前原生为 0.2.1-rc.3（22ddee3792），尚未完成新版本接入验收，先前实例均已停止。本轮先交付[逐步接入说明](worktable-integration.md)和[原生未提交文件核对](harness-working-tree-inventory.md)，尚未构建、安装或迁移；下面 alpha.2/rc.2 段落按历史版本解读。
+
 2026-10-23限定后续阶段交接完成：12—18限定实页、096两宿主恢复/原生控制及正式3080同步已留证，最终正式两轴审查无新增actionable finding，71cb0d9实现与交付证据已推送origin/codex/worktable-framework。工单19按continuation-spec范围关闭；完整framework spec继续OPEN，历史172的66/94/12及framework49的41/6/2分类不提升。考公、旧资料、物理IME、桌面/macOS、内嵌原生标题栏与未发送图片等上游/后续边界继续保留，既有第三方警告未被算为通过。原生源未补丁，正式原数据和选定一致运行时保留。 [正式启动与保护](wayfinder/worktable-platform/implementation/19-formal-delivery096.md)。以下均保留为历史阶段记录。
 
 2026-10-23正式交付检查点：用户选择的一致官方alpha.2构建已在3080使用原home和原数据，Worktable096/Notes021/Reading022正式同步，9/5/6文件与冻结包一致。目录可见两应用，创建的空Reading实例在刷新后经继续入口恢复同ID、无重复，无正式记录或AI请求。原Reading开发junction本体已归档、目标未动；第一次EPERM失败保留，正式重试通过。其余6依赖/lock解析、业务及3份根目录敏感文件哈希保留；原生UI只明确启用新Reading组件，策略恰一boolean变化。既有Modlens/BetterSidebar警告未禁用且不记通过。19仍OPEN待merger最终核验与远程交接，完整spec/历史172与考公等保留范围未改。 [启动与保护说明](wayfinder/worktable-platform/implementation/19-formal-delivery096.md)。以下段落均为历史检查点，不覆盖本段。

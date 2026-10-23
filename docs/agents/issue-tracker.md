@@ -61,3 +61,8 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 ## Worktable首阶段实施图
 
 用户在implement-spec轮明确确认按[首阶段11张实施工单](../wayfinder/worktable-platform/implementation/README.md)发布。集成分支codex/worktable-framework；保留原型评审门槛及真实安装验收，完整搭建器、高级网页桥接和自动追改保留后续。原14张草案未作为实施工单发布；旧规格与旧工单不关闭。
+## Wayfinding operations：Harness 升级与考公接入
+
+新的本地地图是[工作台与考公面向新 Harness 的兼容及迁移路线](../wayfinder/harness-upgrade/map.md)，不替代旧 framework spec 或历史验收。子票存放在同目录 issues/，以 frontmatter 的 id 为身份，parent 指向 harness-upgrade-map；只能使用 wayfinder 标签。各票 blocked_by 引用实际子票 ID，本地跟踪器无独立依赖 API，因此以该字段表达阻塞。
+
+查询运行 `docs/wayfinder/harness-upgrade/frontier.ps1`；加 `-All` 同时显示认领和阻塞。前沿为 open、assignee 为空且所有 blockers 均 closed 的子票。先设置 assignee 再工作；研究可并行，其他类型每轮最多解决一个。结论写票内 Resolution（本地的 resolution comment），随后设 closed、清除 assignee，再给地图追加标题链接与摘要。研究报告留在票内 context_branch 指定的独立 research 分支，推送但不合并或建 PR，Resolution 链接精确提交。
