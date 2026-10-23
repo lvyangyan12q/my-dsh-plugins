@@ -76,3 +76,8 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 ## rc.3 独立适配实施（2026-10-24）
 
 用户已调用 implement-spec 继续实现。[本轮实施图](../wayfinder/harness-upgrade/implementation/README.md)先启动不依赖数据归属决定的原生会话、混合输入及路由生命周期切片；完整升级策略、考公历史接管与课堂合同仍按开放决策票推进。新票区分 implementation_status 与 acceptance_status，只有真实安装验收后才关闭；不改旧票的历史状态。
+
+
+## rc.3 已确认后续图（2026-10-24）
+
+用户已明确确认正式版本等待验收、未知版本仅独立显式试用；历史学习私有实例与原始资料库显式只读共享方案；最终审查基线a81ac77。决策03/04关闭，课堂原型和具体切换门槛保留。现按[rc.3执行图](../wayfinder/harness-upgrade/implementation/README.md)推进05—11，05/06与原型并行。原阶段pending-decisions记录为历史上下文，不能覆盖本轮已明确决定；具体正式迁移仍按影响预览确认。
