@@ -42,10 +42,11 @@ test('failed creation preserves durable intent; restart read is passive and expl
  const intent=(await state.roles.read(state.instance.id,'assistant')).binding
  assert.equal(intent.phase,'intent');assert.equal(intent.sessionId,first)
  await state.reopen();assert.equal((await state.roles.read(state.instance.id,'assistant')).binding.sessionId,first)
- state.authority.create=async row=>row.sessionId
+ state.authority.recoverCreation=async row=>row.sessionId
  const ready=await state.roles.retry(state.instance.id,'assistant',first,intent.revision)
  assert.equal(ready.sessionId,first);assert.equal(ready.phase,'ready')
  await assert.rejects(()=>state.roles.replace(state.instance.id,'assistant',first,intent.revision),/已更新/)
+ state.authority.create=async row=>row.sessionId
  const replacement=await state.roles.replace(state.instance.id,'assistant',first,ready.revision)
  assert.notEqual(replacement.sessionId,first);assert.deepEqual(replacement.previousSessionIds,[first])
 }))
@@ -68,9 +69,9 @@ test('native success followed by an actual filesystem commit failure resumes the
  await rm(file,{recursive:true});await rename(backup,file)
  const intent=(await state.roles.read(state.instance.id,'assistant')).binding
  assert.equal(intent.phase,'intent');assert.equal(intent.sessionId,first)
- state.authority.create=async row=>{calls++;return row.sessionId}
+ state.authority.recoverCreation=async row=>row.sessionId
  const ready=await state.roles.retry(state.instance.id,'assistant',first,intent.revision)
- assert.equal(ready.sessionId,first);assert.equal(calls,2)
+ assert.equal(ready.sessionId,first);assert.equal(calls,1)
 }))
 test('failed durable intent writes invoke no native create and another Host owner is rejected',async()=>setup(async state=>{
  const parent=state.dir,backup=parent+'.temporarily-moved';let calls=0
@@ -99,4 +100,25 @@ test('resolve and open reject an uncreated intent without treating it as native 
  await assert.rejects(()=>state.roles.resolve(state.instance.id,'assistant',intent.sessionId,intent.revision),/尚未就绪/)
  await assert.rejects(()=>state.roles.open(state.instance.id,'assistant',intent.sessionId,intent.revision),/尚未就绪/)
  assert.equal(inspections,0)
+}))
+
+test('unknown creation survives restart and retry cannot issue a second create',async()=>setup(async state=>{
+ let calls=0
+ state.authority.create=async()=>{calls++;throw new Error('reply lost')}
+ await assert.rejects(()=>state.roles.ensure(state.instance.id,'assistant'),/reply lost/)
+ const intent=(await state.roles.read(state.instance.id,'assistant')).binding
+ assert.equal(intent.creationAttempt,'started')
+ await state.reopen()
+ await assert.rejects(()=>state.roles.retry(state.instance.id,'assistant',intent.sessionId,intent.revision),{code:'creation-unknown'})
+ assert.equal(calls,1)
+}))
+
+test('legacy intent without an attempt receipt is treated as unknown across restart',async()=>setup(async state=>{
+ let calls=0;state.authority.create=async()=>{calls++;throw new Error('lost')}
+ await assert.rejects(()=>state.roles.ensure(state.instance.id,'assistant'),/lost/)
+ const row=(await state.roles.read(state.instance.id,'assistant')).binding
+ await state.roles.store.change(data=>{delete data.bindings[0].creationAttempt})
+ await state.reopen()
+ await assert.rejects(()=>state.roles.retry(state.instance.id,'assistant',row.sessionId,row.revision),{code:'creation-unknown'})
+ assert.equal(calls,1)
 }))
