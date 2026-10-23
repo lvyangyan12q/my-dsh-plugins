@@ -1,5 +1,7 @@
 # 工作台进度与待办
 
+2026-10-23限定后续阶段交接完成：12—18限定实页、096两宿主恢复/原生控制及正式3080同步已留证，最终正式两轴审查无新增actionable finding，71cb0d9实现与交付证据已推送origin/codex/worktable-framework。工单19按continuation-spec范围关闭；完整framework spec继续OPEN，历史172的66/94/12及framework49的41/6/2分类不提升。考公、旧资料、物理IME、桌面/macOS、内嵌原生标题栏与未发送图片等上游/后续边界继续保留，既有第三方警告未被算为通过。原生源未补丁，正式原数据和选定一致运行时保留。 [正式启动与保护](wayfinder/worktable-platform/implementation/19-formal-delivery096.md)。以下均保留为历史阶段记录。
+
 2026-10-23正式交付检查点：用户选择的一致官方alpha.2构建已在3080使用原home和原数据，Worktable096/Notes021/Reading022正式同步，9/5/6文件与冻结包一致。目录可见两应用，创建的空Reading实例在刷新后经继续入口恢复同ID、无重复，无正式记录或AI请求。原Reading开发junction本体已归档、目标未动；第一次EPERM失败保留，正式重试通过。其余6依赖/lock解析、业务及3份根目录敏感文件哈希保留；原生UI只明确启用新Reading组件，策略恰一boolean变化。既有Modlens/BetterSidebar警告未禁用且不记通过。19仍OPEN待merger最终核验与远程交接，完整spec/历史172与考公等保留范围未改。 [启动与保护说明](wayfinder/worktable-platform/implementation/19-formal-delivery096.md)。以下段落均为历史检查点，不覆盖本段。
 
 2026-10-23追加当前阶段：独立一致官方alpha.2/3093已安装冻结Worktable0.9.6、Notes0.2.1、Reading0.2.2。合成记录管理、多视图筛选详情及A/B实例/原生会话隔离已实际验证；Notes原生AI完成与另一轮native Stop、096冷恢复、最小宽度下问题一次提交及拒绝/允许一次审批均有实页证据。模型仅按授权复用连接，未混合实例会话。rc.2/3091最终三包冷恢复已实际复开旧未发送文字标注、7轮23步、甲G6与乙B1独立页面；Notes共享仍撤销，所选公开读取403，网页两准备任务仍无request。Chrome专有网页项目不在IAB本地布局中，不记跨浏览器布局恢复。19与完整spec保持OPEN、正式3080未同步；历史172分类不变、考公暂停。前述v1启动失隔离、正式cordis同字节重写、父仓库hook副作用、021peer失败历史继续保留；本段不将整项规格提升为完成。 [版本化证据](wayfinder/worktable-platform/implementation/evidence/19-final-alpha2-installed096.json)。以下既有检查点保留为历史。

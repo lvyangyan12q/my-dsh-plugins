@@ -3,7 +3,7 @@ id: worktable-framework-19
 title: 后续完整实页验收与交接
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: null
 blocked_by: [worktable-framework-12, worktable-framework-13, worktable-framework-14, worktable-framework-15, worktable-framework-16, worktable-framework-17, worktable-framework-18]
 ---
@@ -18,10 +18,10 @@ blocked_by: [worktable-framework-12, worktable-framework-13, worktable-framework
 
 ## Acceptance
 
-- [ ] 最终包实际安装与完整用户流程，按证据关闭各工单；版本/哈希/宿主/限制可追溯；无源码/夹具冒充实页，无扩大数据或模型授权。
-- [ ] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
-- [ ] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
-- [ ] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
+- [x] 最终包实际安装与完整用户流程，按证据关闭各工单；版本/哈希/宿主/限制可追溯；无源码/夹具冒充实页，无扩大数据或模型授权。
+- [x] 先在已确认的公开接缝观察RED，再最小实现GREEN，保留命令/版本/输出；不测试私有结构镜像。
+- [x] 实际安装证据、版本和限制齐全后才关闭；未实测项保留，不借构建/测试通过宣称闭环。
+- [x] 原生/上游、六份历史用户改动、原资料/历史保持；不直接修改3080或发送未经准入的模型任务。
 
 ## Dependencies
 
@@ -65,3 +65,8 @@ Fixed485b38c Standards/Spec review raised three findings; single implementer069a
 4. 原生/上游/保护改动保持；正式123旧session/storage文件与3份根敏感文件哈希保持。3080仅在用户选择一致构建和保留原数据后作最终授权同步，Reading策略一处boolean为原生UI明确启用，不宣称策略逐字节未变。
 
 完整framework spec仍OPEN；旧资料、考公、物理IME、桌面/macOS、内嵌原生标题栏与未发送图片等上游/后续范围单列保留，不能因这些保留项永久阻塞本后续阶段，也不能用本阶段关闭它们。
+
+
+## 最终有限关闭
+
+2026-10-23限定后续阶段交接完成：12—18限定实页、096两宿主恢复/原生控制及正式3080同步已留证，最终正式两轴审查无新增actionable finding，71cb0d9实现与交付证据已推送origin/codex/worktable-framework。工单19按continuation-spec范围关闭；完整framework spec继续OPEN，历史172的66/94/12及framework49的41/6/2分类不提升。考公、旧资料、物理IME、桌面/macOS、内嵌原生标题栏与未发送图片等上游/后续边界继续保留，既有第三方警告未被算为通过。原生源未补丁，正式原数据和选定一致运行时保留。 本段覆盖此前等待merger/push的阶段状态，不删除失败尝试或未验范围。两份最终正式审查及哈希见[交付证据](evidence/19-formal-delivery096.json)。PR可由root标记ready，不自动合入main。

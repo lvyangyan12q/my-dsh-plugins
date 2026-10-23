@@ -25,3 +25,8 @@ node '<已选一致官方构建目录>/apps/cli/lib/bin.js' --profile web --no-o
 正式启动和刷新继续后，独立核对安装前123份session/storage旧文件哈希全部一致，业务记录新增0、AI发送0；只新增已说明的空Reading实例。后续阶段19待最终merger核验、本批文档推送及交接后可有限关闭，完整framework spec及历史172不因此关闭。
 
 当前正式入口的一致官方构建位于插件仓库的 `.scratch/native-alpha2-consistent-windows-20261023`。虽然目录名含scratch，它是已选正式运行时，必须保留；它不是implementer Git worktree，不在开发工作树清理范围。清理临时作者工作树不能删除这份运行时、原home或交付备份。
+
+
+## 限定后续阶段已交接
+
+2026-10-23限定后续阶段交接完成：12—18限定实页、096两宿主恢复/原生控制及正式3080同步已留证，最终正式两轴审查无新增actionable finding，71cb0d9实现与交付证据已推送origin/codex/worktable-framework。工单19按continuation-spec范围关闭；完整framework spec继续OPEN，历史172的66/94/12及framework49的41/6/2分类不提升。考公、旧资料、物理IME、桌面/macOS、内嵌原生标题栏与未发送图片等上游/后续边界继续保留，既有第三方警告未被算为通过。原生源未补丁，正式原数据和选定一致运行时保留。 最终正式两轴报告只以basename/SHA纳入JSON，原私有内容不入仓库。当前一致官方runtime即正式入口，继续保留；后续清理只处理明确的implementer工作树。
