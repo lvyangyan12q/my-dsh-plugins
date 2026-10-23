@@ -30,7 +30,8 @@
     "readyChecks": {
       "runtimeMatches": true,
       "actualPublicHomeProbe": true
-    }
+    },
+    "retention": "Keep the selected consistent official runtime under .scratch; it is the current formal executable, not an implementer Git worktree or cleanup target."
   },
   "history": {
     "initialV2": "Worktable/Notes official add succeeded; Reading old orphan development junction caused EPERM; failure/backup retained",
@@ -143,6 +144,11 @@
     {
       "file": "worktable-formal-consistent-start.mjs",
       "sha256": "532ccab6be8aa1706b604cee0a7adb9bf9be889b71f6b5c7ab7278d14b92942e",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-current.private.json",
+      "sha256": "972bdcf5fe82c86fefe0d3b070353f6dde8c329e1f595930680c8f6bcbc24ecd",
       "contentsCommitted": false
     }
   ],

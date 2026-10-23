@@ -23,3 +23,5 @@ node '<已选一致官方构建目录>/apps/cli/lib/bin.js' --profile web --no-o
 优先使用本机已审helper与成功receipt，避免填错home。旧0.7.2回退包、正式安装备份和旧Reading junction本体已保留；原junction目标与其他依赖不删除。初次失败和随后修复均保留，不用旧备份覆盖当前数据或策略。
 
 正式启动和刷新继续后，独立核对安装前123份session/storage旧文件哈希全部一致，业务记录新增0、AI发送0；只新增已说明的空Reading实例。后续阶段19待最终merger核验、本批文档推送及交接后可有限关闭，完整framework spec及历史172不因此关闭。
+
+当前正式入口的一致官方构建位于插件仓库的 `.scratch/native-alpha2-consistent-windows-20261023`。虽然目录名含scratch，它是已选正式运行时，必须保留；它不是implementer Git worktree，不在开发工作树清理范围。清理临时作者工作树不能删除这份运行时、原home或交付备份。
