@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-23",
+  "status": "formal3080 synchronized and scoped UI opened;19 open pending final merger verification",
+  "packages": [
+    {
+      "name": "dsh-worktable",
+      "version": "0.9.6",
+      "archiveSHA256": "cd0dd7d52422e79354a93341a42fa7914f5ce103043fb9e7d8bb042ddbb04ac2",
+      "installedFilesMatching": 9
+    },
+    {
+      "name": "@deepseek-ai/dsh-project-notes",
+      "version": "0.2.1",
+      "archiveSHA256": "f8f301153eeb78a3d9ee572fb111aa509b3479911d167b98f73187c28cfa5251",
+      "installedFilesMatching": 5
+    },
+    {
+      "name": "@deepseek-ai/dsh-reading-statistics",
+      "version": "0.2.2",
+      "archiveSHA256": "937a378ccb709c7c48933e869edcf14fc02e8d4a275ae9c6f37b5c1c77909e57",
+      "installedFilesMatching": 6
+    }
+  ],
+  "runtime": {
+    "version": "official0.2.1-alpha.2",
+    "sourceCommit": "d743267388641bc76f17c45ce8b4c231aed1d32c",
+    "selection": "User explicitly chose consistent same-commit build with existing data retained",
+    "home": "original existing user home retained; no personal absolute paths committed",
+    "port": 3080,
+    "readyChecks": {
+      "runtimeMatches": true,
+      "actualPublicHomeProbe": true
+    }
+  },
+  "history": {
+    "initialV2": "Worktable/Notes official add succeeded; Reading old orphan development junction caused EPERM; failure/backup retained",
+    "repair": "Archived only the old Reading junction itself; original target unchanged; normal official Reading add retry succeeded",
+    "rollback": "Prior0.7.2 archive, backup and displaced legacy junction retained; no blind restoration"
+  },
+  "preservation": {
+    "business": true,
+    "otherSixDependencySpecsAndLockImporterResolutions": true,
+    "eightProtectedRepositoryFiles": true,
+    "threeSeparatelyGuardedRootHomeFilesIncludingCredentialHash": true,
+    "policy": "Exactly one authorized boolean change after native UI enabled new Reading component; no other policy difference. Do not claim full policy byte equality.",
+    "priorNativeSessionStorageFiles": {
+      "checked": 123,
+      "allHashesUnchanged": true,
+      "after": "official upgrade, boot, actual UI, browser refresh and Continue recent"
+    }
+  },
+  "observedByRoot": {
+    "catalog": "Notes and Reading available",
+    "reading": "Created one empty synthetic Reading instance; refreshed then used Continue recent to reopen exact same instance without duplication",
+    "readingRecordsCreated": 0,
+    "formalAiRequests": 0,
+    "automaticUnassignedDisplay": "Not automatically reopened on refresh; explicit directory Continue recent required"
+  },
+  "limitations": [
+    "Modlens settings registration and Better Sidebar waiting webRuntime remain existing warnings; neither disabled by this delivery",
+    "Full-profile peer zero and universal third-party plugin compatibility not asserted",
+    "Formal catalog and empty instance do not prove all application/AI flows against formal data",
+    "Original native source/upstream historical states retained; chosen consistent runtime is a separate executable build, not a claim original checkout pnpmdev now runs it",
+    "Fullspec/historical17266-94-12/framework41-6-2 remain; Kaogong/materials/native embedded header/unsent images limitations retained",
+    "19 remains OPEN until final merger verification/remote delivery and final handoff"
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-formal-reading-repair-20261023/operation.private.json",
+      "sha256": "cdc3d51e527329a3e03f5374e0b33e80127d0869be4932095def2508a207d47b",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal-reading-repair-20261023/installed-byte-proof.private.json",
+      "sha256": "613e2bb9f77c68c295a5c7d3e302e392204790081093ba216767e243eca0b30c",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal-install-20261023-final096-v2/operation.private.json",
+      "sha256": "2a1c3a108021408640689c5fda782c7380ab79fae3c6b541b717bf8aaaa20657",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal-install-20261023-final096-v2/backup-receipt.private.json",
+      "sha256": "e6120b4e314180d4b5920ac11f2de60ff3fab35a090532cc7dd95305bb3b9596",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal-install-20261023-final096-v2/legacy-reading-link-move.private.json",
+      "sha256": "031f0e926c438fb616b6e2edbab5302b469878a9018465805f9dffcf8d4fb1a2",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-start-1792751849275/operation.private.json",
+      "sha256": "d0c33855d4772dac535f46fb2af1e4611c3fdd79a21069ce91590e2d7b58aa0e",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-start-1792751849275/ready-check.private.json",
+      "sha256": "fb572d066e3b2355d0dd8bd5d5896e2b586afd7c4cc473b8f87a2185534834a8",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-catalog096.private.ax.txt",
+      "sha256": "d89965221140b048b067d0ea32fb4a589aff42a64d38d1076e1513701ad46e31",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-reading022.private.ax.txt",
+      "sha256": "9d1d64c2169619132884b81fc61edac7c01514df473587f54eb7b980de4d8cd2",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-reading022-resumed.private.ax.txt",
+      "sha256": "981e5c10f8e7ef1d83c50e98bdc2c3ff4f5626d598ec3377afd4a2963f17cb32",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-installed096.private.png",
+      "sha256": "413dd8e1fed5aeb44d8b2b13f6b6058cd12af413097cb4da790c9b59fc31dd20",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-independent-handoff.md",
+      "sha256": "cab9744f6b134797e4ac63f24ff0961c25b74b210e369b131bb3c1bdda79b624",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-independent-final.private.json",
+      "sha256": "379846e561ce6eda07b6c75f9f8e015d517f165d47fbca1750e16ad6580984d9",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-policy-difference-paths.private.json",
+      "sha256": "68c15e9b23d62e553f712a58f2dc0814fcbf3df0c2974634238925345f70abfb",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal3080-native-data-after-ui.private.json",
+      "sha256": "6947a5c09cac1abf46b28f4a406ccc749a2f7c7508313e4899174c2677c430bc",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-formal-consistent-start.mjs",
+      "sha256": "532ccab6be8aa1706b604cee0a7adb9bf9be889b71f6b5c7ab7278d14b92942e",
+      "contentsCommitted": false
+    }
+  ],
+  "acceptance19Review": {
+    "AC1": "Versioned12-18 installed flows plus final096/consumer packages and formal installation/scoped UI evidence. Not whole172 completion.",
+    "AC2": "Confirmed public seams RED-to-GREEN retained; real095 native-width failure followed by096 actual Submit/approval success.",
+    "AC3": "Version/hash/host/limits/failed attempts recorded; final merger verification and remote documentation delivery pending before closure.",
+    "AC4": "Native/upstream and protected edits preserved;123prior native session/storage files and3root-home hashes preserved. Formal synchronization only after user final runtime/data choice; one explicitly enabled Reading component policy field, not blanket byte-identical policy.",
+    "proposedResolution": "Close only this continuation stage after merger verification and successful push/final scoped handoff. Keep complete framework spec and historical classifications unchanged."
+  }
+}
