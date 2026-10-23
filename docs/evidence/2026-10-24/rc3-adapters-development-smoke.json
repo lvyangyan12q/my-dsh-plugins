@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-24",
+  "scope": "rc3-independent-adapters-development-smoke",
+  "complete_spec": false,
+  "host": {
+    "version": "0.2.1-rc.3",
+    "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+    "tracked_modifications": 0
+  },
+  "plugin": {
+    "installation": "official-cli-development-link",
+    "host_bundle_sha256": "05e0133c0994402b94c5b7f5260819dd5f0c34a9acf5ec4840a2f6b8849b0c8b",
+    "frozen_archive": false,
+    "final_new_version": false,
+    "development_manifest_version": "0.9.6",
+    "client_bundle_sha256": "64b8c55e641af197f6c89263810b208135a58ff3499aee14f216e8b1cd0dab90",
+    "source_commit": "d97d7e0774dc4bc30add299015fe3213f9f38dd9"
+  },
+  "regression": {
+    "total": 304,
+    "fail": 0,
+    "bundle_syntax": "passed",
+    "build": "passed",
+    "pass": 302,
+    "skip_scope": "legacy rc.2 parser and Config environment checks",
+    "skip": 2
+  },
+  "isolated_instance": {
+    "installer_pnpm": "11.7.0",
+    "messages_sent": 0,
+    "fresh_home": true,
+    "model_configured": false,
+    "formal_home_used": false,
+    "port": 3097
+  },
+  "observed_pass": [
+    "native menus and workspace retained",
+    "application directory opened",
+    "project created using isolated directory",
+    "canvas position annotation",
+    "first annotation inserted into native draft",
+    "second annotation preserved first text and native focus"
+  ],
+  "observed_not_passed": [
+    "Ctrl+Z after two public append operations produced no visible change; typed native input control was successfully undone"
+  ],
+  "pending": [
+    "final new-version archive installation",
+    "reference-command-quote mixed native draft",
+    "physical IME",
+    "native role create and restart recovery",
+    "actual native approval and Stop",
+    "real terminal unload/reinstall",
+    "Notes and Reading consumers",
+    "Kaogong partition and explicit legacy adoption",
+    "complete two-axis code review",
+    "formal cutover and remote delivery"
+  ],
+  "preservation": {
+    "formal_3080_changed": false,
+    "protected_user_files": 7,
+    "frozen_assets_overwritten": false,
+    "protected_user_hashes_unchanged": 7,
+    "formal_kaogong_data_changed": false
+  },
+  "rc3_contract_checks": {
+    "scope": "actual public Config, declaration parser and official manifest gate; declaration source helper is not runtime activation",
+    "pass": 9,
+    "skip": 0,
+    "fail": 0,
+    "integration_commit": "7a8b469024cb6b017b3b0f0ca70d5181a1b1a2b9"
+  }
+}

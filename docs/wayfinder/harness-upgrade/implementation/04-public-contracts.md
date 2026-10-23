@@ -2,7 +2,7 @@
 id: harness-rc3-public-contracts
 title: 固定 rc.3 原生公开配置与声明门禁核对
 parent: worktable-ai-framework-spec
-labels: [implementation]
+labels: [ready-for-agent]
 status: closed
 assignee: null
 blocked_by: []
