@@ -6,16 +6,23 @@ labels: [ready-for-agent]
 status: open
 assignee: null
 blocked_by: [workbench-completion-release]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-acceptance-cutover]
 ---
 
 <!-- native-compatible-plan -->
-## 当前执行范围（2026-10-11）
+## 当前执行范围（2026-10-24）
 
-状态：open；已有无原生补丁平台实页部分证据，以下完整标准仍需逐项验收。
+状态保持 open；rc.3最终包真实隔离验收和数据保护通过后再确定正式切换；工作台阶段与含考公完整交付分别留证，未取得完整证据不得全量关单。
 
-平台阶段通过后才同步3080插件目录与远程。同步清单不得包含原生源码/lib，保护原Worktable、Agent管理改动及正式数据。考公专项暂停期间不得宣称12张全部完成；本工单完整关单仍依赖11完整阶段。
+原工单范围、依赖和未完成验收保留，rc.3 具体增量依据[框架规格 HU07、HU08](../../worktable-platform/framework-spec.md#host-upgrade-requirements)。followup_status 为 pending-decisions，路线见[升级地图](../../harness-upgrade/map.md)，不因旧 ready-for-agent 标签自动执行未决迁移。
 
-历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+- [ ] 交付准确宿主/插件版本、归档哈希、配置差异、真实流程、资料/会话保护与明确回退步骤。
+- [ ] 只同步插件及必要官方profile配置，不覆盖原生源码/lib，不重新生成旧根kaogong.cordis.yml。
+- [ ] 遵守用户自行管理实例的最新指示，本次文档更新不启动/停止、安装或迁移正式数据。
+
+历史检查仍是旧环境证据；以下原始业务标准不删除、不计为新宿主通过。
 
 
 # 12: 正式部署与远程交付

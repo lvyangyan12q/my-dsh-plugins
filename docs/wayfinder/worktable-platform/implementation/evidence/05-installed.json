@@ -1,0 +1,79 @@
+{
+  "ticket": "worktable-framework-05",
+  "date": "2026-10-19",
+  "url": "http://127.0.0.1:3091/",
+  "status": "passed",
+  "installedCandidate": {
+    "worktableSha": "ea2cb32e22953a90595d751cf18281a91a5ca44115578e15fa3ea3eb14c674fd",
+    "readingSha": "07e6193925911a177f03e9bbb6367375f77383ea6f6af09bfb7fefc2d1d90c10",
+    "filesMatched": [
+      7,
+      6
+    ]
+  },
+  "instances": {
+    "A": "845cb81e-ffab-4ea2-adb7-793267b5aea2",
+    "B": "42ab1b0e-0dd0-47b7-90de-2a6bcba83d42",
+    "C": "258c288a-c2d1-4886-b18a-39aebc0518e9",
+    "Bview": "ec0d1264-a15c-41e6-a9da-7cf59c846974"
+  },
+  "uiPassed": [
+    "A original records preserved:2 /75 minutes",
+    "A explicitly shares read-only to B",
+    "B source and read-only status visible,2 /75 minutes, no edit actions",
+    "B search independent:1 /45 minutes; A search remains empty2 /75 minutes",
+    "C own record1 /65 minutes, no A records",
+    "Final candidate: permitted B edit updates original A book ID from45 to50; owner total80",
+    "A explicitly revokes grant revision3; B shows revoked and clears shared records",
+    "Actual read and update return403 revoked after UI revocation",
+    "Own3091 stopped and restarted; B remains revoked; native baseline and model retained",
+    "C same-instance two-view stale edit: first save65 to70; stale66 rejected with refresh message,70 retained",
+    "Owner v1 rows retain original keys/IDs; consumer B has no business storage row"
+  ],
+  "http": {
+    "connection": {
+      "id": "d145fac1-57db-4d55-8724-f4e2f5ee53b3",
+      "ownerAppId": "reading-statistics",
+      "ownerInstanceId": "845cb81e-ffab-4ea2-adb7-793267b5aea2",
+      "consumerAppId": "reading-statistics",
+      "consumerInstanceId": "42ab1b0e-0dd0-47b7-90de-2a6bcba83d42",
+      "resourceId": "reading-records",
+      "revision": 1,
+      "allowedActions": [
+        "read"
+      ],
+      "status": "active"
+    },
+    "readOnlyDirectWrite": {
+      "status": 403,
+      "body": {
+        "code": "action-denied",
+        "error": "此共享资料为只读，尚未许可此写入动作。"
+      }
+    },
+    "forgedOwner": {
+      "status": 403,
+      "body": {
+        "code": "invalid-request",
+        "error": "不能在数据请求中指定任意实例或所属应用。"
+      }
+    },
+    "legacyBypassStatus": 403
+  },
+  "writeGrant": {
+    "explicitUiGranted": true,
+    "connectionId": "d145fac1-57db-4d55-8724-f4e2f5ee53b3",
+    "revision": 2,
+    "businessWrites": 0
+  },
+  "pending": [],
+  "formalWrites": 0,
+  "finalState": {
+    "grantStatus": "revoked",
+    "formal3080Changes": 0,
+    "isolatedCMinutes": 70,
+    "grantRevision": 3,
+    "ownerMinutes": 80,
+    "consumerStorageRowExists": false
+  }
+}

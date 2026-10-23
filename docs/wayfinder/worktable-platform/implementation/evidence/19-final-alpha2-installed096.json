@@ -1,0 +1,222 @@
+{
+  "date": "2026-10-23",
+  "status": "installed096 alpha2 scoped UI and native execution passed;19 open",
+  "package": {
+    "worktable": "0.9.6",
+    "worktableSHA256": "cd0dd7d52422e79354a93341a42fa7914f5ce103043fb9e7d8bb042ddbb04ac2",
+    "notes": "0.2.1",
+    "notesSHA256": "f8f301153eeb78a3d9ee572fb111aa509b3479911d167b98f73187c28cfa5251",
+    "reading": "0.2.2",
+    "readingSHA256": "937a378ccb709c7c48933e869edcf14fc02e8d4a275ae9c6f37b5c1c77909e57"
+  },
+  "observedByRoot": {
+    "consumerUi": "Actual Notes021/Reading022 synthetic record management CRUD; additional same-instance views and Reading filter/detail/statistics1book12minutes; other-project independent instances empty",
+    "sessions": "A/B distinct native role Sessions; returning A retained its history, B empty and no A tasks",
+    "nativeAI1": "Explicit task review/send, native question/answer, completed ALPHA022-AI-OK; trajectory observed, not inferred from accepted task",
+    "nativeAI2": "Separate actual native Stop; retained history and explicit stopped state; not business success",
+    "cold096": "Reading selection/filter/statistics and two prior native turns restored after096 upgrade",
+    "question096": "After dragging below minimum, native question control remained operable without manually widening; selected Start and one Submit succeeded",
+    "approval096": {
+      "denyAbsent": true,
+      "deniedWriteRetried": false,
+      "allowOnce": true,
+      "allowedBytes": 19,
+      "allowedSHA256": "7c38a976041a9fd72870ca0169fbb7e2f33f9ce4fb018193ee961fba1773fa0f",
+      "completedMarker": "ALPHA096-APPROVAL-OK",
+      "nativeTrajectory": "actual3turns8steps: ask answer / write error / write Created file"
+    },
+    "modelAuthorization": "Existing model connection reuse only; no permission to share application data or merge instance Sessions"
+  },
+  "rc2": {
+    "finalThreePackagesInstalled": true,
+    "ownHostRestarted": true,
+    "actualUiRecovery": "actual scoped final096 cold UI restore",
+    "native": "Old unsent textual annotation preserved; native trajectory7turns23steps restored; no resend",
+    "generated": "A G6 recovery page and B B1 independent page reopened; this is retained output, not new096 generation",
+    "sharing": "Notes shared reference remained revoked; selected public read403 revoked; both bridge tasks prepared without request IDs",
+    "layoutLimit": "The Chrome-only17 website project was not found in IAB local layouts; not counted as cross-browser layout recovery; no source material changed"
+  },
+  "reviews": {
+    "through022": "immutable local snapshots preserve fixed-baseline review and635/8e increments",
+    "native096": "separate Standards/Spec reports, zero actionable source findings; distinct from actual installed proof"
+  },
+  "remaining": [
+    "19/full spec stay OPEN; formal3080 not synchronized",
+    "Generated-app096 end-to-end/recovery and final full workflow remaining gates not inferred from Notes task",
+    "Historical172 counts66/94/12 and framework49 counts41/6/2 unchanged; Kaogong paused",
+    "v1 environment error, formal cordis same-byte rewrite, parent hook lifecycle side effects and rejected021 peer gate retained in earlier checkpoint",
+    "Textual unsent annotation cold restore is observed on rc2; native image-attachment restoration and cross-browser local-layout sync not claimed"
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-19-alpha2-notes021-two-records.private.ax.txt",
+      "sha256": "c796d1c080742d1e6def5b582b9e820ecd54d9e4cd3da4433a222e15332cd014",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-notes021-summary.private.ax.txt",
+      "sha256": "e07c610612b6b4da1f4c3b22ea67a89c0b10c5c812c3a1d18514a57f6fb01422",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-notes021-isolated-empty.private.ax.txt",
+      "sha256": "0b086d82faf6d0880ec73c26cf00525f5f7eb0211198e24acfc6c30d004468ff",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-reading022-filtered.private.ax.txt",
+      "sha256": "39930a059fdac9fa7237f4a96b977985fd8fcb0d971ed63e2c7dcc73d53ce0ce",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-reading022-isolated-empty.private.ax.txt",
+      "sha256": "49f6c6ad51d667e6fb3212937d20d27d315e55a12b655fea010cbaedfbabfcbf",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-reading022-mobile.private.ax.txt",
+      "sha256": "5d654f6eae12384f7e60e9d78fa85ee328ae71be34b038f555c40df1dd0809c1",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-reading022-mobile.private.json",
+      "sha256": "5ef9ae5bdf1193bf43873ac559e24cab0552b5ad67793f4e4c1d4690f264784e",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-native-sessionA-returned.private.ax.txt",
+      "sha256": "8673714a7c6e5e8027cd32d0886f8ea1c1edae6a5c0623d6cd456d3081f1d143",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-native-sessionB-empty.private.ax.txt",
+      "sha256": "3f22877fec2507319dc2e1872747f074ca225c80520674462686a3d9c90186aa",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-isolation-facts.private.json",
+      "sha256": "fa5c4b63222a5db4efa58d1561e90e7abaf65d5d3b68cb3d8801f9500d61f793",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-ai1-question.private.ax.txt",
+      "sha256": "c5707b524cfbebeb25d40a852a4366dcad3f67cecb8f20fd707383573c733ee7",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-ai1-completed.private.ax.txt",
+      "sha256": "60db8f33d44c5171298261bc929ebf2e6e8556b6bbe2d3981764554a038cf37d",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-ai1-trajectory.private.ax.txt",
+      "sha256": "4c53226b3c983d1d103cc439cb074015bfb9a16e246266c40ad2d261dd04323e",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-ai2-waiting.private.ax.txt",
+      "sha256": "5adfb5da941eb0bb102c77d2a414b07730993305773470ae2748c9ffa2751b4f",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-ai2-stopped.private.ax.txt",
+      "sha256": "5cd3cc05f5d8fbb4ebceb90990ceac035e0bb43c1004e01e6781f34a73ee0c0f",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-cold096-reading.private.ax.txt",
+      "sha256": "966c1c0fdb4d5985e5f8f30247413591f1415c06a67ec79fedc1761a2bd58987",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-question096-visible.private.png",
+      "sha256": "2b5b8df3c401ae387055cc4659ca07ecddb503097b73104788308a392b9fa1ab",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-approval096-deny.private.ax.txt",
+      "sha256": "e913a8f8e23f4329ce447205341ffc1e9ead58b208ea284f66bd1cdb90367f8a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-approval096-allow.private.ax.txt",
+      "sha256": "fd1d5706278e05dfef37ebc9e40502014caa1c894255a080c4bb3fcaa5875c54",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-approval096-completed.private.ax.txt",
+      "sha256": "09ef84e2c53dd10ef2152a19ab754ec2cfa263813ef2b0c646609e0315be1bd5",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-approval096-completed.private.png",
+      "sha256": "b25e996e7fe0764eefab1d9188b48356e5798066fa1b2f6174461aa414190f4a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-approval096-trajectory.private.ax.txt",
+      "sha256": "8986cb5926f799e3264621396fa3322ca47d4b562412537532b552a582835dc6",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-approval096-files.private.json",
+      "sha256": "59b2b9d6ed8798a353f2b874d53add044966a916ab12599cca9709be90e83717",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-installed096-1792745844681/operation.private.json",
+      "sha256": "d45a6b04c7831bf9919e6fb713cccff9519bfd129723075012bb736b64ec3401",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-rc2-final-three-1792746205608/operation.private.json",
+      "sha256": "03e9f71df26d9672784d7b860977eb6b9a4d85b0846205800af5aa031aea7e2e",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-review-through022-standards.md",
+      "sha256": "9ba3313f6b73f37a30f3d3ffd97acb68ad330d05fda21bc55e9add8f8ef16406",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-review-through022-spec.md",
+      "sha256": "0f4ccaaebc000869a2c233e0385c78807b5b7c7e88d0dffbfd605a1b0ce21684",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final096-standards-review.md",
+      "sha256": "b7255c1686f2fcaa32f3bf096fe280995b7e22f2169ce87b0b4037a853a6ab88",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final096-spec-review.md",
+      "sha256": "61f020d47d5560239168518e5d2d6ff56aa21d790be905ed83d254c960cf2b6a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-native.private.ax.txt",
+      "sha256": "8cd57f9375c1138a5b311130c40fec7c9d87f56469b8db51cb3b9cbffbbbe15c",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-generatedA.private.ax.txt",
+      "sha256": "cb45cdf659014948877d227a883d78dba5cd89c69624cbc184d4011ae2a2a37b",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-generatedB.private.ax.txt",
+      "sha256": "9d3eb2879c737189fcac49c57a2295db66c604f3178c2365c9a5e5225d2bbb93",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-revoked.private.ax.txt",
+      "sha256": "75ec9a9bd0d1d34653a04d7964e1ca107a8c62270c8d98490e336a238765f4df",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-17-cold096.private.json",
+      "sha256": "67bb4e78728bff73e1129aaa93d1c53206a65312fbe2797dbdc38c8686bf3605",
+      "contentsCommitted": false
+    }
+  ]
+}

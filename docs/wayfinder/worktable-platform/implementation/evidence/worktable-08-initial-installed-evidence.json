@@ -1,0 +1,53 @@
+{
+  "ticket": "worktable-framework-08",
+  "date": "2026-10-20",
+  "url": "http://127.0.0.1:3091/",
+  "status": "real-acceptance-in-progress",
+  "integrationBase": "0595712061d91bce142cebb692f5eb8d1d164915",
+  "candidate": "0ca950e7bdb3e5cf319b391a341f939f3cac9049",
+  "worktableSha256": "23fccc1a1a2082cf653264928e1ec3d2d782c794f8e948d86e271710c76fed73",
+  "readingSha256": "639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41",
+  "installedFilesMatched": [
+    7,
+    6
+  ],
+  "processStopKind": "Windows Stop-Process of exact owned PID/port/runtime; process termination, not graceful disposal",
+  "coldBoots": 2,
+  "rootNewModelMessages": 1,
+  "passed": [
+    "Official CLI installed exact final pair in isolated3091; exact7+6 files match",
+    "Cold boot safely recovers dead07 file locks without editing business JSON",
+    "Before any UI action, comparison preserves10instances/9tasks/rolebindings/connections; Reading business+revision and resource file hashes identical; original native user message count6",
+    "IAB refresh retains original native conversation and A unsent draft; same A project click directly restores application split (old candidate required switchC/back); no automatic last-overlay reopening claimed",
+    "A module shows same845cb81e with3records95 including recent15min record5cb9b19a",
+    "Task panel restores same239d source and prepared task27e74e4b/rev2/session10fc with no requestId/no send",
+    "Authenticated real HTTP activeD read200 identifies original ownerA and active readonlygrant10aed65f/rev1; D create403; revokedC read403",
+    "Final candidate actual pool reached6: C/control+4emptyprojects evicts A frommountedDOM; sameprojectA reopens original845/view239d withselected甲/3records95 andprepared27e74e4b",
+    "Chrome activeD stats/page bothshow ownerA3records95/read-only aftercoldboot; IAB revokedC bothviews show0 and explicitrevokederror",
+    "Actual seventh nativeprompt reachesask_user_question pending, exactownedStop-Process thenrestart; same task8c2bc526/request03566cf9/session10fc/statusaccepted andallpayloadhashes; nativeinputs7->7; noautomaticresend",
+    "Native waitingquestionnotrestoredafterprocesstermination; historyretained; TaskPanelshows原生已接纳/原生当前未运行 notbusinesssuccess; originalAunsentdraftpreserved",
+    "Two actualIABpages editrecentrecordfrom15: second saves16=>total96; firstsubmits17 returns阅读资料已更新, keeps17draft; cancelandexplicitrefresh shows16/96, nooverwrite"
+  ],
+  "pending": [
+    "Necessary association discoverabilityfix plusfinalcandidate reinstallation/cold recheck",
+    "Final screenshot, independent guarded merge and ticket closure"
+  ],
+  "formal3080Changes": 0,
+  "nativeSourceChanges": 0,
+  "upstreamSourceChanges": 0,
+  "interruptedTask": {
+    "nativeUserMessages": 7,
+    "beforeStatus": "accepted",
+    "sessionId": "10fc50bb-6c77-49cf-b3a8-21b3c7c63e59",
+    "requestId": "03566cf9-7ee3-4117-bc93-e280a0801f73",
+    "id": "8c2bc526-f4a5-48d8-a746-e47230055dba",
+    "beforeNativeState": "actual ask_user_question waiting answer"
+  },
+  "limitations": [
+    "Browser reload opens native route; explicit currentproject click restores sameview; automatic lastoverlay reopening is not promised",
+    "Official native pending question does not survive process termination as active question; native generic round header may say已完成; no business completion inferred. Originaltask/request/session/history retained, no resubmit",
+    "Storage write-failure/drain/deadPID concurrency are publicowner/HTTP synthetic fault regressions; realprofile ACL/disk not modified",
+    "Arbitrary independentHosts sharing businessbackend unsupported;07 cannotinterpret08 directorylock and safelyrefuses, compatible rollback verifiedin09 later"
+  ],
+  "discoveredBlocker": "Associatedweb776/view48 persists but currentfilledA pane has no nondestructive add/reopen UI; globalcatalog onlyunowned. Rootrequires08filledpane AddApplication recoveryfix beforeclosure;0ca950candidate superseded whenfixed."
+}

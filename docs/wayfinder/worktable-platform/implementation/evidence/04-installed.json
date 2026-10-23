@@ -1,0 +1,129 @@
+{
+  "ticket": "worktable-framework-04",
+  "date": "2026-10-19",
+  "url": "http://127.0.0.1:3091/",
+  "hostVersion": "0.2.0-rc.2",
+  "status": "accepted-ticket-04",
+  "worktableArchiveSha256": "07f1a07f05619f492fff5900702211310cc71816b4d757b0d6496b7d9e4e2891",
+  "attempts": [
+    {
+      "readingArchiveSha256": "54d9e95729ae15eb1ff4ac5602362b76d30d20821c930e98cee5f61db29055b5",
+      "offlineInstall": "failed: zod metadata not cached",
+      "registryInstall": "official CLI succeeded; exact 6 files matched",
+      "worktableFilesMatched": 7,
+      "nativeAndOriginalWorktableInventoryUnchanged": true,
+      "catalog": "reading-statistics visible through installed UI",
+      "activation": "failed",
+      "reason": "optional storage-domain range selected 0.2.1-alpha.2, overriding the official 0.2.0-rc.2 service; Host rejected incompatible package, leaving workspace and session-projection-cache pending",
+      "readingWrites": 0,
+      "resolution": "author fixing dependency selection; no version exemption or native patch"
+    }
+  ],
+  "formal3080Writes": 0,
+  "readingArchiveSha256": "a77613f53c130d9df32c0e7445c9ebae7499ac89cc1549ab6b6eed01a92f35a2",
+  "finalInstalled": {
+    "worktableFiles": 7,
+    "readingFiles": 6,
+    "officialCli": true,
+    "protectedInventoriesUnchanged": true,
+    "nativeWorkspaceAndSessionsRestored": true,
+    "modelVisible": "DeepSeek V4.1 Flash",
+    "activationProblemsInLog": 0
+  },
+  "instances": {
+    "A": {
+      "id": "845cb81e-ffab-4ea2-adb7-793267b5aea2",
+      "initiallyUnassigned": true,
+      "project": "Worktable交互对照",
+      "views": {
+        "page": "a2bc1e54-6033-45dc-b994-c749d4d0e957",
+        "stats": "7b500f58-1c23-46a4-a180-9132e0d91afc",
+        "list": "49462851-382b-445d-a01c-01e27a990b0f"
+      },
+      "records": [
+        {
+          "id": "02f1679b-e263-4a07-ac54-1fb60086cec1",
+          "minutes": 30
+        },
+        {
+          "id": "c6d3137c-7c0f-491d-ba51-937b5c391a86",
+          "minutes": 45
+        }
+      ]
+    },
+    "B": {
+      "id": "42ab1b0e-0dd0-47b7-90de-2a6bcba83d42",
+      "project": "Worktable交互对照",
+      "explicitNew": true,
+      "records": 0,
+      "search": ""
+    },
+    "C": {
+      "id": "258c288a-c2d1-4886-b18a-39aebc0518e9",
+      "project": "阅读隔离验收乙",
+      "initialRecords": 0,
+      "record": {
+        "id": "7bbab0aa-4676-466d-af5c-11a74ab5b603",
+        "minutes": 65
+      },
+      "views": {
+        "page": "c16aae94-0b49-426b-a74f-c6b4098c1f8f",
+        "stats": "ed8c0c91-a78f-4487-9d6a-49bee85db22b"
+      }
+    }
+  },
+  "installedUiChecks": [
+    "A starts empty; create two records totals 75 minutes",
+    "full/stats/list share search and selected record",
+    "explicit new B in same project has empty records/search",
+    "second project C starts empty despite same configured folder",
+    "C full+stats simultaneously visible; search nonmatch gives both 0; matching gives both 60; owner edit gives both 65",
+    "A association preserves instance and view IDs and records",
+    "close/reopen, browser refresh and Host restart preserve C records/search and layout",
+    "other-instances UI restores A after B, reuses original full view ID and record IDs",
+    "restored A search/selection retained then cleared: 2 records /75 minutes",
+    "light and dark buttons/input/select visibly readable; original follow-system preference restored",
+    "native workspace list/baseline group/model remain available; no app role Session created"
+  ],
+  "limitations": [
+    "Initial CUA HTML5 drag attempts did not trigger; subsequent Chrome DevTools actual tab move and pane swap passed. Ticket11 still reruns integrated acceptance.",
+    "No data-grants, role/AI execution, multi-process durability or upgrade/rollback pass claimed."
+  ],
+  "authorCommit": "b76ad754db85e5d9201430705dc58dace9c28119",
+  "auxiliaryChecks": [
+    "real split.tsx public moveTab/swapPanes/openTab/onSpecMutated preserve application instance/view/tab identities; not a manual drag claim"
+  ],
+  "realChromeDrag": {
+    "date": "2026-10-19",
+    "packageSha": "07f1a07f05619f492fff5900702211310cc71816b4d757b0d6496b7d9e4e2891",
+    "instanceId": "bf04d329-1b65-4f40-92a1-6081d544c1ce",
+    "project": "阅读拖放验收",
+    "explicitExampleInitialization": true,
+    "tabMovedFromFirstToSecondPane": true,
+    "panesSwapped": true,
+    "before": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n[{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"e0907242-e994-4fad-b78e-90ebe94a244d\",\"top\":221,\"text\":\"阅读统计\\n搜索\\n分类\\n全部分类\\n文学 Literature\\n科学 Science\\n状态\\n全部状态\\n正在阅读\\n已读完\\n书籍\\n3\\n阅读分钟\\n210\\nWalden / 瓦尔登湖 · 120 分钟\\nOn th\"},{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"021d3d5c-fc41-4b7e-938e-85086ea296ef\",\"top\":483,\"text\":\"书籍\\n3\\n阅读分钟\\n210\"}]\n```"
+        }
+      ]
+    },
+    "after": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"visibleViews\":[{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"021d3d5c-fc41-4b7e-938e-85086ea296ef\",\"top\":221,\"text\":\"书籍\\n3\\n阅读分钟\\n210\"},{\"instanceId\":\"bf04d329-1b65-4f40-92a1-6081d544c1ce\",\"viewId\":\"e0907242-e994-4fad-b78e-90ebe94a244d\",\"top\":483,\"text\":\"阅读统计\\n搜索\\n分类\\n全部分类\\n文学 Literature\\n科学 Science\\n状态\\n全部状态\\n正在阅读\\n已读完\\n书籍\\n3\\n阅读分钟\\n210\\nWalden / 瓦尔登湖 · 120 分钟\\nOn th\"}],\"durableViews\":[{\"id\":\"e0907242-e994-4fad-b78e-90ebe94a244d\",\"type\":\"page\"},{\"id\":\"2e3cf6a5-c4f2-4b5c-b3ae-5965f531f059\",\"type\":\"page\"},{\"id\":\"021d3d5c-fc41-4b7e-938e-85086ea296ef\",\"type\":\"stats\"}],\"nativeConversationStillVisible\":true}\n```"
+        }
+      ]
+    },
+    "afterSwapFilter": {
+      "search": "Walden",
+      "books": 1,
+      "minutes": 120,
+      "bothViews": true
+    },
+    "nativeReplyStillVisible": true,
+    "screenshot": "C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable-04-real-drag.jpg"
+  }
+}

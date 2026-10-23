@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-23",
+  "status": "source-only; installed095 UI pending",
+  "base": "1a0e0a3fc68cd57c196a1cf64b7d9bfc6979c188",
+  "version": "0.9.5",
+  "actual094RedReferences": [
+    "worktable-19-alpha2-associated094.private.ax.txt",
+    "worktable-19-alpha2-stale-directory094.private.ax.txt",
+    "worktable-19-alpha2-directory-remount094.private.ax.txt"
+  ],
+  "seam": "real React ApplicationPicker; public applications HTTP boundary; DOM change event and button/onOpen observation",
+  "tdd": {
+    "eventRefresh": "RED before fix: missing continue button; GREEN after subscription",
+    "stalePrimary": "RED before fix: unwanted duplicate; GREEN after authoritative latest recheck"
+  },
+  "checks": {
+    "build": "passed",
+    "check": "passed",
+    "clientFactory": 10,
+    "allSourcePassed": 277,
+    "allSourceTests": 277,
+    "skipped": 0
+  },
+  "limits": [
+    "These are source/React fixtures, not installed0.9.5 actual UI",
+    "No pack/install/restart/model/profile/native/formal3080 changes",
+    "Explicit independent-instance creation preserved",
+    "Final release/actual repro/root delivery remain ticket19"
+  ]
+}

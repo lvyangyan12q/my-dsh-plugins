@@ -1,0 +1,139 @@
+{
+  "date": "2026-10-23",
+  "status": "interim; ticket19 open",
+  "sourceCandidate": "069a2fb073bfbc0a6ecdbcaa5006cdc004e1856d",
+  "package": {
+    "version": "0.9.4",
+    "sha256": "c40c0c550cc1fa4c55f54eb695c712c58609b82bd82c52c920f5ca081aa1aff6",
+    "installedFilesMatching": 9,
+    "peerIssues": 0,
+    "host": "official unpatched DSH0.2.0-rc.2 own3091"
+  },
+  "actual": {
+    "g6Recovery": "old093 applying -> explicit reconcile prepared -> fresh preview -> explicit draft apply -> explicit enable",
+    "recipeRevisions": [
+      23,
+      24,
+      27
+    ],
+    "runningVersion": "1.0.1",
+    "beforeAndDraftArtifact": "ea30ae1548e77b104324977dcb5b0c949ba3a2bb97d21d3dc92d982b78319cdb",
+    "activeAndReinstalledArtifact": "192917d42207d1d952b1e7c08328478c8cb4c3aaddf8d6b003651e04ceb258db",
+    "bUnchangedArtifact": "a87d92807b72ba1031a079e8b79f75dec78ac81c3cee49ad4f7b5cdc0de5350a",
+    "taskRequestPairsUnchanged": 7,
+    "reinstalledBridgePreparedTasks": 2,
+    "samePackageReinstall": "official remove/add exact frozen package then cold UI reload; original project/two views and G6 restored; frame-local click state resets",
+    "durableManifest": "17 selected durable path existence flags and hashes where present unchanged; not a claim that all17 paths exist",
+    "releaseImmutability": "repeated normal pack rejects release-exists; both existing archive hashes unchanged"
+  },
+  "reading": {
+    "version": "0.9.3",
+    "independentBrowser": "restored same existing instance after cold restart; two views share filters/detail and1book/12minutes",
+    "viewport": "390x900 light/dark; document width390; local scrolling and keyboard Tab/PageDown",
+    "limits": "Synthetic records; no physical device/IME/Desktop/macOS or model evidence"
+  },
+  "review": {
+    "baseline": "485b38cfd9a5d10de5a668ea4864246d4b1ebea7",
+    "reviewedHead": "007130dbcd10a26455b09458ffa8f8cd0e6bedc4",
+    "findings": 3,
+    "correction": "single implementer069a2fb; independent18/18; source272/272 and factory10/10; these are separate synthetic/source gates"
+  },
+  "delivery": {
+    "formal3080": "still0.7.2; not synchronized",
+    "remote": "source069a2fb073bfbc0a6ecdbcaa5006cdc004e1856d pushed successfully to origin/codex/worktable-framework; this documentation checkpoint pending push",
+    "native": "no native source modification",
+    "alpha2": "own3092 original0.2.1-alpha.2 already had9 inactive native entries before plugin installation; native UI failure blocks UI acceptance; not rc2 pass extrapolation"
+  },
+  "pending": [
+    "final incremental mapping without rewriting historical172 classifications",
+    "formal target usable-native-host prerequisite and plugin sync",
+    "remote delivery and final scoped handoff",
+    "retained full-spec scope; Kaogong paused"
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-15-20261023-before-recovery094.private.json",
+      "sha256": "734558b7098756d3497b68f833dcc3e1bd4d635bf54a19440ed031962ba82e44"
+    },
+    {
+      "file": "worktable-15-20261023-g6-draft094.private.json",
+      "sha256": "1aedcb474de319f751514fbb335a6195a6e1f81aa842802eaf74d62e0178000d"
+    },
+    {
+      "file": "worktable-15-20261023-g6-active094.private.json",
+      "sha256": "2a9723a61ac1a021bcd935ebc6c8575d2d42ac74a0bf3ef780820ea11149b194"
+    },
+    {
+      "file": "worktable-15-20261023-b-unchanged094.private.json",
+      "sha256": "343171ab4a72b3b0dad6b75103842f4dd7f3f5af126661e64668858d323e0a4a"
+    },
+    {
+      "file": "worktable-15-20261023-reinstall094.private.json",
+      "sha256": "d1715f00274ed4f544af0552069c24dd7cfcf273b2d2818a41428674e4287409"
+    },
+    {
+      "file": "worktable-17-20261023-reinstall094.private.json",
+      "sha256": "dcd8c2d339bbda72286284fefb8c61ed4bb61d93059d4e0b212408ade4db4c83"
+    },
+    {
+      "file": "worktable-19-g6-recovered094.private.ax.txt",
+      "sha256": "f86b35e70964d2593a5ae49635237a0271e083e8a7ec3e96ee160c39f36326c4"
+    },
+    {
+      "file": "worktable-19-g6-active094.private.ax.txt",
+      "sha256": "72782fc384db89f44db687dae738ba1f24c098a5f0abc2e892b63a384aa4c70e"
+    },
+    {
+      "file": "worktable-19-g6-active094.private.png",
+      "sha256": "1ccbe7f5b1c07445c87f68e0a005ba45fed69e65c59e2867d53335b5f5b0a04a"
+    },
+    {
+      "file": "worktable-19-reinstall094.private.ax.txt",
+      "sha256": "87f7c18f9de037db642a44df210043ea0d8cf110c2d23a5acb9cf3d9c3d2420f"
+    },
+    {
+      "file": "worktable-19-reinstall094.private.png",
+      "sha256": "d44be03a24e9930aaa30fc1229414eb807acc0a861ae3b1cf94c1125812f0b63"
+    },
+    {
+      "file": "worktable-19-reading-light.private.jpg",
+      "sha256": "e4f29101b0cc22c9005436ab0ef37e38e2a27ffa40a42dcdac0079ddaaf6e8f9"
+    },
+    {
+      "file": "worktable-19-reading-dark.private.jpg",
+      "sha256": "aff9c0dbcd7cca53b53588c66455e2ad265615ec9173a9ada3d34f62189542f4"
+    },
+    {
+      "file": "worktable-19-reading-second-view.private.ax.txt",
+      "sha256": "2fc0832e010877a069321be93753f9d43f99f85336cd2d92770b3db6ca30299e"
+    },
+    {
+      "file": "worktable-19-reading-final-handoff.md",
+      "sha256": "cd45f30c98be4c90b3e08d243e8318f3045beeeee157932935314e3782b8765a"
+    },
+    {
+      "file": "worktable-19-reinstall094-1792728299518/operation.private.json",
+      "sha256": "6f3011907f205689532c362a9b3856412ee00684f51ed95705fce5f30132d39b"
+    },
+    {
+      "file": "worktable-19-reinstall094-1792728299518/installed-bytes.private.json",
+      "sha256": "e8e489f573d42eebb3c4ec6c44306d7ccd2818aae7b24a3d0886c016963807f1"
+    },
+    {
+      "file": "worktable-19-reinstall094-1792728299518/stopped-before/manifest.private.json",
+      "sha256": "f914838b42d2084de3a258a66e9f79c15358a71e839cde0bc95ee488d5a51a3f"
+    },
+    {
+      "file": "worktable-19-reinstall094-1792728299518/after-remove/manifest.private.json",
+      "sha256": "a435978e0c5b2ab31e16f1c7a385a00028ed56499d117936627ebc6bd317e50e"
+    },
+    {
+      "file": "worktable-19-reinstall094-1792728299518/after-add/manifest.private.json",
+      "sha256": "c575b6016f6a1f9aa66d8a781ddb768313428ed7b0531b751653acf4243b9356"
+    },
+    {
+      "file": "worktable-19-reinstall094-1792728299518/after-verification/manifest.private.json",
+      "sha256": "90feff330428b85b6a14cb720e6e9d4d439e3abe14b0a76128458dad2627deb8"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-23",
+  "ticket": "worktable-framework-19-directory-refresh",
+  "status": "source and scoped installed095 UI passed; parent19 open",
+  "package": {
+    "version": "0.9.5",
+    "sha256": "8509dcbb85061b2878cdb78e5f51c1b9345b4914c9d6770645b4661020a3ff7d",
+    "installedFiles": 9,
+    "peerIssues": 0
+  },
+  "host": "independent official unpatched0.2.1-alpha.2 same-commit consistent build; own3093",
+  "actual": {
+    "application": "synthetic ordinary website directory-refresh-095",
+    "sequence": [
+      "Retained mounted project picker initially displayed New instance",
+      "Explicit global picker created one unassigned synthetic instance/view",
+      "Explicit instance panel attached that instance to the existing synthetic project",
+      "Returned directly to retained project picker without module return/remount; Continue recent and New independent appeared",
+      "Continue reopened the same instance and existing view"
+    ],
+    "facts": {
+      "instances": 1,
+      "views": 1,
+      "originalComposedInstancePreserved": true,
+      "originalComposedViews": 2,
+      "modelRequests": 0,
+      "websiteCapabilitiesEnabled": false
+    },
+    "dataPreservedDuringInstall": {
+      "selectedNonemptyPaths": 12,
+      "unchanged": true
+    }
+  },
+  "limits": [
+    "Explicit independent creation/stale-click race remain source tests, not new installed UI assertions",
+    "Registration was manually remounted before association regression; no live registration propagation claim",
+    "No AI execution or consumer021 installation/UI claim",
+    "Only this supplemental directory ticket passes; parent19/full spec remain open; formal3080 still0.7.2 and main3091 still0.9.4"
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-19-directory095-installed-handoff.md",
+      "sha256": "c8c6688e5c15294df993556c164d8459cc24f35d6b13600ea63400692bfc5424",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-directory095-before.private.ax.txt",
+      "sha256": "63d05e3d0c716e908a3cbe1dfadbae52893ba5a7478f9d20188a3ea5a23f8525",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-directory095-refreshed.private.ax.txt",
+      "sha256": "cf2a65f328a82c228582240da3ca1f022c0682d7612329fb9da094ffcb0e7e2c",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-directory095-refreshed.private.png",
+      "sha256": "81a6d3c4670eb324e888de1f8968795df6f3efd077b63dbeff5157295ae82b7e",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-directory095-facts.private.json",
+      "sha256": "bd0be0d3a12c365ef5456fcc8fd296396b91798a701bd241f93e481ad5a05b50",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/install-operation.private.json",
+      "sha256": "f044046316624bac6ecc0843b186e722f4fa683e74d5d00fc1bb02bc01d7df0f",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/installed-nine.private.json",
+      "sha256": "dd6f1930419b3a7b732e2a99a6b606f75be145cf63f7dc47282ffb902e2fa854",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/peers.private.log",
+      "sha256": "5ecf82a3fc1f9007eeea79ce3bf0d9c587150219ef245bb5a5a23609cdb562fb",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/protected-before.private.json",
+      "sha256": "2917068d4fadfc4ee40c218001fc921099b8ed4df15e9cd63a4b8130771ca202",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/protected-after-ready.private.json",
+      "sha256": "df0021311b7b67f9461f5b4f3ac9062bf46c8f621e3d6ad6aad0fb956cb0f3f2",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-installed095-1792739375630/install-operation.private.json",
+      "sha256": "14730d2199608fafe6e74e3091dcaf6dca420e768e6020861e48ce86652a8ca8",
+      "contentsCommitted": false
+    }
+  ]
+}

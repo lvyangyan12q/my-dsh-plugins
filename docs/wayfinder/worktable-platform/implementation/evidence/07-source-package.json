@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-19",
+  "ticket": "worktable-framework-07",
+  "status": "source-and-package-passed-real-3091-flow-passed",
+  "integrationBase": "4ee3f3c6890f23148c976ca5270ecb06a46ade1c",
+  "native": {
+    "version": "0.2.0-rc.2",
+    "patched": false
+  },
+  "worktable": {
+    "sha256": "b9f47f830df519bcd71b5681bac0aef87d6f996949916baa1cf117f074e6b61e",
+    "dualAssets": true,
+    "sourceTests": {
+      "tests": 153,
+      "passed": 153,
+      "skipped": 0
+    },
+    "exactArchiveFiles": 7,
+    "independentNpmInstall": true,
+    "installedModuleImport": true,
+    "installedClientFactory": true,
+    "installedRoleNavigation": true,
+    "installedAnchorScenarios": 8,
+    "installedHomeGroups": 3
+  },
+  "reading": {
+    "sha256": "9b8fb5c43c5b16d8988349f72d2efb77ad33136d8985f8ade6a4212ff985959f",
+    "dualAssets": true,
+    "files": [
+      "README.md",
+      "cordis.patch.yml",
+      "lib/client.js",
+      "lib/index.js",
+      "lib/reading-host-C5-TEDJ1.mjs",
+      "package.json"
+    ],
+    "independentNpmInstall": true,
+    "installedByteComparison": 6,
+    "installedModuleImport": true,
+    "temporaryTypeAliasesUsedForInstall": false,
+    "officialDomainAndReactTests": {
+      "tests": 6,
+      "passed": 6,
+      "skipped": 0
+    },
+    "typecheck": {
+      "entry": "plugins/reading-statistics/check-types.mjs",
+      "DSH_SOURCE": "owned unpatched rc.2 runtime",
+      "READING_LEGACY_ROOT": "integration main",
+      "scope": "existing unchanged generated legacy adapter declarations only; no legacy frontend loaded; not independent from-zero legacy declaration generation"
+    }
+  },
+  "scope": {
+    "nativeWrites": 0,
+    "upstreamWrites": 0,
+    "formal3080Writes": 0,
+    "remoteWrites": 0,
+    "actualModelExecution": "root real 3091 acceptance passed; see 07-installed.json",
+    "toolQuestionApprovalStop": "root real 3091 acceptance passed; see 07-installed.json"
+  }
+}

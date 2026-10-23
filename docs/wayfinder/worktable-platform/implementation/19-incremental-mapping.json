@@ -1,0 +1,2827 @@
+{
+  "date": "2026-10-23",
+  "status": "incremental evidence overlay; ticket19 and fullspec open",
+  "base": "3e14e31efd2dbde8da7b868e02485d213f48e75e",
+  "historical": {
+    "json": {
+      "path": "11-acceptance-mapping.json",
+      "sha256": "97cb5d837a39172b4e889758f51dcd44791b51d88cbbabe377f7bc9c0032782a"
+    },
+    "markdown": {
+      "path": "11-acceptance-mapping.md",
+      "sha256": "f100f6f545a05e89bac1e7eef5403076e505d882d8279073677f72926bd4055e"
+    },
+    "frameworkSpecSha256": "219368a127342cb309558d4609bf99cc90d4387b81a0b41d39d1e3fd02153777",
+    "counts": {
+      "legacy123": {
+        "首阶段已验": 25,
+        "当前未验": 88,
+        "后续保留": 10
+      },
+      "framework49": {
+        "首阶段已验": 41,
+        "当前未验": 6,
+        "后续保留": 2
+      },
+      "all172": {
+        "首阶段已验": 66,
+        "当前未验": 94,
+        "后续保留": 12
+      }
+    },
+    "immutable": "172 original IDs/text/hashes/classifications/order preserved. No historical file rewritten; no counts promoted."
+  },
+  "definitions": {
+    "actual": "Only named observed seam in its exact installed version passed; never means entire original requirement closed.",
+    "partial": "Additional installed evidence covers a limited portion; explicit remainder retained.",
+    "unverified": "No new accepted installed observation assigned in this overlay; historical evidence remains.",
+    "retained": "Historical classified evidence or deferred scope preserved without new whole-requirement assertion."
+  },
+  "acceptanceBoundaries": [
+    "12/13/16 clean supplements supersede environment inference only; original mixed evidence is not relabeled.",
+    "14 actual0.8.4;15/17 and Reading actual0.9.3;19 G6/install/reinstall actual0.9.4.",
+    "272 source /18 independent /10 factory gates separate from actual UI/model evidence.",
+    "No template48-entry candidate automatically accepted; no model prompts/HTML/credentials/private profile data copied.",
+    "Native alpha.2 own3092 baseline9 inactive before plugin and native UI failure remain blocked, not compatible UI acceptance.",
+    "Formal3080 remains0.7.2 unsynchronized; code and prior docs/mapping b14c2fd already pushed. This new UI supplement not yet pushed.",
+    "Kaogong paused; legacy materials/physicalIME/Desktop/macOS/upstreamAPI limitations retained.",
+    "Separate19-final-ui094 supplement adds actual final0.9.4 Reading/native/editor-open/website-off checks without rewriting0.9.3 history or claiming new model/create flows."
+  ],
+  "evidenceIndex": {
+    "12-clean-installed.json": {
+      "path": "evidence/12-clean-installed.json",
+      "gitBlobSha256": "a1c911e96d3eecc112fab2691cae13decc2ca05d974c0e616085f2b2c6483a1e",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "13-clean-installed.json": {
+      "path": "evidence/13-clean-installed.json",
+      "gitBlobSha256": "1971121d5cddf62b60f956dc9d02bded73ff481347edc14e7f943ff6063689e6",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "14-installed.json": {
+      "path": "evidence/14-installed.json",
+      "gitBlobSha256": "3b63a53476ac1a7ff80766202f56d1d54a71fe4af101d5a4e37c50c7325275b0",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "15-installed.json": {
+      "path": "evidence/15-installed.json",
+      "gitBlobSha256": "260fca959f0660b4621e94f38ea8ce6a37e6ba1ea3ed3f4fff045ef9645f0aa5",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "16-clean-installed.json": {
+      "path": "evidence/16-clean-installed.json",
+      "gitBlobSha256": "7038b841224e23f7f11473dc85ae748d71c98533077a0173d76b93a9ac6c14f6",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "17-installed.json": {
+      "path": "evidence/17-installed.json",
+      "gitBlobSha256": "4ac89afbfbfa8d138c27a6abbd8c54dc5c7db60f32320e74118d5728f4b2311b",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "18-installed.json": {
+      "path": "evidence/18-installed.json",
+      "gitBlobSha256": "4a997089c646efa00585031bdd3b528adca434d962f66c8225ae94ac4a6cb651",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "19-final-interim-installed094.json": {
+      "path": "evidence/19-final-interim-installed094.json",
+      "gitBlobSha256": "3c5f90629118459d332fa6a603401b0da3727c73ba0939f3dac6854c55863baf",
+      "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "19-final-ui094.json": {
+      "path": "evidence/19-final-ui094.json",
+      "workingFileSha256": "b80602cae9edaca216fd13f127e80adfc40ccb31d98cdeac33c3efb8e16e8685",
+      "basis": "new supplement exact UTF8LF content at author candidate; private raw contents excluded"
+    }
+  },
+  "rows": [
+    {
+      "id": "workbench:User Stories:1",
+      "originalText": "1. 作为用户，我希望从 DSH 侧边栏打开工作台，以便集中访问我的应用。",
+      "requirementSha256": "5b6f8df6e0492362a03d64bf4b4741bc51cfcb1201f412798b3df1996dce52de",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 27,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "新派生包实际菜单与应用目录入口已验；不扩展到 Better Sidebar。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:2",
+      "originalText": "2. 作为用户，我希望在没有 Better Sidebar 时仍能使用工作台，以便不被第三方插件依赖阻断。",
+      "requirementSha256": "7d434619f0a2905c16734907cb43da0de484c9cf8fdc4348d36cac3f0f09de6f",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 28,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "未见新前台在无/有 Better Sidebar 0.24.1 两环境及入口一致性的完整证据；11补验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:3",
+      "originalText": "3. 作为用户，我希望安装 Better Sidebar 后能从其 Tab 打开工作台，以便沿用已有侧边栏布局。",
+      "requirementSha256": "2c537fc9faa85dbfa056d2d666fb51957883e5ecda30e1041dbb3f44f7d0d82c",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 29,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "未见新前台在无/有 Better Sidebar 0.24.1 两环境及入口一致性的完整证据；11补验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:4",
+      "originalText": "4. 作为用户，我希望两个入口展示相同应用和状态，以便不会出现两份互相矛盾的工作台。",
+      "requirementSha256": "3f8e160fa24b358eeb6f94eefc0d59dadf6ef85b23209e4fa4854d595ede1ebd",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 30,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "未见新前台在无/有 Better Sidebar 0.24.1 两环境及入口一致性的完整证据；11补验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:5",
+      "originalText": "5. 作为用户，我希望按应用、Agent、Skill 分类查看内容，以便区分业务应用、角色和方法。",
+      "requirementSha256": "727700416b95bbc50af8bd5b09e7494bc1a7d03c0e117bc9a81e0e9ca9cfae18",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 31,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "应用/Agent/Skill全分类、来源展示及搜索收藏排序隐藏整套管理尚无对应新前台实页证据；11复核，未交付部分保留。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:6",
+      "originalText": "6. 作为用户，我希望看到条目的所属应用、来源及可用状态，以便知道哪些是自建、社区或应用内置内容。",
+      "requirementSha256": "1fdf7e60f1f1275a976ff20a06034164cab0c48cbabd9e3d53f322f7de11374b",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 32,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "应用/Agent/Skill全分类、来源展示及搜索收藏排序隐藏整套管理尚无对应新前台实页证据；11复核，未交付部分保留。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:7",
+      "originalText": "7. 作为用户，我希望搜索、收藏、排序和隐藏应用，以便快速找到常用入口。",
+      "requirementSha256": "d90053d346abbcbf7aac988559aae238508afa7b73bda19aa08f21a9ca064b8c",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 33,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "应用/Agent/Skill全分类、来源展示及搜索收藏排序隐藏整套管理尚无对应新前台实页证据；11复核，未交付部分保留。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:8",
+      "originalText": "8. 作为用户，我希望点击考公打开应用窗口，以便在一个连续界面内学习和练习。",
+      "requirementSha256": "80de596137e1426d935379a5a6de9da23b5bff9da69e7a1176a9cd0ed061de9b",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 34,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:9",
+      "originalText": "9. 作为用户，我希望重复打开同一应用实例时聚焦现有窗口，以便避免重复创建窗口和会话。",
+      "requirementSha256": "a0bcc604698f51165eb23be95aabdcb1d5901c264ac6131aebc4b1f0aa84a5d8",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 35,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading重复打开和实例身份已有部分证据；原条包含现有应用的单窗口聚焦语义，须10/11以考公复验。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:10",
+      "originalText": "10. 作为用户，我希望最大化、最小化、恢复和关闭窗口，以便按当前任务安排空间。",
+      "requirementSha256": "a271824f27098a8cde6db41d35b54859d5e524539035a9ba61cfd1dc813bcecf",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 36,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "旧浮动窗口全部控制、小屏单栏、键盘/焦点及遮挡无完整新前台实页证据；11按当前单布局方案核对，不能直接继承旧实现结论。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:11",
+      "originalText": "11. 作为用户，我希望窗口在小屏幕上能切换为单栏且内容不重叠，以便正常阅读材料和输入消息。",
+      "requirementSha256": "82d6e67c78787fb4c17821073316920d5afc2a1a39493fc84c6bf6eb5dcab8f0",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 37,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "旧浮动窗口全部控制、小屏单栏、键盘/焦点及遮挡无完整新前台实页证据；11按当前单布局方案核对，不能直接继承旧实现结论。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:12",
+      "originalText": "12. 作为用户，我希望窗口布局在刷新后恢复，以便不必重新调整宽度和 Tab。",
+      "requirementSha256": "e42e5eb9b0b306d2b09cb29a26113e6ed5760e2168dacc82b336545cfefe0e80",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 38,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 已有Reading刷新/重启局部恢复；完整尺寸/Tab恢复及故障恢复待08/11。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:13",
+      "originalText": "13. 作为用户，我希望关闭窗口后学习数据和对话保留，以便下次继续。",
+      "requirementSha256": "0f39c3f51400a8b353272bea557c89193325bb825c9415392a77a46942623a8e",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 39,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "已验证Reading任务关闭视图历史保留；考公学习数据及会话关闭重开须10/11。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:14",
+      "originalText": "14. 作为用户，我希望切换 Tab 或收起窗口不会自动停止 Agent，以便后台工作不中断。",
+      "requirementSha256": "e58fdcdfa873376606d5049cb1b255504d956813c04c4791a892c5cd4869418e",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 40,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实任务待提问时关闭来源视图、同实例新视图打开原Session并续答，未隐式Stop。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:15",
+      "originalText": "15. 作为用户，我希望看见角色运行中、等待授权、失败和新消息状态，以便及时处理。",
+      "requirementSha256": "40f47e72c60046b036ef9630d3da6a76e912d26f22bb780a3fae30fd48acf06e",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 41,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "运行/提问/审批/停止/拒绝已部分实测；各状态与未读完整可见矩阵仍需11综合验收。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:16",
+      "originalText": "16. 作为学习者，我希望从老师 Tab 直接发送问题并收到流式回答，以便不用复制提示词再切换主会话。",
+      "requirementSha256": "1c771863b035076636b7ba95cea9dc7916b6d18d0c7600133e55d1526642e697",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 42,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:17",
+      "originalText": "17. 作为学习者，我希望班主任、任课老师和辅导员分别保留历史，以便不同职责的讨论不会混在一起。",
+      "requirementSha256": "c46fd89742e346daaf0826dbab0f1b2f5d4ae1fe025a624bf989eccdfdd1316b",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 43,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:18",
+      "originalText": "18. 作为学习者，我希望任课老师按科目绑定会话，以便资料分析和判断推理的课堂互不混淆。",
+      "requirementSha256": "0b2f7a0b7d126fcded2092bac41a4558082f0750469dce42074bbccbc1fe790b",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 44,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:19",
+      "originalText": "19. 作为学习者，我希望老师加载真实可用的教学 Skill，并明确提示缺失依赖，以便不会假装技能已加载。",
+      "requirementSha256": "b8a2bfe2727751378fac0eee4df75d0ff61e86aa3c9543272ca9611b01ec98e3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 45,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:20",
+      "originalText": "20. 作为学习者，我希望左侧材料保留图片、表格和来源，以便对照原始题目学习。",
+      "requirementSha256": "0792e427aca1e626d47984cf04b0bb47e235d3cc31b54289627fdfc1631407e5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 46,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:21",
+      "originalText": "21. 作为学习者，我希望老师能引用当前材料和课堂目标，以便讲解与正在学习的内容一致。",
+      "requirementSha256": "5300d80ec00f7cc6fcd90a95878f36c9f2c62993605a3cd3fbf005be2b72d273",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 47,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:22",
+      "originalText": "22. 作为学习者，我希望按模块开始十题练习并继续下一轮，以便循环巩固知识点。",
+      "requirementSha256": "37794592330e74319e7336d187b149f83d62f40a2a720e1594b32be92874553c",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 48,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:23",
+      "originalText": "23. 作为学习者，我希望提交前不显示答案，提交后显示真实成绩和解析，以便获得可信的练习结果。",
+      "requirementSha256": "a7b296c1ea17f76f86876abf0a14051e62ce66c73d243cf10e0d9e0d0d356f04",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 49,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:24",
+      "originalText": "24. 作为学习者，我希望将本轮真实错题交给辅导员讲评，以便得到针对性总结和补练建议。",
+      "requirementSha256": "3305af7fd160fbdcf30985debc17e32cbf5cfebe8d5b2b4d192ffb867e19b85c",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 50,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:25",
+      "originalText": "25. 作为学习者，我希望课后任务、完成状态和课堂总结持久保存，以便跟踪学习进度。",
+      "requirementSha256": "3044c8262cda0542b024b591048bf091bbad7d9593a08f0c2c06fc6d98394b97",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 51,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:26",
+      "originalText": "26. 作为学习者，我希望其他角色读取必要的计划和总结而非全部聊天记录，以便协作时保持职责清晰。",
+      "requirementSha256": "ed2a09e475d43e11cd92f33d1b64cd627f4e6a397abadfccc7233fe0c61b0b81",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 52,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "考公材料/科目/教师/课堂/练习或协作专用流程未在新前台验收；Reading成功不能代替考公。10接入后11逐项核既有体验与资料保护，未迁功能继续保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:27",
+      "originalText": "27. 作为用户，我希望查看角色使用的模型、Skill 和工具权限，以便了解角色能做什么。",
+      "requirementSha256": "26742cc234be04d70cdc2ed458893e20580e492d2f34db5c6131ff985da73b61",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 53,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实Agent/Skill可用性和原生模型可见；独立“模型+Skill+工具权限”管理展示完整性未见逐项实页证据，11补核。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:28",
+      "originalText": "28. 作为用户，我希望为角色分配已有 Skill 并检查可用性，以便形成可复用的角色配置。",
+      "requirementSha256": "e0f67b23cffae7837e273a76d9911e8271ef3c7161adc48d2ff14a0ccb4201e5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 54,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "显式公共Agent关联已有Skill、停用阻断/恢复原绑定及真实Skill加载已验证；非全量Skill编辑器承诺。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:29",
+      "originalText": "29. 作为用户，我希望应用内置角色默认归属应用展示，以便全局 Agent 列表不会被重复入口挤满。",
+      "requirementSha256": "ab2941c6ecc4399da286ab925bfcd7074b8baac001efbd199444422906a815bb",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 55,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "私有能力隔离有受控契约回归，未见应用私有教师默认归属/全局去重真实考公流程。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:30",
+      "originalText": "30. 作为用户，我希望现有考公学习记录、题库和 MinerU 资料保留，以便升级后继续学习。",
+      "requirementSha256": "6198b58a15b143e2128f1d674f6d86155a1aa6d4af4e7d2be1cb283c1fe56c62",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 56,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 保护源码不等于考公题库/MinerU与独立入口迁移验收；须09保护/卸载链和10/11考公实页，不可清理旧前台。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:31",
+      "originalText": "31. 作为用户，我希望缺失、归档或不可访问的角色会话有明确恢复选项，以便不会静默新建并丢失上下文。",
+      "requirementSha256": "15d76ab87d4cd0b863767d83f2e345a4698793a3945d3e444351af0298c1dda2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 57,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 缺能力与显式替换/旧历史已验，但真实缺失/归档/不可访问Session恢复矩阵未齐；08/11。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:32",
+      "originalText": "32. 作为用户，我希望卸载工作台后仍能独立打开考公，以便应用不会依赖工作台才能使用。",
+      "requirementSha256": "3f3a728c4681463753f400d0b629efaaed28f56354fd0a9d9da19e1d968cba1e",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 58,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 保护源码不等于考公题库/MinerU与独立入口迁移验收；须09保护/卸载链和10/11考公实页，不可清理旧前台。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:33",
+      "originalText": "33. 作为应用开发者，我希望声明应用入口、页面、默认布局和角色即可接入，以便无需复制窗口管理代码。",
+      "requirementSha256": "e8702061f7c782f502f754be39073bf955633ecadbea87e40125df16f8ee9123",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 59,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading通过公开深度接口接入；仍需第二应用证明不用复制布局代码及冻结最小契约。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:34",
+      "originalText": "34. 作为应用开发者，我希望插件停用或热更新后注册能正确清理，以便没有重复入口和失效窗口。",
+      "requirementSha256": "d2477cdfdbb53240bc70c7ce38144d68551dcade42105de09e6f3d6f14832db5",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 60,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 注册撤销辅助回归不能代替真实停用/卸载/热更新无残留；09/10/11。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:35",
+      "originalText": "35. 作为用户，我希望依赖不兼容时只看到清晰的不可用状态，以便不会因可选扩展导致整个工作台白屏。",
+      "requirementSha256": "d952df9685052bba5b7346f423d299d7eaf9d04faef53a7c1004ac67f053c9d7",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 61,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "缺Host能力/不兼容依赖真实失败有可见诊断，完整可选扩展隔离及最终协议不兼容矩阵待10/11。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:User Stories:36",
+      "originalText": "36. 作为用户，我希望从管理入口进入官方插件和配置功能，以便不需要维护另一套安装器或密钥管理。",
+      "requirementSha256": "c48068417ff0e37094bda63f587b7ddf0f18e8056b98d748f8220919c3739e90",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 62,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "原生菜单保留已有证据；官方插件/配置入口全链及无第二安装器/凭据管理需11检查，尚不作全项已验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:1",
+      "originalText": "- 工作台与考公为两个独立 DSH 插件包，放在现有多插件仓库中发布，不修改 DSH 核心来硬编码业务。安装包需包含可加载的宿主和客户端产物，并声明实际消费的宿主版本兼容范围。",
+      "requirementSha256": "bcb53975960b0bc26b7dd53a2f7940094e77060c897931935cba284324a3313b",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 66,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "派生包/Reading独立官方安装、无native修改已验；原条点名考公独立交付与兼容声明，须10/11补证。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:2",
+      "originalText": "- 用户指定界面参考 awesome-design-md 中的 Claude 设计。采用克制的暖白背景、深色文字和珊瑚色重点操作，适配工作台信息密度；不复制营销页布局、品牌标志或未授权字体，不更改 DSH 与 Better Sidebar 的全局样式。",
+      "requirementSha256": "045a95aea833dd4a9ee02a5b7f5f86aa84aa590a6ae553d4709d5b1aed7fbfb4",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 67,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "主题可读仅部分证据；旧设计参考/字体授权/全局样式边界无完整新前台审查，11核。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:3",
+      "originalText": "- 应用、Agent 和 Skill 是用户管理对象；插件包是交付单元。一个插件包可以提供多种管理对象，不把“自建”作为功能类别。",
+      "requirementSha256": "bd5aeec9ae3761e3598a3f70fec9289bf39d0fdec2c0f17e7c5a3f2187fa82cb",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 68,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "公共能力管理已接入，完整管理对象与插件交付身份分离须10冻结协议和11管理实页。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:4",
+      "originalText": "- 使用小范围应用注册接口，承载唯一标识、版本、名称、图标、页面入口、默认布局、角色与依赖声明。注册返回清理操作；重复标识明确拒绝；注册与卸载不执行模型调用。",
+      "requirementSha256": "1d50548d008d3b53bf9ace52c6f74fe421a3d86da9d9bad6e01aee91384a544b",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 69,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "有Reading注册/稳定Host身份；重复标识、依赖、撤销、无执行、不可序列化值等综合契约仍待10冻结/11最终验证。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:5",
+      "originalText": "- 注册表描述当前安装插件提供的能力，不把客户端模块、函数或 React 内容序列化到持久存储。持久状态保存稳定标识，启动后按当前注册恢复引用。",
+      "requirementSha256": "b99b67b626ccee906cca27a675d96c8740a929d1cb397124c2034896720e1d21",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 70,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "有Reading注册/稳定Host身份；重复标识、依赖、撤销、无执行、不可序列化值等综合契约仍待10冻结/11最终验证。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:6",
+      "originalText": "- 应用定义与应用实例区分。第一版为现有考公提供默认实例，已有学习数据继续归属于该实例；不同时承诺多套独立题库和计划。",
+      "requirementSha256": "5df4bf3633be21940abd6e7277bf83c4806727691bf164c38bc24e94b9373a4c",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 71,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "旧考公默认实例与历史单实例数据映射未在新前台核验；不得照搬Reading新实例数据。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:7",
+      "originalText": "- 工作台主入口使用官方侧边栏扩展点。窗口使用官方 Overlay、浮动和分屏布局能力；不依赖 DOM 类名匹配、移动官方聊天 DOM 或修改其边距来挤出空间。",
+      "requirementSha256": "a31960a88462f4f0c556274f4badc8bfd0fd981465c8895d95baccaab78e05d6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 72,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "新规格明确保留现有集中DOM锚定适配，与旧“完全不移动聊天DOM”要求存在已确认架构调整；11列明差异/用户决定，不能假称旧条原样满足。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:8",
+      "originalText": "- Better Sidebar 适配为可选模块，按公开的注册、打开和清理接口接入。没有该插件时不加载其专属运行时依赖；存在兼容版本时贡献工作台 Tab；未知或不兼容版本提示原因并保留主入口。",
+      "requirementSha256": "61aab15ffcd5661379f2de8f76c4cd38183f770426e457eb519f067ecabec911",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 73,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "未见新前台兼容Better Sidebar安装/缺席/停用完整证据，也未核所有链接与业务重复入口；11。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:9",
+      "originalText": "- Better Sidebar 内展示入口或适合窄栏的管理视图；点击应用进入统一应用窗口。适配层不注册第二套考公业务接口、不复制角色会话、不截取全部文件链接。",
+      "requirementSha256": "710f28572427620aaf4ef272879d402ce05fc893e74da92c4ecc4864d5adb715",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 74,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "未见新前台兼容Better Sidebar安装/缺席/停用完整证据，也未核所有链接与业务重复入口；11。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:10",
+      "originalText": "- 同一应用实例默认一个窗口，重复打开仅聚焦或恢复。收起窗口、切换内容或取消 UI 订阅不等于停止、归档或删除会话。",
+      "requirementSha256": "190c1630f95ecc0b5d86834fe0f15c14a5a7d2f6311119ed9a356240afb43d6a",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 75,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "关闭视图不Stop已验；旧单窗口聚焦/收起含义须10/11考公及当前布局交互对照。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:11",
+      "originalText": "- 窗口位置和尺寸限制在可视区域内；小屏幕使用单栏页面切换。支持键盘操作、焦点管理及关闭后焦点返回；输入和图文内容不得被窗口遮挡。",
+      "requirementSha256": "621456b90042a4c78fa193670f80c60fbfcca87ee9ccc4b61ee358a82c2eca89",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 76,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "桌面缩放/阅读主题有部分实页；小屏、完整窗口约束与键盘焦点返回待11。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:12",
+      "originalText": "- 工作台通过 DSH 会话能力管理角色会话，不实现第二个 Agent 执行引擎。持久关联按应用实例、角色及可选科目索引到会话；创建使用幂等控制避免并发重复。",
+      "requirementSha256": "49b61f10a8c6dffc8ba13d2428cd81e77500ef0fcf1e669ffccaf298056a4536",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 77,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实跨实例角色并发收敛已验；旧教学科目可选键/迁移映射待10考公接入验证。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:13",
+      "originalText": "- 第一实现门槛为官方会话的完整嵌入验证：历史、输入、流式消息、工具结果、授权及提问交互、运行状态和停止均绑定正确角色。若公开接口无法满足，不以只能跳转主聊天的界面冒充完成，需要在开发记录中明确阻塞和调整方案。",
+      "requirementSha256": "23b1cf53c792c5df149930f8f479016ddc3b346e15c114033f77e4c294205b57",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 78,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实原生工具/问题/审批/Stop已通，但当前方案采用唯一原生composer和导航；旧“必须完整嵌入、仅跳转不得算完成”需按新规格确认的替代阶段边界记录，不能原样勾旧要求。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:14",
+      "originalText": "- 运行状态来自真实 DSH 会话订阅；可见视图按需保留会话引用。卸载视图释放订阅不应取消持久会话中的工作；重新打开加载既有历史和状态。",
+      "requirementSha256": "b2e9172f7218c4adb2d39c4892ce9c17ce6b2c244bdbd5a6d945371b4052e2bb",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 79,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "实际关闭来源/切换/刷新仍可查看同Session待处理问题与继续执行；状态与历史由原生提供。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:15",
+      "originalText": "- Agent 使用官方角色预设和配置能力。Skill 的发现、加载、工具权限及模型配置复用 DSH；工作台只管理引用和关联，不向模型声称未加载的 Skill 已可用。",
+      "requirementSha256": "f0fec4959711f826488294bd1d89bcf44210514fee0457429ef3ed9739beb595",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 80,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "官方preset/Config/真实激活门禁、真实Skill加载与缺失/停用拒绝，沿用原生权限；不声称新增能力。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:16",
+      "originalText": "- 角色初始教学规则来自实际安装内容，不依赖硬编码的开发者磁盘路径。已有旧角色配置需迁移到当前宿主机制，不复活已删除的运行时插件。",
+      "requirementSha256": "240e4446f8ee52299e4cc5a3c6bcd9db14c2a50945936c8221e0fd65abda6a40",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 81,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "教学规则/旧角色迁移、独立与嵌入视图、题库图文/练习计分/课堂总结专属考公链尚无新前台证据，原需求保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:17",
+      "originalText": "- 将考公内容模块从独立全屏面板中分离，同一视图能被工作台和独立入口使用。工作台存在时优先提供注册入口，缺席时保留官方侧边栏入口，不通过多次挂载生成重复状态。",
+      "requirementSha256": "0ecfb4d6706e5060d5c11398c5bee1b2e41d6489335859500c610530d4b4a25f",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 82,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "教学规则/旧角色迁移、独立与嵌入视图、题库图文/练习计分/课堂总结专属考公链尚无新前台证据，原需求保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:18",
+      "originalText": "- 保留考公既有题库筛选、循环练习、成绩、错题、知识库和计划逻辑。复用安全图文渲染及本地资源路由，不重新解析全部 PDF，不改变原题 ID、选项或答案。",
+      "requirementSha256": "59bbaed5620f9596f3867699be5c4391330e1f8a558f296a473f73c08e94fadf",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 83,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "教学规则/旧角色迁移、独立与嵌入视图、题库图文/练习计分/课堂总结专属考公链尚无新前台证据，原需求保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:19",
+      "originalText": "- 课堂关联目标、讲义引用、练习结果、课后任务和总结。真实成绩由考公逻辑计算和持久保存；角色不能通过文字回复伪造完成状态。练习提交需要防重复，老师讲评不重复入账。",
+      "requirementSha256": "a2c132a9c5c3381c0fab6eda4fcdf061ef74210d4fbcfed87e90081283c51a44",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 84,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "教学规则/旧角色迁移、独立与嵌入视图、题库图文/练习计分/课堂总结专属考公链尚无新前台证据，原需求保留。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:20",
+      "originalText": "- 工作台保存窗口和角色会话关联，考公拥有业务数据，DSH 拥有会话历史。重要关联使用宿主持久存储并带版本；浏览器只缓存展示偏好，不作为角色关联的唯一来源。",
+      "requirementSha256": "ae93ee5ae03a37664ef4f3d845d5172ae926e962215a19a48382cd44ead4b896",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 85,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 Host平台/应用业务/DSH历史分工已有局部证据；旧资料加法迁移、备份及完整冷恢复/版本映射待08/09/10。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:21",
+      "originalText": "- 旧数据采用最小必要的加法迁移，先提供可恢复备份及迁移校验，不删除原资料。新实例记录与旧单实例业务数据的对应关系明确保存。",
+      "requirementSha256": "a1265a0d30af99550dcf420a3743205ae2fef4860527c8bf72263b033d3c7c4a",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 86,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 Host平台/应用业务/DSH历史分工已有局部证据；旧资料加法迁移、备份及完整冷恢复/版本映射待08/09/10。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:22",
+      "originalText": "- 会话失效、归档或不可访问时明确提示，由用户选择恢复或新建；不得静默换一个会话。缺失模块和图片具有独立错误状态，不能引发整个工作台崩溃。",
+      "requirementSha256": "7ae2857bf16a3e3050e88fb54df90b87d91baae9381ce64fb0cc1b2c1487397a",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 87,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 明确缺能力/旧历史已验；全部失效/归档/图片缺失隔离恢复尚未覆盖。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:23",
+      "originalText": "- Token 和其他凭据继续使用宿主现有凭据机制，不进入应用注册信息、客户端持久状态、日志、导出规格或 Git 仓库。",
+      "requirementSha256": "8c2d6111d91060b1f9b7543f3a04d7293947a6582cb867a8bf37bfb6f3691144",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 88,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 实际原生审批权限未替代；凭据全存储/日志/导出/Git边界需09/11专项审查，不能仅凭无写入计数判定。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Implementation Decisions:24",
+      "originalText": "- 第一版提供已有应用、Agent 和 Skill 的查看与关联管理，复杂角色编辑器和全量 Skill 编辑器另行迭代。界面只展示实际发现的可用对象，不使用演示列表充当真实能力。",
+      "requirementSha256": "3c7460cc431eefd44232fae8f7dbb44bf28a3d4cd9d465f2873b3dced2885748",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 89,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "已有公共Agent/Skill管理；“所有已发现对象”查看与来源全范围未齐，复杂编辑器仍后续，不以演示证明。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:1",
+      "originalText": "- 主要测试边界是用户可见的工作台接入流程：从侧边栏打开工作台，进入考公，使用材料、练习和角色会话，再关闭、刷新及恢复。用户已确认按完整使用流程验收，并覆盖安装与未安装 Better Sidebar 两种情况。",
+      "requirementSha256": "08006937d7ffd3f77b99f051c0cc831046e85918370c12765432e320a6d1b280",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 93,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "最终新前台考公完整流程及Better Sidebar双环境未完成；旧流程或原型不构成通过。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:2",
+      "originalText": "- 好的测试断言结果和可见行为，不断言组件内部状态、私有函数或具体 DOM 类名。底层 DSH 服务可以使用受控的真实接口替身，但不能用假聊天替代关键真实宿主集成验证。",
+      "requirementSha256": "f7a9a0c548c3501fbe05d7a0f2f95643204e6de21b3e2ecfe978236c052f0007",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 94,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实Host闭环已存在，完整测试质量/Standards与Spec两轴仍由11统一审查，不能仅根据测试数量全项通过。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:3",
+      "originalText": "- 完整流程分别覆盖没有 Better Sidebar、启用兼容 Better Sidebar 和停用适配插件的环境；核心工作台和考公数据保持一致。兼容目标以实际安装的 DSH 0.2.0-rc.2 与 Better Sidebar 0.24.1 为首个验证组合，不扩展宣称所有版本可用。",
+      "requirementSha256": "bb6efe4bdfff49ef243988c23f9952e600aee0054950c816a4821a89ebc097b3",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 95,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "最终新前台考公完整流程及Better Sidebar双环境未完成；旧流程或原型不构成通过。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:4",
+      "originalText": "- 一个老师会话真实嵌入的集成测试作为第一道门槛，覆盖发送、流式输出、授权、停止、关闭重开、刷新和宿主重启续聊。会话操作不得误作用于 DSH 主聊天或其他角色。",
+      "requirementSha256": "34998c673e9145381d7cbcd310ce586731dc7deae641091e0dc10256f39318ca",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 96,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 Reading角色隔离、草稿、问题/审批/Stop与浏览器刷新已验；教师/科目及Host重启续聊完整链需08/10/11。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:5",
+      "originalText": "- 通过插件生命周期验证注册、重复打开、禁用、卸载和热更新，确认没有重复入口、残留订阅和隐式模型调用。",
+      "requirementSha256": "63f86f3ca87eabb6cafdf9f8815e0875b8f06da6601e7be5a51abf3a2df09429",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 97,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 真实停用/卸载/热更新生命周期尚待09/10；受控注册测试仅辅助。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:6",
+      "originalText": "- 验证角色隔离、按科目关联、并发创建去重及会话缺失恢复。切换 Tab 不丢输入草稿；关闭窗口不会取消正在运行的任务。",
+      "requirementSha256": "4d339db6c5d8a3a8a160dfeff8d893bc044667bd35efd0ee860702dab4e33b72",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 98,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 Reading角色隔离、草稿、问题/审批/Stop与浏览器刷新已验；教师/科目及Host重启续聊完整链需08/10/11。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:7",
+      "originalText": "- 使用考公现有纯逻辑测试作为题库选择、练习、错题、知识搜索和计划的回归基础；保留已有 MinerU 与材料修复测试，不重写无关业务测试。",
+      "requirementSha256": "081cb63525f31169766818293f25b5bbfc17d1f582637df7f511a6497f2780e6",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 99,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "题库/练习/MinerU/图文跨页/真实成绩与课堂夹具专属回归待10迁入及11实页；不以Reading数据替代。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:8",
+      "originalText": "- 使用现有无密钥宿主测试夹具扩展课堂和讲评记录行为，验证真实作答、课后任务以及总结关联，不依赖外部模型价格或概率输出。",
+      "requirementSha256": "e55649dc56706ddba35a9b09f7e442152b629befc94188b36456449488944eda",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 100,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "题库/练习/MinerU/图文跨页/真实成绩与课堂夹具专属回归待10迁入及11实页；不以Reading数据替代。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:9",
+      "originalText": "- 选择含表格、跨页材料和图片的本地题目及讲义作为图文验收样本，断言资源可访问、图表实际渲染、来源正确、提交前不泄露答案。",
+      "requirementSha256": "d4ebe6604f286f6bcd8ecdcfd511eb34424d9600b302c6c29df1de42dbd6a6e2",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 101,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "题库/练习/MinerU/图文跨页/真实成绩与课堂夹具专属回归待10迁入及11实页；不以Reading数据替代。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:10",
+      "originalText": "- 持久化测试覆盖旧考公默认实例接入、迁移重跑、关联恢复和损坏记录提示；迁移前后既有题库与学习记录不丢失。",
+      "requirementSha256": "a06a0cf73baa7a8670cee3144eca2547cb2d782c5d2f9e882c13efc8da091f0d",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 102,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 旧默认实例、迁移重跑、损坏恢复与数据完整性须后续工单实证。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:11",
+      "originalText": "- 浏览器端验证桌面及小屏幕布局、键盘焦点、窗口尺寸约束和图片加载。关键流程需使用截图与交互结果验证，不能只以构建成功作为完成证据。",
+      "requirementSha256": "ef20888d9b01b0e4439321d934a9b03b23fdeb103545f7a8bde2988623b73394",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 103,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "桌面/主题/真实拖放部分已验；小屏键盘焦点/图片/滚动综合检查未齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "workbench:Testing Decisions:12",
+      "originalText": "- 最后通过发布产物的标准插件安装流程验证，不仅在开发源码路径中验证；兼容和缺失依赖错误需给出可操作提示。",
+      "requirementSha256": "778405df9539cd962e265204be1033849396f3a00fe17db6f3391bb29733847b",
+      "source": "docs/personal-workbench-spec.md",
+      "line": 104,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "精确正式产物安装已验；全部目标兼容组合和缺依赖修复提示仍需10/11，不能外推版本。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:1",
+      "originalText": "1. 作为用户，我希望在应用中心查看多种应用，以便工作台服务于不同业务。",
+      "requirementSha256": "7ee3ab9791d4d4b7031945767c8bdbf69dbdc22f9e85af3fbe0cf1f436c68e93",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 25,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "已存在网页和Reading目录；多业务独立深度应用复用仍待10。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:2",
+      "originalText": "2. 作为用户，我希望保留 DSH 原生菜单，以便继续使用原来的工作区与会话功能。",
+      "requirementSha256": "7ee43348337f73108fe14e35bab5f797b9f368a564a4f88a1d6114332ab8b8a0",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 26,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实原生菜单、工作区/分组/模型/会话持续可用。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:3",
+      "originalText": "3. 作为用户，我希望描述需求生成应用草稿，以便降低新增应用成本。",
+      "requirementSha256": "681a8f77dac64f57ea6322dbe800f4eccec52ac2fe97e0bd6c67c845dc2054f6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 27,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整自然语言生成草稿/模板布局组合/预览/启用搭建工作流被明确后移；当前模块布局不等于完整搭建器。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:4",
+      "originalText": "4. 作为用户，我希望编辑应用名称与说明，以便明确应用用途。",
+      "requirementSha256": "2cb445857783945cf8ae478bed303bb5078da72617e94b142d08e4566ce9627e",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 28,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "入口注册不证明应用名称和说明后续编辑实页完整性，11核当前管理能力。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:5",
+      "originalText": "5. 作为用户，我希望选择页面布局，以便匹配看板、阅读与详情场景。",
+      "requirementSha256": "dc8641e1bc2e1f27d8477bfbf7981b4bf2295e1b8fafedb133a679853e3acb31",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 29,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整自然语言生成草稿/模板布局组合/预览/启用搭建工作流被明确后移；当前模块布局不等于完整搭建器。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:6",
+      "originalText": "6. 作为用户，我希望组合统计卡片和列表等公共模块，以便复用已有功能。",
+      "requirementSha256": "8556b26417ca9d58fcddb6421e9d5ccd08af73f4c0ebe8900b0929080e5d8249",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 30,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整自然语言生成草稿/模板布局组合/预览/启用搭建工作流被明确后移；当前模块布局不等于完整搭建器。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:7",
+      "originalText": "7. 作为开发者，我希望接入专用组件，以便表达通用模块无法承载的业务。",
+      "requirementSha256": "75d4e02f9bb10d6fb3df5272439aac969deda887f9d16ee16efebe4289169bb0",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 31,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading专用视图已注册；需10用第二开发应用证明公共扩展稳定、无内核业务分支。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:8",
+      "originalText": "8. 作为用户，我希望预览草稿，以便验证页面和数据联动。",
+      "requirementSha256": "3c023e2725dc4316c7c094192a80029c3abaeb7c2a193f5102f01f4ab79e344c",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 32,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整自然语言生成草稿/模板布局组合/预览/启用搭建工作流被明确后移；当前模块布局不等于完整搭建器。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:9",
+      "originalText": "9. 作为用户，我希望显式启用应用，以便生成过程不直接修改运行版本。",
+      "requirementSha256": "aa3fb57c9144e47f004361372220f360466713b99fdfc59a99a7e2f419af1694",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 33,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整自然语言生成草稿/模板布局组合/预览/启用搭建工作流被明确后移；当前模块布局不等于完整搭建器。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:10",
+      "originalText": "10. 作为用户，我希望查看应用配置和依赖，以便管理后续应用。",
+      "requirementSha256": "78d09287ba5d809f5760f5d644503ffd15a06479c35fe2353993fde29847abdb",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 34,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "应用配置/依赖完整目录管理证据不齐，角色管理仅部分。 10补证：10原生Notes row配置/required peer依赖有实际和安装辅助证据；全应用配置依赖目录管理原条仍未验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:11",
+      "originalText": "11. 作为用户，我希望停用应用后保留数据与会话，以便恢复使用。",
+      "requirementSha256": "b3a2b1dc05488f3a93ef291cb22f097756c0df69f629999c0af95cb13e2eba2d",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 35,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading停用后保留记录/同原生会话，显式恢复与重装通过；不外推考公。 最终10/11安装组合待复核。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。 10补证：E10官方Notes开关保留业务hash及历史，复启不建会话，补充Reading既有证据。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:12",
+      "originalText": "12. 作为用户，我希望停用应用不能被误打开，以便状态与行为一致。",
+      "requirementSha256": "ca889e04714b3d9c36ad2d95100d20f95f2256b654497d4b54bd92a74bee4566",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 36,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "停用Reading实际新建、prepare及专用prepared submit均409 application-disabled；已开始原生提问可交接。 最终10/11安装组合待复核。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:13",
+      "originalText": "13. 作为用户，我希望从平台打开考公应用，以便复用现有学习数据。",
+      "requirementSha256": "4e87fa08e965950a4cca80ab0e29b658dee18fa29c6c29a26e78c13ff8d2ba92",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 37,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "尚未有新前台真实考公打开及旧数据复用证据。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:14",
+      "originalText": "14. 作为用户，我希望没有 AI 的展示应用也能运行，以便浏览统计和信息。",
+      "requirementSha256": "b0cdff2dde133320ab4ab3836aaaeb7dad2e482f28179ed1756ee1d8467a18e9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 38,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading纯展示无角色Session；筛选同时改变统计与列表真实可见。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:15",
+      "originalText": "15. 作为用户，我希望统计卡片随筛选更新，以便看到正确范围的数据。",
+      "requirementSha256": "44efbd1ddddcf5c2f170ea2227d5fc319a084b2ab116065bc2865c2671c6453e",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 39,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading纯展示无角色Session；筛选同时改变统计与列表真实可见。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:16",
+      "originalText": "16. 作为用户，我希望列表、地图和详情同步选中项，以便理解当前对象。",
+      "requirementSha256": "216c10eeb4b3c46b2ca5aa18a44ad3e198b98e97c83b6e819517e45ba54719ef",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 40,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading列表/详情选择同步部分已验；地图仅原型/专用扩展保留，不能声称真实地图服务或完整组合链已验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:17",
+      "originalText": "17. 作为用户，我希望看到加载、空数据和失败状态，以便区分数据状态。",
+      "requirementSha256": "ab0bda63f586681a85a562198d867173540ea19bd1a190c7958f29ab1a1bbc30",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 41,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "空结果与部分失败真实可见；统一加载/空/失败完整矩阵待11。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:18",
+      "originalText": "18. 作为用户，我希望数据属于相应应用，以便避免应用之间互相覆盖。",
+      "requirementSha256": "8442b37a404d1176d883a2565c8316780c3c86f5deb22d488c09a952ceac25d9",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 42,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading业务归owner且consumer不复制已验；跨两个深度应用各自拥有数据需10实证。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:19",
+      "originalText": "19. 作为用户，我希望明确配置跨应用数据连接，以便知道数据从哪里来。",
+      "requirementSha256": "29276659e3c99af09d6cf639e96ad1fa92ad893b5595e4bfec961793e11d5b4b",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 43,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "显式A→B只读连接、来源/权限可见；撤销真实拒绝。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:20",
+      "originalText": "20. 作为用户，我希望给应用角色引用 Agent 和 Skills，以便复用独立能力库。",
+      "requirementSha256": "151010f537833529d829e51dbdaabaa0d70689dc9fd6a05be53135e91fe8fafa",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 44,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading角色显式关联managed Agent和Skill，真实复用原生能力，禁用明确反馈。 10补证：E10明确UI填写公共general-organizer/text-organize/registeredWorkspace，保存无自动Session，真实Skill双调用。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:21",
+      "originalText": "21. 作为用户，我希望在多个页面继续同一角色会话，以便历史不会碎片化。",
+      "requirementSha256": "021ab015fc469ea613556a2ff72fbdeffbeaf1b5d4f466a9927fa44e0489da47",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 45,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "同实例多视图保持同角色Session；A/C独立，关闭来源后原任务可由同实例视图打开。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:22",
+      "originalText": "22. 作为用户，我希望不同应用实例的会话独立，以便上下文不混淆。",
+      "requirementSha256": "0615161010a2f8854a5bea48e3df4d6fd97bff93c977e1b306677d953adbaac3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 46,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "同实例多视图保持同角色Session；A/C独立，关闭来源后原任务可由同实例视图打开。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:23",
+      "originalText": "23. 作为用户，我希望模块动作选择合适角色，以便把任务交给正确职责。",
+      "requirementSha256": "c46e6cade7ac24e233486ebdb9e4d02dac6ca8835e482f2e81d55797e08de951",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 47,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实模块准备固定角色、实例、来源及过滤资料；可编辑/移除再显式发送。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:24",
+      "originalText": "24. 作为用户，我希望发送前查看、编辑或移除上下文，以便掌握实际交接内容。",
+      "requirementSha256": "3a6078fa1c13585a135ca74d35d91abab1577d97c23215b36ae13adb87bf6415",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 48,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实模块准备固定角色、实例、来源及过滤资料；可编辑/移除再显式发送。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:25",
+      "originalText": "25. 作为用户，我希望选择与筛选不自动调用 AI，以便使用展示页面不产生隐式请求。",
+      "requirementSha256": "81b59ffb64ef5f55b1f7466abcd34e335b6b1c1aedec09fddfef250d149335c6",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 49,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "展示筛选/选择、准备编辑与放弃无隐式发送，实际六次显式发送对应六轮。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:26",
+      "originalText": "26. 作为用户，我希望更换 Agent 后保留旧会话，以便历史可追溯。",
+      "requirementSha256": "d9adaf00abcb32dc59385a36d3bc80be508c3aeba5df7042f115a6fdd4eb6dfa",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 50,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实取消保留绑定，确认替换保留旧Session及草稿，可打开历史且不改新绑定。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:27",
+      "originalText": "27. 作为用户，我希望刷新后恢复已启用应用和角色关联，以便持续使用。",
+      "requirementSha256": "b2b7e3e9548f1ec1e2be8b15886493c2eac13fe6dcf0a101ccc27ac96c04d6db",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 51,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 局部刷新/冷重启已验；包含应用启用与全关联恢复的完整故障矩阵仍待08。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。 10补证：10官方三字段配置和实例/绑定/任务冷恢复实证补充；整条故障矩阵仍不推满。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:User Stories:28",
+      "originalText": "28. 作为用户，我希望配方缺少模块或能力时显示原因，以便修复而不是得到空白页面。",
+      "requirementSha256": "d60fefc06e0b8d6543c7bfa4d721ff9222de6b02ef23aff64a2e0e6766ca380e",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 52,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整配方依赖诊断随搭建器保留；已交付深度模块/能力缺失的明确不可用底线仍首阶段，须10/11复核。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:1",
+      "originalText": "- 工作台为平台型插件；考公与后续业务应用均为接入应用。业务规则、业务数据与专用组件不进入平台核心。",
+      "requirementSha256": "8d1d710ae3c4dbb0a9563b9a0cb6a9e72350072ceffe121afbbed9951cb2665e",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 56,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading业务独立已验；考公及第二深度应用、平台无业务特判待10。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。 10补证：10独立Notes自有业务owner/视图/Skill接入为部分新证据；原条明确含考公，保留当前未验而非假迁移。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:2",
+      "originalText": "- A 应用中心作为首页，B 分步创建流程用于开发，C 目录与配置用于管理；原型只提供交互依据，正式实现需重写。",
+      "requirementSha256": "715929ac0554f1d3df7ca2d10f9e394a209a6ca8dcd0ac8a3bbce52478b523ce",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 57,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整创建/配方/草稿预览启用版本链后续保留；身份/实例、凭据边界和已运行应用保护仍为当前底线。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:3",
+      "originalText": "- 应用配方声明稳定应用身份、版本、页面、布局、模块、数据连接、共享交互状态及角色引用。配方不内嵌凭据、对话历史或业务记录。",
+      "requirementSha256": "44c2589e2c77b6bbc39d06f9f9483acaa45319754feee89144fb060f2eb39448",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 58,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整创建/配方/草稿预览启用版本链后续保留；身份/实例、凭据边界和已运行应用保护仍为当前底线。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:4",
+      "originalText": "- 应用定义与应用实例区分；实例具有独立业务状态和角色关联。模块身份、页面身份及角色身份应稳定，显示名称可以修改。",
+      "requirementSha256": "b4c82730f6fae2f206b191bbb07c38c809de390f8c2301b311eb5ba1fc2e734c",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 59,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实实例/视图/角色稳定身份，同定义新建实例状态隔离及视图布局移动不变。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:5",
+      "originalText": "- 页面布局与模块内容独立。公共展示、交互与角色对话模块共享组件入口；专用组件通过受支持的注册接口扩展。",
+      "requirementSha256": "941c7c7b60fad087389bb0b4e2bf3bb10920f50efb67b9084ffb04889b96f9f0",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 60,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "实际页面与模块可分开挂载，通用组件/专用注册复用和版本承诺待10冻结。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:6",
+      "originalText": "- 业务数据由应用拥有，数据连接具有明确来源和可用状态。默认不直接读取其他应用私有数据；跨应用读取必须通过声明的连接。",
+      "requirementSha256": "a319c61f4e676329014a3364c7a0ccb08e732cb1a51ad1a4907cb26600e2344d",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 61,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading owner和显式共享、未授权写/伪造owner拒绝已验；原条跨应用业务私有数据隔离仍需10第二应用证明，不把跨实例证据扩成跨应用。 10补证：Notes自有业务与Reading并存保持Reading4/108，owner/shape/权限辅助负控已验；当时Notes额外共享待具体授权，未建grant。现E11S限定两条合成内容经N3只读引用N2并撤销，N1整实例未共享；这是同应用跨实例补证，仍不把它扩成任意跨应用schema连接通过。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:7",
+      "originalText": "- 页面共享筛选、选中项等交互状态，模块通过声明关系联动。更新这些状态不产生模型请求。",
+      "requirementSha256": "2d893e818d383ace02431332fb0e4608c76bbbaa03db29fe4d7d2d0fde37eb55",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 62,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "同实例筛选与选择同步，纯交互无模型请求。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:8",
+      "originalText": "- 会话关联以应用实例与角色为边界。同一角色可跨页面复用；角色引用同一个 Agent 不意味着跨应用共用会话。",
+      "requirementSha256": "103d3d1365f48d8a21ec9bc587b45ec523068308b3c2bd6a4e592c8cbc2e1e3d",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 63,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "相同能力复用不会共享历史；多视图角色仍同会话，实例间会话隔离。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:9",
+      "originalText": "- 模块动作声明任务目标与必要上下文。交接先进入待发送状态，允许编辑或移除；显式发送后才调用原生角色会话。清楚显示目标角色和上下文来源。",
+      "requirementSha256": "3dad1b73a2b4b23f1c5043da6a79b6757a43ea20a4ed2aff1d5346a15bb936dc",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 64,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "任务有固定目标/来源/可编辑上下文，显式发送才进入真实原生执行。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:10",
+      "originalText": "- Agent/Skills 仍独立管理；工作台管理引用及使用关系，不复制能力库。缺少、停用或不可调用的能力使相应任务动作不可用并说明原因。",
+      "requirementSha256": "89ab2172899b7bbca626012920223022c50a9867baf087d5b29b8552b0080b7b",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 65,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "公共能力引用及缺失阻断已验；应用私有能力与跨应用独立管理来源尚需10真实接入确认。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:11",
+      "originalText": "- 草稿、预览与已启用版本区分。AI 生成结果进入草稿；生成或预览不改变已启用应用。启用前校验结构、模块及能力引用，失败不替换运行版本。",
+      "requirementSha256": "b664032d5893cd606fa362ce62d20ed3b422b51d28e9062ee59a26fbcf0b3b08",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 66,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "完整创建/配方/草稿预览启用版本链后续保留；身份/实例、凭据边界和已运行应用保护仍为当前底线。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:12",
+      "originalText": "- 停用不删除业务数据、配方或历史会话。启用停用只改变应用可用性；删除与永久清理不在本期范围。",
+      "requirementSha256": "0d2ca9928d9ea5faf347b83d76b0bb8fedfcc0305843352ef6fbe01c14ed75b5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 67,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 应用启用/停用与卸载、保留数据/历史待09；不推断Skill生命周期等于应用生命周期。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:13",
+      "originalText": "- 沿用现有应用注册、原生角色绑定、原生会话和持久化能力；保持 DSH 原生导航可用。考公资料路径与学习数据保持可恢复。",
+      "requirementSha256": "f7e0ccc91a5cbb4095dc81f05a100ba68ceed8793f0856c46957cd53b80992bb",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 68,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "原生导航/角色链已验，考公资料路径和学习数据仍须10/11证明可恢复。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Implementation Decisions:14",
+      "originalText": "- 首版公共模块为统计卡片、数据列表、详情与筛选，以及现有角色对话区。地图保留专用组件扩展接口，本期不要求真实地图服务。",
+      "requirementSha256": "940452fbcbef8825474fb3731305809aa3cb474a1a357045d8eda029de16fc7e",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 69,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading统计/列表/详情/筛选有实际证据；公共模块被两个应用复用需10，地图扩展继续保留且不承诺真实服务。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:1",
+      "originalText": "- 验证外部行为，避免测试内部对象结构与组件排列细节。优先沿用已有应用注册生命周期、真实 Host 持久化、构建后的 Client 交互及原生会话运行时边界。",
+      "requirementSha256": "6a577381c3b64bbfd1bef096e8f7514c09e6f37101985c1f0c0fde2a65e0b5be",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 73,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实Host/安装产物覆盖已存在；全体外部行为测试及两轴规范审查待11，不以本映射代验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:2",
+      "originalText": "- 主要验收链：需求生成草稿 → 配置模块与连接 → 预览联动 → 显式启用 → 从应用中心打开 → 停用与恢复。生成与预览期间运行应用保持原状态。",
+      "requirementSha256": "07b32812f4011968e9b68c57f292bc66baeb9243737330f6dda6c11fd068c7f2",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 74,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "生成草稿→组合/预览→启用完整搭建链明确后移；应用生命周期数据保护仍须09。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:3",
+      "originalText": "- 展示链：同一筛选更新统计与列表；选中列表对象更新详情；示意地图联动仅为原型证据，真实地图不纳入首版验收；纯展示过程无模型请求。",
+      "requirementSha256": "d548ef1560d74a6c9ba2989d912daca16548a4a2a5525ee9d0bc374a9854f7f3",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 75,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading实际筛选联动统计/列表、选择详情且无AI；只覆盖示例展示链，未声称真实地图。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:4",
+      "originalText": "- AI 链：模块动作准备指定角色和上下文 → 用户修改或移除 → 显式发送 → 原生会话保留。跨页面复用，跨实例隔离，角色更换保留旧历史。",
+      "requirementSha256": "58776aaed66cf67f546ca106012ff2df4e2633289d97f34e267783c919ce0721",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 76,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实准备编辑/移除/发送，原生历史及跨视图同角色，实例隔离和显式换Agent保留历史均有证据。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:5",
+      "originalText": "- 恢复链：应用定义、启用状态和角色关联在刷新/重启后恢复；停用不丢业务数据。无效引用显式失败，不默认为其他角色或偷偷创建新会话。",
+      "requirementSha256": "9ad2b151d775b11b03571ea0940496785cb48eb33ae06d2c7732edc89c52c90a",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 77,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "08/09补证：冷恢复、真实冲突拒绝、停用及回退/重装已有版本限定证据；整条仍须核对原文，不能据Reading推定考公、旧配方或全部失效恢复通过。 刷新/重启部分通过；应用停复/错误引用和完整恢复故障链待08/09。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:6",
+      "originalText": "- 平台复用以考公和一个简单展示应用验收（采用阅读统计作为实现示例：自有数据、统计卡片、列表、筛选与详情，不依赖 AI）：公共模块被两个应用使用，平台核心不包含考公或第二应用的业务条件判断。",
+      "requirementSha256": "277a0eeda3796afd012af7cab10cb436b9fc4d229d8ab88ab9acb82dd1dee8c5",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 78,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading已独立；考公与Reading共同复用公共模块及无内核业务判断待10/11。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。 10补证：10已实际以Reading+Notes两个应用验证SDK，但原条明确要求考公+通用公共模块；无通用Stats库/考公迁移，保留当前未验。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:7",
+      "originalText": "- 原生回归：菜单及会话导航可进入；返回应用后保留状态；现有考公记录和历史资料仍可访问。",
+      "requirementSha256": "4b376e3abf6d859295dc451bc9fa72a6bf4c828ecbe9ca7c69e300595e9ae23f",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 79,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "原生菜单导航可用，但考公旧记录/资料访问尚无新前台证据。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:8",
+      "originalText": "- 原型是内存演示，不作为真实生成、持久化、地图服务或模型调用的通过证据。实际实现需浏览器验收和原生运行时验证。",
+      "requirementSha256": "f61fe9ff73db1ed10ce85654a71e7c0ffdf572f42e3f7bbbb4dc113e087bba10",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 80,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "明确标识原型边界，真实安装及原生执行有独立证据；不把地图/生成原型算实现。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "platform:Testing Decisions:9",
+      "originalText": "- 用户已确认以上测试边界：以考公和简单展示应用验证平台闭环；保留地图扩展接口，真实地图后移。",
+      "requirementSha256": "417458200e02d4b6aa49f2e5186fb8136056c25ae19251896ce3a5e934c1812c",
+      "source": "docs/wayfinder/application-platform/platform-spec.md",
+      "line": 81,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "unverified",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "已确认目标/地图后移属于范围依据；考公+展示应用最终闭环仍缺10，不以确认测试边界当通过。 考公专项已暂停且规格out-of-scope；10第二应用为Project Notes，不是考公迁移；其缺口不由10自动补齐。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:1",
+      "originalText": "As a workbench user, I want AI work to remain the primary workflow, so that I can work without first designing an application.",
+      "requirementSha256": "cfbe055a3729320fbecd4b3c1664d23d9934ad6df380455a47c56cf852b3b631",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 52,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "可从原生主流程/唯一Worktable布局工作，不先搭建应用；模块任务沿原生执行。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:2",
+      "originalText": "As a user, I want one familiar layout and window system, so that I do not switch between duplicate workbench interfaces.",
+      "requirementSha256": "c5fe7789a7e1450db87383b7343a1e592dce063d57ad43a254c46d301658fc26",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 53,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "可从原生主流程/唯一Worktable布局工作，不先搭建应用；模块任务沿原生执行。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:3",
+      "originalText": "As a user, I want a project to combine multiple applications, so that related tools support one work goal.",
+      "requirementSha256": "fede9e75ee4fb367382922577109e0212a31d6191bb3db4f6bba17cb3cfd2d91",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 54,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "15-installed.json",
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.8.4 real module-local builder and0.9.3 synthetic generation/website project composition used the existing Worktable project/panes."
+        }
+      ],
+      "remaining": "Complete application catalog/project management and all legacy application workflows are not inferred.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:4",
+      "originalText": "As a user, I want to reuse an installed application across projects, so that I do not install or maintain copies.",
+      "requirementSha256": "67740d00fcc6b66107eb9856e0ee57a336ab5854b7a441d34aa6e8ac61462979",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 55,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "One registered composition used independent A/B instances in separate projects with separate role Sessions/output."
+        }
+      ],
+      "remaining": "No claim that every existing plugin/application has been reused or migrated.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:5",
+      "originalText": "As a user, I want project-specific application state, tasks and conversations, so that unrelated work does not mix.",
+      "requirementSha256": "0f4f3138117b838297e47c56875abcdb7449c0eb8bd3054d3351d1b065e1a2d5",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 56,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json",
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.9.3 A/B native questions, generation and directed Stop stayed instance-owned;0.9.4 A publication/reinstall retained B1 hash."
+        }
+      ],
+      "remaining": "All unrelated application state and old business datasets remain outside this synthetic evidence.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:6",
+      "originalText": "As a user, I want to create a new application instance explicitly, so that an extra view does not accidentally create new work.",
+      "requirementSha256": "79c21b8b9bd165c61151e6b71c4559f7033f3c1c45b93ca89fd2e795b8472075",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 57,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "15-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual explicit creation of independent instance and additional same-instance view did not conflate their identities."
+        }
+      ],
+      "remaining": "Historical classification retained; other application constructors not reverified.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:7",
+      "originalText": "As a user, I want a full-page application view, so that existing applications remain usable without decomposition.",
+      "requirementSha256": "cf8a1d62f9f901baaf5270d02a6296e57c88598caba3aeb47d2c7a46934f64fb",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 58,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading完整页/统计/列表共owner状态，纯展示无Session；真实拖动与交换后身份/筛选保持。 10补证：E10 actualBusinessUi：Notes完整页实际CRUD、归档恢复通过，Reading原体验保留。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:8",
+      "originalText": "As a user, I want embeddable application modules, so that I can arrange several useful views together.",
+      "requirementSha256": "c3fea06efd3386b6120d2fdda53119086b7ab0413ea9e5ac7888b85bcc77458b",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 59,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual0.8.4 module-local five-type configuration and independent template copy were exercised."
+        }
+      ],
+      "remaining": "Every module type, arbitrary developer view or complete business app not proven.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:9",
+      "originalText": "As a user, I want multiple views of one instance to share state, so that selection and progress remain consistent.",
+      "requirementSha256": "640cdecafa316dba19c2b6aca4cacafcd9ed2a07d832ede1982de38b5b51c0a2",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 60,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.8.4 same-instance linked selection/filter/detail; Reading0.9.3 two views restored same filters/selected detail/1book12minutes after cold restart."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 Reading normal reload and two existing tabs independently verified shared filters/selection/detail1book12minutes; no business writes."
+        }
+      ],
+      "remaining": "Reading proof is0.9.3, not all-feature0.9.4; no cross-browser localStorage synchronization.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:10",
+      "originalText": "As a user, I want moving a view between panes to preserve its identity, so that layout changes do not change business context.",
+      "requirementSha256": "0d70d7b62133f2fd49950d5dce1d05ee65a541c300b3d1e07047e6c5413ffc06",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 61,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading完整页/统计/列表共owner状态，纯展示无Session；真实拖动与交换后身份/筛选保持。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:11",
+      "originalText": "As a user, I want display-only modules without conversations, so that charts and lists do not create unnecessary AI sessions.",
+      "requirementSha256": "a61d3fb44774b4646a048ddb71182a63ee9469291bde45a9756314be5957c068",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 62,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual statistics/list/detail/filter modules displayed controlled source data without requiring a role or native send."
+        }
+      ],
+      "remaining": "No arbitrary third-party display integration proof.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:12",
+      "originalText": "As a user, I want explicit data sharing, so that using one application does not reveal another project's records or conversations.",
+      "requirementSha256": "4aa4454bf277d05524f384ac1cb74199307320f25e5cf048dad331a384aa9a24",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 63,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual selected-source explicit grant and revoked read refusal;0.9.3 website UI resource revoke blocked subsequent read and native submit."
+        }
+      ],
+      "remaining": "No grants for legacy materials or additional user datasets; read-only does not assert every possible write integration.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:13",
+      "originalText": "As a user, I want to reference shared source material, so that isolation does not duplicate my entire library.",
+      "requirementSha256": "02ae50bff31d2db8f297ca2cd8dbc5e957c82c6be06b3c1c14c1cfdc6dc048ab",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 64,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Controlled referenced synthetic Notes were used in module/website reads; website pending task retained references and refused revoked source."
+        }
+      ],
+      "remaining": "Not a migration/copy-completeness claim for whole libraries.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:14",
+      "originalText": "As a user, I want AI task preparation to show its target and context, so that I can edit or cancel before sending.",
+      "requirementSha256": "70dda23c11edbde48bde0e13559c6929149e2504a46988850196c02d8de88e60",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 65,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json",
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual generation task preparation required explicit task review/send; website only prepared tasks without request IDs until trusted Host submission."
+        }
+      ],
+      "remaining": "Not every custom application task editor verified.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:15",
+      "originalText": "As a user, I want module selection and filters included in prepared tasks when supported, so that the AI works on the intended records.",
+      "requirementSha256": "d6a476345f25a3f43b155725894caf3c709dac674eaa1b13d80666b5a94dae95",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 66,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.8.4 actual module selection/filter/detail linkage;0.9.3 Host-controlled source selection frozen in website prepared task and revoked source rejected on submit."
+        }
+      ],
+      "remaining": "Owner-specific arbitrary query/schema selection not generalized.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:16",
+      "originalText": "As a user, I want native conversation history, tools and trajectories, so that application work remains inspectable in DSH.",
+      "requirementSha256": "19c7f33c90479bd46e8dd29bfd1c1866bcc10d7bded1acfce9272653b407990c",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 67,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json",
+        "19-final-ui094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.9.3 real native question/answer, Skill, fs approval/trajectory and native execution were observed from application-owned Session."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 actual native conversation/trajectory tabs retained unsent annotation and displayed request23/7turns23steps; no new execution."
+        }
+      ],
+      "remaining": "Full embedded native titlebar and unavailable public APIs remain upstream limitations.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:17",
+      "originalText": "As a user, I want native questions, approvals and Stop to address the correct task, so that I retain control over execution.",
+      "requirementSha256": "079bac410dbab35eb5bacd436f93e01cbe2f851349e88cc801327c7cab98ff99",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 68,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.9.3 A application Stop stopped A while B native question remained pending and later completed; separate native Reject and Allow once operations verified."
+        }
+      ],
+      "remaining": "Stop request is not a public confirmed-cancellation terminal result; unsupported hosts not marked compatible.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:18",
+      "originalText": "As a user, I want closing or hiding a view to leave ongoing work intact, so that navigation does not silently cancel tasks.",
+      "requirementSha256": "9e1721547e9a9ed0bbf58b3703c40ae3b700bd3c53f638d3a28c5f9dabf9a3fe",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 69,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual switch to another application while G1 executed did not implicitly Stop native work."
+        }
+      ],
+      "remaining": "Every hide/close/uninstall race not independently UI tested.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:19",
+      "originalText": "As a user, I want to distinguish running, waiting, failed, cancelled and unread states, so that I do not mistake completion signals for success.",
+      "requirementSha256": "9f217848cba4ceeed1da4a2e69cbb3f430f45899ba6df4028dae679afaaa93e3",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 70,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "16-clean-installed.json",
+        "15-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Clean official0.8.0 native running/question-waiting/error/unread/open-clear and actual Stop trajectory distinguished;0.9.3 approvals and explicit Stop remained actionable."
+        }
+      ],
+      "remaining": "Host exposes no confirmed-cancellation terminal field. Session unread/idle/Stop are not task business success. No exhaustive transport/host state matrix; original whole row remains open.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:20",
+      "originalText": "As a user, I want to reopen the same role conversation, so that view changes do not create duplicate sessions.",
+      "requirementSha256": "7b00b3316260c9401eecee74b8c4bb2c73630e4d384522620da4323dbedde08d",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 71,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json",
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Application task navigation reopened its exact A/B role Session; same-package0.9.4 reinstall retained seven task/request identities."
+        }
+      ],
+      "remaining": "Not every role/legacy Session replacement flow.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:21",
+      "originalText": "As a user, I want unavailable native capabilities explained with an actionable fallback, so that missing features are not silently substituted.",
+      "requirementSha256": "4e055a14a4102efa430072c52140bcc8e7e544dd97e47d34c1644c5295d53d13",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 72,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual cooperative site handshake rejected missing CSP acceptance and redirected Host navigation; ordinary website retained no bridge capabilities."
+        }
+      ],
+      "remaining": "Missing native alpha.2 baseline remains failure, not a successful fallback UI or compatible AI host.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:22",
+      "originalText": "As a user, I want annotation requests associated with stable targets, so that layout movement does not redirect my request.",
+      "requirementSha256": "945cee2b9d0f7547c9a4ac1f9d38e5413b4d74cf4751ccf41540aa8628512f5f",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 73,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "最终0.7.2实页确认标注携带稳定项目/窗格/tab及应用instance/view身份；标签移动保持目标由公开稳定目标回归验证，替换拒绝并保草稿由实际installed factory/React回调负控验证。未声称实页边拖动模块边编辑标注。成功只追加原生草稿、不自动发送或实现完整F09。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:23",
+      "originalText": "As a user, I want generated results attached to the correct instance and module, so that late results cannot overwrite replacement content.",
+      "requirementSha256": "1beab2587b12c0247588b7823d1509e2b9be26e955b871156244bd976c8d5bdf",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 74,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json",
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.9.3 actual G1/G3/B1 separately previewed and explicitly enabled per instance, pending A result survived B binding publication; replaced target/Stop outputs refused."
+        },
+        {
+          "status": "actual",
+          "text": "0.9.4 real historical G6 applying recovered explicitly to prepared, fresh preview/apply/enable produced its own hash; same-package reload retained G6 and unchanged seven requests."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 actual A G6/B B1 switch and scoped receipts retained A revision27/hash and original seven task/request pairs."
+        }
+      ],
+      "remaining": "No arbitrary generated business system/full page builder guarantee. Whole historical later-stage row is not automatically reclassified; all-device/legacy modules remain outside.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:24",
+      "originalText": "As a user, I want reusable Agents and Skills without shared history, so that capability reuse does not mix private work.",
+      "requirementSha256": "e7e17861f6fa3d883b67ada804ce891fbd99573badaefe1b299788146218e070",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 75,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Managed Agent/Skill reused while actual A/B role Sessions remained independent; native text-organize loaded."
+        }
+      ],
+      "remaining": "Does not cover every public capability-management scenario or arbitrary model tool planning.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:25",
+      "originalText": "As an application owner, I want to preserve application-private roles and Skills, so that integration does not forcibly promote them to global resources.",
+      "requirementSha256": "6ecf9b5eab994a6fbcac190f7e2cf3de652ec8df764203c51016a349e8170258",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 76,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实N1原生Skill轨迹同时加载project-notes provider私有Skill和worktable-managed公共Skill，私有项未变全局managed记录；N2历史独立。不是仅Registry lookup；不外推考公迁移。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:26",
+      "originalText": "As a user, I want refresh and restart recovery, so that instances, task references and retained records remain usable.",
+      "requirementSha256": "1922495eb21ecd69aa57df0e99ecb01e7d7a97e3cd8de8cf8cf1569727642e1d",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 77,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.8.4 owner state cold recovery;0.9.4 exact-package remove/add/cold UI reload restored original project/two views/G6; seven task/request pairs unchanged."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 Reading restored existing instance/two views after same-package reinstall and normal UI reload."
+        }
+      ],
+      "remaining": "Frame-local click state resets.17 selected durable path existence flags and existing hashes preserved does not mean17 paths all existed. No legacy data completeness promise.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:27",
+      "originalText": "As a user, I want storage failures and write conflicts explained, so that the interface does not falsely claim a successful save.",
+      "requirementSha256": "64884e2038a8ba124db2c029fa8888f849efde07762b50b58037f12bac38a3a0",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 78,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "12-clean-installed.json",
+        "16-clean-installed.json",
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Clean installed0.8.0 actual filesystem replacement refusal returned503, preserved old bytes, explicit retry succeeded."
+        },
+        {
+          "status": "actual",
+          "text": "0.9.4 actual old093 definitely uncommitted G6 applying explicitly recovered; fresh preview/apply and enable preserved old active until activation."
+        }
+      ],
+      "remaining": "Storage/ACL/full disk/transport races not exhaustive. UI-vs-authenticated-API409 conflict observed separately in private Chrome handoff, not claimed as two UI writers; not added as a committed installed proof here. Source committed-ack reconciliation tests are auxiliary, not actual UI.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:28",
+      "originalText": "As a user, I want disabling or uninstalling an application to preserve business data by default, so that management is reversible.",
+      "requirementSha256": "1a9927a83b6fc1def3cfe8d279b6bab468e005862e1d66f67883ca7efabe9f01",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 79,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.9.4 official plugin remove/add retained selected durable files and existing generation/task identities; cold UI restored application."
+        }
+      ],
+      "remaining": "Worktable package reinstall does not establish every application-specific disable/uninstall retention contract.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:29",
+      "originalText": "As a user, I want upgrades and rollback to retain recent data, so that recovery does not restore an obsolete whole-profile snapshot.",
+      "requirementSha256": "b5e8a71eb96f93c4d4ca69fb550f8fb0aeb2b50385915e821fdbd50a4bf10593",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 80,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "18-installed.json",
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.8.4 independent synthetic owner migration retained one instance/view through controlled failure/recovery;0.9.4 same-package reinstall preserved selected durable state."
+        }
+      ],
+      "remaining": "Same-package reinstall is not incompatible downgrade/upgrade acceptance. Frozen0.8.4 actual downgrade refusal is not established by these receipts; old schema fixture gates are source evidence.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:30",
+      "originalText": "As an application developer, I want to register an independently developed website, so that I can use the workbench without adopting a proprietary recipe format.",
+      "requirementSha256": "ff5e5b134dd7b1f93901530ee3debae9d296c70de96b06a6e1697049b27ae298",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 81,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.9.3 ordinary external website iframe and explicitly enabled cooperative website used existing Worktable module interface; finite read/prepare exercised."
+        }
+      ],
+      "remaining": "Only supported cooperative Chromium CSP enforcement. No arbitrary cross-origin bridge, database or model/tool access.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:31",
+      "originalText": "As an application developer, I want native plugin integration for deeper features, so that I can supply custom views, data and tasks.",
+      "requirementSha256": "ca1707794caddb4aabdf581b7cec985fc94aa5a0a0572cc6b24cca1392e0206f",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 82,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Reading原生插件提供完整页/模块/owner数据/任务上下文，通过公开接入链真实运行。 10补证：E10实际Notes独立原生插件的完整页/summary/owner及原生准备任务，主要为应用自身代码。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:32",
+      "originalText": "As an application designer, I want composed applications to use the same registration and instance model, so that visual composition does not create a second runtime.",
+      "requirementSha256": "a62e31ec40359120942430f8becc12bec40ac95ae10938ad9b17eceaff89ddaf",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 83,
+      "originalClassification": "后续保留",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "12-clean-installed.json",
+        "14-installed.json",
+        "15-installed.json",
+        "17-installed.json",
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Clean0.8.0 composition Host save/preview/activate preserved existing instance/view identities;0.8.4 actual module builder used same registration model."
+        },
+        {
+          "status": "actual",
+          "text": "0.9.3 generated module/controlled website and0.9.4 recovery/reinstall used existing composition/instance/view ownership, not another application runtime."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 module editor controls opened only; not counted as a repeat creation or save/enable acceptance."
+        }
+      ],
+      "remaining": "Complete arbitrary application AI generation and unrestricted low-code builder remain beyond this limited composition contract. No automatic whole-row closure despite later-stage historical category.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:33",
+      "originalText": "As an application developer, I want explicit instance and view context, so that I do not infer identity from the current global session or pane position.",
+      "requirementSha256": "7dbaa6a726c9197391d541d6757457fcf843e7ed1265305b21a0830884221107",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 84,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "15-installed.json",
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "0.9.3 A/B generation and website capabilities used fixed owner view/instance; directed Stop did not use the currently visible B Session for A."
+        }
+      ],
+      "remaining": "All arbitrary contributed application contexts not tested.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:34",
+      "originalText": "As an application developer, I want registration, lifecycle and cleanup contracts, so that adding an application normally does not change the workbench core.",
+      "requirementSha256": "4233b3e72573f7d4c60f683c60ac45d5859fed4c5ffa406ecb985dd36c84f707",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 85,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "Notes主要增加自有业务代码，通过公开注册/owner/角色/任务/生命周期合同接入，原生Notes开关注销仍保数据和历史交接；SDK v1按Reading+Notes实际范围冻结。无Reading核心私有分支；不声称通用Stats库或考公迁移。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:35",
+      "originalText": "As an application developer, I want explicit capability and interface versions, so that incompatible applications fail clearly.",
+      "requirementSha256": "b901d8aa697cb8731134b16916d6e95770ebb3ec7350132cc87e5f3a474c8625",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 86,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "18-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual declared synthetic owner v2 drift fenced old instance and blocked new-instance creation until explicit recovery/plan confirmation."
+        }
+      ],
+      "remaining": "Unknown third-party native/plugin replacement cannot be vetoed by platform; package install baseline alpha.2 still separately blocked.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:36",
+      "originalText": "As an application developer, I want read and write access distinguished, so that a display integration does not gain arbitrary file or tool permissions.",
+      "requirementSha256": "1924b6564a4199be66aafad7af03eca231dc1fa16010e8c69e882df2a97a0f82",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 87,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "17-installed.json",
+        "19-final-ui094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual website selected-resource read-only and prepare-only task authority; resource revoke refused read and submit; no native request from webpage prepare."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 ordinary cooperative website capabilities both off and selected resource revoked; two prepared tasks still have no native request IDs."
+        }
+      ],
+      "remaining": "All resource write methods/owners not actual exhaustive tested.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:37",
+      "originalText": "As an application developer, I want optional platform styling and reusable controls, so that native modules and generated pages can look consistent.",
+      "requirementSha256": "9846a523fba16c87ab9a8621a4c222517de36c69140c61b1aa91a8952636dd93",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 88,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "13-clean-installed.json",
+        "14-installed.json",
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Clean0.8.0 Notes inherited theme and390px geometry;0.8.4 actual reusable statistic/list/detail/filter module controls."
+        },
+        {
+          "status": "actual",
+          "text": "Reading0.9.3 actual390x900 light/dark, Tab/PageDown/local-scroll and two views observed; generated G6 actual0.9.4 iframe/button rendered."
+        },
+        {
+          "status": "actual",
+          "text": "Separate final0.9.4 Reading390x900 light/dark/keyboard/local-scroll actual regression now supplements unchanged historical0.9.3 proof."
+        }
+      ],
+      "remaining": "Historical0.9.3 Reading proof is preserved and now supplemented by separate final0.9.4 Reading UI. G6 render/button is not generated-page complete theme/keyboard proof. No physical mobile/IME/Desktop/macOS or every reusable control/theme combination.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:38",
+      "originalText": "As a user, I want third-party websites to preserve their own interface, so that the workbench does not inject global styles into unrelated applications.",
+      "requirementSha256": "81de5672147da8f748331d4a66b2a1f41f059ff300b0317127b0bba826273f7b",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 89,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "17-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual external site remained isolated opaque sandbox with independent UI; ordinary mode had disabled capability buttons and no auto-enable after refresh."
+        }
+      ],
+      "remaining": "No all-third-party-site compatibility assertion.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:39",
+      "originalText": "As a maintainer, I want one DSH adaptation module, so that host compatibility changes do not spread across applications.",
+      "requirementSha256": "20a8d9fe387f8fa5f73b34fa38f4b4b24144140dd0c87bd81b9884730759b597",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 90,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "DSH适配集中于平台的公开接缝和导航/布局模块，Reading/Notes通过统一SDK注册，未各自改原生区域或引入独立运行布局。最终真实原生菜单与390px单view切换、焦点修复复验支持本范围；不同原生版本全覆盖不在承诺。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:40",
+      "originalText": "As a maintainer, I want one layout owner, so that applications do not compete to resize the native conversation.",
+      "requirementSha256": "dad5d074f04b5bb575a2f6a6d94cd4001c30ad6c3d2bb0291fc2a779ebe34463",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 91,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "只有平台单layout owner控制原生区域；最终菜单/项目双向与390px全宽模块/原生视图切换、单composer及visible/inert恢复通过。Reading/Notes不各自resize原生。原生先focus→narrow用户选Reading搜索→回1280仍为搜索INPUT，草稿与身份保持。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:41",
+      "originalText": "As a maintainer, I want source and local modifications preserved before baseline selection, so that adopting Worktable does not discard user changes.",
+      "requirementSha256": "95d5fba194ad190d3e57c6a556d2990b2fcf46224d12c6a281a2c3eea9ffabbc",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 92,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "精确保护快照、许可证/来源、派生文件及官方runtime版本有基线记录，不把仓库HEAD当dirty工作树。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:42",
+      "originalText": "As a maintainer, I want documented upstream provenance and licensing, so that the derived plugin remains maintainable.",
+      "requirementSha256": "dcbe2f874ed9d24b300581c6ea6b47bf0d0369c9671a5c25fd8c3243e63d32b3",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 93,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "精确保护快照、许可证/来源、派生文件及官方runtime版本有基线记录，不把仓库HEAD当dirty工作树。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:43",
+      "originalText": "As a maintainer, I want application-specific teaching logic outside the generic contract, so that new applications are not coupled to Kaogong.",
+      "requirementSha256": "d796f697dea9b0b326894e670b5f45f54233d85a1db6b4bc89ac539b3b50f13c",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 94,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "公开generic contract没有教学或Kaogong字段/业务特判；Reading及Notes各自owner/视图/Skill实际独立注册与使用，证明平台无需依赖考公教学逻辑。该架构验收不是Kaogong专项接入、旧资料迁移或课堂链通过。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:44",
+      "originalText": "As a user, I want existing materials, scores, records, credentials and native history preserved, so that framework migration does not reset my work.",
+      "requirementSha256": "f9ca05d8646d6f158eb46ec0cc060ee3b246af9128ac35caa1c142f57e593f96",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 95,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Own0.9.4 reinstall preserved selected durable state and task/request identities."
+        }
+      ],
+      "remaining": "Existing user materials, scores, credentials, native historical sessions and Kaogong/MinerU migration not fully verified. Synthetic preservation cannot close this original requirement.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:45",
+      "originalText": "As a maintainer, I want real installed user-flow evidence, so that successful builds and mocks are not confused with usable integration.",
+      "requirementSha256": "eb55b3d8ede77bc60cac7ff86a2cb56257a7faa23dc380e8344a5170b1ec4e98",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 96,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "14-installed.json",
+        "15-installed.json",
+        "17-installed.json",
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual installed receipts explicitly distinguish original versions, source/fixture gates and real UI/model actions;0.9.4 final package9-file identity and real reinstall recorded."
+        }
+      ],
+      "remaining": "19 remains open pending final delivery/native-host prerequisite; not a full-spec completeness claim.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:46",
+      "originalText": "As a user, I want an explicitly unassigned application instance, so that I can start working before creating a project.",
+      "requirementSha256": "22fd36dbf8818a146f28ea0fd6b48c3f22926dbc83e21b19a9f975fea0716cc7",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 98,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实未归属实例、显式关联项目身份/记录保持，无暗中迁移Session或资料。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:47",
+      "originalText": "As a user, I want explicit project association to preserve the instance and conversation identities, so that organizing work does not migrate files or reset history.",
+      "requirementSha256": "80ce0a4b84fabd714864b6b9bfac933a6f45218dea7a944e1d51322cbcc2aa72",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 99,
+      "originalClassification": "首阶段已验",
+      "incrementalStatus": "retained",
+      "wholeRequirementClosed": false,
+      "evidence": [],
+      "observed": [],
+      "remaining": "真实未归属实例、显式关联项目身份/记录保持，无暗中迁移Session或资料。",
+      "interpretation": "No new whole-requirement finding assigned. Preserve historical classification/evidence; unlisted behavior is not implicitly passed."
+    },
+    {
+      "id": "framework:User Stories:48",
+      "originalText": "As a user, I want irreversible business-data migrations explained before confirmation, so that an application upgrade cannot silently make permanent changes.",
+      "requirementSha256": "4bb0993a6fb135e66b13921705d09b180037ca89597237b7115c10017c99f3e1",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 100,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "18-installed.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual0.8.4 synthetic owner impact plan/two explicit acknowledgements before controlled migration; deliberate partial failure fenced instance and explicit owner recovery/new plan completed."
+        }
+      ],
+      "remaining": "Only one synthetic app/instance; no irreversible user business-data migration or Notes/Reading/Kaogong migration. Native plugin-manager package replacement and trusted owner private writes are outside platform veto.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    },
+    {
+      "id": "framework:User Stories:49",
+      "originalText": "As a user, I want incompatible upgrades to stop without clearing records, so that recovery does not hide data loss.",
+      "requirementSha256": "fd82a52a6a0c6388e87c0a7dd8a9a3a5f9d57f8b553514146da4b73487ab70a4",
+      "source": "docs/wayfinder/worktable-platform/framework-spec.md",
+      "line": 101,
+      "originalClassification": "当前未验",
+      "incrementalStatus": "partial",
+      "wholeRequirementClosed": false,
+      "evidence": [
+        "18-installed.json",
+        "19-final-interim-installed094.json"
+      ],
+      "observed": [
+        {
+          "status": "actual",
+          "text": "Actual synthetic declared version drift/recovery-required fenced old instance and new creation, preserved one existing identity and controlled checkpoint."
+        },
+        {
+          "status": "actual",
+          "text": "0.9.4 same-package reinstall retained durable flags/hashes and request identities."
+        }
+      ],
+      "remaining": "Unknown/crash-intent tests are source evidence; actual controlled owner failure is narrower. Same-package reinstall is not incompatible upgrade/downgrade. No native package replacement veto, no alpha.2 usable-UI proof; whole row remains partial.",
+      "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
+    }
+  ]
+}

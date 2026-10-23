@@ -47,3 +47,27 @@ See [full-scope audit](../full-scope-audit.md) and its 123-entry canonical requi
 ## Workbench completion planning (2026-10-10)
 
 The user confirmed the full destination and installed-DSH user-flow testing seams. [工作台完整闭环与交付规格](../wayfinder/workbench-completion/spec.md) is a supplemental ready-for-agent implementation spec; it preserves the original 123 requirements. [工作台完整闭环与交付决策地图](../wayfinder/workbench-completion/map.md) tracks unresolved route decisions separately. Its child frontmatter uses parent, labels, status, assignee and blocked_by; query open unclaimed children whose blockers are closed. Local tracked docs are used as in the earlier application-platform effort, avoiding an ignored-only planning artifact. Wayfinder tickets carry only wayfinder labels, never ready-for-agent. Map completion is planning completion, not implementation acceptance. Historical maps and user edits remain intact.
+
+## Worktable 基线定位与实现路径
+
+用户确认以 Worktable 为代码基线后，新的[基于 Worktable 的 AI 应用工作台定位与实现路径](../wayfinder/worktable-platform/map.md)采用同一本地 frontmatter 跟踪约定。仅已确认的基线决策关闭；产品定位仍待讨论，后续工单通过 blocked_by 排列。旧规格、123项要求及历史验收保持，不据此宣布实施完成。
+
+## Worktable AI 框架规格
+
+本地规格身份为worktable-ai-framework-spec，标题为[基于 Worktable 的 AI 工作台框架与应用接入规格](../wayfinder/worktable-platform/framework-spec.md)。遵循现有frontmatter跟踪；用户已确认真实安装用户流程为主验收入口；当前status=open、唯一triage标签ready-for-agent。规格已发布到本地跟踪器，不把规划资产或提交记录当实施完成。
+
+Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续阶段。原14张实施工单仅为未批准草案，须据新边界重排后再发布；本轮只记录决策与ADR，不发布实施工单。
+
+## Worktable首阶段实施图
+
+用户在implement-spec轮明确确认按[首阶段11张实施工单](../wayfinder/worktable-platform/implementation/README.md)发布。集成分支codex/worktable-framework；保留原型评审门槛及真实安装验收，完整搭建器、高级网页桥接和自动追改保留后续。原14张草案未作为实施工单发布；旧规格与旧工单不关闭。
+
+## Wayfinding operations：Harness 升级与考公接入
+
+新的本地地图是[工作台与考公面向新 Harness 的兼容及迁移路线](../wayfinder/harness-upgrade/map.md)，不替代旧 framework spec 或历史验收。子票存放在同目录 issues/，以 frontmatter 的 id 为身份，parent 指向 harness-upgrade-map；只能使用 wayfinder 标签。各票 blocked_by 引用实际子票 ID，本地跟踪器无独立依赖 API，因此以该字段表达阻塞。
+
+查询运行 `docs/wayfinder/harness-upgrade/frontier.ps1`；加 `-All` 同时显示认领和阻塞。前沿为 open、assignee 为空且所有 blockers 均 closed 的子票。先设置 assignee 再工作；研究可并行，其他类型每轮最多解决一个。结论写票内 Resolution（本地的 resolution comment），随后设 closed、清除 assignee，再给地图追加标题链接与摘要。研究报告留在票内 context_branch 指定的独立 research 分支，推送但不合并或建 PR，Resolution 链接精确提交。
+
+## 旧规格与工单的 rc.3 增量记录
+
+[框架规格 HU01—HU08](../wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements)持有升级详细要求；[实施索引](../wayfinder/worktable-platform/implementation/README.md#host-upgrade-followups)映射原票。旧票的 status、blocked_by 与历史勾选继续表示原阶段，新增 followup_target/status/blocked_by 仅记录升级待办；pending-decisions 不属于可直接领取的实施前沿。当前需先解决 harness-upgrade 地图中的开放决策，随后另行发布可执行升级子票，不把闭合历史票当作新宿主已完成。

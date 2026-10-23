@@ -1,0 +1,448 @@
+{
+  "ticket": "worktable-framework-18",
+  "status": "installed-accepted-with-explicit-boundaries",
+  "date": "2026-10-22",
+  "sourceCandidate": "08b89d38f6fecaa3ddd1e5f69bf18d86e4f9be8f",
+  "runtime": {
+    "url": "http://127.0.0.1:3091/",
+    "finalColdPid": 16572,
+    "worktableVersion": "0.8.4",
+    "worktableArchive": "D:\\programming\\workspace\\my-dsh\\plugins\\worktable\\01_content\\dist\\v0.8.4\\dsh-worktable-0.8.4.tgz",
+    "worktableSha256": "41993c880f28db940a2a7b8e418cdb8e4cb93af6b9211a5b862a30dacb54fbbf",
+    "packLog": {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-continuation-pack084.private.log",
+      "sha256": "be18143e2e73a728ed8efc7acff161ed1dd6a63237e894ad90d87ba11ee13eb5"
+    },
+    "peerLog": {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-continuation-peers084.private.log",
+      "sha256": "016f6225472efb49745f35bd4567a731b2c2a8311b2dfd2702f83121d1a50785"
+    },
+    "peerResult": "No peer dependency issues found",
+    "installedBytes": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-084-installed-bytes.private.json",
+        "sha256": "1e432bb0e2cefbb0f9ab20bba784296cd574001727e27543ecfd6b53bc97613c"
+      },
+      "matches": 9,
+      "expectedFiles": 9,
+      "files": [
+        {
+          "file": "LICENSE",
+          "sha256": "0c06bb339253ff7c420288915cb224017a187635734cc918b7a4e28504764440",
+          "matches": true
+        },
+        {
+          "file": "lib/client.js",
+          "sha256": "3511d8df3c611cb92a2dcf48c917b4234e83c64ebaa68f88843bce6ddca6a06c",
+          "matches": true
+        },
+        {
+          "file": "lib/index.js",
+          "sha256": "0528a44497eb6c2aaad3c3b859361e0a59cc72fba612acade0236655ab0f5235",
+          "matches": true
+        },
+        {
+          "file": "lib/sdk.js",
+          "sha256": "8015e1be5e0fe836a6015db30183e02df05ec6aa54a47beff4fc1c82235434e2",
+          "matches": true
+        },
+        {
+          "file": "dsh.plugin.json",
+          "sha256": "fbb7eb4ecb927b15855f7b8fdcb59701094680b37730d3fd1eba7f7f8729ce3a",
+          "matches": true
+        },
+        {
+          "file": "package.json",
+          "sha256": "232167a22e1c68b21260ed4bf715dd8c8072bdb63ae2e73d52f7ab8c4af1c48b",
+          "matches": true
+        },
+        {
+          "file": "README.md",
+          "sha256": "5b09b3e7314a2d5cd345ca598ad6564166d266b04bee642a04642c73b9f429f8",
+          "matches": true
+        },
+        {
+          "file": "lib/sdk.d.ts",
+          "sha256": "50e7d2c2100997d041b26e8d7555abbb3115668763297f2e6b5b51598d105bb4",
+          "matches": true
+        },
+        {
+          "file": "cordis.patch.yml",
+          "sha256": "64063099e6504f9e22a59f7787cf66faa3a8b04882492b4312aaae7597ebeb48",
+          "matches": true
+        }
+      ],
+      "provenance": "Root exact-whitelist extraction of frozen0.8.4 archive compared byte hashes against owned profile installed node_modules/dsh-worktable."
+    }
+  },
+  "evidenceClassification": {
+    "publicApiReceipts": "Actual installed profile read-only API/business snapshot receipts, projected to synthetic IDs, versions, revisions and hashes only.",
+    "rootObservedUi": "Root performed actual IAB interactions and supplied the observations below. This docs subagent did not repeat browser actions.",
+    "screenshots": "Local screenshots hash-verified; binaries not committed.",
+    "accessibilitySnapshots": "Local capture references retained; a no-change accessibility delta does not independently prove complete visible content.",
+    "archiveReceipts": "Archive collection receipts predate installation and have installed:false; actual later installation is root-observed, not inferred from that field."
+  },
+  "archives": [
+    {
+      "version": "1.0.0",
+      "archive": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-migration-installed-v1-20261021\\deepseek-ai-dsh-worktable-migration-example-1.0.0.tgz",
+      "sha256": "1e3a7d336caec7254ca85226e85593c9ac07327602f69fca6b0d2d2164325bbe",
+      "role": "preserved original loader-broken archive"
+    },
+    {
+      "version": "2.0.0",
+      "archive": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-migration-installed-v2-20261021\\deepseek-ai-dsh-worktable-migration-example-2.0.0.tgz",
+      "sha256": "f6e62b63ab691ad7d246c8b77487a368127167626b2a8e8c6f193bcb89643aae",
+      "role": "preserved original loader-broken archive"
+    },
+    {
+      "version": "1.0.1",
+      "archive": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-migration-installed-v101-20261021\\deepseek-ai-dsh-worktable-migration-example-1.0.1.tgz",
+      "sha256": "efde8e9f58c8c70707bc038ed00d0ced601152ed3b39c24f77f97e957841760f",
+      "role": "root officially installed corrected example archive"
+    },
+    {
+      "version": "2.0.1",
+      "archive": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-migration-installed-v201-20261021\\deepseek-ai-dsh-worktable-migration-example-2.0.1.tgz",
+      "sha256": "cbfb7a3e7998ce12da00d3dacfb9675c81ce73a782f132358dbd4919cfc16b17",
+      "role": "root officially installed corrected example archive"
+    }
+  ],
+  "stages": {
+    "adopted101": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-adopted101.private.json",
+        "sha256": "445d513871a42b7e0dd170fb44cfff56f2120cdf41acbf6d7e78ea28a84b2b40"
+      },
+      "applicationVersion": "1",
+      "status": "ready",
+      "baseline": {
+        "appId": "migration-example",
+        "instanceId": "33334431-ba91-4280-b098-76454da9d4ce",
+        "applicationVersion": "1",
+        "dataVersion": "1",
+        "dataRevision": "9d0fe7ff-0ea3-4588-8073-c72e88e0daf5",
+        "revision": 1
+      },
+      "inspection": {
+        "dataVersion": "1",
+        "revision": "9d0fe7ff-0ea3-4588-8073-c72e88e0daf5"
+      },
+      "plans": [],
+      "businessSha256": "746a3696b090e1f2ceb15493c766f395843d57e7673b65797b24accdb439a38f",
+      "businessDataVersion": "1",
+      "syntheticTextPreserved": true,
+      "instanceIds": [
+        "33334431-ba91-4280-b098-76454da9d4ce"
+      ],
+      "viewIds": [
+        "081d8516-5583-41e3-8378-4b3a4e684318"
+      ]
+    },
+    "drift201": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-drift201.private.json",
+        "sha256": "6a4485bbad5b54d0d344e79c78d6c704dd2b90aeef78e57f2e3f877947d3c5e9"
+      },
+      "applicationVersion": "2",
+      "status": "migration-required",
+      "baseline": {
+        "appId": "migration-example",
+        "instanceId": "33334431-ba91-4280-b098-76454da9d4ce",
+        "applicationVersion": "1",
+        "dataVersion": "1",
+        "dataRevision": "9d0fe7ff-0ea3-4588-8073-c72e88e0daf5",
+        "revision": 1
+      },
+      "inspection": {
+        "dataVersion": "1",
+        "revision": "9d0fe7ff-0ea3-4588-8073-c72e88e0daf5"
+      },
+      "plans": [],
+      "businessSha256": "746a3696b090e1f2ceb15493c766f395843d57e7673b65797b24accdb439a38f",
+      "businessDataVersion": "1",
+      "syntheticTextPreserved": true,
+      "instanceIds": [
+        "33334431-ba91-4280-b098-76454da9d4ce"
+      ],
+      "viewIds": [
+        "081d8516-5583-41e3-8378-4b3a4e684318"
+      ]
+    },
+    "failed201": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-failed201.private.json",
+        "sha256": "396e2bd105b3024dbca271c17203504d67868fde3cecf37c961d49cce6d755f7"
+      },
+      "applicationVersion": "2",
+      "status": "recovery-required",
+      "baseline": {
+        "appId": "migration-example",
+        "instanceId": "33334431-ba91-4280-b098-76454da9d4ce",
+        "applicationVersion": "1",
+        "dataVersion": "1",
+        "dataRevision": "9d0fe7ff-0ea3-4588-8073-c72e88e0daf5",
+        "revision": 1
+      },
+      "inspection": {
+        "dataVersion": "2",
+        "revision": "d5ed117f-d33e-40a3-93fe-d14088b8e2bb"
+      },
+      "plans": [
+        {
+          "id": "17adc689-a084-4d88-a9ff-df71b8e7e5d1",
+          "status": "failed",
+          "revision": 3,
+          "irreversible": true
+        }
+      ],
+      "businessSha256": "f95e464428c8ca5d29b34380dc859844f3dbacbdb99c9efcd8d61ef6d013f6e1",
+      "businessDataVersion": "2",
+      "syntheticTextPreserved": true,
+      "instanceIds": [
+        "33334431-ba91-4280-b098-76454da9d4ce"
+      ],
+      "viewIds": [
+        "081d8516-5583-41e3-8378-4b3a4e684318"
+      ]
+    },
+    "failed-reopened201": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-failed-reopened201.private.json",
+        "sha256": "a1fb44426dbcd7a2d2316c8885ed4526c1eb38a8f1028fd6e619d6335cdbdafc"
+      },
+      "applicationVersion": "2",
+      "status": "recovery-required",
+      "baseline": {
+        "appId": "migration-example",
+        "instanceId": "33334431-ba91-4280-b098-76454da9d4ce",
+        "applicationVersion": "1",
+        "dataVersion": "1",
+        "dataRevision": "9d0fe7ff-0ea3-4588-8073-c72e88e0daf5",
+        "revision": 1
+      },
+      "inspection": {
+        "dataVersion": "2",
+        "revision": "d5ed117f-d33e-40a3-93fe-d14088b8e2bb"
+      },
+      "plans": [
+        {
+          "id": "17adc689-a084-4d88-a9ff-df71b8e7e5d1",
+          "status": "failed",
+          "revision": 3,
+          "irreversible": true
+        }
+      ],
+      "businessSha256": "f95e464428c8ca5d29b34380dc859844f3dbacbdb99c9efcd8d61ef6d013f6e1",
+      "businessDataVersion": "2",
+      "syntheticTextPreserved": true,
+      "instanceIds": [
+        "33334431-ba91-4280-b098-76454da9d4ce"
+      ],
+      "viewIds": [
+        "081d8516-5583-41e3-8378-4b3a4e684318"
+      ]
+    },
+    "recovered201": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-recovered201.private.json",
+        "sha256": "d95fc55328bcb90e06ab8a7777a58d6f5c37507bc39a2a9fad8e21ee5ea029ad"
+      },
+      "applicationVersion": "2",
+      "status": "migration-required",
+      "baseline": {
+        "appId": "migration-example",
+        "instanceId": "33334431-ba91-4280-b098-76454da9d4ce",
+        "applicationVersion": "1",
+        "dataVersion": "1",
+        "dataRevision": "69970801-6fc9-468c-8d76-13b6d7f23c37",
+        "revision": 2
+      },
+      "inspection": {
+        "dataVersion": "1",
+        "revision": "69970801-6fc9-468c-8d76-13b6d7f23c37"
+      },
+      "plans": [
+        {
+          "id": "17adc689-a084-4d88-a9ff-df71b8e7e5d1",
+          "status": "recovered",
+          "revision": 5,
+          "irreversible": true
+        }
+      ],
+      "businessSha256": "cf32f8c8ed6324d4552f30a85b07ce5c45d40bec2c7a5fd2f41a18e2daa50c42",
+      "businessDataVersion": "1",
+      "syntheticTextPreserved": true,
+      "instanceIds": [
+        "33334431-ba91-4280-b098-76454da9d4ce"
+      ],
+      "viewIds": [
+        "081d8516-5583-41e3-8378-4b3a4e684318"
+      ]
+    },
+    "ready201": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-ready201.private.json",
+        "sha256": "b8f6de28b9a6c5e61b8d3ffbfc4ae4e9311bb1259dd2bcfb4a863fd80188ab75"
+      },
+      "applicationVersion": "2",
+      "status": "ready",
+      "baseline": {
+        "appId": "migration-example",
+        "instanceId": "33334431-ba91-4280-b098-76454da9d4ce",
+        "applicationVersion": "2",
+        "dataVersion": "2",
+        "dataRevision": "576c7fa5-2359-4e18-a965-d2bdd4da714d",
+        "revision": 3
+      },
+      "inspection": {
+        "dataVersion": "2",
+        "revision": "576c7fa5-2359-4e18-a965-d2bdd4da714d"
+      },
+      "plans": [
+        {
+          "id": "17adc689-a084-4d88-a9ff-df71b8e7e5d1",
+          "status": "recovered",
+          "revision": 5,
+          "irreversible": true
+        },
+        {
+          "id": "42ca4964-2f24-401f-833a-2ac64a2f2401",
+          "status": "applied",
+          "revision": 3,
+          "irreversible": true
+        }
+      ],
+      "businessSha256": "ad2e17c1acaac39f94a726277540da0e9fc16094509bb7d5dbf5f2a9211b8924",
+      "businessDataVersion": "2",
+      "syntheticTextPreserved": true,
+      "instanceIds": [
+        "33334431-ba91-4280-b098-76454da9d4ce"
+      ],
+      "viewIds": [
+        "081d8516-5583-41e3-8378-4b3a4e684318"
+      ]
+    },
+    "cold-ready201": {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-cold-ready201.private.json",
+        "sha256": "b8f6de28b9a6c5e61b8d3ffbfc4ae4e9311bb1259dd2bcfb4a863fd80188ab75"
+      },
+      "applicationVersion": "2",
+      "status": "ready",
+      "baseline": {
+        "appId": "migration-example",
+        "instanceId": "33334431-ba91-4280-b098-76454da9d4ce",
+        "applicationVersion": "2",
+        "dataVersion": "2",
+        "dataRevision": "576c7fa5-2359-4e18-a965-d2bdd4da714d",
+        "revision": 3
+      },
+      "inspection": {
+        "dataVersion": "2",
+        "revision": "576c7fa5-2359-4e18-a965-d2bdd4da714d"
+      },
+      "plans": [
+        {
+          "id": "17adc689-a084-4d88-a9ff-df71b8e7e5d1",
+          "status": "recovered",
+          "revision": 5,
+          "irreversible": true
+        },
+        {
+          "id": "42ca4964-2f24-401f-833a-2ac64a2f2401",
+          "status": "applied",
+          "revision": 3,
+          "irreversible": true
+        }
+      ],
+      "businessSha256": "ad2e17c1acaac39f94a726277540da0e9fc16094509bb7d5dbf5f2a9211b8924",
+      "businessDataVersion": "2",
+      "syntheticTextPreserved": true,
+      "instanceIds": [
+        "33334431-ba91-4280-b098-76454da9d4ce"
+      ],
+      "viewIds": [
+        "081d8516-5583-41e3-8378-4b3a4e684318"
+      ]
+    }
+  },
+  "actualBlockedNewInstances": [
+    {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-new-instance-blocked.private.json",
+        "sha256": "d465ee1a20ac6a4af5474d53f7321baaa8d3b147121edd0784aea58d13883837"
+      },
+      "httpStatus": 409,
+      "code": "migration-required",
+      "before": 21,
+      "after": 21
+    },
+    {
+      "receipt": {
+        "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-new-instance-blocked-migration-recovery-required.private.json",
+        "sha256": "5afd6ba9c724db087c06dc55abf797dd821432e66d7d2e42e6eb52bfc3dd7526"
+      },
+      "httpStatus": 409,
+      "code": "migration-recovery-required",
+      "before": 21,
+      "after": 21
+    }
+  ],
+  "rootObservedUi": [
+    "Legacy-unverified view displayed both baseline and whole-app suspension warnings; merely opening did not adopt; explicit adoption reached ready.",
+    "Official example upgrade1.0.1 to2.0.1 changed managed status to migration-required while original synthetic data hash stayed unchanged.",
+    "Prepared plan displayed impact, from/to versions, revision, irreversibility and recovery; one acknowledgement kept execute disabled, second acknowledgement plus explicit click invoked owner.",
+    "First owner conversion wrote its checkpoint then failed; actual new-instance request returned409 without inventory change.",
+    "Refresh/reopen retained failed revision and business hash with no execution replay.",
+    "Explicit separately acknowledged owner recovery proved data1 old endpoint while app2 remained migration-required.",
+    "A newly prepared and separately confirmed second conversion reached ready/data2 preserving synthetic text.",
+    "Root-owned cold restart PID16572 retained ready and identical business hash."
+  ],
+  "screenshots": [
+    {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-plan201.private.png",
+      "sha256": "813cc1f5ba706576d372ef4dbb2b5baf66590bd29281c13f642b45f8c89d9f16"
+    },
+    {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-failed201.private.png",
+      "sha256": "b7451727582804fb165484ce9c17aa8f38dabd649b3ba896156d90534a1d3e45"
+    },
+    {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-ready201.private.png",
+      "sha256": "23714c98b2ece6ba36a0f086665330a6bfe4039930dabf73a79dcbaeb913a545"
+    }
+  ],
+  "accessibilitySnapshots": [
+    {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-legacy101.private.ax.txt",
+      "sha256": "a64564a941efd0370d9afb55e592c49a59b7c8887b1b80e54afd4c635ce42e18"
+    },
+    {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-plan201.private.ax.txt",
+      "sha256": "6476e87f6c2e54cc4e3f5cfbf843fb1045cc1b7f1198c1f255d6973062d949d8"
+    },
+    {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-failed201.private.ax.txt",
+      "sha256": "6476e87f6c2e54cc4e3f5cfbf843fb1045cc1b7f1198c1f255d6973062d949d8"
+    },
+    {
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-18-ready201.private.ax.txt",
+      "sha256": "6476e87f6c2e54cc4e3f5cfbf843fb1045cc1b7f1198c1f255d6973062d949d8"
+    }
+  ],
+  "preservation": {
+    "instanceCount": 1,
+    "viewCount": 1,
+    "identitiesUnchanged": true,
+    "oldBrokenArchivesUnchanged": true,
+    "firstBrokenBootRecovery": "Officially removed loader-broken example and restarted owned acceptance runtime; synthetic data retained. New patch archives replaced no old tarball."
+  },
+  "limits": [
+    "Only one independent synthetic application/instance was migrated. No legacy app, Reading, Notes or Kaogong migration is claimed.",
+    "Actual creation after ready was not exercised: no second fixture instance was created. Ready status shows fence clearance; source regression separately covers subsequent admission.",
+    "This platform cannot veto native plugin-manager package replacement or trusted owner private/native writes.",
+    "Owner recovery is explicit verified checkpoint handling, not a platform-wide automatic rollback promise.",
+    "Unknown/crash-intent behavior is source real-child-process evidence; installed flow exercised controlled owner failure, refresh/reopen and cold-ready persistence."
+  ]
+}

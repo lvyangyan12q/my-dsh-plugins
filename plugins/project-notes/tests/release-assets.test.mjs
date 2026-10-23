@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict'
+import {test} from 'node:test'
+import {mkdtempSync,mkdirSync,copyFileSync,writeFileSync,readFileSync,rmSync} from 'node:fs'
+import {tmpdir} from 'node:os'
+import {join,dirname} from 'node:path'
+import {fileURLToPath} from 'node:url'
+import {spawnSync} from 'node:child_process'
+import {reserveConsumerRelease} from '../release-assets.mjs'
+const plugins=fileURLToPath(new URL('../../',import.meta.url))
+test('both normal consumer release entries reject an existing version before gates without changing frozen asset bytes',()=>{const root=mkdtempSync(join(tmpdir(),'consumer-release-frozen-'));try{for(const n of ['project-notes','reading-statistics']){const dir=join(root,n);mkdirSync(dir);for(const f of n==='project-notes'?['release-prep.mjs','release-assets.mjs','public-producer.mjs']:['release-prep.mjs'])copyFileSync(join(plugins,n,f),join(dir,f));writeFileSync(join(dir,'package.json'),JSON.stringify({type:'module',version:'9.8.7'}));const output=join(dir,'dist/v9.8.7');mkdirSync(output,{recursive:true});const names=['deepseek-ai-dsh-'+n+'.tgz','deepseek-ai-dsh-'+n+'-9.8.7.tgz'];for(const file of names)writeFileSync(join(output,file),'frozen-'+file);const run=spawnSync(process.execPath,[join(dir,'release-prep.mjs')],{encoding:'utf8'});assert.notEqual(run.status,0);assert.match(run.stderr,/release-exists/);for(const file of names)assert.equal(readFileSync(join(output,file),'utf8'),'frozen-'+file)}}finally{rmSync(root,{recursive:true,force:true})}})
+test('consumer publisher reserves exclusively and preserves package-specific names',()=>{const root=mkdtempSync(join(tmpdir(),'consumer-release-reserve-'));try{const dir=join(root,'v0.2.1'),reservation=reserveConsumerRelease(dir,'example-consumer');assert.throws(()=>reserveConsumerRelease(dir,'example-consumer'),{code:'release-exists'});const source=join(root,'verified.tgz');writeFileSync(source,'verified');reservation.publish(source,'0.2.1');for(const file of ['example-consumer.tgz','example-consumer-0.2.1.tgz'])assert.equal(readFileSync(join(dir,file),'utf8'),'verified');assert.throws(()=>reserveConsumerRelease(dir,'example-consumer'),{code:'release-exists'})}finally{rmSync(root,{recursive:true,force:true})}})

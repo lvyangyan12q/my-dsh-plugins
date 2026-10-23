@@ -1,0 +1,12 @@
+# Isolated migration owner example
+
+Test-only single-instance application; never install into a user profile. It owns only `worktable-migration-example-synthetic/synthetic.json` in the dedicated acceptance profile. No models, Kaogong or existing app records are read or written. Startup initializes its own synthetic record; inspect only reads it. Its owner lease atomically verifies the expected business revision.
+
+After Worktable 0.8.2 is built and officially installed by the release owner, build versions separately with `node build.mjs 1 <new-v1-directory>` and `node build.mjs 2 <new-v2-directory>`, then npm pack those independent directories. The helper never installs or restarts DSH. Do not overwrite frozen archives.
+
+Install v1, create one synthetic instance, expand 升级与恢复, explicitly adopt its current declaration after inspection. Replace only this example with v2 using the native plugin manager. Verify managed new admission and platform resources block on definition drift while existing native history remains available. Prepare a plan, inspect versions/revision/impact/irreversible/recovery, and separately acknowledge before execute. Its first execution intentionally writes its own checkpoint and fails. Verify persistent blocking, explicit recovery at the current revision, and restored old endpoint. Current v2 remains migration-required until a newly prepared and explicitly confirmed second conversion succeeds. Restart/reopen must retain durable intent and never replay execution.
+
+Source tests and building this example do not establish installed UI acceptance. Record actual archive SHA256, runtime/public dependency versions and real screenshots before closing ticket18. Native plugin replacement and trusted owner private writes are outside this platform admission fence. Existing applications without this owner seam remain legacy-unverified and are not promised upgrade protection.
+
+
+Loader correction: earlier 1.0.0/2.0.0 archives lacked the official ModuleLoader registration wrapper and failed native web boot; plain CJS evaluation was insufficient evidence. Keep those frozen archives unchanged. The corrected builder emits new 1.0.1/2.0.1 packages; final-script regression evaluates only `window.__ModuleLoader__.load`, verifies exact package identity, invokes the registered factory with a React-only external allowlist, and checks exported apply/inject. This corrected source test is not installed acceptance. Root must install the new tarballs through the official CLI and verify actual web boot.

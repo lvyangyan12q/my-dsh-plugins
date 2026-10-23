@@ -1,0 +1,398 @@
+{
+  "date": "2026-10-21",
+  "ticket": "worktable-framework-16",
+  "status": "passed-with-public-native-contract-limits",
+  "priorMixedEvidence": {
+    "ref": "16-installed.json",
+    "unchanged": true,
+    "meaning": "Actual earlier observations remain scoped to mixed alpha.2 fallback. This new receipt is a fresh run after root repaired explicit profile dependency resolution and cold-started PID9032; it does not retroactively promote earlier results."
+  },
+  "host": {
+    "origin": "http://127.0.0.1:3091/",
+    "nativeVersion": "0.2.0-rc.2",
+    "processId": 9032,
+    "nativePatched": false,
+    "runtimeRestartedByThisAgent": false,
+    "peerProofSource": "Root-owned worktable-13-peer-clean.private.json; readonly inspected here",
+    "peerProofSha256": "8465e4bc950b81c1f7699769bfd61ddb033c40a56b512455f2bb6c08733e5369",
+    "peerCheck": {
+      "pnpmVersion": "11.28.5",
+      "exitCode": 0,
+      "stdout": "No peer dependency issues found\n",
+      "stderr": "",
+      "readOnlyMetadataMatched": true
+    },
+    "resolvedContexts": [
+      {
+        "name": "dsh-worktable",
+        "version": "0.8.0",
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.0-rc.2"
+          }
+        ]
+      },
+      {
+        "name": "@deepseek-ai/dsh-project-notes",
+        "version": "0.2.0",
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.0-rc.2"
+          }
+        ]
+      },
+      {
+        "name": "@deepseek-ai/dsh-reading-statistics",
+        "version": "0.2.0",
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.0-rc.2"
+          }
+        ]
+      },
+      {
+        "name": "@deepseek-ai/dsh-storage-domain",
+        "version": "0.2.0-rc.2",
+        "dependencies": [
+          {
+            "name": "@deepseek-ai/cordis",
+            "version": "4.0.4"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage-domain",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-invariants",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-storage",
+            "version": "0.2.0-rc.2"
+          },
+          {
+            "name": "@deepseek-ai/dsh-host-webserver",
+            "version": "0.2.0-rc.2"
+          }
+        ]
+      }
+    ]
+  },
+  "archives": [
+    {
+      "name": "Worktable",
+      "version": "0.8.0",
+      "sha256": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91"
+    },
+    {
+      "name": "Project Notes",
+      "version": "0.2.0",
+      "sha256": "375f1ef756e5da976de2c8286f3dd6d59ad3059fcba41dcd0df242ed05cab17e"
+    },
+    {
+      "name": "Reading",
+      "version": "0.2.0",
+      "sha256": "33ade5eabea718f8daed1652fdd675c372b122916064b7b8b8bde95ed49cdf9a"
+    }
+  ],
+  "scope": "Same frozen final archives; reused only own two synthetic unassigned instances and original dedicated Session identities; no new instance/Session/business record created by this run. Two new prepared then explicitly confirmed tasks have zero business contexts.",
+  "sourceEvidence": {
+    "ref": "16-source-failures.json",
+    "scope": "Previously observed RED/GREEN 44 auxiliary tests retained separately; no code change or re-pack in this clean run."
+  },
+  "publicTaskAudit": [
+    {
+      "instanceId": "f0ca248f-70c5-4b5e-acc6-c4f817f1b7af",
+      "viewId": "e9219ee1-28b9-4d2b-a3cb-5377306d62ab",
+      "projectId": null,
+      "tasks": [
+        {
+          "id": "c2fcb62f-fe28-44e8-bd67-24135421c9e6",
+          "sessionId": "26e3183d-ce9d-4f67-8075-3b030d6cc9f4",
+          "requestId": "43b5bfb2-50ed-480c-a12d-e03c5df50701",
+          "status": "accepted",
+          "stopRequestedAt": null,
+          "contextCount": 0
+        },
+        {
+          "id": "edcbfdcd-43ba-4881-b939-7ad79dfc0a21",
+          "sessionId": "26e3183d-ce9d-4f67-8075-3b030d6cc9f4",
+          "requestId": "6724e633-0bad-403b-bb05-c184ca18dd41",
+          "status": "accepted",
+          "stopRequestedAt": null,
+          "contextCount": 0
+        }
+      ]
+    },
+    {
+      "instanceId": "46e9ed34-d43a-4f0f-8691-e3bd7f82e5c0",
+      "viewId": "3cf663a3-7c2c-4016-b4c9-879c677628dd",
+      "projectId": null,
+      "tasks": [
+        {
+          "id": "9293c7d2-ff61-4ef1-a9e3-8c006e73aca5",
+          "sessionId": "d01fdfed-5bf0-42ac-8b0b-12469af8b26b",
+          "requestId": "73427d33-3c7a-4a05-9c51-4acaf90c675c",
+          "status": "accepted",
+          "stopRequestedAt": 1792591416790,
+          "contextCount": 0
+        },
+        {
+          "id": "7d3a7b7e-3248-4911-9833-ee67cda37a85",
+          "sessionId": "d01fdfed-5bf0-42ac-8b0b-12469af8b26b",
+          "requestId": "c19a8742-d6c0-49b2-9053-f36344515af1",
+          "status": "accepted",
+          "stopRequestedAt": 1792592535499,
+          "contextCount": 0
+        }
+      ]
+    }
+  ],
+  "actualUi": {
+    "browser": "Own new CUA Chrome extension tab745172488; only that tab interacted with, closed after cleanup.",
+    "unknownAfterColdStart": {
+      "observed": true,
+      "quote": "原生当前未运行；执行结果未知，请查看轨迹",
+      "source": "Restored own previously accepted task before new run; cold native error is not fabricated from historical failure."
+    },
+    "running": {
+      "observed": true,
+      "source": "Actual Chrome DOM observation during NEW local failure task at retry5/5: native Running/Stop generating and both same-Session task rows 原生正在运行. Session-wide observation, not per-task success.",
+      "savedRunningScreenshot": false,
+      "caution": "Candidate running snapshots were captured either before asynchronous admission or after failure; none is labeled a running screenshot or used as proof of that frame."
+    },
+    "failed": {
+      "sessionId": "26e3183d-ce9d-4f67-8075-3b030d6cc9f4",
+      "newTaskId": "edcbfdcd-43ba-4881-b939-7ad79dfc0a21",
+      "requestId": "6724e633-0bad-403b-bb05-c184ca18dd41",
+      "observed": "New pure-dependency synthetic text appeared as turn2; native Failed/This turn failed SERVER and TaskPanel 原生错误：500 WORKTABLE_SYNTHETIC_PROVIDER_FAILURE.",
+      "providerOrigin": "http://127.0.0.1:13323",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "status": 500,
+          "at": "2026-10-21T14:18:13.338Z"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "status": 500,
+          "at": "2026-10-21T14:18:13.834Z"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "status": 500,
+          "at": "2026-10-21T14:18:14.793Z"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "status": 500,
+          "at": "2026-10-21T14:18:16.902Z"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "status": 500,
+          "at": "2026-10-21T14:18:21.286Z"
+        },
+        {
+          "method": "POST",
+          "path": "/v1/chat/completions",
+          "status": 500,
+          "at": "2026-10-21T14:18:29.945Z"
+        }
+      ],
+      "nativeRetryLabel": "Retried model request (5/5) · 9s",
+      "forwards": false,
+      "requestBodyOrHeaderLogging": false
+    },
+    "waiting": {
+      "sessionId": "d01fdfed-5bf0-42ac-8b0b-12469af8b26b",
+      "newTaskId": "7d3a7b7e-3248-4911-9833-ee67cda37a85",
+      "requestId": "c19a8742-d6c0-49b2-9053-f36344515af1",
+      "model": "Existing commandcode / DeepSeek V4.1 Flash; original dedicated question Session model remained selected.",
+      "observed": "New question 继续纯依赖状态验收吗？ appeared with 继续/结束 options; TaskPanel 原生等待问题或审批."
+    },
+    "stopUnreadAndClear": {
+      "observed": true,
+      "source": "Selected own failed Session as native main while question instance module remained. Stopped only the NEW question task from its TaskPanel; observed 未读结束提示. Opened correct d01 Session and unread suffix cleared. Native trajectory Turn2 new question result ASK_ABORTED.",
+      "beforeOpen": "已提交停止请求；是否取消及执行结果请查看原生轨迹 · 有未读结束提示 · 已请求Stop（保留队列）",
+      "afterOpen": "已提交停止请求；是否取消及执行结果请查看原生轨迹 · 已请求Stop（保留队列）",
+      "neverClaimsConfirmedCancellationOrBusinessSuccess": true
+    }
+  },
+  "actualInstalledStorage": {
+    "source": "Root repeated actual official-installed profile file replacement refusal/retry AFTER dependency repair; original mixed receipt not reused.",
+    "receipt": {
+      "date": "2026-10-21",
+      "kind": "official-installed-3091-real-file-refusal",
+      "worktableVersion": "0.8.0",
+      "archiveSha": "c4fb81aa00de16390ed11eeadd7c0e0e5425bf48f0bfcbb156c4e066e8096a91",
+      "refusedStatus": 503,
+      "refusedCode": "storage-unavailable",
+      "oldFileSha": "d173c05055eee0819a640590d2e05761e7c24ea105840e00d34a3e1c658f25a2",
+      "refusedFileUnchanged": true,
+      "readDirectoryUnchanged": true,
+      "retryStatus": 200,
+      "exactlyOneSyntheticAppAdded": "storage-installed-1792592298283",
+      "instancesUnchanged": true,
+      "viewsUnchanged": true,
+      "aclChanged": false,
+      "nativePatched": false,
+      "modelSent": false,
+      "formal3080Changed": false
+    }
+  },
+  "cleanup": {
+    "temporaryProviderAndExclusiveSyntheticKeyDeletedViaNativeSettings": true,
+    "modelRowsAfter": [
+      "DeepSeek",
+      "commandcode"
+    ],
+    "helperPid": 17160,
+    "helperIdentityCheckedAndStopped": true,
+    "port13323NoListener": true,
+    "ownBrowserTabClosed": true,
+    "noRunningModelTaskOrPendingQuestion": true,
+    "priorDedicatedSessionsAndTaskAuditRetained": true,
+    "existingProviderAgentSessionNotMutationTargets": true,
+    "browserStateBoundary": "As before, native browser may remember recent model choice; no blanket claim that all browser state is byte-identical. Existing dedicated failure Session intentionally retains its removed synthetic model selection for audit; question Session remained commandcode."
+  },
+  "screenshots": [
+    {
+      "kind": "failed",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-failed.private.png",
+      "sha256": "07bbdfd2abdcb23c996cc240a49112375e244b551981671893b8d4c85735b9e1",
+      "trackedBinary": false
+    },
+    {
+      "kind": "waiting",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-waiting.private.png",
+      "sha256": "37a5d67fdc3153738cdfba0da97f14938e0041418d6392e09c732e0039a5d012",
+      "trackedBinary": false
+    },
+    {
+      "kind": "unread",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-unread.private.png",
+      "sha256": "9f9a5f11f26072c0cab3e868f6e10666ad0d47860f70e9110b795c845aaa8f9f",
+      "trackedBinary": false
+    },
+    {
+      "kind": "stopped-trajectory",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-stopped-trajectory.private.png",
+      "sha256": "b6dd5c6f4ab29ea1d56a30335c74a423e00a7674914f4d9ac0f74f918aa5b90b",
+      "trackedBinary": false
+    },
+    {
+      "kind": "provider-cleaned",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-provider-cleaned.private.png",
+      "sha256": "0cdcd4379ac650b2d70204a1f262d5c71067731b0cc40aee196be885ffdaf4d7",
+      "trackedBinary": false
+    }
+  ],
+  "domSnapshots": [
+    {
+      "kind": "unknown",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-unknown.snapshot.private.txt",
+      "sha256": "111d042e424d880334095673685ef14ddcd59ea659f95b4126a73334393b8fc6",
+      "tracked": false
+    },
+    {
+      "kind": "failed",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-failed.snapshot.private.txt",
+      "sha256": "66c5d4329ef8c8b31f85ffa5b20e13f64a869cfe69aae5cfc00d3f6256c69dbd",
+      "tracked": false
+    },
+    {
+      "kind": "question-waiting",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-question-waiting.snapshot.private.txt",
+      "sha256": "ba59bca630165416a73cfb8da8d38e8ba32bb864e72632a4b05762826e1cac64",
+      "tracked": false
+    },
+    {
+      "kind": "unread",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-unread.snapshot.private.txt",
+      "sha256": "3152c28294c425827445a97cfdc48735ae4da2790831b279b3ca81bbde02b05e",
+      "tracked": false
+    },
+    {
+      "kind": "unread-cleared",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-unread-cleared.snapshot.private.txt",
+      "sha256": "85ee28fade14c8c1c18b20b5921d355ea7e8e312355d59d585553515a25aed75",
+      "tracked": false
+    },
+    {
+      "kind": "stopped-trajectory",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-stopped-trajectory.snapshot.private.txt",
+      "sha256": "4ca43896669207ea293f39fdef35a2924cec8f1aa20003495b215716198482ac",
+      "tracked": false
+    },
+    {
+      "kind": "provider-cleaned",
+      "localPath": "C:\\Users\\pc-zzy\\Documents\\ChatGPT\\deepseek-harness\\worktable-16-clean-provider-cleaned.snapshot.private.txt",
+      "sha256": "d9b4723bcd428f1c7fb51701320fb332f89a557fe2a33c9e494d8f9d3c55f731",
+      "tracked": false
+    }
+  ],
+  "limits": [
+    "Public native status has no confirmed-cancellation terminal field or task-scoped business success correlation; Stop, idle, unread never imply success.",
+    "Native error is a live Session fact, not replayed from past trajectory after restart.",
+    "Actual model-run receipt is new after dependency repair; mixed historical run remains mixed.",
+    "No new Desktop/macOS, unknown transport replay, legacy materials or Kaogong validation; full framework spec remains open.",
+    "No native/upstream patch, formal3080 deployment, new archive or remote push performed by this agent."
+  ]
+}

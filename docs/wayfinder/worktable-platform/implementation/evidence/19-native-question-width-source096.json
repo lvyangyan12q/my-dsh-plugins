@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-23",
+  "status": "source-only096; actual installed native question pending",
+  "base": "8e5a7fb6a476afd5fff10b11eba7783227e02ce3",
+  "actual095Red": "At1000px available native default300px caused native submit56px right1268.78 outside hidden card right1241; two clicks ineffective; manual native column360px submitted. Root observed actual active native question; no restart by author.",
+  "seam": "Real built client splitStore.open/setChatW/persist DOM margin and native width variable; real React installed-client callbacks for full-width switch/focus",
+  "tdd": "Old built client produced300px and I.default failed; new native bounds produced360px for default/persisted/drag without overwriting unrelated saved layout",
+  "checks": {
+    "navigation": "real React installed-client callback fixture passed at780 constrained split and444 mobile",
+    "anchorsPassed": 9,
+    "syntax": "passed",
+    "sourceFailed": 0,
+    "build": "passed",
+    "factoryPassed": 10,
+    "originalAnchorScenarios": 8,
+    "skipped": 0,
+    "sourcePassed": 277
+  },
+  "limits": [
+    "Source/DOM fixtures are not installed096 native question submission evidence",
+    "No native DOM class/style override or native/upstream source change",
+    "Worktable package/manifest/lock096;095 frozen package and consumer archives unchanged;SDK declaration unchanged",
+    "No pack/install/restart/model/push by author",
+    "Supplement and parent19 remain OPEN;172/STATUS untouched"
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-19-alpha2-question-clipped.private.json",
+      "sha256": "3c0b0451fb36a28da784ccfb5c7bdb25df90015fd9f7f51110b680b4749fc424",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-question-clipped.private.png",
+      "sha256": "8d54ab39fd3014339f8d243b7aa61521b192681c06b0a076478e126c91ad9eb7",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-native-width096-red.private.log",
+      "sha256": "6caf8ac3d626b1e91a60031a6dbd38ee7fbf43ea9ad56a5417fb45bdc8a087f6",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-native-width096-green.private.log",
+      "sha256": "495d937ef2306f418fa9ddfbdf6bba5c4659629b49da03fbed67e5522da535a2",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-native-width096-navigation.private.log",
+      "sha256": "e30be1518de31c48aec5a815cd506f5283350d2d7cf15888712e9d95ac1597e9",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-native-width096-full.private.log",
+      "sha256": "7d637caf9ed2d262103d53cde8946dd0658ee22ecd54beda179aff011750e448",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-native-width096-factory.private.log",
+      "sha256": "dd61fb51898c26f27f935e1b2b40ca1a0894893f550794d63f358b8869d8b60a",
+      "contentsCommitted": false
+    }
+  ]
+}

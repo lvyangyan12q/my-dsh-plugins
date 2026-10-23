@@ -1,0 +1,37 @@
+{
+  "ticket":"worktable-framework-06",
+  "status":"navigation-corrected-prepared-awaiting-root-draft-and-layout-validation",
+  "ticketClosed":false,
+  "mergedIntegration":"54b68960db4c2097ed0e6e2ad4035c41e4b8e7b6",
+  "packSourceHead":"ec526cb6a632cc55c930062b778061e486e32b52",
+  "rootReported884bResults":{
+    "managedSave":"Existing reading-helper explicitly saved revision3 with base while preserving ID/content/Skill associations",
+    "sameInstance":"C two views shared ready Session prefix01d15336",
+    "concurrentEnsure":"A actual HTTP Promise.all returned two200 ready revision2 rows for Session prefix10fc50bb",
+    "restart":"Owned Host cold restart retained C same Session and native open worked",
+    "uxBlocker":"Opening C native conversation closed the Worktable layout"
+  },
+  "cause":"Role navigation called openHostSession without the existing plugin-initiated switch marker; syncSessionScope treated it as an external native switch and closed the project.",
+  "minimalFix":"Call existing markPluginSessionOpen(id) immediately before public openHostSession in the configured role navigation callback.",
+  "unchanged":["native services","project binding persistence","role Session bindings","application instance and view IDs","ordinary manual native-switch close behavior"],
+  "redGreen":{
+    "seam":"Actual apply() role callback and existing marker/syncSessionScope functions, using real rc.2 mainView-retention snapshot adapter",
+    "red":"Both source and prior884b product triggered close=1 on role navigation",
+    "green":"Source retains active layout/spec/view object identity and original binding; normal manual switch still closes and marker is consumed",
+    "installedArtifactGate":"The same test passed against lib/client.js from the independently installed final package",
+    "limits":"Native navigation and shell close boundaries are controlled; this is wiring/function regression, not a browser draft or full layout DOM acceptance."
+  },
+  "pack":{
+    "command":"npm run pack",
+    "tests":{"passed":143,"failed":0,"skipped":0,"roleRelated":22,"resourceRelated":5},
+    "independentInstallImport":"passed",
+    "installedClientFactory":"passed",
+    "installedRoleNavigation":"passed",
+    "installedAnchorDomScenarios":8,
+    "installedServerHomeScenarios":3,
+    "sha256":"09ad25544ce8cc7e8baeba0a8133a162bcdae66ae7ac8c7aee498b14793f3458",
+    "assets":["dist/v0.4.0/dsh-worktable.tgz","dist/v0.4.0/dsh-worktable-0.4.0.tgz"],
+    "exactFiles":["package/LICENSE","package/lib/client.js","package/lib/index.js","package/dsh.plugin.json","package/package.json","package/README.md","package/cordis.patch.yml"]
+  },
+  "remaining":"Root installs corrected candidate and continues real project/layout retention, unsent draft isolation/reopen, explicit replacement/history and remaining ticket06 acceptance; implementer does not close ticket or operate Host/browser/model."
+}

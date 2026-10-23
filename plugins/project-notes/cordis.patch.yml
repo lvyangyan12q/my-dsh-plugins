@@ -1,0 +1,3 @@
+- insert:
+    - id: project-notes
+      name: '@deepseek-ai/dsh-project-notes'

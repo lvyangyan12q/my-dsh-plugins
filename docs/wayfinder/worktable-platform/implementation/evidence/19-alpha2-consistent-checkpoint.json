@@ -1,0 +1,230 @@
+{
+  "date": "2026-10-23",
+  "status": "manual host/application checkpoint only;19 open",
+  "officialBuild": {
+    "sourceCommit": "d743267388641bc76f17c45ce8b4c231aed1d32c",
+    "version": "0.2.1-alpha.2",
+    "trackedSourceBytes": "14988/14988 unchanged;14 symlink Git blobs materialized exactly",
+    "lockUnchanged": true,
+    "officialBuildPassed": true,
+    "nativeImports": "three minimal imports green after build; original stale artifacts red",
+    "originalSourcePatched": false,
+    "history": [
+      "Initial frozen install stalled and was explicitly bounded-interrupted; not a build failure; old receipt preserved",
+      "One pinned11.28.5 frozen/store retry with ndjson fetch-timeout30000 fetch-retries1 completed within5minute bound",
+      "Official pnpm run build completed without source changes"
+    ]
+  },
+  "isolation": {
+    "v1": {
+      "passed": false,
+      "reason": "Current PowerShell Start-Process UseNewEnvironment+Environment lost custom child variables; fell back to default user profile",
+      "businessOrModelActions": false,
+      "formalCordisRewrite": "cordis.yml touched but SHA256 identical to prior20Oct backup; package/lock/patch mtimes remained20Oct",
+      "historicalReceipt": "Intended environment is not proof of actual child isolation"
+    },
+    "v2": {
+      "passed": true,
+      "method": "Node explicit allowlisted child environment; actual built public resolveDshHome and resolveAgentsHome probe; separate home/agents/profile",
+      "pureOfficialBaseline": true,
+      "worktable094ManualUi": true,
+      "worktable095DirectoryRegression": true,
+      "configuredModel": false,
+      "copiedUserProfile": false
+    },
+    "parentRepositorySideEffect": "Dependency lifecycle generated a fully commented lefthook.yml and hook in the parent plugin repository. These files were subsequently explicitly protected. Do not claim the whole parent repository was never affected."
+  },
+  "installationHistory": {
+    "initial095": "Failed stopped on wrong-store attempt; preserved receipt/data",
+    "retry095": "Retried using the same existing owned store; exact archive9files/peer0;12selected data paths unchanged",
+    "nativeSourcePatched": false
+  },
+  "reviews": {
+    "baseline": "485b38cfd9a5d10de5a668ea4864246d4b1ebea7",
+    "candidate": "df5f9180d4822505ff218d85bd22bc159c8dfdd0",
+    "standardsActionableFindings": 0,
+    "specActionableFindings": 0,
+    "interpretation": "Historical review reference now uses immutable through022 snapshots including635 Windows runner and8e022 peer metadata increments; later096 review is separate.",
+    "incrementalCandidate": "8e5a7fb6a476afd5fff10b11eba7783227e02ce3"
+  },
+  "remaining": [
+    "Reading021 archive generation now passed after635c722 Windows fix, but official final installation peer gate failed and host remained stopped; Reading022 correction pending",
+    "Notes021 official add/byte proof is not accepted installation/UI support when combined final peer gate failed",
+    "New alpha.2 native AI/Skill/approval/Stop/generation unverified; model credential copying not authorized/performed",
+    "Annotation095 native input injection passed; unsent draft recovery after restart unverified",
+    "Formal3080 deployment/full19 closure remain pending; historical172/mainSTATUS untouched"
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-alpha2-consistent-build-1792734292297/operation.private.json",
+      "sha256": "5edf4602eebc77a3a6437ed3512b45df130d314254cdd14533162eecb6a13559",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-consistent-build-1792734292297/source-after-build-byte-proof.private.json",
+      "sha256": "71aa1174a79d75080fc1be66d6928d85fe3874204a513f75412f1ac0e9bc44f9",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-consistent-build-1792734292297/native-imports-after-build.private.json",
+      "sha256": "9efee74ea3787a56299876a048e2232774cfda4be6d8975f0b1cb0a766dc0016",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-host-blocker-diagnosis.md",
+      "sha256": "42232b8f107b096967466613dd30900561f13aa91ae4d47b536bb8c33db659c7",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-start-isolation-diagnosis.md",
+      "sha256": "ee5049cd35c5f4cf526e45a9d7bb211e53b85741fb9121f56d13315d505ae2b4",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-pure-v2.private.ax.txt",
+      "sha256": "a46365c7fe969d524f61aabe711587914243da5c5be48543a96764756fdde4ff",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-manual-draft094.private.ax.txt",
+      "sha256": "cd20f44b23b79151ee9b4dd59f9297f1159ee1cc1689ae6099b53e937e9ed6f9",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-manual-preview094.private.ax.txt",
+      "sha256": "1ad34eb7074bd22aa0ca8d76d5fff464798fd05cc027d65bcd34279deb9d3eb5",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-manual-running094.private.ax.txt",
+      "sha256": "1bbcb084087fe62e59682fb1aab98861831045d6d34ae0ecb2192bffb8dda933",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-associated094.private.ax.txt",
+      "sha256": "fe206c88741637533b6e191c3caf533121dcf9ec10b6490cdff37c56662831d8",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-directory-facts094.private.json",
+      "sha256": "f443ea18bb597f6c27bb4f6e2159dd76f7f69ad64c618cc91a97a0437a900c19",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-start-env-probe.private.json",
+      "sha256": "e63b751102e3bdecbbf4b35a9f941196de4711bebb74a5babafac4f60a69dd70",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-homepaths-v2-probe.private.json",
+      "sha256": "3fd467fb164627288d0e4aa9f04c8499aa1d79a71d73e7cbdc24d592b330530c",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-unexpected-formal-config-audit.private.json",
+      "sha256": "b6ff14f4beb77fb4004df82bdc4abdb3e4ac4098b83da726b903753e8b4adcea",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-consistent-3093-1792736298368.operation.private.json",
+      "sha256": "73665e95daca9ab9efd4953f13325545cdd6daf9c33a11fdcfaa61fab1853a21",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-review-through022-standards.md",
+      "sha256": "9ba3313f6b73f37a30f3d3ffd97acb68ad330d05fda21bc55e9add8f8ef16406",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-review-through022-spec.md",
+      "sha256": "0f4ccaaebc000869a2c233e0385c78807b5b7c7e88d0dffbfd605a1b0ce21684",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-installed095-1792739375630/install-operation.private.json",
+      "sha256": "14730d2199608fafe6e74e3091dcaf6dca420e768e6020861e48ce86652a8ca8",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/install-operation.private.json",
+      "sha256": "f044046316624bac6ecc0843b186e722f4fa683e74d5d00fc1bb02bc01d7df0f",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/protected-before.private.json",
+      "sha256": "2917068d4fadfc4ee40c218001fc921099b8ed4df15e9cd63a4b8130771ca202",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/protected-after-ready.private.json",
+      "sha256": "df0021311b7b67f9461f5b4f3ac9062bf46c8f621e3d6ad6aad0fb956cb0f3f2",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-annotation095-unsent.private.ax.txt",
+      "sha256": "4637b0480747cd6dcaa563baefaac93e9840f834561800bc974c5581286c4369",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-annotation095-unsent.private.png",
+      "sha256": "b24f6c286fecdcd2d1d9868f818e081a1ed8b70f40ed48510a05ffe050989acc",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-reading-author-pack021-windows.private.log",
+      "sha256": "9b797b2c2ea9d13ea3d6e0e828686a318d2e56fdaaef79fcccd963fd83b32e46",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-consumers021-1792741057316/install-operation.private.json",
+      "sha256": "edacb5eeaf9dc17cdf0eece5771d1e341969aa8f897539a40078702562e1857f",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-consumers021-1792741057316/installed-byte-proof-peer-rejected.private.json",
+      "sha256": "e34f5365860330a799e991d5e4a306e75bc49b3343332595dd8ffa5e019855c2",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-consumers021-1792741057316/peers.private.log",
+      "sha256": "5ccc5bae172d741fe95505bc7000cd25f79df18dd6dcf766b0db629c1128a796",
+      "contentsCommitted": false
+    }
+  ],
+  "annotation095": {
+    "status": "actual injection to native unsent composer only",
+    "sequence": [
+      "Clicked canvas location",
+      "Entered synthetic requirement",
+      "Explicitly confirmed injection to native input"
+    ],
+    "stableTargetFields": [
+      "projectId",
+      "paneId",
+      "appId",
+      "instanceId",
+      "viewId"
+    ],
+    "sent": false,
+    "modelCalls": 0,
+    "unsentDraftRestoredAfterRestart": "not verified"
+  },
+  "consumer021": {
+    "sourceCorrection": "635c7222b2994368ecdc6d91dcfe0f043d745613 Windows release-runner file URL fix; Reading28 source checks and two-host public types passed",
+    "frozenArchives": {
+      "notes": "f8f301153eeb78a3d9ee572fb111aa509b3479911d167b98f73187c28cfa5251",
+      "reading": "a2ce88f8aad3150bc5c8d35dcab0553020605c5efb93a107b69cecb9a162a747"
+    },
+    "officialAdd": "Notes021 and Reading021 add completed; Worktable/Notes/Reading installed9/5/6files byte checks passed",
+    "finalResult": "failed-stopped: Reading requires three host-provided native peers; pnpm peer gate rejected installation",
+    "currentlyRunning": false,
+    "uiValidated": false,
+    "aiValidated": false,
+    "preservation": {
+      "worktableDataSessionsStorages": true,
+      "formalFourConfigFiles": true,
+      "parentTwoHookConfigFiles": true
+    },
+    "next": "Reading022 minimal optional-peer metadata correction pending; never overwrite frozen021"
+  }
+}

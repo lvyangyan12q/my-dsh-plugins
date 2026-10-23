@@ -1,0 +1,105 @@
+{
+  "status": "historical-candidate-superseded-by-notes-config-fix",
+  "sourceHead": "ad56b65c78ed19a2b1b3fcaf231322b5f80d6727",
+  "integrationBase": "b1ecc5a9dc0eb39c80063ce32c6be6772bfd1b18",
+  "sourceTrees": {
+    "worktable": "4b5d4b92d84a0df54b99c71279dbd60c20d26790",
+    "notes": "30f5d1effc89a880cd30a2f19be7616be6c2dacf",
+    "readingUnchanged": "73b6ce09b29cc9bbb7f5190fb43d620c3420c4d9"
+  },
+  "worktable": {
+    "version": "0.6.0",
+    "sha256": "bb645b7cc3afd3e9919ab5f0ee570ea04296c2fe4b4294bbc4e5032f79aa8aa9",
+    "paths": [
+      "plugins/worktable/01_content/dist/v0.6.0/dsh-worktable.tgz",
+      "plugins/worktable/01_content/dist/v0.6.0/dsh-worktable-0.6.0.tgz"
+    ],
+    "files": [
+      "LICENSE",
+      "README.md",
+      "cordis.patch.yml",
+      "dsh.plugin.json",
+      "lib/client.js",
+      "lib/index.js",
+      "lib/sdk.js",
+      "lib/sdk.d.ts",
+      "package.json"
+    ],
+    "sourceTests": 172,
+    "skipped": 0,
+    "installedImport": true,
+    "factory": true,
+    "roleNavigation": true,
+    "installedDomScenarios": 8,
+    "serverHomeScenarios": 3
+  },
+  "notes": {
+    "status": "source-package-only-real-host-pending",
+    "testFiles": 6,
+    "testCases": 11,
+    "files": [
+      "README.md",
+      "cordis.patch.yml",
+      "lib/client.js",
+      "lib/index.js",
+      "package.json"
+    ],
+    "archiveSha256": "16b94b47b8af17961f4a1f5c3573295cfe0b44183205173a2c04c275d0f1d24c",
+    "worktableSha256": "bb645b7cc3afd3e9919ab5f0ee570ea04296c2fe4b4294bbc4e5032f79aa8aa9",
+    "installedBytesMatched": 5,
+    "installedImport": true,
+    "clientFactory": true,
+    "publicConsumerTypes": true,
+    "incompatibleCombinationRejected": true,
+    "npmLegacyPeerBypass": false,
+    "nativePeerSource": "D:\\programming\\workspace\\my-dsh\\.scratch\\native-unpatched-clean-1791697941186",
+    "legacyAlias": false,
+    "consumer": "C:\\Users\\pc-zzy\\AppData\\Local\\Temp\\project-notes-release-ytNigc\\consumer",
+    "formal3080Writes": 0,
+    "remoteWrites": 0
+  },
+  "reading": {
+    "rebuilt": false,
+    "sourceUnchangedFromAccepted09": true,
+    "acceptedArchiveSha256": "639c6964e471ba7e3c53e4d6ae14874eea63c77671087d36198190a9fd41ba41"
+  },
+  "reviewFixes": [
+    "revoked consumer refresh clears visible list and summary while retaining diagnosis",
+    "catalog Application discriminated deep/web union",
+    "unknown Notes data schema refused",
+    "client missing describe explicit compatibility error",
+    "Notes required Worktable >=0.6.0 peer; 09 missing SDK and incompatible combination refusal proved"
+  ],
+  "windowsRecovery": {
+    "foundDuringFinalPack": true,
+    "observedError": "EPERM renaming dead .lock directory to .lock.stale under exclusive recovery gate; competing process rejected owner-recovery-blocked",
+    "pidReuseObserved": false,
+    "awaitCloseAloneSufficient": false,
+    "handleCauseProven": false,
+    "productionBoundary": "win32 only, EPERM/EBUSY only, four attempts with 10/25/50ms waits under same recovery gate; each attempt checks gate token/pid, old lock format/token/pid and dead pid; other errors or changed identity refuse",
+    "deterministicRedThenGreen": true,
+    "negativeCases": [
+      "permanent EPERM bounded and original lock/business retained; own gate released; next explicit acquire succeeds",
+      "EACCES not retried",
+      "lock token replaced retained",
+      "lock pid replaced with live process retained",
+      "recovery gate replaced retained"
+    ],
+    "actualProcessTrials": 200,
+    "formats": [
+      "directory",
+      "legacy"
+    ],
+    "eachTrialExactlyOneOwner": true,
+    "nextAcquireAndBytesPreserved": true
+  },
+  "limits": [
+    "official StorageDomain/SkillRegistry and real React are auxiliary tests, controlled prompt faults are not actual AI",
+    "managed records selected by user; no hardcoded automatic selection",
+    "actual public/private tool-skill loading pending root acceptance",
+    "no generic foreign-schema data browser/converter claimed",
+    "no real Host/browser/profile/credentials/3080/remote actions by author",
+    "ticket10 remains in-progress; no merge authorization"
+  ],
+  "supersededBy": "10-config-prepared.json"
+}

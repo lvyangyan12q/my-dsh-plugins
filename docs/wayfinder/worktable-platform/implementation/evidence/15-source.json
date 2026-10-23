@@ -1,0 +1,106 @@
+{
+  "ticket": "worktable-framework-15",
+  "status": "source-candidate-only",
+  "date": "2026-10-22",
+  "version": "0.9.0",
+  "installedAcceptance": false,
+  "red": [
+    {
+      "seam": "GenerationDirectory.prepare + actual TaskDirectory",
+      "observed": "ERR_MODULE_NOT_FOUND generations.mjs before implementation"
+    },
+    {
+      "seam": "real manifest/HTML preview/apply",
+      "observed": "generations.preview is not a function before second slice"
+    }
+  ],
+  "sourceTests": [
+    "generation.test.mjs",
+    "generation-http.test.mjs",
+    "generation-panel.test.mjs",
+    "generation-rollback.test.mjs"
+  ],
+  "finalFactory": "generation-installed.test.mjs: actual ModuleLoader factory, public composition module UI and external fake HTTP/native boundaries; root acknowledgement prepares only and opens existing TaskPanel",
+  "files": {
+    "ledger": "worktable-platform/generations.v1.json schema1",
+    "managedTasks": "tasks.v1.json upgrades to schema2 only for owned preparation; new TaskStore opt-in1/2, normal RoleStore stays1",
+    "output": "role approvedRoot/.worktable-generated/generationId/result.json plus self-contained HTML",
+    "limits": {
+      "manifestBytes": 16384,
+      "htmlBytes": 1048576
+    }
+  },
+  "manifest": {
+    "schema": 1,
+    "generationId": "opaque generated ID",
+    "taskId": "durable native-prepared task ID",
+    "sessionId": "exact role Session",
+    "artifactPath": "absolute HTML path inside this generation output directory",
+    "sha256": "actual HTML byte SHA256 lowercase hex"
+  },
+  "nativeProof": "Public sessionController.inspect after flush; submitted task.requestId matches user/message source.rpcId and corresponding turn/end explicit reason.completed; aborted/unknown/pending do not become success",
+  "preservation": [
+    "No native/upstream/3080 changes, model send, package installation/restart, push or frozen archive changes.",
+    "Old HTML/manifest and native trajectories retained; only explicit current draft module application, no running activation.",
+    "Actual installed DSH/model/approval/Stop/theme/mobile paths remain for root.",
+    "Actual historical0.8.4 public reader executes schema2 refusal preserving file bytes; this is source proof, not an installed frozen-old-package claim."
+  ],
+  "sourceGate": {
+    "tests": 262,
+    "pass": 262,
+    "fail": 0,
+    "skip": 0,
+    "environment": "WORKTABLE_NATIVE_RC2_ROOT points to independent official rc.2 source",
+    "commands": [
+      "unique release-prep compatTests extracted and run with node --test",
+      "npm run build",
+      "npm run check",
+      "node ../04_test/generation-installed.test.mjs lib/client.js"
+    ],
+    "packExecuted": false
+  },
+  "rollbackSticky": "After owned task discard and a subsequent ordinary task, schema remains2; actual historical0.8.4 public RoleStore code rejects unchanged bytes; current TaskStore reopens both records. Default RoleStore still accepts only1.",
+  "supersedingReviewCorrections": {
+    "unreleasedOriginalCandidate": "9e35e7e619df92d160d0e6ba2e27f843a75fda77",
+    "legacyRendererRed": "Actual historical0.8.4 CompositionCanvas made1 raw artifact fetch from the initial applied config.",
+    "legacyRendererGreen": "Applied shared config has no artifactPath/generationId/artifactSha256, including pre-existing legacy path removal; old component makes0 file requests, renders0 iframe and reports missing artifact path.",
+    "instanceBindings": "AppStore generatedBindings keyed by app/instance/page/module keeps draft/active IDs+hash privately scoped; shared recipe only carries managedGeneration:true.",
+    "atomicity": "Draft marker+instance pending binding share application save transaction; explicit verified-view composition activation publishes only that instance active references in the same transaction.",
+    "activePreservation": "New prepare/Stop/draft do not invalidate existing active output; A/B Sessions/outputs independent; no-view activation publishes no pending binding; same-instance view refresh is scoped.",
+    "api": "artifact(viewId,pageId,moduleId) resolves active binding and private ledger; no client private ID/path or raw fallback.",
+    "pendingAdmission": "Trusted generation-owner async ledger/role/task/native/file validation before activation; owner identity, current refs/OCC and immediate revokedSet checked inside same app-store commit. Missing owner and stopped pending fail closed; already-active historical read remains independent.",
+    "lateUi": "RED retained Private A requirement in view B; identity/open-lifetime epochs and busy/error/notice/requirements resets prevent cross-view and same-view-close/reopen late UI contamination.",
+    "stopRace": "Actual public activation waits on a delayed native inspect boundary; concurrent TaskDirectory Stop completes without waiting on the platform gate, and final synchronous commit refuses publishing. Current running/active remains unchanged."
+  },
+  "confirmationPrecondition": {
+    "red": "Public describe followed by role binding replacement previously allowed prepare (missing expected rejection).",
+    "green": "Exact nonsecret describe fingerprint covers target/recipe revision, role definition, binding revision/Session and canonical declared/binding roots. Stale confirmation rejects before mkdir/ledger/task; fresh describe succeeds.",
+    "unavailable": "A ready binding with roles.read.unavailable is refused before filesystem or generation/task writes.",
+    "ui": "Related role/application events refresh describe and clear acknowledgement; unrelated instance role events do not replace current confirmation. Prepare sends returned confirmationToken and errors force re-description.",
+    "scope": "Optimistic precondition, not authorization token; native task submission/explicit preview/apply/activation boundaries unchanged."
+  },
+  "candidateVersion": "0.9.3",
+  "instanceInFlightCorrection": {
+    "red": "B private generated binding save/activation changed shared recipe revision and incorrectly rejected A in-flight result as generation-target-changed.",
+    "green": "Generation identity includes complete shared draft/running structure fingerprints (including versions and roles), stable slot and instance identity; original recipe revision is retained for audit but private binding OCC changes do not revoke native output.",
+    "occ": "Preview durably records current recipeRevision. Apply must match both that explicit preview revision and current application OCC. An intervening private binding save refuses stale apply without revocation; re-preview permits retry.",
+    "proof": "Public real-file A active/A in-flight plus independent B prepare/preview/apply/activate; second B publication between A preview/apply; A re-preview/apply/activate succeeds and both outputs remain isolated. Actual shared title/structure change still refuses.",
+    "merge": "Integrated bridge46578522e84e334bdcfdea61632daae020a48673; preserved generation preparation owners and third-argument trusted web source, both runtime branches, SDK features and regression gate union."
+  },
+  "pendingStructureCorrection": {
+    "red": "After generation draft apply, changing the candidate module roleId to another legal declared role incorrectly allowed activation (missing expected rejection).",
+    "green": "Draft binding persists SHA256 of post-apply module and selected role declaration. Generation owner validates that exact structure against activation candidate before publication; active artifact reads also verify it.",
+    "proof": "Public real-file flow rejects roleId replacement, module config replacement and selected role declaration changes, retaining running/active state; restoring the original post-apply structure plus version increment permits publication.",
+    "compatibility": "Recipe version is outside the slot fingerprint; private binding-only OCC and stable position moves remain compatible. No shared raw path or private generation ID introduced."
+  },
+  "hashlessManifestCorrection": {
+    "red": "A valid schema2 identity/path manifest without sha256 was refused by the old schema1-only Host.",
+    "green": "Prompt prefers schema2 without sha256. Host bounded real-file preview computes actual HTML SHA256 and persists it with manifest SHA; explicit apply and active reads retain byte/hash checks. Schema1 still requires correct supplied hash; schema2 with sha256 rejects ambiguity.",
+    "proof": "Real-file schema2 preview/apply succeeds; changed HTML or manifest after preview refuses apply; schema1 wrong SHA still rejects. No shell capability or manual user hash required."
+  },
+  "navigationCorrection": {
+    "red": "Actual TaskPanel component with unresolved native navigation thenable kept Stop disabled.",
+    "green": "After authenticated task-open ownership check, navigation is observed asynchronously and no longer holds task operation busy; Stop remains actionable. Late navigation errors are scoped to current view identity.",
+    "boundary": "Official rc2 uiWorkspace.openSession is documented void; no assertion of which runtime navigation route caused the observed long-lived result. Root actual installed appStop recheck pending."
+  }
+}

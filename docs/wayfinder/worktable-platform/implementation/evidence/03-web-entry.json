@@ -1,0 +1,111 @@
+{
+  "date": "2026-10-18",
+  "port": 3091,
+  "nativeVersion": "0.2.0-rc.2",
+  "baseline": {
+    "nativeModel": "commandcode / DeepSeek V4.1 Flash",
+    "actualReply": "基线会话正常",
+    "nativeTitleAndTabsVisible": true,
+    "emptyAndExistingConversation": true,
+    "projectAndControlRoomOpenClose": true,
+    "swapChatSide": true,
+    "viewportWidths": [
+      1600,
+      1100
+    ],
+    "reloadPreservesConversation": true,
+    "screenshot": "worktable-foundation-live-native.jpg"
+  },
+  "prototype": {
+    "commit": "07f0bfca0b6ab4ba5b5dfffee515e64d889308b0",
+    "humanVerdict": "方向对，继续完善并接入",
+    "minimumObservedViewportWidth": 500,
+    "scrollWidthAtMinimum": 485,
+    "sameInstanceFilterSharedAcrossFullAndStatsViews": true,
+    "screenshot": "worktable-prototype-aligned-desktop.png"
+  },
+  "candidates": [
+    {
+      "sha256": "188fffb81dd21100e8c7c08eb5b932d50232533d506f125f27beaac8473a384e",
+      "officialInstall": 0,
+      "installedFilesMatched": 7,
+      "menuVisible": true,
+      "applicationCatalog": "failed-host-capability-missing",
+      "observedError": "当前宿主缺少公开认证或profile接口，应用管理不可用；原工作台仍可使用。",
+      "ticket03Passed": false
+    },
+    {
+      "sha256": "ec18ce0ebdad78cd5e500880db0afd153a650065a89dfbd232523855d665b525",
+      "officialInstall": 0,
+      "installedFilesMatched": 7,
+      "applicationCatalog": "passed",
+      "registeredWebsite": "https://example.com/",
+      "actualIframeTitle": "Example Domain",
+      "ordinaryWebsiteSandbox": "allow-scripts allow-forms allow-popups",
+      "referrerPolicy": "no-referrer",
+      "nativeConversationPreserved": true,
+      "createdUnassignedInstance": "418d7c49-c5e2-494f-88a2-75b806e04d3d",
+      "createdView": "926f61a6-26aa-489a-a01b-e58a26629e71",
+      "projectAssociationPreservesIds": true,
+      "addView": "blocked-by-automatic-review-until-known-instance-race-fixed",
+      "reviewFindings": [
+        "late-response-can-target-previous-instance",
+        "resume-does-not-update-most-recent",
+        "standalone-container-title-stale-after-association"
+      ],
+      "ticket03Passed": false
+    },
+    {
+      "date": "2026-10-19",
+      "sha256": "8c799c9472335fe109f928637fad8674d224ac61d7c2a8b2294b0df7f86f7e2e",
+      "commit": "70f15c34bebde2241fdc73e3b5e369466e76102d",
+      "officialInstall": 0,
+      "installedFilesMatched": 7,
+      "applicationCatalog": "passed",
+      "projectAssociationPreservesIds": true,
+      "sameInstanceNewView": "837732c0-869d-4c61-a5e5-22203a0fbbdd",
+      "sameInstanceId": "418d7c49-c5e2-494f-88a2-75b806e04d3d",
+      "explicitNewInstanceId": "77615f9e-6bc9-436d-92a6-886d2075e130",
+      "secondProjectInstanceId": "820a08b9-1507-4831-8959-57caea2ee0b7",
+      "secondProjectViewId": "b73ec0d0-0240-4c10-b8de-b3d07494cdd1",
+      "closeReopenAndReloadPreserveInstanceAndView": true,
+      "parentDOMAccess": "blocked",
+      "platformReadFromWebFrame": "blocked-by-browser-or-server",
+      "deniedFrame": "browser-refused",
+      "deniedExternalOpen": "visible-heading-confirmed",
+      "missingLink": "404-body-visible-with-fallback",
+      "fixturesAreAuxiliaryOnly": true,
+      "authenticatedFileList": {
+        "status": 200,
+        "hasEntries": true
+      },
+      "lateResponseRegression": "real-React-old-RED-new-GREEN-and-independent-review",
+      "nativeAndUpstreamUnchanged": true,
+      "ticket03Passed": true,
+      "readOnlyHttpPermissionChecks": [
+        {
+          "route": "/api/worktable/fs",
+          "origin": "null",
+          "status": 403
+        },
+        {
+          "route": "/api/worktable/write",
+          "origin": "null",
+          "status": 403,
+          "body": "empty object; no target path"
+        },
+        {
+          "route": "/api/worktable/applications",
+          "origin": "null",
+          "status": 403
+        },
+        {
+          "route": "/api/worktable/fs",
+          "origin": "same-origin without auth cookie",
+          "status": 401
+        }
+      ],
+      "screenshot": "worktable-03-installed-flow.jpg"
+    }
+  ]
+}

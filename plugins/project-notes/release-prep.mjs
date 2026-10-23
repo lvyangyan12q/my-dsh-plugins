@@ -1,0 +1,53 @@
+import {spawnSync} from 'node:child_process'
+import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,copyFileSync,existsSync,readdirSync} from 'node:fs'
+import {dirname,join,resolve} from 'node:path'
+import {fileURLToPath} from 'node:url'
+import {tmpdir} from 'node:os'
+import {createHash} from 'node:crypto'
+import {createRequire} from 'node:module'
+import assert from 'node:assert/strict'
+import {reserveConsumerRelease} from './release-assets.mjs'
+import {installPublicEnvironment} from './public-producer.mjs'
+const here=dirname(fileURLToPath(import.meta.url)),require=createRequire(import.meta.url)
+const pkg=JSON.parse(readFileSync(join(here,'package.json'),'utf8')),dist=join(here,'dist','v'+pkg.version),reservation=reserveConsumerRelease(dist,'deepseek-ai-dsh-project-notes');process.on('exit',()=>reservation.releaseUnused())
+const source=process.env.DSH_SOURCE,worktable=process.env.WORKTABLE_PACKAGE,npm=process.env.npm_execpath
+assert.ok(source&&worktable&&npm,'Use npm run pack with DSH_SOURCE and exact WORKTABLE_PACKAGE')
+function run(command,args,options={}){const result=spawnSync(command,args,{cwd:here,encoding:'utf8',...options});if(result.error)throw result.error;if(result.status!==0)throw Error([command,...args].join(' ')+'\n'+result.stdout+'\n'+result.stderr);return result.stdout}
+const tests=readdirSync(join(here,'tests')).filter(file=>file.endsWith('.test.mjs')).map(file=>join(here,'tests',file))
+const testOutput=run(process.execPath,['--import','tsx','--test',...tests]);process.stdout.write(testOutput)
+const producerReceiptFile=join(here,'.checks/producer-types.json');mkdirSync(dirname(producerReceiptFile),{recursive:true});
+run(process.execPath,[join(here,'check-types.mjs')],{env:{...process.env,NOTES_TYPES_RECEIPT:producerReceiptFile}});const producerTypes=JSON.parse(readFileSync(producerReceiptFile,'utf8'));run(process.execPath,[join(here,'build.mjs')])
+const work=mkdtempSync(join(tmpdir(),'project-notes-release-')),pack=JSON.parse(run(process.execPath,[npm,'pack','--ignore-scripts','--json','--pack-destination',work]))[0],archive=join(work,pack.filename)
+const expected=['README.md','cordis.patch.yml','lib/client.js','lib/index.js','package.json'];assert.deepEqual(pack.files.map(file=>file.path).sort(),[...expected].sort())
+let incompatibleCombinationRejected=false
+if(process.env.INCOMPATIBLE_WORKTABLE_PACKAGE){
+ const oldArchive=resolve(process.env.INCOMPATIBLE_WORKTABLE_PACKAGE),wrong=join(work,'incompatible-consumer');mkdirSync(wrong);writeFileSync(join(wrong,'package.json'),JSON.stringify({name:'notes-incompatible-consumer',version:'0.0.0',private:true,type:'module'}));
+ installPublicEnvironment({folder:wrong,source,worktable:oldArchive,npm})
+ writeFileSync(join(wrong,'business-record.json'),'{"recentNote":"must remain unchanged"}');const oldPackage=readFileSync(join(wrong,'package.json')),business=readFileSync(join(wrong,'business-record.json'));
+ writeFileSync(join(wrong,'no-sdk.mjs'),"import assert from 'node:assert/strict';await assert.rejects(import('dsh-worktable/sdk'),e=>e.code==='ERR_PACKAGE_PATH_NOT_EXPORTED');");run(process.execPath,[join(wrong,'no-sdk.mjs')],{cwd:wrong});
+ const rejected=spawnSync(process.execPath,[npm,'install',oldArchive,archive,'--offline','--ignore-scripts','--omit=optional','--no-audit','--no-fund'],{cwd:wrong,encoding:'utf8'});
+ assert.notEqual(rejected.status,0,'09 without SDK must not install alongside Notes');assert.match(rejected.stdout+rejected.stderr,/ERESOLVE/);assert.match(rejected.stdout+rejected.stderr,/dsh-worktable/);
+ assert.deepEqual(readFileSync(join(wrong,'package.json')),oldPackage);assert.deepEqual(readFileSync(join(wrong,'business-record.json')),business);assert.equal(existsSync(join(wrong,'node_modules/@deepseek-ai/dsh-project-notes/package.json')),false);incompatibleCombinationRejected=true
+}
+const consumer=join(work,'consumer');const consumerEnvironment=installPublicEnvironment({folder:consumer,source,worktable,archive,npm});
+const installed=join(consumer,'node_modules/@deepseek-ai/dsh-project-notes')
+for(const file of expected)assert.deepEqual(readFileSync(join(installed,file)),readFileSync(join(here,file)),file+' installed bytes')
+writeFileSync(join(consumer,'assert.mjs'),`import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';import {runInNewContext} from 'node:vm';import {createRequire} from 'node:module';
+import {requireProtocol,describeProtocol} from 'dsh-worktable/sdk';
+import {apply,Config,name} from '@deepseek-ai/dsh-project-notes';
+assert.equal(name,'project-notes');assert.equal(typeof apply,'function');assert.equal(new Config({}).managedAgentId.get(),'');requireProtocol(describeProtocol(),['prepared-task-v1']);
+const toolRequire=createRequire(${JSON.stringify(join(here,'package.json'))});let factory,registered,removed=0;
+runInNewContext(readFileSync(${JSON.stringify(join(installed,'lib/client.js'))},'utf8'),{window:{__ModuleLoader__:{load(value){assert.equal(value.id,'@deepseek-ai/dsh-project-notes');factory=value.factory}}},console});
+const client=factory(id=>{if(!['react','react/jsx-runtime'].includes(id))throw Error('Unexpected runtime dependency '+id);return toolRequire(id)});
+const cleanups=[];client.apply({inject(keys,fn){if(Array.from(keys)[0]==='slots'){fn({slots:{inject(name,register){assert.equal(name,'plugins.row.config');return register()},register(entry,body){assert.equal(entry.key,'@deepseek-ai/dsh-project-notes#project-notes');assert.equal(typeof body,'function');return()=>{}}}});return}assert.deepEqual(Array.from(keys),['worktableApplicationViews']);fn({worktableApplicationViews:{describe:describeProtocol,register(id,views){assert.equal(id,'project-notes');registered=views;return()=>{removed++}}},effect(fn){cleanups.push(fn())}})}});
+assert.equal(typeof registered.page,'function');assert.equal(typeof registered.summary,'function');for(const cleanup of cleanups)await cleanup();assert.equal(removed,1);
+`)
+run(process.execPath,[join(consumer,'assert.mjs')],{cwd:consumer})
+copyFileSync(join(here,'tests/sdk-shapes.ts'),join(consumer,'consume.ts'))
+run(process.execPath,[createRequire(join(consumer,'package.json')).resolve('typescript/bin/tsc'),join(consumer,'consume.ts'),'--strict','--noEmit','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','--lib','ES2024,DOM,ESNext.Disposable'],{cwd:consumer})
+
+const versioned=join(dist,pack.filename),fixed=join(dist,'deepseek-ai-dsh-project-notes.tgz');reservation.publish(archive,pkg.version)
+const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');assert.equal(hash(versioned),hash(fixed))
+const receipt={status:'source-package-only-real-host-pending',testFiles:tests.length,testCases:Number(testOutput.match(/(?:ℹ|#)\s*tests\s+(\d+)/)?.[1])||null,files:expected,archiveSha256:hash(fixed),worktableSha256:hash(worktable),installedBytesMatched:5,installedImport:true,clientFactory:true,publicConsumerTypes:true,producerTypes,consumerEnvironment,incompatibleCombinationRejected,npmLegacyPeerBypass:false,nativePeerSource:resolve(source),legacyAlias:false,consumer,formal3080Writes:0,remoteWrites:0}
+mkdirSync(join(here,'.checks'),{recursive:true});writeFileSync(join(here,'.checks/release-receipt.json'),JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt,null,2))

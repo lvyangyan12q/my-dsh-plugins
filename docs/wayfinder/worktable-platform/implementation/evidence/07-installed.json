@@ -1,0 +1,55 @@
+{
+  "ticket": "worktable-framework-07",
+  "date": "2026-10-19",
+  "url": "http://127.0.0.1:3091/",
+  "status": "passed",
+  "integrationBase": "4ee3f3c6890f23148c976ca5270ecb06a46ade1c",
+  "installedCandidate": {
+    "filesMatched": [
+      7,
+      6
+    ],
+    "readingSha": "9b8fb5c43c5b16d8988349f72d2efb77ad33136d8985f8ade6a4212ff985959f",
+    "head": "93656beccc2e5f8924ff3fec25da194eee719ba2",
+    "worktableSha": "b9f47f830df519bcd71b5681bac0aef87d6f996949916baa1cf117f074e6b61e"
+  },
+  "testFixtures": "worktable-07-file-fixture.json",
+  "instances": {
+    "A": "845cb81e-ffab-4ea2-adb7-793267b5aea2",
+    "D": "bf04d329-1b65-4f40-92a1-6081d544c1ce",
+    "B": "42ab1b0e-0dd0-47b7-90de-2a6bcba83d42",
+    "C": "258c288a-c2d1-4886-b18a-39aebc0518e9"
+  },
+  "passed": [
+    "Final pair officially installed:7+6 files byte-match, own3091 boot succeeds",
+    "Real C module prepare displays instance258c288a/source c16aae94/currentRoleSession61483d5f while native global old01d draft remains unchanged",
+    "Context expansion shows filter search项目乙 and exactly C record70minutes; no A/D records",
+    "Real edit task body and context persists without send; send disabled during unsaved edit",
+    "Real remove context then save removes card/reference; discard shows已放弃, no model send or Stop",
+    "Actual A submit targets bound10fc50bb while global C01d draft remains untouched; A native draft preserved",
+    "Actual reading-summary skill loads; native read/write/read completes; result.txt contains WORKTABLE_NATIVE_07_OK and distinguishes selected30 from file80; input SHA256 unchanged103752bf14da9cbd7fb2e6118dd38fba6aac5192cf9ad9b7c8c4cd903d6650da",
+    "Native ask_user_question waits; switch to C and back preserves pending native question; reopen same10fc session then answer创建 resumes tool execution",
+    "Native question answer创建 writes exact WORKTABLE_QUESTION_OK independently read from question-result.txt",
+    "Actual Stop while native ask_user_question pending removes question, shows已停止 and保留队列; synthetic stop-must-not-exist.txt absent",
+    "Real native write first sandbox-denied, escalated precise samepath waits for approval; root拒绝 => native denial trace, no retries/pathworkarounds, denied-must-not-exist.txt absent",
+    "Allowed-once actual nativeapproval writes exact WORKTABLE_APPROVAL_ONCE_OK; standing access UI remains工作区内修改; denyfile absent",
+    "Real A->C readonlyshare prepare captures ownerA80 under sessionC614; revoke then explicitSend showsrevoked, durabletask008e1343 remainspreparedrev1 withoutnativeadmission",
+    "Pending nativequestion survives closing sourceviewa2bc1e54; new sameinstance239d0011 lists original task and opens same10fc session; browserrefresh retains pending question and answer works",
+    "Chrome actual native轨迹 selected shows read/write/Skill/ASK_ABORTED/FS_SANDBOX_DENIED and answeredquestion; screenshot worktable-07-native-trajectory.jpg",
+    "Native durableprojection titleInput.val.count=6 and turn6 afterrefresh, matches six explicit sends; sandboxModeworkspace-write and approvalask; no replay",
+    "Candidate taskstore accepted6/preparedrevoked1/discarded1; accepted!=businesssuccess; sharedrevoked task has no admission"
+  ],
+  "pending": [],
+  "rootModelMessages": 6,
+  "formal3080Changes": 0,
+  "nativeSourceChanges": 0,
+  "screenshot": "worktable-07-native-trajectory.jpg",
+  "merge": {
+    "ticketClosed": true,
+    "protectedFiles": 6,
+    "guardedFastForward": true,
+    "approvedCommit": "93656beccc2e5f8924ff3fec25da194eee719ba2",
+    "scope": "07 only; no 08 cold-recovery acceptance claimed",
+    "base": "4ee3f3c6890f23148c976ca5270ecb06a46ade1c"
+  }
+}

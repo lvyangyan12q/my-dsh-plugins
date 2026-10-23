@@ -1,0 +1,207 @@
+{
+  "date": "2026-10-19",
+  "ticket": "worktable-framework-04",
+  "status": "in-progress",
+  "sourceCommit": "a125112ef7f6e2591a583f53afc8a7edb56be456",
+  "readingCommit": "a13fc13ed85cb4b7fc34a98889bd57d476fee71e",
+  "integrationMerged": "8d62be8bbee9b6ee323c3dff15af21b1d6c935ad",
+  "primaryInstalledUIAcceptance": "root-verified-final-installed-user-paths; actual HTML5 drag event not verified",
+  "platform": {
+    "version": "0.4.0",
+    "command": "npm run pack",
+    "testCount": 116,
+    "applicationTests": 18,
+    "existingTests": 98,
+    "passed": 116,
+    "failed": 0,
+    "structure": "exactly-7-package-prefixed-files-no-source-no-maps",
+    "cleanTemporaryInstallImport": true,
+    "factoryGate": true,
+    "installedAnchorDOMScenarios": 8,
+    "installedServerHomeScenarios": 3,
+    "artifacts": [
+      "plugins/worktable/01_content/dist/v0.4.0/dsh-worktable.tgz",
+      "plugins/worktable/01_content/dist/v0.4.0/dsh-worktable-0.4.0.tgz"
+    ],
+    "sha256": "07f1a07f05619f492fff5900702211310cc71816b4d757b0d6496b7d9e4e2891",
+    "supersededCandidate": "027408067213effc88402499958c4b6a672bcd75c462612ff74e07053b6c8463",
+    "previousCandidates": [
+      {
+        "sha256": "13bc7702537435b22d80f27ac945c1e4b81674b31fb26b69e68b8a46be519ccb",
+        "rootReportedOfficialInstalledFilesMatched": 7,
+        "rootPartialUI": {
+          "instanceA": "845cb81e-ffab-4ea2-adb7-793267b5aea2",
+          "instanceB": "42ab1b0e-0dd0-47b7-90de-2a6bcba83d42",
+          "instanceARecords": 2,
+          "instanceAMinutes": 75,
+          "sameInstanceStatsListFiltersShared": true,
+          "explicitInstanceBStartsEmpty": true
+        },
+        "acceptanceGap": "After closing A and explicitly creating B, UI offered no way to choose old A; light theme application controls were black text on dark fallback fill.",
+        "replacement": "Scoped folded other-instance picker restores original instance/view; application controls use actual official theme tokens; root final UI verification pending."
+      }
+    ],
+    "sameArchiveAfterTestOnlyChange": true
+  },
+  "reading": {
+    "version": "0.1.0",
+    "build": "tsdown -c tsdown.config.ts passed",
+    "typeCheck": "tsc --noEmit passed",
+    "tests": {
+      "passed": 18,
+      "failed": 0,
+      "independentlyRerunAfterPlatformRaceFix": true,
+      "DSH_SOURCE": "D:/programming/workspace/my-dsh/.scratch/native-unpatched-clean-1791697941186",
+      "READING_LEGACY_ROOT": "D:/programming/workspace/my-dsh",
+      "KAOGONG_TEST_TOOLS": "D:/programming/workspace/my-dsh",
+      "legacyArtifactsReadOnly": true,
+      "independentlyRerunAfterNativeDependencyFix": true
+    },
+    "artifact": "plugins/reading-statistics/.checks/deepseek-ai-dsh-reading-statistics-0.1.0.tgz",
+    "sha256": "a77613f53c130d9df32c0e7445c9ebae7499ac89cc1549ab6b6eed01a92f35a2",
+    "files": [
+      "package/README.md",
+      "package/cordis.patch.yml",
+      "package/package.json",
+      "package/lib/client.js",
+      "package/lib/index.js",
+      "package/lib/reading-host-B9H2xcDy.mjs"
+    ],
+    "legacyProductionDependency": false,
+    "clientManifestInject": [],
+    "offlineCache": {
+      "zod": "highest observed cached 4.6.4 satisfies ^4.4.3",
+      "storageDomain": "not found in npm cache; official rc2 base provides service; final profile module resolution requires actual installation check"
+    },
+    "previousCandidates": [
+      {
+        "sha256": "54d9e95729ae15eb1ff4ac5602362b76d30d20821c930e98cee5f61db29055b5",
+        "nativeInstallationAcceptance": false,
+        "rootObserved": "Standard npm selected storage-domain alpha2 from rc2||alpha2. Official rc2 Host disabled that incompatible plugin; native workspace/session projection services became pending and session list appeared empty. Root reported records were not deleted and had not created reading records.",
+        "resolution": "Both storage-domain optional dependency and host-webserver peer pinned to exact 0.2.0-rc.2. No native patch or allow-version bypass."
+      }
+    ],
+    "nativeVersionSelection": {
+      "testedRuntime": "0.2.0-rc.2",
+      "storageDomainOptional": "0.2.0-rc.2",
+      "hostWebserverPeer": "0.2.0-rc.2",
+      "cordisPeer": "4.0.4",
+      "test": "npm pack -> extract actual package.json -> npm-pick-manifest for every native dependency/optional/peer against rc2 and alpha2 with latest=alpha2 -> selects rc2; official compatibility accepts rc2 and rejects alpha2",
+      "red": "Final packed old manifest selected 0.2.1-alpha.2",
+      "green": true,
+      "rootFinalReinstall": "official CLI final rc2 package installed; native workspace and sessions restored"
+    }
+  },
+  "redGreen": [
+    {
+      "behavior": "trusted deep contribution and persisted instance/module lifecycle",
+      "red": "contribute is not a function",
+      "green": true
+    },
+    {
+      "behavior": "deep renderer contribution and release with no session request",
+      "red": "public view registry unavailable",
+      "green": true
+    },
+    {
+      "behavior": "same ID existing web cannot be replaced by deep plugin",
+      "red": "missing expected rejection",
+      "green": true
+    },
+    {
+      "behavior": "old A action does not mark replacement B busy or failed",
+      "red": "true !== false for B busy",
+      "green": true
+    },
+    {
+      "behavior": "concurrent deep/web registration acquires exactly one identity",
+      "red": "both succeeded at competing-14 in 100-attempt public test",
+      "green": true
+    },
+    {
+      "behavior": "withdraw/restart cannot retarget retained deep instances to web",
+      "red": "missing expected rejection",
+      "green": true
+    },
+    {
+      "behavior": "reading data owner independent of legacy recipe service",
+      "red": "registerDataSource TypeError with no legacy service",
+      "green": true
+    },
+    {
+      "behavior": "reading multi-view identity, preference sharing and response fences",
+      "red": "missing registration; stale same-instance read replaced saved snapshot",
+      "green": true
+    },
+    {
+      "behavior": "final packed native dependencies preserve tested rc2 during standard npm installation",
+      "red": "npm-pick-manifest selected alpha2 from the actual packed old manifest; actual Host installation independently reproduced incompatibility",
+      "green": true
+    },
+    {
+      "behavior": "A -> explicitly create B -> choose older A through same app/project picker",
+      "red": "Real React picker has no recovery button for old A after B becomes latest",
+      "green": true,
+      "observed": "A instance and original view IDs preserved; foreign-project instance absent; only explicit B and its view are created; no session request"
+    }
+  ],
+  "implementedBoundaries": {
+    "singleWorktableLayoutOwner": true,
+    "newPathLoadsLegacyWorkbenchClient": false,
+    "displayCreatesSessions": false,
+    "oldReadingDomainAndSchemaRetained": true,
+    "newInstancesDefaultEmpty": true,
+    "lastViewReleasesSubscriptionsAndRecordSnapshots": true,
+    "browserPresentationMemoryFallbackLimit": 64,
+    "businessRecordsOwnedByReadingHost": true
+  },
+  "remaining": [
+    "05 resource authorization and revocation",
+    "06 roles and same-session editor arbitration when role views exist",
+    "07 native AI execution/approval/Stop",
+    "08 cross-window synchronization and full durable recovery/concurrency",
+    "09/11 formal derived package identity, upgrade/rollback/release acceptance",
+    "11 actual browser HTML5 tab-drag event and UI movement acceptance; CUA attempts did not fire and are not a pass"
+  ],
+  "uiAcceptanceSteps": [
+    "Open application entry in an existing project; choose reading-statistics and explicitly create an instance.",
+    "Use the application-owned full page: add a reading record or explicitly initialize examples.",
+    "Choose stats/list in 添加视图类型 then 添加同实例视图; compare instance IDs and shared category/status/search/selection.",
+    "Move tabs/panes, close all views, force pool eviction, reopen latest, refresh; preserve instance/view identities and reading records.",
+    "Explicitly create a new instance and open in another project; expect empty records and independent preferences.",
+    "Verify native dialogue remains available without duplicate Sessions and no legacy personal-workbench frontend is loaded."
+  ],
+  "readingImplementationCommit": "9bbd2e164370c690641359bc6683355cd4e25413",
+  "uiFollowup": {
+    "scopedInstanceSelector": "其他实例 folded inside each app card, only current app/project",
+    "restoreRootA": "Expand 其他实例 and choose 恢复实例 845cb81e",
+    "themeChange": "Official Button/Input token contracts; bg-layer-1/3, interactive-bg-hover, button-primary-fill and label-primary-foreground; only application container and its controls affected",
+    "themeVisualAcceptance": "pending-root-light-and-dark-final-package",
+    "newFileLineEndings": "applicationViews.tsx LF; full-branch diff --check passes"
+  },
+  "verificationCommit": "9d6951163b15e178b93f5b7afe6f199eb8c9e27d",
+  "installedUIFinal": {
+    "source": "C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/worktable-04-installed-evidence.json",
+    "reportedBy": "root exclusive 3091 actual browser and official CLI acceptance",
+    "platformSha256": "07f1a07f05619f492fff5900702211310cc71816b4d757b0d6496b7d9e4e2891",
+    "readingSha256": "a77613f53c130d9df32c0e7445c9ebae7499ac89cc1549ab6b6eed01a92f35a2",
+    "casesPassed": [
+      "A/B/C independent instances",
+      "full page, stats and list share filters and selection",
+      "two panes simultaneously reflect editing to 65 minutes",
+      "close and reopen retain reading data and instance identity",
+      "whole Host restart plus refresh preserves records",
+      "older A restored through UI with original view ID",
+      "light and dark application controls readable; theme restored to system"
+    ],
+    "html5Drag": {
+      "passed": false,
+      "reason": "two CUA HTML5 drag attempts emitted no drag event; not counted as success",
+      "laterTicket": "11",
+      "auxiliaryOnly": [
+        "actual switch-position control and repeated same-instance open without a new Session",
+        "complete real layout module public moveTab(top->main)/swapPanes(main->main) preserves appId/instanceId/viewId/tabId and onSpecMutated payload; reopening moved view does not duplicate it"
+      ]
+    }
+  }
+}

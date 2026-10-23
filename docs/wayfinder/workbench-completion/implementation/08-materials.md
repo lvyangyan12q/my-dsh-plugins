@@ -6,16 +6,23 @@ labels: [ready-for-agent]
 status: open
 assignee: null
 blocked_by: []
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-kaogong-ownership]
 ---
 
 <!-- native-compatible-plan -->
-## 当前执行范围（2026-10-11）
+## 当前执行范围（2026-10-24）
 
-状态：open；考公专项暂缓。
+状态保持 open；考公资料保护已恢复规划，先只读核实引用与接管影响，学习验收在工作台适配之后。
 
-考公专项暂缓，保持open。保留资料引用、原题、成绩和已批准的单题修正证据，不在本阶段同步正式资料或补做考公验收。
+原工单范围、依赖和未完成验收保留，rc.3 具体增量依据[框架规格 HU06、HU08](../../worktable-platform/framework-spec.md#host-upgrade-requirements)。followup_status 为 pending-decisions，路线见[升级地图](../../harness-upgrade/map.md)，不因旧 ready-for-agent 标签自动执行未决迁移。
 
-历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+- [ ] 只读清单不调用插件启动 recover、导入、材料修复或 MinerU 同步。
+- [ ] 保留题干/选项/图表、原题快照与来源、成绩和旧资料路径；本次适配不执行答案修正。
+- [ ] 确认可共享来源资料与私有笔记边界，图片/讲义读取和重启恢复不绕过实例授权。
+
+历史检查仍是旧环境证据；以下原始业务标准不删除、不计为新宿主通过。
 
 
 # 08: 考公题目与资料完整性

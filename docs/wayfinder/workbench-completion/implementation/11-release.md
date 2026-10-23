@@ -6,16 +6,23 @@ labels: [ready-for-agent]
 status: open
 assignee: null
 blocked_by: [workbench-completion-runtime, workbench-completion-generation, workbench-completion-reading, workbench-completion-kaogong]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy, harness-upgrade-acceptance-cutover]
 ---
 
 <!-- native-compatible-plan -->
-## 当前执行范围（2026-10-11）
+## 当前执行范围（2026-10-24）
 
-状态：open；已有无原生补丁平台实页部分证据，以下完整标准仍需逐项验收。
+状态保持 open；首个目标为官方未补丁0.2.1-rc.3/22ddee3792，随后逐版验证；旧alpha.2仅保留冻结回退包，不要求新插件兼容旧宿主。
 
-支持的精确候选为未补丁0.2.0-rc.2（639ed015）与0.2.1-alpha.2（d743267388）；当前原生只读检出为后者，历史恢复记录保留；安装包只含插件，不含原生源码/lib补丁。验收依赖缺失、兼容入口、升级/回滚、卸载重装及数据保留；平台阶段与包含考公的完整阶段分开记录，不提前关闭本工单。
+原工单范围、依赖和未完成验收保留，rc.3 具体增量依据[框架规格 HU01、HU04、HU07、HU08](../../worktable-platform/framework-spec.md#host-upgrade-requirements)。followup_status 为 pending-decisions，路线见[升级地图](../../harness-upgrade/map.md)，不因旧 ready-for-agent 标签自动执行未决迁移。
 
-历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+- [ ] 分别验证官方声明检查、当前公开类型、最终包安装和真实流程，不以放宽peer或版本豁免代替兼容。
+- [ ] 新版本工作台/Notes/Reading/考公组合按实际依赖留证，第三方失败单独归因。
+- [ ] 实际升级、停用/卸载重装、失败恢复与回退保留新旧业务；冻结包不自动保证旧宿主可读新格式。
+
+历史检查仍是旧环境证据；以下原始业务标准不删除、不计为新宿主通过。
 
 
 # 11: 兼容、升级与回滚验收

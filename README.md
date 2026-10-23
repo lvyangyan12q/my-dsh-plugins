@@ -1,5 +1,27 @@
 # my-dsh
 
+2026-10-24 升级规划入口：[工作台与考公的新 Harness 兼容及迁移路线](docs/wayfinder/harness-upgrade/map.md)。目标先 rc.3，再建立后续升级检查；旧 alpha.2 只留回退包。本任务启动的3080已应用户要求停止，下面启动记录为历史检查点。
+
+2026-10-24：当前原生 rc.3 已官方构建通过并从 D 盘原仓库启动 3080，使用原 C 盘 home；[启动命令、数据保护和插件待适配项](docs/harness-rc3-readiness.md)。下面“尚未启动”的表述保留为此前检查点，不代表当前运行状态。
+
+当前接入请先读[工作台接入说明](docs/worktable-integration.md)：区分原生源码、插件源码、C 盘 profile 与资料目录，逐步说明构建、适配、注册、启动和回退的影响。当前原生已为 0.2.1-rc.3，兼容验收待做，先前实例已停止。历史启动与验收记录不代表 rc.3 已通过。
+
+## 当前实施 · 2026-10-21
+
+已按用户要求继续工作台后续实施，唯一集成分支仍为 `codex/worktable-framework`。请先看[当前进度](docs/STATUS.md)、[后续范围](docs/wayfinder/worktable-platform/continuation-spec.md)和[12—19任务图](docs/wayfinder/worktable-platform/implementation/README.md)。首阶段01—11保留关闭；完整规格仍open，考公专项继续暂缓。
+
+隔离3091已通过官方未补丁DSH0.2.0-rc.2安装Worktable0.8.0、Notes0.2.0及Reading0.2.0候选组合并重启。12草稿Host生命周期、13公共展示和16原生状态/存储故障已真实验收关闭；14模块内搭建与18升级影响确认正在实施，15/17/19继续按依赖推进。3080保持先前0.7.2部署，本轮尚未同步候选，也尚未推送本轮增量。
+
+下面2026-10-20入口及旧平台段落是历史记录，不覆盖本段。
+
+## 当前入口 · 2026-10-20
+
+本轮以 **Worktable 派生 AI 工作台**为代码基线，源码在 [plugins/worktable/01_content](plugins/worktable/01_content/)，独立应用示例为 [Project Notes](plugins/project-notes/) 与 [Reading](plugins/reading-statistics/)。代码与文档位于 `codex/worktable-framework` 分支；首阶段11张工单已关闭，完整spec仍open。
+
+明天接续先读 **[交接与代码位置](docs/wayfinder/worktable-platform/handoff.md)**、**[实现技术路线及后续待办](docs/wayfinder/worktable-platform/technical-roadmap.md)**、[完整框架spec](docs/wayfinder/worktable-platform/framework-spec.md)和[首阶段工单](docs/wayfinder/worktable-platform/implementation/README.md)。3080已于本日获用户授权切换至0.7.2，仅完成当前alpha.2宿主的安装/加载/控制室页面检查；完整阶段验收仍以rc.2记录为准。3091验收实例已按用户要求停止。
+
+以下插件列表、根目录启动/安装命令及旧菜单说明保留为 **personal-workbench 旧平台记录**，不能用它们判断新派生包已安装。新旧代码并存不是两套前台一起运行，考公专项仍暂缓。新包接入与运行边界见交接文档。
+
 文档入口：[当前进度与待办](docs/STATUS.md) · [规格](docs/specs/README.md) · [工单](docs/tickets/README.md) · [验收](docs/verification/README.md) · [历史](docs/archive/README.md)
 
 DSH 的本地插件仓库。

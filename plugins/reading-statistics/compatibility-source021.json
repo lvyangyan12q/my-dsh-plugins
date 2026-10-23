@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-23",
+  "candidateVersions": {
+    "notes": "0.2.1",
+    "reading": "0.2.1"
+  },
+  "integrationBase": "214ce0c3fe66445ce1bd0b98404e8d6712d1b54e",
+  "scope": "source and public-producer only; final frozen package and official installed two-host UI acceptance pending root",
+  "nativeCandidates": [
+    "0.2.0-rc.2",
+    "0.2.1-alpha.2"
+  ],
+  "red": "Current official alpha.2 evaluatePluginCompatibility rejected both original0.2.0 native peers; existing Reading legacyHTTP test expected409 but current owner correctly refuses arbitrary-instance writes403.",
+  "green": {
+    "notesSourceTests": {
+      "rc2": 22,
+      "alpha2": 22,
+      "fail": 0,
+      "skip": 0
+    },
+    "readingSourceTests": {
+      "rc2": 27,
+      "alpha2": 27,
+      "fail": 0,
+      "skip": 0
+    },
+    "publicProducers": "Notes and Reading source compile against both actual official built native public declarations and exact frozen0.9.4 SDK, skipLibCheck=false, shared actual Cordis identity, no peer bypass",
+    "builds": "Notes esbuild and Reading actual tsdown artifacts built; syntax and actual source/factory tests passed",
+    "releaseGuard": "Both source normal entries refuse pre-existing synthetic version and retain sentinel assets; exclusive package-specific publication test passed"
+  },
+  "runtimeDependencyPolicy": "Real storage-domain runtime imports remain external. Host-provided bounded native peers replace auto-installed optional rc.2 provider. Cordis/Schemastery ranges explicitly name selected official vendor metadata; no native/profile/pin modifications.",
+  "readingTestMigration": {
+    "oldFile": "tests/historical/reading-platform.v020.mjs.txt",
+    "retained": "Original legacy test source preserved for provenance; new executable suite uses registered ApplicationDirectory/ResourceDirectory views, confirmed CRUD, isolation/revoke, lifecycle state and OCC.",
+    "notClaimed": "Old legacy recipe-v4 builder/manager auto-upgrade UI interactions were not revalidated; deep-views/data-grants-ui cover current app UI. No skip/exclusion in normal tests."
+  },
+  "proofFiles": [
+    {
+      "file": "worktable-notes-rc2-producer021.private.log",
+      "sha256": "bcdeabcaa80116355a82d80322d7162c4c6bac9cfd226020b36d5dfd0795e7a7",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-notes-alpha-producer021.private.log",
+      "sha256": "87e0f41d45e50b0210aed9009e880ef8f7e63a8f4f4293825d26dfdd344e49dd",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-reading-rc2-producer021.private.log",
+      "sha256": "84e914fb0ee35b088f5ffd2daa7f99fd870f48b65c70722cf798a19e02895acd",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-reading-alpha-producer021-final.private.log",
+      "sha256": "60e7b7d1c491461769158e7775509fcf2642fb96e7810f955a2005287612a3d3",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-notes-rc2-tests021-final.private.log",
+      "sha256": "c06b74d13624a98f464552ed7cded03f8eb87bc862412ac434a91c83ce25c03d",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-notes-alpha-all021.private.log",
+      "sha256": "33da830de9325d96df2776a4bf9b0e0f82326eb8f4ef6718570dde4cd68d8f48",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-reading-rc2-all021.private.log",
+      "sha256": "7be6ba3904758790212184c8432e1cea81b5ece97a978e8cafd8cf2739e3315a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-reading-alpha-all021.private.log",
+      "sha256": "4819d53fe06a0271b5a6c9616e30d8a7c0bd46caec34f13d963ea8598d1c8c6b",
+      "contentsCommitted": false
+    }
+  ],
+  "limits": [
+    "No consumer0.2.1 frozen archive packed by this implementer.",
+    "No official profile installation/peer0/business/model acceptance claimed for either candidate.",
+    "Root final pack must pass chosen latest frozen Worktable archive;0.9.4 public SDK proof is not a0.9.5 installed assertion.",
+    "Kaogong/legacy owner/native source/Worktable package and existing frozen assets untouched."
+  ]
+}
