@@ -5,7 +5,7 @@ parent: harness-upgrade-map
 labels: [wayfinder:grilling]
 status: open
 assignee: null
-blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-ownership]
+blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-ownership, harness-upgrade-classroom-prototype]
 ---
 
 ## Question

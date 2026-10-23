@@ -26,7 +26,9 @@ assignee: null
 
 ## Decisions so far
 
-尚无已关闭的本地图决策。上面的兼容范围来自用户本轮明确答复，作为地图的初始范围。
+- [核实 rc.3 公开接口与工作台依赖的差异](issues/01-native-compatibility.md)：已分清声明门禁与实际接口差异，明确角色恢复、输入及生命周期的适配接缝。
+
+- [核实考公旧接入、数据及角色会话的迁移接缝](issues/02-kaogong-migration.md)：确认 default 全局学习状态、私有笔记和旧绑定接管缺口，建议尚待用户决定。
 
 ## Not yet specified
 
