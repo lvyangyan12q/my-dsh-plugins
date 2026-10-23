@@ -211,6 +211,17 @@ function setupTerminal(webServer: any, ctx: any) {
   if (!WebSocketServer) return
   const pty = ptyMod.default ?? ptyMod
   const wss = new WebSocketServer({ noServer: true })
+  const terminals = new Map<any, () => void>()
+  let closing = false
+  ctx.effect(() => () => {
+    closing = true
+    for (const release of terminals.values()) release()
+    // Include admitted sockets whose PTY failed to spawn or is still closing.
+    for (const ws of wss.clients) {
+      try { ws.terminate() } catch {}
+    }
+    wss.close()
+  }, 'dsh-worktable: owned terminal connections')
   const spawnShell = (): { cmd: string; args: string[] } =>
     process.platform === 'win32'
       ? { cmd: 'powershell.exe', args: ['-NoLogo', '-NoProfile'] } // -NoProfile：跳过用户配置（oh-my-posh 花哨提示符在 xterm 里是乱码，PSReadLine 长输入行不换行被截断）
@@ -221,6 +232,7 @@ function setupTerminal(webServer: any, ctx: any) {
     path: '/api/worktable/term',
     handler: (req: any, socket: any, head: any) => {
       wss.handleUpgrade(req, socket, head, (ws: any) => {
+        if (closing) { ws.terminate(); return }
         const u = new URL(req.url ?? '/', 'http://dsh.internal')
         const cwd = serverCwd(ctx, u.searchParams.get('sessionId') || undefined, u.searchParams.get('cwd') || undefined)
         const cols = clampDim(Number(u.searchParams.get('cols')), 80)
@@ -234,9 +246,9 @@ function setupTerminal(webServer: any, ctx: any) {
           try { ws.close() } catch {}
           return
         }
-        term.onData((d: string) => { try { ws.send(d) } catch {} })
-        term.onExit(() => { try { ws.close() } catch {} })
-        ws.on('message', (raw: any) => {
+        const data = term.onData((d: string) => { try { ws.send(d) } catch {} })
+        const exit = term.onExit(() => { try { ws.close() } catch {} })
+        const onMessage = (raw: any) => {
           const text = String(raw)
           try {
             const msg = JSON.parse(text)
@@ -246,8 +258,18 @@ function setupTerminal(webServer: any, ctx: any) {
             }
           } catch {}
           try { term.write(text) } catch {}
-        })
-        ws.on('close', () => { try { term.kill() } catch {} })
+        }
+        const release = () => {
+          if (!terminals.delete(ws)) return
+          ws.removeListener('message', onMessage)
+          ws.removeListener('close', release)
+          try { data?.dispose() } catch {}
+          try { exit?.dispose() } catch {}
+          try { term.kill() } catch {}
+        }
+        terminals.set(ws, release)
+        ws.on('message', onMessage)
+        ws.on('close', release)
       })
     },
   }), 'dsh-worktable: terminal upgrade')
@@ -261,7 +283,9 @@ export function apply(ctx: Context) {
     return
   }
 
-  webServer.register({
+  const registerRoute = (route: any) => ctx.effect(() => webServer.register(route), 'dsh-worktable: HTTP ' + route.path)
+
+  registerRoute({
     kind: 'exact',
     path: HEALTH_PATH,
     handler: (_req: any, res: any) => {
@@ -275,7 +299,7 @@ export function apply(ctx: Context) {
   mountGenerations(ctx)
 
   // 本地文件读取（资源管理器点击 .html 后浏览器标签内打开）
-  webServer.register({
+  registerRoute({
     kind: 'exact',
     path: '/api/worktable/file',
     handler: async (req: any, res: any) => {
@@ -305,7 +329,7 @@ export function apply(ctx: Context) {
   // 本地站点（目录级静态托管）：点开 index.html 时挂载整个所在目录，
   // 让 ./assets/... 等相对引用正常解析（前缀路由，余下路径 = <rootToken>/<相对路径>）。
   // 原生皮肤模板：HTML 骨架 + 设计系统样式表（随插件分发，主题自动适配）
-  webServer.register({
+  registerRoute({
     kind: 'prefix',
     path: TEMPLATE_PREFIX,
     handler: (req: any, res: any) => {
@@ -326,7 +350,7 @@ export function apply(ctx: Context) {
     },
   })
 
-  webServer.register({
+  registerRoute({
     kind: 'prefix',
     path: SITE_PREFIX,
     handler: async (req: any, res: any) => {
@@ -358,7 +382,7 @@ export function apply(ctx: Context) {
     },
   })
 
-  webServer.register({
+  registerRoute({
     kind: 'exact',
     path: '/api/worktable/fs',
     handler: async (req: any, res: any) => {
@@ -378,7 +402,7 @@ export function apply(ctx: Context) {
   // 优先走宿主正式服务 ctx.workspaceRegistry（0.1.1/0.1.2 均有，正确感知 DSH_HOME 与存储后端）；
   // 不可用时回退按 resolveDshHomeSafe() 读 storages/workspace.json（只读）。
   // 返回结构是客户端契约，两种来源都映射成同一 shape。
-  webServer.register({
+  registerRoute({
     kind: 'exact',
     path: '/api/worktable/workspaces',
     handler: async (_req: any, res: any) => {
@@ -422,7 +446,7 @@ export function apply(ctx: Context) {
   })
 
   // 本地文件写入（MD 编辑模式保存回磁盘）
-  webServer.register({
+  registerRoute({
     kind: 'exact',
     path: '/api/worktable/write',
     handler: async (req: any, res: any) => {
@@ -443,7 +467,7 @@ export function apply(ctx: Context) {
   })
 
   // 新建分组：创建目录（仅当父目录已存在，避免递归误建深层垃圾目录）
-  webServer.register({
+  registerRoute({
     kind: 'exact',
     path: '/api/worktable/mkdir',
     handler: async (req: any, res: any) => {
@@ -464,7 +488,7 @@ export function apply(ctx: Context) {
     },
   })
 
-  webServer.register({
+  registerRoute({
     kind: 'exact',
     path: '/api/worktable/git',
     handler: async (req: any, res: any) => {
