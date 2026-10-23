@@ -30,7 +30,11 @@
   "rc2": {
     "finalThreePackagesInstalled": true,
     "ownHostRestarted": true,
-    "actualUiRecovery": "pending root; installation receipt does not establish UI/AI pass"
+    "actualUiRecovery": "actual scoped final096 cold UI restore",
+    "native": "Old unsent textual annotation preserved; native trajectory7turns23steps restored; no resend",
+    "generated": "A G6 recovery page and B B1 independent page reopened; this is retained output, not new096 generation",
+    "sharing": "Notes shared reference remained revoked; selected public read403 revoked; both bridge tasks prepared without request IDs",
+    "layoutLimit": "The Chrome-only17 website project was not found in IAB local layouts; not counted as cross-browser layout recovery; no source material changed"
   },
   "reviews": {
     "through022": "immutable local snapshots preserve fixed-baseline review and635/8e increments",
@@ -38,11 +42,10 @@
   },
   "remaining": [
     "19/full spec stay OPEN; formal3080 not synchronized",
-    "Final rc2 three-package actual UI recovery still pending at this checkpoint",
     "Generated-app096 end-to-end/recovery and final full workflow remaining gates not inferred from Notes task",
-    "Native unsent annotation draft restart restoration not claimed by question/approval completion",
     "Historical172 counts66/94/12 and framework49 counts41/6/2 unchanged; Kaogong paused",
-    "v1 environment error, formal cordis same-byte rewrite, parent hook lifecycle side effects and rejected021 peer gate retained in earlier checkpoint"
+    "v1 environment error, formal cordis same-byte rewrite, parent hook lifecycle side effects and rejected021 peer gate retained in earlier checkpoint",
+    "Textual unsent annotation cold restore is observed on rc2; native image-attachment restoration and cross-browser local-layout sync not claimed"
   ],
   "proofFiles": [
     {
@@ -188,6 +191,31 @@
     {
       "file": "worktable-19-final096-spec-review.md",
       "sha256": "61f020d47d5560239168518e5d2d6ff56aa21d790be905ed83d254c960cf2b6a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-native.private.ax.txt",
+      "sha256": "8cd57f9375c1138a5b311130c40fec7c9d87f56469b8db51cb3b9cbffbbbe15c",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-generatedA.private.ax.txt",
+      "sha256": "cb45cdf659014948877d227a883d78dba5cd89c69624cbc184d4011ae2a2a37b",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-generatedB.private.ax.txt",
+      "sha256": "9d3eb2879c737189fcac49c57a2295db66c604f3178c2365c9a5e5225d2bbb93",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-rc2-cold096-revoked.private.ax.txt",
+      "sha256": "75ec9a9bd0d1d34653a04d7964e1ca107a8c62270c8d98490e336a238765f4df",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-17-cold096.private.json",
+      "sha256": "67bb4e78728bff73e1129aaa93d1c53206a65312fbe2797dbdc38c8686bf3605",
       "contentsCommitted": false
     }
   ]
