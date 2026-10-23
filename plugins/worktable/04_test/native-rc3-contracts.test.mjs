@@ -48,24 +48,34 @@ test('fixed official rc.3 public native contracts', { skip: !root }, async t => 
     })
   })
 
-  await t.test('official rc.3 manifest evaluator exposes current rejection facts without exemptions', async () => {
+  await t.test('official target manifests pass rc.3 and unverified versions stop without exemptions', async () => {
     const boot = createRequire(join(root, 'packages/boot/app-boot/package.json'))
     const { evaluatePluginCompatibility } = await import(pathToFileURL(boot.resolve('@deepseek-ai/dsh-app-boot/src/plugin-compatibility.ts')).href)
     const manifests = await Promise.all([
       '../01_content/package.json', '../../project-notes/package.json', '../../reading-statistics/package.json',
     ].map(async file => JSON.parse(await readFile(new URL(file, import.meta.url), 'utf8'))))
-    const [worktable, notes, reading] = manifests.map(manifest => evaluatePluginCompatibility(manifest, {}, version))
-    assert.equal(worktable, undefined, 'Worktable wildcard DSH peers pass declaration gate only')
-    assert.deepEqual(notes, {
+    for (const manifest of manifests) {
+      assert.equal(evaluatePluginCompatibility(manifest, {}, '0.2.1-rc.3'), undefined, manifest.name)
+      for (const candidate of ['0.2.1-rc.4', '0.2.2', '0.2.1-alpha.2']) {
+        assert.deepEqual(evaluatePluginCompatibility(manifest, {}, candidate), {
+          name: manifest.name, version: manifest.version, runtimeVersion: candidate,
+          requirements: { 'engines.dsh': '0.2.1-rc.3' }, exempted: false,
+        })
+      }
+      assert.equal(manifest.engines.dsh, '0.2.1-rc.3')
+      const explicitTrial = {[manifest.name + '@' + manifest.version]: ['0.2.1-rc.4']}
+      assert.equal(evaluatePluginCompatibility(manifest, explicitTrial, '0.2.1-rc.4').exempted, true)
+      assert.equal(evaluatePluginCompatibility(manifest, explicitTrial, '0.2.2').exempted, false)
+    }
+    const legacyReading = {name:'@deepseek-ai/dsh-reading-statistics',version:'0.2.2',peerDependencies:{'@deepseek-ai/dsh-host-webserver':'0.2.0-rc.2 || 0.2.1-alpha.2','@deepseek-ai/dsh-storage-domain':'0.2.0-rc.2 || 0.2.1-alpha.2'}}
+    assert.deepEqual(evaluatePluginCompatibility(legacyReading, {}, version), {
+      name:'@deepseek-ai/dsh-reading-statistics',version:'0.2.2',runtimeVersion:version,
+      requirements:{'@deepseek-ai/dsh-host-webserver':'0.2.0-rc.2 || 0.2.1-alpha.2','@deepseek-ai/dsh-storage-domain':'0.2.0-rc.2 || 0.2.1-alpha.2'},exempted:false,
+    })
+    const legacyNotes = { name: '@deepseek-ai/dsh-project-notes', version: '0.2.1', peerDependencies: { '@deepseek-ai/dsh-storage-domain': '0.2.0-rc.2 || 0.2.1-alpha.2' } }
+    assert.deepEqual(evaluatePluginCompatibility(legacyNotes, {}, version), {
       name: '@deepseek-ai/dsh-project-notes', version: '0.2.1', runtimeVersion: version,
       requirements: { '@deepseek-ai/dsh-storage-domain': '0.2.0-rc.2 || 0.2.1-alpha.2' }, exempted: false,
-    })
-    assert.deepEqual(reading, {
-      name: '@deepseek-ai/dsh-reading-statistics', version: '0.2.2', runtimeVersion: version,
-      requirements: {
-        '@deepseek-ai/dsh-host-webserver': '0.2.0-rc.2 || 0.2.1-alpha.2',
-        '@deepseek-ai/dsh-storage-domain': '0.2.0-rc.2 || 0.2.1-alpha.2',
-      }, exempted: false,
     })
   })
 })

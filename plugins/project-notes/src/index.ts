@@ -10,7 +10,7 @@ export const name='project-notes'
 export const inject:string[]=[]
 export interface Config {settingsVersion:number;managedAgentId:string|Volatile<string>;managedSkillId:string|Volatile<string>;roleWorkspace:string|Volatile<string>}
 export const Config:schema<{settingsVersion?:number;managedAgentId?:string;managedSkillId?:string;roleWorkspace?:string},Config>=schema.object({settingsVersion:schema.number().default(1),managedAgentId:schema.string().pattern(/^(?:[a-z][a-z0-9.-]{0,79})?$/).default('').volatile(),managedSkillId:schema.string().pattern(/^(?:[a-z][a-z0-9.-]{0,79})?$/).default('').volatile(),roleWorkspace:schema.string().pattern(/^(?:$|[a-zA-Z]:[\\/]|\/)/).default('').volatile()})
-export const application:ApplicationDefinition={id:'project-notes',title:'项目便签',version:'0.1.2',protocolVersion:1,kind:'deep',views:[{id:'page',title:'完整便签页'},{id:'summary',title:'便签摘要'}]}
+export const application:ApplicationDefinition={id:'project-notes',title:'项目便签',version:'0.2.2-rc.3.1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'完整便签页'},{id:'summary',title:'便签摘要'}]}
 export function notesRole(input:Omit<Config,'settingsVersion'>):RoleDefinition|undefined{
  const get=(value:string|Volatile<string>)=>typeof value==='string'?value:value.get();const config={managedAgentId:get(input.managedAgentId),managedSkillId:get(input.managedSkillId),roleWorkspace:get(input.roleWorkspace)}
  if(!config.managedAgentId||!config.managedSkillId||!config.roleWorkspace)return

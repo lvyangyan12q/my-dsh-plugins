@@ -1,5 +1,14 @@
 # Reading statistics
 
+## 当前 rc.3 候选 0.2.3-rc.3.2
+
+本候选只将 `0.2.1-rc.3` 声明为目标，由官方 `engines.dsh` 门禁拒绝未验收版本。Cordis 使用官方 `4.0.5`；便签另使用 Schemastery `3.18.5`。原 alpha.2/rc.2 段落为旧冻结版本记录，新包不继续承诺旧宿主支持。
+
+公开 producer 检查安装精确 Worktable 归档与真实 rc.3 公开包，在独立目录以 `skipLibCheck=false` 编译，不使用替代原生声明或 peer 豁免。Reading 的旧配方适配器保留为可选应用内部接缝；新宿主构建不再要求旧 personal-workbench 的生成声明或安装该运行时。配置、源码/归档验证与实际官方 Host/浏览器/模型验收分开记录；本段不宣称后者通过。
+
+发布准备仍用 `npm run pack` 并指定 `DSH_SOURCE`、精确归档 `WORKTABLE_PACKAGE` 与 `npm_execpath`。`READING_LEGACY_ROOT` 若使用，仅为历史工厂回归提供已构建旧资产，不是当前类型或运行时依赖。新资产不得覆盖同版本旧资产；正式升级保留应用数据，未验收版本只能由用户在独立空 home/profile 显式试用。
+
+
 Reading owns its `reading_statistics` version 1 Host storage domain and all records.
 The data owner requires native `storageDomain` and authenticated `connection` services;
 the official web/base runtime provides both. Native compatibility candidates and host-provided storage/webserver peers are explicit below; no package dependency selects a second native storage runtime. No Session or model request is created.
