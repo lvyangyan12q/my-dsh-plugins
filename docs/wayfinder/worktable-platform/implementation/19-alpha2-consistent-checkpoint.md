@@ -1,0 +1,9 @@
+# alpha.2一致构建与隔离接入阶段记录
+
+[脱敏记录与私有证据哈希](evidence/19-alpha2-consistent-checkpoint.json)。官方同commit `d743267388641bc76f17c45ce8b4c231aed1d32c` 导出后14988项源字节一致，14个符号链接Git blob精确物化，冻结lock保持，官方安装/构建与三个最小native import通过；没有修补原生源码。原有checkout的旧编译产物失败仍作为历史保留，不与新构建混同。
+
+必须保留两类副作用：v1 PowerShell启动丢失显式环境而误加载默认正式profile，看到第三方后立即停止，未操作业务/模型；cordis.yml被重写但字节与20Oct备份相同，package/lock/patch的修改时间仍20Oct。依赖生命周期还向父插件仓库生成全注释lefthook配置和hook，后续已精确保护；不能声称整个父仓库始终未受影响，也没有盲目恢复旧备份。
+
+v2使用显式Node子环境和官方公开home/agents解析探针，真实空profile原生UI通过；Worktable094手动搭建/关联与095目录补修通过。095首次错误store安装保持失败停止记录，再使用同一已有owned store重试成功；9文件一致、peer0、12份选定非空数据路径不变。两个已知失败不从交接记录抹去。
+
+固定485b38c→df5f918两轴代码审查均无新增actionable finding；这不是完整实页交付。Notes021仅冻结未安装；Reading021发布前发现Windows路径import问题正在修正；新alpha.2宿主AI未验，没有复制模型凭据。主3091仍094、正式3080仍072；父19及完整spec保持OPEN，历史172与主STATUS不由本文修改。

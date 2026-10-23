@@ -1,0 +1,163 @@
+{
+  "date": "2026-10-23",
+  "status": "manual host/application checkpoint only;19 open",
+  "officialBuild": {
+    "sourceCommit": "d743267388641bc76f17c45ce8b4c231aed1d32c",
+    "version": "0.2.1-alpha.2",
+    "trackedSourceBytes": "14988/14988 unchanged;14 symlink Git blobs materialized exactly",
+    "lockUnchanged": true,
+    "officialBuildPassed": true,
+    "nativeImports": "three minimal imports green after build; original stale artifacts red",
+    "originalSourcePatched": false,
+    "history": [
+      "Initial frozen install stalled and was explicitly bounded-interrupted; not a build failure; old receipt preserved",
+      "One pinned11.28.5 frozen/store retry with ndjson fetch-timeout30000 fetch-retries1 completed within5minute bound",
+      "Official pnpm run build completed without source changes"
+    ]
+  },
+  "isolation": {
+    "v1": {
+      "passed": false,
+      "reason": "Current PowerShell Start-Process UseNewEnvironment+Environment lost custom child variables; fell back to default user profile",
+      "businessOrModelActions": false,
+      "formalCordisRewrite": "cordis.yml touched but SHA256 identical to prior20Oct backup; package/lock/patch mtimes remained20Oct",
+      "historicalReceipt": "Intended environment is not proof of actual child isolation"
+    },
+    "v2": {
+      "passed": true,
+      "method": "Node explicit allowlisted child environment; actual built public resolveDshHome and resolveAgentsHome probe; separate home/agents/profile",
+      "pureOfficialBaseline": true,
+      "worktable094ManualUi": true,
+      "worktable095DirectoryRegression": true,
+      "configuredModel": false,
+      "copiedUserProfile": false
+    },
+    "parentRepositorySideEffect": "Dependency lifecycle generated a fully commented lefthook.yml and hook in the parent plugin repository. These files were subsequently explicitly protected. Do not claim the whole parent repository was never affected."
+  },
+  "installationHistory": {
+    "initial095": "Failed stopped on wrong-store attempt; preserved receipt/data",
+    "retry095": "Retried using the same existing owned store; exact archive9files/peer0;12selected data paths unchanged",
+    "nativeSourcePatched": false
+  },
+  "reviews": {
+    "baseline": "485b38cfd9a5d10de5a668ea4864246d4b1ebea7",
+    "candidate": "df5f9180d4822505ff218d85bd22bc159c8dfdd0",
+    "standardsActionableFindings": 0,
+    "specActionableFindings": 0,
+    "interpretation": "Read-only code review and source tests are distinct from installed UI/AI acceptance"
+  },
+  "remaining": [
+    "Notes0.2.1 archive frozen; actual installation/UI pending",
+    "Reading0.2.1 release entry found Windows raw-drive import issue before publication; fix pending at this checkpoint",
+    "Native AI/Skill/approval/Stop/generation on new alpha.2 runtime not validated; no model credentials copied",
+    "Formal3080 deployment and full19 closure remain pending",
+    "Historical172 mappings, main STATUS and full spec are not modified by this supplement"
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-alpha2-consistent-build-1792734292297/operation.private.json",
+      "sha256": "5edf4602eebc77a3a6437ed3512b45df130d314254cdd14533162eecb6a13559",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-consistent-build-1792734292297/source-after-build-byte-proof.private.json",
+      "sha256": "71aa1174a79d75080fc1be66d6928d85fe3874204a513f75412f1ac0e9bc44f9",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-consistent-build-1792734292297/native-imports-after-build.private.json",
+      "sha256": "9efee74ea3787a56299876a048e2232774cfda4be6d8975f0b1cb0a766dc0016",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-host-blocker-diagnosis.md",
+      "sha256": "42232b8f107b096967466613dd30900561f13aa91ae4d47b536bb8c33db659c7",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-start-isolation-diagnosis.md",
+      "sha256": "ee5049cd35c5f4cf526e45a9d7bb211e53b85741fb9121f56d13315d505ae2b4",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-pure-v2.private.ax.txt",
+      "sha256": "a46365c7fe969d524f61aabe711587914243da5c5be48543a96764756fdde4ff",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-manual-draft094.private.ax.txt",
+      "sha256": "cd20f44b23b79151ee9b4dd59f9297f1159ee1cc1689ae6099b53e937e9ed6f9",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-manual-preview094.private.ax.txt",
+      "sha256": "1ad34eb7074bd22aa0ca8d76d5fff464798fd05cc027d65bcd34279deb9d3eb5",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-manual-running094.private.ax.txt",
+      "sha256": "1bbcb084087fe62e59682fb1aab98861831045d6d34ae0ecb2192bffb8dda933",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-associated094.private.ax.txt",
+      "sha256": "fe206c88741637533b6e191c3caf533121dcf9ec10b6490cdff37c56662831d8",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-alpha2-directory-facts094.private.json",
+      "sha256": "f443ea18bb597f6c27bb4f6e2159dd76f7f69ad64c618cc91a97a0437a900c19",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-start-env-probe.private.json",
+      "sha256": "e63b751102e3bdecbbf4b35a9f941196de4711bebb74a5babafac4f60a69dd70",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-homepaths-v2-probe.private.json",
+      "sha256": "3fd467fb164627288d0e4aa9f04c8499aa1d79a71d73e7cbdc24d592b330530c",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-unexpected-formal-config-audit.private.json",
+      "sha256": "b6ff14f4beb77fb4004df82bdc4abdb3e4ac4098b83da726b903753e8b4adcea",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-consistent-3093-1792736298368.operation.private.json",
+      "sha256": "73665e95daca9ab9efd4953f13325545cdd6daf9c33a11fdcfaa61fab1853a21",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final095-standards-review.md",
+      "sha256": "083ab9626d39ee3c2e4e548b9f2d47e2d361ffedaf2198f2c706404c5642523c",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final095-spec-review.md",
+      "sha256": "0e01d1d5111d070e1b74d90361e0b3d6fd7a7ef9047a9942284495e775c3a96a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-installed095-1792739375630/install-operation.private.json",
+      "sha256": "14730d2199608fafe6e74e3091dcaf6dca420e768e6020861e48ce86652a8ca8",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/install-operation.private.json",
+      "sha256": "f044046316624bac6ecc0843b186e722f4fa683e74d5d00fc1bb02bc01d7df0f",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/protected-before.private.json",
+      "sha256": "2917068d4fadfc4ee40c218001fc921099b8ed4df15e9cd63a4b8130771ca202",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-alpha2-v2-retry095-1792739498197/protected-after-ready.private.json",
+      "sha256": "df0021311b7b67f9461f5b4f3ac9062bf46c8f621e3d6ad6aad0fb956cb0f3f2",
+      "contentsCommitted": false
+    }
+  ]
+}
