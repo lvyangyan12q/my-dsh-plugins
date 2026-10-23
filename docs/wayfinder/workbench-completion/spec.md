@@ -6,7 +6,7 @@ status: open
 assignee: null
 kind: implementation-spec
 upgrade_target: 0.2.1-rc.3
-upgrade_status: pending-decisions
+upgrade_status: implementing
 upgrade_decision_map: harness-upgrade-map
 ---
 
@@ -15,7 +15,7 @@ upgrade_decision_map: harness-upgrade-map
 
 工作台是通用平台型插件，通过公开接口适配原生 DSH，原生菜单、工作区、会话编辑器与核心服务保持。当前升级目标为官方未补丁 0.2.1-rc.3 / 22ddee3792402c3e70ec5f86a63c3e3e895a2f60；原生构建与页面检查已完成，插件完整闭环尚未通过。此前 639ed015、d743267388 及 rc.2/alpha.2 的结果保留为历史版本证据。实现只修改 my-dsh/plugins，不将原生补丁、替换原生 lib 或版本豁免作为安装前提。
 
-工作台新宿主适配在先，考公08/10已恢复接入与保护规划，随后验证学习闭环。原33条故事及原123条要求保持；本轮新增要求统一见[派生框架规格 HU01—HU08](../worktable-platform/framework-spec.md#host-upgrade-requirements)，未决路线见[升级地图](../harness-upgrade/map.md)。旧平台工单保持原状态，与派生实现的历史 closed 不混用；新宿主验收不能沿用旧版本结论，导航也不自动等价于完整嵌入。具体映射见[工单入口](implementation/README.md)。
+工作台新宿主适配在先，考公08/10已恢复接入与保护规划，随后验证学习闭环。原33条故事及原123条要求保持；本轮新增要求统一见[派生框架规格 HU01—HU08](../worktable-platform/framework-spec.md#host-upgrade-requirements)，已确认的升级/归属决定及剩余课堂、切换门槛见[升级地图](../harness-upgrade/map.md)，当前代码执行见[rc.3实施图](../harness-upgrade/implementation/README.md)。旧平台工单保持原状态，与派生实现的历史 closed 不混用；新宿主验收不能沿用旧版本结论，导航也不自动等价于完整嵌入。具体映射见[工单入口](implementation/README.md)。
 
 
 ## Problem Statement
