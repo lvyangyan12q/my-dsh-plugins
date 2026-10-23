@@ -11,3 +11,8 @@ v2使用显式Node子环境和官方公开home/agents解析探针，真实空pro
 后续source635c722修复Reading发布器Windows路径，28项源码与两宿主public类型门禁通过，最终021包已冻结（哈希见JSON）。官方CLI完成Notes021和Reading021 add、9/5/6文件字节核对后，Reading三个必需host-provided peer缺失使最终peer gate拒绝；宿主保持停止。data/sessions/storages、正式4配置与父仓库2hook/config哈希保持。Reading022仅做新的metadata修正，不能覆盖021；本阶段不称021实际支持。
 
 另有实际095画布标注：点击位置、填写合成要求、明确确认后注入原生输入，保留project/pane/app/instance/view稳定目标；没有发送、0模型调用。原生未发送草稿重启恢复尚未验，注入不等于AI执行通过。父19保持OPEN。
+
+
+## 0.9.6实际阶段补证
+
+2026-10-23追加当前阶段：独立一致官方alpha.2/3093已安装冻结Worktable0.9.6、Notes0.2.1、Reading0.2.2。合成记录管理、多视图筛选详情及A/B实例/原生会话隔离已实际验证；Notes原生AI完成与另一轮native Stop、096冷恢复、最小宽度下问题一次提交及拒绝/允许一次审批均有实页证据。模型仅按授权复用连接，未混合实例会话。rc.2/3091已升级最终三包，但本检查点不提前记实页恢复通过。19与完整spec保持OPEN、正式3080未同步；历史172分类不变、考公暂停。前述v1启动失隔离、正式cordis同字节重写、父仓库hook副作用、021peer失败历史继续保留；本段不将整项规格提升为完成。 见[实页阶段JSON](evidence/19-final-alpha2-installed096.json)。问题/审批通过不替代所有旧持久宽度、窄屏与全工作流验收；补票暂保持OPEN，待root最终收口。

@@ -44,8 +44,8 @@
     "candidate": "df5f9180d4822505ff218d85bd22bc159c8dfdd0",
     "standardsActionableFindings": 0,
     "specActionableFindings": 0,
-    "interpretation": "Read-only fixed-baseline review of df5f918 plus appended635c722 Windows release-runner increment; source tests distinct from installed UI/AI acceptance",
-    "incrementalCandidate": "635c7222b2994368ecdc6d91dcfe0f043d745613"
+    "interpretation": "Historical review reference now uses immutable through022 snapshots including635 Windows runner and8e022 peer metadata increments; later096 review is separate.",
+    "incrementalCandidate": "8e5a7fb6a476afd5fff10b11eba7783227e02ce3"
   },
   "remaining": [
     "Reading021 archive generation now passed after635c722 Windows fix, but official final installation peer gate failed and host remained stopped; Reading022 correction pending",
@@ -131,13 +131,13 @@
       "contentsCommitted": false
     },
     {
-      "file": "worktable-19-final095-standards-review.md",
-      "sha256": "ab29eaa228e83bcc4855066378ecf2eafe4f98d44b562d7cc4b6cf2aca67cfd3",
+      "file": "worktable-19-review-through022-standards.md",
+      "sha256": "9ba3313f6b73f37a30f3d3ffd97acb68ad330d05fda21bc55e9add8f8ef16406",
       "contentsCommitted": false
     },
     {
-      "file": "worktable-19-final095-spec-review.md",
-      "sha256": "b5aea05f31c18aa5045af2294048bbdfa137314aba57c6955c386049d5d87df0",
+      "file": "worktable-19-review-through022-spec.md",
+      "sha256": "0f4ccaaebc000869a2c233e0385c78807b5b7c7e88d0dffbfd605a1b0ce21684",
       "contentsCommitted": false
     },
     {

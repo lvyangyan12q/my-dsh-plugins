@@ -45,3 +45,8 @@ Fixed485b38c Standards/Spec review raised three findings; single implementer069a
 
 
 最终0.9.4新增[UI补验](19-final-ui094.md)：Reading两视图及390px明暗/键盘/局部滚动，原生对话保留未发送标注与轨迹，A/B显示隔离，合作网页默认无权限。Editor只打开，未save、不算新建闭环；无模型重发。原alpha.2独立官方构建尚在准备，未记通过。19仍open待正式宿主前提和部署/交付。
+
+
+## 0.9.6实际阶段补证
+
+2026-10-23追加当前阶段：独立一致官方alpha.2/3093已安装冻结Worktable0.9.6、Notes0.2.1、Reading0.2.2。合成记录管理、多视图筛选详情及A/B实例/原生会话隔离已实际验证；Notes原生AI完成与另一轮native Stop、096冷恢复、最小宽度下问题一次提交及拒绝/允许一次审批均有实页证据。模型仅按授权复用连接，未混合实例会话。rc.2/3091已升级最终三包，但本检查点不提前记实页恢复通过。19与完整spec保持OPEN、正式3080未同步；历史172分类不变、考公暂停。前述v1启动失隔离、正式cordis同字节重写、父仓库hook副作用、021peer失败历史继续保留；本段不将整项规格提升为完成。 见[实页阶段JSON](evidence/19-final-alpha2-installed096.json)。问题/审批通过不替代所有旧持久宽度、窄屏与全工作流验收；补票暂保持OPEN，待root最终收口。
