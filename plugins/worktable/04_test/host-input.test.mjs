@@ -31,6 +31,71 @@ function fixture(patch = {}) {
   const bridge = { sessions: { list: { getSnapshot: () => ({ byId: { selected: { id: 'session-1', retainedBy: { mainView: 1 } } } }) }, scope: id => { assert.equal(id, 'session-1'); return scope } }, conversation: { input: { for: ctx => { assert.equal(ctx, scope); return input } } } }
   return { bridge, input, calls, state }
 }
+
+function rc3Fixture(patch = {}) {
+  const f = fixture(patch)
+  const binding = { sessionId: 'session-1' }
+  f.bridge.sessions.binding = id => { assert.equal(id, 'session-1'); return binding }
+  f.bridge.conversation.input.requestDraftInitialization = (target, options) => {
+    assert.equal(target, binding)
+    f.calls.push({ prompt: options.prompt, whenDraftExists: options.whenDraftExists })
+    return 'applied'
+  }
+  delete f.input.actions // SessionInput does not expose the slot-only InputActions.
+  return f
+}
+
+test('rc.3: mixed reference, command and quote drafts append through the retained Session public face', () => {
+  const f = rc3Fixture({ draft: '/goal @资料 > 引文\n已有正文', phase: 'claimed', claim: { token: '/goal ' }, occurrences: [{ offset: 6, length: 3 }] })
+  assert.equal(appendHostInput(f.bridge, '追加要求', noDom), true)
+  assert.deepEqual(f.calls, [{ prompt: '追加要求', whenDraftExists: 'append' }])
+  assert.equal(f.state.draft, '/goal @资料 > 引文\n已有正文')
+})
+
+test('rc.3: rejected or uncertain append never falls through to span edits or another input', () => {
+  for (const result of ['blocked', 'preserved', undefined, 'unknown']) {
+    const f = rc3Fixture()
+    f.bridge.conversation.input.requestDraftInitialization = () => result
+    assert.equal(appendHostInput(f.bridge, '要求', noDom), false)
+    assert.deepEqual(f.calls, [])
+  }
+  const f = rc3Fixture()
+  f.bridge.conversation.input.requestDraftInitialization = () => { throw new Error('stale generation') }
+  assert.equal(appendHostInput(f.bridge, '要求', noDom), false)
+  assert.deepEqual(f.calls, [])
+})
+
+test('rc.3: missing or foreign retained binding cannot receive another Session annotation', () => {
+  for (const binding of [undefined, { sessionId: 'other-session' }]) {
+    const f = rc3Fixture()
+    f.bridge.sessions.binding = () => binding
+    assert.equal(appendHostInput(f.bridge, '私有要求', noDom), false)
+    assert.deepEqual(f.calls, [])
+  }
+})
+
+test('rc.3: only successful append restores focus, and a focus failure cannot duplicate it', () => {
+  const f = rc3Fixture()
+  let focusCount = 0
+  f.input.focus = () => { focusCount++; throw new Error('unmounted') }
+  assert.equal(appendHostInput(f.bridge, '要求', noDom), true)
+  assert.equal(focusCount, 1)
+  assert.equal(f.calls.length, 1)
+  f.bridge.conversation.input.requestDraftInitialization = () => 'blocked'
+  assert.equal(appendHostInput(f.bridge, '要求', noDom), false)
+  assert.equal(focusCount, 1)
+})
+
+test('rc.3: empty drafts and locked submission phases keep the public owner semantics', () => {
+  const empty = rc3Fixture()
+  assert.equal(appendHostInput(empty.bridge, '要求', noDom), true)
+  assert.deepEqual(empty.calls, [{ prompt: '要求', whenDraftExists: 'append' }])
+  for (const phase of ['adjudicating', 'submitting']) {
+    const f = rc3Fixture({ phase })
+    assert.equal(appendHostInput(f.bridge, '要求', noDom), false)
+    assert.deepEqual(f.calls, [])
+  }
+})
 test('new host: empty input receives annotation, never submit', () => {
   const f = fixture()
   assert.equal(appendHostInput(f.bridge, '标注', noDom), true)
