@@ -326,4 +326,28 @@ function fresh() {
   ok('G. settling 过渡态保持等待')
 }
 
+// —— I. desktop native questions: actual store open/persisted/drag boundaries ——
+{
+  const { sandbox, splitStore, allEls } = fresh()
+  const root = new FakeEl('DIV', 'wSkVaW_root', { phase: 'active' }).setRect({ left: 280, top: 0, right: 1280, bottom: 800 })
+  const header = new FakeEl('HEADER').setRect({ left: 280, top: 0, right: 1280, bottom: 40 })
+  const body = new FakeEl('MAIN').setRect({ left: 280, top: 40, right: 1280, bottom: 800 })
+  root.appendChild(header);root.appendChild(body);allEls.push(root);sandbox.document.body.appendChild(root)
+  const saved = new Map();sandbox.localStorage.getItem = key => saved.get(key) ?? null;sandbox.localStorage.setItem = (key,value) => saved.set(key,value)
+  const spec=makeSpec('native-question-minimum')
+  splitStore.open(spec)
+  if (root.style.getPropertyValue('--dsh-chat-user-width') !== '360px') fail('I.default', 'native question column is '+root.style.getPropertyValue('--dsh-chat-user-width')+'; observed300 clips native submit')
+  splitStore.setChatW(280)
+  if (Number.parseFloat(root.style.getPropertyValue('--dsh-chat-user-width')) < 360) fail('I.drag', 'drag reintroduced clipped native question')
+  splitStore.setChatW(9999)
+  if (Number.parseFloat(body.style.marginLeft) < spec.main[0].min) fail('I.content', 'native drag consumed required workbench minimum')
+  splitStore.close()
+  saved.set('dsh.worktable.split.v2',JSON.stringify({[spec.id]:{chatW:300,topH:200,leftW:260,paneWs:[200],topWs:[],leftWs:[]},unrelated:{chatW:480,marker:'preserved'}}))
+  splitStore.open(spec)
+  if (root.style.getPropertyValue('--dsh-chat-user-width') !== '360px') fail('I.persisted', 'old300px native question column not sanitized')
+  splitStore.setChatW(360)
+  if (JSON.parse(saved.get('dsh.worktable.split.v2')).unrelated.marker !== 'preserved') fail('I.other-layout', 'resize overwrote another saved layout')
+  splitStore.close()
+  ok('I. native question default/persisted/drag width and other-layout preservation')
+}
 console.log('all anchor-dom tests passed: ' + pass + '/' + pass)

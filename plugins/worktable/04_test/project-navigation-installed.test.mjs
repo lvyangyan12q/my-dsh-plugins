@@ -29,6 +29,12 @@ try{
  await act(async()=>{await project.props.onClick({currentTarget:{}});await flush()});assert.equal(store.active,true);assert.equal(panel,null)
  await act(async()=>{overlay=create(React.createElement(overlayComponent));await flush()})
  const nativeInput=document.querySelector('[data-phase] main textarea');nativeInput.focus()
+ // 780px is wider than the historical mobile breakpoint, but cannot fit the
+ // declared401px modules plus the native384px minimum: retain the same safe switch.
+ await act(async()=>{frameWidth=780;store.syncAnchor();await flush()})
+ assert.equal(overlay.root.findAllByProps({'aria-label':'切换模块或原生对话'}).length,1,'insufficient split space must expose full-width module/native switching')
+ assert.equal(overlay.root.findAllByProps({className:'dsh-wt_pane'})[0].props.style.width,780)
+ await act(async()=>{frameWidth=1200;store.syncAnchor();await flush()})
  await act(async()=>{frameWidth=444;store.syncAnchor();await flush()})
  const mobilePanes=()=>overlay.root.findAllByProps({className:'dsh-wt_pane'})
  assert.equal(mobilePanes()[0].props.style.width,444,'narrow module must use entire available 444px rather than the old 60px remainder')

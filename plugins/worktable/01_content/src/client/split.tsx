@@ -148,6 +148,19 @@ const BAR_H = 26
 const NARROW_WIDTH = 760
 const NARROW_BAR_H = 38
 const PERSIST_KEY = 'dsh.worktable.split.v2'
+// Native question/approval controls need this column width; never restyle native DOM.
+const NATIVE_CHAT_MIN = 360
+function contentMinimum(spec: LayoutSpec): number {
+  const main = spec.main ?? []
+  return main.reduce((total, pane) => total + pane.min, 0) + Math.max(0, main.length - 1) * GAP
+}
+function nativeSingleSurface(spec: LayoutSpec, width: number): boolean {
+  return width < Math.max(NARROW_WIDTH, contentMinimum(spec) + Math.max(NATIVE_CHAT_MIN, spec.chatWidth.min))
+}
+function nativeChatWidth(spec: LayoutSpec, width: number, wanted: number): number {
+  const minimum = Math.max(NATIVE_CHAT_MIN, spec.chatWidth.min)
+  return clamp(Math.round(wanted), minimum, Math.max(minimum, width - contentMinimum(spec)))
+}
 
 /** 内置内容窗图标 */
 const BUILTIN_ICONS: Record<BuiltinType, string> = {
@@ -858,11 +871,9 @@ export const splitStore: SplitState = {
     this.savedNativeVisibility = viewArea.style.visibility
     this.savedNativeInert = viewArea.inert === true
     this.refreshGeom()
-    // 存档 sanitize：chatW 等尺寸按本布局规格钳制（防老版本/脏存值越界，如 1067 > max 600）
+    // Reconcile old widths against both the native control minimum and module space.
     if (this.geom) {
-      const minContent = main.reduce((a: number, p: SplitPane) => a + p.min, 0) + Math.max(0, main.length - 1) * GAP
-      const hi = Math.max(spec.chatWidth.min, (this.geom.right - this.geom.left) - minContent)
-      this.chatW = clamp(Math.round(this.chatW), spec.chatWidth.min, hi)
+      this.chatW = nativeChatWidth(spec, this.geom.right - this.geom.left, this.chatW)
     }
     // 均衡默认：无存档尺寸时按当前可用空间比例分配，
     // 不再出现“其余窗全部贴 min、最后一个吃掉全部余量”的悬殊观感。
@@ -871,8 +882,7 @@ export const splitStore: SplitState = {
       const colW0 = g0.right - g0.left
       const rowH0 = g0.bottom - g0.top
       if (!hasChatW) {
-        const hi = Math.max(spec.chatWidth.min, colW0 - 60)
-        this.chatW = clamp(Math.round(colW0 * 0.3), spec.chatWidth.min, hi)
+        this.chatW = nativeChatWidth(spec, colW0, colW0 * 0.3)
       }
       if (left && !hasLeftW) {
         const lo = spec.leftWidth?.min ?? 160
@@ -1028,7 +1038,7 @@ export const splitStore: SplitState = {
     if (!viewArea || !g || !spec) return
     const colW = g.right - g.left
     const rowH = g.bottom - g.top
-    if (colW < NARROW_WIDTH) {
+    if (nativeSingleSurface(spec, colW)) {
       this.lastMarginLeft = ''
       this.lastMarginRight = ''
       this.lastMarginTop = NARROW_BAR_H + 'px'
@@ -1058,7 +1068,7 @@ export const splitStore: SplitState = {
     this.restoreNativeView()
     const hasLeft = !!spec.left
     const hasTop = !!(spec.top && spec.top.length > 0)
-    const chatW = clamp(this.chatW, spec.chatWidth.min, Math.max(spec.chatWidth.min, colW - 60))
+    const chatW = nativeChatWidth(spec, colW, this.chatW)
     // 会话内容宽 clamp(680px, …, 920px) 不随挤出的聊天列收缩 → 显式钉到挤出的列宽
     // （close/重锚定时原样恢复；0.1.1 上该 CSS 变量闲置，设置无害）
     if (this.root && this.root.isConnected) {
@@ -1087,10 +1097,7 @@ export const splitStore: SplitState = {
     const spec = this.spec
     if (!g || !spec) return
     const colW = g.right - g.left
-    const main = spec.main ?? []
-    const minContent = main.reduce((a, p) => a + p.min, 0) + Math.max(0, main.length - 1) * GAP
-    const hi = Math.max(spec.chatWidth.min, colW - minContent)
-    this.chatW = clamp(Math.round(w), spec.chatWidth.min, hi)
+    this.chatW = nativeChatWidth(spec, colW, w)
     this.applyMargin()
     this.persist()
     this.notify()
@@ -1129,7 +1136,7 @@ export const splitStore: SplitState = {
     const main = spec.main ?? []
     if (i < 0 || i >= main.length) return
     const colW = g.right - g.left
-    const chatW = clamp(this.chatW, spec.chatWidth.min, Math.max(spec.chatWidth.min, colW - 60))
+    const chatW = nativeChatWidth(spec, colW, this.chatW)
     const contentW = Math.max(0, colW - chatW)
     const othersMin = main.reduce((a, p, k) => a + (k === i ? 0 : p.min), 0)
     const lo = main[i].min
@@ -3087,11 +3094,11 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   const chatLeft = !hasLeft && spec.chatSide === 'left'
   const colW = g.right - g.left
   const rowH = g.bottom - g.top
-  const narrow = colW > 0 && colW < NARROW_WIDTH
+  const narrow = colW > 0 && nativeSingleSurface(spec, colW)
   const choices = [...(spec.left ? [{ pane: spec.left, row: 'left' as PaneRow, index: 0 }] : []), ...top.map((pane, index) => ({ pane, row: 'top' as PaneRow, index })), ...main.map((pane, index) => ({ pane, row: 'main' as PaneRow, index }))]
   const selectedPaneId = splitStore.narrowPaneId === null ? null : choices.find(c => c.pane.id === splitStore.narrowPaneId)?.pane.id ?? choices[0]?.pane.id
   const narrowView = selectedPaneId == null ? 'native' : 'pane:' + selectedPaneId
-  const chatW = clamp(props.chatW, spec.chatWidth.min, Math.max(spec.chatWidth.min, colW - 60))
+  const chatW = nativeChatWidth(spec, colW, props.chatW)
   const topH = hasTop
     ? clamp(props.topH, spec.topHeight?.min ?? 80, Math.max(spec.topHeight?.min ?? 80, rowH - BAR_H - 80))
     : 0
