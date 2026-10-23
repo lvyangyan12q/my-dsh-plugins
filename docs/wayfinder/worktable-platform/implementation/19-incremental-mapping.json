@@ -43,8 +43,9 @@
     "272 source /18 independent /10 factory gates separate from actual UI/model evidence.",
     "No template48-entry candidate automatically accepted; no model prompts/HTML/credentials/private profile data copied.",
     "Native alpha.2 own3092 baseline9 inactive before plugin and native UI failure remain blocked, not compatible UI acceptance.",
-    "Formal3080 remains0.7.2 unsynchronized; code and prior docs3e14e31 already pushed. This new mapping commit not yet pushed.",
-    "Kaogong paused; legacy materials/physicalIME/Desktop/macOS/upstreamAPI limitations retained."
+    "Formal3080 remains0.7.2 unsynchronized; code and prior docs/mapping b14c2fd already pushed. This new UI supplement not yet pushed.",
+    "Kaogong paused; legacy materials/physicalIME/Desktop/macOS/upstreamAPI limitations retained.",
+    "Separate19-final-ui094 supplement adds actual final0.9.4 Reading/native/editor-open/website-off checks without rewriting0.9.3 history or claiming new model/create flows."
   ],
   "evidenceIndex": {
     "12-clean-installed.json": {
@@ -86,6 +87,11 @@
       "path": "evidence/19-final-interim-installed094.json",
       "gitBlobSha256": "3c5f90629118459d332fa6a603401b0da3727c73ba0939f3dac6854c55863baf",
       "basis": "exact committed bytes at3e14e31; no mixed historical receipt relabeled clean"
+    },
+    "19-final-ui094.json": {
+      "path": "evidence/19-final-ui094.json",
+      "workingFileSha256": "b80602cae9edaca216fd13f127e80adfc40ccb31d98cdeac33c3efb8e16e8685",
+      "basis": "new supplement exact UTF8LF content at author candidate; private raw contents excluded"
     }
   },
   "rows": [
@@ -1973,12 +1979,17 @@
       "wholeRequirementClosed": false,
       "evidence": [
         "14-installed.json",
-        "19-final-interim-installed094.json"
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
       ],
       "observed": [
         {
           "status": "actual",
           "text": "0.8.4 same-instance linked selection/filter/detail; Reading0.9.3 two views restored same filters/selected detail/1book12minutes after cold restart."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 Reading normal reload and two existing tabs independently verified shared filters/selection/detail1book12minutes; no business writes."
         }
       ],
       "remaining": "Reading proof is0.9.3, not all-feature0.9.4; no cross-browser localStorage synchronization.",
@@ -2117,12 +2128,17 @@
       "incrementalStatus": "partial",
       "wholeRequirementClosed": false,
       "evidence": [
-        "15-installed.json"
+        "15-installed.json",
+        "19-final-ui094.json"
       ],
       "observed": [
         {
           "status": "actual",
           "text": "0.9.3 real native question/answer, Skill, fs approval/trajectory and native execution were observed from application-owned Session."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 actual native conversation/trajectory tabs retained unsent annotation and displayed request23/7turns23steps; no new execution."
         }
       ],
       "remaining": "Full embedded native titlebar and unavailable public APIs remain upstream limitations.",
@@ -2260,7 +2276,8 @@
       "wholeRequirementClosed": false,
       "evidence": [
         "15-installed.json",
-        "19-final-interim-installed094.json"
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
       ],
       "observed": [
         {
@@ -2270,6 +2287,10 @@
         {
           "status": "actual",
           "text": "0.9.4 real historical G6 applying recovered explicitly to prepared, fresh preview/apply/enable produced its own hash; same-package reload retained G6 and unchanged seven requests."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 actual A G6/B B1 switch and scoped receipts retained A revision27/hash and original seven task/request pairs."
         }
       ],
       "remaining": "No arbitrary generated business system/full page builder guarantee. Whole historical later-stage row is not automatically reclassified; all-device/legacy modules remain outside.",
@@ -2321,12 +2342,17 @@
       "wholeRequirementClosed": false,
       "evidence": [
         "14-installed.json",
-        "19-final-interim-installed094.json"
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
       ],
       "observed": [
         {
           "status": "actual",
           "text": "0.8.4 owner state cold recovery;0.9.4 exact-package remove/add/cold UI reload restored original project/two views/G6; seven task/request pairs unchanged."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 Reading restored existing instance/two views after same-package reinstall and normal UI reload."
         }
       ],
       "remaining": "Frame-local click state resets.17 selected durable path existence flags and existing hashes preserved does not mean17 paths all existed. No legacy data completeness promise.",
@@ -2451,7 +2477,8 @@
         "14-installed.json",
         "15-installed.json",
         "17-installed.json",
-        "19-final-interim-installed094.json"
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
       ],
       "observed": [
         {
@@ -2461,6 +2488,10 @@
         {
           "status": "actual",
           "text": "0.9.3 generated module/controlled website and0.9.4 recovery/reinstall used existing composition/instance/view ownership, not another application runtime."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 module editor controls opened only; not counted as a repeat creation or save/enable acceptance."
         }
       ],
       "remaining": "Complete arbitrary application AI generation and unrestricted low-code builder remain beyond this limited composition contract. No automatic whole-row closure despite later-stage historical category.",
@@ -2533,12 +2564,17 @@
       "incrementalStatus": "partial",
       "wholeRequirementClosed": false,
       "evidence": [
-        "17-installed.json"
+        "17-installed.json",
+        "19-final-ui094.json"
       ],
       "observed": [
         {
           "status": "actual",
           "text": "Actual website selected-resource read-only and prepare-only task authority; resource revoke refused read and submit; no native request from webpage prepare."
+        },
+        {
+          "status": "actual",
+          "text": "Final0.9.4 ordinary cooperative website capabilities both off and selected resource revoked; two prepared tasks still have no native request IDs."
         }
       ],
       "remaining": "All resource write methods/owners not actual exhaustive tested.",
@@ -2556,7 +2592,8 @@
       "evidence": [
         "13-clean-installed.json",
         "14-installed.json",
-        "19-final-interim-installed094.json"
+        "19-final-interim-installed094.json",
+        "19-final-ui094.json"
       ],
       "observed": [
         {
@@ -2566,9 +2603,13 @@
         {
           "status": "actual",
           "text": "Reading0.9.3 actual390x900 light/dark, Tab/PageDown/local-scroll and two views observed; generated G6 actual0.9.4 iframe/button rendered."
+        },
+        {
+          "status": "actual",
+          "text": "Separate final0.9.4 Reading390x900 light/dark/keyboard/local-scroll actual regression now supplements unchanged historical0.9.3 proof."
         }
       ],
-      "remaining": "Reading390/theme is0.9.3, not rerun0.9.4. G6 render/button is not generated-page complete theme/keyboard proof. No physical mobile/IME/Desktop/macOS or every reusable control/theme combination.",
+      "remaining": "Historical0.9.3 Reading proof is preserved and now supplemented by separate final0.9.4 Reading UI. G6 render/button is not generated-page complete theme/keyboard proof. No physical mobile/IME/Desktop/macOS or every reusable control/theme combination.",
       "interpretation": "actual applies only to each listed installed observation; row status remains partial unless explicitly narrowed. Historical classification and full-spec status unchanged."
     },
     {

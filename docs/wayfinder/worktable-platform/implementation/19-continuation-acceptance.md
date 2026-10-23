@@ -42,3 +42,6 @@ Fixed485b38c Standards/Spec review raised three findings; single implementer069a
 
 
 2026-10-23新增[逐条增量映射](19-incremental-mapping.md)及[172条JSON](19-incremental-mapping.json)，保留历史原ID/原文/hash/分类及原文件SHA。实际、局部、未验与保留范围区分；不提升历史计数、不以Reading/合成迁移代替考公或真实资料迁移。19仍open，待正式宿主前提、3080同步和最终远程交付。
+
+
+最终0.9.4新增[UI补验](19-final-ui094.md)：Reading两视图及390px明暗/键盘/局部滚动，原生对话保留未发送标注与轨迹，A/B显示隔离，合作网页默认无权限。Editor只打开，未save、不算新建闭环；无模型重发。原alpha.2独立官方构建尚在准备，未记通过。19仍open待正式宿主前提和部署/交付。

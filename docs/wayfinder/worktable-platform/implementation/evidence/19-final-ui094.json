@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-23",
+  "status": "actual final0.9.4 UI supplement;19 open",
+  "base": "b14c2fd1c5fc26042bdc17ee6665c9aed59eb70c",
+  "host": "own3091 official unpatched DSH0.2.0-rc.2",
+  "package": {
+    "version": "0.9.4",
+    "sha256": "c40c0c550cc1fa4c55f54eb695c712c58609b82bd82c52c920f5ca081aa1aff6",
+    "installationBasis": "19-final-interim-installed094.json same-package actual official reinstall9/9"
+  },
+  "actual": {
+    "native": "Exited Worktable overlay to same native conversation; retained unsent annotation. Native trajectory tab displayed request23 and7turns23steps. No send/replay.",
+    "instances": "Actual A G6 / B B1 UI switch; A revision27/hash and seven original task/request pairs unchanged in scoped receipt.",
+    "editor": "Opened module-local editor exposing9 types/theme/field/role controls only; no edit/save/new creation claimed.",
+    "website": "Own cooperative fixture served; ordinary iframe read/prepare disabled, both capability checkboxes0, resource permission revoked. Scoped receipt retains two prepared tasks without request IDs.",
+    "reading": {
+      "version": "0.9.4",
+      "after": "final exact-package reinstall; normal reload and existing project/tab selection",
+      "state": "two existing Reading tabs share same instance, retained search/category/status/selected synthetic detail and1book12minutes; two synthetic records12/23minutes",
+      "viewport": "390x900 light and dark; document width390; Tab category/status/selected-record; PageDown local scrollTop358 in537px container/895px content",
+      "writes": "No business/model/task/permission writes or new instances; no server restart by Reading reviewer"
+    }
+  },
+  "limits": [
+    "Native trace text is history/current Session UI, not a new model execution or success inference. Unsent annotation retained; no native image-attachment restoration asserted.",
+    "Editor controls opened only, not a repeat create/modify/save/enable flow.",
+    "Ordinary website off state is final package regression; no newly granted access/read/send claimed.",
+    "Reading prior0.9.3 evidence remains historical; this separate0.9.4 run newly verifies named UI only. No physical mobile/IME/Desktop/macOS or Notes re-open claim.",
+    "Isolated official alpha.2 build preparation still in progress; no native-source repair or usable-host acceptance claimed.",
+    "Formal3080 still0.7.2 unsynchronized; code/prior docs b14c2fd pushed, this new supplement pending push;19/fullspec open."
+  ],
+  "proofFiles": [
+    {
+      "file": "worktable-19-final-native094.private.ax.txt",
+      "sha256": "1c7f3d5815c91150b8984a7fcffb21d2a66d74bc3b2312e9bb4511b81421eb5a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final-trajectory094.private.ax.txt",
+      "sha256": "9ad6597dc335d4afc280c98c10b5ca83c9712fbb2e44fe97b9cdaf18333f0d82",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final-b094.private.ax.txt",
+      "sha256": "a73736a88d0acda96ab4e3cb9818a3d5781458b2481002adf56ac17646ae1589",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final-bridge-off094.private.ax.txt",
+      "sha256": "34c37aefef1f239d9830283d06656ee4f4e8cb0681cfc98ca9b23490fbd1b86b",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final-bridge-off094.private.png",
+      "sha256": "31d6749dba7cf1e0625b8f743f17566e65a3e99aec74d22746b6675d7f0e4d06",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final-editor094.private.ax.txt",
+      "sha256": "c0eb431515c9c4c185e8c90a6aeb8bd42d4a9af1559bca14f41b0151a44f161b",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-final-editor094.private.png",
+      "sha256": "652bebfbf5e0add2c63263d5655dfea5d0d3252d22af778a9f703b400b977c27",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-15-20261023-final-ui094.private.json",
+      "sha256": "6b9f1ae8a2cf17c3967eba26a008a4cd5127647b0ff089b586217103fa95e6f5",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-17-20261023-final-ui094.private.json",
+      "sha256": "8c1e897a0c183e510f6dd411dbbccb83a93f272a9fb851a345be53ff3f2afc23",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-reading-094-handoff.md",
+      "sha256": "2b20da7372c6ba7b29d642dbb2526365d3d5cf943ebf266f5d353f55d3a3172d",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-reading-094-hashes.private.json",
+      "sha256": "60f83044f9f0104b0dd4241c7c3cf2ea17cc7c0f7edacc5cce5a5dbf583a16c6",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-reading-094-dark.private.ax.txt",
+      "sha256": "7a98ac88abe6e2e5cfb153776cad2014d35da3c9de79728b8429dd4f84c9b167",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-reading-094-dark.private.jpg",
+      "sha256": "ce1026b98b4b7070fc205cff2aa1d130be7179cadee299e9ee42b9705f0834a1",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-reading-094-light.private.ax.txt",
+      "sha256": "16bb3f5c902d861c8d1998a69b6d93748b7fc4010ab92fec5dfcdc9b89fc888a",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-reading-094-light.private.jpg",
+      "sha256": "4bd8efaec6d6b819c07f8ae53a66f252aa2abd0aa6b9c02dc08affdfcee3ca54",
+      "contentsCommitted": false
+    },
+    {
+      "file": "worktable-19-reading-094-first-view.private.ax.txt",
+      "sha256": "bc570fcde4363e5c318d32a9a2fb01ec448c73501b5046be73c8af83ef60edb8",
+      "contentsCommitted": false
+    }
+  ]
+}
