@@ -1,5 +1,11 @@
 # 工作台进度与待办
 
+## 当前检查点 · 2026-10-23
+
+2026-10-23 当前：独立官方未补丁rc.2/3091已安装冻结Worktable0.9.4（SHA256 c40c0c550cc1fa4c55f54eb695c712c58609b82bd82c52c920f5ca081aa1aff6），9/9包内文件一致、peer0。15追加真实旧G6失败恢复、显式预览/草稿/启用及同包卸载重装冷恢复，已关闭；12—18按各票限定范围关闭。19仍open：最终增量映射、正式宿主可用前提、3080同步与远程交付待完成。3080仍0.7.2，本轮尚未同步或推送。原生alpha.2独立3092在插件安装前已有9项原生inactive，原生UI失败不能计为工作台UI通过；未修改原生。两轴审查固定485b38c共3项已由单一implementer修复，source272/272、独立18/18与factory10/10不替代实页。完整spec和历史172分类保持，考公暂缓。
+
+当前证据：[19阶段实页记录](wayfinder/worktable-platform/implementation/evidence/19-final-interim-installed094.json)。以下旧日期段落保留为历史，不能覆盖此检查点。
+
 2026-10-22当前前沿：12、13、14、15、16、17、18已按各票实际范围关闭；19全部依赖已解除，进入最终闭环和两轴审查。15已在独立官方rc.2/Worktable0.9.3（SHA256 57222fda4d6f4b9310e42baa2c1648372f5ea26a2dc2ae9f049a9497b15abd5b）完成原生生成追改、A/B隔离、目标替换与原生Stop、Skill及单次审批验收，见[15实页证据](wayfinder/worktable-platform/implementation/evidence/15-installed.json)。17已在同一0.9.3完成真实合作网页只读两条新合成资料、只准备任务、界面撤资料后读取/原生发送拒绝；独立Chrome补同主机跨端口/缺CSP接纳/302跳宿主拒绝及刷新默认关闭，见[17实页证据](wayfinder/worktable-platform/implementation/evidence/17-installed.json)。最终冷启/旧包回退/剩余窄屏明暗和3080目标宿主仍待19；3080保持原部署，完整spec仍open，历史映射不变。
 
 

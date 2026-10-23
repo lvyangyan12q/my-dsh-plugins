@@ -3,7 +3,7 @@ id: worktable-framework-15
 title: 原生AI生成追改与稳定产物归属
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: continuation_failures
 blocked_by: [worktable-framework-14]
 ---
@@ -123,3 +123,10 @@ The earlier0.9.3 installed evidence remains a record of the actual completed flo
 Candidate0.9.4 adds an explicit recovery action, not automatic retry. It revalidates exact target, role/Session/native completed request and preview file/manifest hashes, then reads the durable instance binding. If no binding references this generation and the complete original target structure is unchanged, recovery returns only to prepared; the user must preview again and explicitly apply. This safely handles a real0.9.3 applying record lacking new fields after a definitely uncommitted failure. If a draft binding already references this generation, the new durable apply intent must match its exact recipe and slot/hash before marking the record applied; no composition transaction is replayed. A legacy uncertain committed record lacking sufficient intent is blocked with explanation. Stop, changed target/files/roles, missing owner or indeterminate binding remain fail-closed. Active historical output is retained.
 
 Source regression runs use actual OS rename refusal on independent temporary files: historical0.9.3 creates the old applying record; new owner explicitly recovers without another native prompt. Another real composition commit followed by actual ledger-write refusal is reconciled after owner reopen with no extra recipe revision or enable. UI/final factory callbacks expose recovery only by explicit action and scope late callbacks to the current view. Actual root0.9.4 recovery of G6 remains pending; this source correction does not close15.
+
+
+## 2026-10-23 actual0.9.4 failure-retry verification
+
+Root officially installed frozen0.9.4 (SHA256 c40c0c550cc1fa4c55f54eb695c712c58609b82bd82c52c920f5ca081aa1aff6;9/9 bytes). Historical0.9.3 G6 applying was explicitly reconciled in the real module UI to prepared, previewed again, then explicitly applied to draft revision24 from23. Running G3 stayed unchanged until separate editor preview/save/enable produced version1.0.1 revision27/G6. All seven native task/request pairs remained identical; B1 remained unchanged. Official same-package remove/add and cold reload retained G6 and its original two views, with the same seven requests and artifact hash. Frame-local button state reset is not claimed as persistent application data.
+
+This closes the reopened explicit failure-retry seam only. [19 interim installed evidence](evidence/19-final-interim-installed094.json) contains sanitized hashes and distinctions between actual UI and source gates.19 and the full spec remain open; formal3080 is still0.7.2, pending usable native host and final mapping/delivery.

@@ -32,3 +32,10 @@ blocked_by: [worktable-framework-12, worktable-framework-13, worktable-framework
 - [16](16-failure-states.md)
 - [17](17-web-bridge.md)
 - [18](18-upgrade-protection.md)
+
+
+## 2026-10-23 interim installed checkpoint — remains open
+
+[0.9.4实际阶段记录](evidence/19-final-interim-installed094.json) covers G6 explicit failure recovery and same-package official remove/add/cold UI restore, unchanged seven native requests and two prepared website tasks,9-file identity and selected durable-path preservation. Reading390px light/dark/keyboard/local-scroll evidence is actual0.9.3, not recast as0.9.4.
+
+Fixed485b38c Standards/Spec review raised three findings; single implementer069a2fb corrected source, independently regressed18/18 with full272 source and10 factory checks. Source gates are separate from installed acceptance.19 stays open for final incremental mapping and delivery; formal3080 remains0.7.2. Original native alpha.2 baseline9 inactive entries and native UI failure predate this plugin and block alpha.2 UI acceptance; no native repair or rc.2 extrapolation. Historical172 mapping remains66/94/12, framework49 remains41/6/2.
