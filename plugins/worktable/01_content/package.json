@@ -1,7 +1,7 @@
 {
   "name": "dsh-worktable",
   "description": "工作台 Worktable：DeepSeek Harness 侧边栏的 agent 级项目容器（应用抽屉）",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/Aisland-SJL/dsh-worktable.git",
@@ -66,7 +66,7 @@
     "test:widget": "node ../04_test/widget-mount.test.mjs",
     "verify:remote": "node verify-remote.mjs",
     "test:roles": "node --test ../04_test/roles.test.mjs ../04_test/capabilities.test.mjs ../04_test/role-native.test.mjs ../04_test/role-panel.test.mjs ../04_test/capability-native.test.mjs ../04_test/role-lifecycle.test.mjs ../04_test/role-navigation.test.mjs",
-    "test:applications": "node --test ../04_test/application-entry.test.mjs ../04_test/application-http.test.mjs ../04_test/application-component.test.mjs",
+    "test:applications": "node --test ../04_test/application-entry.test.mjs ../04_test/application-http.test.mjs ../04_test/application-component.test.mjs ../04_test/directory-refresh.test.mjs",
     "test:tasks": "node --test ../04_test/tasks.test.mjs ../04_test/task-host.test.mjs ../04_test/task-panel.test.mjs"
   },
   "peerDependencies": {

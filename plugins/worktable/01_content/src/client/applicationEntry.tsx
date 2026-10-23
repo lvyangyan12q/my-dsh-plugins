@@ -22,15 +22,30 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
   const [composing,setComposing]=useState(false)
   const [name,setName]=useState(''),[id,setId]=useState(''),[url,setUrl]=useState('')
   const mounted=useRef(true)
-  useEffect(()=>{mounted.current=true;request().then(s=>{if(mounted.current)setSnapshot(s)}).catch(e=>{if(mounted.current)setError(e.message)});return()=>{mounted.current=false}},[])
-  async function perform(operation:()=>Promise<void>){setBusy(true);setError('');try{await operation()}catch(e:any){if(mounted.current)setError(e.message)}finally{if(mounted.current)setBusy(false)}}
-  async function open(application:any,create:boolean,selected?:any){await perform(async()=>{
-    let instance=selected??(create?null:await request({action:'latest',appId:application.id,projectId:props.projectId}))
-    if(!instance){if(!create)throw new Error('没有可继续的实例，请显式新建。');instance=await request({action:'create',appId:application.id,projectId:props.projectId})}
-    if(!create){instance=await request({action:'resume',instanceId:instance.id});if(instance.appId!==application.id||instance.projectId!==props.projectId)throw new Error('实例归属已改变，请重新打开应用目录。')}
-    const state=await request();let view=create?null:state.views.find((v:any)=>v.instanceId===instance.id)
+  const directoryRead=useRef(0),ownership=useRef(0)
+  useEffect(()=>{
+    mounted.current=true;ownership.current++;setSnapshot(null);setError('');setBusy(false)
+    let pending:AbortController|null=null
+    const refresh=()=>{
+      const current=++directoryRead.current;pending?.abort();const controller=new AbortController();pending=controller
+      const owns=()=>mounted.current&&!controller.signal.aborted&&directoryRead.current===current
+      request(undefined,controller.signal).then(value=>{if(owns()){setSnapshot(value);setError('')}}).catch(e=>{if(owns())setError(e.message)})
+    }
+    refresh();window.addEventListener('dsh:applications-changed',refresh)
+    return()=>{mounted.current=false;ownership.current++;directoryRead.current++;pending?.abort();window.removeEventListener('dsh:applications-changed',refresh)}
+  },[props.projectId])
+  async function perform(operation:(owns:()=>boolean)=>Promise<void>){const owner=ownership.current;const owns=()=>mounted.current&&ownership.current===owner;setBusy(true);setError('');try{await operation(owns)}catch(e:any){if(owns())setError(e.message)}finally{if(owns())setBusy(false)}}
+  async function open(application:any,create:boolean,selected?:any,independent=false){await perform(async owns=>{
+    let instance=selected??(independent?null:await request({action:'latest',appId:application.id,projectId:props.projectId}))
+    if(!owns())return
+    const creating=!instance
+    if(creating){if(!create)throw new Error('没有可继续的实例，请显式新建。');instance=await request({action:'create',appId:application.id,projectId:props.projectId})}
+    if(!owns())return
+    if(!creating){instance=await request({action:'resume',instanceId:instance.id});if(!owns())return;if(instance.appId!==application.id||instance.projectId!==props.projectId)throw new Error('实例归属已改变，请重新打开应用目录。')}
+    const state=await request();if(!owns())return
+    let view=creating?null:state.views.find((v:any)=>v.instanceId===instance.id)
     if(!view)view=await request({action:'view',instanceId:instance.id})
-    if(mounted.current)props.onOpen(contentOf(application,instance,view))
+    if(owns())props.onOpen(contentOf(application,instance,view))
   })}
   if(composing)return <CompositionEditor projectId={props.projectId} onCancel={()=>setComposing(false)} onOpen={props.onOpen}/>
   return <section className="dsh-wt_appPanel" aria-label="选择应用">
@@ -45,21 +60,21 @@ export function ApplicationPicker(props:{projectId:string|null;onOpen:Open;onCan
         <strong>{application.title}</strong><small>{application.kind==='deep'?'应用':'网页'} · {application.id}{application.enabled===false?' · 已停用':''}</small>
         <div className="dsh-wt_appLine">
           <button type="button" className="dsh-wt_appPrimary" disabled={busy||(!latest&&application.enabled===false)} onClick={()=>open(application,!latest)}>{latest?'继续最近实例':'新建实例'}</button>
-          {latest&&<button type="button" disabled={busy||application.enabled===false} onClick={()=>open(application,true)}>新建独立实例</button>}
-          <button type="button" disabled={busy} onClick={()=>void perform(async()=>{await request({action:'lifecycle',appId:application.id,enabled:application.enabled===false,revision:application.lifecycleRevision??0});const next=await request();if(mounted.current)setSnapshot(next);window.dispatchEvent(new Event('dsh:applications-changed'))})}>{application.enabled===false?'启用应用':'停用应用'}</button>
+          {latest&&<button type="button" disabled={busy||application.enabled===false} onClick={()=>open(application,true,undefined,true)}>新建独立实例</button>}
+          <button type="button" disabled={busy} onClick={()=>void perform(async owns=>{await request({action:'lifecycle',appId:application.id,enabled:application.enabled===false,revision:application.lifecycleRevision??0});const next=await request();if(owns())setSnapshot(next);window.dispatchEvent(new Event('dsh:applications-changed'))})}>{application.enabled===false?'启用应用':'停用应用'}</button>
         </div>
         {instances.length>1&&<details><summary>其他实例（{instances.length-1}）</summary><div className="dsh-wt_appForm">{instances.slice(1).map((instance:any)=><button type="button" key={instance.id} title={instance.id} disabled={busy} onClick={()=>open(application,false,instance)}>恢复实例 {instance.id.slice(0,8)}</button>)}</div></details>}
       </div>
     })}
     {snapshot?.applications.length===0&&<p>还没有接入应用。可先登记一个独立网页。</p>}
-    {snapshot?.lifecycle?.filter((row:any)=>!snapshot.applications.some((app:any)=>app.id===row.appId)).map((row:any)=><div className="dsh-wt_appCard" key={'missing:'+row.appId}><strong>{row.appId} · 应用插件未加载</strong><p>持久策略：{row.enabled?'已启用':'已停用'}。原数据和原生会话保留；启用策略不会安装插件。</p>{!row.enabled&&<button disabled={busy} onClick={()=>void perform(async()=>{await request({action:'lifecycle',appId:row.appId,enabled:true,revision:row.revision});const next=await request();if(mounted.current)setSnapshot(next);window.dispatchEvent(new Event('dsh:applications-changed'))})}>明确启用此策略</button>}</div>)}
+    {snapshot?.lifecycle?.filter((row:any)=>!snapshot.applications.some((app:any)=>app.id===row.appId)).map((row:any)=><div className="dsh-wt_appCard" key={'missing:'+row.appId}><strong>{row.appId} · 应用插件未加载</strong><p>持久策略：{row.enabled?'已启用':'已停用'}。原数据和原生会话保留；启用策略不会安装插件。</p>{!row.enabled&&<button disabled={busy} onClick={()=>void perform(async owns=>{await request({action:'lifecycle',appId:row.appId,enabled:true,revision:row.revision});const next=await request();if(owns())setSnapshot(next);window.dispatchEvent(new Event('dsh:applications-changed'))})}>明确启用此策略</button>}</div>)}
     <TaskHandoff/>
     <CapabilityManager/>
     <details><summary>接入网页应用</summary>
-      <form className="dsh-wt_appForm" onSubmit={e=>{e.preventDefault();void perform(async()=>{
+      <form className="dsh-wt_appForm" onSubmit={e=>{e.preventDefault();void perform(async owns=>{
         websiteEntry(url,window.location.origin)
         await request({action:'register',application:{id,title:name,version:'1.0.0',protocolVersion:1,kind:'web',url}})
-        const next=await request();if(mounted.current){setSnapshot(next);setName('');setId('');setUrl('')}
+        const next=await request();if(owns()){setSnapshot(next);setName('');setId('');setUrl('')}
       })}}>
         <label>应用名称<input required value={name} onChange={e=>setName(e.target.value)} /></label>
         <label>应用标识<input required pattern="[a-z][a-z0-9.-]{0,79}" placeholder="reading-web" value={id} onChange={e=>setId(e.target.value)} /></label>

@@ -89,7 +89,8 @@ test('after opening A then explicitly creating B, the project picker restores ol
   const {mkdtemp,rm}=await import('node:fs/promises'),{tmpdir}=await import('node:os')
   const {ApplicationDirectory}=await import('../01_content/src/framework/applications.mjs')
   const folder=await mkdtemp(join(tmpdir(),'worktable-picker-restore-')),apps=new ApplicationDirectory(join(folder,'apps.json'))
-  const previousFetch=globalThis.fetch,opened=[],actions=[];let root
+  const previousFetch=globalThis.fetch,previousWindow=globalThis.window,opened=[],actions=[];let root
+  globalThis.window=Object.assign(new EventTarget(),{location:{origin:'http://127.0.0.1:3091'}})
   try {
     await apps.contribute({id:'reading',title:'Reading',version:'1',kind:'deep',protocolVersion:1,views:[{id:'page',title:'Page'}]})
     const a=await apps.createInstance('reading','project-one'),aView=await apps.createView(a.id)
@@ -123,7 +124,7 @@ test('after opening A then explicitly creating B, the project picker restores ol
     assert.equal(actions.filter(action=>action.action==='create').length,1)
     assert.equal(actions.filter(action=>action.action==='view').length,1)
     assert.equal((await apps.latest('reading','project-one')).id,a.id)
-  } finally {if(root)await act(async()=>root.unmount());globalThis.fetch=previousFetch;await rm(folder,{recursive:true,force:true})}
+  } finally {if(root)await act(async()=>root.unmount());globalThis.fetch=previousFetch;globalThis.window=previousWindow;await rm(folder,{recursive:true,force:true})}
 })
 
 test('public layout moveTab and swapPanes retain application instance and view identities',()=>{
