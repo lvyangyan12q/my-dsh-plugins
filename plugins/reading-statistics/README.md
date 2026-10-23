@@ -2,9 +2,7 @@
 
 Reading owns its `reading_statistics` version 1 Host storage domain and all records.
 The data owner requires native `storageDomain` and authenticated `connection` services;
-the official web/base runtime provides both. Native runtime compatibility is pinned
-to the tested `0.2.0-rc.2` release, including the storage-domain dependency and
-host-webserver peer, so installation cannot select a newer alpha storage provider. No Session or model request is created.
+the official web/base runtime provides both. Native compatibility candidates and host-provided storage/webserver peers are explicit below; no package dependency selects a second native storage runtime. No Session or model request is created.
 
 ## Worktable deep application
 
@@ -65,3 +63,14 @@ fixtures are retained with their original pre-05 API assumptions; their arbitrar
 success expectations are incompatible with the deliberate 403 change and are not
 reported as passing 05 tests. Final installed UI verification is a separate root
 acceptance step, including refresh/restart and version-pairing checks for ticket09.
+
+
+## 0.2.1 dual-host compatibility candidate
+
+Native peer ranges explicitly name official DSH0.2.0-rc.2 and0.2.1-alpha.2, with their actual Cordis4.0.4/4.0.5-alpha.1 (and Notes Schemastery3.18.4/3.18.5-alpha.1). Native storage-domain is a host-provided peer, not an optional package dependency that can silently install another runtime. Its real defineDomain/domainTable import remains external; installation must provide that service. No peer bypass/native patch is part of this candidate.
+
+Public producer checks install the exact frozen Worktable archive and selected official native public packages in an independent directory, assert shared Cordis identity and compile with skipLibCheck=false. Candidate source/compilation is distinct from final official package installation, peers check and actual two-host UI acceptance, which remain root release gates.
+
+Release entry is npm run pack with DSH_SOURCE, WORKTABLE_PACKAGE and npm_execpath. Existing dist/vVERSION directories are refused before tests/build/install; published stable and versioned filenames are copied exclusively. Bad assets require a new version. Source-only preparation does not create a frozen package or alter any profile.
+
+Reading type checks also require READING_LEGACY_ROOT pointing to genuine built personal-workbench public declaration artifacts. Only those existing declarations are copied for optional legacy adapter type checking; that legacy runtime is not installed into the producer. Public native package exports and one React types identity are selected explicitly; no substitute declarations or skipLibCheck. Legacy HTTP-based tests are preserved byte-for-byte in tests/historical/reading-platform.v020.mjs.txt for provenance. Their formerly supported arbitrary-instance HTTP CRUD path is now refused403. The executable reading-platform suite migrates persistence/CRUD/confirmed-delete/view isolation/read-only/revocation/lifecycle/conflict intent to registered ResourceDirectory instance/view calls; deep-views and data-grants-ui exercise current public UI. Old legacy recipe-v4 builder/manager auto-upgrade interaction is not claimed by the new suite and needs separate future legacy acceptance if retained. No test is skipped or excluded by the normal release entry.

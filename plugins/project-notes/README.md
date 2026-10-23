@@ -1,4 +1,4 @@
-# 项目便签 0.1.1
+# 项目便签 0.2.1（源码候选）
 
 独立的便签应用，接入 Worktable 协议1。完整页编辑标题、正文和归档状态；“便签摘要”模块显示同实例筛选后的数量与选择。业务记录归自己的官方 `project_notes` StorageDomain v1；不同实例不共用记录。
 
@@ -36,3 +36,12 @@
 
 
 0.1.2修正共享资料的动作权限展示：新建草稿按create许可，已有便签编辑按update许可，归档按archive许可分别控制。界面只提交被许可的明确动作；Host原有授权与revision校验继续生效，权限不因编辑器状态获得提升。
+
+
+## 0.2.1 dual-host compatibility candidate
+
+Native peer ranges explicitly name official DSH0.2.0-rc.2 and0.2.1-alpha.2, with their actual Cordis4.0.4/4.0.5-alpha.1 (and Notes Schemastery3.18.4/3.18.5-alpha.1). Native storage-domain is a host-provided peer, not an optional package dependency that can silently install another runtime. Its real defineDomain/domainTable import remains external; installation must provide that service. No peer bypass/native patch is part of this candidate.
+
+Public producer checks install the exact frozen Worktable archive and selected official native public packages in an independent directory, assert shared Cordis identity and compile with skipLibCheck=false. Candidate source/compilation is distinct from final official package installation, peers check and actual two-host UI acceptance, which remain root release gates.
+
+Release entry is npm run pack with DSH_SOURCE, WORKTABLE_PACKAGE and npm_execpath. Existing dist/vVERSION directories are refused before tests/build/install; published stable and versioned filenames are copied exclusively. Bad assets require a new version. Source-only preparation does not create a frozen package or alter any profile.

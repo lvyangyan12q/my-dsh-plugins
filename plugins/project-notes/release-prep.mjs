@@ -6,8 +6,10 @@ import {tmpdir} from 'node:os'
 import {createHash} from 'node:crypto'
 import {createRequire} from 'node:module'
 import assert from 'node:assert/strict'
+import {reserveConsumerRelease} from './release-assets.mjs'
 import {installPublicEnvironment} from './public-producer.mjs'
 const here=dirname(fileURLToPath(import.meta.url)),require=createRequire(import.meta.url)
+const pkg=JSON.parse(readFileSync(join(here,'package.json'),'utf8')),dist=join(here,'dist','v'+pkg.version),reservation=reserveConsumerRelease(dist,'deepseek-ai-dsh-project-notes');process.on('exit',()=>reservation.releaseUnused())
 const source=process.env.DSH_SOURCE,worktable=process.env.WORKTABLE_PACKAGE,npm=process.env.npm_execpath
 assert.ok(source&&worktable&&npm,'Use npm run pack with DSH_SOURCE and exact WORKTABLE_PACKAGE')
 function run(command,args,options={}){const result=spawnSync(command,args,{cwd:here,encoding:'utf8',...options});if(result.error)throw result.error;if(result.status!==0)throw Error([command,...args].join(' ')+'\n'+result.stdout+'\n'+result.stderr);return result.stdout}
@@ -44,8 +46,8 @@ assert.equal(typeof registered.page,'function');assert.equal(typeof registered.s
 run(process.execPath,[join(consumer,'assert.mjs')],{cwd:consumer})
 copyFileSync(join(here,'tests/sdk-shapes.ts'),join(consumer,'consume.ts'))
 run(process.execPath,[createRequire(join(consumer,'package.json')).resolve('typescript/bin/tsc'),join(consumer,'consume.ts'),'--strict','--noEmit','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','--lib','ES2024,DOM,ESNext.Disposable'],{cwd:consumer})
-const pkg=JSON.parse(readFileSync(join(here,'package.json'),'utf8')),dist=join(here,'dist','v'+pkg.version);mkdirSync(dist,{recursive:true})
-const versioned=join(dist,pack.filename),fixed=join(dist,'deepseek-ai-dsh-project-notes.tgz');copyFileSync(archive,versioned);copyFileSync(archive,fixed)
+
+const versioned=join(dist,pack.filename),fixed=join(dist,'deepseek-ai-dsh-project-notes.tgz');reservation.publish(archive,pkg.version)
 const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');assert.equal(hash(versioned),hash(fixed))
 const receipt={status:'source-package-only-real-host-pending',testFiles:tests.length,testCases:Number(testOutput.match(/(?:ℹ|#)\s*tests\s+(\d+)/)?.[1])||null,files:expected,archiveSha256:hash(fixed),worktableSha256:hash(worktable),installedBytesMatched:5,installedImport:true,clientFactory:true,publicConsumerTypes:true,producerTypes,consumerEnvironment,incompatibleCombinationRejected,npmLegacyPeerBypass:false,nativePeerSource:resolve(source),legacyAlias:false,consumer,formal3080Writes:0,remoteWrites:0}
 mkdirSync(join(here,'.checks'),{recursive:true});writeFileSync(join(here,'.checks/release-receipt.json'),JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt,null,2))

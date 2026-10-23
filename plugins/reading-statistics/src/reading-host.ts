@@ -23,7 +23,7 @@ export async function installReading(ctx: Context) {
   const revisionTable = revisions.table('instances')
   let closing = false, tail = Promise.resolve(), disposePromise: Promise<void> | undefined
   const requests = new Set<Promise<void>>()
-  const read = (instanceId: string): ReadingInstance => {
+  const read = (instanceId: string): ReadingInstance & { revision: string } => {
     const row = structuredClone(table.get(identity.parse(instanceId)) ?? { instanceId, initialized: false, records: [] })
     return { ...row, revision: `${revisionTable.get(instanceId)?.revision ?? 0}:${createHash('sha256').update(JSON.stringify(row)).digest('hex')}` }
   }
@@ -78,7 +78,7 @@ export async function installReading(ctx: Context) {
     } catch (error) { respond(409, { error: error instanceof Error ? error.message : 'Reading request failed' }) }
   }
   const withTaskLease = <T,>(operation: () => Promise<T>) => { const task = tail.catch(() => {}).then(async () => { if (closing) throw new Error('Reading data unavailable'); return operation() }); tail = task.then(() => {}, () => {}); return task }
-  return { resource: { withTaskLease, taskContext: (value: ReadingInstance, selection: unknown) => {
+  return { resource: { withTaskLease, taskContext: (value: ReadingInstance & { revision: string }, selection: unknown) => {
     const chosen = z.object({ ids: z.array(identity).max(50), filter: z.object({ category: z.string().max(400), status: z.string().max(400), search: z.string().max(400) }).strict() }).strict().parse(selection);
     const matching = value.records.filter(record => (!chosen.filter.category || record.category === chosen.filter.category) && (!chosen.filter.status || record.status === chosen.filter.status) && (!chosen.filter.search || (record.title + ' ' + record.author).toLocaleLowerCase().includes(chosen.filter.search.toLocaleLowerCase())));
     if (chosen.ids.some(id => !matching.some(record => record.id === id))) throw new Error('所选阅读记录已变化，请重新选择。');

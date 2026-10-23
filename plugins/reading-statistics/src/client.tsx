@@ -1,3 +1,4 @@
+import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type { Context } from '@deepseek-ai/cordis'
 import type * as WorkbenchClient from '@deepseek-ai/dsh-personal-workbench/client'
 declare const require: (specifier: string) => typeof WorkbenchClient
@@ -18,7 +19,7 @@ export function readingRecipe(): AppRecipe {
 export function apply(ctx: Context) {
   ctx.inject(['worktableApplicationViews'], child => child.effect(() => {
     const owner = createReadingViews()
-    const dispose = child.get('worktableApplicationViews').register(readingAppId, owner.views)
+    const registry=child.get('worktableApplicationViews');if(!registry)throw Error('Worktable views unavailable');const dispose = registry.register(readingAppId, owner.views)
     return () => { dispose(); owner.dispose() }
   }, 'reading worktable views'))
   ctx.inject(['personalWorkbench'], child => {
