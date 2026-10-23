@@ -38,6 +38,8 @@ export function mountRoles(ctx){
     case 'capability-save':value=await capabilities.save(body.capability,body.revision);break
     case 'list':{const rows=await roles.list(body.instanceId);const snapshot=await roles.applications.snapshot();const instance=snapshot.instances.find(row=>row.id===body.instanceId);value={roles:rows,capabilities:await capabilities.list(instance.appId)};break}
     case 'read':value=await roles.read(body.instanceId,body.roleId);break
+    case 'adoption-preview':value=await roles.previewAdoption(body.instanceId,body.roleId,body.sourceKey);break
+    case 'adoption-apply':value=await roles.applyAdoption(body.instanceId,body.roleId,body.sourceKey,body.fingerprint,body.confirmed);break
     case 'ensure':value=await roles.ensure(body.instanceId,body.roleId,body.agent);break
     case 'retry':value=await roles.retry(body.instanceId,body.roleId,body.sessionId,body.revision);break
     case 'replace':value=await roles.replace(body.instanceId,body.roleId,body.sessionId,body.revision,body.agent);break

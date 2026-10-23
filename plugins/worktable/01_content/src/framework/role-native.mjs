@@ -21,10 +21,16 @@ export function createRoleAuthority(ctx,capabilities){
   if(projection.values.agentPreset!==row.presetId)reject('agent-changed','角色原生会话Agent已改变，请明确替换。')
   if(!same(stored.header.cwd,row.creation.cwd))reject('workspace-changed','角色原生会话目录已改变。')
   if(!workspace(row.creation.cwd).sessionIds.includes(row.sessionId))reject('workspace-membership','角色会话不在原生工作区中。')
+  return {sessionId:row.sessionId,presetId:row.presetId,cwd:stored.header.cwd,status:'current'}
  }
  return {
   validate:async(definition,appId)=>{workspace(definition.creation.cwd);return capabilities.validateRole(definition,appId)},
   validateExisting:existing,
+  validateLegacy:async(row,{allowMissing=false,creation}={})=>{
+   if(creation&&!same(creation.cwd,row.creation.cwd))reject('workspace-changed','旧绑定目录与应用声明不同，未改写旧会话目录。')
+   if(allowMissing&&!await ctx.sessionPersistence.stat(row.sessionId))return {sessionId:row.sessionId,presetId:row.presetId,cwd:row.creation.cwd,status:'missing'}
+   return existing(row)
+  },
   validateAttachment:async(definition,sessionId)=>existing({sessionId,presetId:definition.presetId,creation:definition.creation}),
   recoverCreation:async row=>{
    try{await existing(row)}catch(error){if(error.code==='session-missing')reject('creation-unknown','原生创建结果未知，请核对原会话后恢复或明确替换。');throw error}

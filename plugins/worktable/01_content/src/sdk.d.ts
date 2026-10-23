@@ -42,7 +42,22 @@ export type CapabilityRef={kind:'agent'|'skill';id:string}&({source:'managed'}|{
 export type PrivateCapability={id:string;title:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}&({kind:'agent';presetId:string}|{kind:'skill';provider:string})
 export interface CapabilityDirectory {contribute(appId:string,definitions:PrivateCapability[]):Disposer;list(appId?:string):Promise<unknown[]>}
 export interface RoleDefinition {id:string;title:string;agent:CapabilityRef&{kind:'agent'};creation:{cwd:string};skills?:(CapabilityRef&{kind:'skill'})[]}
-export interface RoleDirectory {contribute(appId:string,definitions:RoleDefinition[]):Disposer}
+export interface NativeRoleIdentity {sessionId:string;presetId:string;creation:{cwd:string}}
+/** The application derives this snapshot from its read-only legacy inspector, never browser input. Histories require their own native identity evidence. */
+export interface LegacyRoleSnapshot extends NativeRoleIdentity {sourceKey:string;revision:string;roleId:string;phase:'intent'|'ready';previousSessions:NativeRoleIdentity[];selectedPreset?:boolean;agent?:CapabilityRef&{kind:'agent'}}
+export interface LegacyRoleOwner {inspect(sourceKey:string,target:{instanceId:string;roleId:string}):LegacyRoleSnapshot|null|Promise<LegacyRoleSnapshot|null>}
+export interface RoleAdoptionPreview {status:'ready'|'applied'|'blocked';fingerprint:string|null;blockers:{code:string;reason:string}[];source?:LegacyRoleSnapshot;target?:{appId:string;instanceId:string;roleId:string};native?:{sessionId:string;presetId:string;cwd:string;status:'current'|'missing'}[]}
+export interface AdoptedRoleBinding extends NativeRoleIdentity {appId:string;instanceId:string;roleId:string;agent:CapabilityRef&{kind:'agent'};revision:number;phase:'intent'|'ready';creationAttempt?:'started';selectedPreset:boolean;previousSessionIds:string[];historicalSessions:NativeRoleIdentity[];adoption:{sourceKey:string;sourceRevision:string;sourceFingerprint:string;fingerprint:string;bindingRevision:number}}
+export type NativeRoleContext={appId:string;instanceId:string;roleId:string;sessionId:string}&({kind:'current';readOnly:false}|{kind:'history';readOnly:true})
+export interface RoleDirectory {
+ contribute(appId:string,definitions:RoleDefinition[]):Disposer
+ /** Host-only. Dispose with the application; inspect must not repair, migrate or create native Sessions. */
+ contributeLegacy(appId:string,owner:LegacyRoleOwner):Disposer
+ previewAdoption(instanceId:string,roleId:string,sourceKey:string):Promise<RoleAdoptionPreview>
+ applyAdoption(instanceId:string,roleId:string,sourceKey:string,fingerprint:string,confirmed:true):Promise<AdoptedRoleBinding>
+ /** Host-only trusted tool entry. sessionId must originate from native execution context, never model arguments. Write access refuses historical Sessions. */
+ resolveSession(appId:string,sessionId:string,options?:{access:'read'|'write'}):Promise<NativeRoleContext>
+}
 export interface ResourceValue {revision:string}
 export interface ResourceDescriptor {title:string;recordsField?:string}
 export interface ResourceOwner<T extends ResourceValue=ResourceValue> {
@@ -57,7 +72,7 @@ export interface ResourceConnectionStatus {status:'active'|'revoked'|'none'|'own
 export interface ResourceDirectory {connection?(input:{viewId:string;ownerViewId:string;resourceId:string}):Promise<ResourceConnectionStatus>;register<T extends ResourceValue>(owner:ResourceOwner<T>):Disposer;catalog?():Promise<{appId:string;appTitle:string;instanceId:string;projectId:string|null;viewId:string;resourceId:string;descriptor?:ResourceDescriptor}[]>}
 export interface TaskContextRef {resourceId:string;selection?:unknown}
 export interface TaskFacade {prepare(input:{roleId:string;text:string;contexts?:TaskContextRef[]}):Promise<unknown>}
-export interface RoleFacade {read(roleId:string):Promise<unknown>;ensure(roleId:string,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;retry(roleId:string,sessionId:string,revision:number):Promise<unknown>;replace(roleId:string,sessionId:string,revision:number,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;open(roleId:string,sessionId:string,revision:number):Promise<void>}
+export interface RoleFacade {read(roleId:string):Promise<unknown>;previewAdoption(roleId:string,sourceKey:string):Promise<RoleAdoptionPreview>;applyAdoption(roleId:string,sourceKey:string,fingerprint:string,confirmed:true):Promise<AdoptedRoleBinding>;ensure(roleId:string,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;retry(roleId:string,sessionId:string,revision:number):Promise<unknown>;replace(roleId:string,sessionId:string,revision:number,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;open(roleId:string,sessionId:string,revision:number):Promise<void>}
 export interface ApplicationViewProps {application:DeepApplication;instance:ApplicationInstance;view:ApplicationView;roles?:RoleFacade;tasks?:TaskFacade}
 export interface ApplicationViews extends ProtocolService {register(appId:string,views:Record<string,ComponentType<ApplicationViewProps>>):Disposer}
 /** Optional Cordis services. Inject before use; absence is not permission to invent a fallback. */
