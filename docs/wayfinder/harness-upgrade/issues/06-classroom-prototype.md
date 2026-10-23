@@ -4,7 +4,7 @@ title: 验证考公课堂原生对话的公开嵌入交互
 parent: harness-upgrade-map
 labels: [wayfinder:prototype]
 status: open
-assignee: null
+assignee: rc3_classroom_prototype
 blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-ownership]
 ---
 
@@ -15,3 +15,8 @@ blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-ownership]
 沿用已确认的课堂与工作台布局，不重新选择工作台定位或改原生菜单。研究已确认当前应用 SDK 没有提供旧课堂使用的原生工厂上下文；需探索插件侧可公开的接入方式。若必须改变用户原有操作路径，应明确展示差异并由用户决定，不由研究者默认为等价。原型只用于判断交互与接入可行性，不等于正式适配或验收。
 
 研究上下文见[考公迁移接缝报告](https://github.com/lvyangyan12q/my-dsh-plugins/blob/fc2614973552ad5db6178d03f791f4e27cf739b5/docs/wayfinder/harness-upgrade/research/kaogong-worktable-migration.md#sdk-已承接与仍缺的逐项映射)。仅在本票被领取时启动 prototype 工作；本轮未创建原型或操作用户实例。
+
+
+## 实施上下文
+
+本票已在 codex/prototype-rc3-classroom 独立分支领取；原型代码保持可丢弃，不合并集成分支。当前目标是原布局下真实原生公开接缝可用性，不重新选择视觉方案。
