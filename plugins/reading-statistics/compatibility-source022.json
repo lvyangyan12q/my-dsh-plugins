@@ -1,0 +1,134 @@
+{
+  "date": "2026-10-23",
+  "version": "0.2.2",
+  "sourceCandidate": "ee0bd7fd0a9b110c1b0b0644cae127a19d9a9195",
+  "scope": "Reading-only host-native peer metadata correction; package/source and independent official loader proof; actual root application UI/model acceptance pending",
+  "superseded021": {
+    "sha256": "a2ce88f8aad3150bc5c8d35dcab0553020605c5efb93a107b69cecb9a162a747",
+    "status": "immutable retained; official CLI add succeeded but real empty-profile pnpm peers failed3 missing native services; not full installed support"
+  },
+  "package": {
+    "sha256": "937a378ccb709c7c48933e869edcf14fc02e8d4a275ae9c6f37b5c1c77909e57",
+    "dualAssetsEqual": true,
+    "installedFiles": 6,
+    "installedImport": true,
+    "sdkVersion": "0.9.5",
+    "nativeProducer": "0.2.1-alpha.2"
+  },
+  "source": {
+    "alpha2": {
+      "tests": 30,
+      "pass": 30,
+      "fail": 0,
+      "skip": 0
+    },
+    "rc2": {
+      "tests": 30,
+      "pass": 30,
+      "fail": 0,
+      "skip": 0
+    },
+    "publicTypeChecks": "both actual official built source declarations with exact095 SDK; skipLibCheck=false",
+    "serviceAbsence": "actual official Cordis Context with only webServer provided retains503 unavailable data route; no data owner activation",
+    "unsupportedNativeVersion": "official compatibility evaluator still rejects unsupported storage-domain range despite optional metadata"
+  },
+  "actualOfficialEmptyProfile": {
+    "host": "same official unpatched0.2.1-alpha.2 CLI/runtime",
+    "profile": "new independent temporary DSH_HOME; no copied user profile or credentials",
+    "nativeResolver": "official app-boot profile.ts installation-anchor/profile package table and profile-resolution/resolver.ts in-memory ESM/CommonJS routing; no source patch",
+    "red": "actual official frozen021 installation -> real pnpm peers check3 native missing",
+    "green": "actual exact022 installation -> real pnpm peers check0; no native-provider dependencies added",
+    "mandatorySdk": "actual official CLI remove dsh-worktable -> pnpm missing required dsh-worktable; exact095 restore -> peers0",
+    "boot": "official resolveDshHome child probe matched own home, explicit environment, new free loopback port above3100",
+    "loaderPassed": true,
+    "readingOwnerMounted": true,
+    "realExternalStorageDomainImportResolved": true,
+    "consumerRegistration": [
+      "project-notes",
+      "reading-statistics"
+    ],
+    "unsafeDataEntryRefused403": true,
+    "ownChildStopped": true
+  },
+  "preserved": {
+    "notes021": "unchanged",
+    "worktable095": "unchanged",
+    "reading021": "unchanged",
+    "root3093": "not touched",
+    "formal3080": "not touched",
+    "nativeSource": "not modified"
+  },
+  "limits": [
+    "Independent host loading/owner readiness is not root3093 actual application business/UI/model acceptance.",
+    "No use of copied model credentials or prepared/sent tasks in this private probe.",
+    "No optional peer bypass: SDK remains required, native compatibility ranges remain bounded, actual source service absence remains unavailable."
+  ],
+  "proofFiles": [
+    {
+      "kind": "official-loader-proof",
+      "file": "worktable-reading022-official-loader-proof.private.json",
+      "sha256": "3c428a2e3247f34676eaa3e8836613797cf3f740ce6e4cd4f83d3d5210624d8e",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "unique-pack",
+      "file": "worktable-reading-author-pack022.private.log",
+      "sha256": "24dbb70fe6a9ec330ada3bee85b98e19569edf24b8782726de014942d3cdf955",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "rc2-types",
+      "file": "worktable-reading022-rc2-producer095.private.log",
+      "sha256": "df62e87c93e1336115f45e0faf651b77f4685e2d674c8fc555473c77e9858f53",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "rc2-tests",
+      "file": "worktable-reading022-rc2-tests.private.log",
+      "sha256": "e1f3d1be974dbf1c30ece7eaba9fdab3d1dcf3f8da27a26b49abd23e443e94cb",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "independent-empty-profile",
+      "file": "peers021.log",
+      "sha256": "5ccc5bae172d741fe95505bc7000cd25f79df18dd6dcf766b0db629c1128a796",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "independent-empty-profile",
+      "file": "peers022.log",
+      "sha256": "5ecf82a3fc1f9007eeea79ce3bf0d9c587150219ef245bb5a5a23609cdb562fb",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "independent-empty-profile",
+      "file": "peers-missing-sdk.log",
+      "sha256": "3626e41a1eedeb2ac7d12359d6b1923de60bc6997c9e1718db66428e3a7a45be",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "independent-empty-profile",
+      "file": "peers-restored.log",
+      "sha256": "5ecf82a3fc1f9007eeea79ce3bf0d9c587150219ef245bb5a5a23609cdb562fb",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "independent-empty-profile",
+      "file": "home-probe.log",
+      "sha256": "ab3e3728a3fe2d120eeaa9457f59ea2d3ed1c4f06d02bab74ae8632d0e2e2ee3",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "independent-empty-profile",
+      "file": "host.stdout.private.log",
+      "sha256": "264a29bca9a27d94dffc714cf5145900ef43bb7cc975b38f5d1fc35c49e465a7",
+      "contentsCommitted": false
+    },
+    {
+      "kind": "independent-empty-profile",
+      "file": "host.stderr.private.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "contentsCommitted": false
+    }
+  ]
+}
