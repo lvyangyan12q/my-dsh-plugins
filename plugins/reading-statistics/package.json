@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-reading-statistics",
-  "version": "0.2.2",
+  "version": "0.2.3-rc.3.2",
   "type": "module",
   "description": "Independent reading records with shared Workbench display modules",
   "main": "lib/index.js",
@@ -25,23 +25,32 @@
     }
   },
   "scripts": {
-    "build": "tsdown -c tsdown.config.ts",
-    "test": "tsx --test tests/*.test.mjs",
+    "build": "node build.mjs",
+    "test": "node --import tsx --test tests/*.test.mjs",
     "check": "node check-types.mjs",
     "pack": "node release-prep.mjs"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "4.0.4 || 4.0.5-alpha.1",
-    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "dsh-worktable": ">=0.8.0 <1",
-    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2 || 0.2.1-alpha.2"
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-host-webserver": "0.2.1-rc.3",
+    "dsh-worktable": ">=0.10.0-rc.3.1 <1",
+    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.3"
   },
   "dependencies": {
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-personal-workbench": "file:../personal-workbench",
-    "dsh-worktable": "file:../worktable/01_content"
+    "dsh-worktable": "file:../worktable/01_content",
+    "tsdown": "0.22.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3",
+    "esbuild": "^0.25.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-test-renderer": "18.3.1",
+    "jsdom": "^29.1.1",
+    "@types/react": "^18.3.27",
+    "@types/node": "^22.19.0"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {
@@ -53,5 +62,8 @@
     "@deepseek-ai/dsh-storage-domain": {
       "optional": true
     }
+  },
+  "engines": {
+    "dsh": "0.2.1-rc.3"
   }
 }

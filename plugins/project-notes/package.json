@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-project-notes",
-  "version": "0.2.1",
+  "version": "0.2.2-rc.3.1",
   "type": "module",
   "main": "lib/index.js",
   "description": "Independent project notes with Worktable v1 page, summary and task context",
@@ -34,10 +34,10 @@
     "zod": "4.4.3"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "4.0.4 || 4.0.5-alpha.1",
-    "@deepseek-ai/dsh-storage-domain": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "dsh-worktable": ">=0.8.0 <1",
-    "@deepseek-ai/schemastery": "3.18.4 || 3.18.5-alpha.1"
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.3",
+    "dsh-worktable": ">=0.10.0-rc.3.1 <1",
+    "@deepseek-ai/schemastery": "3.18.5"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {
@@ -60,6 +60,9 @@
     "react-test-renderer": "18.3.1",
     "@types/react": "^18.3.27",
     "@types/node": "^22.19.0",
-    "@deepseek-ai/dsh-skill": "0.2.0-rc.2 || 0.2.1-alpha.2"
+    "@deepseek-ai/dsh-skill": "0.2.1-rc.3"
+  },
+  "engines": {
+    "dsh": "0.2.1-rc.3"
   }
 }

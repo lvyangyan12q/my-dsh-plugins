@@ -1,4 +1,13 @@
-# 项目便签 0.2.1（源码候选）
+# 项目便签
+
+## 当前 rc.3 候选 0.2.2-rc.3.1
+
+本候选只将 `0.2.1-rc.3` 声明为目标，由官方 `engines.dsh` 门禁拒绝未验收版本。Cordis 使用官方 `4.0.5`；便签另使用 Schemastery `3.18.5`。原 alpha.2/rc.2 段落为旧冻结版本记录，新包不继续承诺旧宿主支持。
+
+公开 producer 检查安装精确 Worktable 归档与真实 rc.3 公开包，在独立目录以 `skipLibCheck=false` 编译，不使用替代原生声明或 peer 豁免。本应用只通过公开 Worktable SDK 接入；应用私有 Skill 保持私有，会话和业务数据仍按实例归属。配置、源码/归档验证与实际官方 Host/浏览器/模型验收分开记录；本段不宣称后者通过。
+
+发布准备仍用 `npm run pack` 并指定 `DSH_SOURCE`、精确归档 `WORKTABLE_PACKAGE` 与 `npm_execpath`。新资产不得覆盖同版本旧资产；正式升级保留应用数据，未验收版本只能由用户在独立空 home/profile 显式试用。
+
 
 独立的便签应用，接入 Worktable 协议1。完整页编辑标题、正文和归档状态；“便签摘要”模块显示同实例筛选后的数量与选择。业务记录归自己的官方 `project_notes` StorageDomain v1；不同实例不共用记录。
 

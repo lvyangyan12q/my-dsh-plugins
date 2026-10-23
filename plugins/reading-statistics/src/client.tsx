@@ -1,8 +1,7 @@
-import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type { Context } from '@deepseek-ai/cordis'
-import type * as WorkbenchClient from '@deepseek-ai/dsh-personal-workbench/client'
-declare const require: (specifier: string) => typeof WorkbenchClient
-import type { AppRecipe, DisplayData } from '@deepseek-ai/dsh-personal-workbench/client'
+import type {LegacyClient,AppRecipe,DisplayData} from './legacy-contract.ts'
+import {requireProtocol} from 'dsh-worktable/sdk'
+declare const require: (specifier: string) => LegacyClient
 import { readingAppId, readingResource } from './reading-api.ts'
 import type { ReadingInstance } from './reading-api.ts'
 import { requestReading as request, subscribeReading, recordOrigin } from './reading-data-client.ts'
@@ -18,9 +17,11 @@ export function readingRecipe(): AppRecipe {
 }
 export function apply(ctx: Context) {
   ctx.inject(['worktableApplicationViews'], child => child.effect(() => {
+    const registry=child.get('worktableApplicationViews');if(!registry)throw Error('Worktable views unavailable');requireProtocol(registry.describe?.(),['instance-view-v1','presentation-components-v1'])
     const owner = createReadingViews()
-    const registry=child.get('worktableApplicationViews');if(!registry)throw Error('Worktable views unavailable');const dispose = registry.register(readingAppId, owner.views)
-    return () => { dispose(); owner.dispose() }
+    let dispose:()=>void|Promise<void>
+    try{dispose=registry.register(readingAppId,owner.views)}catch(error){owner.dispose();throw error}
+    return async () => { try{await dispose()}finally{owner.dispose()} }
   }, 'reading worktable views'))
   ctx.inject(['personalWorkbench'], child => {
     const { registerDisplaySource, registerRecipeTemplate, registerRecipeModuleRenderer } = require('@deepseek-ai/dsh-personal-workbench/client')
