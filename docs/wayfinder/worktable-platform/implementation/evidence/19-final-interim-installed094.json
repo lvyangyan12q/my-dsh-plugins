@@ -40,7 +40,7 @@
   },
   "delivery": {
     "formal3080": "still0.7.2; not synchronized",
-    "remote": "continuation not yet pushed",
+    "remote": "source069a2fb073bfbc0a6ecdbcaa5006cdc004e1856d pushed successfully to origin/codex/worktable-framework; this documentation checkpoint pending push",
     "native": "no native source modification",
     "alpha2": "own3092 original0.2.1-alpha.2 already had9 inactive native entries before plugin installation; native UI failure blocks UI acceptance; not rc2 pass extrapolation"
   },
