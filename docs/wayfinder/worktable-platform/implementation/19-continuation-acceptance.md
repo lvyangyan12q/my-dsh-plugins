@@ -39,3 +39,6 @@ blocked_by: [worktable-framework-12, worktable-framework-13, worktable-framework
 [0.9.4实际阶段记录](evidence/19-final-interim-installed094.json) covers G6 explicit failure recovery and same-package official remove/add/cold UI restore, unchanged seven native requests and two prepared website tasks,9-file identity and selected durable-path preservation. Reading390px light/dark/keyboard/local-scroll evidence is actual0.9.3, not recast as0.9.4.
 
 Fixed485b38c Standards/Spec review raised three findings; single implementer069a2fb corrected source, independently regressed18/18 with full272 source and10 factory checks. Source gates are separate from installed acceptance.19 stays open for final incremental mapping and delivery; formal3080 remains0.7.2. Original native alpha.2 baseline9 inactive entries and native UI failure predate this plugin and block alpha.2 UI acceptance; no native repair or rc.2 extrapolation. Historical172 mapping remains66/94/12, framework49 remains41/6/2.
+
+
+2026-10-23新增[逐条增量映射](19-incremental-mapping.md)及[172条JSON](19-incremental-mapping.json)，保留历史原ID/原文/hash/分类及原文件SHA。实际、局部、未验与保留范围区分；不提升历史计数、不以Reading/合成迁移代替考公或真实资料迁移。19仍open，待正式宿主前提、3080同步和最终远程交付。
