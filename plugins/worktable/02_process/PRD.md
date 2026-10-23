@@ -50,3 +50,6 @@ resume是显式使用动作，更新最近使用顺序而不新建实例/视图�
 
 
 0.9.3生成清单首选schema2，仅身份和artifactPath，不填写sha256；Host预览从实际HTML字节算并锁hash，应用/展示继续核对HTML及清单字节。schema1仍验模型所给hash，schema2出现sha256拒绝。无需增加原生shell能力或用户手填hash。TaskPanel打开原生对话的异步返回不持续占任务busy，Stop仍可操作。
+
+
+0.9.4平台generation ledger增加可选applyIntent（候选recipe/slot hash和OCC）与显式recovery审计。它不改变业务schema；旧applying无intent仅在原目标完整一致且不存在本generation的持久draft/active引用时可核实未提交。已提交但旧intent缺失时保守拒绝，不自动重放。恢复仅prepared或确认applied，原生请求/active产物保留，用户仍需分别预览、应用、启用。正式验收待root。

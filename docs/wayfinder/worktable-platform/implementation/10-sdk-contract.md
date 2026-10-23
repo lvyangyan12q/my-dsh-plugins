@@ -170,3 +170,10 @@ Pending generated bindings also carry structureSha256 for the post-apply custom 
 
 
 Generation candidate0.9.3 prefers manifest schema2: identity fields and artifactPath only, with no sha256 property. Host preview computes and locks artifact/manifest byte hashes; later apply and active reads still require them unchanged. Legacy schema1 supplied SHA is mandatory and checked. This removes shell/hash generation as a role requirement without weakening identity/root/preview checks. TaskPanel native navigation lifetime is independent of operation busy; open ownership validation and scoped async navigation errors remain.
+
+
+### Candidate0.9.4 explicit generation recovery
+
+Optional feature `module-generation-recovery-v1` exposes trusted Host `recover({id,confirmed:true})` and authenticated instance-owned HTTP action recover. It reconciles only applying records after full target/role/Session/native-result/file-hash revalidation. Known uncommitted state returns prepared for a new explicit preview; exact committed draft plus durable apply intent confirms applied without replay. Missing or mismatched intent for an uncertain committed legacy record blocks. The UI never automatically invokes recovery/preview/apply/enable/send. Existing0.9.3 applying records without intent can recover only when their target remains exact and no durable draft/active reference belongs to them.
+
+The sole release entry reserves a new version directory before gates, excludes other publishers, and copies each verified asset with exclusive creation. Existing version directories refuse immediately. Failed validation may release only the publisher's untouched empty reservation; partial assets or lost/stale ownership remain for explicit inspection. The nine-file package whitelist and mandatory SDK files are unchanged.

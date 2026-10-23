@@ -3,7 +3,7 @@ id: worktable-framework-15
 title: 原生AI生成追改与稳定产物归属
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: closed
+status: open
 assignee: continuation_failures
 blocked_by: [worktable-framework-14]
 ---
@@ -114,3 +114,12 @@ Root actually verified native question→answer→HTML/schema2 manifest→previe
 Independent Chrome actual TaskPanel preparation/review/send loaded text-organize through native Skill, and exercised separate single-operation native Reject and Allow once write approvals using only synthetic markers. Denied marker remained absent, allowed marker exact bytes were verified. A mistaken unsupported permission-enum prompt caused no write and is retained as setup failure. Native access mode stayed Workspace Write; no global permission/grant changed. TaskPanel Stop remained actionable after native navigation and during waiting approval.
 
 This closes15 only.17 and19 remain open. Final19 cold recovery, actual frozen-old-package refusal/restore, final narrow/theme/keyboard cross-feature UI, storage/editor recovery, target3080 host compatibility, review/mapping and delivery remain pending. Original titlebar/image/IME/device/legacy/kaogong limitations remain; no historical172 mapping changed. No source fixture is presented as real installed acceptance.
+
+
+## Review correction pending actual0.9.4 recovery
+
+The earlier0.9.3 installed evidence remains a record of the actual completed flows; it did not cover a storage-refused draft application leaving a durable `applying` generation. Review and root later reproduced this gap. Ticket15 is reopened for this explicit failure-recovery obligation;19 remains open and historical acceptance JSON is unchanged.
+
+Candidate0.9.4 adds an explicit recovery action, not automatic retry. It revalidates exact target, role/Session/native completed request and preview file/manifest hashes, then reads the durable instance binding. If no binding references this generation and the complete original target structure is unchanged, recovery returns only to prepared; the user must preview again and explicitly apply. This safely handles a real0.9.3 applying record lacking new fields after a definitely uncommitted failure. If a draft binding already references this generation, the new durable apply intent must match its exact recipe and slot/hash before marking the record applied; no composition transaction is replayed. A legacy uncertain committed record lacking sufficient intent is blocked with explanation. Stop, changed target/files/roles, missing owner or indeterminate binding remain fail-closed. Active historical output is retained.
+
+Source regression runs use actual OS rename refusal on independent temporary files: historical0.9.3 creates the old applying record; new owner explicitly recovers without another native prompt. Another real composition commit followed by actual ledger-write refusal is reconciled after owner reopen with no extra recipe revision or enable. UI/final factory callbacks expose recovery only by explicit action and scope late callbacks to the current view. Actual root0.9.4 recovery of G6 remains pending; this source correction does not close15.

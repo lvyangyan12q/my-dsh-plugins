@@ -1,0 +1,46 @@
+{
+  "scope": "source-only review corrections; actual0.9.4 recovery and packaging remain root-owned pending",
+  "candidateVersion": "0.9.4",
+  "base": "007130dbcd10a26455b09458ffa8f8cd0e6bedc4",
+  "reviewFindings": {
+    "standardsP2": "Early exclusive immutable version reservation and COPYFILE_EXCL asset publication; synthetic real entry refuses known two-asset version preserving sentinel bytes; overlapping process cannot reserve the held version.",
+    "standardsP3": "AGENTS two seven-file instructions now say nine files including mandatory SDK JS/types; user collaboration rules retained and read back.",
+    "specP2": "Explicit applying reconciliation under public gate; old093 no-intent uncommitted FS failure recovers prepared; committed draft with new applyIntent after ledger FS refusal reconciles applied after owner reopen, no repeat transaction or native send."
+  },
+  "seams": [
+    "Documented release-prep process in isolated synthetic directory, no frozen asset invocation",
+    "Public GenerationDirectory/CompositionDirectory/TaskDirectory and real synthetic filesystem locks",
+    "Authenticated generation HTTP ownership/owner absence",
+    "Actual React component and final complete ModuleLoader client factory UI callbacks"
+  ],
+  "red": [
+    "Old release entry failed identity instead of rejecting existing version before gates",
+    "Legacy093 OS-refused application remained applying and recover was absent",
+    "Applying UI had no recovery button",
+    "Fresh full run found newly added failed-apply UI regression still red: stale preview remained after storage failure; minimal catch refresh fixed it and focused9/full272 passed."
+  ],
+  "green": {
+    "sourceTests": 272,
+    "pass": 272,
+    "fail": 0,
+    "skip": 0,
+    "officialRc2ParserEnabled": true,
+    "buildCheck": "passed",
+    "actualCompleteClientFactoryRecoveryCallback": "passed",
+    "packedInstalledOrRestarted": false,
+    "freshRerun": "2026-10-23 officialRc2 source272/272; build/check; factory10/10; complete built-bundle generation UI callbacks"
+  },
+  "failClosed": [
+    "Stop/changed target/changed HTML refuse recovery preserving running and prompt count",
+    "Cross-instance HTTP recover403 and missing owner503",
+    "Old uncertain committed no-intent remains blocked rather than replayed",
+    "Recovered uncommitted requires fresh preview and later explicit apply/enable"
+  ],
+  "privacy": "Synthetic source evidence only; no raw credentials/user prompts/private absolute runtime paths included",
+  "pending": [
+    "Root actual old G6 recovery on officially installed0.9.4",
+    "Unique pack0.9.4/installed byte and final19 real user-path acceptance",
+    "No changes to historical172 mapping or already occurred0.9.3 installed facts"
+  ],
+  "verifiedOn": "2026-10-23"
+}

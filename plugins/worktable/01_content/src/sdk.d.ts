@@ -37,7 +37,7 @@ export interface MigrationDirectory {contribute(appId:string,owner:MigrationOwne
 /** Optional Host-owned generation; user interfaces prepare native tasks and explicitly preview/apply draft only. No direct model-send authority. */
 export interface GenerationTarget {projectId:string|null;appId:string;instanceId:string;viewId:string;pageId:string;moduleId:string;recipeVersion:string;recipeRevision:number;runningVersion:string;moduleFingerprint:string}
 export interface GenerationDescriptor {id:string;target:GenerationTarget;taskId?:string;sessionId:string;root:string;manifestPath:string;status:'preparing'|'prepared'|'preview'|'applying'|'applied'|'revoked'}
-export interface GenerationDirectory {list(viewId:string):Promise<GenerationDescriptor[]>}
+export interface GenerationDirectory {list(viewId:string):Promise<GenerationDescriptor[]>;recover(input:{id:string;confirmed:true}):Promise<GenerationDescriptor>}
 export type CapabilityRef={kind:'agent'|'skill';id:string}&({source:'managed'}|{source:'application';ownerAppId:string})
 export type PrivateCapability={id:string;title:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}&({kind:'agent';presetId:string}|{kind:'skill';provider:string})
 export interface CapabilityDirectory {contribute(appId:string,definitions:PrivateCapability[]):Disposer;list(appId?:string):Promise<unknown[]>}

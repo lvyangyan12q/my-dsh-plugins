@@ -18,7 +18,7 @@
   「解包 / 复制 / 实跑用户路径」；「构建成功」「bundle 里有字符串」「退出码 0」不算验收。
 - **发布前自跑最终产物清单**：干净目录安装、最终包逐文件核对、双资产哈希、关键行逐字
   grep —— 先自查再报告，不等外部复审来抓。
-- **发布包验收=结构检查 + 真实安装**：标准 package/ 前缀、白名单精确 7 文件（无 src/、.map），
+- **发布包验收=结构检查 + 真实安装**：标准 package/ 前缀、白名单精确 9 文件（含必需的 lib/sdk.js、lib/sdk.d.ts；无 src/、.map），
   再独立目录 npm install + import() 断言；仅核对文件存在不能证明包可安装。
 - **声明可证伪，不许写满**：验收结论只写已验证范围。「通知全覆盖」「等价端到端」这类表述会被
   反向检查打脸——只写「版本比较逻辑上重新激活」「验证了安装与服务端模块导入」。
@@ -49,7 +49,7 @@ node --check lib/index.js
 - **构建必须 `cd 01_content` 后执行**：误在仓库根跑会把 lib 写到仓库根 `lib/`，宿主仍加载
   `01_content/lib` 旧 bundle，出现「改完不生效」假象（已有教训，见工作日志）。
 - **发布打包唯一入口 = `npm run pack`（01_content/release-prep.mjs）**：身份断言（package/manifest/cordis.patch.yml 严格结构）→
-  版本一致性 → **会话/输入/传输/挂载回归**（test:input / test:session / test:details / test:transport / test:widget 共 98 项，评估源码契约）→ 构建（cwd 固定 01_content）→ node --check → npm pack → 结构清单断言（package/ 前缀 + 精确 7 文件，
+  版本一致性 → **会话/输入/传输/挂载回归**（test:input / test:session / test:details / test:transport / test:widget 共 98 项，评估源码契约）→ 构建（cwd 固定 01_content）→ node --check → npm pack → 结构清单断言（package/ 前缀 + 精确 9 文件（lib/sdk.js、lib/sdk.d.ts 必需），
   无 src/、无 .map）→ 独立临时目录 npm install + import() 断言（apply 函数/inject 含 webServer+sessions/name/
   HEALTH_PATH/包内双 bundle 版本）→ **客户端工厂求值门禁**（ModuleLoader 恰好注册一次 + ID 校验 + 精确外部依赖
   白名单 react/react/jsx-runtime + apply/inject 断言）→ **分栏锚点 DOM 回归**（8 场景，评估安装产物 lib/client.js；

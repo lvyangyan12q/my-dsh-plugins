@@ -18,6 +18,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import { gateClientFactory } from './client-factory-gate.mjs'
+import { reserveRelease } from './release-assets.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url)) // 固定 = 01_content，绝不依赖执行 cwd
 // Windows 下 spawnSync('npm') 有 ENOENT、spawnSync('npm.cmd') 有 EINVAL 问题。
@@ -47,6 +48,9 @@ if (manifest.version !== pkg.version) {
 }
 const VERSION = pkg.version
 console.log('[release-prep] version = ' + VERSION)
+const outDir = join(HERE, 'dist', 'v' + VERSION)
+const release = reserveRelease(outDir)
+process.on('exit',()=>release.releaseUnused())
 
 // ---------- 1b. 身份断言（package/manifest/patch 统一为 dsh-worktable） ----------
 const IDENTITY = 'dsh-worktable'
@@ -83,7 +87,7 @@ if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
-const compatTests = ['project-navigation.test.mjs', 'annotation-target.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'presentation.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs', 'compositions.test.mjs', 'composition-http.test.mjs', 'storage-refusal-http.test.mjs', 'composition-state.test.mjs', 'composition-template.test.mjs', 'composition-sources.test.mjs', 'composition-references.test.mjs', 'composition-editor.test.mjs', 'composition-runtime.test.mjs', 'migrations.test.mjs', 'migration-http.test.mjs', 'migration-resource.test.mjs', 'migration-panel.test.mjs', 'migration-example.test.mjs', 'generation.test.mjs', 'generation-http.test.mjs', 'generation-panel.test.mjs', 'generation-rollback.test.mjs', 'web-bridge.test.mjs', 'web-bridge-frame.test.mjs', 'web-bridge-component.test.mjs']
+const compatTests = ['project-navigation.test.mjs', 'annotation-target.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'presentation.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs', 'compositions.test.mjs', 'composition-http.test.mjs', 'storage-refusal-http.test.mjs', 'composition-state.test.mjs', 'composition-template.test.mjs', 'composition-sources.test.mjs', 'composition-references.test.mjs', 'composition-editor.test.mjs', 'composition-runtime.test.mjs', 'migrations.test.mjs', 'migration-http.test.mjs', 'migration-resource.test.mjs', 'migration-panel.test.mjs', 'migration-example.test.mjs', 'generation.test.mjs', 'generation-http.test.mjs', 'generation-panel.test.mjs', 'generation-rollback.test.mjs', 'generation-recovery.test.mjs', 'release-immutability.test.mjs', 'web-bridge.test.mjs', 'web-bridge-frame.test.mjs', 'web-bridge-component.test.mjs']
   .map((file) => join(HERE, '..', '04_test', file))
 const compatRun = spawnSync(process.execPath, ['--test', ...compatTests], { cwd: HERE, stdio: 'inherit' })
 if (compatRun.status !== 0) { console.error('[release-prep] FAIL: session/input compatibility tests'); process.exit(1) }
@@ -241,20 +245,9 @@ if (serverRun.status !== 0) {
 console.log('[release-prep] server home resolution tests passed (3 scenarios, on installed artifact)')
 
 // ---------- 6. 双资产从同一已验证包复制 + SHA-256 ----------
-const outDir = join(HERE, 'dist', 'v' + VERSION)
-mkdirSync(outDir, { recursive: true })
-// 输出目录终态约束：只允许固定名 + 版本化两个 tgz；出现未知文件 = 报错，绝不删除
-const KNOWN = new Set(['dsh-worktable.tgz', 'dsh-worktable-' + VERSION + '.tgz'])
-for (const ent of readdirSync(outDir)) {
-  if (!KNOWN.has(ent)) {
-    console.error('[release-prep] FAIL: dist/v' + VERSION + '/ contains unknown file: ' + ent + ' (not deleting; fix manually)')
-    process.exit(1)
-  }
-}
 const assetFixed = join(outDir, 'dsh-worktable.tgz')
 const assetVer = join(outDir, 'dsh-worktable-' + VERSION + '.tgz')
-copyFileSync(tgz, assetFixed) // 同版本重跑：覆盖这两个已知文件是允许的
-copyFileSync(tgz, assetVer)
+release.publish(tgz, VERSION)
 // 复制后终态断言：目录恰好两个已知文件（无遗漏/无多余），双 SHA 一致
 const finalEntries = readdirSync(outDir).sort()
 const finalSet = new Set(finalEntries)
