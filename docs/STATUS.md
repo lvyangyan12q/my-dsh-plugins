@@ -1,5 +1,7 @@
 # 工作台进度与待办
 
+2026-10-24：旧spec与实施工单已回写rc.3升级范围，详细要求集中在[框架规格HU01—HU08](wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements)，[原票升级映射](wayfinder/worktable-platform/implementation/README.md#host-upgrade-followups)记录待实施/复验。考公旧资料/学习票取消过期暂停，19索引校正为原限定范围closed；原故事、历史勾选及验收计数保持。四项路线决策仍open，新宿主增量不因本次文档更新变为可执行或已通过；未改代码、进程或数据。
+
 2026-10-24 wayfinder 研究检查点：两份只读研究已发布独立 research 分支并关闭研究票；当前共六张决策票，前沿为升级规则与考公旧学习归属。新增后置课堂原生嵌入原型验证，随后再确定验收/切换门槛。未实现或迁移，未操作用户实例。[地图与研究结论](wayfinder/harness-upgrade/map.md)。
 
 2026-10-24 新一轮 wayfinder：用户确认 rc.3 为首个升级目标，未来版本逐版验证，旧 alpha.2 仅留冻结回退包。[升级与考公接入地图](wayfinder/harness-upgrade/map.md)及[前沿查询](wayfinder/harness-upgrade/README.md)已建立；两张研究票已认领并行，后续用户决策按依赖推进。本轮不实施、不迁移、不操作实例；本任务之前启动的3080已应用户要求停止，用户后来自启状态不作推断。

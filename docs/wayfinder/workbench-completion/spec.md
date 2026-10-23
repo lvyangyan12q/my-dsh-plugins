@@ -5,14 +5,17 @@ labels: [ready-for-agent]
 status: open
 assignee: null
 kind: implementation-spec
+upgrade_target: 0.2.1-rc.3
+upgrade_status: pending-decisions
+upgrade_decision_map: harness-upgrade-map
 ---
 
 <!-- native-compatible-plan -->
 ## 当前生效边界
 
-工作台是通用平台型插件，适配未经工作台补丁的原生DSH。原生工作区、菜单、会话编辑器及核心服务保持原样；禁止新增原生接口或替换原生编译产物作为安装前提。历史恢复至639ed015及build:lib结果保留；当前原生只读核验为d743267388（0.2.1-alpha.2），跟踪文件无差异。独立未补丁rc.2与alpha.2分别验证，版本声明与测试通过不代替实页完整验收。
+工作台是通用平台型插件，通过公开接口适配原生 DSH，原生菜单、工作区、会话编辑器与核心服务保持。当前升级目标为官方未补丁 0.2.1-rc.3 / 22ddee3792402c3e70ec5f86a63c3e3e895a2f60；原生构建与页面检查已完成，插件完整闭环尚未通过。此前 639ed015、d743267388 及 rc.2/alpha.2 的结果保留为历史版本证据。实现只修改 my-dsh/plugins，不将原生补丁、替换原生 lib 或版本豁免作为安装前提。
 
-优先完成平台，考公08/10暂缓。保留原业务需求与历史证据；公开能力缺失须明确降级方式及未满足项，不能通过导航替代就自动判定完整嵌入需求通过。新验收以未补丁实例为准。具体执行见[工单](implementation/README.md)和[恢复清单](native-restoration.md)。
+工作台新宿主适配在先，考公08/10已恢复接入与保护规划，随后验证学习闭环。原33条故事及原123条要求保持；本轮新增要求统一见[派生框架规格 HU01—HU08](../worktable-platform/framework-spec.md#host-upgrade-requirements)，未决路线见[升级地图](../harness-upgrade/map.md)。旧平台工单保持原状态，与派生实现的历史 closed 不混用；新宿主验收不能沿用旧版本结论，导航也不自动等价于完整嵌入。具体映射见[工单入口](implementation/README.md)。
 
 
 ## Problem Statement
@@ -110,4 +113,4 @@ kind: implementation-spec
 
 ## 2026-10-11 实施边界修订
 
-用户要求恢复原生DSH，工作台必须适配未经插件补丁的原生公开能力。禁止把原生接口新增、编辑器修改或原生lib替换作为安装前提。具体对应01/05/06/11/12工单及[原生恢复清单](native-restoration.md)。既有业务需求保留，缺少能力由插件降级或重新设计；旧补丁运行时证据不作为无补丁兼容通过依据。考公专项暂缓。
+用户要求恢复原生DSH，工作台必须适配未经插件补丁的原生公开能力。禁止把原生接口新增、编辑器修改或原生lib替换作为安装前提。具体对应01/05/06/11/12工单及[原生恢复清单](native-restoration.md)。既有业务需求保留；公开能力缺口须给出方案并经所需决策验证，不能自动减范围。考公已于2026-10-24恢复接入规划，旧补丁或旧宿主证据均不作为 rc.3 通过依据。

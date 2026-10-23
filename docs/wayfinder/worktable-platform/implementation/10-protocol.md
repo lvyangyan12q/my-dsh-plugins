@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: second_application
 blocked_by: [worktable-framework-08]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-ownership]
 ---
 
 # 10: 第二应用独立接入并冻结首版协议
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU01、HU05、HU07](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 按官方真实兼容门禁校验最终声明，并验证公开类型、客户端模块和能力握手。
+- [ ] Notes/Reading 用新版本包适配 rc.3 并复验多视图、隔离、能力和恢复；不改旧冻结包范围。
+- [ ] 考公旧绑定/历史接管和课堂嵌入缺口须采用公开合同，新增协议能力的范围等待路线决策。
+
+## 原阶段要求与证据
 
 **What to build:** 另一个真实开发应用依据接入文档通过注册接入，主要增加应用自身代码，不修改工作台核心私有分支。
 

@@ -6,16 +6,24 @@ labels: [ready-for-agent]
 status: open
 assignee: null
 blocked_by: [workbench-completion-data, workbench-completion-native, workbench-completion-materials]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-kaogong-ownership, harness-upgrade-classroom-prototype]
 ---
 
 <!-- native-compatible-plan -->
-## 当前执行范围（2026-10-11）
+## 当前执行范围（2026-10-24）
 
-状态：open；考公专项暂缓。
+状态保持 open；考公已重新纳入 rc.3 与派生 Worktable SDK 的接入规划；工作台适配、旧学习归属和课堂原型仍是前置，尚未实施或验收。
 
-考公专项暂缓，保持open。待平台适配稳定后重验班主任/任课老师、独立学习窗口、原生会话、资料、练习与统计；本阶段只保留已有应用与数据。
+原工单范围、依赖和未完成验收保留，rc.3 具体增量依据[框架规格 HU02、HU05—HU08](../../worktable-platform/framework-spec.md#host-upgrade-requirements)。followup_status 为 pending-decisions，路线见[升级地图](../../harness-upgrade/map.md)，不因旧 ready-for-agent 标签自动执行未决迁移。
 
-历史检查保留为旧环境证据，不作为当前基线通过。下列原始范围及验收项继续保留；涉及新增原生接口的实施方式以本节为准。
+- [ ] 以公开 SDK 接入应用/实例/视图/资源/私有能力/角色/任务，移除旧personal-workbench运行时依赖。
+- [ ] 六领域及浏览器草稿按已确认实例归属隔离；旧笔记不整库公开，未知归属记录保留。
+- [ ] 旧 Session/preset/cwd、学科老师与默认老师、历史绑定和选用Agent逐项映射，不新建老师替代恢复。
+- [ ] 真实教学、十题评分/错题、课堂完成、计划统计、原生轨迹/审批/Stop及刷新重启恢复需新版本证据。
+
+历史检查仍是旧环境证据；以下原始业务标准不删除、不计为新宿主通过。
 
 
 # 10: 考公学习完整闭环

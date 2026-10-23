@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: continuation_failures
 blocked_by: []
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy]
 ---
 
 # 16: 原生状态矩阵与存储失败恢复
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU02、HU03、HU04、HU07](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 复验 running/waiting/failed/cancelled/unread、原生问题/审批和 Stop 语义。
+- [ ] 覆盖缺能力、迁移待处理、身份/输入冲突、服务卸载和实际存储失败，给出明确恢复路径。
+- [ ] 未知结果不转为成功、不自动重试，不通过隐藏第三方失败伪造平台可用。
+
+## 原阶段要求与证据
 
 范围依据：[完整spec](../framework-spec.md)、[2026-10-21后续实施边界](../continuation-spec.md)。
 

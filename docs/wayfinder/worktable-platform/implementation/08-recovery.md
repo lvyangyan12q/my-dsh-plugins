@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: recovery
 blocked_by: [worktable-framework-05, worktable-framework-07]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy]
 ---
 
 # 08: 持久化、并发与冷恢复
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU02、HU04、HU08](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 复验已存在、冷、缺失与迁移待处理原生会话，保持实例、角色与历史 ID。
+- [ ] 按 rc.3 最终包验证刷新/Host 重启、并发冲突、视图重挂及未发送草稿恢复。
+- [ ] 真实写入失败或未知结果保留旧记录和恢复入口，不以旧整 profile 覆盖新增业务。
+
+## 原阶段要求与证据
 
 **What to build:** 真实应用项目、未归属实例、显式关联、授权、数据状态和角色引用在刷新/Host重启后正确恢复。
 

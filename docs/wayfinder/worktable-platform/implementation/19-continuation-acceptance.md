@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: null
 blocked_by: [worktable-framework-12, worktable-framework-13, worktable-framework-14, worktable-framework-15, worktable-framework-16, worktable-framework-17, worktable-framework-18]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-acceptance-cutover]
 ---
 
 # 19: 后续完整实页验收与交接
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU01—HU08](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 以新版本最终包完成 rc.3 工作台、消费者和考公真实闭环，再决定正式同步。
+- [ ] 记录配置、声明、包哈希、实际流程、旧记录/资料保护与回退条件，不复用旧版本通过来关新范围。
+- [ ] 用户运行实例由用户管理；本次规格更新不重启、部署或迁移，历史限定关闭与完整 spec OPEN 分开。
+
+## 原阶段要求与证据
 
 范围依据：[完整spec](../framework-spec.md)、[2026-10-21后续实施边界](../continuation-spec.md)。
 

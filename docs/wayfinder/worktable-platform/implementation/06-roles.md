@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: role_capabilities
 blocked_by: [worktable-framework-04]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy, harness-upgrade-kaogong-ownership]
 ---
 
 # 06: 角色会话隔离与能力复用
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU02、HU05](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 替换旧 inspect 调用并验证公开身份、迁移状态、cwd/别名和工作区成员关系；已有老师不得因恢复失败被重建。
+- [ ] 明确 create 返回不同 ID、意图/回执未知和并发恢复的处理，不自动重试或静默换绑。
+- [ ] 历史角色接管、previousSessionIds 与应用私有/公共能力通过公开 SDK 合同验证；具体接管方式等待用户决策。
+
+## 原阶段要求与证据
 
 **What to build:** 应用实例的角色通过稳定身份关联原生会话，读取/创建/重试/替换语义分开。
 

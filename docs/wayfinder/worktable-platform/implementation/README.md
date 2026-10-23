@@ -1,8 +1,26 @@
 # Worktable AI工作台首阶段实施工单
 
+<a id="host-upgrade-followups"></a>
+## 2026-10-24 rc.3 升级增量映射
+
+01—19 的原阶段均已按各票限定范围 closed，其中19于2026-10-23有限关闭；本索引原 open 行已依据票内最终记录校正。完整规格仍 open，rc.3 适配不能沿用旧勾选。历史票增加 followup_target/status/blocked_by 记录升级待办，原 status、原依赖与原验收保持。
+
+| 本轮工作 | 对应原工单 | 当前 rc.3 增量状态 | 路线前置 |
+| --- | --- | --- | --- |
+| 声明、公开适配层和消费者 | [第二应用与协议](10-protocol.md) | 待实施/验收 | [升级规则](../../harness-upgrade/issues/03-upgrade-policy.md)；涉及新 SDK 的部分还待旧学习归属 |
+| 原生角色、历史接管及身份恢复 | [角色](06-roles.md) | 待方案确认及复验 | [旧学习归属](../../harness-upgrade/issues/04-kaogong-ownership.md)与升级规则 |
+| 输入、原生执行、标注/生成 | [执行](07-native-execution.md)、[生成](15-generation.md)、[故障状态](16-failure-states.md) | 待公开接口适配与实页复验 | 升级规则 |
+| 释放、持久化与回退 | [恢复](08-recovery.md)、[生命周期](09-lifecycle.md)、[迁移保护](18-upgrade-protection.md) | 待复验；真实考公接管未执行 | 升级规则、旧学习归属及切换门槛 |
+| 考公新 SDK 接入及旧资料保护 | [原考公学习票](../../workbench-completion/implementation/10-kaogong.md)、[原资料票](../../workbench-completion/implementation/08-materials.md) | 已恢复规划，未迁移/验收 | 旧学习归属与[课堂原型](../../harness-upgrade/issues/06-classroom-prototype.md) |
+| 新宿主整体验收与正式交接 | [首阶段验收](11-acceptance.md)、[后续交接](19-continuation-acceptance.md) | rc.3 待验；历史关闭不变 | [验收/切换门槛](../../harness-upgrade/issues/05-acceptance-cutover.md) |
+
+本次更新既有票的升级增量，未发布可直接领取的新实施子票。当前可领取的是[wayfinder 决策前沿](../../harness-upgrade/README.md)；结论确认后再拆实施工单，避免把研究建议当已批准方案。其他01—19能力也必须纳入最终 rc.3 回归，不能因未单独修改其票而推定已兼容。
+
+## 历史阶段与原工单
+
 ## 2026-10-21 后续实施（用户明确要求继续完成）
 
-01—11的关闭状态与历史证据保持；新增12—19按[后续范围](../continuation-spec.md)推进，完整spec仍open。以下是执行工单，不是已通过清单。考公专项继续暂停。
+01—11及12—19的历史关闭状态和证据保持，完整spec仍open。本段是2026-10-21阶段及其后续完成记录；当前考公接入已重新纳入上面的rc.3增量，不再暂停。
 
 | 编号 | 工单 | 阻塞于 | 状态 |
 |---|---|---|---|
@@ -13,9 +31,9 @@
 | 16 | [原生状态矩阵与存储失败恢复](16-failure-states.md) | 无 | closed |
 | 17 | [显式受控网页桥接](17-web-bridge.md) | 14、16 | closed（0.9.3合作网页read/prepare/撤权与负向实页；最终恢复见19） |
 | 18 | [应用升级与迁移影响确认](18-upgrade-protection.md) | 12、16 | closed：独立合成应用真实升级、失败恢复与冷启通过；旧应用迁移不在本次验收内 |
-| 19 | [后续完整实页验收与交接](19-continuation-acceptance.md) | 12、13、14、15、16、17、18 | open |
+| 19 | [后续完整实页验收与交接](19-continuation-acceptance.md) | 12、13、14、15、16、17、18 | closed（2026-10-23原限定范围；rc.3增量待验） |
 
-当前12、13、14、15、16、17、18已关闭；19的全部依赖已解除，进入最终跨功能、恢复与交接验收。单一集成分支继续`codex/worktable-framework`，不得重置已有用户工作树。
+12—19已按原限定范围关闭；此前19待验的历史检查点由票内“最终有限关闭”覆盖，不删除历史失败与保留项。当前新宿主增量见上表。单一集成分支继续codex/worktable-framework，不得重置用户工作树。
 
 ## 首阶段历史与证据
 

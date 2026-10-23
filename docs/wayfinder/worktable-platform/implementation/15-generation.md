@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: continuation_failures
 blocked_by: [worktable-framework-14]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy]
 ---
 
 # 15: 原生AI生成追改与稳定产物归属
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU02、HU03、HU07](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 在 rc.3 混合输入与原生会话中复验标注准备、AI 生成/追改、用户显式发送和结果挂载。
+- [ ] Stop、关闭/替换模块、失败和迟到结果不覆盖新目标、不触发重复发送。
+- [ ] 记录真实模型、原生轨迹/问题/审批与最终产物恢复证据，不沿用旧宿主成功记录。
+
+## 原阶段要求与证据
 
 范围依据：[完整spec](../framework-spec.md)、[2026-10-21后续实施边界](../continuation-spec.md)。
 

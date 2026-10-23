@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: acceptance
 blocked_by: [worktable-framework-09, worktable-framework-10]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-acceptance-cutover]
 ---
 
 # 11: 首阶段完整验收与渐进迁移清单
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU01—HU08](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 为 rc.3 记录准确宿主提交、插件/消费者最终包和真实用户流程，历史映射不自动提升。
+- [ ] 复验原生菜单、布局、标注/生成、授权、原生执行和冷恢复，保留已知未满足项。
+- [ ] 将考公、旧记录与资料保护纳入新切换门槛；原型与研究不作为验收通过。
+
+## 原阶段要求与证据
 
 **What to build:** 在精确记录的官方安装组合上完成已确认F01-F08及F10-F13首阶段用户流程，不用测试夹具代替真实网页和深度应用。
 

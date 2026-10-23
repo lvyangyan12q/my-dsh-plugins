@@ -3,14 +3,14 @@
 <!-- native-compatible-plan -->
 ## 当前领取与依赖
 
-所有12张保持open；旧assignee/claimed仅为历史执行记录，重新领取前核对活跃任务。08/10暂缓。先做01与05的公共接口兼容盘点；02/03/04可处理独立插件范围，但实页关单需在01适配后进行。06需02与05，07需03与06；09需01/03/04/05。11先做平台阶段（01/07/09），12仅在该阶段验收后同步插件；完整11/12仍保留10及其依赖，不能提前全量关单。
+旧12张保持open；其原依赖与未验要求继续保留。08/10已恢复新宿主和派生SDK接入规划，不再暂停，但不能绕过工作台适配、资料保护及旧学习接管决策。当前实现以派生框架为准，完整升级要求见[HU01—HU08](../../worktable-platform/framework-spec.md#host-upgrade-requirements)，原票对应关系见[升级增量映射](../../worktable-platform/implementation/README.md#host-upgrade-followups)。wayfinder未决条件解决前，只推进已允许的规划/研究，不依据旧标签领取正式迁移。
 
 以下原始依赖图保留完整交付范围。本段描述当前阶段执行门槛，不解除frontmatter中的完整范围依赖。
 
 
 用户于 2026-10-10 调用 implement-spec，授权执行已提出的 12 张收尾工单。父规格、原 123 条要求、旧平台/画布工单及其验收状态保持；此图管理剩余补齐与验收，不重做已有能力。
 
-本地追踪沿用已配置 frontmatter，阻塞通过真实工单 ID 和正文标题表示。一张工单一个文件；ready-for-agent 表示工单可由 agent执行，只有阻塞已关闭且执行条件具备者可领取。当前集成分支 codex/application-platform；交付沿用现有 PR。
+本地追踪沿用已配置 frontmatter，阻塞通过真实工单 ID 和正文标题表示。一张工单一个文件；ready-for-agent 表示工单可由 agent执行，只有阻塞已关闭且执行条件具备者可领取。codex/application-platform 为旧平台历史集成分支；当前派生工作台继续使用 codex/worktable-framework，不把旧前台重新部署为最终方案。
 
 - [平台入口与窗口恢复](01-runtime.md)：无实施工单阻塞。
 - [手动创建完整应用](02-authoring.md)：无实施工单阻塞。

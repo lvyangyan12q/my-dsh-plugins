@@ -1,5 +1,11 @@
 # 当前工单
 
+## 2026-10-24 原工单升级要求已同步
+
+[派生框架工单索引](../wayfinder/worktable-platform/implementation/README.md#host-upgrade-followups)已列 rc.3 增量与原票对应关系；原角色/执行/恢复/生命周期/SDK/验收/生成/失败/迁移/交接票增加未实施的 followup 及复验清单。旧考公资料、学习、发布和交付票也已更新范围，取消过期暂停描述。
+
+历史01—19的closed仅适用于原限定验收，其中19索引已与最终关闭记录一致；旧完整闭环12张仍open。新宿主增量为pending-decisions，不改旧状态或勾选，也不自动发布新实施子票。当前前沿仍是[升级决策图](../wayfinder/harness-upgrade/README.md)。
+
 ## 当前实施结果 · 2026-10-20
 
 [Worktable派生框架首阶段01—11](../wayfinder/worktable-platform/implementation/README.md)均已closed；完整framework spec继续open。最新[交接](../wayfinder/worktable-platform/handoff.md)与[后续待办/建议路线](../wayfinder/worktable-platform/technical-roadmap.md)已整理，建议尚未发布为新工单。
@@ -9,7 +15,7 @@
 <!-- native-compatible-plan -->
 ## 当前执行基线
 
-所有工单保持open。01/05先消除原生补丁依赖，02/03/04保留插件功能，06/07重新接入公开执行路径，09负责通用实页验收；11/12区分平台阶段与完整交付。08/10暂缓。详细顺序见[当前依赖](../wayfinder/workbench-completion/implementation/README.md)。
+以下旧完整闭环12张保持open，不包含派生框架01—19的历史关闭。考公08/10已恢复接入与保护规划，正式实施仍等待升级、旧学习接管和课堂验证；其他原依赖不删除。当前rc.3增量以派生索引和升级决策为准，不能按本页旧标签直接迁移或部署。
 
 
 返回 [进度入口](../STATUS.md)。[原工单清单与依赖](../wayfinder/workbench-completion/implementation/README.md)保持原始完整范围。
@@ -23,9 +29,9 @@
 | 05 | [DSH原生执行闭环](../wayfinder/workbench-completion/implementation/05-native.md) | 平台优先，待完成验收 |
 | 06 | [画布标注与模块生成](../wayfinder/workbench-completion/implementation/06-annotation.md) | 平台优先，待完成验收 |
 | 07 | [AI创建应用闭环](../wayfinder/workbench-completion/implementation/07-generation.md) | 平台优先，待完成验收 |
-| 08 | [考公题目与资料完整性](../wayfinder/workbench-completion/implementation/08-materials.md) | 专项暂缓，已有结果保留 |
+| 08 | [考公题目与资料完整性](../wayfinder/workbench-completion/implementation/08-materials.md) | 已恢复接入/保护规划；新宿主验收待前置 |
 | 09 | [阅读统计通用应用闭环](../wayfinder/workbench-completion/implementation/09-reading.md) | 通用平台样例，继续验收 |
-| 10 | [考公学习完整闭环](../wayfinder/workbench-completion/implementation/10-kaogong.md) | 专项暂缓，已有结果保留 |
+| 10 | [考公学习完整闭环](../wayfinder/workbench-completion/implementation/10-kaogong.md) | 已恢复接入/保护规划；新宿主验收待前置 |
 | 11 | [兼容、升级与回滚](../wayfinder/workbench-completion/implementation/11-release.md) | 先完成平台阶段；完整范围仍待验收 |
 | 12 | [正式部署与远程交付](../wayfinder/workbench-completion/implementation/12-delivery.md) | 平台验收后同步；完整交付仍待验收 |
 

@@ -67,3 +67,7 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 新的本地地图是[工作台与考公面向新 Harness 的兼容及迁移路线](../wayfinder/harness-upgrade/map.md)，不替代旧 framework spec 或历史验收。子票存放在同目录 issues/，以 frontmatter 的 id 为身份，parent 指向 harness-upgrade-map；只能使用 wayfinder 标签。各票 blocked_by 引用实际子票 ID，本地跟踪器无独立依赖 API，因此以该字段表达阻塞。
 
 查询运行 `docs/wayfinder/harness-upgrade/frontier.ps1`；加 `-All` 同时显示认领和阻塞。前沿为 open、assignee 为空且所有 blockers 均 closed 的子票。先设置 assignee 再工作；研究可并行，其他类型每轮最多解决一个。结论写票内 Resolution（本地的 resolution comment），随后设 closed、清除 assignee，再给地图追加标题链接与摘要。研究报告留在票内 context_branch 指定的独立 research 分支，推送但不合并或建 PR，Resolution 链接精确提交。
+
+## 旧规格与工单的 rc.3 增量记录
+
+[框架规格 HU01—HU08](../wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements)持有升级详细要求；[实施索引](../wayfinder/worktable-platform/implementation/README.md#host-upgrade-followups)映射原票。旧票的 status、blocked_by 与历史勾选继续表示原阶段，新增 followup_target/status/blocked_by 仅记录升级待办；pending-decisions 不属于可直接领取的实施前沿。当前需先解决 harness-upgrade 地图中的开放决策，随后另行发布可执行升级子票，不把闭合历史票当作新宿主已完成。

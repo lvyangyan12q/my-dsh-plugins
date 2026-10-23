@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: lifecycle
 blocked_by: [worktable-framework-08]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy, harness-upgrade-acceptance-cutover]
 ---
 
 # 09: 停用、升级与回退的数据保护
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU04、HU08](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 补齐自身旧 HTTP/Upgrade 路由和监听释放；实际停用、热替换、卸载重装不残留重复注册。
+- [ ] 视图关闭或应用停用不误停任务、不丢失原生控制、不删除业务数据或会话。
+- [ ] 验证新包与冻结回退包/宿主/数据格式的匹配边界，保留迁移后新增记录。
+
+## 原阶段要求与证据
 
 **What to build:** 停用阻止新实例与新任务，不自动停止已有任务；仍可在原生会话查看、审批和Stop。
 

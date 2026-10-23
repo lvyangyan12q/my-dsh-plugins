@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: native_execution
 blocked_by: [worktable-framework-05, worktable-framework-06]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-support-policy]
 ---
 
 # 07: 数据上下文与原生AI执行闭环
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU02、HU03、HU07](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 按 rc.3 公开发送、状态与持有接口复验显式发送、问题/审批、Stop、队列和原生轨迹，准入不记为成功。
+- [ ] 验证 reference/command/quote 混合草稿追加、焦点/撤销和跨实例输入归属，不写编辑器私有状态。
+- [ ] 断线、关闭视图、重启或回执未知不换通道重发，保留原会话和任务身份。
+
+## 原阶段要求与证据
 
 **What to build:** 准备任务展示准确的实例、角色、来源视图及选中记录/筛选上下文；可编辑、移除上下文和放弃。
 

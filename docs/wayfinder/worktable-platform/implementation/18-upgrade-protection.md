@@ -6,9 +6,22 @@ labels: [ready-for-agent]
 status: closed
 assignee: continuation_failures
 blocked_by: [worktable-framework-12, worktable-framework-16]
+followup_target: 0.2.1-rc.3
+followup_status: pending-decisions
+followup_blocked_by: [harness-upgrade-kaogong-ownership, harness-upgrade-acceptance-cutover]
 ---
 
 # 18: 应用升级与迁移影响确认
+
+## 2026-10-24 rc.3 增量（尚未实施/复验）
+
+原 status: closed 和原勾选仅对应历史宿主及已记录范围，继续保留；本节不是该历史阶段重新通过的证明。当前 followup_status 为 pending-decisions，依赖[升级决策](../../harness-upgrade/map.md)；不能仅凭旧 ready-for-agent 标签或原依赖已关闭领取新宿主增量。完整增量依据为[框架规格 HU05、HU06、HU08](../framework-spec.md#host-upgrade-requirements)。
+
+- [ ] 为考公接管提供只读清单、影响预览与明确批准后的计划，启动 recover/同步不能充当只读检查。
+- [ ] 保留题库、私有笔记、评分/轮次快照、课堂证据、角色当前/历史绑定及资料引用；本次适配不改答案或重新评分。
+- [ ] 验证失败/unknown 的阶段日志与幂等恢复；旧合成 owner 迁移通过不等于真实考公迁移通过。
+
+## 原阶段要求与证据
 
 范围依据：[完整spec](../framework-spec.md)、[2026-10-21后续实施边界](../continuation-spec.md)。
 
