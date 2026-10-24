@@ -1,4 +1,4 @@
-import {resolve} from 'node:path'
+import {isAbsolute,resolve} from 'node:path'
 import {realpathSync} from 'node:fs'
 import {reject} from './roles.mjs'
 const normalized=path=>process.platform==='win32'?resolve(path).toLowerCase():resolve(path)
@@ -10,6 +10,22 @@ const same=(a,b)=>{
 /** Exact rc.3 public Host interfaces; read-only validation never opens or migrates a Session. */
 export function createRoleAuthority(ctx,capabilities){
  const workspace=cwd=>{const row=ctx.workspaceRegistry.list().find(row=>same(row.path,cwd));if(!row)reject('workspace-unavailable','请先在原生DSH登记角色工作目录。');return row}
+ const hydrateLegacy=async sessionId=>{
+  const stored=await ctx.sessionPersistence.stat(sessionId)
+  if(!stored)reject('session-missing','角色原生会话缺失，请恢复历史或明确替换。')
+  if(stored.header?.id!==sessionId)reject('native-identity','角色会话身份不匹配。')
+  if(stored.formatStatus==='migration-required')reject('session-migration-required','请先在原生DSH完成会话迁移。')
+  if(stored.formatStatus!==undefined&&stored.formatStatus!=='current')reject('native-identity','原生会话格式未知。')
+  const projection=await ctx.sessionController.projections({sessionId},new AbortController().signal)
+  if(!projection)reject('session-missing','角色原生会话缺失，请恢复历史或明确替换。')
+  if(projection.kind!=='sequenced')reject('session-migration-required','请先在原生DSH完成会话迁移。')
+  const presetId=projection.values?.agentPreset,cwd=stored.header.cwd
+  if(typeof presetId!=='string'||!presetId||typeof cwd!=='string'||!isAbsolute(cwd))reject('native-identity','历史会话缺少可验证的Agent或目录。')
+  const memberships=ctx.workspaceRegistry.list().filter(row=>row.sessionIds.includes(sessionId))
+  if(memberships.length>1)reject('native-conflict','原生会话工作区归属冲突。')
+  if(memberships.length!==1||!same(memberships[0].path,cwd))reject('workspace-membership','角色会话不在原生工作区中。')
+  return {sessionId,presetId,creation:{cwd}}
+ }
  const existing=async row=>{
   const stored=await ctx.sessionPersistence.stat(row.sessionId)
   if(!stored)reject('session-missing','角色原生会话缺失，请恢复历史或明确替换。')
@@ -26,6 +42,7 @@ export function createRoleAuthority(ctx,capabilities){
  return {
   validate:async(definition,appId)=>{workspace(definition.creation.cwd);return capabilities.validateRole(definition,appId)},
   validateExisting:existing,
+  hydrateLegacy,
   validateLegacy:async(row,{allowMissing=false,creation}={})=>{
    if(creation&&!same(creation.cwd,row.creation.cwd))reject('workspace-changed','旧绑定目录与应用声明不同，未改写旧会话目录。')
    if(allowMissing&&!await ctx.sessionPersistence.stat(row.sessionId))return {sessionId:row.sessionId,presetId:row.presetId,cwd:row.creation.cwd,status:'missing'}
