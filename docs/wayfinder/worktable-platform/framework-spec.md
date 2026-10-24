@@ -57,7 +57,7 @@ upgrade_blocked_by: [harness-upgrade-acceptance-cutover]
 
 原生构建 10/10 和页面启动已完成，仅作为环境事实；原生实例随后交由用户自行管理。Worktable 0.9.6 及考公 0.1.0 尚未通过 rc.3 完整适配验收，后续要求见[升级增量](#host-upgrade-requirements)和[当前工单映射](implementation/README.md#host-upgrade-followups)。
 
-升级规则、旧学习归属、课堂公开嵌入原型与切换门槛仍在[升级决策地图](../harness-upgrade/map.md)中开放。本文 ready-for-agent 不代表这些未决增量已经可执行；未决项不得由实施者自行降级或决定数据迁移方式。
+升级规则、旧学习归属和课堂公开嵌入路径已由用户确认；[升级决策地图](../harness-upgrade/map.md)中的验收与切换门槛仍待具体版本及迁移计划落实。本文 ready-for-agent 不代表完整增量已验收；正式迁移仍须具体影响预览确认，实施者不得自行降级要求或决定数据迁移方式。
 
 ## User Stories
 

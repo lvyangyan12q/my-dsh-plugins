@@ -22,7 +22,7 @@ target: 0.2.1-rc.3
 - Host `worktableRoles.contributeLegacy(appId, owner)`：仅有实际角色贡献的应用可注册唯一检查器；随应用销毁。`owner.inspect(sourceKey, {instanceId, roleId})` 必须只读，不运行旧插件的修复、迁移或会话创建。检查器返回稳定来源键和 revision、映射后的角色 ID、当前 Session/preset/cwd/phase、selectedPreset 及每条历史的独立 Session/preset/cwd；旧 Agent 有选择变化时由应用提供映射后的受控能力引用，预设仍必须是同一个原生 ID。
 - 页面 `roles.previewAdoption(roleId, sourceKey)`：实例由 facade 固定；返回影响、阻塞项和包含源快照、目标、角色声明、实例 revision、原生校验事实的指纹。预览不写角色或原生 Session。来源、历史证据、能力映射或目录不明时显示阻塞，不能用当前 preset 填补旧历史。
 - 页面 `roles.applyAdoption(roleId, sourceKey, fingerprint, true)`：只能选已注册来源，浏览器不能提交 Session 导入对象。确认后重新读取来源并校验指纹、原生身份、所有者代次及全局当前/历史唯一归属；只将完整单角色绑定原子写入。Host 迁移所有者也可通过同名公开方法显式传入 instanceId 执行同一合同。无 `create`、替换、改 cwd 或复制消息副作用。
-- Host `roles.resolveSession(appId, sessionId, {access: 'read' | 'write'})`：仅供可信工具使用。ID 必须来自实际原生 `exec.agent.sessionId`，不得取模型参数。当前 ready 角色校验后得到对应实例；历史校验独立身份，只能只读，write 准入直接拒绝。浏览器 HTTP、facade 均没有任意 Session 反向查询。返回的是已校验上下文事实，不代替资源授权检查。
+- Host `roles.resolveSession(appId, sessionId, {access: 'read' | 'write'})`：仅供可信工具使用。ID 必须来自实际原生 `exec.agent.session.id`，不得取模型参数。当前 ready 角色校验后得到对应实例；历史校验独立身份，只能只读，write 准入直接拒绝。浏览器 HTTP、facade 均没有任意 Session 反向查询。返回的是已校验上下文事实，不代替资源授权检查。
 
 未完成的旧 intent 保持 intent 和 selectedPreset，写入 `creationAttempt: started` 后只能明确恢复原 ID，不通过接管触发创建。缺失 ready 或任何缺少身份证据的历史阻止该项接管。应用需在只读预检时通过原生公开 stat/projections 得到历史身份事实；不能猜测旧 Agent 或改变目录使其匹配。
 
