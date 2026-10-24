@@ -26,7 +26,7 @@ export interface AdoptionServices {
 }
 function fail(code:string):never{throw Object.assign(new Error(code),{code})}
 const hash=(value:unknown)=>value===undefined?null:fingerprint(value)
-function validate(plan:LegacyAdoptionPlan){const {fingerprint:expected,...body}=plan;if(plan.format!=='kaogong-adoption-plan'||plan.formatVersion!==1||expected!==fingerprint(body))fail('ADOPTION_PLAN_CHANGED');for(const row of [...plan.records,...plan.globals])if(row.hash!==fingerprint(row.value))fail('ADOPTION_PLAN_CHANGED')}
+function validate(plan:LegacyAdoptionPlan){const {fingerprint:expected,...body}=plan;if(plan.format!=='kaogong-adoption-plan'||plan.formatVersion!==1||plan.private!==true||expected!==fingerprint(body))fail('ADOPTION_PLAN_CHANGED');for(const row of [...plan.records,...plan.globals])if(row.hash!==fingerprint(row.value))fail('ADOPTION_PLAN_CHANGED')}
 function validateJournal(row:AdoptionJournal){
  validate(row.plan);if(row.schema!==1||row.id!==row.plan.id)fail('ADOPTION_CHECKPOINT_INVALID')
  for(const [index,size]of [[row.globalIndex,row.plan.globals.length],[row.recordIndex,row.plan.records.length],[row.roleIndex,row.plan.roles.length],[row.grantIndex,row.plan.readOnlyGrants.length]])if(!Number.isSafeInteger(index)||index<0||index>size)fail('ADOPTION_CHECKPOINT_INVALID')

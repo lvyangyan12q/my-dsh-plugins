@@ -1,16 +1,7 @@
 
-/**
- * DeepSeek Harness plugin: the kaogong (考公) learning suite for the
- * 武汉市公务员考试. Durable state lives in storage-domain domains
- * (`kaogong_notebook` + `kaogong_progress`) so the wrong-answer notebook
- * and the backward-scheduled study plan are shared across agents.
- *
- * Tools: kaogong_record_question, kaogong_list_questions,
- *   kaogong_analyze_errors, kaogong_summarize_weaknesses, kaogong_taxonomy,
- *   kaogong_delete_question, kaogong_plan_set, kaogong_plan_view,
- *   kaogong_plan_done, kaogong_progress_status.
- *
- * @module kaogong
+/** Instance-scoped learning command registrations.
+ * The production Host validates the view/native Session and leases owned state
+ * before dispatch. This module never opens or repairs a legacy domain.
  */
 
 import type { Context, Volatile } from '@deepseek-ai/cordis'
@@ -41,9 +32,6 @@ import { z as wire } from 'zod'
 import { searchKnowledge, knowledgeExcerpt } from './knowledge.ts'
 import type { Question, AttemptResult, BankQuestion, KnowledgeEntry, BankReviewStatus } from './types.ts'
 import { KNOWLEDGE_KINDS } from './types.ts'
-
-export const name = 'kaogong'
-export const inject = ['tools', 'storageDomain', 'webServer', 'connection']
 
 /** Plugin configuration, validated by the schemastery schema below. */
 export interface Config {

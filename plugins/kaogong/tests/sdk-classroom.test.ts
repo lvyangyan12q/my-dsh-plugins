@@ -48,3 +48,21 @@ test('owned teaching prepares only persistent references and never calls browser
   await prepareLearningTask({instanceId:'learning-a',roles,tasks} as never,{kind:'review',context:{},result:{roundId:'round-a',correctCount:999}} as never,null)
   assert.deepEqual(calls.at(-1),['owned',{roleId:'counselor',kind:'review',payload:{roundId:'round-a'}}])
 })
+
+test('selected role hover stays legible inside the classroom without changing native buttons outside it',async()=>{
+ const dom=new JSDOM('<div id="root"></div><button id="native" data-pwb-button aria-pressed="true">Native</button>',{url:'http://localhost'})
+ const globals={React,window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true},previous=new Map(Object.keys(globals).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))
+ for(const [key,value]of Object.entries(globals))Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})
+ const oldFetch=globalThis.fetch;globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?{today:'2026-10-24',daysToExam:100,pastDonePct:0,pastDone:0,pastDays:1,accuracyRate:0,totalQuestions:0,knowledgeTotal:0,bankTotal:0,todayPlan:{phase:'foundation',items:[]},modules:[],weakPoints:[],recentKnowledge:[]}:String(input).includes('/lesson/current')?null:{entries:[]}))
+ const root=createRoot(document.getElementById('root')!)
+ try{
+  const {KaogongApplicationView}=await import('../src/client.tsx')
+  const props={application:{id:'kaogong',title:'考公学习',kind:'deep',version:'candidate',views:[{id:'page',title:'学习'}]},instance:{id:'hover-study',appId:'kaogong',projectId:null,revision:1},view:{id:'hover-view',instanceId:'hover-study',type:'page'},roles:{ensure:async()=>({phase:'ready',sessionId:'native-advisor',revision:1}),open:async()=>{}},tasks:{prepare:async()=>({})}}
+  await act(async()=>root.render(React.createElement(KaogongApplicationView,props as never)))
+  const advisor=[...document.querySelectorAll('.kg-sdk-classroom button')].find(button=>button.textContent==='班主任')!
+  await act(async()=>advisor.click());assert.equal(advisor.getAttribute('aria-pressed'),'true');advisor.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}))
+  const nativeHover=document.createElement('style');nativeHover.textContent='button[data-pwb-button]:not(:disabled):hover{background:rgba(38,49,72,.06)}';document.head.append(nativeHover)
+  assert.equal(dom.window.getComputedStyle(advisor).backgroundColor,'rgb(164, 76, 50)');assert.equal(dom.window.getComputedStyle(advisor).color,'rgb(255, 250, 246)')
+  const outside=document.getElementById('native')!;outside.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}));nativeHover.textContent+=' ';assert.equal(dom.window.getComputedStyle(outside).backgroundColor,'rgba(38, 49, 72, 0.06)')
+ }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;for(const [key,descriptor]of previous){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key)}dom.window.close()}
+})

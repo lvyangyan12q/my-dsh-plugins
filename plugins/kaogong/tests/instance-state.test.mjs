@@ -175,3 +175,15 @@ test('an uncertain close is retained as a failure instead of silently opening a 
     await assert.rejects(pool.close(), /部分考公实例关闭失败/)
   } finally { await replacement?.release(); await pool.close().catch(() => {}); await app.close(); await rm(root, { recursive: true, force: true }) }
 })
+
+test('lesson read and current preserve pending projections and notebook bytes instead of performing recovery',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'kaogong-pure-lesson-')),app=await boot(root);let lease
+ try{
+  lease=await app.pool.acquire('readonly-classroom');const state=lease.state
+  await state.knowledgeEntries.put('material',knowledge);await state.bankQuestions.put('q',bankQuestion)
+  const round=await state.practice.start({subject,title:'synthetic',limit:10});await state.practice.submit(round.roundId,[{id:'q',answer:'A'}]);const id=randomUUID();await state.lessons.create({lessonId:id,subject,objective:'synthetic',materialIds:['material'],requireReflections:false});await state.lessons.link(id,round.roundId)
+  await state.rounds.update(round.roundId,row=>({...row,projectedRevision:0}))
+  const beforeRounds=structuredClone([...state.rounds.entries()]),beforeNotebook=structuredClone([...state.questions.entries()])
+  const view=await state.lessons.read(id);await state.lessons.current();assert.equal(view.evidence[0].projection,'pending');assert.deepEqual([...state.rounds.entries()],beforeRounds);assert.deepEqual([...state.questions.entries()],beforeNotebook)
+ }finally{await lease?.release();await app.close();await rm(root,{recursive:true,force:true})}
+})

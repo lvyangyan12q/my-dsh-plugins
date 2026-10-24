@@ -6,7 +6,7 @@ import {lessonRecord,lessonSelection} from './lesson-schema.ts'
 import {roleSubjects,subjectRoleIds} from './role-definitions.ts'
 export function canonical(value:unknown):string{
  if(Array.isArray(value))return '['+value.map(canonical).join(',')+']'
- if(value!==null&&typeof value==='object')return '{'+Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,value])=>JSON.stringify(key)+':'+canonical(value)).join(',')+'}'
+ if(value!==null&&typeof value==='object')return '{'+Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,value])=>JSON.stringify(key)+':'+canonical(value)).join(',')+'}'
  return JSON.stringify(value)
 }
 export const fingerprint=(value:unknown)=>createHash('sha256').update(canonical(value)).digest('hex')
@@ -18,7 +18,7 @@ export type LegacyInspectionSnapshot={format:string;formatVersion:number;private
 export type RoleInput={sourceKey:string;roleId:string;revision:string;binding:Record<string,unknown>}
 type Inspection=Pick<RoleAdoptionPreview,'status'|'fingerprint'|'blockers'|'source'|'native'>
 export type LegacyAdoptionPlan={
- format:'kaogong-adoption-plan';formatVersion:1;id:string;status:'ready'|'blocked';fingerprint:string
+ format:'kaogong-adoption-plan';formatVersion:1;private:true;id:string;status:'ready'|'blocked';fingerprint:string
  source:{home:string;revision:string;files:{name:string;resolvedPath:string;sha256:string;version:number}[]}
  targets:{history:{instanceId:string;viewId:string;appId:'kaogong';projectId:null};library:{instanceId:string;viewId:string;appId:'kaogong-library';projectId:null}}
  records:{domain:Domain;target:'history'|'library';key:string;value:unknown;hash:string}[]
@@ -55,6 +55,7 @@ export async function prepareLegacyAdoption({snapshot,inspectRole}:{snapshot:Leg
    for(const [id,value] of Object.entries(data.tables.bindings)){
     const input=legacyRoleInput(sourceRevision,id,value as Record<string,unknown>);if(!input)continue
     const inspection=await inspectRole(input);if(inspection.status!=='ready'||!inspection.fingerprint)blockers.push({code:'LEGACY_NATIVE_IDENTITY_BLOCKED',roleId:input.roleId})
+    if(input.binding.phase==='intent')counts.pendingRoleIntents=(counts.pendingRoleIntents??0)+1
     roles.push({...input,inspection})
    }
    continue
@@ -69,9 +70,11 @@ export async function prepareLegacyAdoption({snapshot,inspectRole}:{snapshot:Leg
    const row=original as Record<string,unknown>,value=domain==='lessons'?{...row,instanceId:targets.history.instanceId,roleKey:{...(row.roleKey as object),instanceId:targets.history.instanceId}}:original
    if(domain==='lessons')exact(lessonRecord,value)
    if(domain==='knowledge')privateKnowledgeIds.push(key)
+   if(domain==='practice'&&row.review==='sending')counts.unknownReviews=(counts.unknownReviews??0)+1
+   if(domain==='practice'&&Number(row.projectedRevision)<Number(row.revision))counts.pendingProjections=(counts.pendingProjections??0)+1
    records.push({domain,target:domain==='bank'?'library':'history',key,value,hash:fingerprint(value)})
   }
  }
- const body={format:'kaogong-adoption-plan' as const,formatVersion:1 as const,id:randomUUID(),status:blockers.length?'blocked' as const:'ready' as const,source:{home:snapshot.sourceHome,revision:sourceRevision,files:snapshot.files.map(({name,resolvedPath,sha256,version})=>({name,resolvedPath,sha256,version}))},targets,records,globals,roles,privateKnowledgeIds,counts,readOnlyGrants:[{resourceId:'question-bank' as const,owner:'library' as const,consumer:'history' as const}],blockers,rollback:{mode:'journal-only-no-source-or-profile-restore' as const,schemaGate:5 as const,sourceWrites:0 as const,nativeMessagesCopied:false as const,newerTargetRows:'never-overwrite-or-delete' as const,legacyAssets:'preserved-unadopted-until-verified-owner-manifest' as const}}
+ const body={format:'kaogong-adoption-plan' as const,formatVersion:1 as const,private:true as const,id:randomUUID(),status:blockers.length?'blocked' as const:'ready' as const,source:{home:snapshot.sourceHome,revision:sourceRevision,files:snapshot.files.map(({name,resolvedPath,sha256,version})=>({name,resolvedPath,sha256,version}))},targets,records,globals,roles,privateKnowledgeIds,counts,readOnlyGrants:[{resourceId:'question-bank' as const,owner:'library' as const,consumer:'history' as const}],blockers,rollback:{mode:'journal-only-no-source-or-profile-restore' as const,schemaGate:5 as const,sourceWrites:0 as const,nativeMessagesCopied:false as const,newerTargetRows:'never-overwrite-or-delete' as const,legacyAssets:'preserved-unadopted-until-verified-owner-manifest' as const}}
  return {...body,fingerprint:fingerprint(body)}
 }

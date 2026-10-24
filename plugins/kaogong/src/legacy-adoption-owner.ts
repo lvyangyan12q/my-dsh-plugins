@@ -9,6 +9,7 @@ import {adoptionDomain,adoptionPlansDomain,privateKnowledgeKey} from './legacy-a
 import {adoptionTarget} from './adoption-target.ts'
 import type {KaogongHost} from './instance-host.ts'
 import type {Config} from './business.ts'
+import {adoptionPreview} from './adoption-preview.ts'
 import {revalidatePlanSource} from './legacy-plan-source.ts'
 function fail(code:string):never{throw Object.assign(new Error(code),{code})}
 function source(snapshot:LegacyInspectionSnapshot,sourceKey:string,roleId:string):LegacyRoleSnapshot|null{
@@ -23,10 +24,6 @@ function source(snapshot:LegacyInspectionSnapshot,sourceKey:string,roleId:string
   return {sourceKey,revision:input.revision,roleId,sessionId:row.sessionId,presetId:row.presetId,creation:{cwd:creation.cwd},phase:row.phase==='ready'?'ready':'intent',previousSessionIds:previous, ...(typeof row.selectedPreset==='boolean'?{selectedPreset:row.selectedPreset}:{}),...(agent?{agent}:{})}
  }
  return null
-}
-export function adoptionPreview(plan:LegacyAdoptionPlan,status:string=plan.status){
- return {id:plan.id,fingerprint:plan.fingerprint,status,counts:plan.counts,privateKnowledge:plan.privateKnowledgeIds.length,roles:plan.roles.map(row=>({roleId:row.roleId,status:row.inspection.status,blockers:row.inspection.blockers})),blockers:plan.blockers,
- markdown:[`# 考公旧学习接管预览`,``,`状态：${status}；计划：${plan.id}`,`计划指纹：${plan.fingerprint}`,`源版本指纹：${plan.source.revision}`,``,`- 创建一个私有历史学习实例：${plan.targets.history.instanceId}`,`- 创建一个独立资料库实例：${plan.targets.library.instanceId}`,`- 原题库 ${plan.counts.bank??0} 条进入资料库；历史实例获得本计划明确列出的只读题库授权。`,`- 全部 ${plan.privateKnowledgeIds.length} 条未证明为原始来源的知识留在私有历史中，笔记不共享。`,`- 保留原题、答案、成绩、顺序和课堂证据；只改新副本的实例归属字段，不重新评分。`,`- 原生角色 ${plan.roles.length} 条须逐一通过公共身份验证；不复制消息，不重建老师或改变旧 cwd。`,`- 原始文件和旧目录不写入、不移动；未验证图片/文档引用不开放访问。`,`- schema5 平台接管回执使旧版读取失败；回退使用独立旧数据与冻结旧包，禁止整体旧 profile 覆盖新记录。`,`- 失败/未知仅按同一计划回执恢复，保留升级后新增记录，不自动回滚或重发。`,``,`正式 apply 仅接受这个计划的完整指纹和明确确认；本预览不等于接管完成。`].join('\n')}
 }
 /** Authenticated Host-owned preparation/import service. Merely mounting it never reads the legacy home. */
 export function createAdoptionOwner(ctx:Context,host:KaogongHost,metadata:Domain<typeof adoptionDomain>,planMetadata:Domain<typeof adoptionPlansDomain>,config:Config){
