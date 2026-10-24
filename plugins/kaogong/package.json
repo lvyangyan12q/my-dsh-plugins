@@ -48,7 +48,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:host && pnpm run build:client && pnpm run build:types",
+    "build": "node scripts/build.mjs",
     "build:host": "tsdown -c tsdown.host.config.ts",
     "build:client": "tsdown -c tsdown.config.ts && tsc -p tsconfig.client.json",
     "build:types": "node scripts/check-host-types.mjs --emit",
