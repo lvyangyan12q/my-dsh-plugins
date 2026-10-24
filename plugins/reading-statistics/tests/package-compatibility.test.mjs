@@ -13,15 +13,15 @@ test('official plugin compatibility accepts independent Workbench package depend
   assert.equal(manifest.optionalDependencies?.['@deepseek-ai/dsh-personal-workbench'], undefined)
   assert.equal(manifest.dsh.client.inject.includes('@deepseek-ai/dsh-personal-workbench'), false)
   assert.equal(evaluatePluginCompatibility(manifest, {}, runtime), undefined)
-  const original = { ...manifest, peerDependencies: { ...manifest.peerDependencies, '@deepseek-ai/dsh-personal-workbench': '0.1.0' } }
-  assert.equal(evaluatePluginCompatibility(original, {}, runtime).peers['@deepseek-ai/dsh-personal-workbench'], '0.1.0')
-  const incompatibleNative = { ...manifest, peerDependencies: { ...manifest.peerDependencies, '@deepseek-ai/dsh-host-webserver': '0.1.0' } }
+  const original = { ...manifest, engines: {}, peerDependencies: { ...manifest.peerDependencies, '@deepseek-ai/dsh-personal-workbench': '0.1.0' } }
+  assert.equal(evaluatePluginCompatibility(original, {}, runtime).requirements['@deepseek-ai/dsh-personal-workbench'], '0.1.0')
+  const incompatibleNative = { ...manifest, engines: {}, peerDependencies: { ...manifest.peerDependencies, '@deepseek-ai/dsh-host-webserver': '0.1.0' } }
   assert.equal(evaluatePluginCompatibility(incompatibleNative, {}, runtime).exempted, false)
 })
 
 
 
-test('packed reading artifact declares host-provided native services for both explicitly validated candidate versions', async () => {
+test('packed reading artifact declares host-provided native services for the rc.3 target and refuses unverified hosts', async () => {
   const { mkdtemp, rm } = await import('node:fs/promises')
   const { tmpdir } = await import('node:os')
   const { dirname, join } = await import('node:path')
@@ -40,11 +40,11 @@ test('packed reading artifact declares host-provided native services for both ex
     const nativeDependencies = Object.entries({ ...packed.dependencies, ...packed.optionalDependencies, ...packed.peerDependencies }).filter(([name]) => name.startsWith('@deepseek-ai/dsh-'))
     assert.ok(nativeDependencies.length > 0)
     for (const [name, wanted] of nativeDependencies) {
-      const versions = Object.fromEntries(['0.2.0-rc.2', '0.2.1-alpha.2'].map(version => [version, { name, version }]))
-      const selected = pick({ name, versions, 'dist-tags': { latest: '0.2.1-alpha.2' } }, wanted)
-      assert.ok(['0.2.0-rc.2','0.2.1-alpha.2'].includes(selected.version));assert.equal(packed.dependencies?.[name],undefined);assert.equal(packed.optionalDependencies?.[name],undefined)
+      const versions = Object.fromEntries(['0.2.1-rc.3'].map(version => [version, { name, version }]))
+      const selected = pick({ name, versions, 'dist-tags': { latest: '0.2.1-rc.3' } }, wanted)
+      assert.ok(selected.version==='0.2.1-rc.3');assert.equal(packed.dependencies?.[name],undefined);assert.equal(packed.optionalDependencies?.[name],undefined)
     }
-    assert.equal(evaluatePluginCompatibility(packed, {}, '0.2.0-rc.2'), undefined)
-    assert.equal(evaluatePluginCompatibility(packed, {}, '0.2.1-alpha.2'), undefined)
+    assert.equal(evaluatePluginCompatibility(packed, {}, '0.2.1-rc.3'), undefined)
+    assert.equal(evaluatePluginCompatibility(packed, {}, '0.2.1-rc.4').exempted, false)
   } finally { await rm(folder, { recursive: true, force: true }) }
 })

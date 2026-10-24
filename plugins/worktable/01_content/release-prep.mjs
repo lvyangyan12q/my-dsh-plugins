@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, copyFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { tmpdir } from 'node:os'
 import { gateClientFactory } from './client-factory-gate.mjs'
 import { reserveRelease } from './release-assets.mjs'
@@ -86,8 +86,17 @@ if (patchOk && (patchEntries[0].id !== IDENTITY || patchEntries[0].name !== IDEN
 if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
+// rc.3 candidate release gate uses the exact official source/toolchain, never an exemption.
+const nativeRoot = process.env.WORKTABLE_NATIVE_RC3_ROOT ?? process.env.DSH_SOURCE
+if (!nativeRoot) throw new Error('Set WORKTABLE_NATIVE_RC3_ROOT to the fixed official rc.3 checkout before packing this candidate')
+const nativeLoader = join(nativeRoot, 'node_modules', 'tsx', 'dist', 'loader.mjs')
+const nativeConformance = spawnSync(process.execPath, ['--import', pathToFileURL(nativeLoader).href, '--test', join(HERE, '..', '04_test', 'native-rc3-contracts.test.mjs')], {
+  cwd: HERE, stdio: 'inherit', env: {...process.env, WORKTABLE_NATIVE_RC3_ROOT: nativeRoot, TSX_TSCONFIG_PATH: join(nativeRoot, 'tsconfig.json')},
+})
+if (nativeConformance.status !== 0) throw new Error('Official rc.3 public contract release gate failed')
+
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
-const compatTests = ['project-navigation.test.mjs', 'annotation-target.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'directory-refresh.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'presentation.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs', 'compositions.test.mjs', 'composition-http.test.mjs', 'storage-refusal-http.test.mjs', 'composition-state.test.mjs', 'composition-template.test.mjs', 'composition-sources.test.mjs', 'composition-references.test.mjs', 'composition-editor.test.mjs', 'composition-runtime.test.mjs', 'migrations.test.mjs', 'migration-http.test.mjs', 'migration-resource.test.mjs', 'migration-panel.test.mjs', 'migration-example.test.mjs', 'generation.test.mjs', 'generation-http.test.mjs', 'generation-panel.test.mjs', 'generation-rollback.test.mjs', 'generation-recovery.test.mjs', 'release-immutability.test.mjs', 'web-bridge.test.mjs', 'web-bridge-frame.test.mjs', 'web-bridge-component.test.mjs']
+const compatTests = ['role-adoption.test.mjs', 'role-adoption-http.test.mjs', 'host-route-lifetime.test.mjs', 'project-navigation.test.mjs', 'annotation-target.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'directory-refresh.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'presentation.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs', 'compositions.test.mjs', 'composition-http.test.mjs', 'storage-refusal-http.test.mjs', 'composition-state.test.mjs', 'composition-template.test.mjs', 'composition-sources.test.mjs', 'composition-references.test.mjs', 'composition-editor.test.mjs', 'composition-runtime.test.mjs', 'migrations.test.mjs', 'migration-http.test.mjs', 'migration-resource.test.mjs', 'migration-panel.test.mjs', 'migration-example.test.mjs', 'generation.test.mjs', 'generation-http.test.mjs', 'generation-panel.test.mjs', 'generation-rollback.test.mjs', 'generation-recovery.test.mjs', 'release-immutability.test.mjs', 'web-bridge.test.mjs', 'web-bridge-frame.test.mjs', 'web-bridge-component.test.mjs']
   .map((file) => join(HERE, '..', '04_test', file))
 const compatRun = spawnSync(process.execPath, ['--test', ...compatTests], { cwd: HERE, stdio: 'inherit' })
 if (compatRun.status !== 0) { console.error('[release-prep] FAIL: session/input compatibility tests'); process.exit(1) }

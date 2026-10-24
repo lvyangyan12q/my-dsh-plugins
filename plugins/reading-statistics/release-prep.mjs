@@ -11,7 +11,7 @@ import {reserveConsumerRelease} from '../project-notes/release-assets.mjs'
 const here=dirname(fileURLToPath(import.meta.url)),pkg=JSON.parse(readFileSync(join(here,'package.json'),'utf8')),dist=join(here,'dist','v'+pkg.version),reservation=reserveConsumerRelease(dist,'deepseek-ai-dsh-reading-statistics')
 process.on('exit',()=>reservation.releaseUnused())
 const source=process.env.DSH_SOURCE,worktable=process.env.WORKTABLE_PACKAGE,npm=process.env.npm_execpath
-assert.ok(source&&worktable&&npm,'Use npm run pack with DSH_SOURCE, archived WORKTABLE_PACKAGE and READING_LEGACY_ROOT genuine public types')
+assert.ok(source&&worktable&&npm,'Use npm run pack with DSH_SOURCE, archived WORKTABLE_PACKAGE (READING_LEGACY_ROOT is only for historical artifact regression)')
 function run(args,cwd=here){const r=spawnSync(process.execPath,args,{cwd,encoding:'utf8',env:process.env});if(r.error)throw r.error;assert.equal(r.status,0,r.stdout+'\n'+r.stderr);return r.stdout}
 run([join(here,'check-types.mjs')]);run([npm,'run','build'])
 const {runSourceTests}=await import('./release-test-runner.mjs');const require=createRequire(join(here,'package.json')),testRun=runSourceTests({cwd:here,tsx:require.resolve('tsx'),files:readdirSync(join(here,'tests')).filter(f=>f.endsWith('.test.mjs')).map(f=>join(here,'tests',f))});if(testRun.error)throw testRun.error;assert.equal(testRun.status,0,testRun.stdout+'\n'+testRun.stderr);const testOutput=testRun.stdout;process.stdout.write(testOutput)

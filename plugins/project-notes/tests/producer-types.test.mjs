@@ -12,7 +12,7 @@ test('producer compiles against the exact archived SDK and one explicit official
  assert.equal(run.status,0,run.stdout+'\n'+run.stderr)
  assert.ok(existsSync(receipt),'public producer must record its actual dependency identities; an ancestor-dependent tsc exit is insufficient')
  const value=JSON.parse(readFileSync(receipt,'utf8'))
- assert.equal(value.status,'public-producer-types-passed');assert.equal(value.nativeCordis.version,value.nativeVersion==='0.2.0-rc.2'?'4.0.4':'4.0.5-alpha.1');assert.equal(value.nativeSkill.version,value.nativeVersion);assert.equal(value.sdk.name,'dsh-worktable');assert.ok(value.sdk.version);assert.equal(value.worktableSha256,(await import('node:crypto')).createHash('sha256').update(readFileSync(process.env.WORKTABLE_PACKAGE)).digest('hex'))
+ assert.equal(value.status,'public-producer-types-passed');assert.equal(value.nativeCordis.version,'4.0.5');assert.equal(value.nativeSkill.version,value.nativeVersion);assert.equal(value.sdk.name,'dsh-worktable');assert.ok(value.sdk.version);assert.equal(value.worktableSha256,(await import('node:crypto')).createHash('sha256').update(readFileSync(process.env.WORKTABLE_PACKAGE)).digest('hex'))
  assert.equal(value.notesCordis.realpath,value.sdkCordis.realpath);assert.equal(value.notesCordis.realpath,value.skillCordis.realpath);assert.equal(value.npmLegacyPeerBypass,false);assert.equal(value.sourceAndContractTypes,true)
  assert.notEqual(value.producer,fileURLToPath(new URL('..',import.meta.url)))
 })

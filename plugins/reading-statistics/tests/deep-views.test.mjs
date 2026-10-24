@@ -74,7 +74,7 @@ async function deepClient(server) {
   const root = require('react-dom/client').createRoot(dom.window.document.getElementById('mount'))
   const render=async element=>{await act(async()=>{root.render(element);await new Promise(resolve=>setTimeout(resolve,10))});for(let attempt=0;attempt<50;attempt++){await act(async()=>{await new Promise(resolve=>setTimeout(resolve,10))});if(!dom.window.document.body.textContent.includes('正在加载阅读记录'))break}}
   const view=(kind,id,key=kind+id)=>h(views[kind],{key,application:{id:'reading-statistics'},instance:server.rows.get(id).instance,view:server.rows.get(id).views[kind]})
-  return { view, render, requests, network: callback => { network = callback }, document: dom.window.document, dom, close: async () => { await act(async () => root.unmount()); for (const dispose of cleanups.reverse()) dispose(); dom.window.close(); for (const [key, descriptor] of originals) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key] } } }
+  return { view, render, requests, network: callback => { network = callback }, document: dom.window.document, dom, close: async () => { await act(async () => root.unmount()); for (const dispose of cleanups.reverse()) await dispose(); dom.window.close(); for (const [key, descriptor] of originals) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else delete globalThis[key] } } }
 }
 test('registered page/stats/list share filters and selection, isolate instances and restore after all views close', async () => {
   const folder = await mkdtemp(join(tmpdir(), 'reading-deep-ui-')); const server = await host(folder); let ui
@@ -105,7 +105,7 @@ test('public Host registration contributes a deep app without the legacy service
   const folder = await mkdtemp(join(tmpdir(), 'reading-contribution-')), directory = new ApplicationDirectory(join(folder, 'applications.json'))
   const effects = [], disposers = [], services = {
     webServer: { register: () => () => {} },
-    worktableApplications: directory,
+    worktableApplications: directory, worktableProtocol:{describe:describeProtocol},
   }
   const ctx = { ...services, get: name => services[name], inject: (names, install) => { if (names.every(name => services[name])) install(ctx) }, effect: install => effects.push(install) }
   applyHost(ctx)
