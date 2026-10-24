@@ -3,6 +3,15 @@ import {readRequestText} from './request-body.mjs'
 import {join} from 'node:path'
 import {TaskDirectory,TaskStore} from './tasks.mjs'
 import {RoleError} from './roles.mjs'
+const actionFields={
+ prepare:['action','viewId','roleId','text','contexts'],
+ 'prepare-owned':['action','viewId','roleId','kind','payload'],
+ list:['action','viewId'],edit:['action','viewId','id','revision','text','contexts'],
+ discard:['action','viewId','id','revision'],submit:['action','viewId','id','revision'],
+ open:['action','viewId','id','revision'],stop:['action','viewId','id','revision'],
+ 'recover-owner':['action','viewId','id','revision'],
+ handoff:['action'],'handoff-open':['action','id'],'handoff-stop':['action','id'],
+}
 /** One authenticated route; no browser-selected native Session or direct prompt endpoint. */
 export function mountTasks(ctx){
  let owner=null,closing=false;
@@ -22,13 +31,15 @@ export function mountTasks(ctx){
    if(req.method!=='POST')return send(405,{error:'POST required'});if(!String(req.headers['content-type']??'').startsWith('application/json'))return send(415,{error:'JSON required'});
    const text=await readRequestText(req,180000,()=>new RoleError('request-too-large','任务请求过大。'),runtime.lifetime.controller.signal);
    let body;try{body=JSON.parse(text)}catch{throw new RoleError('invalid-request','JSON格式无效。')};
-   if(!body||Array.isArray(body)||typeof body!=='object'||Object.keys(body).some(key=>!['action','viewId','id','revision','roleId','text','contexts'].includes(key)))throw new RoleError('invalid-request','不能在任务请求中指定任意实例、会话或发送通道。');
+   if(!body||Array.isArray(body)||typeof body!=='object')throw new RoleError('invalid-request','任务请求格式无效。');
+   if(typeof body.action!=='string'||!Object.hasOwn(actionFields,body.action))throw new RoleError('invalid-action','不支持此任务操作。');
+   if(Object.keys(body).some(key=>!actionFields[body.action].includes(key)))throw new RoleError('invalid-request','不能在任务请求中指定任意实例、会话或发送通道。');
    runtime.lifetime.check();const {tasks}=runtime;if(body.action==='handoff')return send(200,await tasks.handoff());if(body.action==='handoff-open')return send(200,await tasks.openSession(body.id));if(body.action==='handoff-stop')return send(200,await tasks.stopSession(body.id));const historical=['list','open','stop'].includes(body.action),context=await (historical&&tasks.applications.resolveStoredView?tasks.applications.resolveStoredView(body.viewId):tasks.applications.resolveView(body.viewId));if(!historical&&context.application.kind!=='deep')throw new RoleError('deep-required','网页没有任务执行权限。');
-   if(!['prepare','list'].includes(body.action)){const row=await tasks.find(body.id);if(row.instanceId!==context.instance.id)throw new RoleError('task-owner','任务不属于当前应用实例。')}
+   if(!['prepare','prepare-owned','list'].includes(body.action)){const row=await tasks.find(body.id);if(row.instanceId!==context.instance.id)throw new RoleError('task-owner','任务不属于当前应用实例。')}
    let value;switch(body.action){
     case 'list':value=await tasks.list(body.viewId);break;
     case 'prepare':value=await tasks.prepare(body);break;
-    case 'prepare-owned':if(Object.keys(body).some(key=>!['action','viewId','roleId','kind','payload'].includes(key)))throw new RoleError('invalid-request','应用任务不能指定原生会话或其他实例。');value=await tasks.prepareOwned(body);break;
+    case 'prepare-owned':value=await tasks.prepareOwned(body);break;
     case 'recover-owner':value=await tasks.recoverOwner(body.id);break;
     case 'edit':value=await tasks.edit(body.id,body.revision,body);break;
     case 'discard':value=await tasks.discard(body.id,body.revision);break;
