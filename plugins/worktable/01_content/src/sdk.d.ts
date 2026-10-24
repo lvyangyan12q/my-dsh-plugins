@@ -45,8 +45,13 @@ export interface RoleDefinition {id:string;title:string;agent:CapabilityRef&{kin
 export interface NativeRoleIdentity {sessionId:string;presetId:string;creation:{cwd:string}}
 /** The application derives this snapshot from its read-only legacy inspector, never browser input. Supply history IDs for platform native hydration, or full identities for backward compatibility; at least one history list is required. */
 export interface LegacyRoleSnapshot extends NativeRoleIdentity {sourceKey:string;revision:string;roleId:string;phase:'intent'|'ready';previousSessions?:NativeRoleIdentity[];previousSessionIds?:string[];selectedPreset?:boolean;agent?:CapabilityRef&{kind:'agent'}}
-export interface LegacyRoleOwner {inspect(sourceKey:string,target:{instanceId:string;roleId:string}):LegacyRoleSnapshot|null|Promise<LegacyRoleSnapshot|null>}
-export interface RoleAdoptionPreview {status:'ready'|'applied'|'blocked';fingerprint:string|null;blockers:{code:string;reason:string}[];source?:LegacyRoleSnapshot;target?:{appId:string;instanceId:string;roleId:string};native?:{sessionId:string;presetId:string;cwd:string;status:'current'|'missing'}[]}
+export interface LegacyRoleOwner {
+ /** Optional Host-only source inspection before a target instance exists. Same read-only source authority as inspect. */
+ inspectSource?(sourceKey:string,target:{roleId:string}):LegacyRoleSnapshot|null|Promise<LegacyRoleSnapshot|null>
+ inspect(sourceKey:string,target:{instanceId:string;roleId:string}):LegacyRoleSnapshot|null|Promise<LegacyRoleSnapshot|null>
+}
+export interface LegacyRoleSourceInspection {status:'ready'|'blocked';fingerprint:string|null;blockers:{code:string;reason:string}[];source?:LegacyRoleSnapshot;native?:{sessionId:string;presetId:string;cwd:string;status:'current'|'missing'}[]}
+export interface RoleAdoptionPreview {sourceFingerprint?:string;status:'ready'|'applied'|'blocked';fingerprint:string|null;blockers:{code:string;reason:string}[];source?:LegacyRoleSnapshot;target?:{appId:string;instanceId:string;roleId:string};native?:{sessionId:string;presetId:string;cwd:string;status:'current'|'missing'}[]}
 export interface AdoptedRoleBinding extends NativeRoleIdentity {appId:string;instanceId:string;roleId:string;agent:CapabilityRef&{kind:'agent'};revision:number;phase:'intent'|'ready';creationAttempt?:'started';selectedPreset:boolean;previousSessionIds:string[];historicalSessions:NativeRoleIdentity[];adoption:{sourceKey:string;sourceRevision:string;sourceFingerprint:string;fingerprint:string;bindingRevision:number}}
 export type NativeRoleContext={appId:string;instanceId:string;roleId:string;sessionId:string}&({kind:'current';readOnly:false}|{kind:'history';readOnly:true})
 export interface RoleDirectory {
@@ -55,6 +60,8 @@ export interface RoleDirectory {
  contribute(appId:string,definitions:RoleDefinition[]):Disposer
  /** Host-only. Dispose with the application; inspect must not repair, migrate or create native Sessions. */
  contributeLegacy(appId:string,owner:LegacyRoleOwner):Disposer
+ /** Host-only, no target instance or writes; never exposed through RoleFacade or browser HTTP. */
+ inspectLegacySource(appId:string,roleId:string,sourceKey:string):Promise<LegacyRoleSourceInspection>
  previewAdoption(instanceId:string,roleId:string,sourceKey:string):Promise<RoleAdoptionPreview>
  applyAdoption(instanceId:string,roleId:string,sourceKey:string,fingerprint:string,confirmed:true):Promise<AdoptedRoleBinding>
  /** Host-only trusted tool entry. sessionId must originate from native execution context, never model arguments. Write access refuses historical Sessions. */

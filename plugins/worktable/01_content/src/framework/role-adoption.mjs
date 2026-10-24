@@ -32,15 +32,22 @@ export class RoleAdoptions {
   if(new Set(ids).size!==ids.length)this.reject('legacy-history-invalid','旧绑定包含重复的当前或历史会话身份。')
   return {sourceKey,revision:value.revision,roleId,...session(value),phase:value.phase,selectedPreset:value.selectedPreset??false,previousSessions:previous,...(raw?{previousSessionIds:[...raw]}:{}),...(value.agent?{agent:structuredClone(value.agent)}:{})}
  }
- async prepare(instanceId,roleId,sourceKey){
+ async inspectTrusted(appId,roleId,sourceKey,target){
   const directory=this.directory
   if(!text(sourceKey))this.reject('legacy-source-invalid','旧绑定来源标识无效。')
-  const {instance,definition}=await directory.definition(instanceId,roleId)
-  await directory.applications.assertEnabled?.(instance.appId)
-  const owner=this.owners.get(instance.appId);this.assertOwner(instance.appId,owner)
+  await directory.applications.assertEnabled?.(appId)
+  const owner=this.owners.get(appId);this.assertOwner(appId,owner)
+  const definition=owner.definitions.find(row=>row.id===roleId)
+  if(!definition)this.reject('role-unavailable','应用未声明此角色。')
   let inspected
-  try{inspected=await owner.inspector.inspect(sourceKey,{instanceId,roleId})}catch{this.reject('legacy-source-unavailable','旧绑定来源暂不可读，未执行接管。')}
-  this.assertOwner(instance.appId,owner)
+  try{
+   if(target)inspected=await owner.inspector.inspect(sourceKey,target)
+   else{
+    if(typeof owner.inspector.inspectSource!=='function')this.reject('legacy-source-unavailable','旧绑定检查器未提供无目标只读检查能力。')
+    inspected=await owner.inspector.inspectSource(sourceKey,{roleId})
+   }
+  }catch{this.reject('legacy-source-unavailable','旧绑定来源暂不可读，未执行接管。')}
+  this.assertOwner(appId,owner)
   const source=this.source(inspected,sourceKey,roleId)
   if(source.previousSessionIds){
    if(typeof directory.authority.hydrateLegacy!=='function')this.reject('legacy-validation-unavailable','当前宿主缺少历史身份公开读取能力。')
@@ -53,27 +60,40 @@ export class RoleAdoptions {
    }
    source.previousSessions=hydrated;delete source.previousSessionIds
   }
-  const sourceFingerprint=digest(source)
+  const agent=source.agent??definition.agent
+  const capability=await directory.authority.validate({...definition,agent,creation:source.creation},appId)
+  if(capability.presetId!==source.presetId)this.reject('legacy-agent-unmapped','旧Agent选择尚未映射到同一原生预设，未重建或替换。')
+  if(typeof directory.authority.validateLegacy!=='function')this.reject('legacy-validation-unavailable','当前宿主缺少旧绑定公开校验能力。')
+  const evidence=[await directory.authority.validateLegacy(source,{allowMissing:source.phase==='intent'})]
+  for(const previous of source.previousSessions)evidence.push(await directory.authority.validateLegacy(previous))
+  this.assertOwner(appId,owner)
+  return {owner,definition,source,sourceFingerprint:digest(source),inspectionFingerprint:digest({source,definition,evidence}),evidence}
+ }
+ async inspect(appId,roleId,sourceKey){
+  try{
+   const plan=await this.inspectTrusted(appId,roleId,sourceKey)
+   return {status:'ready',fingerprint:plan.inspectionFingerprint,blockers:[],source:{...plan.source,agent:plan.source.agent??plan.definition.agent},native:plan.evidence}
+  }catch(error){return {status:'blocked',fingerprint:null,blockers:[{code:error.code??'legacy-preview-failed',reason:error.code?error.message:'旧绑定无法验证，原记录保留。'}]}}
+ }
+ async prepare(instanceId,roleId,sourceKey){
+  const directory=this.directory
+  const {instance}=await directory.definition(instanceId,roleId)
+  const plan=await this.inspectTrusted(instance.appId,roleId,sourceKey,{instanceId,roleId})
+  const {owner,definition,source,sourceFingerprint,evidence}=plan
   const state=await directory.store.snapshot(),key=keyOf(instanceId,roleId)
   const binding=state.bindings.find(row=>row.key===key)??null
   if(state.bindings.some(row=>row.key!==key&&row.appId===instance.appId&&row.adoption?.sourceKey===sourceKey))this.reject('legacy-source-owned','旧绑定来源已经接管到其他实例或角色。')
   if(binding&&(!binding.adoption||binding.adoption.sourceKey!==sourceKey||binding.adoption.sourceFingerprint!==sourceFingerprint||binding.revision!==binding.adoption.bindingRevision))this.reject('adoption-binding-changed','目标角色已有不同或更新的绑定，未覆盖原身份。')
-  const agent=source.agent??definition.agent
-  const capability=await directory.authority.validate({...definition,agent},instance.appId)
-  if(capability.presetId!==source.presetId)this.reject('legacy-agent-unmapped','旧Agent选择尚未映射到同一原生预设，未重建或替换。')
-  if(typeof directory.authority.validateLegacy!=='function')this.reject('legacy-validation-unavailable','当前宿主缺少旧绑定公开校验能力。')
-  const evidence=[await directory.authority.validateLegacy(source,{allowMissing:source.phase==='intent',creation:definition.creation})]
-  for(const previous of source.previousSessions)evidence.push(await directory.authority.validateLegacy(previous))
   const ids=new Set([source.sessionId,...source.previousSessions.map(row=>row.sessionId)])
   if(state.bindings.some(row=>row.key!==key&&[row.sessionId,...row.previousSessionIds].some(id=>ids.has(id))))this.reject('session-owned','当前或历史原生会话已归属其他角色或实例。')
   this.assertOwner(instance.appId,owner)
   const fingerprint=binding?.adoption.fingerprint??digest({source,definition,instanceRevision:instance.revision,binding,evidence})
-  return {owner,instance,definition,source,sourceFingerprint,binding,fingerprint,evidence}
+  return {...plan,instance,binding,fingerprint}
  }
  async preview(instanceId,roleId,sourceKey){
   try{
    const plan=await this.prepare(instanceId,roleId,sourceKey)
-   return {status:plan.binding?'applied':'ready',fingerprint:plan.fingerprint,blockers:[],source:{...plan.source,agent:plan.source.agent??plan.definition.agent},target:{appId:plan.instance.appId,instanceId,roleId},native:plan.evidence}
+   return {status:plan.binding?'applied':'ready',fingerprint:plan.fingerprint,sourceFingerprint:plan.inspectionFingerprint,blockers:[],source:{...plan.source,agent:plan.source.agent??plan.definition.agent},target:{appId:plan.instance.appId,instanceId,roleId},native:plan.evidence}
   }catch(error){return {status:'blocked',fingerprint:null,blockers:[{code:error.code??'legacy-preview-failed',reason:error.code?error.message:'旧绑定无法验证，原记录保留。'}]}}
  }
  async apply(instanceId,roleId,sourceKey,fingerprint,confirmed){
