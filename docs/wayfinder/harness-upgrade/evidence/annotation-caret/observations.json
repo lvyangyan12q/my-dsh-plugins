@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-24",
+  "native": "0.2.1-rc.3",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "port": 3099,
+  "build": "production-worktable-development-link",
+  "modelSends": 0,
+  "nativeEditorCount": 1,
+  "seedOnly": "existing disposable prototype public mixed-draft preparation button",
+  "insertionPath": "production Worktable pane annotation button, canvas location, requirement, confirm",
+  "caret": {"inserted": true, "oldTextRetained": true, "annotationClosed": true, "focusedNative": true, "oneUndoRestoresText": true, "oneUndoRestoresMarkup": true},
+  "selectionEnd": {"oldTextRetained": true, "commandRetained": true, "referenceRetained": true, "quoteRetained": true, "oneUndoRestoresText": true, "oneUndoRestoresMarkup": true},
+  "staleRevision": {"changedBy": "public mixed-draft preparation after capture", "draftPreserved": true, "notInserted": true, "error": "原生草稿已变化或正在提交；标注要求已保留，请返回原会话并重新开始标注。"},
+  "crossSessionAndSlotRecreation": {"transition": "public sessions.create/openSession, reopen same Worktable, confirm old annotation, return original Session and reopen Worktable", "draftPreserved": true, "originalNotInserted": true, "error": "原生输入槽已关闭或重建；标注要求已保留，请返回原会话并重新开始标注。"},
+  "automated": {"testsPassed": 27, "developmentBuild": true, "bundleSyntaxChecks": true},
+  "runtime": {"previousPid": 17840, "currentPid": 18204, "oldMetadataPreserved": true},
+  "unverified": ["forced same-Session generation replacement in real UI", "whole plugin disposal in real UI", "attachments", "physical IME", "final archive installation", "model execution", "full HU03"]
+}
