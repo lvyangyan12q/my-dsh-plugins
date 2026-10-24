@@ -50,9 +50,12 @@ export async function mountKaogong(ctx:Context,config:Config){
   const registry=async(state:KaogongInstanceState,command='')=>{
    const viewId=await instanceView(ctx.worktableApplications,state.instanceId)
    const {instance}=await ctx.worktableApplications.resolveView(viewId)
-   const needsSource=!legacyAssetPaths.includes(command.replace(/^exact:/,'') as typeof legacyAssetPaths[number])&&/knowledge|document-image|dashboard|practice\/start|lesson\/create|kaogong_bank_|^kaogong_practice$/.test(command)
-   const bankRows=needsSource?await sourceRows<BankQuestionRecord>(ctx.worktableResources,viewId,'question-bank'):[]
-   const materialSource=needsSource?(await ctx.worktableResources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})).value:null
+   const legacyAsset=legacyAssetPaths.includes(command.replace(/^exact:/,'') as typeof legacyAssetPaths[number])
+   const combined=command==='exact:/api/kaogong/dashboard'||command==='exact:/api/kaogong/lesson/create'
+   const needsBank=!legacyAsset&&(combined||command==='exact:/api/kaogong/practice/start'||command==='kaogong_practice'||command.startsWith('kaogong_bank_'))
+   const needsMaterials=!legacyAsset&&(combined||['exact:/api/kaogong/knowledge','exact:/api/kaogong/document-image','kaogong_knowledge_read','kaogong_knowledge_search','kaogong_knowledge_list'].includes(command))
+   const bankRows=needsBank?await sourceRows<BankQuestionRecord>(ctx.worktableResources,viewId,'question-bank'):[]
+   const materialSource=needsMaterials?(await ctx.worktableResources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})).value:null
    const materialRows=materialSource?.rows??[]
    const bankQuestions=instance.appId==='kaogong-library'?readonlyRows(bankRows):overlay(state.bankQuestions,bankRows)
    const knowledgeEntries=instance.appId==='kaogong-library'?readonlyRows(materialRows):overlay(state.knowledgeEntries,materialRows)
@@ -71,6 +74,16 @@ export async function mountKaogong(ctx:Context,config:Config){
     if(url.pathname!=='/api/kaogong/document-image'||!job||!asset||meta.table('jobs').get(job)?.instanceId!==state.instanceId)return undefined
     return scopedMineru.image(job,asset)
    }}))registry.routes.set(route.kind+':'+route.path,route)
+   const addKnowledge=registry.tools.get('kaogong_knowledge_add')
+   if(addKnowledge)registry.tools.set('kaogong_knowledge_add',{...addKnowledge,execute:async(args,execution)=>{
+    const id=args&&typeof args==='object'&&'id'in args&&typeof args.id==='string'?args.id.trim():''
+    // Generated IDs and known own edits have no source dependency. An explicit new ID must not shadow a shared record.
+    if(id&&!state.knowledgeEntries.get(id)){
+     const rows=await sourceRows<KnowledgeEntryRecord>(ctx.worktableResources,viewId,'materials')
+     if(rows.some(([key])=>key===id))throw Error('Shared source is read-only')
+    }
+    return addKnowledge.execute(args,execution)
+   }})
    return {...registry,dispose:async()=>{await lessons.close();await practice.close()}}
   }
   host=new KaogongHost({applications:ctx.worktableApplications,roles:ctx.worktableRoles,pool,connection:ctx.connection,registry,assertReady:instanceId=>assertAdoptionReady(adoptionState.table('journals'),instanceId)})
