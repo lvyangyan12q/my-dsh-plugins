@@ -12,8 +12,9 @@ import type {Config} from './business.ts'
 import {adoptionPreview} from './adoption-preview.ts'
 import {revalidatePlanSource} from './legacy-plan-source.ts'
 import {inspectAdoptionEvidence,pinAdoptionEvidence,revalidateAdoptionEvidence} from './adoption-evidence.ts'
+import {legacyTeacherPresetId,subjectRoleIds} from './role-definitions.ts'
 function fail(code:string):never{throw Object.assign(new Error(code),{code})}
-function source(snapshot:LegacyInspectionSnapshot,sourceKey:string,roleId:string):LegacyRoleSnapshot|null{
+export function legacyRoleSource(snapshot:LegacyInspectionSnapshot,sourceKey:string,roleId:string):LegacyRoleSnapshot|null{
  const file=snapshot.files.find(row=>row.name==='personal_workbench_role_bindings');if(!file)return null
  const rows=JSON.parse(Buffer.from(file.bytesBase64,'base64').toString('utf8')).tables.bindings
  for(const [id,value]of Object.entries(rows)){
@@ -21,6 +22,9 @@ function source(snapshot:LegacyInspectionSnapshot,sourceKey:string,roleId:string
   const row=input.binding,creation=row.creation as {cwd?:unknown},previous=row.previousSessionIds
   if(typeof row.sessionId!=='string'||typeof row.presetId!=='string'||typeof creation?.cwd!=='string'||!isAbsolute(creation.cwd)||!['intent','ready'].includes(String(row.phase))||!Array.isArray(previous)||!previous.every((value):value is string=>typeof value==='string')||row.selectedPreset!==undefined&&typeof row.selectedPreset!=='boolean')fail('LEGACY_ROLE_SOURCE_INVALID')
   let agent:CapabilityRef&{kind:'agent'}|undefined
+  // Original subject teachers used one packaged Native preset before per-subject capability IDs existed.
+  // This exact known mapping preserves the old Native identity; public inspection still verifies the actual Session.
+  if(row.agent===undefined&&row.presetId===legacyTeacherPresetId&&['teacher',...subjectRoleIds].includes(roleId))agent={kind:'agent',source:'application',ownerAppId:'kaogong',id:'teacher'}
   if(row.agent!==undefined){const value=row.agent as {kind?:unknown;source?:unknown;id?:unknown;ownerAppId?:unknown};if(value.kind!=='agent'||typeof value.id!=='string')fail('LEGACY_AGENT_UNMAPPED');if(value.source==='managed')agent={kind:'agent',source:'managed',id:value.id};else if(value.source==='application'&&typeof value.ownerAppId==='string')agent={kind:'agent',source:'application',id:value.id,ownerAppId:value.ownerAppId};else fail('LEGACY_AGENT_UNMAPPED')}
   return {sourceKey,revision:input.revision,roleId,sessionId:row.sessionId,presetId:row.presetId,creation:{cwd:creation.cwd},phase:row.phase==='ready'?'ready':'intent',previousSessionIds:previous, ...(typeof row.selectedPreset==='boolean'?{selectedPreset:row.selectedPreset}:{}),...(agent?{agent}:{})}
  }
@@ -32,8 +36,8 @@ export function createAdoptionOwner(ctx:Context,host:KaogongHost,metadata:Domain
  let closing=false;const pending=new Set<Promise<unknown>>()
  const capture=async()=>{if(!config.legacySourceHome||!isAbsolute(config.legacySourceHome))fail('EXPLICIT_LEGACY_HOME_REQUIRED');return (await inspectLegacy({home:config.legacySourceHome})).snapshot}
  const removeSource=config.legacySourceHome?ctx.worktableRoles.contributeLegacy('kaogong',{
-  inspectSource:async(sourceKey,{roleId})=>source(await capture(),sourceKey,roleId),
-  inspect:async(sourceKey,{roleId})=>source(await capture(),sourceKey,roleId),
+  inspectSource:async(sourceKey,{roleId})=>legacyRoleSource(await capture(),sourceKey,roleId),
+  inspect:async(sourceKey,{roleId})=>legacyRoleSource(await capture(),sourceKey,roleId),
  }):()=>{}
  const workflow=new LegacyAdoptionWorkflow({
   store:{read:async id=>{const row=journals.get(id);if(!row)return null;const stored=plans.get(row.planId);if(!stored||stored.fingerprint!==row.planFingerprint||stored.id!==row.id)fail('ADOPTION_CHECKPOINT_INVALID');const {planId,planFingerprint,...journal}=row;return {...journal,plan:stored.plan}},write:async row=>{const {plan,...journal}=row,stored=plans.get(plan.id);if(stored&&stored.fingerprint!==plan.fingerprint)fail('ADOPTION_INTENT_CONFLICT');if(!stored)await plans.put(plan.id,{id:plan.id,fingerprint:plan.fingerprint,plan});await journals.put(row.id,{...journal,planId:plan.id,planFingerprint:plan.fingerprint})}},
