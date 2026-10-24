@@ -1,0 +1,20 @@
+{
+  "source": "61d610d0b128718a006c28cdfeef29103aad6730",
+  "seam": "actual installed client ModuleLoader factory, public conversation.input.dock and production React callbacks",
+  "installedClientSha256": "7b006007b6c409ea046d25af9ca6798c984b0a777c231fc7bf67cf80090b0773",
+  "originalFixtureExitCode": 1,
+  "originalFailure": "second annotation draft empty; expected /稳定目标/",
+  "correctedFixtureExitCode": 0,
+  "productionBundleUnchanged": true,
+  "mutations": [
+    {"mutation": "selection-start", "status": 1, "caught": true},
+    {"mutation": "unguarded-revision", "status": 1, "caught": true},
+    {"mutation": "revived-unmounted-slot", "status": 1, "caught": true},
+    {"mutation": "unguarded-generation", "status": 1, "caught": true}
+  ],
+  "originalGateAfterMutations": 0,
+  "modelSends": 0,
+  "buildsOrPackageManagerRuns": 0,
+  "runtimeChanges": 0,
+  "doesNotClaim": ["native undo history simulated by fixture", "new real Ctrl+Z acceptance", "complete final-package release gate", "physical IME", "full HU03/HU07"]
+}
