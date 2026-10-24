@@ -10,7 +10,7 @@ export function mountTasks(ctx){
   child.effect(async function*(){
    const store=await TaskStore.open(join(child.profileContext.dir,'worktable-platform','tasks.v1.json'));
    const tasks=new TaskDirectory(store,{gate:child.worktableAdmission,applications:child.worktableApplications,roles:child.worktableRoles,resources:child.worktableResources,native:{prompt:(request,signal)=>child.sessionController.prompt(request,signal),flush:()=>child.sessionPersistence.flush(),cancel:request=>child.sessionController.cancel(request)}});
-   const lifetime=new RequestLifetime();const runtime={tasks,connection:child.connection,requests:lifetime.requests,lifetime};owner=runtime;try{child.provide('worktableTasks',tasks)}catch(error){if(owner===runtime)owner=null;try{await lifetime.close(()=>tasks.close())}catch(cleanupError){throw new AggregateError([error,cleanupError],'任务启动失败；清理也有失败，请检查全部诊断。')}throw error}
+   const lifetime=new RequestLifetime();const runtime={tasks,connection:child.connection,requests:lifetime.requests,lifetime};owner=runtime;try{child.provide('worktableTasks',tasks);child.provide('worktableTaskOwners',Object.freeze({contribute:(appId,kind,handler)=>tasks.contributeOwner(appId,kind,handler)}))}catch(error){if(owner===runtime)owner=null;try{await lifetime.close(()=>tasks.close())}catch(cleanupError){throw new AggregateError([error,cleanupError],'任务启动失败；清理也有失败，请检查全部诊断。')}throw error}
    yield async()=>{if(owner===runtime)owner=null;await lifetime.close(()=>tasks.close())}
   },'worktable durable task owner')
  });
@@ -28,6 +28,8 @@ export function mountTasks(ctx){
    let value;switch(body.action){
     case 'list':value=await tasks.list(body.viewId);break;
     case 'prepare':value=await tasks.prepare(body);break;
+    case 'prepare-owned':if(Object.keys(body).some(key=>!['action','viewId','roleId','kind','payload'].includes(key)))throw new RoleError('invalid-request','应用任务不能指定原生会话或其他实例。');value=await tasks.prepareOwned(body);break;
+    case 'recover-owner':value=await tasks.recoverOwner(body.id);break;
     case 'edit':value=await tasks.edit(body.id,body.revision,body);break;
     case 'discard':value=await tasks.discard(body.id,body.revision);break;
     case 'submit':value=await tasks.submit(body.id,body.revision);break;
