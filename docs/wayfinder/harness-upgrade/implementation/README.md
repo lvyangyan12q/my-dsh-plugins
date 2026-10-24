@@ -51,7 +51,7 @@
 
 ## 当前实施前沿 · 2026-10-24
 
-- [02a](02a-annotation-undo.md)：用户已选择光标/选区末端插入及独立撤销；02b生产接线待实施，原型代码没有合入。02/HU03仍待生产及最终安装验收。
+- [02a](02a-annotation-undo.md)：用户已选择光标/选区末端插入及独立撤销；[02b生产接线](02b-production-caret.md)已合入，并有27项定向回归及开发link真实插入/撤销证据；原型代码没有合入。最终归档安装、物理IME、附件、同Session强制换代、插件整体卸载与完整HU03仍待验收。
 - [05](05-host-consumers.md)和[06](06-legacy-role-contract.md)：仅目标声明、消费者候选归档及公开角色合同切片关闭，实际原生安装仍待验。rc.3可信会话字段为 `exec.agent.session.id`。
 - [07](07-classroom-application.md)：生产客户端已合入；真实模型、同实例多视图及原生轨迹/审批/Stop未据此通过。
 - [08a](08a-state-partition.md)：业务状态工厂切片关闭；08的HTTP、可信工具和完整隔离接线仍在实施。
