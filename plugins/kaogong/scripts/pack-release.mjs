@@ -16,6 +16,7 @@ const npm=npmCli(),run=args=>{const result=spawnSync(process.execPath,[npm,...ar
 run(['run','build'])
 run(['run','test:host'])
 run(['run','test:client'])
+run(['run','test:domain'])
 run(['run','test:artifact'])
 const temp=resolve(root,'.scratch','pack-'+randomUUID()),releases=resolve(root,'releases')
 await mkdir(temp,{recursive:true});await mkdir(releases,{recursive:true})

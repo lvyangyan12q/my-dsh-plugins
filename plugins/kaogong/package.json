@@ -60,6 +60,7 @@
     "typecheck:host": "node scripts/check-host-types.mjs",
     "test:platform": "node scripts/test-current.mjs",
     "pack": "node scripts/pack-release.mjs",
+    "test:domain": "node scripts/test-current.mjs --domain",
     "test:host": "node scripts/test-current.mjs --host",
     "test:client": "node scripts/test-current.mjs --client"
   },
