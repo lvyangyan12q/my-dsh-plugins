@@ -21,10 +21,10 @@ test('the real Host compatibility gate accepts optional workbench integration wi
   assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-host-webserver'], '0.2.1-rc.3')
 })
 
-test('the real gate still rejects a mismatched Host peer and the original false runtime peer', () => {
-  for (const [name, range] of [['@deepseek-ai/dsh-host-webserver', '9.0.0'], ['@deepseek-ai/dsh-personal-workbench', '0.1.0']]) {
-    const issue = evaluatePluginCompatibility({ ...manifest, peerDependencies: { ...manifest.peerDependencies, [name]: range } })
-    assert.deepEqual(issue.peers, { [name]: range })
-    assert.equal(issue.exempted, false)
-  }
+test('the real rc.3 gate refuses unverified runtime versions without an exemption',()=>{
+ const issue=evaluatePluginCompatibility({...manifest,engines:{...manifest.engines,dsh:'9.0.0'}})
+ assert.deepEqual(issue.requirements,{'engines.dsh':'9.0.0'});assert.equal(issue.exempted,false)
+ const {engines,...withoutEngine}=manifest
+ const peerIssue=evaluatePluginCompatibility({...withoutEngine,peerDependencies:{'@deepseek-ai/dsh-host-webserver':'9.0.0'}})
+ assert.deepEqual(peerIssue.requirements,{'@deepseek-ai/dsh-host-webserver':'9.0.0'})
 })

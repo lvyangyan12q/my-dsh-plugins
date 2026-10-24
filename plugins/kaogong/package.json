@@ -52,15 +52,16 @@
     "build:host": "tsdown -c tsdown.host.config.ts",
     "build:client": "tsdown -c tsdown.config.ts && tsc -p tsconfig.client.json",
     "build:types": "node scripts/check-host-types.mjs --emit",
-    "test:artifact": "node --test tests/views.test.mjs tests/package.test.mjs",
+    "test:artifact": "node --test tests/package.test.mjs",
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
     "test:practice": "tsx --test tests/practice-rounds.test.mjs tests/views.test.mjs",
     "test:runtime": "tsx scripts/check-practice-runtime.mjs",
     "typecheck:client": "tsc -p tsconfig.client.json --noEmit --emitDeclarationOnly false",
     "typecheck:host": "node scripts/check-host-types.mjs",
-    "test:platform": "tsx --test tests/platform-integration.test.mjs tests/views.test.mjs tests/practice-rounds.test.mjs tests/lessons.test.mjs tests/role-presets.test.mjs tests/runtime-compat.test.mjs",
+    "test:platform": "node scripts/test-current.mjs",
     "pack": "node scripts/pack-release.mjs",
-    "test:host": "tsx --test tests/instance-host.test.mjs tests/production-host.test.mjs tests/instance-state.test.mjs"
+    "test:host": "node scripts/test-current.mjs --host",
+    "test:client": "node scripts/test-current.mjs --client"
   },
   "license": "MIT",
   "engines": {
