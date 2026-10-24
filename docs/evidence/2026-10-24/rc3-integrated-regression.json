@@ -1,0 +1,34 @@
+{
+  "recordedUtc": "2026-10-24T02:47:53.6066713Z",
+  "integrationCommit": "dbc5057e6486c091c3235b09ab5b9cffe12f965b",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "nativeVersion": "0.2.1-rc.3",
+  "worktable": {
+    "tests": 346,
+    "pass": 344,
+    "fail": 0,
+    "skip": 2,
+    "scope": "source contract and regression tests",
+    "skipScope": "legacy environment-dependent checks, not rc.3 acceptance"
+  },
+  "kaogong": {
+    "command": "node plugins/kaogong/scripts/test-current.mjs",
+    "tests": 19,
+    "pass": 19,
+    "fail": 0,
+    "skip": 0,
+    "scope": "current production Host and client seams with synthetic data"
+  },
+  "protectedFiles": {
+    "count": 7,
+    "changed": 0
+  },
+  "finalArchiveInstalled": false,
+  "nativeAiAccepted": false,
+  "physicalImeAccepted": false,
+  "formalMigrationApplied": false,
+  "limitations": [
+    "Source regressions do not replace installed native user-flow acceptance.",
+    "Ticket 09 remains open; no formal migration was applied."
+  ]
+}
