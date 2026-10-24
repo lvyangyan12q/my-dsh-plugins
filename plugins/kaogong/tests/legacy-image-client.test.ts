@@ -21,6 +21,17 @@ test('knowledge images render exact record selectors and bound view while unsafe
  for(const img of images){const url=new URL(img.src);assert.equal(url.pathname,'/api/kaogong/legacy-image');assert.equal(url.searchParams.get('entryId'),'knowledge-a');assert.equal(url.searchParams.get('viewId'),'view-a');assert.equal(img.hasAttribute('onerror'),false)}
  assert.equal(document.querySelector('script'),null)
  assert.match(document.body.textContent!,/图片引用不可用/)
+ const {KaogongView}=await import('../src/kaogong-view.tsx')
+ const {KaogongStateContext,KaogongViewState}=await import('../src/view-state.tsx')
+ const state=new KaogongViewState('history-a')
+ state.cell('loading',false);state.cell('practiceRestored',true)
+ state.cell('dashboard',{today:'2026-10-24',examDate:'2027-01-01',daysToExam:50,totalDays:100,pastDays:50,pastDone:0,pastDonePct:0,totalQuestions:0,totalCorrect:0,totalWrong:0,accuracyRate:0,bankTotal:1,knowledgeTotal:1,todayPlan:{phase:'foundation',items:[]},modules:[],weakPoints:[],recentKnowledge:[]})
+ state.cell('practiceItem',{subject:'行测-资料分析',title:'原题',limit:1});state.cell('practice',{roundId:'round-a',context:{subject:'行测-资料分析',title:'原题',limit:1},reason:'test',totalAvailable:1,returned:1,cycled:false,questions:[{id:'q-original',subject:'行测-资料分析',knowledgePoint:'统计',stem:'原题![图](题目_images/source.png)',options:['A. ![选项](题目_images/option.png)','B. 原文'],difficulty:'normal',source:'原题'}],result:null,reflections:[]})
+ await act(async()=>root.render(React.createElement(KaogongTransportContext.Provider,{value:createViewTransport({instanceId:'history-a',viewId:'practice-view'})},React.createElement(KaogongStateContext.Provider,{value:state},React.createElement(KaogongView,{active:false,focusedStudy:true,pageId:'practice',onOpenTeacher:()=>{}})))))
+ const practiceImages=[...document.querySelectorAll('img')]
+ assert.equal(practiceImages.length,2,'actual practice stems and options both retain their record selectors')
+ for(const img of practiceImages){const url=new URL(img.src);assert.equal(url.searchParams.get('questionId'),'q-original');assert.equal(url.searchParams.get('viewId'),'practice-view')}
+ assert.equal(document.body.textContent!.includes('正确答案'),false,'unsubmitted question does not expose answer')
  }finally{await act(async()=>root.unmount());for(const[key,value]of saved){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key)}}
 })
 
