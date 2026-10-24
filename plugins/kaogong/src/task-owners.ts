@@ -5,7 +5,7 @@ import type {KaogongHost} from './instance-host.ts'
 import type {KaogongInstanceState} from './instance-state.ts'
 import {TAXONOMY} from './taxonomy.ts'
 import {subjectRoleIds} from './role-definitions.ts'
-export type TaskReceipt = {instanceId:string;businessId:string;kind:'review'|'lesson';requestId:string;status:'claimed'|'done'}
+export type TaskReceipt = {instanceId:string;businessId:string;kind:'review'|'lesson';requestId:string;status:'claimed'|'done'|'releasing'|'rejected'}
 const fingerprint=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex')
 function evidence(state:KaogongInstanceState,kind:'review'|'lesson',id:string){
  if(kind==='lesson'){
@@ -14,7 +14,7 @@ function evidence(state:KaogongInstanceState,kind:'review'|'lesson',id:string){
   return {content,subject:row.request.subject,materialIds:row.request.materialIds}
  }
  const row=state.rounds.get(id);if(!row?.score)throw Error('Review requires a submitted round')
- const {review,...content}=row
+ const {review,reviewClaim,...content}=row
  return {content,subject:row.context.subject,materialIds:[] as string[]}
 }
 function payloadId(kind:'review'|'lesson',payload:unknown){const key=kind==='review'?'roundId':'lessonId';if(!payload||typeof payload!=='object'||Object.keys(payload).length!==1||typeof (payload as Record<string,unknown>)[key]!=='string')throw Error('Select an existing business record');return (payload as Record<string,string>)[key]!}
@@ -38,16 +38,27 @@ export function registerTaskOwners(host:KaogongHost, owners:ApplicationTaskOwner
    beforeSubmit:async task=>host.state(task.instanceId,async state=>{
     await load(task);if(!task.requestId)throw Error('Native admission intent required')
     const previous=receipts.get(task.id)
-    if(previous&&(previous.instanceId!==task.instanceId||previous.requestId!==task.requestId))throw Error('Task receipt identity changed')
+    if(previous&&(previous.instanceId!==task.instanceId||previous.requestId!==task.requestId||previous.businessId!==task.preparation.id||previous.kind!==kind))throw Error('Task receipt identity changed')
     if(!previous)await receipts.put(task.id,{instanceId:task.instanceId,businessId:task.preparation.id,kind,requestId:task.requestId,status:'claimed'})
-    if(kind==='review')await state.practice.review(task.preparation.id,'claim')
+    if(kind==='review')await state.practice.review(task.preparation.id,'claim',{taskId:task.id,requestId:task.requestId})
     else await state.lessons.prepare(task.preparation.id)
+   }),
+   notAdmitted:async task=>host.state(task.instanceId,async state=>{
+    if(task.status!=='failed'||!task.ownerRejection||!task.requestId)throw Error('Proven no-admission receipt required')
+    const receipt=receipts.get(task.id)
+    if(!receipt)return
+    if(receipt.instanceId!==task.instanceId||receipt.businessId!==task.preparation.id||receipt.requestId!==task.requestId||receipt.kind!==kind)throw Error('Application claim identity changed')
+    if(receipt.status==='rejected')return
+    if(receipt.status==='done')throw Error('Accepted claim cannot be released')
+    await receipts.put(task.id,{...receipt,status:'releasing'})
+    if(kind==='review')await state.practice.review(task.preparation.id,'release',{taskId:task.id,requestId:task.requestId})
+    await receipts.put(task.id,{...receipt,status:'rejected'})
    }),
    accepted:async task=>host.state(task.instanceId,async state=>{
     const receipt=receipts.get(task.id)
     if(!receipt||receipt.instanceId!==task.instanceId||receipt.businessId!==task.preparation.id||receipt.requestId!==task.requestId||receipt.kind!==kind)throw Error('Application claim receipt unavailable')
     if(receipt.status==='done')return
-    if(kind==='review')await state.practice.review(task.preparation.id,'complete')
+    if(kind==='review')await state.practice.review(task.preparation.id,'complete',{taskId:task.id,requestId:task.requestId!})
     await receipts.put(task.id,{...receipt,status:'done'})
    }),
   }

@@ -18,7 +18,7 @@ export interface AdoptionJournal {
 export interface AdoptionServices {
  store:{read(id:string):Promise<AdoptionJournal|null>;write(row:AdoptionJournal):Promise<void>}
  source:{verify(plan:LegacyAdoptionPlan,phase?:'initial'|'final'):Promise<void>}
- applications:{ensureInstance(input:{id:string;appId:string;projectId:null;operationId:string}):Promise<unknown>;ensureView(input:{id:string;instanceId:string;type:string;operationId:string}):Promise<unknown>}
+ applications:{completeProvision?(instanceId:string,operationId:string):Promise<unknown>;ensureInstance(input:{id:string;appId:string;projectId:null;operationId:string}):Promise<unknown>;ensureView(input:{id:string;instanceId:string;type:string;operationId:string}):Promise<unknown>}
  target:{run<T>(instanceId:string,operation:(target:AdoptionTarget)=>Promise<T>):Promise<T>}
  privacy:{markPrivate(instanceId:string,ids:string[],sourceRevision:string):Promise<void>}
  roles:{apply(plan:LegacyAdoptionPlan,role:LegacyAdoptionPlan['roles'][number]):Promise<void>}
@@ -51,7 +51,9 @@ export class LegacyAdoptionWorkflow {
   let journal=await this.services.store.read(input.id);if(!journal)fail('ADOPTION_PLAN_MISSING')
   validateJournal(journal);const plan=journal.plan
   if(plan.fingerprint!==input.fingerprint||plan.status!=='ready')fail('ADOPTION_PLAN_BLOCKED_OR_CHANGED')
-  if(journal.status==='applied')return journal
+  const isApplied=()=>journal?.status==='applied'
+  const complete=async()=>{for(const target of [plan.targets.history,plan.targets.library])await this.services.applications.completeProvision?.(target.instanceId,plan.id)}
+  if(journal.status==='applied'){await complete();return journal}
   const save=async(patch:Partial<AdoptionJournal>)=>{journal={...journal!,...patch};await this.services.store.write(journal);return journal}
   try{
    await this.services.source.verify(plan,'initial')
@@ -99,8 +101,9 @@ export class LegacyAdoptionWorkflow {
     for(const step of plan.records)if(plan.targets[step.target].instanceId===targetId&&hash(target.read(step.domain,step.key))!==step.hash)fail('ADOPTION_TARGET_CHANGED')
     for(const step of plan.globals)if(plan.targets[step.target].instanceId===targetId&&hash(target.global(step.domain))!==step.hash)fail('ADOPTION_TARGET_CHANGED')
    })
-   return save({status:'applied',notice:'Confirmed records applied; original profile and newer target rows retained'})
-  }catch(error){try{await save({status:'unknown',notice:'Phase failed or receipt unknown; only explicit same-plan recovery may continue'})}catch{}throw error}
+   await save({status:'applied',notice:'Confirmed records applied; original profile and newer target rows retained'})
+   await complete();return journal
+  }catch(error){if(isApplied())throw error;try{await save({status:'unknown',notice:'Phase failed or receipt unknown; only explicit same-plan recovery may continue'})}catch{}throw error}
  })}
  async close(){this.closing=true;await this.tail}
 }

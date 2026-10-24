@@ -1,3 +1,4 @@
+import {inspectionTable} from './legacy-inspection-envelope.mjs'
 /** Offline bank-image associations only. Never repairs questions, answers, options or source files. */
 import * as fs from 'node:fs/promises'
 import path from 'node:path'
@@ -32,14 +33,7 @@ async function file(root, relativePath, io, index = false) {
   } catch (error) { if (index && error.code === 'ENOENT') return null; if (['BANK_IMAGE_PATH_ESCAPE', 'BANK_IMAGE_SOURCE_CHANGED'].includes(error.code)) throw error; fail('BANK_IMAGE_FILE_UNAVAILABLE') }
 }
 function bankFrom(snapshot) {
-  if (!object(snapshot) || snapshot.format !== 'kaogong-legacy-inspection' || snapshot.formatVersion !== 1 || snapshot.private !== true || !Array.isArray(snapshot.files)) fail('INVALID_INSPECTION_SNAPSHOT')
-  const names = new Set()
-  for (const file of snapshot.files) { if (!object(file) || typeof file.name !== 'string' || names.has(file.name) || typeof file.bytesBase64 !== 'string' || sha(Buffer.from(file.bytesBase64, 'base64')) !== file.sha256) fail('INVALID_INSPECTION_SNAPSHOT'); names.add(file.name) }
-  if (sha(JSON.stringify(snapshot.files.map(({ name, sha256, resolvedPath }) => [name, sha256, resolvedPath]))) !== snapshot.sourceRevision) fail('INVALID_INSPECTION_SNAPSHOT')
-  const file = snapshot.files.find(row => row.name === 'kaogong_bank')
-  if (!file) fail('INVALID_INSPECTION_SNAPSHOT')
-  let data
-  try { data = JSON.parse(Buffer.from(file.bytesBase64, 'base64').toString('utf8')) } catch { fail('INVALID_INSPECTION_SNAPSHOT') }
+  const {data,file}=inspectionTable(snapshot,'kaogong_bank',bytes=>{try{return JSON.parse(bytes.toString('utf8'))}catch{fail('INVALID_INSPECTION_SNAPSHOT')}})
   if (data.unit?.name !== 'kaogong_bank' || data.unit.version !== 2 || !object(data.tables?.questions)) fail('INVALID_INSPECTION_SNAPSHOT')
   return { records: data.tables.questions, bankSnapshotSha256: file.sha256 }
 }

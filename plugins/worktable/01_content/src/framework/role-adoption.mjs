@@ -77,7 +77,7 @@ export class RoleAdoptions {
  }
  async prepare(instanceId,roleId,sourceKey){
   const directory=this.directory
-  const {instance}=await directory.definition(instanceId,roleId)
+  const {instance}=await directory.definition(instanceId,roleId,true)
   const plan=await this.inspectTrusted(instance.appId,roleId,sourceKey,{instanceId,roleId})
   const {owner,definition,source,sourceFingerprint,evidence}=plan
   const state=await directory.store.snapshot(),key=keyOf(instanceId,roleId)
@@ -87,6 +87,7 @@ export class RoleAdoptions {
   const ids=new Set([source.sessionId,...source.previousSessions.map(row=>row.sessionId)])
   if(state.bindings.some(row=>row.key!==key&&[row.sessionId,...row.previousSessionIds].some(id=>ids.has(id))))this.reject('session-owned','当前或历史原生会话已归属其他角色或实例。')
   this.assertOwner(instance.appId,owner)
+  await directory.applications.assertInstanceReady?.(instanceId,true)
   const fingerprint=binding?.adoption.fingerprint??digest({source,definition,instanceRevision:instance.revision,binding,evidence})
   return {...plan,instance,binding,fingerprint}
  }

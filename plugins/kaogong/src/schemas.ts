@@ -112,6 +112,7 @@ export const practiceRound = z.object({
   reflections: z.array(z.object({ id: z.string(), errorReason: z.string(), notes: z.string().optional(), savedAt: z.string().optional(), notesRevision: z.number().int().optional() })),
   revision: z.number().int().nonnegative(), projectedRevision: z.number().int().nonnegative(), changedAt: z.string(),
   review: z.enum(['ready', 'sending', 'sent']),
+  reviewClaim: z.object({taskId:z.string(),requestId:z.string()}).optional(),
 }).refine(round => new Set(round.questions.map(row => row.id)).size === round.questions.length && round.projectedRevision <= round.revision &&
   (round.score ? round.score.answers.length === round.questions.length && round.score.answers.every((row, index) => row.id === round.questions[index]?.id) : round.review === 'ready'),
   'Invalid issued round membership or state')

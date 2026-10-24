@@ -60,7 +60,7 @@ export function createAdoptionOwner(ctx:Context,host:KaogongHost,metadata:Domain
  return {
   prepare:()=>run(async()=>{const snapshot=await capture(),evidence=await inspectAdoptionEvidence(snapshot,{materialRoot:config.mineru.get()?.outputDir,questionImageRoot:config.questionImageRoot.get()});const plan=pinAdoptionEvidence(await prepareLegacyAdoption({snapshot,materialEvidence:evidence.materials,inspectRole:input=>ctx.worktableRoles.inspectLegacySource('kaogong',input.roleId,input.sourceKey)}),evidence);await workflow.remember(plan);return adoptionPreview(plan)}),
   inspect:(id:string)=>run(async()=>{const row=await workflow.inspect(id);return adoptionPreview(row.plan,row.status)}),
-  apply:(input:{id:string;fingerprint:string;confirmed:boolean})=>run(async()=>{const row=await workflow.apply(input);return adoptionPreview(row.plan,row.status)}),
+  apply:(input:{id:string;fingerprint:string;confirmed:boolean})=>run(()=>ctx.worktableApplications.withProvision(input.id,async()=>{const row=await workflow.apply(input);return adoptionPreview(row.plan,row.status)})),
   exportPlan:(id:string)=>run(async()=>structuredClone((await workflow.inspect(id)).plan)),
   async close(){closing=true;await Promise.allSettled([...pending]);await workflow.close();await removeSource()},
  }

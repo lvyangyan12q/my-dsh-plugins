@@ -19,6 +19,10 @@ export interface ApplicationDirectory {
  /** Host-only durable provisioning intent; never exposed as browser create parameters. Existing unowned IDs are conflicts. */
  ensureInstance(input:{id:string;appId:string;projectId:string|null;operationId:string}):Promise<ApplicationInstance>
  ensureView(input:{id:string;instanceId:string;type?:string;operationId:string}):Promise<ApplicationView>
+ /** Trusted importer scope; expires at callback settlement. It never permits native creation or task sends. */
+ withProvision<T>(operationId:string,operation:()=>Promise<T>):Promise<T>
+ completeProvision(instanceId:string,operationId:string):Promise<ApplicationInstance>
+ assertInstanceReady(instanceId:string):Promise<void>
  resolveView(viewId:string):Promise<{application:Application;instance:ApplicationInstance;view:ApplicationView}>
  setEnabled?(appId:string,enabled:boolean,revision:number):Promise<{appId:string;enabled:boolean;revision:number}>
 }
@@ -87,9 +91,9 @@ export interface ResourceDirectory {call<T extends ResourceValue=ResourceValue>(
 export interface TaskContextRef {resourceId:string;selection?:unknown}
 export interface ApplicationTaskContext {appId:string;instanceId:string;viewId:string;roleId:string}
 export interface ApplicationTaskPlan {id:string;text:string;contexts?:TaskContextRef[];token?:unknown}
-export interface ApplicationOwnedTask {id:string;appId:string;instanceId:string;roleId:string;sessionId:string;requestId?:string;status:string;preparation:{kind:string;id:string;ownerAppId:string;ownerVersion:string;token:unknown};ownerFinalization?:'pending'|'done'}
+export interface ApplicationOwnedTask {id:string;appId:string;instanceId:string;roleId:string;sessionId:string;requestId?:string;status:string;preparation:{kind:string;id:string;ownerAppId:string;ownerVersion:string;token:unknown};ownerFinalization?:'pending'|'done';ownerRejection?:'pending'|'done'}
 /** Trusted Host owner. prepare is read-only; business claims run outside resource leases before native admission. accepted is idempotent and never sends native messages. */
-export interface ApplicationTaskOwner {version:string;prepare(context:ApplicationTaskContext,payload:unknown):ApplicationTaskPlan|Promise<ApplicationTaskPlan>;validate(task:ApplicationOwnedTask):void|Promise<void>;beforeSubmit(task:ApplicationOwnedTask):void|Promise<void>;accepted(task:ApplicationOwnedTask):void|Promise<void>;stop?(task:ApplicationOwnedTask):void|Promise<void>}
+export interface ApplicationTaskOwner {version:string;prepare(context:ApplicationTaskContext,payload:unknown):ApplicationTaskPlan|Promise<ApplicationTaskPlan>;validate(task:ApplicationOwnedTask):void|Promise<void>;beforeSubmit(task:ApplicationOwnedTask):void|Promise<void>;accepted(task:ApplicationOwnedTask):void|Promise<void>;notAdmitted?(task:ApplicationOwnedTask):void|Promise<void>;stop?(task:ApplicationOwnedTask):void|Promise<void>}
 export interface ApplicationTaskOwners {contribute(appId:string,kind:string,owner:ApplicationTaskOwner):Disposer}
 export interface TaskFacade {prepare(input:{roleId:string;text:string;contexts?:TaskContextRef[]}):Promise<unknown>;prepareOwned?(input:{roleId:string;kind:string;payload:unknown}):Promise<unknown>}
 export interface RoleFacade {read(roleId:string):Promise<unknown>;previewAdoption(roleId:string,sourceKey:string):Promise<RoleAdoptionPreview>;applyAdoption(roleId:string,sourceKey:string,fingerprint:string,confirmed:true):Promise<AdoptedRoleBinding>;ensure(roleId:string,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;retry(roleId:string,sessionId:string,revision:number):Promise<unknown>;replace(roleId:string,sessionId:string,revision:number,agent?:CapabilityRef&{kind:'agent'}):Promise<unknown>;open(roleId:string,sessionId:string,revision:number):Promise<void>}

@@ -1,3 +1,4 @@
+import {inspectionTable} from './legacy-inspection-envelope.mjs'
 /** Offline evidence only. No plugin startup, collection, repair, configuration or network access. */
 import * as fs from 'node:fs/promises'
 import path from 'node:path'
@@ -44,16 +45,7 @@ async function materialFile(root, relativePath, io) {
 }
 function json(bytes) { try { return JSON.parse(bytes.toString('utf8')) } catch { fail('MATERIAL_FORMAT_UNSUPPORTED') } }
 function snapshotEntries(snapshot) {
-  if (!object(snapshot) || snapshot.format !== 'kaogong-legacy-inspection' || snapshot.formatVersion !== 1 || snapshot.private !== true || !Array.isArray(snapshot.files)) fail('INVALID_INSPECTION_SNAPSHOT')
-  const seen = new Set()
-  for (const file of snapshot.files) {
-    if (!object(file) || typeof file.name !== 'string' || seen.has(file.name) || typeof file.bytesBase64 !== 'string' || sha(Buffer.from(file.bytesBase64, 'base64')) !== file.sha256) fail('INVALID_INSPECTION_SNAPSHOT')
-    seen.add(file.name)
-  }
-  if (sha(JSON.stringify(snapshot.files.map(({ name, sha256, resolvedPath }) => [name, sha256, resolvedPath]))) !== snapshot.sourceRevision) fail('INVALID_INSPECTION_SNAPSHOT')
-  const file = snapshot.files.find(row => row.name === 'kaogong_knowledge')
-  if (!file) fail('INVALID_INSPECTION_SNAPSHOT')
-  const data = json(Buffer.from(file.bytesBase64, 'base64'))
+  const {data}=inspectionTable(snapshot,'kaogong_knowledge',json)
   if (data.unit?.name !== 'kaogong_knowledge' || data.unit.version !== 1 || !object(data.tables?.entries)) fail('INVALID_INSPECTION_SNAPSHOT')
   return data.tables.entries
 }
