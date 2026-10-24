@@ -26,3 +26,19 @@ test('plan canonical hashes use portable code-point key order rather than the ma
  const {canonical}=await import('../src/legacy-adoption-plan.ts')
  assert.equal(canonical({'中':3,a:2,Z:1}),' {"Z":1,"a":2,"中":3}'.trim())
 })
+
+test('trusted source evidence moves only exact raw lecture candidates to library and pins the evidence in the plan',async()=>{
+ const {createHash}=await import('node:crypto'),home=await fixture()
+ try{
+  const path=join(home,'storages/kaogong_knowledge.json'),data=JSON.parse(await readFile(path,'utf8'))
+  data.tables.entries.raw={...data.tables.entries.private,content:'original source',source:'source.pdf'}
+  data.tables.entries.note={...data.tables.entries.private,kind:'笔记'}
+  await writeFile(path,JSON.stringify(data));const {snapshot}=await inspectLegacy({home})
+  const materialEvidence={sourceRevision:snapshot.sourceRevision,entries:[{id:'raw',sourceContentSha256:createHash('sha256').update('original source').digest('hex')}],evidenceHash:'trusted-host-only'}
+  const plan=await prepareLegacyAdoption({snapshot,materialEvidence,inspectRole:async()=>assert.fail('no roles')})
+  assert.equal(plan.records.find(row=>row.key==='raw').target,'library');assert.deepEqual(plan.privateKnowledgeIds,['private','note'])
+  assert.equal(plan.assetEvidence.materials.evidenceHash,'trusted-host-only');assert.ok(plan.readOnlyGrants.some(row=>row.resourceId==='materials'))
+  materialEvidence.entries[0].sourceContentSha256='changed';assert.notEqual(plan.assetEvidence.materials.entries[0].sourceContentSha256,'changed')
+  await assert.rejects(prepareLegacyAdoption({snapshot,materialEvidence,inspectRole:async()=>assert.fail('no roles')}),{code:'LEGACY_MATERIAL_SOURCE_CHANGED'})
+ }finally{await rm(home,{recursive:true,force:true})}
+})

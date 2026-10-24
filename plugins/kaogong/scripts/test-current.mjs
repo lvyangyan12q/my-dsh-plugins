@@ -15,7 +15,7 @@ await mkdir(temp,{recursive:true})
 try{
  const config=resolve(temp,'tsconfig.json')
  await writeFile(config,JSON.stringify({compilerOptions:{target:'ES2024',module:'ESNext',moduleResolution:'Bundler',jsx:'react-jsx',paths}}))
- const host=['legacy-adoption-plan.test.mjs','legacy-adoption-workflow.test.mjs','instance-host.test.mjs','production-host.test.mjs','instance-state.test.mjs','role-presets.test.mjs','runtime-compat.test.mjs']
+ const host=['legacy-inspection.test.mjs','legacy-material-evidence.test.mjs','legacy-bank-image-evidence.test.mjs','legacy-private-assets.test.mjs','adopted-assets.test.mjs','adoption-assets-host.test.mjs','legacy-adoption-plan.test.mjs','legacy-adoption-workflow.test.mjs','instance-host.test.mjs','production-host.test.mjs','instance-state.test.mjs','role-presets.test.mjs','runtime-compat.test.mjs']
  const client=['sdk-classroom.test.ts','sdk-client-runtime.test.ts']
  const files=process.argv.includes('--host')?host:process.argv.includes('--client')?client:[...host,...client]
  const result=spawnSync(process.execPath,['--import','tsx/esm','--test',...files.map(file=>resolve(root,'tests',file))],{cwd:root,stdio:'inherit',env:{...process.env,KAOGONG_TEST_RUNTIME:native,TSX_TSCONFIG_PATH:config}})

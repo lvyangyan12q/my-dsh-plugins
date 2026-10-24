@@ -17,6 +17,7 @@ import type {BankQuestionRecord,KnowledgeEntryRecord} from './domain.ts'
 import {adoptionDomain,adoptionPlansDomain,assertAdoptionReady,privateKnowledgeKey} from './legacy-adoption-state.ts'
 import {createAdoptionOwner} from './legacy-adoption-owner.ts'
 import {mountAdoptionHttp} from './adoption-http.ts'
+import {legacyAssetRoutes,legacyAssetPaths} from './legacy-asset-http.ts'
 
 const metadata=defineDomain({name:'kaogong_platform_rc3',version:1,tables:{
  receipts:domainTable(z.object({instanceId:z.string(),businessId:z.string(),kind:z.enum(['review','lesson']),requestId:z.string(),status:z.enum(['claimed','done'])})),
@@ -49,7 +50,7 @@ export async function mountKaogong(ctx:Context,config:Config){
   const registry=async(state:KaogongInstanceState,command='')=>{
    const viewId=await instanceView(ctx.worktableApplications,state.instanceId)
    const {instance}=await ctx.worktableApplications.resolveView(viewId)
-   const needsSource=/knowledge|document-image|dashboard|practice\/start|lesson\/create|kaogong_bank_|^kaogong_practice$/.test(command)
+   const needsSource=!legacyAssetPaths.includes(command.replace(/^exact:/,'') as typeof legacyAssetPaths[number])&&/knowledge|document-image|dashboard|practice\/start|lesson\/create|kaogong_bank_|^kaogong_practice$/.test(command)
    const bankRows=needsSource?await sourceRows<BankQuestionRecord>(ctx.worktableResources,viewId,'question-bank'):[]
    const materialSource=needsSource?(await ctx.worktableResources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})).value:null
    const materialRows=materialSource?.rows??[]
@@ -64,6 +65,12 @@ export async function mountKaogong(ctx:Context,config:Config){
    }
    // Legacy absolute image roots remain unread until an explicit migration establishes ownership.
    const registry=businessRegistry({...config,questionImageRoot:{get:()=>undefined}},{...state,bankQuestions,knowledgeEntries,practice,lessons},scopedMineru)
+      for(const route of legacyAssetRoutes({instanceId:state.instanceId,viewId,state,resources:ctx.worktableResources,plans:()=>[...adoptionState.table('journals').entries()].filter(([,row])=>row.status==='applied').flatMap(([,row])=>{const stored=adoptionPlans.table('plans').get(row.planId);return stored&&stored.fingerprint===row.planFingerprint?[stored.plan]:[]}),newImage:async(id,reference)=>{
+    const record=state.knowledgeEntries.get(id);if(!record||![...record.content.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].some(row=>row[1]===reference))return undefined
+    const url=new URL(reference,'http://localhost'),job=url.searchParams.get('id'),asset=url.searchParams.get('asset')
+    if(url.pathname!=='/api/kaogong/document-image'||!job||!asset||meta.table('jobs').get(job)?.instanceId!==state.instanceId)return undefined
+    return scopedMineru.image(job,asset)
+   }}))registry.routes.set(route.kind+':'+route.path,route)
    return {...registry,dispose:async()=>{await lessons.close();await practice.close()}}
   }
   host=new KaogongHost({applications:ctx.worktableApplications,roles:ctx.worktableRoles,pool,connection:ctx.connection,registry,assertReady:instanceId=>assertAdoptionReady(adoptionState.table('journals'),instanceId)})
@@ -78,6 +85,7 @@ export async function mountKaogong(ctx:Context,config:Config){
   // Registration descriptors do not read tables or create a Session.
   const templates=businessRegistry(config,{} as KaogongInstanceState,mineru)
   for(const [key,route] of templates.routes)disposers.push(ctx.webServer.register({...route,handler:(req,res)=>runtime.http(key,req,res)}))
+  for(const path of legacyAssetPaths)disposers.push(ctx.webServer.register({kind:'exact',path,handler:(req,res)=>runtime.http('exact:'+path,req,res)}))
   for(const [name,tool] of templates.tools)disposers.push(ctx.tools.register({...tool,execute:(args,execution)=>runtime.tool(name,args,execution)}, {when:context=>runtime.active(name,context)}))
  }catch(error){
   // Stop admission before withdrawing sources and releasing metadata.
