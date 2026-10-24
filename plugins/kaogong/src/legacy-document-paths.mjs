@@ -12,7 +12,7 @@ function safeAsset(asset){
 /** Parse only an exact local document-image URL; reject duplicate/extra keys and extra decoding. */
 export function parseLegacyDocumentReference(target){
  try{
-  if(typeof target!=='string'||!target.startsWith('/api/kaogong/document-image?'))return null
+  if(typeof target!=='string'||/[\x00-\x20]/.test(target)||!target.startsWith('/api/kaogong/document-image?'))return null
   const u=new URL(target,'https://offline.invalid'),jobId=u.searchParams.get('id')
   if(u.pathname!=='/api/kaogong/document-image'||u.hash||[...u.searchParams.keys()].sort().join(',')!=='asset,id'||!job.test(jobId??''))return null
   return {jobId,asset:safeAsset(u.searchParams.get('asset'))}
