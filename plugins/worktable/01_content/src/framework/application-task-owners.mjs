@@ -24,6 +24,12 @@ export class ApplicationTaskOwners {
  forTask(row){const p=row.preparation;if(!p?.ownerAppId||p.ownerAppId!==row.appId)fail('task-owner-invalid','任务来源与应用不匹配。');return this.entry(row.appId,p.kind,p.ownerVersion)}
  validate(row){return this.invoke(this.forTask(row),'validate',row)}
  beforeSubmit(row){return this.invoke(this.forTask(row),'beforeSubmit',row)}
+ async reject(row){
+  const entry=this.forTask(row)
+  if(typeof entry.owner.notAdmitted!=='function')fail('task-owner-recovery-unavailable','Owner cannot recover proven no-admission; restore the compatible owner.')
+  await this.invoke(entry,'notAdmitted',row)
+  return this.directory.put({...row,ownerRejection:'done',notice:'未调用原生发送；应用发送标记已恢复，可重新准备。'})
+ }
  async finalize(row){
   try{await this.invoke(this.forTask(row),'accepted',row);return await this.directory.put({...row,ownerFinalization:'done',notice:'已进入原生会话；应用发送标记已确认。'})}
   catch{return this.directory.put({...row,ownerFinalization:'pending',notice:'原生已接纳；应用发送标记待恢复。不会再次发送原生消息。'})}

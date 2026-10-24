@@ -1,3 +1,4 @@
+import {inspectionTable} from './legacy-inspection-envelope.mjs'
 /** Exact original private references only. This is neither PDF provenance nor a sharing grant. */
 import * as fs from 'node:fs/promises'
 import path from 'node:path'
@@ -33,12 +34,7 @@ async function file(root,relativePath,io){
 }
 function json(bytes){try{return JSON.parse(bytes.toString('utf8'))}catch{fail('PRIVATE_ASSET_FORMAT_UNSUPPORTED')}}
 function records(snapshot){
- if(!object(snapshot)||snapshot.format!=='kaogong-legacy-inspection'||snapshot.formatVersion!==1||snapshot.private!==true||!Array.isArray(snapshot.files))fail('INVALID_INSPECTION_SNAPSHOT')
- const names=new Set()
- for(const f of snapshot.files){if(!object(f)||typeof f.name!=='string'||names.has(f.name)||typeof f.bytesBase64!=='string'||sha(Buffer.from(f.bytesBase64,'base64'))!==f.sha256)fail('INVALID_INSPECTION_SNAPSHOT');names.add(f.name)}
- if(sha(JSON.stringify(snapshot.files.map(({name,sha256,resolvedPath})=>[name,sha256,resolvedPath])))!==snapshot.sourceRevision)fail('INVALID_INSPECTION_SNAPSHOT')
- const f=snapshot.files.find(f=>f.name==='kaogong_knowledge');if(!f)fail('INVALID_INSPECTION_SNAPSHOT')
- const d=json(Buffer.from(f.bytesBase64,'base64'));if(d.unit?.name!=='kaogong_knowledge'||d.unit.version!==1||!object(d.tables?.entries))fail('INVALID_INSPECTION_SNAPSHOT')
+ const {data:d}=inspectionTable(snapshot,'kaogong_knowledge',json);if(d.unit?.name!=='kaogong_knowledge'||d.unit.version!==1||!object(d.tables?.entries))fail('INVALID_INSPECTION_SNAPSHOT')
  return d.tables.entries
 }
 function htmlSource(tag){

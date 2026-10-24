@@ -11,6 +11,8 @@ import {mountKaogong} from '../src/production-host.ts'
 import {KaogongInstancePool} from '../src/instance-state.ts'
 import {ApplicationDirectory} from '../../worktable/01_content/src/framework/applications.mjs'
 import {describeProtocol} from '../../worktable/01_content/src/sdk.mjs'
+import {RoleDirectory,RoleStore} from '../../worktable/01_content/src/framework/roles.mjs'
+import {TaskDirectory,TaskStore} from '../../worktable/01_content/src/framework/tasks.mjs'
 import {ResourceDirectory} from '../../worktable/01_content/src/framework/resources.mjs'
 const native=process.env.KAOGONG_TEST_RUNTIME;assert.ok(native)
 const require=createRequire(resolve(native,'packages/client/ui-renderer/package.json'))
@@ -21,7 +23,7 @@ const {JsonStorageBackend}=await load('packages/storage/storage-json/lib/index.j
 const {DomainFacility}=await load('packages/storage/storage-domain/lib/index.js')
 const response=()=>({status:0,value:null,writeHead(code){this.status=code},end(value){this.value=JSON.parse(value)}})
 test('actual production Host installs empty views, routes tools by native Session and enforces explicit library grant/revoke and pinned adoption recovery',async()=>{
- const root=await mkdtemp(join(tmpdir(),'kaogong-production-')),nativeContext=new Context();await nativeContext.plugin(Storage);const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend);const facility=new DomainFacility(nativeContext,{backend:'json'});const apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate);const routes=new Map(),tools=new Map(),owners=new Map();let stop,otherPool;
+ const root=await mkdtemp(join(tmpdir(),'kaogong-production-')),nativeContext=new Context();await nativeContext.plugin(Storage);const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend);const facility=new DomainFacility(nativeContext,{backend:'json'});const apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate);const routes=new Map(),tools=new Map(),owners=new Map();let stop,otherPool,publicRoles,publicTasks;let nativeCreates=0,nativePrompts=0;
  const legacyHome=await legacyFixture();let failImport=false,importPuts=0
  const wrappedFacility={open:async spec=>{const domain=await facility.open(spec);return new Proxy(domain,{get(target,key){if(key==='table')return name=>{const table=target.table(name);return new Proxy(table,{get(table,key){if(key==='put')return async(id,value)=>{if(spec.name.endsWith('_knowledge')&&id==='private'&&value.title==='unknown source')importPuts++;await table.put(id,value);if(failImport&&spec.name.endsWith('_knowledge')&&id==='private'){failImport=false;throw Error('lost import receipt')}};const value=Reflect.get(table,key,table);return typeof value==='function'?value.bind(table):value}})};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})}}
  const ctx={worktableProtocol:{describe:describeProtocol},storageDomain:wrappedFacility,worktableApplications:apps,worktableResources:resources,worktableRoles:{contribute:()=>()=>{},contributeLegacy:()=>()=>{},read:async()=>({binding:null}),resolveSession:async(app,id,{access})=>{if(id==='history'&&access==='write')throw Error('read-only');if(id!=='native-B')throw Error('unbound');return {instanceId:B.id}}},worktableCapabilities:{contribute:()=>()=>{}},worktableTaskOwners:{contribute:(app,kind,owner)=>{owners.set(kind,owner);return ()=>owners.delete(kind)}},agentPresets:{register:async()=>async()=>{}},connection:{admit:request=>request.auth?{peer:{}}:{rejection:401}},webServer:{register:route=>{routes.set(route.kind+':'+route.path,route);return ()=>routes.delete(route.kind+':'+route.path)}},tools:{register:(tool,options)=>{tools.set(tool.name,{tool,options});return ()=>tools.delete(tool.name)}}};let B;
@@ -45,7 +47,12 @@ test('actual production Host installs empty views, routes tools by native Sessio
   assert.equal(await reviewState(),'ready','preview must not claim a review')
   const task={id:'owned-task',appId:'kaogong',instanceId:B.id,viewId:bv.id,roleId:'counselor',sessionId:'native-B',requestId:'native-request',status:'submitting',preparation:{kind:'review',id:plan.id,ownerAppId:'kaogong',ownerVersion:'1',token:plan.token}}
   await owner.beforeSubmit(task);assert.equal(await reviewState(),'sending','unknown admission stays sending until known acceptance')
-  await owner.validate(task);await owner.accepted({...task,status:'accepted'});assert.equal(await reviewState(),'sent');await owner.accepted({...task,status:'accepted'});await assert.rejects(owner.prepare(context,{roundId:round.roundId}),/already sent/)
+  const failed={...task,status:'failed',ownerRejection:'pending'}
+  await assert.rejects(owner.notAdmitted({...failed,requestId:'foreign-request'}),/identity changed/)
+  await owner.notAdmitted(failed);assert.equal(await reviewState(),'ready')
+  const freshPlan=await owner.prepare(context,{roundId:round.roundId});const fresh={...task,id:'fresh-task',requestId:'fresh-request',preparation:{...task.preparation,token:freshPlan.token}}
+  await owner.beforeSubmit(fresh);await owner.notAdmitted(failed);assert.equal(await reviewState(),'sending','old cleanup cannot release a newer task claim')
+  await owner.validate(fresh);await owner.accepted({...fresh,status:'accepted'});assert.equal(await reviewState(),'sent');await owner.accepted({...fresh,status:'accepted'});await assert.rejects(owner.prepare(context,{roundId:round.roundId}),/already sent/)
   await study.release()
   const original=await readFile(join(legacyHome,'storages/kaogong_knowledge.json'))
   const adoption=async body=>{const request=Readable.from([JSON.stringify(body)]);Object.assign(request,{method:'POST',url:'/api/kaogong/adoption',auth:true,headers:{'content-type':'application/json'}});const res=response();await routes.get('exact:/api/kaogong/adoption').handler(request,res);return res}
@@ -53,6 +60,12 @@ test('actual production Host installs empty views, routes tools by native Sessio
   const exported=(await adoption({action:'export',id:preview.value.id})).value
   assert.equal((await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:false})).status,409)
   failImport=true;const attempt=await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:true});assert.equal(attempt.status,409);assert.equal((await adoption({action:'inspect',id:preview.value.id})).value.status,'unknown');assert.equal((await get(exported.targets.history.viewId)).status,403,'partial targets remain fenced')
+  publicRoles=new RoleDirectory(await RoleStore.open(join(root,'roles.json')),apps,{validate:async()=>({presetId:'teacher'}),create:async row=>{nativeCreates++;return row.sessionId}})
+  publicRoles.contribute('kaogong',[{id:'teacher',title:'Teacher',agent:{kind:'agent',source:'managed',id:'teacher'},creation:{cwd:root}}])
+  publicTasks=new TaskDirectory(await TaskStore.open(join(root,'tasks.json')),{applications:apps,roles:publicRoles,resources,native:{prompt:async()=>{nativePrompts++;return {accepted:true}}}})
+  await assert.rejects(()=>publicRoles.ensure(exported.targets.history.instanceId,'teacher'),{code:'instance-not-ready'})
+  await assert.rejects(()=>publicTasks.prepare({viewId:exported.targets.history.viewId,roleId:'teacher',text:'generic attempt',operationId:exported.id}),{code:'instance-not-ready'})
+  assert.equal(nativeCreates,0);assert.equal(nativePrompts,0)
   await writeFile(join(legacyHome,'storages/kaogong_knowledge.json'),Buffer.concat([original,Buffer.from(' ')]))
   const changed=await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:true});assert.equal(changed.status,409);assert.equal(changed.value.code,'LEGACY_SOURCE_CHANGED');assert.equal((await get(exported.targets.history.viewId)).status,403)
   await writeFile(join(legacyHome,'storages/kaogong_knowledge.json'),original)
@@ -62,5 +75,5 @@ test('actual production Host installs empty views, routes tools by native Sessio
   assert.deepEqual((await resources.call({viewId:exported.targets.history.viewId,resourceId:'materials',action:'read'})).value.rows,[],'unproven lectures cannot enter a shareable resource')
   assert.equal((await resources.call({viewId:exported.targets.history.viewId,resourceId:'teaching',action:'read'})).value.rows.length,1,'private original lecture remains usable by its own teaching context')
   await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:true});assert.equal((await apps.snapshot()).instances.length,5);assert.deepEqual(await readFile(join(legacyHome,'storages/kaogong_knowledge.json')),original)
- }finally{await stop?.();await otherPool?.close();await resources.close();await apps.close();await backend.close();await nativeContext.fiber.dispose();await rm(root,{recursive:true,force:true});await rm(legacyHome,{recursive:true,force:true})}
+ }finally{await publicTasks?.close();await publicRoles?.dispose();await stop?.();await otherPool?.close();await resources.close();await apps.close();await backend.close();await nativeContext.fiber.dispose();await rm(root,{recursive:true,force:true});await rm(legacyHome,{recursive:true,force:true})}
 })

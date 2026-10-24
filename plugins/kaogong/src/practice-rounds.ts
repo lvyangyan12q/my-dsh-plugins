@@ -202,14 +202,22 @@ export class PracticeRounds {
     })
   }
   /** Reserve an explicit native handoff; uncertain delivery stays sending across restart. */
-  review(id: string, action: 'claim' | 'complete') {
+  review(id: string, action: 'claim' | 'complete' | 'release', claim?: {taskId:string;requestId:string}) {
     return this.run(async () => {
       const round = this.round(id)
       this.result(id, round)
+      const matching=claim&&round.reviewClaim?.taskId===claim.taskId&&round.reviewClaim.requestId===claim.requestId
+      if(action==='release'){
+        if(!matching)return this.view(id,round)
+        if(round.review==='sent')throw new PracticeError('Accepted review cannot be released',409)
+        await this.rounds.update(id,current=>({...current,review:'ready',reviewClaim:undefined}));return this.view(id,this.round(id))
+      }
+      if(action==='claim'&&matching&&round.review==='sending')return this.view(id,round)
+      if(action==='complete'&&claim&&!matching)throw new PracticeError('Review claim identity changed',409)
       if (action === 'claim' && round.review !== 'ready') throw new PracticeError(round.review === 'sent' ? 'review already sent' : 'review delivery uncertain; inspect the counselor conversation', 409)
       if (action === 'complete' && round.review === 'ready') throw new PracticeError('review was not claimed', 409)
       if (action === 'complete' && round.review === 'sent') return this.view(id, round)
-      await this.rounds.update(id, current => ({ ...current, review: action === 'claim' ? 'sending' : 'sent' }))
+      await this.rounds.update(id, current => ({ ...current, review: action === 'claim' ? 'sending' : 'sent', ...(claim?{reviewClaim:claim}:{}) }))
       return this.view(id, this.round(id))
     })
   }

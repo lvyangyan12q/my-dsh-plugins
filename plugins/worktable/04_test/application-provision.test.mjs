@@ -21,7 +21,7 @@ test('composition and lifecycle writes retain schema5 receipts; older readers an
  try{
   await apps.contribute({id:'study',title:'Study',version:'1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'Page'}]});await apps.ensureInstance({id,appId:'study',projectId:null,operationId});await apps.setEnabled('study',false,0)
   const compositions=new CompositionDirectory(apps);await compositions.save({appId:'new-app',expectedRevision:0,recipe:{title:'New app',version:'1.0.0',layout:'vertical',pages:[{id:'home',title:'Home',modules:[]}]}})
-  await apps.close();const data=JSON.parse(await readFile(file,'utf8'));assert.equal(data.schema,5);assert.deepEqual(data.provisions,[{kind:'instance',id,operationId}]);
+  await apps.close();const data=JSON.parse(await readFile(file,'utf8'));assert.equal(data.schema,5);assert.deepEqual(data.provisions,[{kind:'instance',id,operationId},{kind:'instance-admission',id,operationId,state:'pending'}]);
   const {ProfileFileStore}=await import('../01_content/src/framework/persistence.mjs');const {applicationState}=await import('../01_content/src/framework/state-schema.mjs');const old=new ProfileFileStore(file,()=>({}),applicationState,[1,2,3,4]);try{await assert.rejects(old.read())}finally{await old.close()}
   await writeFile(file,JSON.stringify({...data,schema:6}));apps=new ApplicationDirectory(file);await assert.rejects(apps.snapshot());await assert.rejects(apps.ensureInstance({id,appId:'study',projectId:null,operationId}));assert.equal(JSON.parse(await readFile(file,'utf8')).schema,6)
  }finally{await apps.close();await rm(dir,{recursive:true,force:true})}

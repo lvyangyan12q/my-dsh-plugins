@@ -1,3 +1,4 @@
+import {AsyncLocalStorage} from 'node:async_hooks'
 import {compositionDefinition} from './composition-schema.mjs'
 import {applicationState,applicationSchema} from './state-schema.mjs'
 import {AdmissionGate} from './admission.mjs'
@@ -13,6 +14,29 @@ function nextUse(data){return data.instances.reduce((time,item)=>Math.max(time,i
 
 /** Profile-owned directory. Public methods return detached records; no DOM or session globals. */
 export class ApplicationDirectory {
+  provisionContext=new AsyncLocalStorage()
+  /** Trusted backend scope only; browser IDs never confer this authority. */
+  async withProvision(operationId,operation){
+    this.provisionIdentity(operationId,operationId)
+    const token={operationId,active:true,contributions:new Map(this.contributions)}
+    try{return await this.provisionContext.run(token,operation)}finally{token.active=false}
+  }
+  async assertInstanceReady(instanceId,allowProvision=false){
+    await this.pending;const data=await this.read(),instance=this.instance(data,instanceId)
+    const receipt=data.provisions?.find(row=>row.kind==='instance-admission'&&row.id===instanceId)
+    if(receipt?.state==='ready'||!receipt&&!data.provisions?.some(row=>row.kind==='instance'&&row.id===instanceId))return
+    const token=this.provisionContext.getStore()
+    if(allowProvision&&token?.active&&token.operationId===(receipt??data.provisions.find(row=>row.kind==='instance'&&row.id===instanceId)).operationId&&token.contributions.get(instance.appId)===this.contributions.get(instance.appId)&&this.contributions.has(instance.appId))return
+    throw new ApplicationError('instance-not-ready','实例接管尚未完成；请由原应用明确恢复同一操作。',409)
+  }
+  completeProvision(instanceId,operationId){return this.change(data=>{
+    const instance=this.instance(data,instanceId);this.application(data,instance.appId)
+    const token=this.provisionContext.getStore()
+    if(!token?.active||token.operationId!==operationId||!this.contributions.has(instance.appId)||token.contributions.get(instance.appId)!==this.contributions.get(instance.appId))throw new ApplicationError('provision-authority-expired','Trusted provisioning scope expired.',409)
+    const receipt=data.provisions?.find(row=>row.kind==='instance-admission'&&row.id===instanceId)
+    if(!receipt||receipt.operationId!==operationId)throw new ApplicationError('provision-conflict','接管操作身份不匹配。',409)
+    receipt.state='ready';return instance
+  })}
   constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map(); this.closing=false; this.store=new ProfileFileStore(file,()=>({schema:1,applications:[],instances:[],views:[]}),applicationState,[1,2,3,4,5]) }
   setReadinessGuard(guard){if(typeof guard!=='function')throw new TypeError('Readiness guard required');this.readinessGuard=guard;return()=>{if(this.readinessGuard===guard)this.readinessGuard=null}}
   async read() {if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.store.read()}
@@ -79,10 +103,10 @@ export class ApplicationDirectory {
     this.provisionIdentity(id,operationId);projectId=projectScope(projectId)
     return this.gate.run(async()=>{await this.readinessGuard?.(appId);return this.changeWithin(data=>{
       this.assertAvailable(data,appId);const previous=data.instances.find(row=>row.id===id),receipt=data.provisions?.find(row=>row.kind==='instance'&&row.id===id)
-      if(previous){if(!receipt||receipt.operationId!==operationId||previous.appId!==appId||previous.projectId!==projectId)throw new ApplicationError('provision-conflict','目标实例已存在且不属于此接管意图，未覆盖。',409);return previous}
+      if(previous){if(!receipt||receipt.operationId!==operationId||previous.appId!==appId||previous.projectId!==projectId)throw new ApplicationError('provision-conflict','目标实例已存在且不属于此接管意图，未覆盖。',409);if(!data.provisions.some(row=>row.kind==='instance-admission'&&row.id===id))data.provisions.push({kind:'instance-admission',id,operationId,state:'pending'});return previous}
       if(receipt)throw new ApplicationError('provision-conflict','接管实例回执与目标不一致，未重建。',409)
       const record={id,appId,projectId,revision:1,createdAt:Date.now(),lastOpenedAt:nextUse(data)}
-      data.instances.push(record);data.provisions??=[];data.provisions.push({kind:'instance',id,operationId});return record
+      data.instances.push(record);data.provisions??=[];data.provisions.push({kind:'instance',id,operationId},{kind:'instance-admission',id,operationId,state:'pending'});return record
     })})
   }
   provisionIdentity(id,operationId){const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);if(!uuid(id)||!uuid(operationId))throw new ApplicationError('provision-invalid','接管需要固定的实例/视图与操作 UUID。',400)}
@@ -98,9 +122,11 @@ export class ApplicationDirectory {
     })
   }
   async resume(id) {
+    await this.assertInstanceReady(id)
     return this.change(data=>{const instance=this.instance(data,id);this.application(data,instance.appId);instance.lastOpenedAt=nextUse(data);return instance})
   }
   async attach(id,projectId,revision) {
+    await this.assertInstanceReady(id)
     projectId=projectScope(projectId,true)
     return this.change(data=>{
       const record=this.instance(data,id)
@@ -111,12 +137,13 @@ export class ApplicationDirectory {
     })
   }
   async createView(id,type='page') {
+    await this.assertInstanceReady(id)
     return this.change(data=>{ const instance=this.instance(data,id);const app=this.application(data,instance.appId);if(typeof type!=='string'||(app.kind==='deep'?!app.views.some(v=>v.id===type):type!=='page'))throw new ApplicationError('view-unsupported','应用未声明此视图，请选择可用模块。'); const view={id:randomUUID(),instanceId:id,type};data.views.push(view);instance.lastOpenedAt=nextUse(data);return view })
   }
   async resolveView(id) {
     await this.pending; const data=await this.read();const view=data.views.find(v=>v.id===id)
     if(!view) throw new ApplicationError('view-missing','视图不存在；请从应用入口继续。',404)
-    const instance=this.instance(data,view.instanceId);return structuredClone({view,instance,application:this.application(data,instance.appId)})
+    const instance=this.instance(data,view.instanceId);await this.assertInstanceReady(instance.id,true);return structuredClone({view,instance,application:this.application(data,instance.appId)})
   }
   async snapshot() {await this.pending;const data=await this.read();return structuredClone({...data,applications:this.available(data)})}
 }
