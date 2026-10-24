@@ -16,9 +16,9 @@ test('the real Host compatibility gate accepts optional workbench integration wi
   assert.equal(evaluatePluginCompatibility(manifest), undefined)
   assert.equal(manifest.dependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
   assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
-  assert.equal(manifest.devDependencies['@deepseek-ai/dsh-personal-workbench'], 'file:../personal-workbench')
-  assert.equal(manifest.optionalDependencies['@deepseek-ai/dsh-personal-workbench'], '0.1.0')
-  assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-host-webserver'], '0.2.0-rc.2 || 0.2.1-alpha.2')
+  assert.equal(manifest.devDependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
+  assert.equal(manifest.optionalDependencies['@deepseek-ai/dsh-personal-workbench'], undefined)
+  assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-host-webserver'], '0.2.1-rc.3')
 })
 
 test('the real gate still rejects a mismatched Host peer and the original false runtime peer', () => {

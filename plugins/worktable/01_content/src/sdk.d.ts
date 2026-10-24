@@ -50,6 +50,8 @@ export interface RoleAdoptionPreview {status:'ready'|'applied'|'blocked';fingerp
 export interface AdoptedRoleBinding extends NativeRoleIdentity {appId:string;instanceId:string;roleId:string;agent:CapabilityRef&{kind:'agent'};revision:number;phase:'intent'|'ready';creationAttempt?:'started';selectedPreset:boolean;previousSessionIds:string[];historicalSessions:NativeRoleIdentity[];adoption:{sourceKey:string;sourceRevision:string;sourceFingerprint:string;fingerprint:string;bindingRevision:number}}
 export type NativeRoleContext={appId:string;instanceId:string;roleId:string;sessionId:string}&({kind:'current';readOnly:false}|{kind:'history';readOnly:true})
 export interface RoleDirectory {
+ /** Host-only inspection; it never creates a native Session. */
+ read(instanceId:string,roleId:string):Promise<{binding:({phase:'intent'|'ready';sessionId:string;presetId:string;revision:number})|null}>
  contribute(appId:string,definitions:RoleDefinition[]):Disposer
  /** Host-only. Dispose with the application; inspect must not repair, migrate or create native Sessions. */
  contributeLegacy(appId:string,owner:LegacyRoleOwner):Disposer

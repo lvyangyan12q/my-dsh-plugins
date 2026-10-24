@@ -19,7 +19,7 @@ export class TaskDirectory {
  async find(id){const row=(await this.store.snapshot()).tasks?.find(row=>row.id===id);if(!row)fail('task-missing','任务记录不存在。');return row}
  registerPreparationOwner(kind,owner){if(!/^[a-z][a-z0-9.-]*$/.test(kind)||this.preparationOwners.has(kind)||typeof owner?.validate!=='function'||typeof owner?.stop!=='function')fail('preparation-owner-invalid','任务准备所有者无效或重复。');this.preparationOwners.set(kind,owner);return()=>{if(this.preparationOwners.get(kind)===owner)this.preparationOwners.delete(kind)}}
  contributeOwner(appId,kind,owner){return this.applicationOwners.contribute(appId,kind,owner)}
- async prepareOwned(input){const plan=await this.applicationOwners.plan(input);return this.prepare(plan.input,plan.preparation)}
+ prepareOwned(input){return this.run(async()=>{const plan=await this.applicationOwners.plan(input);return this.prepare(plan.input,plan.preparation)})}
  recoverOwner(id){return this.run(async()=>{const row=await this.find(id);if(row.status!=='accepted'||!row.requestId||!row.preparation?.ownerAppId)fail('task-owner-recovery-invalid','只有已确认原生准入的应用任务可恢复发送标记。');if(row.ownerFinalization==='done')return row;return this.applicationOwners.finalize(row)})}
  async validatePreparation(row){if(!row.preparation)return;if(row.preparation.ownerAppId)return this.applicationOwners.validate(row);const owner=this.preparationOwners.get(row.preparation.kind);if(!owner)fail('preparation-owner-unavailable','此受管任务的准备所有者暂不可用，请恢复服务；不会改用其他通道。');await owner.validate(row)}
  async stopPreparation(row){if(row.preparation?.ownerAppId)return this.applicationOwners.stop(row);if(row.preparation)await this.preparationOwners.get(row.preparation.kind)?.stop(row)}
