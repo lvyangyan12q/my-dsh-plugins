@@ -8,20 +8,28 @@ import { TAXONOMY } from './taxonomy.ts'
 import { canonicalKnowledgePoint } from './knowledge-point-identity.ts'
 
 type Binding = { phase: 'intent' | 'ready'; sessionId: string; presetId: string }
-/** One default-instance lesson owner; accepted attempts are always resolved by the existing scorer. */
+/** One explicit lesson owner; accepted attempts are always resolved by the existing scorer. */
 export class Lessons {
   private tail: Promise<unknown> = Promise.resolve()
   private closing = false
+  private readonly instanceId: string
   constructor(private table: KvTable<string, Lesson>, private knowledge: KvTable<string, KnowledgeEntryRecord>,
     private practice: PracticeRounds, private binding: (key: Lesson['roleKey']) => Promise<Binding | null>,
-    private selection: DomainGlobal<{ instanceId: 'default'; activeLessonId: string | null }>) {}
+    private selection: DomainGlobal<{ instanceId: string; activeLessonId: string | null }>) {
+    this.instanceId = selection.get().instanceId
+  }
   private run<T>(command: () => Promise<T>): Promise<T> {
     if (this.closing) return Promise.reject(new PracticeError('课堂服务正在关闭', 503))
     const pending = this.tail.then(command); this.tail = pending.catch(() => {}); return pending
   }
   /** Stop accepting new commands and await every owned command before domain shutdown. */
   async close() { this.closing = true; await this.tail }
-  private get(id: string) { const row = this.table.get(id); if (!row) throw new PracticeError('课堂不存在', 404); return row }
+  private get(id: string) {
+    const row = this.table.get(id)
+    if (!row) throw new PracticeError('课堂不存在', 404)
+    if (row.instanceId !== this.instanceId || row.roleKey.instanceId !== this.instanceId) throw new PracticeError('课堂不属于当前实例', 409)
+    return row
+  }
   private async put(id: string, row: Lesson) { await this.table.put(id, { ...row, revision: row.revision + 1, updatedAt: new Date().toISOString() }) }
   /** Learner-confirmed creation is idempotent by the supplied stable lesson ID. */
   create(input: LessonCreate): Promise<LessonView> { return this.run(async () => {
@@ -31,7 +39,7 @@ export class Lessons {
     const old = this.table.get(request.lessonId)
     if (old) {
       if (JSON.stringify(old.request) !== JSON.stringify(request)) throw new PracticeError('课堂 ID 的创建内容冲突', 409)
-      await this.selection.set({ instanceId: 'default', activeLessonId: request.lessonId })
+      await this.selection.set({ instanceId: this.instanceId, activeLessonId: request.lessonId })
       return this.view(old)
     }
     const materials = request.materialIds.map(id => {
@@ -46,19 +54,19 @@ export class Lessons {
       legacyNote = { id: request.legacyNoteId, updatedAt: row.updatedAt }
     }
     const now = new Date().toISOString()
-    const row: Lesson = { version: 1, instanceId: 'default', request, objectiveId: request.lessonId + ':objective', homeworkId: request.lessonId + ':practice',
-      roleKey: { appId: 'kaogong', instanceId: 'default', roleId: 'teacher', subject: request.subject }, binding: null, materials,
+    const row: Lesson = { version: 1, instanceId: this.instanceId, request, objectiveId: request.lessonId + ':objective', homeworkId: request.lessonId + ':practice',
+      roleKey: { appId: 'kaogong', instanceId: this.instanceId, roleId: 'teacher', subject: request.subject }, binding: null, materials,
       ...(legacyNote ? { legacyNote } : {}), roundIds: [], notes: '', completion: null, createdAt: now, updatedAt: now, revision: 0 }
     await this.table.put(request.lessonId, row)
     // The record precedes the navigation pointer. A failed pointer write can retry this same ID.
-    await this.selection.set({ instanceId: 'default', activeLessonId: request.lessonId })
+    await this.selection.set({ instanceId: this.instanceId, activeLessonId: request.lessonId })
     return this.view(row)
   }) }
   read(id: string) { return this.run(() => this.view(this.get(id))) }
   current() { return this.run(async () => { const id = this.selection.get().activeLessonId; return id ? this.view(this.get(id)) : null }) }
   select(id: string) { return this.run(async () => {
     const value = await this.view(this.get(id))
-    await this.selection.set({ instanceId: 'default', activeLessonId: id })
+    await this.selection.set({ instanceId: this.instanceId, activeLessonId: id })
     return value
   }) }
   list() { return this.run(async () => [...this.table.entries()].map(([id, row]) => ({ id, subject: row.request.subject, objective: row.request.objective,
