@@ -69,6 +69,9 @@ async function embeddedAsset(target, root, io) {
     const asset = target.slice('题目_images/'.length).replaceAll('\\', '/')
     if (!imageAsset(asset)) fail('UNSUPPORTED_IMAGE_REFERENCE')
     declaredPath = path.resolve(root, asset)
+  } else if (imageAsset(target)) {
+    // Exact original root-relative references use the same explicitly configured owner root.
+    declaredPath = path.resolve(root, target)
   } else {
     if (!path.isAbsolute(target) || (process.platform === 'win32' && !/^[A-Za-z]:[\\/]/.test(target))) fail('UNSUPPORTED_IMAGE_REFERENCE')
     declaredPath = absolute(target)
