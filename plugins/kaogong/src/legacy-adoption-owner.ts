@@ -62,7 +62,7 @@ export function createAdoptionOwner(ctx:Context,host:KaogongHost,metadata:Domain
  })
  const run=<T>(operation:()=>Promise<T>)=>{if(closing)return Promise.reject(Error('Adoption service is stopping'));const task=Promise.resolve().then(operation);pending.add(task);void task.finally(()=>pending.delete(task)).catch(()=>{});return task}
  return {
-  prepare:()=>run(async()=>{const snapshot=await capture(),evidence=await inspectAdoptionEvidence(snapshot,{materialRoot:config.mineru.get()?.outputDir,questionImageRoot:config.questionImageRoot.get()});const plan=pinAdoptionEvidence(await prepareLegacyAdoption({snapshot,materialEvidence:evidence.materials,inspectRole:input=>ctx.worktableRoles.inspectLegacySource('kaogong',input.roleId,input.sourceKey)}),evidence);await workflow.remember(plan);return adoptionPreview(plan)}),
+  prepare:()=>run(async()=>{const snapshot=await capture(),evidence=await inspectAdoptionEvidence(snapshot,{materialRoot:config.legacyMaterialRoot,questionImageRoot:config.questionImageRoot.get(),mineruRoot:config.mineru.get()?.outputDir});const plan=pinAdoptionEvidence(await prepareLegacyAdoption({snapshot,materialEvidence:evidence.materials,inspectRole:input=>ctx.worktableRoles.inspectLegacySource('kaogong',input.roleId,input.sourceKey)}),evidence);await workflow.remember(plan);return adoptionPreview(plan)}),
   inspect:(id:string)=>run(async()=>{const row=await workflow.inspect(id);return adoptionPreview(row.plan,row.status)}),
   apply:(input:{id:string;fingerprint:string;confirmed:boolean})=>run(async()=>{const row=await workflow.apply(input);return adoptionPreview(row.plan,row.status)}),
   exportPlan:(id:string)=>run(async()=>structuredClone((await workflow.inspect(id)).plan)),
