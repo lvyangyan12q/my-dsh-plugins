@@ -58,7 +58,7 @@ export interface Config {
 
 /** Schemastery schema for {@link Config}. */
 export const Config = z.object({
-  roleCwd: z.string().description('角色课堂新会话的绝对工作目录；留空不创建新会话，已有课堂仍可恢复'),
+  roleCwd: z.string().description('角色新会话的明确绝对目录；留空不注册角色。课堂内容仍可读，恢复原生角色入口前需配置目录'),
   questionImageRoot: z.string().description('历史题目图片的持久绝对目录；留空仅提供随包的两张已核验图片').volatile(),
   topN: z.natural().min(1).default(8),
   mineru: z.object({
