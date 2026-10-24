@@ -1,6 +1,6 @@
 import { TAXONOMY } from './taxonomy.ts'
 
-const storageKey = 'kaogong/default/learning-view/v1'
+const storageKey = (instanceId:string,viewId?:string)=>instanceId==='default'?'kaogong/default/learning-view/v1':`kaogong/instances/${encodeURIComponent(instanceId)}/${viewId?'views/'+encodeURIComponent(viewId)+'/':''}learning-view/v1`
 export type LearningPreferences = {
   version: 1; studyOpen: boolean
   page: 'classroom' | 'materials' | 'practice' | 'errors'
@@ -27,16 +27,16 @@ function validate(value: unknown): LearningPreferences | null {
 }
 
 /** Display choices only. Native bindings, messages, drafts and business evidence stay with their owners. */
-export function readLearningPreferences(): LearningPreferences | null {
+export function readLearningPreferences(instanceId='default',viewId?:string): LearningPreferences | null {
   try {
-    const raw = window.localStorage.getItem(storageKey)
+    const raw = window.localStorage.getItem(storageKey(instanceId,viewId))
     return !raw || raw.length > 4096 ? null : validate(JSON.parse(raw))
   } catch { return null }
 }
 
-export function writeLearningPreferences(value: LearningPreferences): void {
+export function writeLearningPreferences(value: LearningPreferences,instanceId='default',viewId?:string): void {
   const validated = validate(value)
   if (!validated) return
-  try { window.localStorage.setItem(storageKey, JSON.stringify(validated)) }
+  try { window.localStorage.setItem(storageKey(instanceId,viewId), JSON.stringify(validated)) }
   catch { /* Disabled or full browser storage must not prevent learning navigation. */ }
 }

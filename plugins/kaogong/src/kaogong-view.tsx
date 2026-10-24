@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { KnowledgeLibrary } from './knowledge-reader.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
-import { practiceRequest, readPracticeDraft, savePracticeDraft, readAdmittedReviews, markAdmittedReview } from './practice-client.ts'
+import {useLearningHttp,usePracticeClient,ScopedMaterialImage} from './view-context.tsx'
 import { LessonPanel } from './lesson-panel.tsx'
 
 export type DashboardData = {
@@ -106,7 +106,7 @@ function renderStem(stem: string) {
     if (src) {
       parts.push(
         <figure key={`img-${match.index}`} style={{ margin: '12px 0' }}>
-          <img
+          <ScopedMaterialImage
             src={src}
             alt={alt}
             style={{ display: 'block', maxWidth: '100%', height: 'auto', border: '1px solid #e5e7eb', borderRadius: 4 }}
@@ -155,6 +155,8 @@ function optionValue(option: string): string {
 
 
 export function KaogongView({ embedded = false, focusedStudy = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
+  const http=useLearningHttp()
+  const {practiceRequest,readPracticeDraft,savePracticeDraft,readAdmittedReviews,markAdmittedReview}=usePracticeClient()
   const [data, setData] = useBusinessState('dashboard', null)
   const [loading, setLoading] = useBusinessState('loading', false)
   const [error, setError] = useBusinessState('error', null)
@@ -193,7 +195,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('/api/kaogong/dashboard', { credentials: 'same-origin' })
+      const response = await http.fetch('/api/kaogong/dashboard', { credentials: 'same-origin' })
       if (!response.ok) throw new Error(`加载失败 (${response.status})`)
       const value = await response.json() as DashboardData
       if (current()) setData(value)
@@ -202,7 +204,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
     } finally {
       if (current()) setLoading(false)
     }
-  }, [requests])
+  }, [requests,http])
 
   useEffect(() => { if (active) void refresh() }, [active, refresh])
   useEffect(() => {
@@ -231,7 +233,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
   const toggleItem = async (index: number, done: boolean) => {
     if (data === null) return
     try {
-      const response = await fetch('/api/kaogong/plan/done', {
+      const response = await http.fetch('/api/kaogong/plan/done', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },

@@ -8,9 +8,9 @@ export default defineConfig({
   dts: false,
   sourcemap: false,
   clean: false,
-  external: ['react', 'react/jsx-runtime', '@deepseek-ai/dsh-personal-workbench/client'],
+  external: ['react', 'react/jsx-runtime'],
   alias: { 'lucide-react': 'lucide-react/dist/esm/lucide-react.js' },
-  noExternal: ['marked', 'dompurify'],
+  noExternal: ['marked', 'dompurify', 'dsh-worktable/sdk'],
   outputOptions: {
     entryFileNames: 'client.js',
     banner: 'window.__ModuleLoader__.load({ id: "@deepseek-ai/dsh-tool-kaogong", factory: (require) => {',

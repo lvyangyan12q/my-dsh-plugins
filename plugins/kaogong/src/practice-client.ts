@@ -10,19 +10,18 @@ export async function practiceRequest<T>(action: string, body: unknown): Promise
   return value
 }
 
-const admittedKey = 'kaogong/default/admitted-reviews/v1'
+const storageKey=(instanceId:string,suffix:string)=>instanceId==='default'?`kaogong/default/${suffix}/v1`:`kaogong/instances/${encodeURIComponent(instanceId)}/${suffix}/v1`
 /** Delivery markers suppress repeat sends after native admission when the Host projection must be retried. */
-export function readAdmittedReviews(): string[] {
-  try { const value: unknown = JSON.parse(window.localStorage.getItem(admittedKey) ?? '[]'); return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)) : [] } catch { return [] }
+export function readAdmittedReviews(instanceId='default'): string[] {
+  try { const value: unknown = JSON.parse(window.localStorage.getItem(storageKey(instanceId,'admitted-reviews')) ?? '[]'); return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)) : [] } catch { return [] }
 }
-export function markAdmittedReview(roundId: string) { window.localStorage.setItem(admittedKey, JSON.stringify([...new Set([...readAdmittedReviews(), roundId])])) }
+export function markAdmittedReview(roundId: string,instanceId='default') { window.localStorage.setItem(storageKey(instanceId,'admitted-reviews'), JSON.stringify([...new Set([...readAdmittedReviews(instanceId), roundId])])) }
 
-const draftKey = 'kaogong/default/practice-draft/v1'
 export type PracticeDraft = { roundId: string; answers: Record<string, string>; errorReasons: Record<string, string>; notes: Record<string, string> }
 /** Drafts contain learner input and a Host-issued pointer only. Storage failure is explicit. */
-export function savePracticeDraft(draft: PracticeDraft) { window.localStorage.setItem(draftKey, JSON.stringify(draft)) }
-export function readPracticeDraft(): PracticeDraft | null {
-  const raw = window.localStorage.getItem(draftKey)
+export function savePracticeDraft(draft: PracticeDraft,instanceId='default') { window.localStorage.setItem(storageKey(instanceId,'practice-draft'), JSON.stringify(draft)) }
+export function readPracticeDraft(instanceId='default'): PracticeDraft | null {
+  const raw = window.localStorage.getItem(storageKey(instanceId,'practice-draft'))
   if (!raw) return null
   const value: unknown = JSON.parse(raw)
   if (!value || typeof value !== 'object' || !('roundId' in value) || typeof value.roundId !== 'string' || !/^[0-9a-f-]{36}$/i.test(value.roundId)) throw new Error('练习草稿已损坏')
