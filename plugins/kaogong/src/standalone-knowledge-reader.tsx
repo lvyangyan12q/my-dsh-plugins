@@ -62,7 +62,7 @@ export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean
       {entry && <article>
         <h3 style={{ fontSize: 18, overflowWrap: 'anywhere' }}>{entry.title}</h3>
         <p style={{ fontSize: 12, color: '#6b7280', overflowWrap: 'anywhere' }}>{entry.subject} · {entry.kind} · {entry.source}</p>
-        <DocumentMarkdown content={entry.content} />
+        <DocumentMarkdown content={entry.content} imageContext={{entryId:entry.id}} />
       </article>}
     </> : <>
       <input ref={searchInput} aria-label="搜索知识库" placeholder="搜索标题、科目或正文" value={query} onChange={event => setQuery(event.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: 9, margin: '12px 0', border: '1px solid #d1d5db', borderRadius: 4 }} />
