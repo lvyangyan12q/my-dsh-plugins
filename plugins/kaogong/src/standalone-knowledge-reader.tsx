@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBusinessState } from './view-state.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
+import {useLearningHttp} from './view-context.tsx'
 
 import type { Entry } from './knowledge-reader.tsx'
 
 export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean }) {
+  const http=useLearningHttp()
   const [subject, setSubject] = useState('')
   const [kind, setKind] = useState('')
   const [query, setQuery] = useBusinessState('reader.query', '')
@@ -27,7 +29,7 @@ export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean
     const abort = new AbortController()
     const refresh = () => {
       setError('')
-      fetch('/api/kaogong/knowledge?q=' + encodeURIComponent(query), { signal: abort.signal })
+      http.fetch('/api/kaogong/knowledge?q=' + encodeURIComponent(query), { signal: abort.signal })
         .then(async r => { if (!r.ok) throw new Error('知识库加载失败'); return r.json() })
         .then(data => { if (!Array.isArray(data.entries)) throw new Error('知识库返回了无法识别的数据'); if (!abort.signal.aborted) setEntries(data.entries) })
         .catch(e => { if (!abort.signal.aborted) setError(e.message) })
@@ -35,7 +37,7 @@ export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean
     const timer = setTimeout(refresh, 250)
     const interval = setInterval(refresh, 15000)
     return () => { clearTimeout(timer); clearInterval(interval); abort.abort() }
-  }, [query, active])
+  }, [query, active,http])
   useEffect(() => {
     if (!active) return
     if (!selected) { setEntry(null); return }
@@ -44,13 +46,13 @@ export function StandaloneKnowledgeLibrary({ active = true }: { active?: boolean
     setLoading(true)
     setEntry(null)
     setError('')
-    fetch('/api/kaogong/knowledge?id=' + encodeURIComponent(selected), { signal: abort.signal })
+    http.fetch('/api/kaogong/knowledge?id=' + encodeURIComponent(selected), { signal: abort.signal })
       .then(async r => { if (!r.ok) throw new Error('资料正文加载失败'); return r.json() })
       .then(value => { if (!abort.signal.aborted) setEntry({ ...value, id: selected }) })
       .catch(e => { if (!abort.signal.aborted) setError(e.message) })
       .finally(() => { if (!abort.signal.aborted) setLoading(false) })
     return () => abort.abort()
-  }, [selected, active])
+  }, [selected, active,http])
   const filtered = entries.filter(item => (!subject || item.subject === subject) && (!kind || item.kind === kind))
   return <div aria-label="考公独立资料">
     {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
