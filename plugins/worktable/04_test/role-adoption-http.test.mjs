@@ -31,6 +31,7 @@ test('authenticated browser adoption selects owner-inspected identity; arbitrary
   assert.equal((await request({action:'adoption-apply',instanceId:instance.id,roleId:'teacher',sourceKey:'old/default/teacher',fingerprint:preview.body.fingerprint})).body.code,'confirmation-required')
   const apply=await request({action:'adoption-apply',instanceId:instance.id,roleId:'teacher',sourceKey:'old/default/teacher',fingerprint:preview.body.fingerprint,confirmed:true,sessionId:'forged',source:{sessionId:'forged'}})
   assert.equal(apply.status,200);assert.equal(apply.body.sessionId,'native-current');assert.deepEqual(apply.body.previousSessionIds,['native-history']);assert.equal(creates,0)
+  assert.equal((await request({action:'inspect-legacy-source',appId:'reader',roleId:'teacher',sourceKey:'old/default/teacher'})).body.code,'invalid-action')
   assert.equal((await request({action:'resolve-session',sessionId:'native-current'})).body.code,'invalid-action')
   assert.equal((await request({action:'adoption-preview',instanceId:instance.id,roleId:'teacher',sourceKey:'forged-source'})).body.status,'blocked')
   ctx.sessionController.projections=async()=>({kind:'sequenced',values:{agentPreset:'changed-without-adoption'}})
