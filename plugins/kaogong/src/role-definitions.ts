@@ -2,13 +2,14 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
-import type { RoleDefinition } from '@deepseek-ai/dsh-personal-workbench'
+import type { RoleDefinition, PrivateCapability } from 'dsh-worktable/sdk'
 import { TAXONOMY } from './taxonomy.ts'
 
 export const legacyTeacherPresetId = 'personal-workbench.kaogong-teacher.v1'
 export const teachingSkillProvider = 'kaogong-packaged-teaching'
 export const roleSubjects = TAXONOMY.map(row => row.subject)
-const subjectPresetIds = ['language', 'quantitative', 'reasoning', 'data-analysis', 'general-knowledge', 'essay'].map(id => `kaogong.teacher.${id}.v1`)
+export const subjectRoleIds = ['language', 'quantitative', 'reasoning', 'data-analysis', 'general-knowledge', 'essay'].map(id => `teacher.${id}`)
+const subjectPresetIds = subjectRoleIds.map(id => `kaogong.${id}.v1`)
 
 /** Application-owned personas and trusted installation Skill root; never loads roles/cordis.yml. */
 export async function kaogongRolePresets() {
@@ -16,7 +17,7 @@ export async function kaogongRolePresets() {
     { id: legacyTeacherPresetId, roleId: 'teacher', name: '默认老师（旧课堂）', file: '老师' },
     { id: 'kaogong.class-advisor.v1', roleId: 'class-advisor', name: '班主任', file: '班主任' },
     { id: 'kaogong.counselor.v1', roleId: 'counselor', name: '辅导员', file: '辅导员' },
-    ...roleSubjects.map((subject, index) => ({ id: subjectPresetIds[index]!, roleId: 'teacher', name: subject, file: '老师', subject })),
+    ...roleSubjects.map((subject, index) => ({ id: subjectPresetIds[index]!, roleId: subjectRoleIds[index]!, name: subject, file: '老师', subject })),
   ]
   return Promise.all(rows.map(async row => ({ id: row.id, name: row.name, description: '考公持续课堂角色', plugins: [
     { name: '@deepseek-ai/dsh-persona', config: { prefix: (await readFile(new URL(`../roles/personas/${row.file}.md`, import.meta.url), 'utf8')).replaceAll('{科目}', row.subject ?? '已确认科目'), complete: false, includeRuntimeContext: true } },
@@ -27,26 +28,32 @@ export async function kaogongRolePresets() {
 }
 
 /** Explicit deployment location is captured by each durable intent, not inferred from process cwd. */
+export function kaogongPrivateCapabilities(): PrivateCapability[] {
+  const rows = [{id:'teacher',title:'默认老师',presetId:legacyTeacherPresetId},
+    {id:'class-advisor',title:'班主任',presetId:'kaogong.class-advisor.v1'},
+    {id:'counselor',title:'辅导员',presetId:'kaogong.counselor.v1'},
+    ...roleSubjects.map((title,index)=>({id:subjectRoleIds[index]!,title,presetId:subjectPresetIds[index]!}))]
+  return [...rows.map(row=>({...row,kind:'agent' as const,enabled:true,userInvocable:true,modelInvocable:true})),
+    {id:'kaogong-teach',title:'考公教学',kind:'skill',provider:teachingSkillProvider,enabled:true,userInvocable:true,modelInvocable:true}]
+}
 export function kaogongRoleDefinitions(cwd?: string): RoleDefinition[] {
-  const definition = (roleId: string, presetId: string, subject?: string): RoleDefinition => ({
-    key: { appId: 'kaogong', instanceId: 'default', roleId, ...(subject ? { subject } : {}) }, presetId,
-    ...(cwd ? { creation: { cwd } } : {}), teaching: { skillName: 'kaogong-teach', provider: teachingSkillProvider },
-  })
-  return [definition('teacher', legacyTeacherPresetId), definition('class-advisor', 'kaogong.class-advisor.v1'), definition('counselor', 'kaogong.counselor.v1'),
-    ...roleSubjects.map((subject, index) => definition('teacher', subjectPresetIds[index]!, subject))]
+  if (!cwd) return []
+  return kaogongPrivateCapabilities().filter(row=>row.kind==='agent').map(row=>({
+    id:row.id,title:row.title,creation:{cwd},agent:{kind:'agent',source:'application',ownerAppId:'kaogong',id:row.id},
+    skills:[{kind:'skill',source:'application',ownerAppId:'kaogong',id:'kaogong-teach'}],
+  }))
 }
 
-/** Optional registration only: no Session create, preset scope acquisition or model invocation. */
+/** Registration owns declarations only; no native Session is created or silently adopted. */
 export async function installKaogongRoles(ctx: Context, cwd?: string) {
-  const removePresets: (() => Promise<void>)[] = []
-  const removeDefinitions: (() => void)[] = []
+  const removers: (() => void | Promise<void>)[] = []
   try {
-    for (const preset of await kaogongRolePresets()) removePresets.push(await ctx.agentPresets.register(preset))
-    for (const definition of kaogongRoleDefinitions(cwd)) removeDefinitions.push(ctx.personalWorkbenchBindings.registerRole(definition))
+    for (const preset of await kaogongRolePresets()) removers.push(await ctx.agentPresets.register(preset))
+    removers.push(ctx.worktableCapabilities.contribute('kaogong',kaogongPrivateCapabilities()))
+    removers.push(ctx.worktableRoles.contribute('kaogong',kaogongRoleDefinitions(cwd)))
   } catch (error) {
-    for (const remove of removeDefinitions.reverse()) remove()
-    for (const remove of removePresets.reverse()) await remove()
+    await Promise.allSettled(removers.reverse().map(remove=>Promise.resolve().then(remove)))
     throw error
   }
-  return async () => { for (const remove of removeDefinitions.reverse()) remove(); for (const remove of removePresets.reverse()) await remove() }
+  return async () => { for (const remove of removers.reverse()) await remove() }
 }

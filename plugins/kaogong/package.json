@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-kaogong",
   "description": "武汉公务员考试学习套件：错题本（归纳问题点/总结）+ 倒排学习计划与进度",
-  "version": "0.1.0",
+  "version": "0.2.0-rc.3.1",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -43,9 +43,7 @@
     "client": {
       "platform": "web",
       "inject": [
-        "@deepseek-ai/dsh-client-ui-sidebar",
-        "@deepseek-ai/dsh-client-ui-workspace",
-        "@deepseek-ai/dsh-personal-workbench"
+        "worktableApplicationViews"
       ]
     }
   },
@@ -53,18 +51,22 @@
     "build": "pnpm run build:host && pnpm run build:client && pnpm run build:types",
     "build:host": "tsdown -c tsdown.host.config.ts",
     "build:client": "tsdown -c tsdown.config.ts && tsc -p tsconfig.client.json",
-    "build:types": "tsc -p tsconfig.host.json",
-    "test:artifact": "node --test tests/views.test.mjs tests/package.test.mjs",
+    "build:types": "node scripts/check-host-types.mjs --emit",
+    "test:artifact": "node --test tests/package.test.mjs",
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
     "test:practice": "tsx --test tests/practice-rounds.test.mjs tests/views.test.mjs",
     "test:runtime": "tsx scripts/check-practice-runtime.mjs",
     "typecheck:client": "tsc -p tsconfig.client.json --noEmit --emitDeclarationOnly false",
-    "typecheck:host": "tsc -p tsconfig.host.json --noEmit --emitDeclarationOnly false",
-    "test:platform": "tsx --test tests/platform-integration.test.mjs tests/views.test.mjs tests/practice-rounds.test.mjs tests/lessons.test.mjs tests/role-presets.test.mjs tests/runtime-compat.test.mjs"
+    "typecheck:host": "node scripts/check-host-types.mjs",
+    "test:platform": "node scripts/test-current.mjs",
+    "pack": "node scripts/pack-release.mjs",
+    "test:host": "node scripts/test-current.mjs --host",
+    "test:client": "node scripts/test-current.mjs --client"
   },
   "license": "MIT",
   "engines": {
-    "node": "^22.19.0 || >=24.0.0"
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": "0.2.1-rc.3"
   },
   "dependencies": {
     "adm-zip": "^0.6.0",
@@ -74,20 +76,18 @@
     "zod": "^4.4.3"
   },
   "optionalDependencies": {
-    "@deepseek-ai/dsh-persona": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-skill-filesystem": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-tool-skill": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-tool-ask-user": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-personal-workbench": "0.1.0"
+    "@deepseek-ai/dsh-persona": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tool-skill": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tool-ask-user": "0.2.1-rc.3"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.4",
-    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-client-ui-sidebar": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-client-ui-workspace": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-agent-preset-registry": "0.2.0-rc.2 || 0.2.1-alpha.2",
-    "@deepseek-ai/dsh-personal-workbench": "file:../personal-workbench",
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-ui-sidebar": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-ui-workspace": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-agent-preset-registry": "0.2.1-rc.3",
     "@types/react": "~18.3.1",
     "@types/node": "^24.0.0",
     "react": "^18.2.0",
@@ -97,11 +97,17 @@
     "tsx": "^4.20.0",
     "lucide-react": "0.468.0",
     "tsdown": "^0.22.2",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "dsh-worktable": "file:../worktable/01_content"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "4.0.4",
-    "@deepseek-ai/dsh-host-webserver": "0.2.0-rc.2 || 0.2.1-alpha.2"
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/dsh-host-webserver": "0.2.1-rc.3",
+    "dsh-worktable": "0.10.0-rc.3.2",
+    "@deepseek-ai/schemastery": "3.18.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-connection": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-agent-preset-registry": "0.2.1-rc.3"
   }
 }
-

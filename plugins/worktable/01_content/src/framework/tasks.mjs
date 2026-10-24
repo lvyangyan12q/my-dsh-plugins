@@ -1,14 +1,15 @@
 import {randomUUID} from 'node:crypto'
 import {RoleStore,RoleError} from './roles.mjs'
 import {AdmissionGate} from './admission.mjs'
-export class TaskStore extends RoleStore{constructor(file){super(file,[1,2])}}
+import {ApplicationTaskOwners} from './application-task-owners.mjs'
+export class TaskStore extends RoleStore{constructor(file){super(file,[1,2,4])}}
 const fail=(code,message)=>{throw new RoleError(code,message)}
 const textOf=value=>{if(typeof value!=='string'||!value.trim()||value.length>24000)fail('task-text-invalid','请输入任务，最多24000字。');return value}
 /** Durable preparation and submission references. Native DSH owns execution and its full conversation. */
 export class TaskDirectory {
- constructor(store,{applications,roles,resources,gate=new AdmissionGate(),native}){Object.assign(this,{store,applications,roles,resources,gate,native});this.operations=new Set();this.closing=false;this.preparationOwners=new Map()}
+ constructor(store,{applications,roles,resources,gate=new AdmissionGate(),native}){Object.assign(this,{store,applications,roles,resources,gate,native});this.operations=new Set();this.closing=false;this.preparationOwners=new Map();this.applicationOwners=new ApplicationTaskOwners(this)}
  run(operation,serial=true){if(this.closing)return Promise.reject(new RoleError('unavailable','任务状态所有者已关闭。'));const task=serial?this.gate.run(()=>{if(this.closing)fail('unavailable','任务状态所有者已关闭。');return operation()}):Promise.resolve().then(operation);this.operations.add(task);void task.finally(()=>this.operations.delete(task)).catch(()=>{});return task}
- close(){if(!this.closePromise){this.closing=true;this.closePromise=(async()=>{await Promise.allSettled([...this.operations]);await this.store.close()})()}return this.closePromise}
+ close(){if(!this.closePromise){this.closing=true;this.closePromise=(async()=>{await Promise.allSettled([...this.operations]);await this.applicationOwners.close();await this.store.close()})()}return this.closePromise}
  list(viewId){return this.run(async()=>{const context=await (this.applications.resolveStoredView?.(viewId)??this.applications.resolveView(viewId));return (await this.store.snapshot()).tasks?.filter(row=>row.instanceId===context.instance.id).map(row=>this.present(row))??[]},false)}
  present(row){const value=structuredClone(row);if(value.status==='submitting'){value.status='unknown';value.notice='提交结果尚未确认。请查看原生会话；不会自动重发。'}return value}
  handoff(){return this.run(async()=>({tasks:(await this.store.snapshot()).tasks?.map(row=>this.present(row))??[],roles:await this.roles.handoff?.()??[]}),false)}
@@ -17,22 +18,26 @@ export class TaskDirectory {
  stopSession(id){return this.run(async()=>{const value=await this.knownSession(id);for(const row of (await this.store.snapshot()).tasks??[])if(row.sessionId===id){await this.stopPreparation(row);if(row.preparation)await this.put({...row,stopRequestedAt:Date.now()})}await this.native.cancel(value);return {...value,notice:'已请求原生Stop；保留排队消息，已发生的写入不会回滚。'}},false)}
  async find(id){const row=(await this.store.snapshot()).tasks?.find(row=>row.id===id);if(!row)fail('task-missing','任务记录不存在。');return row}
  registerPreparationOwner(kind,owner){if(!/^[a-z][a-z0-9.-]*$/.test(kind)||this.preparationOwners.has(kind)||typeof owner?.validate!=='function'||typeof owner?.stop!=='function')fail('preparation-owner-invalid','任务准备所有者无效或重复。');this.preparationOwners.set(kind,owner);return()=>{if(this.preparationOwners.get(kind)===owner)this.preparationOwners.delete(kind)}}
- async validatePreparation(row){if(!row.preparation)return;const owner=this.preparationOwners.get(row.preparation.kind);if(!owner)fail('preparation-owner-unavailable','此受管任务的准备所有者暂不可用，请恢复服务；不会改用其他通道。');await owner.validate(row)}
- async stopPreparation(row){if(row.preparation)await this.preparationOwners.get(row.preparation.kind)?.stop(row)}
+ contributeOwner(appId,kind,owner){return this.applicationOwners.contribute(appId,kind,owner)}
+ prepareOwned(input){return this.run(async()=>{const plan=await this.applicationOwners.plan(input);return this.prepare(plan.input,plan.preparation)})}
+ recoverOwner(id){return this.run(async()=>{const row=await this.find(id);if(row.status!=='accepted'||!row.requestId||!row.preparation?.ownerAppId)fail('task-owner-recovery-invalid','只有已确认原生准入的应用任务可恢复发送标记。');if(row.ownerFinalization==='done')return row;return this.applicationOwners.finalize(row)})}
+ async validatePreparation(row){if(!row.preparation)return;if(row.preparation.ownerAppId)return this.applicationOwners.validate(row);const owner=this.preparationOwners.get(row.preparation.kind);if(!owner)fail('preparation-owner-unavailable','此受管任务的准备所有者暂不可用，请恢复服务；不会改用其他通道。');await owner.validate(row)}
+ async stopPreparation(row){if(row.preparation?.ownerAppId)return this.applicationOwners.stop(row);if(row.preparation)await this.preparationOwners.get(row.preparation.kind)?.stop(row)}
  prepareFromWeb(input,source){if(source?.kind!=='website-module'||typeof source.moduleId!=='string'||!/^[a-z][a-z0-9.-]{0,79}$/.test(source.moduleId)||typeof source.capabilityId!=='string'||source.capabilityId.length<1||source.capabilityId.length>200||!Number.isSafeInteger(source.revision)||source.revision<1||Object.keys(source).some(key=>!['kind','origin','moduleId','capabilityId','revision'].includes(key)))fail('web-source-invalid','网页来源无效。');let url;try{url=new URL(source.origin)}catch{fail('web-source-invalid','网页来源无效。')}if(!['http:','https:'].includes(url.protocol)||url.origin!==source.origin)fail('web-source-invalid','网页来源需要精确origin。');return this.prepare(input,undefined,source)}
  prepare(input,preparation,webSource){return this.run(async()=>{
   const {view,instance,application}=await this.applications.resolveView(input.viewId);if(application.kind!=='deep')fail('deep-required','网页没有任务执行权限。');
   await this.applications.assertEnabled?.(instance.appId);const role=await this.roles.read(instance.id,input.roleId);if(role.unavailable)fail('role-unavailable',role.unavailable.reason);const binding=role.binding;if(binding?.phase!=='ready')fail('role-not-ready','请先在应用角色中创建可用会话。');
-  if(preparation&&(!this.preparationOwners.has(preparation.kind)||typeof preparation.id!=='string'))fail('preparation-owner-unavailable','任务准备所有者暂不可用。');
+  if(preparation?.ownerAppId){if(preparation.ownerAppId!==instance.appId)fail('task-owner-invalid','应用任务来源不匹配。');this.applicationOwners.entry(instance.appId,preparation.kind,preparation.ownerVersion)}
+  else if(preparation&&(!this.preparationOwners.has(preparation.kind)||typeof preparation.id!=='string'))fail('preparation-owner-unavailable','任务准备所有者暂不可用。');
   const contexts=await this.resources.captureTaskContexts(input.viewId,input.contexts??[]);
   const row={id:randomUUID(),revision:1,status:'prepared',appId:instance.appId,instanceId:instance.id,instanceRevision:instance.revision,roleId:input.roleId,sessionId:binding.sessionId,bindingRevision:binding.revision,source:{viewId:view.id,viewType:view.type,applicationTitle:application.title,...(webSource?{web:structuredClone(webSource)}:{})},...(preparation?{preparation:structuredClone(preparation)}:{}),text:textOf(input.text),contexts,createdAt:Date.now()};
-  await this.store.change(data=>{data.tasks??=[];if(preparation)data.schema=2;data.tasks.push(row);return row});return row
+  await this.store.change(data=>{data.tasks??=[];if(preparation)data.schema=Math.max(data.schema,preparation.ownerAppId?4:2);data.tasks.push(row);return row});return row
  })}
  edit(id,revision,input){return this.run(async()=>{const row=await this.find(id);if(row.status!=='prepared'||row.revision!==revision)fail('task-changed','任务已更新或发送，请刷新。');const text=textOf(input.text);if(!Array.isArray(input.contexts)||input.contexts.reduce((sum,c)=>sum+(typeof c?.text==='string'?c.text.length:32001),0)>32000||input.contexts.some(c=>!row.contexts.some(old=>old.id===c.id)||typeof c.text!=='string'||c.text.length>16000)||new Set(input.contexts.map(c=>c.id)).size!==input.contexts.length)fail('context-invalid','只能编辑或移除已准备的上下文。');const next={...row,text,contexts:input.contexts.map(c=>({...row.contexts.find(old=>old.id===c.id),text:c.text})),revision:row.revision+1};await this.put(next);return next})}
  discard(id,revision){return this.run(async()=>{const row=await this.find(id);if(row.status!=='prepared'||row.revision!==revision)fail('task-changed','任务已更新或发送。');await this.stopPreparation(row);return this.put({...row,status:'discarded',revision:row.revision+1})})}
  put(row){return this.store.change(data=>{const index=data.tasks.findIndex(saved=>saved.id===row.id),stopRequestedAt=Math.max(data.tasks[index].stopRequestedAt??0,row.stopRequestedAt??0);const next={...row,...(stopRequestedAt?{stopRequestedAt}:{})};data.tasks[index]=next;return next})}
  async validate(row){await this.validatePreparation(row);await this.applications.assertEnabled?.(row.appId);const context=await this.applications.resolveView(row.source.viewId);if(context.instance.id!==row.instanceId||context.instance.appId!==row.appId||context.instance.revision!==row.instanceRevision)fail('source-changed','来源实例已改变，请重新准备。');await this.roles.resolve(row.instanceId,row.roleId,row.sessionId,row.bindingRevision);const current=await this.resources.captureTaskContexts(row.source.viewId,row.contexts.map(c=>c.reference));if(current.length!==row.contexts.length||current.some((c,index)=>c.fingerprint!==row.contexts[index].fingerprint))fail('context-changed','资料或共享授权已改变，请重新准备任务。')}
- submit(id,revision){return this.run(async()=>{const prepared=await this.find(id);if(prepared.requestId)return this.present(prepared);return this.resources.withTaskLease(prepared.source.viewId,prepared.contexts.map(c=>c.reference),async()=>{
+ submit(id,revision){return this.run(async()=>{const prepared=await this.find(id);if(prepared.requestId)return this.present(prepared);if(prepared.preparation?.ownerAppId)return this.submitOwned(prepared,revision);return this.resources.withTaskLease(prepared.source.viewId,prepared.contexts.map(c=>c.reference),async()=>{
   let row=await this.find(id);if(row.requestId)return this.present(row);if(row.status!=='prepared'||row.revision!==revision)fail('task-changed','任务已更新或放弃，请刷新。');
   await this.validate(row);
   const prompt=[row.text,...row.contexts.map(c=>'资料上下文（用户确认，非额外权限）：'+c.title+'\n'+c.text)].join('\n\n');
@@ -42,6 +47,21 @@ export class TaskDirectory {
   try{const result=await this.gate.detached(()=>this.native.prompt({...row.payload,requestId:row.requestId},AbortSignal.timeout(15000)));if(result?.accepted!==true)throw Error('原生未返回准入回执。');await this.native.flush?.();row={...row,status:'accepted',notice:'已进入原生会话。执行结果、问题、审批和轨迹请在原生对话查看。'};return await this.put(row)}
   catch(error){const unknown={...row,status:'unknown',notice:'提交结果未知，请查看原生会话；不会自动重发。',error:String(error.message??error).slice(0,1000)};try{await this.put(unknown)}catch{}return unknown}
  })})}
+ async submitOwned(row,revision){
+  if(row.status!=='prepared'||row.revision!==revision)fail('task-changed','任务已更新或放弃，请刷新。')
+  await this.validate(row)
+  const prompt=[row.text,...row.contexts.map(c=>'资料上下文（用户确认，非额外权限）：'+c.title+'\n'+c.text)].join('\n\n')
+  row={...row,revision:row.revision+1,status:'submitting',requestId:randomUUID(),submittedAt:Date.now(),payload:{sessionId:row.sessionId,mode:'queue',content:[{type:'text',text:prompt}]}}
+  await this.put(row)
+  // Business claims are outside resource leases. Validation inside the lease is read-only.
+  try{await this.applicationOwners.beforeSubmit(row)}catch(error){return this.put({...row,status:'failed',notice:'应用准入前检查失败；未调用原生发送。',error:String(error.message??error).slice(0,1000)})}
+  row=await this.resources.withTaskLease(row.source.viewId,row.contexts.map(c=>c.reference),async()=>{
+   try{await this.validate(row)}catch(error){return this.put({...row,status:'failed',notice:error.message})}
+   try{const result=await this.gate.detached(()=>this.native.prompt({...row.payload,requestId:row.requestId},AbortSignal.timeout(15000)));if(result?.accepted!==true)throw Error('原生未返回准入回执。');await this.native.flush?.();return this.put({...row,status:'accepted',ownerFinalization:'pending',notice:'已进入原生会话；应用发送标记正在确认。'})}
+   catch(error){const unknown={...row,status:'unknown',notice:'提交结果未知，请查看原生会话；不会自动重发。',error:String(error.message??error).slice(0,1000)};try{await this.put(unknown)}catch{}return unknown}
+  })
+  return row.status==='accepted'?this.applicationOwners.finalize(row):row
+ }
  open(id){return this.run(async()=>{const row=await this.find(id);if(!row.requestId)fail('not-submitted','此准备任务尚未发送。');return {sessionId:row.sessionId}},false)}
  stop(id){return this.run(async()=>{const row=await this.find(id);if(!row.requestId||!['accepted','unknown','submitting'].includes(row.status))fail('not-submitted','此任务没有准入记录。');await this.stopPreparation(row);if(row.preparation)await this.put({...row,stopRequestedAt:Date.now()});await this.native.cancel({sessionId:row.sessionId});await this.put({...row,stopRequestedAt:Date.now()});return {sessionId:row.sessionId,notice:'已请求原生Stop；队列保留，已发生的写入不会回滚。'}},false)}
 }

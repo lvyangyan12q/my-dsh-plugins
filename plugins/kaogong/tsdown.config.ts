@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown'
+import {fileURLToPath} from 'node:url'
 
 export default defineConfig({
   entry: { client: 'src/client.tsx' },
@@ -9,7 +10,7 @@ export default defineConfig({
   sourcemap: false,
   clean: false,
   external: ['react', 'react/jsx-runtime'],
-  alias: { 'lucide-react': 'lucide-react/dist/esm/lucide-react.js' },
+  alias: { 'dsh-worktable/sdk':fileURLToPath(new URL('../worktable/01_content/src/sdk.mjs',import.meta.url)), 'lucide-react': 'lucide-react/dist/esm/lucide-react.js' },
   noExternal: ['marked', 'dompurify', 'dsh-worktable/sdk'],
   outputOptions: {
     entryFileNames: 'client.js',

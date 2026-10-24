@@ -8,7 +8,7 @@ export default defineConfig({
   dts: false,
   sourcemap: false,
   clean: true,
-  external: [/^@deepseek-ai\//, 'zod', 'node:crypto', 'node:http'],
+  external: [/^@deepseek-ai\//, 'zod', 'node:crypto', 'node:http', 'dsh-worktable/sdk'],
   outputOptions: {
     entryFileNames: 'index.js',
   },

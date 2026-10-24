@@ -1,6 +1,16 @@
 # Kaogong
 
-DSH Web `0.2.0-rc.2` learning application: notebook, plan/progress, question bank, knowledge reader, durable practice and lessons. Install the prebuilt bundle through the [official release instructions](../../README.md#prebuilt-installation).
+DSH Web `0.2.1-rc.3` + Worktable `0.10.0-rc.3.2` learning application: notebook, plan/progress, question bank, knowledge reader, durable practice and lessons. Install the prebuilt bundle through the [official release instructions](../../README.md#prebuilt-installation).
+
+## rc.3 Application Boundary
+
+The Host and client register through the public Worktable SDK. Learning instances start empty; the separate source-library instance exposes original bank/material rows through explicit read-only grants. Notes, scores, lessons and role Sessions remain instance-private. Each HTTP/asset request requires the registered `viewId`; native tools use the actual execution Agent Session, never a model-supplied instance selector. Subject teacher presets retain their original IDs.
+
+Owned review/lesson preparation has no send side effect. Actual native admission claims the business record; only a known accepted and flushed receipt finalizes its sent marker. Unknown admission is retained for inspection. Recovering an accepted task's marker never resends the native message.
+
+Legacy absolute paths below are preserved configuration references, not automatic data access grants. The rc.3 candidate does not open, repair, import, collect or move old data on activation. Historical image/job access remains unavailable until the explicit migration preview and ownership mapping in ticket09; the two verified bundled images remain available. New parser jobs are scoped to the creating instance. Do not remove old data or rollback packages.
+
+For source builds set `DSH_SOURCE` to a built, unpatched official rc.3 checkout. Run `npm run typecheck:host`, `npm run test:platform`, then `npm run pack`. The pack entry checks current Host/Client contracts and package contents and creates an immutable versioned archive in `releases/`; it refuses an existing filename. Legacy alpha-specific view fixtures are retained for their frozen artifact, and are not the current SDK classroom gate.
 
 ## Configuration And Preservation
 
