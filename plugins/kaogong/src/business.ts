@@ -37,6 +37,8 @@ import { KNOWLEDGE_KINDS } from './types.ts'
 export interface Config {
   /** Read only on explicit adoption preview; mounting never reads or writes this old home. */
   legacySourceHome?: string
+  /** Canonical legacy material collection root, independent from the parser jobs outputDir. */
+  legacyMaterialRoot?: string
   /** Explicit absolute location for new role Sessions; persisted before creation. */
   roleCwd?: string
   /** Existing image directory, independent of the installed package; no automatic copying. */
@@ -49,6 +51,7 @@ export interface Config {
 /** Schemastery schema for {@link Config}. */
 export const Config = z.object({
   legacySourceHome: z.string().description('旧考公独立 home 的明确绝对路径；仅点击接管预览时只读检查，不自动迁移或写旧目录'),
+  legacyMaterialRoot: z.string().description('旧资料集合的明确绝对根目录；仅接管预览使用，与MinerU作业outputDir独立，留空不推断'),
   roleCwd: z.string().description('角色新会话的明确绝对目录；留空不注册角色。课堂内容仍可读，恢复原生角色入口前需配置目录'),
   questionImageRoot: z.string().description('历史题目图片的持久绝对目录；留空仅提供随包的两张已核验图片').volatile(),
   topN: z.natural().min(1).default(8),

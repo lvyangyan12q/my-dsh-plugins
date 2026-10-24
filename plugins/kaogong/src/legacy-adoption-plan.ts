@@ -7,6 +7,7 @@ import {roleSubjects,subjectRoleIds} from './role-definitions.ts'
 import type {LegacyMaterialEvidence} from './legacy-material-evidence.mjs'
 import type {LegacyBankImageEvidence} from './legacy-bank-image-evidence.mjs'
 import type {LegacyPrivateAssetEvidence} from './legacy-private-assets.mjs'
+import {safePracticeQuestion} from './practice-rounds.ts'
 export function canonical(value:unknown):string{
  if(Array.isArray(value))return '['+value.map(canonical).join(',')+']'
  if(value!==null&&typeof value==='object')return '{'+Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,value])=>JSON.stringify(key)+':'+canonical(value)).join(',')+'}'
@@ -79,6 +80,11 @@ export async function prepareLegacyAdoption({snapshot,inspectRole,materialEviden
    const proof=domain==='knowledge'?rawMaterials.get(key):undefined
    if(proof&&(row.kind==='笔记'||typeof row.content!=='string'||bytesHash(Buffer.from(row.content))!==proof.sourceContentSha256))fail('LEGACY_MATERIAL_SOURCE_CHANGED')
    if(domain==='knowledge'&&!proof)privateKnowledgeIds.push(key)
+   if(domain==='bank'){
+    const approved=row.reviewStatus==='approved',eligible=approved&&safePracticeQuestion({...bankQuestion.parse(original),id:key})
+    const count=approved?(eligible?'bankGuardEligibleApproved':'bankGuardDeferredApproved'):'bankNotApproved'
+    counts[count]=(counts[count]??0)+1
+   }
    if(domain==='practice'&&row.review==='sending')counts.unknownReviews=(counts.unknownReviews??0)+1
    if(domain==='practice'&&Number(row.projectedRevision)<Number(row.revision))counts.pendingProjections=(counts.pendingProjections??0)+1
    records.push({domain,target:domain==='bank'||proof?'library':'history',key,value,hash:fingerprint(value)})

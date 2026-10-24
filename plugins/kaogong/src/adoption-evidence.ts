@@ -1,18 +1,17 @@
-import {join} from 'node:path'
 import {inspectLegacyMaterialEvidence,revalidateLegacyMaterialEvidence} from './legacy-material-evidence.mjs'
 import {inspectLegacyBankImageEvidence,revalidateLegacyBankImageEvidence} from './legacy-bank-image-evidence.mjs'
 import {inspectLegacyPrivateAssets,revalidateLegacyPrivateAssets} from './legacy-private-assets.mjs'
 import {fingerprint,type LegacyInspectionSnapshot,type LegacyAdoptionPlan} from './legacy-adoption-plan.ts'
 
 /** Explicit configured roots are read only on concrete preparation, never plugin activation. */
-export async function inspectAdoptionEvidence(snapshot:LegacyInspectionSnapshot,roots:{materialRoot?:string;questionImageRoot?:string}){
+export async function inspectAdoptionEvidence(snapshot:LegacyInspectionSnapshot,roots:{materialRoot?:string;questionImageRoot?:string;mineruRoot?:string}){
  const materials=roots.materialRoot?(await inspectLegacyMaterialEvidence({snapshot,materialRoot:roots.materialRoot})).evidence:undefined
  const file=snapshot.files.find(row=>row.name==='kaogong_knowledge')!
  const rows=JSON.parse(Buffer.from(file.bytesBase64,'base64').toString()).tables.entries
  const positives=new Set(materials?.entries.map(row=>row.id)??[])
  const privateEntryIds=Object.keys(rows).filter(id=>!positives.has(id))
  const privateEvidence=roots.materialRoot?(await inspectLegacyPrivateAssets({snapshot,materialRoot:roots.materialRoot,privateEntryIds})).evidence:undefined
- const bank=roots.questionImageRoot?(await inspectLegacyBankImageEvidence({snapshot,questionImageRoot:roots.questionImageRoot,mineruRoot:roots.materialRoot?join(roots.materialRoot,'storage/mineru'):undefined})).evidence:undefined
+ const bank=roots.questionImageRoot?(await inspectLegacyBankImageEvidence({snapshot,questionImageRoot:roots.questionImageRoot,mineruRoot:roots.mineruRoot})).evidence:undefined
  return {...(materials?{materials}:{}),...(privateEvidence?{private:privateEvidence}:{}),...(bank?{bank}:{})}
 }
 export function pinAdoptionEvidence(plan:LegacyAdoptionPlan,evidence:NonNullable<LegacyAdoptionPlan['assetEvidence']>):LegacyAdoptionPlan{

@@ -15,13 +15,14 @@ node scripts/stage-acceptance-source.mjs --output-root <新绝对目录> --sessi
 
 输出七份旧格式存储、10道已批准的合成资料分析题（标准答案均B）、一份私有讲义、确定性PNG柱图（蓝10、橙20），以及私有回执。错题、练习、课堂和按日进度初始为空。图是新编合成数据，不伪造PDF、MinerU作业或人工核验索引；空材料manifest只用于明确没有原始PDF来源。题图原引用为`bars.png`，通过显式图片根、精确原引用与字节哈希读取；没有改动现有练习安全筛选规则。
 
-独立Host配置只合并下列考公插件字段，保留其他配置及模型：
+独立Host配置只合并下列考公插件字段，保留其他配置及模型。legacyMaterialRoot是原始材料集合根；mineru.outputDir仍是实际作业根，不从它猜测父目录，不能把原有解析器指向集合根。夹具的作业根明确为材料根/storage/mineru：
 
 ```yaml
 legacySourceHome: <回执sourceHome>
+legacyMaterialRoot: <回执materialRoot>
 questionImageRoot: <回执questionImageRoot>
 mineru:
-  outputDir: <回执materialRoot>
+  outputDir: <回执materialRoot>/storage/mineru
 roleCwd: <原生已登记的精确cwd>
 ```
 
@@ -29,6 +30,6 @@ roleCwd: <原生已登记的精确cwd>
 
 已认证同源客户端依次POST `/api/kaogong/adoption`：`{action:'prepare',sourceKey:'legacy-default'}`，检查返回摘要；`{action:'export',id}`核对具体私有计划。确认仅是本合成源后，使用它返回的精确`id`、`fingerprint`和`confirmed:true`调用apply。未登录、来源变更、冲突身份和不同指纹均不得绕过。完成后从真实工作台打开历史实例，核对同一个老师会话、私有讲义、原图像素，发起10题并由服务端按B评分；资料库只含题库，讲义仍私有。关闭重开和重启后复核源七份哈希及Session身份。该合成通过不能代替正式旧数据的具体预览和人工确认。
 
-离线CLI可用`preview-legacy-plan.mjs --home <sourceHome> --material-root <materialRoot> --question-image-root <questionImageRoot> --plan <新.private.json> --preview <新.md>`交叉核对业务数量和来源；它始终Native-blocked且没有apply入口。
+离线CLI可用`preview-legacy-plan.mjs --home <sourceHome> --material-root <materialRoot> --question-image-root <questionImageRoot> --mineru-root <materialRoot>/storage/mineru --plan <新.private.json> --preview <新.md>`交叉核对业务数量和来源；它始终Native-blocked且没有apply入口。
 
 单元/Host回归验证142项通过，包含夹具schema、10题可发题性、正确答案B、PNG实际蓝橙像素、来源重复写入拒绝、旧默认老师映射及未知preset不猜测。真实原生身份及浏览器安装闭环待操作者提供事实后完成。
