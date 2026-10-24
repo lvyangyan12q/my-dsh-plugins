@@ -13,7 +13,7 @@ export class TaskDirectory {
  list(viewId){return this.run(async()=>{const context=await (this.applications.resolveStoredView?.(viewId)??this.applications.resolveView(viewId));return (await this.store.snapshot()).tasks?.filter(row=>row.instanceId===context.instance.id).map(row=>this.present(row))??[]},false)}
  present(row){const value=structuredClone(row);if(value.status==='submitting'){value.status='unknown';value.notice='提交结果尚未确认。请查看原生会话；不会自动重发。'}return value}
  handoff(){return this.run(async()=>({tasks:(await this.store.snapshot()).tasks?.map(row=>this.present(row))??[],roles:await this.roles.handoff?.()??[]}),false)}
- async knownSession(id){const task=(await this.store.snapshot()).tasks?.find(row=>row.requestId&&row.sessionId===id);const roles=await this.roles.handoff?.()??[];if(!task&&!roles.some(row=>row.sessionId===id||row.previousSessionIds.includes(id)))fail('session-not-owned','会话不在持久任务或角色交接记录中。');return {sessionId:id}}
+ async knownSession(id){const task=(await this.store.snapshot()).tasks?.find(row=>row.requestId&&row.sessionId===id);const roles=await this.roles.handoff?.()??[];if(!task&&!roles.some(row=>row.sessionId===id||row.previousSessionIds.includes(id)))fail('session-not-owned','会话不在持久任务或角色交接记录中。');const owned=task??roles.find(row=>row.sessionId===id||row.previousSessionIds.includes(id));if(owned?.instanceId)await this.applications.assertInstanceReady?.(owned.instanceId);return {sessionId:id}}
  openSession(id){return this.run(()=>this.knownSession(id),false)}
  stopSession(id){return this.run(async()=>{const value=await this.knownSession(id);for(const row of (await this.store.snapshot()).tasks??[])if(row.sessionId===id){await this.stopPreparation(row);if(row.preparation)await this.put({...row,stopRequestedAt:Date.now()})}await this.native.cancel(value);return {...value,notice:'已请求原生Stop；保留排队消息，已发生的写入不会回滚。'}},false)}
  async find(id){const row=(await this.store.snapshot()).tasks?.find(row=>row.id===id);if(!row)fail('task-missing','任务记录不存在。');return row}
@@ -65,6 +65,6 @@ export class TaskDirectory {
   })}catch(error){if(nativeAttempted)throw error;return this.notAdmitted(row,error)}
   return row.status==='accepted'?this.applicationOwners.finalize(row):row
  }
- open(id){return this.run(async()=>{const row=await this.find(id);if(!row.requestId)fail('not-submitted','此准备任务尚未发送。');return {sessionId:row.sessionId}},false)}
+ open(id){return this.run(async()=>{const row=await this.find(id);await this.applications.assertInstanceReady?.(row.instanceId);if(!row.requestId)fail('not-submitted','此准备任务尚未发送。');return {sessionId:row.sessionId}},false)}
  stop(id){return this.run(async()=>{const row=await this.find(id);if(!row.requestId||!['accepted','unknown','submitting'].includes(row.status))fail('not-submitted','此任务没有准入记录。');await this.stopPreparation(row);if(row.preparation)await this.put({...row,stopRequestedAt:Date.now()});await this.native.cancel({sessionId:row.sessionId});await this.put({...row,stopRequestedAt:Date.now()});return {sessionId:row.sessionId,notice:'已请求原生Stop；队列保留，已发生的写入不会回滚。'}},false)}
 }
