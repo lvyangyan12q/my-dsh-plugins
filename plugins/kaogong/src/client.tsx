@@ -1,168 +1,46 @@
-import { useEffect, useRef, useState } from 'react'
-import type { Context as ClientContext } from '@deepseek-ai/cordis'
-import type { SidebarFooterActionOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar/client'
-import type { PropsRenderFactories } from '@deepseek-ai/dsh-client-ui-slots'
-import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
-import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
-import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
-import type {} from '@deepseek-ai/cordis-plugin-loader'
-import type { ClientModuleLoader } from '@deepseek-ai/dsh-client-modules/client'
-import type { PersonalWorkbench, WorkbenchAppRegistration, WorkbenchAppDefinition, WorkbenchAppId, WorkbenchInstanceId, WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
-import { optionalWorkbenchClient } from './optional-workbench-client.ts'
-import { knowledgeSource } from './knowledge-reader.tsx'
-import { KaogongClassroom } from './classroom.tsx'
-import type { KaogongViewProps } from './kaogong-view.tsx'
-import { KaogongStateContext, KaogongViewState, useBusinessState } from './view-state.tsx'
+import {useMemo} from 'react'
+import type {Context} from '@deepseek-ai/cordis'
+import {requireProtocol} from 'dsh-worktable/sdk'
+import type {ApplicationViewProps} from 'dsh-worktable/sdk'
+import {createViewTransport} from './client-runtime.ts'
+import {KaogongStateContext,KaogongPresentationContext,KaogongViewState,KaogongViewStatePool} from './view-state.tsx'
+import {KaogongTransportContext,KaogongServicesContext} from './view-context.tsx'
+import {SdkClassroom,sdkLearningStyles} from './sdk-classroom.tsx'
+import {KnowledgeLibrary} from './knowledge-reader.tsx'
 
-export { KaogongView } from './kaogong-view.tsx'
-export type { KaogongViewProps, KaogongTeachingRequest, PracticeContext, PracticeResult } from './kaogong-view.tsx'
-export { KaogongStateContext, KaogongViewState, useBusinessState } from './view-state.tsx'
+export {KaogongView} from './kaogong-view.tsx'
+export type {KaogongViewProps,KaogongTeachingRequest,PracticeContext,PracticeResult} from './kaogong-view.tsx'
+export {KaogongStateContext,KaogongPresentationContext,KaogongViewState,KaogongViewStatePool}
+export const inject=['worktableApplicationViews']
 
-type FooterProps = SidebarFooterActionOwnerProps & Partial<PropsRenderFactories>
-
-/** Installed Kaogong pages reuse the existing Host data without migration. */
-export const kaogongApp: WorkbenchAppDefinition = {
-  id: 'kaogong' as WorkbenchAppId, version: '0.1.0', name: '考公学习', icon: 'graduation-cap',
-  source: '@deepseek-ai/dsh-tool-kaogong',
-  pages: [{ id: 'classroom', label: '课堂' }, { id: 'practice', label: '练习' }, { id: 'errors', label: '错题' }, { id: 'materials', label: '讲义' }, { id: 'plan', label: '计划' }],
-  defaultLayout: { width: 1040, height: 760, pageId: 'classroom' },
+type ViewProps=ApplicationViewProps&{state?:KaogongViewState;presentation?:KaogongViewState}
+function ScopedView(props:ViewProps&{library?:boolean}){
+  const state=useMemo(()=>props.state??new KaogongViewState(props.instance.id),[props.state,props.instance.id])
+  const presentation=useMemo(()=>props.presentation??new KaogongViewState(props.instance.id,props.view.id),[props.presentation,props.instance.id,props.view.id])
+  const transport=useMemo(()=>createViewTransport({instanceId:props.instance.id,viewId:props.view.id}),[props.instance.id,props.view.id])
+  const services=useMemo(()=>({roles:props.roles,tasks:props.tasks}),[props.roles,props.tasks])
+  if(state.instanceId!==props.instance.id||presentation.instanceId!==props.instance.id||presentation.viewId!==props.view.id)return <p role="alert">学习视图状态归属不符；未读取其他实例。</p>
+  return <KaogongStateContext.Provider value={state}><KaogongPresentationContext.Provider value={presentation}><KaogongTransportContext.Provider value={transport}><KaogongServicesContext.Provider value={services}>
+    {props.library?<section className="kg-sdk-classroom" aria-label="考公资料库"><style>{sdkLearningStyles}</style><header><strong>考公资料库</strong><small>来源资料只读展示；学习笔记、成绩和老师会话不在此共享。</small></header><div className="kg-sdk-content"><KnowledgeLibrary active/></div></section>:<SdkClassroom key={props.view.id} {...props}/>}
+  </KaogongServicesContext.Provider></KaogongTransportContext.Provider></KaogongPresentationContext.Provider></KaogongStateContext.Provider>
 }
-const defaultInstance = 'default' as WorkbenchInstanceId
+function owned(props:ViewProps,id:string){return props.application.id===id&&props.instance.appId===id&&props.view.instanceId===props.instance.id&&props.instance.id!=='default'}
+export function KaogongApplicationView(props:ViewProps){return owned(props,'kaogong')?<ScopedView {...props}/>:<p role="alert">考公需要工作台提供的明确实例和视图；旧 default 未自动接管。</p>}
+export function KaogongLibraryView(props:ViewProps){return owned(props,'kaogong-library')?<ScopedView {...props} library/>:<p role="alert">资料库实例归属不符；未读取全局资料。</p>}
 
-/** One state owner is shared by the official entry and optional keyed app view. */
-export function KaogongDashboard(props: FooterProps & { ctx: ClientContext; state?: KaogongViewState }) {
-  const [local] = useState(() => new KaogongViewState())
-  return <KaogongStateContext.Provider value={props.state ?? local}><DashboardContent {...props} /></KaogongStateContext.Provider>
-}
-
-function DashboardContent({ wide, renderFactorySlot, ctx }: FooterProps & { ctx: ClientContext }) {
-  const [integration] = useBusinessState('integration', null)
-  const [open, setOpen] = useBusinessState('open', false)
-  const surface = useRef<HTMLDivElement>(null)
-  const launcher = useRef<HTMLButtonElement>(null)
-  useEffect(() => {
-    if (!open || integration || !surface.current) return
-    const dialog = surface.current
-    dialog.focus()
-    return () => {
-      if (dialog.contains(document.activeElement) || document.activeElement === document.body) launcher.current?.focus()
-    }
-  }, [open, integration])
-  if (integration) return null
-
-  return (
-    <>
-      <button
-        type="button"
-        ref={launcher}
-        title="打开考公学习看板"
-        aria-label="打开考公学习看板"
-        onClick={() => setOpen(true)}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: wide ? 'flex-start' : 'center', gap: 8,
-          width: '100%', minHeight: 36, padding: wide ? '7px 10px' : 0, border: 0, borderRadius: 9,
-          background: 'transparent', color: colors.ink, cursor: 'pointer', fontSize: 13, fontWeight: 500,
-        }}
-      >
-        <span aria-hidden="true" style={{ display: 'grid', placeItems: 'center', width: 20, height: 20, borderRadius: 6, background: colors.blueSoft, color: colors.blue, fontSize: 12, fontWeight: 700 }}>考</span>
-        {wide && <span>考公学习</span>}
-      </button>
-      {!integration && <div ref={surface} tabIndex={-1} onKeyDown={event => {
-        if (event.defaultPrevented || event.nativeEvent.isComposing) return
-        if (event.key === 'Escape') {
-          event.preventDefault()
-          event.stopPropagation()
-          setOpen(false)
-        } else if (event.key === 'Tab') {
-          const root = event.currentTarget
-          const controls = [...root.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href], [tabindex], summary')].filter(control => {
-            if (control.tabIndex < 0 || control.matches(':disabled')) return false
-            for (let node: HTMLElement | null = control; node && node !== root; node = node.parentElement) {
-              const style = window.getComputedStyle(node)
-              if (node.hidden || style.display === 'none' || style.visibility === 'hidden') return false
-            }
-            return true
-          })
-          const first = controls[0], last = controls[controls.length - 1]
-          if (!first || document.activeElement === root || (event.shiftKey ? document.activeElement === first : document.activeElement === last)) {
-            event.preventDefault()
-            const target = event.shiftKey ? last : first
-            target?.focus()
-            if (!first) root.focus()
-          }
-        }
-      }} hidden={!open} role={open ? 'dialog' : undefined} aria-modal={open ? true : undefined} aria-label="考公学习看板" style={{ position: 'fixed', inset: 0, zIndex: 1000, overflow: 'auto', background: '#f8fafc', color: colors.ink, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <KaogongClassroom ctx={ctx} active={open} onClose={() => setOpen(false)} renderFactorySlot={renderFactorySlot} />
-      </div>}
-    </>
-  )
+/** No sidebar replacement, native renderer factory, Session context or old workbench runtime. */
+export function apply(ctx:Context){
+  requireProtocol(ctx.worktableApplicationViews.describe(),['instance-view-v1','instance-role-v1','prepared-task-v1'])
+  const pool=new KaogongViewStatePool()
+  const learning=(props:ApplicationViewProps)=><KaogongApplicationView {...props} state={pool.forInstance(props.instance.id)} presentation={pool.forView(props.instance.id,props.view.id)}/>
+  const library=(props:ApplicationViewProps)=><KaogongLibraryView {...props} state={pool.forInstance(props.instance.id)} presentation={pool.forView(props.instance.id,props.view.id)}/>
+  const removeLearning=ctx.worktableApplicationViews.register('kaogong',{page:learning,classroom:learning,practice:learning,errors:learning,materials:learning,plan:learning})
+  let removeLibrary:()=>void|Promise<void>
+  try{removeLibrary=ctx.worktableApplicationViews.register('kaogong-library',{page:library,materials:library})}
+  catch(error){void removeLearning();pool.dispose();throw error}
+  ctx.effect(()=>async()=>{try{await removeLibrary()}finally{try{await removeLearning()}finally{pool.dispose()}}},'kaogong public application views')
 }
 
-const colors = { ink: '#202124', blue: '#2563eb', blueSoft: '#eff6ff' }
-export const inject = ['slots', 'uiWorkspace']
-
-export function apply(ctx: ClientContext): void {
-  const state = new KaogongViewState()
-  let sourceRegistration: WorkbenchAppRegistration | undefined
-  let sourceModules: ClientModuleLoader | undefined
-  const depart = (registration: WorkbenchAppRegistration) => {
-    const entry = ctx.fiber?.entry
-    const removed = sourceModules && !sourceModules.manifest.plugins.some(row => row.id === kaogongApp.source)
-    const ownerRemoved = !ctx.fiber || (ctx.fiber.uid === null && !entry)
-    if (entry?.disabled || removed || ownerRemoved || typeof registration.suspend !== 'function') registration()
-    else registration.suspend()
-  }
-  // The source owner outlives a missing renderer and can still permanently retire it later.
-  ctx.effect(() => () => { if (sourceRegistration) depart(sourceRegistration) }, 'kaogong source application lifetime')
-  const registerSource = optionalWorkbenchClient?.registerDisplaySource
-  if (registerSource) ctx.effect(() => registerSource(knowledgeSource), 'kaogong knowledge display source')
-  ctx.inject(['personalWorkbenchTasks'], child => {
-    const tasks = state.cell('tasks', null)
-    child.effect(() => { tasks.set(child.personalWorkbenchTasks); return () => tasks.set(null) }, 'kaogong prepared teaching tasks')
-  })
-  ctx.effect(() => () => state.cell('reader.store', null).value?.dispose(), 'kaogong display owner')
-  ctx.inject(['personalWorkbenchRoles'], child => {
-    const roles = state.cell('roles', null)
-    child.effect(() => { roles.set(child.personalWorkbenchRoles); return () => roles.set(null) }, 'kaogong: optional teacher service')
-  })
-  const Dashboard = (props: FooterProps) => <KaogongDashboard {...props} ctx={ctx} state={state} />
-  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
-    name: 'sidebar.footer.action',
-    id: 'kaogong-dashboard',
-    order: 10,
-    label: '考公学习看板',
-  }, Dashboard))
-  ctx.inject(['personalWorkbench', 'slots'], child => {
-    child.slots.inject('personal-workbench.app', () => {
-      const View = (props: WorkbenchAppProps & PropsRenderFactories) => <KaogongStateContext.Provider value={state}><KaogongWorkbenchContent {...props} ctx={ctx} /></KaogongStateContext.Provider>
-      const removeView = child.slots.register({ name: 'personal-workbench.app', key: kaogongApp.id }, View)
-      let removeApp: WorkbenchAppRegistration
-      try { sourceRegistration = removeApp = child.personalWorkbench.registerApp(kaogongApp) }
-      catch (error) { removeView(); throw error }
-      // Public native metadata distinguishes an installed renderer reload from removal.
-      sourceModules = ctx.get?.('modules') as ClientModuleLoader | undefined
-      const integration = state.cell('integration', null)
-      try {
-        integration.set({ service: child.personalWorkbench })
-        if (state.cell('open', false).value) child.personalWorkbench.openApp(kaogongApp.id, defaultInstance)
-      } catch (error) {
-        removeApp()
-        removeView()
-        integration.set(null)
-        throw error
-      }
-      return () => {
-        try { depart(removeApp) }
-        finally { removeView(); integration.set(null) }
-      }
-    })
-  })
-}
-
-/** Page adapter under the existing state provider; an explicit teaching callback owns any role acquisition. */
-export function KaogongWorkbenchContent({ instanceId, pageId, active, selectPage, close, onOpenTeacher, renderFactorySlot, ctx }: WorkbenchAppProps & Partial<PropsRenderFactories> & { ctx: ClientContext; onOpenTeacher?: KaogongViewProps['onOpenTeacher'] }) {
-  const [, setOpen] = useBusinessState('open', false)
-  useEffect(() => { if (instanceId === defaultInstance) setOpen(active) }, [active, instanceId, setOpen])
-  if (instanceId !== defaultInstance) return <p role="alert">考公当前仅支持默认学习实例。</p>
-  return <KaogongClassroom ctx={ctx} embedded active={active} pageId={pageId} onSelectPage={selectPage} onClose={close} onOpenTeacher={onOpenTeacher} renderFactorySlot={renderFactorySlot} />
-}
+/** Frozen source-era launchers do not issue unscoped reads/writes from the new installed bundle. */
+export function KaogongDashboard(){return <p role="status">请从工作台应用目录打开考公学习；旧独立入口已冻结，原记录保留。</p>}
+export const KaogongWorkbenchContent=KaogongDashboard
