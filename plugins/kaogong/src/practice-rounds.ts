@@ -30,6 +30,7 @@ function optionKey(option: string) { return /^\s*([A-Za-z])(?:[.、)\s]|$)/.exec
 /** One application command queue, drained before domains close. No cross-domain transaction is assumed. */
 export class PracticeRounds {
   private tail: Promise<unknown> = Promise.resolve()
+  private closing = false
   constructor(private rounds: KvTable<string, PracticeRound>, private bank: KvTable<string, BankQuestionRecord>, private notebook: KvTable<string, QuestionRecord>, private materialStem: (id: string, stem: string) => string = (_id, stem) => stem, private materialOptions: (id: string, stem: string, options: string[]) => string[] = (_id, _stem, options) => options) {}
   private displayQuestion(question: BankQuestion) {
     const stem = this.materialStem(question.id, question.stem)
@@ -40,8 +41,11 @@ export class PracticeRounds {
     return safePracticeQuestion(display.question, display.verifiedFigure)
   }
   drain() { return this.tail }
+  /** Reject new commands, then drain the existing queue before its domains close. */
+  close() { this.closing = true; return this.tail }
   notebookCommand<T>(command: () => Promise<T>): Promise<T> { return this.run(command) }
   private run<T>(command: () => Promise<T>): Promise<T> {
+    if (this.closing) return Promise.reject(new PracticeError('练习服务正在关闭', 503))
     const result = this.tail.then(command)
     this.tail = result.catch(() => {})
     return result
