@@ -9,7 +9,7 @@ decision_map: worktable-platform-map
 upgrade_target: 0.2.1-rc.3
 upgrade_status: implementing
 upgrade_decision_map: harness-upgrade-map
-upgrade_blocked_by: [harness-upgrade-classroom-prototype, harness-upgrade-acceptance-cutover]
+upgrade_blocked_by: [harness-upgrade-acceptance-cutover]
 ---
 
 ## Problem Statement
@@ -174,7 +174,7 @@ upgrade_blocked_by: [harness-upgrade-classroom-prototype, harness-upgrade-accept
 | --- | --- | --- |
 | HU01 版本与接口 | 固定宿主提交、版本及最终插件/SDK 包哈希；官方实际兼容检查、公开类型、接口行为与真实用户流程分开核验。支持声明需有对应版本证据，不能以通配 peer、自定义 compatibility 文案或版本豁免代替验证。已确认正式环境等待验收、未知版本仅在独立实例显式试用；不承诺未知版本自动兼容。 | 35、39、41、45、49 |
 | HU02 原生角色身份 | 修正角色恢复对已移除 inspect 的依赖，使用目标宿主公开能力核验原 Session、preset、cwd 和工作区成员关系。明确缺失、迁移待处理、身份冲突、创建回执未知及返回不同 ID 的处理；不得静默重建老师或重试造成多会话。资料目录别名须验证，不能改写旧会话 cwd 来通过校验。 | 13、14、18—21、44 |
-| HU03 输入与原生交互 | 覆盖纯文本、reference、command、quote 及混合草稿的追加、焦点、撤销、中文输入与跨实例隔离。使用公开编辑器接缝，不写 Lexical 私有状态。完整原生对话、轨迹、问题/审批和 Stop 保留原生语义；准入、结束、未读或 Stop 不代表业务成功。 | 12、15、19—23、45 |
+| HU03 输入与原生交互 | 覆盖纯文本、reference、command、quote及混合草稿的插入、焦点、撤销、中文输入与跨实例隔离。用户已确认标注改为开始标注时捕获的原生光标/选区末端插入，保留选中文字并可独立撤销，不再强制文档末尾追加。使用公开编辑器接缝，不写 Lexical 私有状态。完整原生对话、轨迹、问题/审批和 Stop 保留原生语义；准入、结束、未读或 Stop 不代表业务成功。 | 12、15、19—23、45 |
 | HU04 生命周期 | 热替换、停用、卸载与重装释放自己注册的 HTTP/Upgrade 路由、监听、会话持有及能力；不能残留重复路由或失去任务控制。关闭视图不删除数据，刷新/重启保留身份，版本或存储失败明确可恢复。 | 24—29、34、49 |
 | HU05 应用公开接入 | 考公通过公开 Worktable SDK 注册应用、实例、视图、资源、私有能力、角色及待发送任务，移除对旧 personal-workbench 运行时的依赖。旧角色当前/历史绑定接管及课堂嵌入需要补充公开合同或经用户确认的方案，不调用平台私有 attach、不手改 roles.v1.json、不复制原生消息冒充历史。 | 13、30—36、39、43、44 |
 | HU06 考公状态归属 | 现有六个领域及 default 不是隔离实例；按已确认实例模型设计学习状态分区，同时覆盖 HTTP、原生工具和浏览器草稿。题库/来源资料与私有笔记分清，未知归属默认保留，不整库共享。已确认旧学习归入历史实例、新实例为空、原始资料库显式只读共享、笔记成绩与老师会话私有；具体映射须先预检；禁止给多个新实例接上同一份全局学习数据而声称隔离。 | 7、10、11、13、33、43、44 |
@@ -185,7 +185,7 @@ upgrade_blocked_by: [harness-upgrade-classroom-prototype, harness-upgrade-accept
 
 - [原生公开接口研究](https://github.com/lvyangyan12q/my-dsh-plugins/blob/52757981818725d072e445523c670847511192c9/docs/wayfinder/harness-upgrade/research/harness-rc3-compatibility.md)分清声明拒绝与实际接口差异；提出的 stat/projections 或输入初始化替代尚未通过修复和实页验证，不视为已定函数签名。
 - [考公迁移接缝研究](https://github.com/lvyangyan12q/my-dsh-plugins/blob/fc2614973552ad5db6178d03f791f4e27cf739b5/docs/wayfinder/harness-upgrade/research/kaogong-worktable-migration.md)确认全局/default、私有笔记和公开接管/嵌入缺口。用户已明确批准“历史学习实例 + 资料库实例”的归属方案，但具体正式迁移仍须预览确认；本轮未读取实际旧记录判断迁移是否可行。
-- [升级规则](../harness-upgrade/issues/03-upgrade-policy.md)、[旧学习归属](../harness-upgrade/issues/04-kaogong-ownership.md)、[课堂原型](../harness-upgrade/issues/06-classroom-prototype.md)、[验收与切换](../harness-upgrade/issues/05-acceptance-cutover.md)中前两项已由用户明确确认并关闭，后两项待验证。旧实例接管和 SDK 接口可按已确认归属实施；正式迁移仍需具体预览确认。
+- [升级规则](../harness-upgrade/issues/03-upgrade-policy.md)、[旧学习归属](../harness-upgrade/issues/04-kaogong-ownership.md)、[课堂原型](../harness-upgrade/issues/06-classroom-prototype.md)、[验收与切换](../harness-upgrade/issues/05-acceptance-cutover.md)中升级、归属和课堂路径已由用户明确确认并关闭，验收切换待落实。旧实例接管和 SDK 接口可按已确认归属实施；正式迁移仍需具体预览确认。
 
 ### 增量验收记录规则
 
