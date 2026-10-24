@@ -54,7 +54,7 @@
 - [02a](02a-annotation-undo.md)：用户已选择光标/选区末端插入及独立撤销；[02b生产接线](02b-production-caret.md)已合入，并有27项定向回归及开发link真实插入/撤销证据；原型代码没有合入。最终归档安装、物理IME、附件、同Session强制换代、插件整体卸载与完整HU03仍待验收。
 - [05](05-host-consumers.md)和[06](06-legacy-role-contract.md)：仅目标声明、消费者候选归档及公开角色合同切片关闭，实际原生安装仍待验。rc.3可信会话字段为 `exec.agent.session.id`。
 - [07](07-classroom-application.md)：生产客户端已合入；真实模型、同实例多视图及原生轨迹/审批/Stop未据此通过。
-- [08a](08a-state-partition.md)：业务状态工厂切片关闭；08的HTTP、可信工具和完整隔离接线仍在实施。
-- [09a](09a-legacy-inspection.md)：只读私有清单准备切片关闭；[09](09-legacy-adoption.md)仍open，正式迁移未执行。
+- [08a](08a-state-partition.md)：业务状态工厂切片关闭；[08](08-kaogong-instances.md)的Host/SDK、HTTP、可信工具、私有任务与资源接线已合入，真实安装及完整隔离闭环仍待验。
+- [09a](09a-legacy-inspection.md)：只读私有清单准备切片关闭；[09b](09b-native-history-identity.md)的公开原生历史身份补全切片关闭，实际安装仍待验。[09](09-legacy-adoption.md)仍open，具体计划、联合迁移与回退尚未完成，正式迁移未执行。
 
 最近一次完整回归历史记录为322项、320通过、0失败、2跳过；它早于上述后续合并，不作为当前组合提交的全套通过声明。后续需重新进行组合回归、冻结归档及真实安装验收。决策票05的切换/回退门槛仍待具体版本与迁移计划，不因源码合并关闭。正式3080未切换。
