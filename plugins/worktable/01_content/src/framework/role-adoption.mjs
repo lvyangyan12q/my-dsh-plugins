@@ -21,14 +21,16 @@ export class RoleAdoptions {
  }
  close(){for(const owner of this.owners.values())owner.active=false;this.owners.clear()}
  source(value,sourceKey,roleId){
-  if(!value||value.sourceKey!==sourceKey||value.roleId!==roleId||!text(value.revision)||!['ready','intent'].includes(value.phase)||!text(value.sessionId)||!text(value.presetId)||!isAbsolute(value.creation?.cwd??'')||!Array.isArray(value.previousSessions)||value.previousSessions.length>256||value.selectedPreset!==undefined&&typeof value.selectedPreset!=='boolean')this.reject('legacy-source-invalid','旧绑定缺少可验证的身份、目录、阶段或来源版本。')
-  const previous=value.previousSessions.map(row=>{
+  if(!value||value.sourceKey!==sourceKey||value.roleId!==roleId||!text(value.revision)||!['ready','intent'].includes(value.phase)||!text(value.sessionId)||!text(value.presetId)||!isAbsolute(value.creation?.cwd??'')||value.previousSessions!==undefined&&!Array.isArray(value.previousSessions)||value.previousSessionIds!==undefined&&!Array.isArray(value.previousSessionIds)||value.previousSessions===undefined&&value.previousSessionIds===undefined||(value.previousSessions?.length??value.previousSessionIds?.length)>256||value.selectedPreset!==undefined&&typeof value.selectedPreset!=='boolean')this.reject('legacy-source-invalid','旧绑定缺少可验证的身份、目录、阶段或来源版本。')
+  const previous=(value.previousSessions??[]).map(row=>{
    if(!text(row?.sessionId)||!text(row.presetId)||!isAbsolute(row.creation?.cwd??''))this.reject('legacy-history-invalid','历史会话缺少独立的Agent或目录证据，未接管。')
    return session(row)
   })
-  const ids=[value.sessionId,...previous.map(row=>row.sessionId)]
+  const raw=value.previousSessionIds
+  if(raw&&(raw.length>256||raw.some(id=>!text(id))||value.previousSessions!==undefined&&JSON.stringify(raw)!==JSON.stringify(previous.map(row=>row.sessionId))))this.reject('legacy-history-invalid','历史会话身份列表冲突或无效。')
+  const ids=[value.sessionId,...(raw??previous.map(row=>row.sessionId))]
   if(new Set(ids).size!==ids.length)this.reject('legacy-history-invalid','旧绑定包含重复的当前或历史会话身份。')
-  return {sourceKey,revision:value.revision,roleId,...session(value),phase:value.phase,selectedPreset:value.selectedPreset??false,previousSessions:previous,...(value.agent?{agent:structuredClone(value.agent)}:{})}
+  return {sourceKey,revision:value.revision,roleId,...session(value),phase:value.phase,selectedPreset:value.selectedPreset??false,previousSessions:previous,...(raw?{previousSessionIds:[...raw]}:{}),...(value.agent?{agent:structuredClone(value.agent)}:{})}
  }
  async prepare(instanceId,roleId,sourceKey){
   const directory=this.directory
@@ -39,7 +41,19 @@ export class RoleAdoptions {
   let inspected
   try{inspected=await owner.inspector.inspect(sourceKey,{instanceId,roleId})}catch{this.reject('legacy-source-unavailable','旧绑定来源暂不可读，未执行接管。')}
   this.assertOwner(instance.appId,owner)
-  const source=this.source(inspected,sourceKey,roleId),sourceFingerprint=digest(source)
+  const source=this.source(inspected,sourceKey,roleId)
+  if(source.previousSessionIds){
+   if(typeof directory.authority.hydrateLegacy!=='function')this.reject('legacy-validation-unavailable','当前宿主缺少历史身份公开读取能力。')
+   const hydrated=[]
+   for(const id of source.previousSessionIds){
+    const actual=await directory.authority.hydrateLegacy(id)
+    const declared=source.previousSessions.find(row=>row.sessionId===id)
+    if(declared&&(declared.presetId!==actual.presetId||declared.creation.cwd!==actual.creation.cwd))this.reject('legacy-history-invalid','历史身份声明与原生事实冲突。')
+    hydrated.push(session(actual))
+   }
+   source.previousSessions=hydrated;delete source.previousSessionIds
+  }
+  const sourceFingerprint=digest(source)
   const state=await directory.store.snapshot(),key=keyOf(instanceId,roleId)
   const binding=state.bindings.find(row=>row.key===key)??null
   if(state.bindings.some(row=>row.key!==key&&row.appId===instance.appId&&row.adoption?.sourceKey===sourceKey))this.reject('legacy-source-owned','旧绑定来源已经接管到其他实例或角色。')
