@@ -6,6 +6,7 @@
  */
 
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
+import { createHash } from 'node:crypto'
 import type { DomainGlobalSpec } from '@deepseek-ai/dsh-storage-domain'
 import { TAXONOMY } from './taxonomy.ts'
 import { lessonRecord, lessonSelection } from './lesson-schema.ts'
@@ -70,3 +71,29 @@ export const lessonDomainSpec = defineDomain({
   global: lessonGlobal,
   tables: { lessons: domainTable<string, Lesson>(lessonRecord) },
 })
+
+/** Legacy names are metadata for explicit adoption; opening them is not a read-only inspection. */
+export const legacyDomainSpecs = Object.freeze({
+  notebook: notebookDomainSpec, progress: progressDomainSpec, bank: bankDomainSpec,
+  knowledge: knowledgeDomainSpec, practice: practiceDomainSpec, lessons: lessonDomainSpec,
+})
+
+/** Only explicit platform instance identities enter the new namespace; never alias legacy default. */
+export function instanceDomainSpecs(instanceId: string) {
+  if (typeof instanceId !== 'string' || !instanceId.trim() || instanceId !== instanceId.trim()
+    || instanceId.length > 200 || instanceId === 'default') throw new Error('需要明确的新实例身份；旧 default 只能经预览接管')
+  const prefix = 'kaogong_i_' + createHash('sha256').update(instanceId).digest('hex') + '_'
+  return {
+    notebook: defineDomain({ ...notebookDomainSpec, name: prefix + 'notebook' }),
+    progress: defineDomain({ ...progressDomainSpec, name: prefix + 'progress' }),
+    bank: defineDomain({ ...bankDomainSpec, name: prefix + 'bank' }),
+    knowledge: defineDomain({ ...knowledgeDomainSpec, name: prefix + 'knowledge' }),
+    practice: defineDomain({ ...practiceDomainSpec, name: prefix + 'practice' }),
+    lessons: defineDomain({
+      ...lessonDomainSpec, name: prefix + 'lessons',
+      global: { schema: lessonSelection.refine(row => row.instanceId === instanceId, 'foreign lesson selection'),
+        initial: { instanceId, activeLessonId: null } },
+      tables: { lessons: domainTable<string, Lesson>(lessonRecord.refine(row => row.instanceId === instanceId, 'foreign lesson record')) },
+    }),
+  }
+}
