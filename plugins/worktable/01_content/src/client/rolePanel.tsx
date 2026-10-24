@@ -2,7 +2,7 @@ import {useEffect,useRef,useState} from 'react'
 let navigate:((id:string)=>Promise<unknown>)|null=null
 export function configureRoleNavigation(open:(id:string)=>Promise<unknown>){navigate=open;return()=>{if(navigate===open)navigate=null}}
 export async function openRoleNativeSession(id:string){if(!navigate)throw new Error('原生导航暂不可用。');return navigate(id)}
-export async function roleRequest(body:any,signal?:AbortSignal){const response=await fetch('/api/worktable/roles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal});const value=await response.json();if(!response.ok)throw new Error(value.error??'角色操作失败。');if(typeof window!=='undefined'&&['ensure','retry','replace'].includes(body.action))window.dispatchEvent(new CustomEvent('dsh:roles-changed',{detail:{instanceId:body.instanceId}}));return value}
+export async function roleRequest(body:any,signal?:AbortSignal){const response=await fetch('/api/worktable/roles',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal});const value=await response.json();if(!response.ok)throw new Error(value.error??'角色操作失败。');if(typeof window!=='undefined'&&['ensure','retry','replace','adoption-apply'].includes(body.action))window.dispatchEvent(new CustomEvent('dsh:roles-changed',{detail:{instanceId:body.instanceId}}));return value}
 const refOf=(row:any)=>({kind:row.kind,source:row.source,id:row.id,...(row.ownerAppId?{ownerAppId:row.ownerAppId}:{})})
 const refKey=(ref:any)=>JSON.stringify([ref?.source,ref?.ownerAppId??null,ref?.id])
 /** Read-only until explicit gestures. All editing stays in the resident native composer. */
@@ -64,6 +64,8 @@ export function createRoleFacade(instanceId:string){
  const call=(action:string,roleId:string,extra:any={})=>roleRequest({...extra,action,instanceId,roleId})
  return Object.freeze({
   read:(roleId:string)=>call('read',roleId),
+  previewAdoption:(roleId:string,sourceKey:string)=>call('adoption-preview',roleId,{sourceKey}),
+  applyAdoption:(roleId:string,sourceKey:string,fingerprint:string,confirmed:true)=>call('adoption-apply',roleId,{sourceKey,fingerprint,confirmed}),
   ensure:(roleId:string,agent?:any)=>call('ensure',roleId,{agent}),
   retry:(roleId:string,sessionId:string,revision:number)=>call('retry',roleId,{sessionId,revision}),
   replace:(roleId:string,sessionId:string,revision:number,agent?:any)=>call('replace',roleId,{sessionId,revision,agent}),

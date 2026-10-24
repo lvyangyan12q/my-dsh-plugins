@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import type { RecipeModuleProps, WorkbenchAppId, WorkbenchInstanceId } from '@deepseek-ai/dsh-personal-workbench/client'
+import type {LegacyContext} from './legacy-contract.ts'
 import type { ReadingData } from './reading-data-client.ts'
 import type { ReadingRecord } from './reading-api.ts'
 import { readingAppId, validReadingIdentity, readingIdentityMaxLength } from './reading-api.ts'
 import { requestReading, recordOrigin, subscribeReading } from './reading-data-client.ts'
 type Fields = Omit<ReadingRecord, 'id'>
 const empty = (): Fields => ({ title: '', author: '', category: '', status: 'reading', minutes: 0, notes: '' })
-export function ReadingRecordEditor({ appId, instanceId, preview, ctx, standalone = false, viewId, readOnly = false }: { appId: string; instanceId: string; preview: boolean; ctx?: RecipeModuleProps['ctx']; standalone?: boolean; viewId?: string; readOnly?: boolean }) {
+export function ReadingRecordEditor({ appId, instanceId, preview, ctx, standalone = false, viewId, readOnly = false }: { appId: string; instanceId: string; preview: boolean; ctx?: LegacyContext; standalone?: boolean; viewId?: string; readOnly?: boolean }) {
   const [targetInstance, setTargetInstance] = useState(instanceId)
   const scopeKey = `${appId}:${instanceId}:${preview}`
   const owner = useRef({ key: scopeKey, token: {} })
@@ -23,7 +23,7 @@ export function ReadingRecordEditor({ appId, instanceId, preview, ctx, standalon
   if(appId!==readingAppId)return <p role="alert">阅读管理模块属于阅读统计应用。</p>
   return <section data-reading-editor aria-busy={busy} style={{display:'grid',gap:12,minWidth:0}}>
     <p>实例：{instanceId} · 阅读记录独立保存。示例仅在显式初始化后创建。</p>
-    {!preview&&!readOnly&&!standalone&&<form style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'end'}} onSubmit={event=>{event.preventDefault();if(preview||busy||!validReadingIdentity(targetInstance))return;try{if(!ctx?.personalWorkbench)throw new Error('工作台服务暂不可用，请恢复插件后重试');ctx.personalWorkbench.openApp(readingAppId as WorkbenchAppId,targetInstance as WorkbenchInstanceId)}catch(e){setError(e instanceof Error?e.message:String(e))}}}><label>阅读实例 ID<input aria-label="阅读实例 ID" maxLength={readingIdentityMaxLength} value={targetInstance} onChange={event=>setTargetInstance(event.target.value)} placeholder="例如 default 或 second"/></label><button data-pwb-button type="submit" disabled={busy||!validReadingIdentity(targetInstance)}>打开阅读实例</button><small>仅支持英文、数字、下划线、点和短横线，最多 160 字符；新实例为空，不自动复制示例。</small></form>}
+    {!preview&&!readOnly&&!standalone&&<form style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'end'}} onSubmit={event=>{event.preventDefault();if(preview||busy||!validReadingIdentity(targetInstance))return;try{if(!ctx?.personalWorkbench)throw new Error('工作台服务暂不可用，请恢复插件后重试');ctx.personalWorkbench.openApp(readingAppId,targetInstance)}catch(e){setError(e instanceof Error?e.message:String(e))}}}><label>阅读实例 ID<input aria-label="阅读实例 ID" maxLength={readingIdentityMaxLength} value={targetInstance} onChange={event=>setTargetInstance(event.target.value)} placeholder="例如 default 或 second"/></label><button data-pwb-button type="submit" disabled={busy||!validReadingIdentity(targetInstance)}>打开阅读实例</button><small>仅支持英文、数字、下划线、点和短横线，最多 160 字符；新实例为空，不自动复制示例。</small></form>}
     {readOnly&&<p role="status">共享资料只读；请由资料所属实例显式授予编辑许可。</p>}
     {preview&&<p role="status">预览只读，启用后可管理此实例的阅读记录。</p>}
     {error&&<div role="alert"><p>{error}</p><button data-pwb-button disabled={busy} onClick={()=>{setDeleting(undefined);void read()}}>重试加载阅读记录</button></div>}

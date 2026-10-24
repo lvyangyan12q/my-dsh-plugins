@@ -1,16 +1,16 @@
-import assert from 'node:assert/strict'
-import {mkdtempSync,cpSync,mkdirSync,copyFileSync,readFileSync,writeFileSync,realpathSync,existsSync,readdirSync,rmSync,symlinkSync} from 'node:fs'
+import {mkdtempSync,cpSync,readFileSync,writeFileSync,mkdirSync} from 'node:fs'
 import {tmpdir} from 'node:os'
-import {join,resolve,dirname} from 'node:path'
+import {join,dirname} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {createRequire} from 'node:module'
 import {installPublicEnvironment,command} from '../project-notes/public-producer.mjs'
-const here=dirname(fileURLToPath(import.meta.url)),source=process.env.DSH_SOURCE,legacy=resolve(process.env.READING_LEGACY_ROOT??resolve(here,'../..'),'plugins/personal-workbench/lib/types')
-assert.ok(source&&existsSync(join(legacy,'client.d.ts')),'Set DSH_SOURCE and READING_LEGACY_ROOT to genuine built legacy public declarations (types only; no runtime install).')
-const folder=mkdtempSync(join(tmpdir(),'reading-public-producer-')),receipt=installPublicEnvironment({folder,source,worktable:process.env.WORKTABLE_PACKAGE})
-cpSync(join(here,'src'),join(folder,'src'),{recursive:true});cpSync(legacy,join(folder,'legacy-types'),{recursive:true})
-const nativeRequire=createRequire(join(source,'package.json')),nativeReact=dirname(nativeRequire.resolve('@types/react/package.json'));
-const ownReact=join(folder,'node_modules/@types/react');assert.ok(ownReact.startsWith(folder));rmSync(ownReact,{recursive:true});symlinkSync(nativeReact,ownReact,'junction');
-const config=JSON.parse(readFileSync(join(here,'tsconfig.json'),'utf8'));config.compilerOptions.skipLibCheck=false;config.compilerOptions.types=['node'];config.compilerOptions.paths={'@deepseek-ai/dsh-personal-workbench':[join(folder,'legacy-types/index.d.ts')],'@deepseek-ai/dsh-personal-workbench/client':[join(folder,'legacy-types/client.d.ts')],'@deepseek-ai/*':[join(realpathSync(source),'node_modules/@deepseek-ai/*')]};const specRoot=join(folder,'node_modules/@standard-schema/spec');config.compilerOptions.paths['@standard-schema/spec']=[join(specRoot,JSON.parse(readFileSync(join(specRoot,'package.json'),'utf8')).types)];config.compilerOptions.paths.react=[join(nativeReact,'index.d.ts')];config.compilerOptions.paths['react/*']=[join(nativeReact,'*')];const roots=[join(source,'vendor'),...readdirSync(join(source,'packages'),{withFileTypes:true}).filter(x=>x.isDirectory()).map(x=>join(source,'packages',x.name))];for(const parent of roots)for(const entry of readdirSync(parent,{withFileTypes:true}).filter(x=>x.isDirectory())){const root=join(parent,entry.name),meta=join(root,'package.json');if(!existsSync(meta))continue;const pkg=JSON.parse(readFileSync(meta,'utf8'));if(!pkg.name?.startsWith('@deepseek-ai/'))continue;const exports=pkg.exports??{'.':{types:pkg.types}};for(const[key,value]of Object.entries(exports)){const types=typeof value==='object'&&value?.types;if(typeof types==='string'&&existsSync(join(root,types)))config.compilerOptions.paths[pkg.name+(key==='.'?'':key.slice(1))]=[join(root,types)]}};writeFileSync(join(folder,'tsconfig.json'),JSON.stringify(config));const require=createRequire(join(folder,'package.json'));command(process.execPath,[require.resolve('typescript/bin/tsc'),'--noEmit'],folder)
-const result={...receipt,status:'reading-public-producer-types-passed',skipLibCheck:false,sourceTypes:true,legacyTypesOnly:realpathSync(legacy),legacyRuntimeInstalled:false}
-if(process.env.READING_TYPES_RECEIPT){mkdirSync(dirname(process.env.READING_TYPES_RECEIPT),{recursive:true});writeFileSync(process.env.READING_TYPES_RECEIPT,JSON.stringify(result,null,2))}console.log(JSON.stringify(result,null,2))
+const here=dirname(fileURLToPath(import.meta.url)),folder=mkdtempSync(join(tmpdir(),'reading-public-producer-'))
+const receipt=installPublicEnvironment({folder,source:process.env.DSH_SOURCE,worktable:process.env.WORKTABLE_PACKAGE})
+cpSync(join(here,'src'),join(folder,'src'),{recursive:true})
+const config=JSON.parse(readFileSync(join(here,'tsconfig.json'),'utf8'));config.compilerOptions.skipLibCheck=false
+const specRoot=join(folder,'node_modules/@standard-schema/spec');config.compilerOptions.paths={'@standard-schema/spec':[join(specRoot,JSON.parse(readFileSync(join(specRoot,'package.json'),'utf8')).types)]}
+writeFileSync(join(folder,'tsconfig.json'),JSON.stringify(config))
+const require=createRequire(join(folder,'package.json'));command(process.execPath,[require.resolve('typescript/bin/tsc'),'--noEmit'],folder)
+const result={...receipt,status:'reading-public-producer-types-passed',skipLibCheck:false,sourceTypes:true,legacyRuntimeInstalled:false,legacyDeclarationsRequired:false}
+if(process.env.READING_TYPES_RECEIPT){mkdirSync(dirname(process.env.READING_TYPES_RECEIPT),{recursive:true});writeFileSync(process.env.READING_TYPES_RECEIPT,JSON.stringify(result,null,2))}
+console.log(JSON.stringify(result,null,2))

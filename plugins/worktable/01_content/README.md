@@ -1,4 +1,29 @@
-# 本地派生平台候选 v0.6.0
+# 本地派生 Worktable 平台
+
+## 当前 rc.3 候选与后续版本规则
+
+本轮工作台候选声明目标为官方 `0.2.1-rc.3`，使用准确 `engines.dsh` 门禁，未知版本在正式环境中拒绝加载。包版本或声明检查通过不表示完整兼容验收通过；只有公开契约、新版归档干净安装、SDK 消费者及真实应用闭环都有相应版本证据，才可标记已验。旧 alpha.2 仅保留旧冻结包供回退，不由本轮新包继续支持。
+
+维护者打包需在 `npm run pack` 前设置 `WORKTABLE_NATIVE_RC3_ROOT`（或 `DSH_SOURCE`）为固定官方 rc.3 已构建检出；门禁使用其公开工具链、实际 Config 与兼容检查，并包含路由生命周期回归。打包不修改原生仓库，不变更 profile，不自动试用或部署。
+
+### 未验收版本的独立显式试用
+
+试用是未验证行为，不可在正式 home/profile 授予版本豁免。以下命令由用户在选定的新 Harness 检出中执行：先选一个全新的绝对 `DSH_HOME`，不复制会话、资料或存储，再使用官方精确版本命令。每个应用包都须单独授权，不能写通配范围；原生权限与应用能力检查继续有效。
+
+```powershell
+# 将下面占位值替换为实际新目录、目标宿主版本、精确候选版本和归档绝对路径。
+$env:DSH_HOME = '<全新隔离home绝对路径>'
+pnpm dsh plugin --profile web allow-version 'dsh-worktable@<候选版本>' --dsh-version '<目标宿主精确版本>' --accept-risk
+pnpm dsh plugin --profile web add '<已核对哈希的候选tgz绝对路径>'
+pnpm dsh web --no-open --host 127.0.0.1 --port <独立空闲端口>
+# 撤销本次试用许可：仍在相同隔离 home 执行，不切换正式进程。
+pnpm dsh plugin --profile web revoke-version 'dsh-worktable@<候选版本>' --dsh-version '<目标宿主精确版本>'
+```
+
+`allow-version` 是用户对一个精确包/宿主组合的官方风险确认，不等于兼容证明。插件不自动执行该命令，不自动复制模型凭据、迁移正式业务库或切换 3080。发现缺失公开能力即停止对应功能并保留记录。回退包、配置回退和业务迁移恢复分开处理；不得用旧整库覆盖升级后的新记录。
+
+
+## 历史 0.6.0 协议记录
 
 0.6.0首次导出 `dsh-worktable/sdk`：无副作用的协议/feature检查及公开类型，包精确9文件（新增lib/sdk.js、lib/sdk.d.ts）。接入协议仍为1；Notes要求产品>=0.6.0并验证实际feature。09的0.5.0没有该子路径，不能混装。生命周期和历史交接继承09；第二应用真实安装验收仍属10候选，不改变原生或正式profile。
 

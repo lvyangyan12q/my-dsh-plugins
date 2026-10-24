@@ -7,6 +7,18 @@ const built=buildSync({entryPoints:[fileURLToPath(new URL('../01_content/src/cli
 const module={exports:{}};new Function('require','module','exports',built.outputFiles[0].text)(require,module,module.exports)
 const {RolePanel,configureRoleNavigation}=module.exports
 const flush=()=>new Promise(r=>setImmediate(r))
+
+test('application adoption facade is instance-bound and sends only a registered source and confirmed preview',async()=>{
+ const previous=globalThis.fetch,requests=[]
+ globalThis.fetch=async(url,options)=>{requests.push(JSON.parse(options.body));return {ok:true,json:async()=>({status:'ready',fingerprint:'preview-r1'})}}
+ try{
+  const facade=module.exports.createRoleFacade('fixed-instance')
+  await facade.previewAdoption('teacher','legacy/default/math')
+  await facade.applyAdoption('teacher','legacy/default/math','preview-r1',true)
+  assert.deepEqual(requests,[{action:'adoption-preview',instanceId:'fixed-instance',roleId:'teacher',sourceKey:'legacy/default/math'},{action:'adoption-apply',instanceId:'fixed-instance',roleId:'teacher',sourceKey:'legacy/default/math',fingerprint:'preview-r1',confirmed:true}])
+  assert.equal(facade.resolveSession,undefined,'trusted native tool lookup must never become a browser facade')
+ }finally{globalThis.fetch=previous}
+})
 test('opening a role view only reads, native navigation reuses the bound identity and unmount sends no Stop',async()=>{
  const actions=[],opened=[];let root;const saved=globalThis.fetch
  configureRoleNavigation(async id=>opened.push(id))
