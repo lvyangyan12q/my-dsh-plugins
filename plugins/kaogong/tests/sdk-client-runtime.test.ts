@@ -63,3 +63,11 @@ test('opening a teacher preserves the exact facade binding and never retries a r
   assert.equal(roleIdForKey({roleId:'teacher'}),'teacher')
   assert.throws(()=>roleIdForKey({roleId:'teacher',subject:'未知科目'}),/科目/)
 })
+
+test('missing role declaration gives actionable configuration guidance without masking other native refusals',async()=>{
+ let opened=0;const unavailable=new Error('应用未声明此角色。');const roles={ensure:async()=>{throw unavailable},open:async()=>{opened++}}
+ const open=createRoleNavigator('learning-a',roles)
+ await assert.rejects(open({appId:'kaogong',instanceId:'learning-a',roleId:'class-advisor'}),/配置考公插件.*角色工作目录.*原生工作区.*重试/)
+ assert.equal(opened,0)
+ const other=new Error('permission denied');roles.ensure=async()=>{throw other};await assert.rejects(open({appId:'kaogong',instanceId:'learning-a',roleId:'class-advisor'}),error=>error===other)
+})

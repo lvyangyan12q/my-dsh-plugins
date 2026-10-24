@@ -46,7 +46,10 @@ export function createRoleNavigator(instanceId:string,roles:Pick<RoleFacade,'ens
   return async(key:LearningRoleKey)=>{
     if(key.appId!=='kaogong'||key.instanceId!==instanceId)throw new Error('角色不属于当前学习实例。')
     const roleId=roleIdForKey(key)
-    const value=await roles.ensure(roleId) as {sessionId?:unknown;revision?:unknown;phase?:unknown}
+    const value=await roles.ensure(roleId).catch((cause:unknown)=>{
+      if(cause instanceof Error&&(cause.message==='应用未声明此角色。'||'code' in cause&&cause.code==='role-unavailable'))throw new Error('请配置考公插件的角色工作目录，并在原生工作区登记该目录后重试；原会话和学习记录保留。',{cause})
+      throw cause
+    }) as {sessionId?:unknown;revision?:unknown;phase?:unknown}
     if(value?.phase!=='ready'||typeof value.sessionId!=='string'||!Number.isSafeInteger(value.revision))throw new Error('原角色会话尚未就绪；未创建替代会话。')
     if(!isCurrent())throw new Error('学习视图已关闭；未切换其他视图的会话。')
     await roles.open(roleId,value.sessionId,value.revision as number)

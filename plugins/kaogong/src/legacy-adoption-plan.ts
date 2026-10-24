@@ -11,11 +11,11 @@ export function canonical(value:unknown):string{
 }
 export const fingerprint=(value:unknown)=>createHash('sha256').update(canonical(value)).digest('hex')
 const bytesHash=(value:Buffer)=>createHash('sha256').update(value).digest('hex')
-const fail=(code:string):never=>{throw Object.assign(new Error(code),{code})}
+function fail(code:string):never{throw Object.assign(new Error(code),{code})}
 const specs={kaogong_bank:['bank',2,'questions',bankQuestion],kaogong_knowledge:['knowledge',1,'entries',knowledgeEntry],kaogong_lessons:['lessons',1,'lessons',lessonRecord],kaogong_notebook:['notebook',1,'questions',questionRecord],kaogong_practice:['practice',1,'rounds',practiceRound],kaogong_progress:['progress',1,'days',dayPlan]} as const
 type Domain=typeof specs[keyof typeof specs][0]
-type Snapshot={format:string;formatVersion:number;private:true;sourceHome:string;sourceRevision:string;files:{name:string;sourcePath:string;resolvedPath:string;version:number;table:string;sha256:string;bytesBase64:string}[]}
-type RoleInput={sourceKey:string;roleId:string;revision:string;binding:Record<string,unknown>}
+export type LegacyInspectionSnapshot={format:string;formatVersion:number;private:true;sourceHome:string;sourceRevision:string;files:{name:string;sourcePath:string;resolvedPath:string;version:number;table:string;sha256:string;bytesBase64:string}[]}
+export type RoleInput={sourceKey:string;roleId:string;revision:string;binding:Record<string,unknown>}
 type Inspection=Pick<RoleAdoptionPreview,'status'|'fingerprint'|'blockers'|'source'|'native'>
 export type LegacyAdoptionPlan={
  format:'kaogong-adoption-plan';formatVersion:1;id:string;status:'ready'|'blocked';fingerprint:string
@@ -30,7 +30,15 @@ export type LegacyAdoptionPlan={
 }
 function exact(schema:{safeParse(value:unknown):{success:boolean;data?:unknown}},value:unknown){const result=schema.safeParse(value);if(!result.success||canonical(result.data)!==canonical(value))fail('LEGACY_RECORD_UNSUPPORTED_OR_LOSSY')}
 /** Pure preparation over a private byte snapshot. No domain, native Session or target is created. */
-export async function prepareLegacyAdoption({snapshot,inspectRole}:{snapshot:Snapshot;inspectRole:(input:RoleInput)=>Promise<Inspection>}):Promise<LegacyAdoptionPlan>{
+export function legacyRoleInput(sourceRevision:string,id:string,binding:Record<string,unknown>):RoleInput|null{
+ const key=binding.key as {appId?:string;roleId?:string;subject?:string}
+ if(key?.appId!=='kaogong')return null
+ let roleId=key.roleId
+ if(roleId==='teacher'&&key.subject){const index=roleSubjects.indexOf(key.subject);if(index<0)fail('LEGACY_SUBJECT_UNMAPPED');roleId=subjectRoleIds[index]}
+ if(!roleId||!['teacher','class-advisor','counselor',...subjectRoleIds].includes(roleId))fail('LEGACY_ROLE_UNMAPPED')
+ return {sourceKey:'legacy.'+fingerprint([sourceRevision,id]),roleId,revision:sourceRevision,binding:structuredClone(binding)}
+}
+export async function prepareLegacyAdoption({snapshot,inspectRole}:{snapshot:LegacyInspectionSnapshot;inspectRole:(input:RoleInput)=>Promise<Inspection>}):Promise<LegacyAdoptionPlan>{
  if(snapshot?.format!=='kaogong-legacy-inspection'||snapshot.formatVersion!==1||snapshot.private!==true||!isAbsolute(snapshot.sourceHome)||snapshot.files.length!==7)fail('LEGACY_SNAPSHOT_INVALID')
  const expected=[...Object.keys(specs),'personal_workbench_role_bindings']
  if(snapshot.files.some((row,index)=>row.name!==expected[index]))fail('LEGACY_SNAPSHOT_INVALID')
@@ -45,13 +53,8 @@ export async function prepareLegacyAdoption({snapshot,inspectRole}:{snapshot:Sna
   if(file.name==='personal_workbench_role_bindings'){
    if(file.version!==1||file.table!=='bindings')fail('LEGACY_SNAPSHOT_INVALID')
    for(const [id,value] of Object.entries(data.tables.bindings)){
-    const binding=value as Record<string,unknown>,key=binding.key as {appId?:string;roleId?:string;subject?:string}
-    if(key?.appId!=='kaogong')continue
-    let roleId=key.roleId
-    if(roleId==='teacher'&&key.subject){const index=roleSubjects.indexOf(key.subject);if(index<0)fail('LEGACY_SUBJECT_UNMAPPED');roleId=subjectRoleIds[index]}
-    if(!roleId||!['teacher','class-advisor','counselor',...subjectRoleIds].includes(roleId))fail('LEGACY_ROLE_UNMAPPED')
-    const input={sourceKey:'legacy.'+fingerprint([sourceRevision,id]),roleId,revision:sourceRevision,binding:structuredClone(binding)}
-    const inspection=await inspectRole(input);if(inspection.status!=='ready'||!inspection.fingerprint)blockers.push({code:'LEGACY_NATIVE_IDENTITY_BLOCKED',roleId})
+    const input=legacyRoleInput(sourceRevision,id,value as Record<string,unknown>);if(!input)continue
+    const inspection=await inspectRole(input);if(inspection.status!=='ready'||!inspection.fingerprint)blockers.push({code:'LEGACY_NATIVE_IDENTITY_BLOCKED',roleId:input.roleId})
     roles.push({...input,inspection})
    }
    continue
