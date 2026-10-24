@@ -5,6 +5,8 @@ import {questionRecord,planConfig,dayPlan,bankQuestion,knowledgeEntry,practiceRo
 import {lessonRecord,lessonSelection} from './lesson-schema.ts'
 import {roleSubjects,subjectRoleIds} from './role-definitions.ts'
 import type {LegacyMaterialEvidence} from './legacy-material-evidence.mjs'
+import type {LegacyBankImageEvidence} from './legacy-bank-image-evidence.mjs'
+import type {LegacyPrivateAssetEvidence} from './legacy-private-assets.mjs'
 export function canonical(value:unknown):string{
  if(Array.isArray(value))return '['+value.map(canonical).join(',')+']'
  if(value!==null&&typeof value==='object')return '{'+Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,value])=>JSON.stringify(key)+':'+canonical(value)).join(',')+'}'
@@ -26,7 +28,7 @@ export type LegacyAdoptionPlan={
  globals:{domain:'progress'|'lessons';target:'history';value:unknown;hash:string}[]
  roles:(RoleInput&{inspection:Inspection})[];privateKnowledgeIds:string[];counts:Record<string,number>
  readOnlyGrants:{resourceId:'question-bank'|'materials';owner:'library';consumer:'history'}[]
- assetEvidence?:{materials?:LegacyMaterialEvidence}
+ assetEvidence?:{materials?:LegacyMaterialEvidence;bank?:LegacyBankImageEvidence;private?:LegacyPrivateAssetEvidence}
  blockers:{code:string;roleId?:string}[]
  rollback:{mode:'journal-only-no-source-or-profile-restore';schemaGate:5;sourceWrites:0;nativeMessagesCopied:false;newerTargetRows:'never-overwrite-or-delete';legacyAssets:'preserved-unadopted-until-verified-owner-manifest'}
 }

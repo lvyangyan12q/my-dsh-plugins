@@ -50,7 +50,7 @@ export class KaogongHost {
       const context = await this.services.applications.resolveView(views[0])
       const appId = context.instance.appId
       if (context.application.kind !== 'deep' || context.application.id !== appId || !['kaogong', 'kaogong-library'].includes(appId)) throw new Error('View does not belong to Kaogong')
-      if (appId === 'kaogong-library' && (!/\/knowledge(?:\/|$)|\/(?:document-image|material-image)(?:\/|$)|^\/%E9/.test(url.pathname) || !['GET','HEAD'].includes(request.method ?? ''))) throw new Error('Library view is read-only')
+      if (appId === 'kaogong-library' && (!/\/knowledge(?:\/|$)|\/(?:document-image|material-image|legacy-image|legacy-question-image)(?:\/|$)|^\/%E9/.test(url.pathname) || !['GET','HEAD'].includes(request.method ?? ''))) throw new Error('Library view is read-only')
       await this.operation(context.instance.id, route, async registry => {
         const handler = registry.routes.get(route)
         if (!handler || !('handler' in handler)) throw new Error('Route unavailable')
