@@ -108,7 +108,8 @@ export class Lessons {
     return this.view(this.get(id))
   }) }
   private async evidence(row: Lesson, roundId: string): Promise<LessonEvidence> {
-    const round = await this.practice.read(roundId), result = round.result
+    // A view and a historical read tool must not repair/project notebook state.
+    const round = (await this.practice.readCompleted(roundId))?.round, result = round?.result
     if (!result || result.totalCount === 0) throw new PracticeError('本轮未提交或没有可评分作答')
     const point = row.request.knowledgePoint
     if (round.context.subject !== row.request.subject || (point &&

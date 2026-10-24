@@ -31,7 +31,7 @@ export async function sourceRows<T>(resources: ResourceDirectory, viewId: string
   return (await resources.call<Rows<T>>({ viewId, resourceId, action: 'read' })).value.rows
 }
 /** Private teaching contexts cannot be catalogued or granted to another instance. */
-export function registerResources(host: KaogongHost, applications: ApplicationDirectory, resources: ResourceDirectory) {
+export function registerResources(host: KaogongHost, applications: ApplicationDirectory, resources: ResourceDirectory, privateKnowledge:(instanceId:string,id:string)=>boolean=()=>false) {
   const remove: (() => void | Promise<void>)[] = []
   const withTaskLease = <T>(operation: () => Promise<T>) => host.gate.run(operation)
   for (const appId of ['kaogong', 'kaogong-library']) {
@@ -42,7 +42,7 @@ export function registerResources(host: KaogongHost, applications: ApplicationDi
     const materials: ResourceOwner<Rows<KnowledgeEntryRecord>> = {
       appId, resourceId: 'materials', descriptor: { title: '原始学习资料', recordsField: 'rows' }, actions: [], withTaskLease,
       read: instanceId => host.state(instanceId, async state => {
-        const rows = [...state.knowledgeEntries.entries()].filter(([, row]) => row.kind !== '笔记')
+        const rows = [...state.knowledgeEntries.entries()].filter(([id, row]) => row.kind !== '笔记'&&!privateKnowledge(instanceId,id))
         return {revision: revision(rows), rows, ownerInstanceId:instanceId}
       }),
       taskContext(value, selection) {
@@ -67,6 +67,12 @@ export function registerResources(host: KaogongHost, applications: ApplicationDi
         const row = value.rows.find(([id]) => id === selected.id)
         if (!row) throw new Error('Material unavailable')
         return {title: row[1].title, text: JSON.stringify({id: row[0], ...row[1]})}
+      }
+      if(selected?.kind==='materials'&&Array.isArray((selected as {ids?:unknown}).ids)){
+        const ids=(selected as unknown as {ids:unknown[]}).ids
+        if(ids.length>8||ids.some(id=>typeof id!=='string'))throw Error('Invalid private materials selection')
+        const rows=ids.map(id=>{const row=value.rows.find(([key])=>key===id);if(!row)throw Error('Material unavailable');return row})
+        return {title:'课堂资料',text:JSON.stringify(rows)}
       }
       if (selected?.kind === 'objective' && selected.context && JSON.stringify(selected.context).length <= 4096) return {title: '学习目标', text: JSON.stringify(selected.context)}
       throw new Error('Teaching context selection invalid')

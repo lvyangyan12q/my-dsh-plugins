@@ -15,10 +15,12 @@ export class KaogongHost {
     pool: Pick<KaogongInstancePool, 'acquire' | 'close'>
     connection: { admit(request: IncomingMessage): unknown }
     registry(state: KaogongInstanceState, command?: string): Registry | Promise<Registry>
+    assertReady?(instanceId:string):void|Promise<void>
   }) {}
   private operation<T>(instanceId: string, command: string, action: (registry: Registry) => Promise<T>): Promise<T> {
     if (this.closing) return Promise.reject(new Error('Kaogong is stopping'))
     const result = this.gate.external(async () => {
+      await this.services.assertReady?.(instanceId)
       const lease = await this.services.pool.acquire(instanceId)
       let registry: Registry | undefined
       try { registry = await this.services.registry(lease.state, command); return await action(registry) }
@@ -30,6 +32,10 @@ export class KaogongHost {
   }
   /** App-internal source/receipt work may reenter its own lease, external tools may not. */
   state<T>(instanceId: string, operation: (state: KaogongInstanceState) => Promise<T>): Promise<T> {
+    return this.importState(instanceId,async state=>{await this.services.assertReady?.(instanceId);return operation(state)})
+  }
+  /** App-owned importer only; normal HTTP/tools/resources always use the readiness guard. */
+  importState<T>(instanceId: string, operation: (state: KaogongInstanceState) => Promise<T>): Promise<T> {
     if (this.closing) return Promise.reject(new Error('Kaogong is stopping'))
     const result = this.gate.run(async () => { const lease = await this.services.pool.acquire(instanceId); try { return await operation(lease.state) } finally { await lease.release() } })
     this.pending.add(result); void result.finally(() => this.pending.delete(result)).catch(() => {}); return result

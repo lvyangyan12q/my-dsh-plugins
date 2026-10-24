@@ -16,6 +16,9 @@ export interface ApplicationDirectory {
  snapshot():Promise<{applications:Application[];instances:ApplicationInstance[];views:ApplicationView[]}>
  createInstance(appId:string,projectId:string|null):Promise<ApplicationInstance>
  createView(instanceId:string,viewType?:string):Promise<ApplicationView>
+ /** Host-only durable provisioning intent; never exposed as browser create parameters. Existing unowned IDs are conflicts. */
+ ensureInstance(input:{id:string;appId:string;projectId:string|null;operationId:string}):Promise<ApplicationInstance>
+ ensureView(input:{id:string;instanceId:string;type?:string;operationId:string}):Promise<ApplicationView>
  resolveView(viewId:string):Promise<{application:Application;instance:ApplicationInstance;view:ApplicationView}>
  setEnabled?(appId:string,enabled:boolean,revision:number):Promise<{appId:string;enabled:boolean;revision:number}>
 }

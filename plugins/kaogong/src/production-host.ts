@@ -14,6 +14,9 @@ import {registerTaskOwners} from './task-owners.ts'
 import {PracticeRounds} from './practice-rounds.ts'
 import {Lessons} from './lessons.ts'
 import type {BankQuestionRecord,KnowledgeEntryRecord} from './domain.ts'
+import {adoptionDomain,adoptionPlansDomain,assertAdoptionReady,privateKnowledgeKey} from './legacy-adoption-state.ts'
+import {createAdoptionOwner} from './legacy-adoption-owner.ts'
+import {mountAdoptionHttp} from './adoption-http.ts'
 
 const metadata=defineDomain({name:'kaogong_platform_rc3',version:1,tables:{
  receipts:domainTable(z.object({instanceId:z.string(),businessId:z.string(),kind:z.enum(['review','lesson']),requestId:z.string(),status:z.enum(['claimed','done'])})),
@@ -22,9 +25,10 @@ const metadata=defineDomain({name:'kaogong_platform_rc3',version:1,tables:{
 /** Public SDK registration only; legacy stores are not opened or adopted on activation. */
 export async function mountKaogong(ctx:Context,config:Config){
  const protocol=ctx.worktableProtocol.describe()
- if(protocol.protocolVersion!==1||['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1'].some(feature=>!protocol.features.includes(feature)))throw Error('Install the rc.3 Worktable SDK with private resources and application task receipts before enabling Kaogong')
+ if(protocol.protocolVersion!==1||['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1','host-provision-intent-v1','legacy-role-source-inspection-v1'].some(feature=>!protocol.features.includes(feature)))throw Error('Install the rc.3 Worktable SDK with private resources, durable provisioning and public legacy identity inspection before enabling Kaogong')
  const disposers:(()=>void|Promise<void>)[]=[]
  let host:KaogongHost|undefined
+ let adoption:ReturnType<typeof createAdoptionOwner>|undefined
  try{
   for(const [id,title,views] of [
    ['kaogong','考公学习',['page','classroom','practice','errors','materials','plan']],
@@ -32,6 +36,10 @@ export async function mountKaogong(ctx:Context,config:Config){
   ] as const)disposers.push(await ctx.worktableApplications.contribute({id,title,version:'0.2.0-rc.3.1',protocolVersion:1,kind:'deep',views:views.map(id=>({id,title:id}))}))
   const meta=await ctx.storageDomain.open(metadata)
   disposers.push(()=>meta.close())
+  const adoptionState=await ctx.storageDomain.open(adoptionDomain)
+  disposers.push(()=>adoptionState.close())
+  const adoptionPlans=await ctx.storageDomain.open(adoptionPlansDomain)
+  disposers.push(()=>adoptionPlans.close())
   const readBinding=async(instanceId:string,key:{subject:string})=>{
    const roleId=subjectRoleIds[roleSubjects.indexOf(key.subject)]??'teacher'
    return (await ctx.worktableRoles.read(instanceId,roleId)).binding
@@ -41,7 +49,7 @@ export async function mountKaogong(ctx:Context,config:Config){
   const registry=async(state:KaogongInstanceState,command='')=>{
    const viewId=await instanceView(ctx.worktableApplications,state.instanceId)
    const {instance}=await ctx.worktableApplications.resolveView(viewId)
-   const needsSource=/knowledge|document-image|dashboard|practice\/start|lesson\/create|kaogong_bank_list|^kaogong_practice$/.test(command)
+   const needsSource=/knowledge|document-image|dashboard|practice\/start|lesson\/create|kaogong_bank_|^kaogong_practice$/.test(command)
    const bankRows=needsSource?await sourceRows<BankQuestionRecord>(ctx.worktableResources,viewId,'question-bank'):[]
    const materialSource=needsSource?(await ctx.worktableResources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})).value:null
    const materialRows=materialSource?.rows??[]
@@ -58,11 +66,14 @@ export async function mountKaogong(ctx:Context,config:Config){
    const registry=businessRegistry({...config,questionImageRoot:{get:()=>undefined}},{...state,bankQuestions,knowledgeEntries,practice,lessons},scopedMineru)
    return {...registry,dispose:async()=>{await lessons.close();await practice.close()}}
   }
-  host=new KaogongHost({applications:ctx.worktableApplications,roles:ctx.worktableRoles,pool,connection:ctx.connection,registry})
+  host=new KaogongHost({applications:ctx.worktableApplications,roles:ctx.worktableRoles,pool,connection:ctx.connection,registry,assertReady:instanceId=>assertAdoptionReady(adoptionState.table('journals'),instanceId)})
   const runtime=host
   disposers.push(()=>runtime.close())
-  disposers.push(registerResources(runtime,ctx.worktableApplications,ctx.worktableResources))
+  disposers.push(registerResources(runtime,ctx.worktableApplications,ctx.worktableResources,(instanceId,id)=>!!adoptionState.table('private_knowledge').get(privateKnowledgeKey(instanceId,id))))
   disposers.push(await installKaogongRoles(ctx,config.roleCwd))
+  adoption=createAdoptionOwner(ctx,runtime,adoptionState,adoptionPlans,config)
+  disposers.push(()=>adoption!.close())
+  disposers.push(mountAdoptionHttp(ctx,adoption))
   disposers.push(registerTaskOwners(runtime,ctx.worktableTaskOwners,meta.table('receipts'),ctx.worktableResources))
   // Registration descriptors do not read tables or create a Session.
   const templates=businessRegistry(config,{} as KaogongInstanceState,mineru)
@@ -70,12 +81,12 @@ export async function mountKaogong(ctx:Context,config:Config){
   for(const [name,tool] of templates.tools)disposers.push(ctx.tools.register({...tool,execute:(args,execution)=>runtime.tool(name,args,execution)}, {when:context=>runtime.active(name,context)}))
  }catch(error){
   // Stop admission before withdrawing sources and releasing metadata.
-  await host?.close()
+  await adoption?.close();await host?.close()
   await Promise.allSettled(disposers.reverse().map(remove=>Promise.resolve().then(remove)))
   throw error
  }
  return async()=>{
-  await host?.close()
+  await adoption?.close();await host?.close()
   for(const remove of disposers.reverse())await remove()
  }
 }

@@ -1,5 +1,5 @@
 import {compositionDefinition} from './composition-schema.mjs'
-import {applicationState} from './state-schema.mjs'
+import {applicationState,applicationSchema} from './state-schema.mjs'
 import {AdmissionGate} from './admission.mjs'
 import {ProfileFileStore} from './persistence.mjs'
 import { randomUUID } from 'node:crypto'
@@ -13,7 +13,7 @@ function nextUse(data){return data.instances.reduce((time,item)=>Math.max(time,i
 
 /** Profile-owned directory. Public methods return detached records; no DOM or session globals. */
 export class ApplicationDirectory {
-  constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map(); this.closing=false; this.store=new ProfileFileStore(file,()=>({schema:1,applications:[],instances:[],views:[]}),applicationState,[1,2,3,4]) }
+  constructor(file,options={}) { this.gate=options.gate??new AdmissionGate(); this.file=file; this.hostOrigin=options.hostOrigin; this.pending=Promise.resolve(); this.contributions=new Map(); this.closing=false; this.store=new ProfileFileStore(file,()=>({schema:1,applications:[],instances:[],views:[]}),applicationState,[1,2,3,4,5]) }
   setReadinessGuard(guard){if(typeof guard!=='function')throw new TypeError('Readiness guard required');this.readinessGuard=guard;return()=>{if(this.readinessGuard===guard)this.readinessGuard=null}}
   async read() {if(this.closing)throw new ApplicationError('unavailable','应用状态所有者已关闭。',503);return this.store.read()}
   close(){if(!this.closePromise){this.closing=true;this.closePromise=this.gate.run(async()=>{await this.pending;await this.store.close()})}return this.closePromise}
@@ -21,6 +21,7 @@ export class ApplicationDirectory {
   async changeWithin(operation,committed=()=>{}) {
     const result=this.pending.then(async()=>{
       const data=await this.read(); const value=operation(data)
+      data.schema=applicationSchema(data)
       await this.store.write(data)
       committed(value)
       return structuredClone(value)
@@ -72,6 +73,29 @@ export class ApplicationDirectory {
   async createInstance(appId,projectId) {
     projectId=projectScope(projectId)
     return this.gate.run(async()=>{await this.readinessGuard?.(appId);return this.changeWithin(data=>{ this.assertAvailable(data,appId); const record={id:randomUUID(),appId,projectId,revision:1,createdAt:Date.now(),lastOpenedAt:nextUse(data)}; data.instances.push(record);return record })})
+  }
+  /** Trusted Host import intent only. Browser create never accepts caller-selected IDs. */
+  ensureInstance({id,appId,projectId,operationId}) {
+    this.provisionIdentity(id,operationId);projectId=projectScope(projectId)
+    return this.gate.run(async()=>{await this.readinessGuard?.(appId);return this.changeWithin(data=>{
+      this.assertAvailable(data,appId);const previous=data.instances.find(row=>row.id===id),receipt=data.provisions?.find(row=>row.kind==='instance'&&row.id===id)
+      if(previous){if(!receipt||receipt.operationId!==operationId||previous.appId!==appId||previous.projectId!==projectId)throw new ApplicationError('provision-conflict','目标实例已存在且不属于此接管意图，未覆盖。',409);return previous}
+      if(receipt)throw new ApplicationError('provision-conflict','接管实例回执与目标不一致，未重建。',409)
+      const record={id,appId,projectId,revision:1,createdAt:Date.now(),lastOpenedAt:nextUse(data)}
+      data.instances.push(record);data.provisions??=[];data.provisions.push({kind:'instance',id,operationId});return record
+    })})
+  }
+  provisionIdentity(id,operationId){const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);if(!uuid(id)||!uuid(operationId))throw new ApplicationError('provision-invalid','接管需要固定的实例/视图与操作 UUID。',400)}
+  ensureView({id,instanceId,type='page',operationId}) {
+    this.provisionIdentity(id,operationId)
+    return this.change(data=>{
+      const instance=this.instance(data,instanceId),app=this.application(data,instance.appId)
+      if(typeof type!=='string'||(app.kind==='deep'?!app.views.some(row=>row.id===type):type!=='page'))throw new ApplicationError('view-unsupported','应用未声明此视图。')
+      const previous=data.views.find(row=>row.id===id),receipt=data.provisions?.find(row=>row.kind==='view'&&row.id===id)
+      if(previous){if(!receipt||receipt.operationId!==operationId||previous.instanceId!==instanceId||previous.type!==type)throw new ApplicationError('provision-conflict','目标视图已存在且不属于此接管意图，未覆盖。',409);return previous}
+      if(receipt)throw new ApplicationError('provision-conflict','接管视图回执与目标不一致，未重建。',409)
+      const view={id,instanceId,type};data.views.push(view);data.provisions??=[];data.provisions.push({kind:'view',id,operationId});instance.lastOpenedAt=nextUse(data);return view
+    })
   }
   async resume(id) {
     return this.change(data=>{const instance=this.instance(data,id);this.application(data,instance.appId);instance.lastOpenedAt=nextUse(data);return instance})

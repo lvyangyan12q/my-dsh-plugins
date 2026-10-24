@@ -1,16 +1,7 @@
 
-/**
- * DeepSeek Harness plugin: the kaogong (考公) learning suite for the
- * 武汉市公务员考试. Durable state lives in storage-domain domains
- * (`kaogong_notebook` + `kaogong_progress`) so the wrong-answer notebook
- * and the backward-scheduled study plan are shared across agents.
- *
- * Tools: kaogong_record_question, kaogong_list_questions,
- *   kaogong_analyze_errors, kaogong_summarize_weaknesses, kaogong_taxonomy,
- *   kaogong_delete_question, kaogong_plan_set, kaogong_plan_view,
- *   kaogong_plan_done, kaogong_progress_status.
- *
- * @module kaogong
+/** Instance-scoped learning command registrations.
+ * The production Host validates the view/native Session and leases owned state
+ * before dispatch. This module never opens or repairs a legacy domain.
  */
 
 import type { Context, Volatile } from '@deepseek-ai/cordis'
@@ -42,11 +33,10 @@ import { searchKnowledge, knowledgeExcerpt } from './knowledge.ts'
 import type { Question, AttemptResult, BankQuestion, KnowledgeEntry, BankReviewStatus } from './types.ts'
 import { KNOWLEDGE_KINDS } from './types.ts'
 
-export const name = 'kaogong'
-export const inject = ['tools', 'storageDomain', 'webServer', 'connection']
-
 /** Plugin configuration, validated by the schemastery schema below. */
 export interface Config {
+  /** Read only on explicit adoption preview; mounting never reads or writes this old home. */
+  legacySourceHome?: string
   /** Explicit absolute location for new role Sessions; persisted before creation. */
   roleCwd?: string
   /** Existing image directory, independent of the installed package; no automatic copying. */
@@ -58,7 +48,8 @@ export interface Config {
 
 /** Schemastery schema for {@link Config}. */
 export const Config = z.object({
-  roleCwd: z.string().description('角色课堂新会话的绝对工作目录；留空不创建新会话，已有课堂仍可恢复'),
+  legacySourceHome: z.string().description('旧考公独立 home 的明确绝对路径；仅点击接管预览时只读检查，不自动迁移或写旧目录'),
+  roleCwd: z.string().description('角色新会话的明确绝对目录；留空不注册角色。课堂内容仍可读，恢复原生角色入口前需配置目录'),
   questionImageRoot: z.string().description('历史题目图片的持久绝对目录；留空仅提供随包的两张已核验图片').volatile(),
   topN: z.natural().min(1).default(8),
   mineru: z.object({

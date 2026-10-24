@@ -6,8 +6,9 @@ const text=value=>typeof value==='string'&&value.length>0&&value.length<=4096
 const id=value=>typeof value==='string'&&/^[a-z][a-z0-9.-]{0,79}$/.test(value)
 const revision=value=>Number.isSafeInteger(value)&&value>=1
 const unique=(rows,key)=>{expect(Array.isArray(rows));const ids=new Set();for(const row of rows){const value=key(row);expect(text(value)&&!ids.has(value));ids.add(value)}return ids}
+export function applicationSchema(data){return data.provisions?.length?5:data.presentationStates?.length?4:data.compositions?.length?3:(data.lifecycle??[]).some(row=>!row.enabled)?2:1}
 export function applicationState(data){
- const policies=data.lifecycle??[];unique(policies,row=>row.appId);for(const row of policies)expect(id(row.appId)&&typeof row.enabled==='boolean'&&revision(row.revision));validateCompositions(data.compositions??[]);expect(data.schema===(data.presentationStates?.length?4:data.compositions?.length?3:policies.some(row=>!row.enabled)?2:1));
+ const policies=data.lifecycle??[];unique(policies,row=>row.appId);for(const row of policies)expect(id(row.appId)&&typeof row.enabled==='boolean'&&revision(row.revision));validateCompositions(data.compositions??[]);expect(data.schema===applicationSchema(data));
  unique(data.applications,row=>row.id);const instances=unique(data.instances,row=>row.id);unique(data.views,row=>row.id);
  validatePresentationStates(data.presentationStates??[],data);validateGenerated(data.generatedBindings??[],data);
  const reserved=data.deepApplicationIds??[];expect(Array.isArray(reserved)&&new Set(reserved).size===reserved.length&&reserved.every(id));
@@ -15,6 +16,7 @@ export function applicationState(data){
  for(const row of data.compositions??[])expect(!reserved.includes(row.appId)&&!data.applications.some(app=>app.id===row.appId));
  for(const row of data.instances)expect(id(row.appId)&&(row.projectId===null||text(row.projectId))&&revision(row.revision)&&Number.isFinite(row.createdAt)&&Number.isFinite(row.lastOpenedAt));
  for(const row of data.views)expect(instances.has(row.instanceId)&&id(row.type));
+ const provisions=data.provisions??[];unique(provisions,row=>row.kind+':'+row.id);for(const row of provisions){expect(['instance','view'].includes(row.kind)&&text(row.operationId));expect((row.kind==='instance'?data.instances:data.views).some(target=>target.id===row.id))}
 }
 export function resourceState(data){
  unique(data.connections,row=>row.id);const active=new Set();

@@ -74,6 +74,7 @@ export const sdkLearningStyles=`
 .kg-sdk-classroom small{font-size:12px;color:#736c62}.kg-sdk-content{min-height:0;min-width:0;flex:1;overflow:auto}
 .kg-sdk-classroom [data-pwb-button]{min-height:34px;padding:6px 10px;border:1px solid #d7d0c5;border-radius:7px;background:#fdfcf9;color:#2e2b26;font:inherit;cursor:pointer}
 .kg-sdk-classroom [data-pwb-button][aria-pressed=true],.kg-sdk-classroom [data-variant=primary]{background:#a44c32;color:#fffaf6;border-color:#a44c32}
+.kg-sdk-classroom [data-pwb-button][aria-pressed=true]:hover,.kg-sdk-classroom [data-pwb-button][aria-pressed=true]:focus-visible,.kg-sdk-classroom [data-pwb-button][data-variant=primary]:hover,.kg-sdk-classroom [data-pwb-button][data-variant=primary]:focus-visible{background:#a44c32;color:#fffaf6;border-color:#a44c32}
 .kg-sdk-classroom [data-pwb-button]:disabled{opacity:.5;cursor:not-allowed}.kg-sdk-classroom :is(button,input,select,textarea):focus-visible{outline:2px solid #a44c32;outline-offset:2px}
 .kg-sdk-classroom :is(input:not([type=checkbox]):not([type=radio]),select,textarea){max-width:100%;min-width:0;box-sizing:border-box;border:1px solid #cfc5b7;border-radius:7px;background:#fdfcf9;color:#2e2b26;font:inherit;padding:7px}
 .kg-sdk-classroom label{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}.kg-sdk-classroom>p[role=alert]{color:#b42318;padding:0 12px;overflow-wrap:anywhere}
