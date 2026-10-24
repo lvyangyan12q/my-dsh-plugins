@@ -1,5 +1,6 @@
 import {CompositionEditor} from './compositionEditor'
 import { captureAnnotationTarget, resolveAnnotationTarget, type AnnotationTarget } from './annotationTarget'
+import type { AnnotationInsertion } from './hostInput'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { parentPathOf } from './pathutil'
 import { ApplicationPicker, ApplicationPane, type ApplicationContent } from './applicationEntry'
@@ -253,7 +254,7 @@ export type ConsoleCardData = {
 }
 
 type SplitEnv = {
-  fillHostInput: (text: string) => boolean
+  captureHostInput: () => AnnotationInsertion
   getScope: () => SplitScope | null
   getJobs: () => SplitJob[]
   getSubagents: () => any[]
@@ -346,6 +347,7 @@ function setDropTarget(t: { row: PaneRow; index: number } | null) {
 
 /** ——「指哪打哪」标注引擎：按钮 → 蓝色冒泡光标 → 点击弹输入框 → ✓ 打包进对话框（不发送） —— */
 type AnnotState = {
+  insertion?: AnnotationInsertion
   target: AnnotationTarget | null
   error: string
   on: boolean
@@ -373,8 +375,14 @@ function subscribeAnnot(fn: () => void) { annotListeners.add(fn); return () => {
 
 /** 进入瞄准模式（resp = 窗口编号等上下文，由调用方拼好） */
 function startAnnot(resp: string, target: AnnotationTarget) {
+  let insertion: AnnotationInsertion | undefined
+  let error = ''
+  try {
+    if (!splitEnv) throw new Error('原生会话未就绪，请重新打开会话后开始标注。')
+    insertion = splitEnv.captureHostInput()
+  } catch (cause) { error = cause instanceof Error ? cause.message : String(cause) }
   document.body.classList.add('dsh-wt-annotating')
-  setAnnot({ on: true, started: false, drawing: false, resp, target, error: '', stat: '', draft: annotState.on ? annotState.draft : '' })
+  setAnnot({ on: true, started: false, drawing: false, resp, target, insertion, error, stat: '', draft: annotState.on ? annotState.draft : '' })
 }
 function cancelAnnot() {
   document.body.classList.remove('dsh-wt-annotating')
@@ -538,11 +546,6 @@ async function copyTextSafe(text: string): Promise<boolean> {
   } catch { return false }
 }
 
-/** 注入宿主对话框输入框（不发送）；失败返回 false */
-function fillHostInput(text: string): boolean {
-  return splitEnv?.fillHostInput(text) ?? false
-}
-
 /** ✓ 确认：打包并注入，不发送 */
 function confirmAnnot() {
   const s = annotState
@@ -557,14 +560,14 @@ function confirmAnnot() {
   const identity = { ...resolved.target, originalPaneId: resolved.target.paneId, paneId: resolved.paneId }
   const text = '📌 标注-' + s.resp + '\n稳定目标：' + JSON.stringify(identity) + '\n' + (s.stat || '') + '\n要求：' + (s.draft.trim() || '（未填写）')
     + '\n【工作台标注·已定位，直接作答，无需再问；仅当确实无法从标注定位时才问一次。数据缺失或标注标注读取受限时，如实说明无法确定，禁止编造数值；可建议提供截图或使用视觉模型会话】'
-  const ok = fillHostInput(text)
-  if (!ok) {
-    try {
-      navigator.clipboard?.writeText(text).catch(() => { try { window.prompt('标注已生成，请手动复制：', text) } catch {} })
-    } catch {
-      try { window.prompt('标注已生成，请手动复制：', text) } catch {}
-    }
+  try {
+    if (!s.insertion) throw new Error(s.error || '没有捕获原生光标；标注要求已保留，请重新开始标注。')
+    s.insertion.insert(text)
+  } catch (cause) {
+    setAnnot({ error: cause instanceof Error ? cause.message : String(cause) })
+    return
   }
+  setAnnot({ draft: '', target: null, insertion: undefined, error: '' })
   cancelAnnot()
 }
 
@@ -3174,6 +3177,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
           className="dsh-wt_annotBtn"
           title={T('annot.label')}
           aria-label={T('annot.label')}
+          onMouseDown={(event) => event.preventDefault()}
           onClick={() => startAnnot(windowLabelOf(row, index), captureAnnotationTarget(splitStore.spec, row, index))}
         >
           <svg viewBox="0 0 16 16" aria-hidden><path d="M2 5.6c0-1.2 1-2.2 2.2-2.2h7.6c1.2 0 2.2 1 2.2 2.2v3.6c0 1.2-1 2.2-2.2 2.2H7.5L5 13.6l.3-2.4H4.2c-1.2 0-2.2-1-2.2-2.2z" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" /></svg>

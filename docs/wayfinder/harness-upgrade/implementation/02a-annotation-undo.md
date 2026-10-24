@@ -8,7 +8,7 @@ assignee: root
 blocked_by: []
 target: 0.2.1-rc.3
 diagnosis_status: complete
-implementation_status: awaiting-user-operation-choice
+implementation_status: approved-production-caret-development-verified
 acceptance_status: pending-installed-production-flow
 context_branch: codex/prototype-rc3-annotation-undo
 context_commit: ee7b60e02aa8d9d63d97e35a0869e5edfff287eb
@@ -64,3 +64,7 @@ rc.3 的公开 `conversation.input.dock` 槽提供 `InputActions.captureInsertio
 ## 用户选择 · 2026-10-24
 
 用户明确选择“光标处插入，可独立撤销”。生产语义变更已获确认：开始标注时捕获原生光标/选区末端；不替换选中文字；确认插入只在同一会话代和draftRev上执行一次；过期失败保留标注，不换通道、不自动发送。末尾初始化追加不再是新版本默认操作。原型ee7b60e仅为已验证依据，生产接线、跨Session/卸载、附件和最终包仍待验。
+
+## 生产接线进展 · 2026-10-24
+
+[02b 生产光标插入](02b-production-caret.md) 已实现透明公开输入槽桥接和生产画布接线。独立 3099 开发安装实际通过三种 chip 混合草稿、选区末端、一次撤销精确恢复、旧 revision 拒绝与跨 Session 槽卸载/重开保留标注。附件、物理 IME、最终归档及完整 HU03 继续待验；本票不以开发构建关闭 02/HU03。
