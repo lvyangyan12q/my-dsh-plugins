@@ -4,6 +4,7 @@ import type {RoleAdoptionPreview} from 'dsh-worktable/sdk'
 import {questionRecord,planConfig,dayPlan,bankQuestion,knowledgeEntry,practiceRound} from './schemas.ts'
 import {lessonRecord,lessonSelection} from './lesson-schema.ts'
 import {roleSubjects,subjectRoleIds} from './role-definitions.ts'
+import type {LegacyMaterialEvidence} from './legacy-material-evidence.mjs'
 export function canonical(value:unknown):string{
  if(Array.isArray(value))return '['+value.map(canonical).join(',')+']'
  if(value!==null&&typeof value==='object')return '{'+Object.entries(value).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,value])=>JSON.stringify(key)+':'+canonical(value)).join(',')+'}'
@@ -24,7 +25,8 @@ export type LegacyAdoptionPlan={
  records:{domain:Domain;target:'history'|'library';key:string;value:unknown;hash:string}[]
  globals:{domain:'progress'|'lessons';target:'history';value:unknown;hash:string}[]
  roles:(RoleInput&{inspection:Inspection})[];privateKnowledgeIds:string[];counts:Record<string,number>
- readOnlyGrants:{resourceId:'question-bank';owner:'library';consumer:'history'}[]
+ readOnlyGrants:{resourceId:'question-bank'|'materials';owner:'library';consumer:'history'}[]
+ assetEvidence?:{materials?:LegacyMaterialEvidence}
  blockers:{code:string;roleId?:string}[]
  rollback:{mode:'journal-only-no-source-or-profile-restore';schemaGate:5;sourceWrites:0;nativeMessagesCopied:false;newerTargetRows:'never-overwrite-or-delete';legacyAssets:'preserved-unadopted-until-verified-owner-manifest'}
 }
@@ -38,12 +40,15 @@ export function legacyRoleInput(sourceRevision:string,id:string,binding:Record<s
  if(!roleId||!['teacher','class-advisor','counselor',...subjectRoleIds].includes(roleId))fail('LEGACY_ROLE_UNMAPPED')
  return {sourceKey:'legacy.'+fingerprint([sourceRevision,id]),roleId,revision:sourceRevision,binding:structuredClone(binding)}
 }
-export async function prepareLegacyAdoption({snapshot,inspectRole}:{snapshot:LegacyInspectionSnapshot;inspectRole:(input:RoleInput)=>Promise<Inspection>}):Promise<LegacyAdoptionPlan>{
+export async function prepareLegacyAdoption({snapshot,inspectRole,materialEvidence}:{snapshot:LegacyInspectionSnapshot;inspectRole:(input:RoleInput)=>Promise<Inspection>;materialEvidence?:LegacyMaterialEvidence}):Promise<LegacyAdoptionPlan>{
  if(snapshot?.format!=='kaogong-legacy-inspection'||snapshot.formatVersion!==1||snapshot.private!==true||!isAbsolute(snapshot.sourceHome)||snapshot.files.length!==7)fail('LEGACY_SNAPSHOT_INVALID')
  const expected=[...Object.keys(specs),'personal_workbench_role_bindings']
  if(snapshot.files.some((row,index)=>row.name!==expected[index]))fail('LEGACY_SNAPSHOT_INVALID')
  const sourceRevision=createHash('sha256').update(JSON.stringify(snapshot.files.map(({name,sha256,resolvedPath})=>[name,sha256,resolvedPath]))).digest('hex')
  if(sourceRevision!==snapshot.sourceRevision)fail('LEGACY_SNAPSHOT_REVISION_CHANGED')
+ if(materialEvidence&&materialEvidence.sourceRevision!==sourceRevision)fail('LEGACY_MATERIAL_SOURCE_CHANGED')
+ const rawMaterials=new Map(materialEvidence?.entries.map(row=>[row.id,row])??[])
+ if(rawMaterials.size!==(materialEvidence?.entries.length??0))fail('LEGACY_MATERIAL_SOURCE_CHANGED')
  const targets={history:{instanceId:randomUUID(),viewId:randomUUID(),appId:'kaogong' as const,projectId:null},library:{instanceId:randomUUID(),viewId:randomUUID(),appId:'kaogong-library' as const,projectId:null}}
  const records:LegacyAdoptionPlan['records']=[],globals:LegacyAdoptionPlan['globals']=[],roles:LegacyAdoptionPlan['roles']=[],privateKnowledgeIds:string[]=[],counts:Record<string,number>={},blockers:LegacyAdoptionPlan['blockers']=[]
  for(const file of snapshot.files){
@@ -69,12 +74,16 @@ export async function prepareLegacyAdoption({snapshot,inspectRole}:{snapshot:Leg
    if(!key)fail('LEGACY_RECORD_INVALID');exact(schema,original)
    const row=original as Record<string,unknown>,value=domain==='lessons'?{...row,instanceId:targets.history.instanceId,roleKey:{...(row.roleKey as object),instanceId:targets.history.instanceId}}:original
    if(domain==='lessons')exact(lessonRecord,value)
-   if(domain==='knowledge')privateKnowledgeIds.push(key)
+   const proof=domain==='knowledge'?rawMaterials.get(key):undefined
+   if(proof&&(row.kind==='笔记'||typeof row.content!=='string'||bytesHash(Buffer.from(row.content))!==proof.sourceContentSha256))fail('LEGACY_MATERIAL_SOURCE_CHANGED')
+   if(domain==='knowledge'&&!proof)privateKnowledgeIds.push(key)
    if(domain==='practice'&&row.review==='sending')counts.unknownReviews=(counts.unknownReviews??0)+1
    if(domain==='practice'&&Number(row.projectedRevision)<Number(row.revision))counts.pendingProjections=(counts.pendingProjections??0)+1
-   records.push({domain,target:domain==='bank'?'library':'history',key,value,hash:fingerprint(value)})
+   records.push({domain,target:domain==='bank'||proof?'library':'history',key,value,hash:fingerprint(value)})
   }
  }
  const body={format:'kaogong-adoption-plan' as const,formatVersion:1 as const,private:true as const,id:randomUUID(),status:blockers.length?'blocked' as const:'ready' as const,source:{home:snapshot.sourceHome,revision:sourceRevision,files:snapshot.files.map(({name,resolvedPath,sha256,version})=>({name,resolvedPath,sha256,version}))},targets,records,globals,roles,privateKnowledgeIds,counts,readOnlyGrants:[{resourceId:'question-bank' as const,owner:'library' as const,consumer:'history' as const}],blockers,rollback:{mode:'journal-only-no-source-or-profile-restore' as const,schemaGate:5 as const,sourceWrites:0 as const,nativeMessagesCopied:false as const,newerTargetRows:'never-overwrite-or-delete' as const,legacyAssets:'preserved-unadopted-until-verified-owner-manifest' as const}}
- return {...body,fingerprint:fingerprint(body)}
+ if([...rawMaterials.keys()].some(id=>!records.some(row=>row.domain==='knowledge'&&row.key===id)))fail('LEGACY_MATERIAL_SOURCE_CHANGED')
+ const readOnlyGrants:LegacyAdoptionPlan['readOnlyGrants']=[...body.readOnlyGrants];if(rawMaterials.size)readOnlyGrants.push({resourceId:'materials',owner:'library',consumer:'history'});const complete={...body,readOnlyGrants,...(materialEvidence?{assetEvidence:{materials:structuredClone(materialEvidence)}}:{})}
+ return {...complete,fingerprint:fingerprint(complete)}
 }
