@@ -9,7 +9,7 @@ import { isAbs, joinPath, parentPathOf, basenameOf } from './pathutil'
 import {applicationViews} from './applicationViews'
 import { ApplicationLauncher, type ApplicationContent } from './applicationEntry'
 import { findConversationRoot, splitStore, SplitWorkspace, setSplitT, setSplitEnv, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
-import { appendHostInput } from './hostInput'
+import { createAnnotationInput } from './hostInput'
 import { worktableUpgrade } from './hostTransport'
 import { WidgetMountRegistry, newWidgetId, widgetManifestPath, type WidgetBinding } from './widgetMount'
 import { currentSessionOf, openHostSession, sendHostSession, createSessionSnapshotAdapter, childSessionIdsOf, pendingAckOf, sessionRuntimeMs } from './sessionCompat'
@@ -1294,7 +1294,10 @@ function WorktableSection(props: any) {
   // 崩溃），改为 apply 里订阅 ctx.sessions.list 后写入模块级 store，此处直接读取。
   useEffect(() => {
     const env = {
-      fillHostInput: (text: string) => appendHostInput(sessionBridge, text),
+      captureHostInput: () => {
+        if (!annotationInput) throw new Error('原生输入槽不可用；请重新打开原生会话后开始标注。')
+        return annotationInput.capture()
+      },
       getScope: () => {
         const s = sessionScopeStore.snapshot
         return s ? { sessionId: s.sessionId, cwd: s.cwd } : null
@@ -3210,12 +3213,27 @@ function buildCustomLayoutPrompt(req: string): string {
 
 export const inject = ['slots', 'locale', 'sessions', 'conversation', 'workspaces']
 
+let annotationInput: ReturnType<typeof createAnnotationInput> | null = null
+
 export function apply(ctx: any) {
   ctx.provide('worktableApplicationViews',applicationViews)
   ctx.effect(()=>configureTaskFacts(id=>readHostTaskFacts(ctx,sessionStatusSource,id)), 'worktable native task status facts')
   ctx.effect(()=>configureRoleNavigation(async id=>{markPluginSessionOpen(id);return openHostSession(ctx,ctx.sessions,id)}), 'worktable role native navigation')
   // 自定义窗口 → 宿主会话桥：保存 sessions/conversation/list 服务引用（模块级）
   sessionBridge = { sessions: ctx.sessions ?? null, conversation: ctx.conversation ?? null, list: ctx.sessions?.list ?? null, workspaces: ctx.workspaces ?? null }
+  const inputBridge = createAnnotationInput(sessionBridge)
+  annotationInput = inputBridge
+  function AnnotationInputCapture({ sessionId, inputActions }: any) {
+    useLayoutEffect(() => inputBridge.mount(sessionId, inputActions), [sessionId, inputActions])
+    return null
+  }
+  ctx.effect(() => () => {
+    inputBridge.dispose()
+    if (annotationInput === inputBridge) annotationInput = null
+  }, 'worktable annotation input lifetime')
+  ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
+    name: 'conversation.input.dock', id: 'worktable-annotation-input-capture',
+  }, AnnotationInputCapture), 'worktable public annotation input capture')
   clientCtx = ctx
   try { hostApi = ctx.get?.('connection')?.api ?? null } catch { hostApi = null }
   try { (window as any).__dshHostApi = hostApi } catch {}
