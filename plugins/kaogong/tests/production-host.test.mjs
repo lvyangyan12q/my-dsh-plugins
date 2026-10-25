@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import {randomUUID} from 'node:crypto'
 import {test} from 'node:test'
 import {createRequire} from 'node:module'
 import {mkdtemp,rm,readFile,writeFile} from 'node:fs/promises'
@@ -124,7 +125,7 @@ for(const ownershipAt of ['prepare','apply'])test(`actual Host blocks a source S
 })
 
 test('fresh material-only Host import ignores broken old roles/learning and keeps private library material out of cross-instance grants',async()=>{
- const root=await mkdtemp(join(tmpdir(),'kaogong-material-host-')),source=await legacyFixture(),nativeContext=new Context();await nativeContext.plugin(Storage);const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend);const facility=new DomainFacility(nativeContext,{backend:'json'}),apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate),routes=new Map();let stop,lostReceipt=false,materialWrites=0; const importFacility={open:async spec=>{const domain=await facility.open(spec);return new Proxy(domain,{get(target,key){if(key==='table')return name=>{const table=target.table(name);return new Proxy(table,{get(target,key){if(key==='put')return async(id,value)=>{await table.put(id,value);if(spec.name.endsWith('_knowledge')&&id==='private'){materialWrites++;if(lostReceipt){lostReceipt=false;throw Error('lost material receipt')}}};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})}}
+ const root=await mkdtemp(join(tmpdir(),'kaogong-material-host-')),source=await legacyFixture(),nativeContext=new Context();await nativeContext.plugin(Storage);const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend);const facility=new DomainFacility(nativeContext,{backend:'json'}),apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate),routes=new Map();let stop,lostReceipt=false,failBeforeBusiness=false,materialWrites=0;const importDomains=new Map(); const importFacility={open:async spec=>{const domain=await facility.open(spec);importDomains.set(spec.name,domain);return new Proxy(domain,{get(target,key){if(key==='table')return name=>{const table=target.table(name);return new Proxy(table,{get(target,key){if(key==='put')return async(id,value)=>{if(failBeforeBusiness&&spec.name==='kaogong_material_import_rc3'&&name==='private_knowledge'){failBeforeBusiness=false;throw Error('unknown before first business row')}await table.put(id,value);if(spec.name.endsWith('_knowledge')&&id==='private'){materialWrites++;if(lostReceipt){lostReceipt=false;throw Error('lost material receipt')}}};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})}}
  const ctx={worktableProtocol:{describe:describeProtocol},storageDomain:importFacility,worktableApplications:apps,worktableResources:resources,worktableRoles:{contribute:()=>()=>{},contributeLegacy:()=>()=>{},read:async()=>({binding:null}),resolveSession:async()=>{throw Error('no Native sessions')}},worktableCapabilities:{contribute:()=>()=>{},contributeSessionScopes:()=>()=>{}},worktableTaskOwners:{contribute:()=>()=>{}},agentPresets:{register:async()=>async()=>{}},connection:{admit:req=>req.auth?{peer:{}}:{rejection:401}},webServer:{register:route=>{routes.set(route.kind+':'+route.path,route);return ()=>routes.delete(route.kind+':'+route.path)}},tools:{register:()=>()=>{}}}
  try{
   await writeFile(join(source,'storages','personal_workbench_role_bindings.json'),'invalid old role bytes');await writeFile(join(source,'storages','kaogong_practice.json'),'invalid old practice bytes')
@@ -137,6 +138,38 @@ test('fresh material-only Host import ignores broken old roles/learning and keep
   assert.equal((await post({action:'prepare',viewId:lv.id},false)).status,401)
   assert.equal((await post({action:'prepare',viewId:av.id})).status,409)
   assert.equal((await post({action:'prepare',viewId:lv.id,path:'arbitrary'})).status,409)
+  const emptyUnknown=await apps.createInstance('kaogong-library',null),emptyUnknownView=await apps.createView(emptyUnknown.id)
+  const firstEmpty=(await post({action:'prepare',viewId:emptyUnknownView.id})).value,otherEmpty=(await post({action:'prepare',viewId:emptyUnknownView.id})).value
+  failBeforeBusiness=true
+  assert.equal((await post({action:'apply',viewId:emptyUnknownView.id,id:firstEmpty.id,fingerprint:firstEmpty.fingerprint,confirmed:true})).status,409)
+  assert.equal(materialWrites,0,'the quarantined plan has written zero business rows')
+  assert.equal((await get(emptyUnknownView.id)).status,403)
+  assert.equal((await post({action:'apply',viewId:emptyUnknownView.id,id:otherEmpty.id,fingerprint:otherEmpty.fingerprint,confirmed:true})).status,409,'another prepared plan must not bypass empty unknown target quarantine')
+  assert.equal((await post({action:'prepare',viewId:emptyUnknownView.id})).status,409,'an empty unknown target may not acquire a new source plan')
+  assert.equal(materialWrites,0)
+  assert.equal((await post({action:'apply',viewId:emptyUnknownView.id,id:firstEmpty.id,fingerprint:firstEmpty.fingerprint,confirmed:true})).status,200,'the exact unknown plan can still recover')
+  materialWrites=0
+  const legacyUnknown=await apps.createInstance('kaogong-library',null),legacyUnknownView=await apps.createView(legacyUnknown.id),beforeLegacy=(await post({action:'prepare',viewId:legacyUnknownView.id})).value
+  await importDomains.get('kaogong_adoption_rc3').table('journals').put('synthetic-old-unknown',{id:'synthetic-old-unknown',schema:1,status:'unknown',planId:'synthetic-old-plan',planFingerprint:'synthetic-only',globalIndex:0,recordIndex:0,roleIndex:0,grantIndex:0,targetIntents:[legacyUnknown.id]})
+  assert.equal((await get(legacyUnknownView.id)).status,403)
+  assert.equal((await post({action:'prepare',viewId:legacyUnknownView.id})).status,409,'fresh preview cannot bypass old target quarantine')
+  assert.equal((await post({action:'apply',viewId:legacyUnknownView.id,id:beforeLegacy.id,fingerprint:beforeLegacy.fingerprint,confirmed:true})).status,409,'fresh apply cannot bypass old unknown target quarantine')
+  const oldJournal=importDomains.get('kaogong_adoption_rc3').table('journals')
+  await oldJournal.put('synthetic-old-unknown',{...oldJournal.get('synthetic-old-unknown'),status:'applied'})
+  assert.equal((await post({action:'prepare',viewId:legacyUnknownView.id})).status,409,'an applied legacy source receipt pins even an empty library')
+  assert.equal((await post({action:'apply',viewId:legacyUnknownView.id,id:beforeLegacy.id,fingerprint:beforeLegacy.fingerprint,confirmed:true})).status,409)
+  const provisionId=randomUUID(),provisionView=randomUUID(),operationId=randomUUID()
+  await apps.withProvision(operationId,async()=>{
+   await apps.ensureInstance({id:provisionId,appId:'kaogong-library',projectId:null,operationId})
+   await apps.ensureView({id:provisionView,instanceId:provisionId,type:'page',operationId})
+   assert.equal((await post({action:'prepare',viewId:provisionView})).status,409,'even an ambient trusted provision scope cannot admit material import before ready')
+  })
+  const emptySource=JSON.parse(original);emptySource.tables.entries={};await writeFile(join(source,'storages','kaogong_knowledge.json'),JSON.stringify(emptySource))
+  const emptyApplied=await apps.createInstance('kaogong-library',null),emptyAppliedView=await apps.createView(emptyApplied.id),zeroPlan=(await post({action:'prepare',viewId:emptyAppliedView.id})).value
+  assert.equal(zeroPlan.counts.knowledge,0)
+  assert.equal((await post({action:'apply',viewId:emptyAppliedView.id,id:zeroPlan.id,fingerprint:zeroPlan.fingerprint,confirmed:true})).status,200)
+  await writeFile(join(source,'storages','kaogong_knowledge.json'),original)
+  assert.equal((await post({action:'prepare',viewId:emptyAppliedView.id})).status,409,'even a zero-record completed import pins the library source')
   const prepared=await post({action:'prepare',viewId:lv.id});assert.equal(prepared.status,200);assert.equal(prepared.value.counts.privateMaterials,1);assert.equal((await get(lv.id)).value.entries.length,0)
   assert.equal((await post({action:'apply',viewId:lv.id,id:prepared.value.id,fingerprint:prepared.value.fingerprint,confirmed:false})).status,409)
   lostReceipt=true

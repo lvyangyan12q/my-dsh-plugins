@@ -101,7 +101,7 @@ export async function mountKaogong(ctx:Context,config:Config){
   const runtime=host
   disposers.push(()=>runtime.close())
   disposers.push(registerResources(runtime,ctx.worktableApplications,ctx.worktableResources,(instanceId,id)=>!!adoptionState.table('private_knowledge').get(privateKnowledgeKey(instanceId,id))||!!materialState.table('private_knowledge').get(privateKnowledgeKey(instanceId,id))))
-  materialImport=createMaterialImportOwner(ctx,runtime,materialState,materialPlans,config)
+  materialImport=createMaterialImportOwner(ctx,runtime,materialState,materialPlans,config,instanceId=>{assertAdoptionReady(adoptionState.table('journals'),instanceId);for(const[,journal]of adoptionState.table('journals').entries()){if(!['applying','unknown','applied'].includes(journal.status))continue;const prior=adoptionPlans.table('plans').get(journal.planId);if(journal.targetIntents?.includes(instanceId)||prior?.plan.targets.library.instanceId===instanceId)throw Object.assign(Error('MATERIAL_TARGET_HAS_LEGACY_SOURCE_INTENT'),{code:'MATERIAL_TARGET_HAS_LEGACY_SOURCE_INTENT'})}})
   disposers.push(()=>materialImport!.close())
   disposers.push(mountMaterialImportHttp(ctx,materialImport))
   disposers.push(await installKaogongRoles(ctx,config.roleCwd))

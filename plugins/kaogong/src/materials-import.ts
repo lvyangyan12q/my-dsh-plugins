@@ -5,7 +5,7 @@ export interface MaterialTarget{entries(domain:'bank'|'knowledge'):Iterable<[str
 export interface MaterialImportServices{
  store:{read(id:string):Promise<MaterialJournal|null>;write(row:MaterialJournal):Promise<unknown>}
  source:{verify(plan:MaterialImportPlan,full?:boolean):Promise<void>}
- target:{run<T>(target:MaterialImportPlan['target'],operation:(target:MaterialTarget)=>Promise<T>):Promise<T>}
+ target:{run<T>(target:MaterialImportPlan['target'],operation:(target:MaterialTarget)=>Promise<T>,planId:string):Promise<T>}
  privacy:{mark(instanceId:string,ids:string[],sourceRevision:string):Promise<unknown>}
 }
 function fail(code:string):never{throw Object.assign(Error(code),{code})}
@@ -31,7 +31,7 @@ export class MaterialImportWorkflow{
     }
     await save({started:true,status:'applying',notice:'Only this confirmed material plan is being applied; source files remain untouched'})
     await this.services.privacy.mark(plan.target.instanceId,plan.privateKnowledgeIds,plan.source.revision)
-   })
+   },plan.id)
    while(row.index<plan.records.length){
     await this.services.source.verify(plan)
     const end=Math.min(row.index+20,plan.records.length)
@@ -43,10 +43,10 @@ export class MaterialImportWorkflow{
       if(current===undefined)await target.write(record.domain,record.key,record.value)
       await save({index:index+1,active:undefined})
      }
-    })
+    },plan.id)
    }
    await this.services.source.verify(plan,true)
-   await this.services.target.run(plan.target,async target=>{for(const record of plan.records)if(fingerprint(target.read(record.domain,record.key))!==record.hash)fail('MATERIAL_TARGET_CHANGED')})
+   await this.services.target.run(plan.target,async target=>{for(const record of plan.records)if(fingerprint(target.read(record.domain,record.key))!==record.hash)fail('MATERIAL_TARGET_CHANGED')},plan.id)
    return save({status:'applied',notice:'Material metadata confirmed; original files remain in place and no learning instance or sharing grant was created'})
   }catch(error){if(row.started)try{await save({status:'unknown',notice:'Import outcome requires explicit same-plan inspection/recovery; target remains isolated'})}catch{}throw error}
  })}
