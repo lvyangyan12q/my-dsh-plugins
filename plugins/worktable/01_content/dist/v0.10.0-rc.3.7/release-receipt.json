@@ -1,0 +1,39 @@
+{
+  "status": "candidate-pending-installed-cold-native-editor-and-catalogue-user-flow",
+  "version": "0.10.0-rc.3.7",
+  "source": "edcdae28518ca62db063d47701dd65cc66bccdc1",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "entry": "01_content npm run pack",
+  "archiveFiles": 9,
+  "assets": [
+    {
+      "file": "plugins/worktable/01_content/dist/v0.10.0-rc.3.7/dsh-worktable-0.10.0-rc.3.7.tgz",
+      "bytes": 581294,
+      "sha256": "5c567fd10f2199cd24a29fe06c9defda2d022d954f78f577482866ca4fa20ec5"
+    },
+    {
+      "file": "plugins/worktable/01_content/dist/v0.10.0-rc.3.7/dsh-worktable.tgz",
+      "bytes": 581294,
+      "sha256": "5c567fd10f2199cd24a29fe06c9defda2d022d954f78f577482866ca4fa20ec5"
+    }
+  ],
+  "gates": {
+    "officialContracts": 9,
+    "source": {
+      "total": 361,
+      "pass": 359,
+      "fail": 0,
+      "skip": 2,
+      "skipScope": "existing old rc2 environment checks"
+    },
+    "nativeRootLease": 4,
+    "installedAnchors": 10,
+    "sameAgentCatalogueCriticalSectionTests": 2,
+    "independentOfflineNpmInstallImport": true,
+    "installedClientFactoryAndNativeDOMCallbacks": true,
+    "rootLockVersionsAligned": true
+  },
+  "actualBrowserAcceptance": "pending root CUA cold native editor, explicit-round review and restore",
+  "formalRegistration": false,
+  "pushed": false
+}

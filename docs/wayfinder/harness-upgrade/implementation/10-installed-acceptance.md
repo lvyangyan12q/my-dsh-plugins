@@ -96,3 +96,10 @@ K.4已通过规定完整pack并保存[公开来源回执](../../../../plugins/ka
 真实“计划与统计”入口此前只有今日计划：指标区仅允许非focused课堂，导致plan页隐藏。现只调整既有四项指标的可见性，显式plan页可见；非focused standalone课堂保持原展示，focused课堂仍隐藏。指标值继续来自原dashboard，不新增统计、不改变累计/单轮口径或计算。
 
 新增3项实际React DOM回归并纳入唯一客户端清单：通过深度应用导航查看10题/90%，空实例0题/0%，以及standalone与focused课堂的原边界。当前客户端16/16、完整构建及官方Host/客户端类型通过。此为源码验证；新W.7/K.6组合及真实页面仍待，不覆盖既有包或改运行实例。
+## W.7/K.6 准确候选档案 · 2026-10-25
+
+配对源码 `edcdae28518ca62db063d47701dd65cc66bccdc1` 已分别通过唯一完整 pack。[W.7来源回执](../../../../plugins/worktable/01_content/dist/v0.10.0-rc.3.7/release-receipt.json)对应双资产各581294 bytes、精确9文件、SHA256 `5c567fd10f2199cd24a29fe06c9defda2d022d954f78f577482866ca4fa20ec5`；官方契约9、源码361项359通过/0失败/2项既有旧环境跳过，同Agent catalogue临界区2项、root lease4项和安装产物锚点10/10及其余安装门禁均实际执行。
+
+[K.6来源回执](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.6.receipt.json)对应528410 bytes、65文件、SHA256 `f53057fc6b9cb281ad30c638c452db328baa50bcf03a4cfe0117f4169e68284a`，精确peer W.7。构建/官方类型、Host165、客户端16、领域21、归档1及无开发依赖祖先的官方CLI独立安装身份门禁通过；包含source/compiled实际Native子进程、新讲评roundId与计划指标DOM回归。
+
+候选档案和脱敏回执只证明上述来源与门禁，不替代真实冷Native编辑器/catalogue、明确轮次模型讲评、计划页实图和恢复验收。旧W.6/K.5及其他冻结包保持；正式数据、正式注册和远程推送未由此步骤改变。17/18/19/10保持各自待验边界，不据源码/打包绿关闭。
