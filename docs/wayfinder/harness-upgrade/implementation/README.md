@@ -4,7 +4,7 @@
 
 当前准确包同源 `edcdae28518ca62db063d47701dd65cc66bccdc1`，脱敏[实际验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)与[逐步接入说明](../../../worktable-integration.md)置于当前入口。独立source CLI已验证角色冷恢复输入可用、精确轮次9/10读取、计划统计、显式课堂完成保持、原PDF/PNG读取，以及官方CLI移除再安装同准确包后26个持久文件hash一致。最终准确包重装后的Native问题/Stop/审批拒绝与允许一次已实际复验通过，10按此独立安装范围关闭。
 
-07/08/10/13/15/16/17/18/19已按当前全新部署及独立实页Resolution关闭；11正式注册/推送/清理待执行。实际source入口带显式TSX_TSCONFIG_PATH，裸pnpm start:web兼容尚待只读核对，不自动扩大已验范围。09历史会话/学习接管继续open并排除，不迁不删；正式旧资料只读清点，导入新资料库仍须具体预览与明确确认。物理IME仅引用既有同Native人工证据，不声称新一次人工输入验收。固定a81ac77→edcdae2两轴源码review均0 finding，但源码review不能替代这些实际门槛。
+07/08/15/16/17/18/19保留已验显式入口Resolution。10/13/11因新确认的官方默认源码启动拒绝恢复in-progress，20持有最小K.7修复及真实stock入口待验；正式注册/推送仍禁止。已验入口带显式TSX_TSCONFIG_PATH，不能冒充裸pnpm start:web通过。09历史会话/学习接管继续open并排除，不迁不删；正式旧资料只读清点，导入新资料库仍须具体预览与明确确认。物理IME仅引用既有同Native人工证据，不声称新一次人工输入验收。固定a81ac77→edcdae2两轴源码review均0 finding，但源码review不能替代这些实际门槛。
 
 以下历史更新按各自日期与版本解释，不能覆盖本节当前结果。
 

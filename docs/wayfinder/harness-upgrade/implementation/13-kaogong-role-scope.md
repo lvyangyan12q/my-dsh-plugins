@@ -3,13 +3,19 @@ id: harness-rc3-kaogong-role-scope
 title: 考公全新部署的应用私有角色与Skill
 parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
-status: closed
+status: in-progress
 implementation_status: production-source-integrated
-acceptance_status: passed-current-fresh-installed-scope
+acceptance_status: blocked-stock-default-source-entry
 assignee: kaogong-roles-scope
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+## 当前阻塞：官方默认源码启动 · 2026-10-25
+
+先前准确W.7/K.6在显式 `TSX_TSCONFIG_PATH` 下的冷恢复、课堂、统计、重装与Native问题/Stop/审批矩阵证据继续成立，但未设置该变量、从Native目录使用官方原命令启动时仍可触发 `NATIVE_ROLE_SCOPE_RUNTIME_UNRECOGNIZED`，因此本票恢复in-progress，禁止正式注册或将此前闭合解释为裸启动通过。
+
+[20默认启动适配](20-default-source-startup.md)采用已声明公开get-tsconfig API仅提出配置候选，仍须实际activeTSX、安装范围映射及Native公共scope probe认可。源码已合入，新K.7必须通过干净官方离线安装及compiled/explicit-source/default-source/负例回归，并在官方stock入口实际复验；不要求用户加环境变量回避。本次没有改变Native、已验归档、正式配置或旧资料。
 
 ## 当前 Resolution · 2026-10-25 · W.7 / K.6
 

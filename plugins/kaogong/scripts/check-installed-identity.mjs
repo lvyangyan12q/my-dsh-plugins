@@ -20,7 +20,7 @@ const run=async(args,name)=>{const result=spawnSync(process.execPath,args,{cwd:r
 await run([join(native,'apps/cli/lib/bin.js'),'plugin','--profile','web','add',worktable,archive,'--offline'],'official-cli-install')
 const installed=JSON.parse(await readFile(join(profile,'node_modules/@deepseek-ai/dsh-tool-kaogong/package.json'),'utf8'))
 const peer=JSON.parse(await readFile(join(profile,'node_modules/dsh-worktable/package.json'),'utf8'))
-assert.equal(installed.version,'0.2.0-rc.3.6');assert.equal(peer.version,'0.10.0-rc.3.7');assert.equal(installed.peerDependencies['dsh-worktable'],peer.version)
+assert.equal(installed.version,'0.2.0-rc.3.7');assert.equal(peer.version,'0.10.0-rc.3.7');assert.equal(installed.peerDependencies['dsh-worktable'],peer.version)
 const verify=join(root,'verify-installed.mjs')
 await writeFile(verify,`
 import assert from 'node:assert/strict'

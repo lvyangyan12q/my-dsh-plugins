@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-10-25",
   "scope": "Fresh Kaogong deployment on unpatched Harness rc.3; synthetic data only",
-  "status": "passed-current-isolated-installed-scope-formal-delivery-pending",
+  "status": "explicit-source-entry-passed-stock-default-entry-blocked",
   "source": "edcdae28518ca62db063d47701dd65cc66bccdc1",
   "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
   "archives": [
@@ -73,7 +73,7 @@
     "nativeSourceModified": false
   },
   "pending": [
-    "Check official pnpm start:web entry without explicit TSX_TSCONFIG_PATH; current source-entry evidence has that variable explicitly set",
+    "K6 default stock source startup without TSX_TSCONFIG_PATH refused Native scope; K7 clean install and actual stock startup validation required before formal registration",
     "Formal plugin registration with dedicated registered roleCwd; preserve unrelated dependencies/bundles and configs",
     "Remote delivery and authorized cleanup",
     "Any formal material import requires its own concrete preview and confirmation"

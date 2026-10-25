@@ -1,3 +1,15 @@
+---
+id: harness-rc3-default-source-startup
+title: 官方默认源码启动的公开TSX配置兼容
+parent: harness-rc3-kaogong-role-scope
+labels: [ready-for-agent]
+status: in-progress
+implementation_status: production-source-integrated
+acceptance_status: pending-clean-k7-install-and-stock-entry-browser
+assignee: kaogong-default-tsx-config
+blocked_by: []
+target: 0.2.1-rc.3
+---
 # Official default source startup compatibility
 
 ## Defect and boundary
