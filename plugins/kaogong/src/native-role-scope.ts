@@ -45,9 +45,17 @@ async function hasActiveTsx(anchor:string){
  }catch{}
  return false
 }
-/** The rc.3 source CLI is supported only with its explicit active TSX alias configuration. */
+/** A public discovery result is only a candidate; the actual Native scope probe remains decisive. */
 async function declaredSource(scopeManifest:string,presetManifest:string,version:string){
- const config=process.env.TSX_TSCONFIG_PATH;if(version!=='0.2.1-rc.3'||!config||!isAbsolute(config)||!await hasActiveTsx(presetManifest))return
+ if(version!=='0.2.1-rc.3'||!await hasActiveTsx(presetManifest))return
+ let config=process.env.TSX_TSCONFIG_PATH
+ if(config===undefined){
+  // TSX exposes no active-config accessor. Reproduce its default cwd search
+  // using a declared public dependency, without inspecting loader internals.
+  try{config=(await import('get-tsconfig')).getTsconfig(process.cwd())?.path}
+  catch{fail('NATIVE_ROLE_SOURCE_CONFIG_UNSUPPORTED')}
+ }
+ if(!config||!isAbsolute(config))return
  const root=dirname(await realpath(config)),scopeRoot=await realpath(dirname(scopeManifest)),presetRoot=await realpath(dirname(presetManifest))
  if(!inside(root,scopeRoot)||!inside(root,presetRoot))return
  const paths=await aliases(config,root),requests=[['@deepseek-ai/dsh-scope',scopeManifest],['@deepseek-ai/dsh-agent-preset-registry',presetManifest]] as const
