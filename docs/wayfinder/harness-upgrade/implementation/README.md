@@ -87,7 +87,7 @@ Desktop/macOS、非空队列实际交互、部分私有能力和并发负例仍�
 
 用户在工作台定版并合入主线后明确要求继续完成考公插件。当前集成分支为 `codex/kaogong-rc3-completion`，起点为 `a2a10d01b0c8327cb1f0cec031c897d143b4a4c1`。本轮不改变已关闭的[12工作台Windows Web阶段](12-worktable-freeze.md)，也不覆盖其冻结归档。
 
-- 13角色归属切片正在独立实现：新应用角色的人格与私有Skill通过公开原生接缝挂载，已有会话身份与兼容预设保留；实际SDK接线、真实安装和直接聊天尚未据原型通过。正式工单由该切片补入，本索引不提前声称实现。
+- 13角色归属切片等待历史会话交接方案确认：用户已明确要求旧角色preset菜单条目也消失，先提供历史会话迁移方案。新角色的公开接缝原型不代表旧会话迁移已获批准；如需改变原currentSession或preset身份，必须列明具体影响并取得该计划授权，不执行正式迁移。正式工单由该切片补入，实际SDK接线、真实安装和直接聊天仍待验。
 - [14接管前置检查](14-kaogong-adoption-preflight.md)源码已合入：固定计划目标先检查当前/历史会话占用，apply创建目标前再次复验；通过明确协议feature拒绝旧工作台静默忽略目标参数。集成树公开协议与来源检查11/11通过。新归档和实际安装仍待验，14保持in-progress。
 - [07课堂](07-classroom-application.md)、[08实例隔离](08-kaogong-instances.md)、[09旧学习接管](09-legacy-adoption.md)、[10组合验收](10-installed-acceptance.md)、[11组合交付](11-review-delivery.md)继续开放，不由源码回归或平台定版代替考公完整闭环。
 
