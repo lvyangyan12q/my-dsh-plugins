@@ -1,0 +1,50 @@
+{
+  "status": "candidate-pending-complete-installed-user-flow",
+  "version": "0.10.0-rc.3.5",
+  "source": "5f8827d96758632778f19e15ddab0bc8b3db8d9f",
+  "metadataCommit": "f152a0f",
+  "resourceCommit": "793183b",
+  "directionLabelCommit": "0c04173",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "entry": "01_content npm run pack",
+  "sourceContracts": {
+    "total": 355,
+    "pass": 353,
+    "fail": 0,
+    "skip": 2,
+    "skipScope": "existing old rc2 environment checks"
+  },
+  "officialContracts": {
+    "total": 9,
+    "pass": 9,
+    "fail": 0,
+    "skip": 0
+  },
+  "archiveFiles": 9,
+  "assets": [
+    {
+      "file": "plugins/worktable/01_content/dist/v0.10.0-rc.3.5/dsh-worktable-0.10.0-rc.3.5.tgz",
+      "bytes": 580817,
+      "sha256": "8720e8bbf7417f8b020985903d199501f96dbc6004fbd172502ba773b6b9a456"
+    },
+    {
+      "file": "plugins/worktable/01_content/dist/v0.10.0-rc.3.5/dsh-worktable.tgz",
+      "bytes": 580817,
+      "sha256": "8720e8bbf7417f8b020985903d199501f96dbc6004fbd172502ba773b6b9a456"
+    }
+  ],
+  "packGates": [
+    "independent offline npm install and host/sdk import",
+    "installed client factory",
+    "installed role navigation",
+    "8 split anchors",
+    "installed native panel/annotation UI",
+    "installed generation UI",
+    "collapsed project dialog",
+    "3 server-home cases"
+  ],
+  "officialCLIProfileInstall": "Isolated 3101 CLI install reported; paired Kaogong candidate and complete actual flow pending",
+  "actualBrowserUI": "pending final paired-candidate acceptance",
+  "formalDeployed": false,
+  "pushed": false
+}
