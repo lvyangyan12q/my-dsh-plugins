@@ -1,3 +1,15 @@
+---
+id: harness-rc3-practice-source-projection
+title: 按已授权来源接入练习展示证明
+parent: harness-rc3-kaogong-instances
+labels: [ready-for-agent]
+status: in-progress
+implementation_status: production-source-integrated
+acceptance_status: pending-new-k5-installed-user-flow
+assignee: kaogong-practice-proof
+blocked_by: [harness-rc3-kaogong-fresh-materials]
+target: 0.2.1-rc.3
+---
 # 17 · 按已授权资料来源接入练习展示证明
 
 状态：Host 必要接线与辅助回归已实现；新 K.5 官方安装及实际应用课堂/练习闭环待验收。K.4 冻结包不覆盖。

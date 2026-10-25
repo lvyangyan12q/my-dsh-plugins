@@ -35,4 +35,3 @@ if(certified){await mkdir(join(imageRoot,'verified'),{recursive:true});await wri
 if(certified&&optionProof)await writeFile(join(imageRoot,'verified/option-repairs.json'),JSON.stringify({version:1,associations:Object.entries(questions).map(([questionId,row])=>({questionId,stemSha256:sha(row.stem),optionsSha256:sha(JSON.stringify(row.options)),optionIndices:[0,1,2,3],sourceOptions:['A. 10','B. 20','C. 30','D. 40'],sourcePdfSha256:sha(pdfBytes),sourcePage:1}))}),{flag:'wx'})
 return {root,...config,png,pdfBytes,questions}
 }
-
