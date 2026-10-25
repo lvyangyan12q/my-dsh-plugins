@@ -34,12 +34,14 @@ export class RoleSessionScopes {
   }))
  }
  async mount(row,binding,definition,agent,validate,assertBinding){
-  const owner=this.owner(binding.appId),current=this.live.get(agent)
-  if(current){
-   if(!current.active||current.owner!==owner||current.identity!==identity(binding))reject('session-scope-changed','原生会话的私有角色已停用或改变，请关闭并重新打开；不会自动换角色。')
-   await this.track(owner,()=>this.catalog(async()=>{this.assertOwner(binding.appId,owner);await validate(agent);this.assertOwner(binding.appId,owner)}));return
-  }
+  const owner=this.owner(binding.appId)
   return this.track(owner,()=>this.catalog(async()=>{
+   this.assertOwner(binding.appId,owner)
+   const current=this.live.get(agent)
+   if(current){
+    if(!current.active||current.owner!==owner||current.identity!==identity(binding))reject('session-scope-changed','原生会话的私有角色已停用或改变，请关闭并重新打开；不会自动换角色。')
+    await validate(agent);this.assertOwner(binding.appId,owner);return
+   }
    let remove,record
    try{
     this.assertOwner(binding.appId,owner);remove=await owner.provider.mount({capabilityId:row.id,cwd:binding.creation.cwd,context:agent.ctx})
