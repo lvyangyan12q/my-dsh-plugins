@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import {test} from 'node:test'
-import {createRequire,registerHooks} from 'node:module'
+import {registerHooks} from 'node:module'
+import {spawnSync} from 'node:child_process'
+import {randomUUID} from 'node:crypto'
 import {mkdtemp,rm,mkdir,copyFile,readFile,writeFile,realpath} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {resolve,join} from 'node:path'
@@ -11,9 +13,15 @@ import {AdmissionGate} from '../../worktable/01_content/src/framework/admission.
 
 const native=process.env.KAOGONG_TEST_RUNTIME
 assert.ok(native,'Set KAOGONG_TEST_RUNTIME to built official DSH checkout')
-const require=createRequire(resolve(native,'packages/client/ui-renderer/package.json'))
-const {Context}=require('@deepseek-ai/cordis')
-const load=async path=>await import(pathToFileURL(resolve(native,path)).href)
+if(!process.env.KAOGONG_NATIVE_ENTRY){
+ for(const mode of ['compiled','source'])await test('official '+mode+' entry keeps application personas in the actual Native scope',async()=>{
+  const directory=new URL('../.scratch/',import.meta.url);await mkdir(directory,{recursive:true});const config=fileURLToPath(new URL('compiled-'+randomUUID()+'.json',directory))
+  await writeFile(config,JSON.stringify({compilerOptions:{target:'ES2024',module:'ESNext',moduleResolution:'Bundler'}}))
+  try{const result=spawnSync(process.execPath,['--import',pathToFileURL(resolve(native,'node_modules/tsx/dist/loader.mjs')).href,'--test',fileURLToPath(import.meta.url)],{encoding:'utf8',timeout:60000,windowsHide:true,env:{...process.env,NODE_TEST_CONTEXT:undefined,KAOGONG_NATIVE_ENTRY:mode,TSX_TSCONFIG_PATH:mode==='source'?resolve(native,'tsconfig.json'):config}});assert.equal(result.status,0,result.stdout+'\n'+result.stderr);assert.match(result.stdout,/new application roles use one generic native Agent/,'Nested entry must run the actual composition assertions')}finally{await rm(config,{force:true})}
+ })
+}else{
+const load=async path=>await import(pathToFileURL(resolve(native,process.env.KAOGONG_NATIVE_ENTRY==='source'?path.replace('/lib/','/src/').replace(/\.js$/,'.ts'):path)).href)
+const {Context}=await load('vendor/cordis/lib/index.js')
 // Official installs may keep a second same-version dsh-scope next to optional plugin dependencies.
 // Its private Symbol must not become the identity of the host Agent/Prompt/Skill scope.
 await mkdir(new URL('../.scratch/',import.meta.url),{recursive:true})
@@ -23,7 +31,7 @@ const roleScopeUrl=new URL('../src/role-session-scope.ts',import.meta.url).href
 const hooks=registerHooks({resolve(specifier,context,next){if(specifier==='@deepseek-ai/dsh-scope'&&context.parentURL===roleScopeUrl)return {url:pathToFileURL(join(dependencyCopy,'scope.mjs')).href,shortCircuit:true};return next(specifier,context)}})
 const {installKaogongRoles,kaogongRolePresets}=await import('../src/role-definitions.ts')
 
-test('new application roles use one generic native Agent with isolated system personas and Skills', {timeout:15000}, async()=>{
+test('new application roles use one generic native Agent with isolated system personas and Skills', {timeout:30000}, async()=>{
  const dir=await mkdtemp(join(tmpdir(),'kaogong-session-roles-')),ctx=new Context(),handles=new Map()
  const workspace={id:'native-workspace',path:dir,sessionIds:[]}
  ctx.baseUrl=new URL('../package.json',import.meta.url).href
@@ -77,6 +85,11 @@ test('new application roles use one generic native Agent with isolated system pe
   const installationScope=ctx.pluginPackages.resolution.entries.filter(row=>row.name==='@deepseek-ai/dsh-scope'&&row.scope==='installation')
   assert.equal(installationScope.length,1)
   assert.notEqual(await realpath(profileScope),await realpath(installationScope[0].packageDir),'The actual official profile fixture retains a second physical same-version scope package')
+  if(process.env.KAOGONG_NATIVE_ENTRY==='source'){
+   const configured=process.env.TSX_TSCONFIG_PATH;delete process.env.TSX_TSCONFIG_PATH
+   try{removeRoles=await installKaogongRoles(ctx,dir);await assert.rejects(ctx.worktableRoles.ensure('instance-a','class-advisor'),/NATIVE_ROLE_SCOPE_RUNTIME_UNRECOGNIZED/,'A source Native graph without explicit source configuration must not guess a source directory');assert.equal(handles.size,0)}finally{await removeRoles?.();removeRoles=undefined;process.env.TSX_TSCONFIG_PATH=configured}
+  }
+  const globalBefore=(await ctx.systemPrompt.assemble()).sections.map(({name,text})=>[name,text])
   removeRoles=await installKaogongRoles(ctx,dir)
   const advisor=await ctx.worktableRoles.ensure('instance-a','class-advisor')
   const teacher=await ctx.worktableRoles.ensure('instance-b','teacher.data-analysis')
@@ -89,6 +102,7 @@ test('new application roles use one generic native Agent with isolated system pe
   assert.equal(await personaOf(advisor),definitions.find(row=>row.id==='kaogong.class-advisor.v1').plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix)
   assert.equal(await personaOf(teacher),definitions.find(row=>row.id==='kaogong.teacher.data-analysis.v1').plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix)
   assert.notEqual(await personaOf(advisor),await personaOf(teacher))
+  assert.deepEqual((await ctx.systemPrompt.assemble()).sections.map(({name,text})=>[name,text]),globalBefore,'Identity probes and role overlays must never mutate deployment/global prompt sections')
   const foreignScope=await import(pathToFileURL(join(dependencyCopy,'scope.mjs')).href)
   assert.equal(foreignScope.scopeOf(handles.get(advisor.sessionId).agent.ctx),undefined,'The fixture preserves a second incompatible same-version scope identity')
   assert.equal(await ctx.skills.get('kaogong-teach'),undefined)
@@ -120,3 +134,5 @@ test('new application roles use one generic native Agent with isolated system pe
   hooks.deregister();await rm(dependencyCopy,{recursive:true,force:true})
  }
 })
+
+}

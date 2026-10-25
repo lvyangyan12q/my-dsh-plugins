@@ -177,3 +177,16 @@ W.5/K.3已在独立3101通过官方source CLI启动并继续此前合成学习�
 - Persona/SkillFilesystem/SkillTool/AskUser 仍经传入 Native Agent.ctx 安装；后三者的实际安装构建没有另行导入 scopeOf/scopeTarget/ScopedLayers，所需技能与工具通过原生注入服务注册，撤销保留原生基础 persona 和私有角色停用护栏。
 - 辅助合同通过官方 createRuntimeResolution + initProfile/loadProfileDirectory + 实际 PluginPackages service 构造独立 profile，物理保留第二份同版 scope；同时使用真实官方 Agent/Persona/Skill 与独立同版 scope 模块副本，保留独立模块身份，避免 source 路径别名掩盖。额外覆盖缺少运行元数据（即使开发 peer 可解析）、缺少 installation scope、重复 installation scope 都拒绝，不回退到 profile 或开发目录。标准 preset 包含原生 persona；覆盖两角色隔离、重复打开、普通会话不继承私有技能、卸载精确撤销。恢复修复前源码时以同一测试配置精确复现重复 section，修复后 Host 153/153 与公开 Host 类型检查通过。
 - 辅助合同不是官方安装闭环：新 K.3/W.5 候选仍需官方 CLI 安装后通过真实界面创建班主任、辅导员、任课老师及原生模型任务验证。冻结 W.4/K.2 不覆盖。
+
+### 2026-10-25 源码启动入口与编译入口分别验证
+
+K.3 的 installation package 默认入口仍不能证明当前加载的模块身份：当前官方 rc.3 源码入口使用 `node --import <Native tsx loader> <Native apps/cli/src/bin.ts>` 和明确 `TSX_TSCONFIG_PATH`，原生服务会按路径映射加载源码 scope；从默认包 exports 取得 lib scope 仍是另一身份。旧测试强制映射 lib scope 掩盖了这一点，该覆盖已移除。
+
+K.4 待验收修正采用以下边界：
+
+- 仍先核对运行实例的公开 installation 元数据；profile 副本与开发祖先不能替代。
+- 候选通过公开 `agentPresets.mount` 在临时 scope 中做身份验证，不创建 Session、不安装 Persona、不发送模型请求。错误 scope 仅在原生 API 的首个 scoped-context 检查拒绝，随后精确释放；不尝试覆盖全局 persona，也不吞掉其他预设错误。
+- 普通编译安装只使用已声明默认公开 exports。仅在 rc.3、实际激活公开 TSX loader、显式绝对 tsconfig 及其有限相对 JSONC extends 同时精确声明 scope 和 preset 的安装内源码映射时，才允许该安装包已公开的对应源码入口；没有映射、源文件不可用或运行服务不认可时明确拒绝，不猜目录。
+- 辅助回归分别启动独立进程：编译 Native lib 组合使用无 Native paths 的测试配置；源码 Native src 组合使用与源码 CLI 相同的 Native TSX loader 和 Native tsconfig。两侧保留 profile 物理副本、真实 Native Agent/Persona/Skill、缺元数据与缺/重复 installation 项负例；源码侧额外验证缺显式配置不猜源码。身份探针与角色安装前后全局提示词 section 完全不变。
+- 同一双入口反馈中，修复前编译侧通过、源码侧精确复现 `deployment:persona-prefix` 重复；修复后 Host 154/154 与公开 Host 类型检查通过。该辅助组合没有启动 CLI 服务器，不能替代新 K.4 官方安装后实际源码 CLI 和编译 CLI 的角色/模型验收。
+- K.2/K.3 与 W.4/W.5 冻结资产不覆盖，既有 failed/unknown 创建意图不自动清除或重发。当前源码支持边界为已核对的官方 rc.3（22ddee3）配置结构；后续宿主版本须重新验证。

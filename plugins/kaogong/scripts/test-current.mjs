@@ -9,9 +9,6 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),native=process.
 assert(native,'Set DSH_SOURCE to the official rc.3 checkout for current integration tests')
 const base=ts.readConfigFile(resolve(native,'tsconfig.base.json'),ts.sys.readFile).config
 const paths=Object.fromEntries(Object.entries(base.compilerOptions.paths).map(([name,targets])=>[name,targets.map(target=>resolve(native,target))]))
-// Keep the actual compiled scope identity shared by official Agent/Prompt/Skill runtime modules.
-// Mapping this singleton to source masks installed duplicate-module failures.
-paths['@deepseek-ai/dsh-scope']=[resolve(native,'packages/core/scope/lib/index.js')]
 paths['dsh-worktable/sdk']=[resolve(root,'../worktable/01_content/src/sdk.mjs')]
 const temp=resolve(root,'.scratch','test-'+randomUUID())
 await mkdir(temp,{recursive:true})
