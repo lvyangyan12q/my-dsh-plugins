@@ -20,13 +20,14 @@ const run=async(args,name)=>{const result=spawnSync(process.execPath,args,{cwd:r
 await run([join(native,'apps/cli/lib/bin.js'),'plugin','--profile','web','add',worktable,archive,'--offline'],'official-cli-install')
 const installed=JSON.parse(await readFile(join(profile,'node_modules/@deepseek-ai/dsh-tool-kaogong/package.json'),'utf8'))
 const peer=JSON.parse(await readFile(join(profile,'node_modules/dsh-worktable/package.json'),'utf8'))
-assert.equal(installed.version,'0.2.0-rc.3.7');assert.equal(peer.version,'0.10.0-rc.3.7');assert.equal(installed.peerDependencies['dsh-worktable'],peer.version)
+assert.equal(installed.version,'0.2.0-rc.3.7');assert.equal(installed.dependencies['get-tsconfig'],'5.0.0-beta.5');
+const lock=await readFile(join(profile,'pnpm-lock.yaml'),'utf8');assert.ok(lock.includes('get-tsconfig@5.0.0-beta.5:'),'Official clean installation must lock the exact runtime dependency');assert.equal(peer.version,'0.10.0-rc.3.7');assert.equal(installed.peerDependencies['dsh-worktable'],peer.version)
 const verify=join(root,'verify-installed.mjs')
 await writeFile(verify,`
 import assert from 'node:assert/strict'
 import {createRequire} from 'node:module'
 import {readFile,realpath} from 'node:fs/promises'
-import {join,relative,isAbsolute} from 'node:path'
+import {join,relative,isAbsolute,dirname} from 'node:path'
 import {pathToFileURL} from 'node:url'
 const native=${JSON.stringify(native)},home=${JSON.stringify(home)},profile=${JSON.stringify(profile)},anchor=join(native,'apps/cli/package.json')
 const hostRequire=createRequire(anchor),consumerRequire=createRequire(join(profile,'package.json'))
@@ -44,10 +45,14 @@ try{
  assert.equal(anchors['@deepseek-ai/dsh-agent-preset-registry'].version,anchors['@deepseek-ai/dsh-scope'].version)
  const scopeEntry=createRequire(join(directories.get('@deepseek-ai/dsh-scope'),'package.json')).resolve('@deepseek-ai/dsh-scope'),scope=await import(pathToFileURL(scopeEntry).href),key={},owned=scope.createScope(ctx,key)
  try{assert.equal(scope.scopeOf(owned.ctx),key)}finally{await owned.dispose()}
- const installed=await import(pathToFileURL(consumerRequire.resolve('@deepseek-ai/dsh-tool-kaogong')).href)
+ const kaogongEntry=consumerRequire.resolve('@deepseek-ai/dsh-tool-kaogong'),kaogongRequire=createRequire(kaogongEntry)
+ const configEntry=await realpath(kaogongRequire.resolve('get-tsconfig')),configRel=relative(await realpath(profile),configEntry);assert.ok(configRel&&!configRel.startsWith('..')&&!isAbsolute(configRel),'Runtime get-tsconfig must be installed in the independent profile')
+ const configManifest=JSON.parse(await readFile(join(dirname(dirname(configEntry)),'package.json'),'utf8'));assert.equal(configManifest.name,'get-tsconfig');assert.equal(configManifest.version,'5.0.0-beta.5')
+ const configAPI=await import(pathToFileURL(configEntry).href);assert.equal(typeof configAPI.getTsconfig,'function')
+ const installed=await import(pathToFileURL(kaogongEntry).href)
  const worktable=await import(pathToFileURL(consumerRequire.resolve('dsh-worktable')).href)
  assert.equal(typeof installed.apply,'function');assert.equal(typeof worktable.apply,'function')
- console.log(JSON.stringify({officialCLI:true,noDevelopmentAncestor:true,publicRuntimeResolution:true,installedHostImport:true,officialScopeIdentity:true,anchors}))
+ console.log(JSON.stringify({officialCLI:true,noDevelopmentAncestor:true,publicRuntimeResolution:true,installedHostImport:true,officialScopeIdentity:true,independentPinnedTsconfig:true,anchors}))
 }finally{await ctx.fiber.dispose()}
 `)
 const output=await run([verify],'runtime-identity')
