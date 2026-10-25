@@ -17,7 +17,7 @@ type ViewValues = {
   practiceHistory: { roundId: string; context: PracticeContext; createdAt: string; submitted: boolean }[]
   'reader.store': {dispose():void} | null; 'review.admitted': string[]
   'reader.query': string; 'reader.entries': Entry[]; 'reader.selected': string; 'reader.entry': Entry | null
-  'reader.error': string; 'reader.loading': boolean
+  'reader.error': string; 'reader.loading': boolean; 'reader.refresh': number
   integration: { service: unknown } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: RoleFacade | null; tasks: TaskFacade | null

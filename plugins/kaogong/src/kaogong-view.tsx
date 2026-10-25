@@ -164,6 +164,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
   const [seenQuestionIds, setSeenQuestionIds] = useBusinessState('seenQuestionIds', [])
   const [errorReasonsByQuestion, setErrorReasonsByQuestion] = useBusinessState('errorReasons', {})
   const [moduleSummary, setModuleSummary] = useBusinessState('moduleSummary', null)
+  const [,setReaderRefresh]=useBusinessState('reader.refresh',0)
   const [submitting, setSubmitting] = useBusinessState('submitting', false)
   const [restored, setRestored] = useBusinessState('practiceRestored', false)
   const [practiceBusy, setPracticeBusy] = useBusinessState('practiceBusy', false)
@@ -407,7 +408,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                 <div style={{ color: colors.muted, fontSize: 14 }}>今天 {data?.today ?? '加载中'} · 聚焦行测与申论</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button data-pwb-button type="button" onClick={() => { void refresh() }} disabled={loading} style={buttonStyle(false)}>{loading ? '刷新中' : '刷新'}</button>
+                <button data-pwb-button type="button" onClick={() => { setReaderRefresh(value=>value+1);void refresh() }} disabled={loading} style={buttonStyle(false)}>{loading ? '刷新中' : '刷新'}</button>
                 {onClose && <button data-pwb-button type="button" onClick={onClose} aria-label="关闭看板" style={buttonStyle(true)}>关闭</button>}
               </div>
             </header>}
