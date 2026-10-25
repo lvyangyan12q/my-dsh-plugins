@@ -12,6 +12,8 @@ import {instanceView,overlay,readonlyRows,registerResources,sourceRows,type Rows
 import {installKaogongRoles,roleSubjects,subjectRoleIds} from './role-definitions.ts'
 import {registerTaskOwners} from './task-owners.ts'
 import {PracticeRounds} from './practice-rounds.ts'
+import {prepareBankPracticeDisplay} from './bank-practice-display.ts'
+import {fingerprint} from './legacy-adoption-plan.ts'
 import {Lessons} from './lessons.ts'
 import type {BankQuestionRecord,KnowledgeEntryRecord} from './domain.ts'
 import {adoptionDomain,adoptionPlansDomain,assertAdoptionReady,privateKnowledgeKey} from './legacy-adoption-state.ts'
@@ -62,15 +64,18 @@ export async function mountKaogong(ctx:Context,config:Config){
    const {instance}=await ctx.worktableApplications.resolveView(viewId)
    const legacyAsset=legacyAssetPaths.includes(command.replace(/^exact:/,'') as typeof legacyAssetPaths[number])
    const combined=command==='exact:/api/kaogong/dashboard'||command==='exact:/api/kaogong/lesson/create'
-   const needsBank=!legacyAsset&&(combined||command==='exact:/api/kaogong/practice/start'||command==='kaogong_practice'||command.startsWith('kaogong_bank_'))
+   const practiceCommand=command==='kaogong_practice'||command==='kaogong_practice_read'||command==='kaogong_practice_submit'||command.startsWith('exact:/api/kaogong/practice/')
+   const needsBank=!legacyAsset&&(combined||practiceCommand||command.startsWith('kaogong_bank_'))
    const needsMaterials=!legacyAsset&&(combined||['exact:/api/kaogong/knowledge','exact:/api/kaogong/document-image','kaogong_knowledge_read','kaogong_knowledge_search','kaogong_knowledge_list'].includes(command))
-   const bankRows=needsBank?await sourceRows<BankQuestionRecord>(ctx.worktableResources,viewId,'question-bank'):[]
+   const bankSource=needsBank?await ctx.worktableResources.call<Rows<BankQuestionRecord>>({viewId,resourceId:'question-bank',action:'read'}):null
+   const bankRows=bankSource?.value.rows??[]
    const materialSource=needsMaterials?(await ctx.worktableResources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})).value:null
    const materialRows=materialSource?.rows??[]
    const bankQuestions=instance.appId==='kaogong-library'?readonlyRows(bankRows):overlay(state.bankQuestions,bankRows)
    // The library's own view can inspect private lectures; sharing still passes through registerResources.
    const knowledgeEntries=instance.appId==='kaogong-library'?readonlyRows([...state.knowledgeEntries.entries()].filter(([,row])=>row.kind!=='笔记')):overlay(state.knowledgeEntries,materialRows)
-   const practice=new PracticeRounds(state.rounds,bankQuestions,state.questions)
+   const display=practiceCommand&&bankSource?await prepareBankPracticeDisplay({instanceId:state.instanceId,ownBank:state.bankQuestions,rows:bankQuestions.entries(),externalOwner:bankSource.value.ownerInstanceId,plans:assetPlans(),revalidate:async()=>{const fresh=await ctx.worktableResources.call<Rows<BankQuestionRecord>>({viewId,resourceId:'question-bank',action:'read'});if(fingerprint(fresh.connection)!==fingerprint(bankSource.connection)||fingerprint(fresh.value)!==fingerprint(bankSource.value))throw Error('题库授权或来源已变化，请重新打开练习。')}}):undefined
+   const practice=new PracticeRounds(state.rounds,bankQuestions,state.questions,display?.materialStem,display?.materialOptions)
    const lessons=new Lessons(state.lessonRecords,knowledgeEntries,practice,key=>readBinding(state.instanceId,key),state.lessonSelection)
    const scopedMineru={root:()=>mineru.root(),
     start:async(...args:Parameters<Mineru['start']>)=>{const job=await mineru.start(...args);await meta.table('jobs').put(job.id,{instanceId:state.instanceId,id:job.id});return job},

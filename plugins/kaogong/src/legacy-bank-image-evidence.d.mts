@@ -81,3 +81,5 @@ export function revalidateLegacyBankImageEvidence(input: BankImageEvidenceInput 
 /** Caller must authorize the source owner first; questionId/root must come from trusted Host state. */
 export function readLegacyBankImageAsset(input: { readonly evidence: LegacyBankImageEvidence; readonly questionId: string; readonly asset: string; readonly bindingKey: string; readonly io?: BankImageReadIO }): Promise<Buffer>
 export function writeLegacyBankImageEvidence(input: Omit<BankImageEvidenceInput, 'io'> & { readonly output: string; readonly io?: BankImageReadIO & Pick<typeof fs, 'writeFile'> }): Promise<BankImageEvidenceSummary>
+/** Public internal consumer: verifies the same root/index/missing-index receipts without reading unrelated images. */
+export function verifyLegacyBankPracticeEvidence(input:{readonly evidence:LegacyBankImageEvidence;readonly io?:BankImageReadIO}):Promise<void>
