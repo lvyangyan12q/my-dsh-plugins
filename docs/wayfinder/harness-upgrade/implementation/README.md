@@ -1,5 +1,11 @@
 # rc.3 实施工单图
 
+## 最终交付状态 · 2026-10-25
+
+W.7/K.7当前stock源码范围已验收、正式profile已准确注册且3080未启动，15个本轮临时工作树及自有实例已安全清理。正常push与remote readback确认 `origin/codex/kaogong-rc3-completion` 为 `8cc9202040b0b016418f8ffe5b05295c7c9b7c12`；11已按该实际交付证明关闭，本收尾文档另行推送。没有合并main或创建PR。
+
+[当前脱敏证据](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)及[逐步启动接入说明](../../../worktable-integration.md)为入口。09历史迁移继续open且明确排除；正式旧资料未导入，后续具体materials-only预览/确认不构成本轮交付缺陷。以下待推送/待清理段落均为历史，不覆盖本节。
+
 ## 最终当前入口 · 2026-10-25 · W.7 / K.7
 
 准确W.7/K.7已通过官方stock源码命令（无TSX_TSCONFIG_PATH）的真实角色/Skill/精确轮次、空新实例与同包卸载重装恢复，28个持久文件hash相同；20/13/10恢复closed。正式profile已注册准确归档并使用已登记专用roleCwd，但3080未运行。本轮15个已合并工作树已安全清理，自有验收进程及页面已关闭，3101/3080无listener；11保持in-progress仅等实际push。09历史迁移open排除、正式原资料仅只读清点未导入，资料接入仍另预览确认。

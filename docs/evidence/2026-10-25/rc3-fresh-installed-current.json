@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-10-25",
   "scope": "Fresh Kaogong deployment on unpatched Harness rc.3; synthetic data only",
-  "status": "passed-stock-source-scope-formally-registered-not-started-remote-pending",
+  "status": "delivered-stock-source-scope-formally-registered-not-started",
   "source": "81fa66b355daa8fd776aed5de8ef51eca6621ad4",
   "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
   "archives": [
@@ -75,8 +75,7 @@
     "nativeFinalState": "Clean official22ddee with no retained source patch; actual cleanup incident and recovery documented separately"
   },
   "pending": [
-    "Actual remote push proof and closing delivery ticket11",
-    "Any formal material import requires its own concrete preview and confirmation"
+    "Outside this delivery scope: any formal material import requires its own concrete preview and confirmation"
   ],
   "formalRegistration": {
     "officialOfflineCLI": true,
@@ -107,5 +106,13 @@
     "port3101Listeners": 0,
     "port3080Listeners": 0,
     "browser": "Only owned3101 tab closed"
+  },
+  "remoteDelivered": {
+    "remote": "origin",
+    "branch": "codex/kaogong-rc3-completion",
+    "verifiedDeliveryCommit": "8cc9202040b0b016418f8ffe5b05295c7c9b7c12",
+    "method": "Normal push; readback remote branch HEAD equal; TLS verification preserved",
+    "mainMerged": false,
+    "pullRequestCreated": false
   }
 }

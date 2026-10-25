@@ -4,7 +4,7 @@
 
 本节覆盖下方旧版本/旧入口的历史说明。当前最终验收和接入目标是未经补丁的官方 Harness `0.2.1-rc.3`（`22ddee3792402c3e70ec5f86a63c3e3e895a2f60`），准确工作台 `0.10.0-rc.3.7` 与考公 `0.2.0-rc.3.7`。源码及规格在插件仓库 `D:/programming/workspace/my-dsh`，当前集成分支 `codex/kaogong-rc3-completion`。插件兼容公开宿主接口，不修改 Harness 源码或原生Editor。
 
-目前已在独立3101实际验证冷角色、原生输入/工具、统计、合成资料与同准确包移除重装恢复；[当前证据及剩余门槛](evidence/2026-10-25/rc3-fresh-installed-current.json)是进度入口。正式profile已官方离线注册准确W.7/K.7，3080尚未运行；推送和最后安全清理由11继续控制。最终准确包重装后的Native问题/Stop/审批矩阵已通过。K.7已使用官方stock源码命令、Native cwd且不设置TSX_TSCONFIG_PATH实际验收；无需用户添加该变量。
+目前已在独立3101实际验证冷角色、原生输入/工具、统计、合成资料与同准确包移除重装恢复；[当前证据及剩余门槛](evidence/2026-10-25/rc3-fresh-installed-current.json)是进度入口。正式profile已官方离线注册准确W.7/K.7，3080尚未运行；本轮15个工作树已安全清理，远程分支正常push并readback验证8cc9202，11当前范围已交付。正式3080由用户自行启动。最终准确包重装后的Native问题/Stop/审批矩阵已通过。K.7已使用官方stock源码命令、Native cwd且不设置TSX_TSCONFIG_PATH实际验收；无需用户添加该变量。
 
 | 顺序 | 操作 | 影响与核对 |
 | --- | --- | --- |

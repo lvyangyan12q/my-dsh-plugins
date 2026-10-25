@@ -3,19 +3,30 @@ id: harness-rc3-review-delivery
 title: 固定基线两轴审查及准确交付
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 assignee: null
 blocked_by: [harness-rc3-installed-acceptance]
-acceptance_status: formal-registered-safe-cleanup-complete-remote-push-pending
+acceptance_status: delivered-current-stock-source-scope
 target: 0.2.1-rc.3
 ---
+
+## Resolution · 已交付 · 2026-10-25
+
+- [x] W.7/K.7准确归档、四入口回归及官方stock源码实页/冷恢复/同包重装验收通过，原生模式和应用私有角色边界保留。
+- [x] 固定a81ac77→81fa66b两轴审查各0finding；正式profile注册、逐文件hash与其他配置保留通过。
+- [x] 自有验收进程及页面关闭，3101/3080无listener；15个本轮工作树按nofollow断指针后安全清理，分支/归档/验收数据/资料保留。
+- [x] 实际正常push至 `origin/codex/kaogong-rc3-completion` 并readback验证提交 `8cc9202040b0b016418f8ffe5b05295c7c9b7c12`。没有force、合并main或创建PR；本地工单按分支交付。
+
+本票当前范围关闭。上述提交是已实际验证的远程交付点，本关闭文档提交将随后另行正常push，不自我引用未推送SHA。两次Schannel/HTTP408失败未改变远程ref，第三次仅per-command OpenSSL/HTTP1正常push成功，TLS验证保留且未改全局Git配置。
+
+正式3080已注册但未启动，留给用户启动；正式旧资料只读清点未导入，历史会话/学习未迁删，09继续open并排除。正式资料具体预览/确认是范围外后续操作，不记为本轮未完成缺陷。
 
 ## 当前仅剩远程交付 · 2026-10-25
 
 - [x] 准确W.7/K.7独立验收及正式注册，其他配置/数据保持。
 - [x] 自有验收进程已验证后停止；3101及3080均无listener，仅自建3101浏览器tab关闭。
 - [x] 本轮15个已合并工作树（含首次遗留孤儿及最终3个）按nofollow扫描、非递归断指针、零链接证明后安全清理。全部分支、永久/备份包、完整验收home及合成/原资料保留，旧阶段和其他scratch未清理。
-- [ ] 实际远程push成功并核验远程分支HEAD。
+- [x] 实际远程push成功并核验远程分支HEAD：`8cc9202040b0b016418f8ffe5b05295c7c9b7c12`。
 
 11保持in-progress，仅远程交付待实际证明。正式3080未启动，资料接入仍需单独具体预览确认。
 
