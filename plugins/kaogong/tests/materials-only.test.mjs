@@ -33,6 +33,7 @@ test('material-only plan preserves original answers and private lectures without
   assert.equal(plan.records[0].value.correctAnswer,'B')
   assert.deepEqual(plan.privateKnowledgeIds,['private'])
   assert.equal(plan.target.appId,'kaogong-library')
+  assert.equal(plan.source.files.find(file=>file.name==='kaogong_bank').bytes,(await readFile(path)).length)
   assert.equal(Object.hasOwn(plan,'roles'),false)
   assert.equal(Object.hasOwn(plan,'readOnlyGrants'),false)
  }finally{await rm(home,{recursive:true,force:true})}

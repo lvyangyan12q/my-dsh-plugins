@@ -14,7 +14,7 @@ import {privateKnowledgeKey} from './legacy-adoption-state.ts'
 import type {Config} from './business.ts'
 import type {KaogongHost} from './instance-host.ts'
 function fail(code:string):never{throw Object.assign(Error(code),{code})}
-export function materialPreview(plan:MaterialImportPlan,status='prepared'){return {id:plan.id,fingerprint:plan.fingerprint,status,sourceRevision:plan.source.revision,target:plan.target,counts:plan.counts,notice:'仅接入资料到当前空资料库；原文件原址保留，不接管会话或学习记录，也不自动共享。'}}
+export function materialPreview(plan:MaterialImportPlan,status='prepared'){return {id:plan.id,fingerprint:plan.fingerprint,status,sourceRevision:plan.source.revision,sourceFiles:plan.source.files.map(({name,sha256,bytes})=>({name,sha256,bytes})),target:plan.target,counts:plan.counts,notice:'仅接入资料到当前空资料库；原文件原址保留，不接管会话或学习记录，也不自动共享。'}}
 /** Authenticated material-only owner. Mounting/listing does not open any old source. */
 export function createMaterialImportOwner(ctx:Context,host:KaogongHost,state:Domain<typeof materialImportDomain>,plansDomain:Domain<typeof materialPlansDomain>,config:Config){
  const journals=state.table('journals'),plans=plansDomain.table('plans'),privacy=state.table('private_knowledge');let closing=false;const pending=new Set<Promise<unknown>>()
