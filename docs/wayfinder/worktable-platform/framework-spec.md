@@ -168,6 +168,8 @@ upgrade_blocked_by: [harness-upgrade-acceptance-cutover]
 <a id="host-upgrade-requirements"></a>
 ## Harness 升级与考公接入增量（2026-10-24）
 
+**2026-10-25交付顺序更新。** 用户明确先完成工作台自身、定版提交推送，再处理考公接入。平台独立验收由Notes/Reading验证，跟踪[工作台独立定版票](../harness-upgrade/implementation/12-worktable-freeze.md)；考公HU05/HU06/HU08及HU07业务部分继续保留，不再阻塞平台单独定版，也不被标记完成。以下HU仍是完整升级要求的详细入口，原故事及123/172项映射不删减。平台定版仅在新票各实际门禁完成后成立，不等于全文所有后续能力完成。
+
 本段是本规格本轮升级要求的唯一详细入口。HU 编号是既有要求的版本化复验点，不重编号、删改或新增原 User Stories 的计数，不更改原123条、172条映射或历史验收分类。所有 HU 当前均未完成 rc.3 整体验收；独立适配切片的源码与点测进度见本轮实施图。
 
 | 复验点 | 本轮必须满足的行为 | 关联原故事 |
