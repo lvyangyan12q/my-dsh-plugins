@@ -16,7 +16,7 @@ try{
  const config=resolve(temp,'tsconfig.json')
  await writeFile(config,JSON.stringify({compilerOptions:{target:'ES2024',module:'ESNext',moduleResolution:'Bundler',jsx:'react-jsx',paths}}))
  const host=['materials-only.test.mjs','build-runner.test.mjs','acceptance-source.test.mjs','legacy-inspection.test.mjs','legacy-material-evidence.test.mjs','legacy-bank-image-evidence.test.mjs','legacy-private-assets.test.mjs','adopted-assets.test.mjs','adoption-assets-host.test.mjs','legacy-adoption-plan.test.mjs','legacy-adoption-workflow.test.mjs','instance-host.test.mjs','production-host.test.mjs','instance-state.test.mjs','role-presets.test.mjs','role-session-scope.test.mjs','runtime-compat.test.mjs']
- const client=['legacy-image-client.test.ts','sdk-classroom.test.ts','sdk-client-runtime.test.ts']
+ const client=['legacy-image-client.test.ts','reader-revocation.test.ts','sdk-classroom.test.ts','sdk-client-runtime.test.ts']
  const domain=['lessons.test.mjs','practice-rounds.test.mjs']
  const domainPattern='lesson links|unsupported, foreign|additive migration|same subject role|score-only completion|one aggregate write|canonical cause|ten-question cycles|durable scoring|partial notebook failure|reflection retries|notebook commands|repair-style material|explicit knowledge point|verified display supplements|publisher solution annotations|unverified option adverts|bibliographic analysis titles|bibliographic metadata|only a bounded bibliography|reviewed one-question answer'
  const files=process.argv.includes('--domain')?domain:process.argv.includes('--host')?host:process.argv.includes('--client')?client:[...host,...client]
