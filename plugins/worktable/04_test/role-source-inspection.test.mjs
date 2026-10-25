@@ -96,3 +96,31 @@ test('owner revocation during source read blocks a source inspection without wri
  assert.equal((await checking).blockers[0].code,'legacy-source-unavailable');await removed
  assert.equal((await f.apps.snapshot()).instances.length,0);assert.equal(f.creates,0)
 }))
+
+test('planned target preflight rejects existing foreign ownership before creating any target and permits same-target recovery',async()=>fixture(async f=>{
+ const {randomUUID}=await import('node:crypto'),original=await f.inspect(),owner=await f.apps.createInstance('reader',null)
+ const preview=await f.roles.previewAdoption(owner.id,'teacher',f.source.sourceKey)
+ await f.roles.applyAdoption(owner.id,'teacher',f.source.sourceKey,preview.fingerprint,true)
+ const files=['apps.json','roles.json'],before=await Promise.all(files.map(name=>readFile(join(f.dir,name),'utf8')))
+ const planned=randomUUID(),blocked=await f.roles.inspectLegacySource('reader','teacher',f.source.sourceKey,{instanceId:planned})
+ assert.equal(blocked.status,'blocked');assert.equal(blocked.blockers[0].code,'legacy-source-owned')
+ const resumed=await f.roles.inspectLegacySource('reader','teacher',f.source.sourceKey,{instanceId:owner.id})
+ assert.equal(resumed.status,'ready');assert.equal(resumed.fingerprint,original.fingerprint)
+ assert.equal((await f.apps.snapshot()).instances.length,1)
+ assert.deepEqual(await Promise.all(files.map(name=>readFile(join(f.dir,name),'utf8'))),before)
+}))
+
+for(const ownedSession of ['current','history'])test(`planned source preflight rejects ${ownedSession} already held by a normal foreign application role`,async()=>fixture(async f=>{
+ const cwd=ownedSession==='current'?f.legacyCwd:join(f.dir,'previous')
+ if(ownedSession==='history')f.native.get('history').preset='teacher-preset'
+ await f.apps.contribute({id:'foreign',title:'Foreign',version:'1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'Page'}]})
+ f.roles.contribute('foreign',[{id:'teacher',title:'Private foreign teacher',agent:{kind:'agent',source:'managed',id:'teacher'},creation:{cwd}}])
+ const owner=await f.apps.createInstance('foreign',null)
+ await f.roles.attach(owner.id,'teacher',ownedSession,null,0)
+ const before=await readFile(join(f.dir,'roles.json'),'utf8'),{randomUUID}=await import('node:crypto')
+ const blocked=await f.roles.inspectLegacySource('reader','teacher',f.source.sourceKey,{instanceId:randomUUID()})
+ assert.equal(blocked.status,'blocked');assert.equal(blocked.blockers[0].code,'session-owned')
+ assert.doesNotMatch(JSON.stringify(blocked),/Private foreign teacher|foreign/)
+ assert.equal((await f.apps.snapshot()).instances.length,1)
+ assert.equal(await readFile(join(f.dir,'roles.json'),'utf8'),before);assert.equal(f.creates,0)
+}))

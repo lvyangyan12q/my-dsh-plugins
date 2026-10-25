@@ -67,8 +67,8 @@ export interface RoleDirectory {
  contribute(appId:string,definitions:RoleDefinition[]):Disposer
  /** Host-only. Dispose with the application; inspect must not repair, migrate or create native Sessions. */
  contributeLegacy(appId:string,owner:LegacyRoleOwner):Disposer
- /** Host-only, no target instance or writes; never exposed through RoleFacade or browser HTTP. */
- inspectLegacySource(appId:string,roleId:string,sourceKey:string):Promise<LegacyRoleSourceInspection>
+ /** Host-only, without creating a target or writing; optional planned identity also checks ownership before provisioning. Never exposed through RoleFacade or browser HTTP. */
+ inspectLegacySource(appId:string,roleId:string,sourceKey:string,target?:{instanceId:string}):Promise<LegacyRoleSourceInspection>
  previewAdoption(instanceId:string,roleId:string,sourceKey:string):Promise<RoleAdoptionPreview>
  applyAdoption(instanceId:string,roleId:string,sourceKey:string,fingerprint:string,confirmed:true):Promise<AdoptedRoleBinding>
  /** Host-only trusted tool entry. sessionId must originate from native execution context, never model arguments. Write access refuses historical Sessions. */

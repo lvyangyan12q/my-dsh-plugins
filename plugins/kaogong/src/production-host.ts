@@ -1,5 +1,5 @@
 import type {Context} from '@deepseek-ai/cordis'
-import type {} from 'dsh-worktable/sdk'
+import {requireProtocol} from 'dsh-worktable/sdk'
 import {defineDomain,domainTable} from '@deepseek-ai/dsh-storage-domain'
 import {z} from 'zod'
 import {Mineru} from './mineru.ts'
@@ -25,8 +25,7 @@ const metadata=defineDomain({name:'kaogong_platform_rc3',version:1,tables:{
 }})
 /** Public SDK registration only; legacy stores are not opened or adopted on activation. */
 export async function mountKaogong(ctx:Context,config:Config){
- const protocol=ctx.worktableProtocol.describe()
- if(protocol.protocolVersion!==1||['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1','instance-admission-v1','task-owner-no-admission-v1','host-provision-intent-v1','legacy-role-source-inspection-v1'].some(feature=>!protocol.features.includes(feature)))throw Error('Install the rc.3 Worktable SDK with private resources, durable provisioning and public legacy identity inspection before enabling Kaogong')
+ requireProtocol(ctx.worktableProtocol.describe(),['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1','instance-admission-v1','task-owner-no-admission-v1','host-provision-intent-v1','legacy-role-source-inspection-v1','legacy-role-target-inspection-v1'])
  const disposers:(()=>void|Promise<void>)[]=[]
  let host:KaogongHost|undefined
  let adoption:ReturnType<typeof createAdoptionOwner>|undefined
