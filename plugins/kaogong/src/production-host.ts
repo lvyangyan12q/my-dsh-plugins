@@ -15,9 +15,11 @@ import {PracticeRounds} from './practice-rounds.ts'
 import {Lessons} from './lessons.ts'
 import type {BankQuestionRecord,KnowledgeEntryRecord} from './domain.ts'
 import {adoptionDomain,adoptionPlansDomain,assertAdoptionReady,privateKnowledgeKey} from './legacy-adoption-state.ts'
-import {createAdoptionOwner} from './legacy-adoption-owner.ts'
-import {mountAdoptionHttp} from './adoption-http.ts'
 import {legacyAssetRoutes,legacyAssetPaths} from './legacy-asset-http.ts'
+import {materialImportDomain,materialPlansDomain,assertMaterialImportReady} from './materials-state.ts'
+import {createMaterialImportOwner} from './materials-owner.ts'
+import {mountMaterialImportHttp} from './materials-http.ts'
+import type {ProvenAssetPlan} from './adopted-assets.ts'
 
 const metadata=defineDomain({name:'kaogong_platform_rc3',version:1,tables:{
  receipts:domainTable(z.object({instanceId:z.string(),businessId:z.string(),kind:z.enum(['review','lesson']),requestId:z.string(),status:z.enum(['claimed','done','releasing','rejected'])})),
@@ -25,10 +27,10 @@ const metadata=defineDomain({name:'kaogong_platform_rc3',version:1,tables:{
 }})
 /** Public SDK registration only; legacy stores are not opened or adopted on activation. */
 export async function mountKaogong(ctx:Context,config:Config){
- requireProtocol(ctx.worktableProtocol.describe(),['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1','instance-admission-v1','task-owner-no-admission-v1','host-provision-intent-v1','legacy-role-source-inspection-v1','legacy-role-target-inspection-v1','native-role-session-scope-v1'])
+ requireProtocol(ctx.worktableProtocol.describe(),['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1','instance-admission-v1','task-owner-no-admission-v1','host-provision-intent-v1','native-role-session-scope-v1'])
  const disposers:(()=>void|Promise<void>)[]=[]
  let host:KaogongHost|undefined
- let adoption:ReturnType<typeof createAdoptionOwner>|undefined
+ let materialImport:ReturnType<typeof createMaterialImportOwner>|undefined
  try{
   for(const [id,title,views] of [
    ['kaogong','考公学习',['page','classroom','practice','errors','materials','plan']],
@@ -40,6 +42,15 @@ export async function mountKaogong(ctx:Context,config:Config){
   disposers.push(()=>adoptionState.close())
   const adoptionPlans=await ctx.storageDomain.open(adoptionPlansDomain)
   disposers.push(()=>adoptionPlans.close())
+  const materialState=await ctx.storageDomain.open(materialImportDomain)
+  disposers.push(()=>materialState.close())
+  const materialPlans=await ctx.storageDomain.open(materialPlansDomain)
+  disposers.push(()=>materialPlans.close())
+  // Old receipts are only read for quarantine and exact original asset references, never resumed on activation.
+  const assetPlans=():ProvenAssetPlan[]=>[
+   ...[...adoptionState.table('journals').entries()].filter(([,row])=>row.status==='applied').flatMap(([,row])=>{const stored=adoptionPlans.table('plans').get(row.planId);return stored&&stored.fingerprint===row.planFingerprint?[stored.plan]:[]}),
+   ...[...materialState.table('journals').entries()].filter(([,row])=>row.status==='applied').flatMap(([,row])=>{const stored=materialPlans.table('plans').get(row.planId);return stored&&stored.fingerprint===row.planFingerprint?[stored.plan]:[]}),
+  ]
   const readBinding=async(instanceId:string,key:{subject:string})=>{
    const roleId=subjectRoleIds[roleSubjects.indexOf(key.subject)]??'teacher'
    return (await ctx.worktableRoles.read(instanceId,roleId)).binding
@@ -57,7 +68,8 @@ export async function mountKaogong(ctx:Context,config:Config){
    const materialSource=needsMaterials?(await ctx.worktableResources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})).value:null
    const materialRows=materialSource?.rows??[]
    const bankQuestions=instance.appId==='kaogong-library'?readonlyRows(bankRows):overlay(state.bankQuestions,bankRows)
-   const knowledgeEntries=instance.appId==='kaogong-library'?readonlyRows(materialRows):overlay(state.knowledgeEntries,materialRows)
+   // The library's own view can inspect private lectures; sharing still passes through registerResources.
+   const knowledgeEntries=instance.appId==='kaogong-library'?readonlyRows([...state.knowledgeEntries.entries()].filter(([,row])=>row.kind!=='笔记')):overlay(state.knowledgeEntries,materialRows)
    const practice=new PracticeRounds(state.rounds,bankQuestions,state.questions)
    const lessons=new Lessons(state.lessonRecords,knowledgeEntries,practice,key=>readBinding(state.instanceId,key),state.lessonSelection)
    const scopedMineru={root:()=>mineru.root(),
@@ -67,7 +79,7 @@ export async function mountKaogong(ctx:Context,config:Config){
    }
    // Legacy absolute image roots remain unread until an explicit migration establishes ownership.
    const registry=businessRegistry({...config,questionImageRoot:{get:()=>undefined}},{...state,bankQuestions,knowledgeEntries,practice,lessons},scopedMineru)
-      for(const route of legacyAssetRoutes({instanceId:state.instanceId,viewId,state,resources:ctx.worktableResources,plans:()=>[...adoptionState.table('journals').entries()].filter(([,row])=>row.status==='applied').flatMap(([,row])=>{const stored=adoptionPlans.table('plans').get(row.planId);return stored&&stored.fingerprint===row.planFingerprint?[stored.plan]:[]}),newImage:async(id,reference)=>{
+      for(const route of legacyAssetRoutes({instanceId:state.instanceId,viewId,state,resources:ctx.worktableResources,plans:assetPlans,newImage:async(id,reference)=>{
     const record=state.knowledgeEntries.get(id);if(!record||![...record.content.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].some(row=>row[1]===reference))return undefined
     const url=new URL(reference,'http://localhost'),job=url.searchParams.get('id'),asset=url.searchParams.get('asset')
     if(url.pathname!=='/api/kaogong/document-image'||!job||!asset||meta.table('jobs').get(job)?.instanceId!==state.instanceId)return undefined
@@ -85,14 +97,14 @@ export async function mountKaogong(ctx:Context,config:Config){
    }})
    return {...registry,dispose:async()=>{await lessons.close();await practice.close()}}
   }
-  host=new KaogongHost({applications:ctx.worktableApplications,roles:ctx.worktableRoles,pool,connection:ctx.connection,registry,assertReady:instanceId=>assertAdoptionReady(adoptionState.table('journals'),instanceId)})
+  host=new KaogongHost({applications:ctx.worktableApplications,roles:ctx.worktableRoles,pool,connection:ctx.connection,registry,assertReady:instanceId=>{assertAdoptionReady(adoptionState.table('journals'),instanceId);assertMaterialImportReady(materialState.table('journals'),instanceId)}})
   const runtime=host
   disposers.push(()=>runtime.close())
-  disposers.push(registerResources(runtime,ctx.worktableApplications,ctx.worktableResources,(instanceId,id)=>!!adoptionState.table('private_knowledge').get(privateKnowledgeKey(instanceId,id))))
+  disposers.push(registerResources(runtime,ctx.worktableApplications,ctx.worktableResources,(instanceId,id)=>!!adoptionState.table('private_knowledge').get(privateKnowledgeKey(instanceId,id))||!!materialState.table('private_knowledge').get(privateKnowledgeKey(instanceId,id))))
+  materialImport=createMaterialImportOwner(ctx,runtime,materialState,materialPlans,config)
+  disposers.push(()=>materialImport!.close())
+  disposers.push(mountMaterialImportHttp(ctx,materialImport))
   disposers.push(await installKaogongRoles(ctx,config.roleCwd))
-  adoption=createAdoptionOwner(ctx,runtime,adoptionState,adoptionPlans,config)
-  disposers.push(()=>adoption!.close())
-  disposers.push(mountAdoptionHttp(ctx,adoption))
   disposers.push(registerTaskOwners(runtime,ctx.worktableTaskOwners,meta.table('receipts'),ctx.worktableResources))
   // Registration descriptors do not read tables or create a Session.
   const templates=businessRegistry(config,{} as KaogongInstanceState,mineru)
@@ -101,12 +113,12 @@ export async function mountKaogong(ctx:Context,config:Config){
   for(const [name,tool] of templates.tools)disposers.push(ctx.tools.register({...tool,execute:(args,execution)=>runtime.tool(name,args,execution)}, {when:context=>runtime.active(name,context)}))
  }catch(error){
   // Stop admission before withdrawing sources and releasing metadata.
-  await adoption?.close();await host?.close()
+  await materialImport?.close();await host?.close()
   await Promise.allSettled(disposers.reverse().map(remove=>Promise.resolve().then(remove)))
   throw error
  }
  return async()=>{
-  await adoption?.close();await host?.close()
+  await materialImport?.close();await host?.close()
   for(const remove of disposers.reverse())await remove()
  }
 }
