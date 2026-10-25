@@ -37,7 +37,7 @@ export async function mountKaogong(ctx:Context,config:Config){
   for(const [id,title,views] of [
    ['kaogong','考公学习',['page','classroom','practice','errors','materials','plan']],
    ['kaogong-library','考公资料库',['page','materials']],
-  ] as const)disposers.push(await ctx.worktableApplications.contribute({id,title,version:'0.2.0-rc.3.5',protocolVersion:1,kind:'deep',views:views.map(id=>({id,title:id}))}))
+  ] as const)disposers.push(await ctx.worktableApplications.contribute({id,title,version:'0.2.0-rc.3.6',protocolVersion:1,kind:'deep',views:views.map(id=>({id,title:id}))}))
   const meta=await ctx.storageDomain.open(metadata)
   disposers.push(()=>meta.close())
   const adoptionState=await ctx.storageDomain.open(adoptionDomain)
