@@ -127,7 +127,7 @@ export async function revalidateLegacyPrivateAssets({snapshot,materialRoot,priva
 }
 /** Host must authorize the own private historical instance first; this function never accepts sharing grants. */
 export async function readLegacyPrivateAsset({evidence,entryId,jobId,asset,bindingKey,currentRecord,access,io=fs}={}){
- if(access?.kind!=='private-history'||typeof access.ownerInstanceId!=='string'||!access.ownerInstanceId||access.instanceId!==access.ownerInstanceId)fail('PRIVATE_ASSET_ACCESS_DENIED')
+ if(!['private-history','private-material-library'].includes(access?.kind)||typeof access.ownerInstanceId!=='string'||!access.ownerInstanceId||access.instanceId!==access.ownerInstanceId)fail('PRIVATE_ASSET_ACCESS_DENIED')
  validate(evidence)
  const entry=evidence.entries.find(x=>x.id===entryId&&x.jobId===jobId)
  if(!entry||!object(currentRecord)||digest(currentRecord)!==entry.recordSha256||typeof currentRecord.content!=='string'||sha(currentRecord.content)!==entry.contentSha256)fail('PRIVATE_ASSET_RECORD_CHANGED')

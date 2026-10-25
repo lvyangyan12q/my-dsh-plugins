@@ -10,7 +10,7 @@ import {spawnSync} from 'node:child_process'
 import {fileURLToPath} from 'node:url'
 import {pathToFileURL} from 'node:url'
 import {fixture} from './legacy-adoption-fixture.mjs'
-import {mountKaogong} from '../src/production-host.ts'
+import {mountHistoricalFixture} from './historical-host-fixture.mjs'
 import {KaogongInstancePool} from '../src/instance-state.ts'
 import {ApplicationDirectory} from '../../worktable/01_content/src/framework/applications.mjs'
 import {ResourceDirectory} from '../../worktable/01_content/src/framework/resources.mjs'
@@ -49,7 +49,7 @@ test('actual authenticated Host adopts separate raw/private/bank proofs, renders
   const config={legacySourceHome:home,legacyMaterialRoot:materialRoot,questionImageRoot:{get:()=>imageRoot},mineru:{get:()=>({outputDir:join(materialRoot,'storage/mineru')})}}
   const offlinePath=join(root,'preview.private.json'),offline=spawnSync(process.execPath,['--import','tsx/esm',fileURLToPath(new URL('../scripts/preview-legacy-plan.mjs',import.meta.url)),'--home',home,'--material-root',materialRoot,'--question-image-root',imageRoot,'--mineru-root',join(materialRoot,'storage/mineru'),'--plan',offlinePath,'--preview',join(root,'preview.md')],{encoding:'utf8'})
   assert.equal(offline.status,0,offline.stderr);const offlinePlan=JSON.parse(await readFile(offlinePath,'utf8'));assert.equal(offlinePlan.status,'blocked');assert.equal(offlinePlan.counts.rawMaterials,1);assert.equal(offlinePlan.counts.privateImageBindings,1);assert.equal(offlinePlan.counts.bankImageBindings,1)
-  stop=await mountKaogong(ctx,config)
+  stop=await mountHistoricalFixture(ctx,config)
   const post=async body=>{const req=Readable.from([JSON.stringify(body)]);Object.assign(req,{url:'/api/kaogong/adoption',method:'POST',auth:true,headers:{'content-type':'application/json'}});const res=response();await routes.get('exact:/api/kaogong/adoption').handler(req,res);return res}
   const preview=await post({action:'prepare',sourceKey:'legacy-default'});assert.equal(preview.status,200,JSON.stringify(preview.value));assert.equal(preview.value.counts.rawMaterials,1);assert.equal(preview.value.counts.privateImageBindings,1)
   const plan=(await post({action:'export',id:preview.value.id})).value;assert.equal((await apps.snapshot()).instances.length,0)
@@ -60,7 +60,7 @@ test('actual authenticated Host adopts separate raw/private/bank proofs, renders
   for(const[view,kind,id,reference]of [[history.viewId,'knowledge',ids.private,refs.private],[history.viewId,'knowledge',ids.raw,refs.raw],[library.viewId,'knowledge',ids.raw,refs.raw],[history.viewId,'bank','q','题目_images/original.png']]){const res=await image(view,kind,id,reference);assert.equal(res.status,200,JSON.stringify(res.value));assert.deepEqual(res.value,png);assert.equal(res.headers['cache-control'],'private, no-store')}
   assert.equal((await image(otherView.id,'knowledge',ids.private,refs.private)).status,404);assert.equal((await image(library.viewId,'knowledge',ids.private,refs.private)).status,404)
   assert.equal((await image(history.viewId,'bank','q','unrelated.png')).status,404);assert.equal((await image(history.viewId,'bank','q','题目_images/original.png',{root:imageRoot})).status,404)
-  await stop();stop=await mountKaogong(ctx,config);assert.equal((await image(history.viewId,'knowledge',ids.private,refs.private)).status,200)
+  await stop();stop=await mountHistoricalFixture(ctx,config);assert.equal((await image(history.viewId,'knowledge',ids.private,refs.private)).status,200)
   const grant=(await resources.connection({viewId:history.viewId,ownerViewId:library.viewId,resourceId:'materials'})).connection;await resources.revoke(grant.id,grant.revision)
   assert.equal((await image(history.viewId,'knowledge',ids.raw,refs.raw)).status,404);assert.equal((await image(history.viewId,'bank','q','题目_images/original.png')).status,200,'bank authorization must not depend on the materials grant')
   assert.equal((await image(history.viewId,'knowledge',ids.private,refs.private)).status,200,'own private continuity must not depend on revoked source grants')

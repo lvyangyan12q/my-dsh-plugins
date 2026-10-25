@@ -1,4 +1,4 @@
-import {useMemo} from 'react'
+import {useMemo,useState} from 'react'
 import type {Context} from '@deepseek-ai/cordis'
 import {requireProtocol} from 'dsh-worktable/sdk'
 import type {ApplicationViewProps} from 'dsh-worktable/sdk'
@@ -7,6 +7,7 @@ import {KaogongStateContext,KaogongPresentationContext,KaogongViewState,KaogongV
 import {KaogongTransportContext,KaogongServicesContext} from './view-context.tsx'
 import {SdkClassroom,sdkLearningStyles} from './sdk-classroom.tsx'
 import {KnowledgeLibrary} from './knowledge-reader.tsx'
+import {MaterialImportPanel} from './materials-panel.tsx'
 
 export {KaogongView} from './kaogong-view.tsx'
 export type {KaogongViewProps,KaogongTeachingRequest,PracticeContext,PracticeResult} from './kaogong-view.tsx'
@@ -14,6 +15,7 @@ export {KaogongStateContext,KaogongPresentationContext,KaogongViewState,KaogongV
 export const inject=['worktableApplicationViews']
 
 type ViewProps=ApplicationViewProps&{state?:KaogongViewState;presentation?:KaogongViewState}
+function LibraryContent({viewId}:{viewId:string}){const[revision,setRevision]=useState(0);return <section className="kg-sdk-classroom" aria-label="考公资料库"><style>{sdkLearningStyles}</style><header><strong>考公资料库</strong><small>资料原址保留；库内私有资料不自动共享。学习笔记、成绩和老师会话不接入。</small></header><div className="kg-sdk-content"><MaterialImportPanel viewId={viewId} onApplied={()=>setRevision(value=>value+1)}/><KnowledgeLibrary key={revision} active/></div></section>}
 function ScopedView(props:ViewProps&{library?:boolean}){
   const state=useMemo(()=>props.state??new KaogongViewState(props.instance.id),[props.state,props.instance.id])
   const presentation=useMemo(()=>props.presentation??new KaogongViewState(props.instance.id,props.view.id),[props.presentation,props.instance.id,props.view.id])
@@ -21,7 +23,7 @@ function ScopedView(props:ViewProps&{library?:boolean}){
   const services=useMemo(()=>({roles:props.roles,tasks:props.tasks}),[props.roles,props.tasks])
   if(state.instanceId!==props.instance.id||presentation.instanceId!==props.instance.id||presentation.viewId!==props.view.id)return <p role="alert">学习视图状态归属不符；未读取其他实例。</p>
   return <KaogongStateContext.Provider value={state}><KaogongPresentationContext.Provider value={presentation}><KaogongTransportContext.Provider value={transport}><KaogongServicesContext.Provider value={services}>
-    {props.library?<section className="kg-sdk-classroom" aria-label="考公资料库"><style>{sdkLearningStyles}</style><header><strong>考公资料库</strong><small>来源资料只读展示；学习笔记、成绩和老师会话不在此共享。</small></header><div className="kg-sdk-content"><KnowledgeLibrary active/></div></section>:<SdkClassroom key={props.view.id} {...props}/>}
+    {props.library?<LibraryContent viewId={props.view.id}/>:<SdkClassroom key={props.view.id} {...props}/>}
   </KaogongServicesContext.Provider></KaogongTransportContext.Provider></KaogongPresentationContext.Provider></KaogongStateContext.Provider>
 }
 function owned(props:ViewProps,id:string){return props.application.id===id&&props.instance.appId===id&&props.view.instanceId===props.instance.id&&props.instance.id!=='default'}

@@ -1,6 +1,7 @@
 import type {Context} from '@deepseek-ai/cordis'
 import type {Domain} from '@deepseek-ai/dsh-storage-domain'
 import type {LegacyRoleSnapshot,CapabilityRef} from 'dsh-worktable/sdk'
+import {requireProtocol} from 'dsh-worktable/sdk'
 import {isAbsolute} from 'node:path'
 import {inspectLegacy} from './legacy-inspection.mjs'
 import {legacyRoleInput,prepareLegacyAdoption,type LegacyInspectionSnapshot,type LegacyAdoptionPlan} from './legacy-adoption-plan.ts'
@@ -32,6 +33,7 @@ export function legacyRoleSource(snapshot:LegacyInspectionSnapshot,sourceKey:str
 }
 /** Authenticated Host-owned preparation/import service. Merely mounting it never reads the legacy home. */
 export function createAdoptionOwner(ctx:Context,host:KaogongHost,metadata:Domain<typeof adoptionDomain>,planMetadata:Domain<typeof adoptionPlansDomain>,config:Config){
+ requireProtocol(ctx.worktableProtocol.describe(),['legacy-role-source-inspection-v1','legacy-role-target-inspection-v1','host-provision-intent-v1'])
  const journals=metadata.table('journals'),plans=planMetadata.table('plans'),privacy=metadata.table('private_knowledge')
  let closing=false;const pending=new Set<Promise<unknown>>()
  const capture=async()=>{if(!config.legacySourceHome||!isAbsolute(config.legacySourceHome))fail('EXPLICIT_LEGACY_HOME_REQUIRED');return (await inspectLegacy({home:config.legacySourceHome})).snapshot}

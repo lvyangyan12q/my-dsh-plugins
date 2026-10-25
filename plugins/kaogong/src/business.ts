@@ -35,6 +35,8 @@ import { KNOWLEDGE_KINDS } from './types.ts'
 
 /** Plugin configuration, validated by the schemastery schema below. */
 export interface Config {
+  /** Old bank/knowledge source, read only after explicit material preview. */
+  materialSourceHome?: string
   /** Read only on explicit adoption preview; mounting never reads or writes this old home. */
   legacySourceHome?: string
   /** Canonical legacy material collection root, independent from the parser jobs outputDir. */
@@ -50,6 +52,7 @@ export interface Config {
 
 /** Schemastery schema for {@link Config}. */
 export const Config = z.object({
+  materialSourceHome: z.string().description('新部署保留资料的旧home绝对路径；仅资料接入预览读取题库和知识，不读取会话或学习记录，不移动原文件'),
   legacySourceHome: z.string().description('旧考公独立 home 的明确绝对路径；仅点击接管预览时只读检查，不自动迁移或写旧目录'),
   legacyMaterialRoot: z.string().description('旧资料集合的明确绝对根目录；仅接管预览使用，与MinerU作业outputDir独立，留空不推断'),
   roleCwd: z.string().description('角色新会话的明确绝对目录；留空不注册角色。课堂内容仍可读，恢复原生角色入口前需配置目录'),

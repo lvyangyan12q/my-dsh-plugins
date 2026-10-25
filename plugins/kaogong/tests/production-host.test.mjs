@@ -8,6 +8,8 @@ import {Readable} from 'node:stream'
 import {fixture as legacyFixture} from './legacy-adoption-fixture.mjs'
 import {pathToFileURL} from 'node:url'
 import {mountKaogong} from '../src/production-host.ts'
+import {createAdoptionOwner} from '../src/legacy-adoption-owner.ts'
+import {mountHistoricalFixture} from './historical-host-fixture.mjs'
 import {KaogongInstancePool} from '../src/instance-state.ts'
 import {ApplicationDirectory} from '../../worktable/01_content/src/framework/applications.mjs'
 import {describeProtocol} from '../../worktable/01_content/src/sdk.mjs'
@@ -29,7 +31,7 @@ test('actual Host rejects an older descriptor without planned target inspection 
   worktableApplications:{contribute:async()=>{calls.push('application registration');throw Error('registration must not start')}},
   storageDomain:{open:async()=>{calls.push('storage open');throw Error('storage must not open')}},
  }
- await assert.rejects(mountKaogong(ctx,{}),/legacy-role-target-inspection-v1/)
+ assert.throws(()=>createAdoptionOwner(ctx,null,null,null,{}),/legacy-role-target-inspection-v1/)
  assert.deepEqual(calls,[])
 })
 
@@ -39,7 +41,7 @@ test('actual production Host installs empty views, routes tools by native Sessio
  const wrappedFacility={open:async spec=>{const domain=await facility.open(spec);return new Proxy(domain,{get(target,key){if(key==='table')return name=>{const table=target.table(name);return new Proxy(table,{get(table,key){if(key==='put')return async(id,value)=>{if(spec.name.endsWith('_knowledge')&&id==='private'&&value.title==='unknown source')importPuts++;await table.put(id,value);if(failImport&&spec.name.endsWith('_knowledge')&&id==='private'){failImport=false;throw Error('lost import receipt')}};const value=Reflect.get(table,key,table);return typeof value==='function'?value.bind(table):value}})};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})}}
  const ctx={worktableProtocol:{describe:describeProtocol},storageDomain:wrappedFacility,worktableApplications:apps,worktableResources:resources,worktableRoles:{contribute:()=>()=>{},contributeLegacy:()=>()=>{},read:async()=>({binding:null}),resolveSession:async(app,id,{access})=>{if(id==='history'&&access==='write')throw Error('read-only');if(id!=='native-B')throw Error('unbound');return {instanceId:B.id}}},worktableCapabilities:{contribute:()=>()=>{}},worktableTaskOwners:{contribute:(app,kind,owner)=>{owners.set(kind,owner);return ()=>owners.delete(kind)}},agentPresets:{register:async()=>async()=>{}},connection:{admit:request=>request.auth?{peer:{}}:{rejection:401}},webServer:{register:route=>{routes.set(route.kind+':'+route.path,route);return ()=>routes.delete(route.kind+':'+route.path)}},tools:{register:(tool,options)=>{tools.set(tool.name,{tool,options});return ()=>tools.delete(tool.name)}}};let B;
  try{
-  const configuration={legacySourceHome:legacyHome,questionImageRoot:{get:()=>undefined},mineru:{get:()=>undefined}};stop=await mountKaogong(ctx,configuration);const library=await apps.createInstance('kaogong-library',null),A=await apps.createInstance('kaogong',null);B=await apps.createInstance('kaogong',null);const lv=await apps.createView(library.id),av=await apps.createView(A.id),bv=await apps.createView(B.id);assert.equal(owners.size,2)
+  const configuration={legacySourceHome:legacyHome,questionImageRoot:{get:()=>undefined},mineru:{get:()=>undefined}};stop=await mountHistoricalFixture(ctx,configuration);const library=await apps.createInstance('kaogong-library',null),A=await apps.createInstance('kaogong',null);B=await apps.createInstance('kaogong',null);const lv=await apps.createView(library.id),av=await apps.createView(A.id),bv=await apps.createView(B.id);assert.equal(owners.size,2)
   const get=async(view,path='/api/kaogong/knowledge',auth=true)=>{const res=response();await routes.get('exact:'+path).handler({url:path+'?viewId='+view,method:'GET',auth},res);return res}
   assert.deepEqual((await get(av.id)).value.entries,[]);assert.equal((await get(av.id,undefined,false)).status,403)
   assert.equal(await tools.get('kaogong_knowledge_add').options.when({agent:{session:{id:'outside'}}}),false)
@@ -80,7 +82,7 @@ test('actual production Host installs empty views, routes tools by native Sessio
   await writeFile(join(legacyHome,'storages/kaogong_knowledge.json'),Buffer.concat([original,Buffer.from(' ')]))
   const changed=await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:true});assert.equal(changed.status,409);assert.equal(changed.value.code,'LEGACY_SOURCE_CHANGED');assert.equal((await get(exported.targets.history.viewId)).status,403)
   await writeFile(join(legacyHome,'storages/kaogong_knowledge.json'),original)
-  await stop();stop=await mountKaogong(ctx,configuration)
+  await stop();stop=await mountHistoricalFixture(ctx,configuration)
   const completed=await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:true});assert.equal(completed.value.status,'applied');assert.equal(importPuts,1,'lost put receipt must not issue another native domain put');assert.equal((await apps.snapshot()).instances.length,5)
   assert.deepEqual((await get(exported.targets.history.viewId)).value.entries.map(row=>row.id),['private']);assert.deepEqual((await get(exported.targets.library.viewId)).value.entries,[])
   assert.deepEqual((await resources.call({viewId:exported.targets.history.viewId,resourceId:'materials',action:'read'})).value.rows,[],'unproven lectures cannot enter a shareable resource')
@@ -105,7 +107,7 @@ for(const ownershipAt of ['prepare','apply'])test(`actual Host blocks a source S
   const path=join(legacyHome,'storages/personal_workbench_role_bindings.json'),source=JSON.parse(await readFile(path,'utf8'))
   source.tables.bindings.synthetic={key:{appId:'kaogong',instanceId:'default',roleId:'teacher',subject:'行测-资料分析'},sessionId:'existing-native',presetId:preset,creation:{cwd:root},phase:'ready',selectedPreset:true,previousSessionIds:[]}
   await writeFile(path,JSON.stringify(source))
-  stop=await mountKaogong(ctx,{legacySourceHome:legacyHome,roleCwd:root,questionImageRoot:{get:()=>undefined},mineru:{get:()=>undefined}})
+  stop=await mountHistoricalFixture(ctx,{legacySourceHome:legacyHome,roleCwd:root,questionImageRoot:{get:()=>undefined},mineru:{get:()=>undefined}})
   const adoption=async body=>{const req=Readable.from([JSON.stringify(body)]);Object.assign(req,{method:'POST',url:'/api/kaogong/adoption',headers:{'content-type':'application/json'}});const res=response();await routes.get('exact:/api/kaogong/adoption').handler(req,res);return res}
   const before=await apps.snapshot()
   const preview=await adoption({action:'prepare',sourceKey:'legacy-default'})
@@ -119,4 +121,35 @@ for(const ownershipAt of ['prepare','apply'])test(`actual Host blocks a source S
   assert.deepEqual(await readFile(join(root,'roles.json')),roleBytes)
   assert.doesNotMatch(JSON.stringify(preview.value),/Private foreign teacher/)
  }finally{await stop?.();await roles.dispose();await resources.close();await apps.close();await backend.close();await nativeContext.fiber.dispose();await rm(root,{recursive:true,force:true});await rm(legacyHome,{recursive:true,force:true})}
+})
+
+test('fresh material-only Host import ignores broken old roles/learning and keeps private library material out of cross-instance grants',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'kaogong-material-host-')),source=await legacyFixture(),nativeContext=new Context();await nativeContext.plugin(Storage);const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend);const facility=new DomainFacility(nativeContext,{backend:'json'}),apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate),routes=new Map();let stop,lostReceipt=false,materialWrites=0; const importFacility={open:async spec=>{const domain=await facility.open(spec);return new Proxy(domain,{get(target,key){if(key==='table')return name=>{const table=target.table(name);return new Proxy(table,{get(target,key){if(key==='put')return async(id,value)=>{await table.put(id,value);if(spec.name.endsWith('_knowledge')&&id==='private'){materialWrites++;if(lostReceipt){lostReceipt=false;throw Error('lost material receipt')}}};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value}})}}
+ const ctx={worktableProtocol:{describe:describeProtocol},storageDomain:importFacility,worktableApplications:apps,worktableResources:resources,worktableRoles:{contribute:()=>()=>{},contributeLegacy:()=>()=>{},read:async()=>({binding:null}),resolveSession:async()=>{throw Error('no Native sessions')}},worktableCapabilities:{contribute:()=>()=>{}},worktableTaskOwners:{contribute:()=>()=>{}},agentPresets:{register:async()=>async()=>{}},connection:{admit:req=>req.auth?{peer:{}}:{rejection:401}},webServer:{register:route=>{routes.set(route.kind+':'+route.path,route);return ()=>routes.delete(route.kind+':'+route.path)}},tools:{register:()=>()=>{}}}
+ try{
+  await writeFile(join(source,'storages','personal_workbench_role_bindings.json'),'invalid old role bytes');await writeFile(join(source,'storages','kaogong_practice.json'),'invalid old practice bytes')
+  const original=await readFile(join(source,'storages','kaogong_knowledge.json'))
+  stop=await mountKaogong(ctx,{legacySourceHome:source,materialSourceHome:source,questionImageRoot:{get:()=>undefined},mineru:{get:()=>undefined}})
+  assert.equal(routes.has('exact:/api/kaogong/adoption'),false,'fresh deployment must not expose historical learner or Session adoption')
+  const library=await apps.createInstance('kaogong-library',null),lv=await apps.createView(library.id),learning=await apps.createInstance('kaogong',null),av=await apps.createView(learning.id)
+  const post=async(body,auth=true)=>{const req=Readable.from([JSON.stringify(body)]);Object.assign(req,{method:'POST',url:'/api/kaogong/material-import',headers:{'content-type':'application/json'},auth});const res=response();const route=routes.get('exact:/api/kaogong/material-import');assert.ok(route,'fresh library must expose the material-only import endpoint');await route.handler(req,res);return res}
+  const get=async view=>{const res=response();await routes.get('exact:/api/kaogong/knowledge').handler({method:'GET',url:'/api/kaogong/knowledge?viewId='+view,auth:true},res);return res}
+  assert.equal((await post({action:'prepare',viewId:lv.id},false)).status,401)
+  assert.equal((await post({action:'prepare',viewId:av.id})).status,409)
+  assert.equal((await post({action:'prepare',viewId:lv.id,path:'arbitrary'})).status,409)
+  const prepared=await post({action:'prepare',viewId:lv.id});assert.equal(prepared.status,200);assert.equal(prepared.value.counts.privateMaterials,1);assert.equal((await get(lv.id)).value.entries.length,0)
+  assert.equal((await post({action:'apply',viewId:lv.id,id:prepared.value.id,fingerprint:prepared.value.fingerprint,confirmed:false})).status,409)
+  lostReceipt=true
+  assert.equal((await post({action:'apply',viewId:lv.id,id:prepared.value.id,fingerprint:prepared.value.fingerprint,confirmed:true})).status,409)
+  assert.equal((await get(lv.id)).status,403,'lost receipt must quarantine all normal library reads')
+  await assert.rejects(resources.call({viewId:lv.id,resourceId:'materials',action:'read'}),/尚未确认/)
+  await stop();stop=await mountKaogong(ctx,{materialSourceHome:source,questionImageRoot:{get:()=>undefined},mineru:{get:()=>undefined}})
+  assert.equal((await get(lv.id)).status,403,'restart must not silently resume an unknown import')
+  const alternateView=await apps.createView(library.id)
+  const applied=await post({action:'apply',viewId:alternateView.id,id:prepared.value.id,fingerprint:prepared.value.fingerprint,confirmed:true});assert.equal(applied.status,200);assert.equal(applied.value.status,'applied');assert.equal(materialWrites,1,'same-plan recovery confirms existing original bytes without another put')
+  assert.deepEqual((await get(lv.id)).value.entries.map(row=>row.id),['private'],'own library can inspect its private lecture')
+  await resources.share({ownerViewId:lv.id,consumerInstanceId:learning.id,resourceId:'materials'});assert.deepEqual((await get(av.id)).value.entries,[],'a material grant must not expose private or unproven lecture rows')
+  assert.deepEqual(await readFile(join(source,'storages','kaogong_knowledge.json')),original)
+  const l2=await apps.createInstance('kaogong-library',null),v2=await apps.createView(l2.id),next=await post({action:'prepare',viewId:v2.id});await writeFile(join(source,'storages','kaogong_knowledge.json'),Buffer.concat([original,Buffer.from(' ')]));assert.equal((await post({action:'apply',viewId:v2.id,id:next.value.id,fingerprint:next.value.fingerprint,confirmed:true})).status,409);assert.deepEqual((await get(v2.id)).value.entries,[],'source byte change is refused before data import')
+ }finally{await stop?.();await resources.close();await apps.close();await backend.close();await nativeContext.fiber.dispose();await rm(root,{recursive:true,force:true});await rm(source,{recursive:true,force:true})}
 })
