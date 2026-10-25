@@ -60,7 +60,7 @@ test('new application roles use one generic native Agent with isolated system pe
     handles.set(sessionId,handle);workspace.sessionIds.push(sessionId)
     return {sessionId,agentPreset}
    },
-   projections:async({sessionId})=>{const agent=handles.get(sessionId)?.agent;return agent?{kind:'sequenced',values:{agentPreset:ctx.agentPresets.presetForSession(agent.session)}}:undefined},
+   projections:async({sessionId})=>{const agent=handles.get(sessionId)?.agent;if(agent)return {kind:'sequenced',values:{agentPreset:ctx.agentPresets.presetForSession(agent.session)}};using observation=await ctx.sessionQuery.observeSession(sessionId);return {kind:'sequenced',values:observation.projections.values}},
   })
   ctx.provide('worktableApplications',{assertEnabled:async()=>{if(!enabled)throw Error('application disabled')},assertInstanceReady:async()=>{},snapshot:async()=>({applications:[{id:'kaogong',kind:'deep'}],instances:[{id:'instance-a',appId:'kaogong'},{id:'instance-b',appId:'kaogong'}]})})
   await ctx.plugin({apply:mountRoles})
@@ -93,6 +93,41 @@ test('new application roles use one generic native Agent with isolated system pe
   removeRoles=await installKaogongRoles(ctx,dir)
   const advisor=await ctx.worktableRoles.ensure('instance-a','class-advisor')
   const teacher=await ctx.worktableRoles.ensure('instance-b','teacher.data-analysis')
+  ctx.provide('agentDefaultModel',{currentSelection:()=>({provider:'offline',model:'not-called'})})
+  await ctx.plugin((await load('packages/session-query/session-query-sqlite/lib/index.js')).default,{path:':memory:'})
+  const {ApiSessionAgentController}=await load('packages/api/session-controller/src/agent.ts');const coldController=new ApiSessionAgentController(ctx)
+  const {createUserMessage}=await load('packages/llm/llm/lib/index.js'),{agentEvents:historyEvents}=await load('packages/core/agent/lib/index.js')
+  const historyAgent=handles.get(advisor.sessionId).agent
+  const invocation=createUserMessage({content:[{type:'text',text:'/kaogong-teach'}],source:{kind:'user'}})
+  historyAgent.session.append('turn/start',{turn:1});historyAgent.session.append('user/message',invocation,{surfaceOp:'append'})
+  const historyStep=await historyEvents(ctx,historyAgent).waterfall('agent/pre-step',{messages:[invocation],turn:1,step:1,signal:new AbortController().signal},async()=>({kind:'enter',messages:[invocation]}))
+  const injections=historyStep.messages.filter(message=>message.id!==invocation.id)
+  assert.ok(injections.some(message=>message.source.kind==='skill-invocation'),'Use the real Skill invocation path to persist historical instructions')
+  for(const message of injections)historyAgent.session.append('user/message',message,{surfaceOp:'append'})
+  historyAgent.session.append('turn/end',{turn:1,reason:{kind:'completed'}})
+  await ctx.sessionPersistence.flush()
+  const old=handles.get(advisor.sessionId);await old.dispose();handles.delete(advisor.sessionId)
+  assert.equal(ctx.agents.get(advisor.sessionId),undefined,'The next open must be cold, not reuse a live Agent')
+  const cold=await Promise.all([
+   ctx.worktableRoles.open('instance-a','class-advisor',advisor.sessionId,advisor.revision),
+   coldController.resolveAgent(advisor.sessionId),
+   ...Array.from({length:12},()=>ctx.worktableRoles.read('instance-b','teacher.data-analysis')),
+  ])
+  assert.ok(cold[1].agent,cold[1].error?.message)
+  assert.ok(cold[1].agent.session.snapshotEvents().some(event=>event.type==='user/message'&&event.data.source.kind==='skill-invocation'),'Cold restore replays the real persisted Skill instruction history')
+  assert.deepEqual(cold.slice(2).map(row=>row.unavailable).filter(Boolean),[])
+  handles.set(advisor.sessionId,{agent:cold[1].agent,dispose:()=>ctx.agents.get(advisor.sessionId)?.ctx.fiber.dispose()})
+  assert.equal((await ctx.skills.get('kaogong-teach',{scope:cold[1].agent,cwd:dir})).provider,'kaogong-packaged-teaching')
+  const observations=await Promise.all(Array.from({length:24},(_,i)=>i%2?ctx.worktableRoles.read('instance-a','class-advisor'):ctx.worktableRoles.assertNativeSession(handles.get(advisor.sessionId).agent).then(()=>({unavailable:null}))))
+  assert.deepEqual(observations.map(row=>row.unavailable).filter(Boolean),[],'Concurrent role inspection must not destabilize an already mounted Native Skill catalog')
+  const brokenRoot=join(dir,'broken-skills');await mkdir(join(brokenRoot,'unreadable','SKILL.md'),{recursive:true})
+  const broken=await ctx.plugin(await load('packages/skill/skill-filesystem/lib/index.js'),{providerName:'broken-directory-fixture',includeDefaultRoots:false,customSkillDirs:[brokenRoot],watch:false})
+  try{
+   assert.equal((await ctx.skills.snapshot({scope:cold[1].agent,cwd:dir})).complete,false)
+   assert.equal((await ctx.worktableRoles.read('instance-a','class-advisor')).unavailable.code,'catalog-incomplete','Serializing our scopes must not bypass a truly unreadable Skill directory')
+   await assert.rejects(ctx.worktableRoles.assertNativeSession(cold[1].agent),/角色Skills目录不完整/)
+  }finally{await broken.dispose()}
+  assert.equal((await ctx.worktableRoles.read('instance-a','class-advisor')).unavailable,null,'A failed validation must not poison the critical-section queue')
   assert.equal((await ctx.worktableRoles.ensure('instance-a','class-advisor')).sessionId,advisor.sessionId,'Repeated role opening must not mount a second persona')
   assert.equal(advisor.presetId,'standard','New application roles must not need their own native mode')
   assert.equal(teacher.presetId,'standard')
