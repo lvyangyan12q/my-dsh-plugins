@@ -4,6 +4,7 @@ import {join} from 'node:path'
 import {RoleDirectory,RoleStore,RoleError} from './roles.mjs'
 import {CapabilityDirectory} from './capabilities.mjs'
 import {createRoleAuthority} from './role-native.mjs'
+import {bindRoleSessionScopes} from './role-session-scopes.mjs'
 /** Independent optional fiber; no coupling to legacy workbench or its execution tools. */
 export function mountRoles(ctx){
  let owner=null,closing=false
@@ -16,6 +17,7 @@ export function mountRoles(ctx){
    const cleanup=async()=>{capabilities.closing=true;roles.closing=true;await Promise.allSettled([capabilities.pending,roles.pending]);const results=await Promise.allSettled([capabilities.dispose(),roles.dispose()]);const errors=results.filter(row=>row.status==='rejected');if(errors.length)throw new AggregateError(errors.map(row=>row.reason),'角色服务已结束；部分清理失败，请检查诊断。')}
    try{
     await capabilities.restore()
+    bindRoleSessionScopes(child,roles)
     const runtime={roles,capabilities,connection:child.connection,requests,lifetime}
     child.provide('worktableCapabilities',capabilities);child.provide('worktableRoles',roles);owner=runtime
     yield async()=>{if(owner===runtime)owner=null;await lifetime.close(cleanup)}

@@ -25,7 +25,7 @@ const metadata=defineDomain({name:'kaogong_platform_rc3',version:1,tables:{
 }})
 /** Public SDK registration only; legacy stores are not opened or adopted on activation. */
 export async function mountKaogong(ctx:Context,config:Config){
- requireProtocol(ctx.worktableProtocol.describe(),['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1','instance-admission-v1','task-owner-no-admission-v1','host-provision-intent-v1','legacy-role-source-inspection-v1','legacy-role-target-inspection-v1'])
+ requireProtocol(ctx.worktableProtocol.describe(),['application-task-owner-v1','host-resource-call-v1','native-role-context-v1','private-resource-v1','instance-admission-v1','task-owner-no-admission-v1','host-provision-intent-v1','legacy-role-source-inspection-v1','legacy-role-target-inspection-v1','native-role-session-scope-v1'])
  const disposers:(()=>void|Promise<void>)[]=[]
  let host:KaogongHost|undefined
  let adoption:ReturnType<typeof createAdoptionOwner>|undefined

@@ -17,7 +17,7 @@ test('authenticated browser adoption selects owner-inspected identity; arbitrary
   sessionPersistence:{stat:async id=>['native-current','native-history'].includes(id)?{header:{id,cwd:dir},formatStatus:'current'}:undefined},
   sessionController:{projections:async({sessionId})=>({kind:'sequenced',values:{agentPreset:sessionId==='native-history'?'private.previous':'private.reader'}}),create:async()=>{creates++;throw Error('must not create')}},
   agentPresets:{resolve:async id=>({id}),acquireScope:async()=>({key:{},[Symbol.asyncDispose]:async()=>{}})},skills:{snapshot:async()=>({complete:true,skills:[]})},
-  provide:(key,value)=>services.set(key,value),inject:(keys,fn)=>fn(ctx),effect:(factory,label)=>effects.push({factory,label}),webServer:{register:route=>{routes.push(route);return()=>{}}}}
+  provide:(key,value)=>services.set(key,value),on:()=>()=>{},inject:(keys,fn)=>fn(ctx),effect:(factory,label)=>effects.push({factory,label}),webServer:{register:route=>{routes.push(route);return()=>{}}}}
  async function request(body){const req=Readable.from([Buffer.from(JSON.stringify(body))]);req.method='POST';req.headers={'content-type':'application/json'};const res={writeHead(status){this.status=status},end(text){this.body=JSON.parse(text)}};await routes[0].handler(req,res);return res}
  try{
   mountRoles(ctx);iterator=effects.find(row=>row.label==='worktable role and capability owner').factory();activation=await iterator.next()
