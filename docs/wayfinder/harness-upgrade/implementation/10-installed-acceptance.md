@@ -58,3 +58,9 @@ target: 0.2.1-rc.3
 新归档与[公开来源回执](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.2.receipt.json)已保存仓库：`0.2.0-rc.3.2`，520960 bytes，SHA256 `6f30424b5fa8c643dbc36bd065d11b083276ca10f52906752e7cbce01b663aef`，构建源码 `5fe314ab473d9bf23777af4df94b6b18db45ec38`，依赖 Worktable `0.10.0-rc.3.4`。规定 pack 已执行构建及公开类型、Host153/153、客户端9/9、领域21/21、归档1/1；实际包63文件，解包 Host/客户端工厂检查通过。
 
 3101 已通过官方 CLI 安装该准确候选组合并启动，真实 UI、原生 AI 及恢复验收仍在进行，不能把安装成功或 pack 门禁代替整体验收。未切换正式3080、未执行正式资料接入；旧 Kaogong rc.3.1 与 Worktable rc.3.3 冻结包保持不变。
+
+## Kaogong rc.3.3 候选替代复验 · 2026-10-25
+
+修复后的 K.3 / W.5 精确组合已产新不可变归档：[公开来源回执](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.3.receipt.json)。K.3为521739 bytes、63文件，SHA256 `500f00ffabafbc73b6b98df6b5227881cd2c9bdaed2c3de8411cd62e8f3d1ebf`，源码 `0e09e6c20dd13062a7efb6a5a62813df3375a343`。构建/公开类型、Host153、客户端9、领域21、归档1均通过；新增官方compiled CLI隔离安装门禁在无开发依赖祖先的全新HOME核验真实公共PluginPackages installation Cordis/preset/Scope身份及实际K/W Host导入，全部通过。
+
+独立3101已由官方CLI安装该准确组合并启动，真实浏览器角色创建、模型、授权/撤销与恢复仍在复验。历史K.2失败证据保留，新辅助门禁不能提前取消其两个实际阻塞或关闭13/15/16/10。本票保持open；没有正式资料接入、正式注册或推送，既有归档均保留原字节。
