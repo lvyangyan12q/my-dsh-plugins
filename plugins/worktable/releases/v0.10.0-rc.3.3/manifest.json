@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "name": "dsh-worktable",
+  "version": "0.10.0-rc.3.3",
+  "date": "2026-10-25",
+  "scope": "Windows Web stage acceptance",
+  "host": {
+    "name": "deepseek-harness",
+    "version": "0.2.1-rc.3",
+    "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+    "patched": false
+  },
+  "source": {
+    "fixCommit": "1e344593489e87fdf9b4c34299588c9bc9178817",
+    "packageCommit": "19be3d90a8fb5d54cbc57b97377307c3e4136706",
+    "integrationCommit": "ab9e735e36dbc1daccf4449c380cd1dab6a2c8ad",
+    "branch": "codex/worktable-framework"
+  },
+  "archives": [
+    {
+      "file": "dsh-worktable.tgz",
+      "bytes": 575318,
+      "sha256": "78928cad59e0622bc61895ee5d6d303d673dad86240c096aca11aa7366e70d8f"
+    },
+    {
+      "file": "dsh-worktable-0.10.0-rc.3.3.tgz",
+      "bytes": 575318,
+      "sha256": "78928cad59e0622bc61895ee5d6d303d673dad86240c096aca11aa7366e70d8f"
+    }
+  ],
+  "gates": {
+    "entry": "plugins/worktable/01_content/npm run pack",
+    "exactPackageFiles": 9,
+    "source": {
+      "total": 346,
+      "passed": 344,
+      "failed": 0,
+      "skipped": 2,
+      "skipScope": "old environment checks"
+    },
+    "officialHostContracts": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "cleanInstallAndImport": true,
+    "installedClientFactory": true,
+    "actualNativeGenerationPreviewDraftEnable": true,
+    "actualRevisionPreservesOriginalArtifacts": true,
+    "sameArchiveReinstallColdRecovery": true
+  },
+  "evidence": "docs/wayfinder/harness-upgrade/implementation/12-worktable-freeze.md",
+  "limitations": [
+    "Windows Web only; Desktop/macOS not actually accepted",
+    "nonempty message queue and private-capability failure branches have auxiliary contract coverage only",
+    "some concurrency/late-response branches are not actual UI evidence",
+    "full embedded native header and unsent-image auto-recovery await upstream public capabilities",
+    "Kaogong integration and formal legacy migration remain deferred"
+  ],
+  "deliveryReceipt": "See freeze ticket for formal registration and remote commit; not implied by archive availability"
+}
