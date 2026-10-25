@@ -5,11 +5,17 @@ parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
 status: in-progress
 implementation_status: production-source-integrated
-acceptance_status: synthetic-import-passed-grant-revoke-ui-blocked
+acceptance_status: grant-revoke-host-passed-reader-cache-blocked
 assignee: kaogong-materials
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+## 最新 W.5/K.3 真实授权复验 · 2026-10-25
+
+通用资料连接面板已实际选择合成资料库的公开原始资料并显式授权给学习实例。应用自身刷新后仅显示1份公开资料，没有带出私有讲义，PNG图片可见。随后通过界面显式撤销，连接显示已撤销，新的资料读取返回403并受阻；授权、私有排除和Host撤销拒绝的这部分真实证据成立。
+
+**应用读取界面仍未通过撤销验收**：K.3阅读器虽显示读取错误，仍保留先前缓存的正文、图片及“1份”计数，界面清理修复正在独立切片处理。不能将后端403写作整个读取体验已通过。另有[13](13-kaogong-role-scope.md)source/compiled Scope身份阻塞，真实AI为0次。本票保持in-progress，待新归档清理缓存、恢复及完整资料流程复验；正式资料未接入。
 
 ## 最新真实安装结果 · 2026-10-25
 

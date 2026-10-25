@@ -5,11 +5,17 @@ parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
 status: in-progress
 implementation_status: production-source-integrated
-acceptance_status: blocked-installed-role-persona-collision
+acceptance_status: blocked-source-compiled-scope-identity
 assignee: kaogong-roles-scope
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+## 最新 K.3 真实复验：仍未通过 · 2026-10-25
+
+W.5/K.3已在独立3101通过官方source CLI启动并继续此前合成学习实例；课堂及总结恢复，但首次创建辅导员仍报 `duplicate deployment:persona-prefix`，未产生真实模型请求。官方compiled CLI安装身份门禁通过，只证明该构建入口的身份检查，不能代替source CLI真实运行闭环。
+
+当前诊断为source CLI的TSX解析令Native Scope使用源码入口，而安装元数据的公开exports解析到编译入口，仍可能形成不同模块身份。源码/编译双入口的探针与修复正在独立切片进行，须新K.4归档复验，不覆盖K.3，不以已有153项测试关闭本票。3101自有进程已停止，合成数据保留；正式资料与环境未变。
 
 ## 最新真实安装结果 · 2026-10-25
 
