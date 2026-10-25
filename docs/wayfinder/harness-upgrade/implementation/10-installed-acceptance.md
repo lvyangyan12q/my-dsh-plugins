@@ -3,12 +3,22 @@ id: harness-rc3-installed-acceptance
 title: 新包真实安装与工作台考公完整用户验收
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 assignee: null
 blocked_by: [harness-rc3-host-consumers, harness-rc3-classroom-application, harness-rc3-kaogong-instances, harness-upgrade-acceptance-cutover]
-acceptance_status: blocked-stock-default-source-entry
+acceptance_status: passed-stock-source-k7-installed-scope
 target: 0.2.1-rc.3
 ---
+
+## 当前最终 Resolution · 2026-10-25 · W.7 / K.7
+
+官方stock源码命令从Native cwd启动且不设置 `TSX_TSCONFIG_PATH` 的真实UI已通过：旧辅导员冷输入enabled，私有教学Skill及精确轮次读取实际返回10题/9对/1错/0未答；计划90%/10题。全新空学习实例保持0题0资料0库，首次新建班主任真实回答其身份且使用标准Native preset，没有全局注册应用角色模式。
+
+停止自有进程后官方CLI移除两插件、再安装准确永久W.7/K.7，28个Session/存储/cordis配置文件hash全部相同。再次stock启动，新班主任cold输入可用、空实例仍0，原学习实例仍90%/10题及题库10、已完成课堂/反思/总结保留。原PDF/PNG在原根读取正常。
+
+本票当前范围关闭。问题/Stop/审批拒绝及允许一次完整模型矩阵按准确W.7/K.6证据保留：K.7仅修改配置候选发现，W.7、Native桥接和评分业务代码相同；K.7新增四入口、真实角色/工具及生命周期证据，不伪称完整矩阵或物理IME重做。正式profile已官方离线注册W.7/K.7并精确启用考公及专用已登记roleCwd，其他依赖/bundle/patch/资料引用保持；正式3080未启动。11远程推送/最后清理待完成；正式原资料未导入、历史未迁删，09继续open排除。
+
+[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)与[清理事故及恢复](../../../evidence/2026-10-25/rc3-cleanup-recovery.json)持有准确边界。下方状态为早期历史，不覆盖本节。
 
 ## 当前阻塞：官方默认源码启动 · 2026-10-25
 

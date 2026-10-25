@@ -1,18 +1,18 @@
 # 工作台接入 Harness：步骤、影响与回退
 
-## 当前接入顺序 · 2026-10-25 · Harness rc.3 / W.7 / K.6
+## 当前接入顺序 · 2026-10-25 · Harness rc.3 / W.7 / K.7
 
-本节覆盖下方旧版本/旧入口的历史说明。当前目标是未经补丁的官方 Harness `0.2.1-rc.3`（`22ddee3792402c3e70ec5f86a63c3e3e895a2f60`），准确工作台 `0.10.0-rc.3.7` 与考公 `0.2.0-rc.3.6`。源码及规格在插件仓库 `D:/programming/workspace/my-dsh`，当前集成分支 `codex/kaogong-rc3-completion`。插件兼容公开宿主接口，不修改 Harness 源码或原生Editor。
+本节覆盖下方旧版本/旧入口的历史说明。当前最终验收和接入目标是未经补丁的官方 Harness `0.2.1-rc.3`（`22ddee3792402c3e70ec5f86a63c3e3e895a2f60`），准确工作台 `0.10.0-rc.3.7` 与考公 `0.2.0-rc.3.7`。源码及规格在插件仓库 `D:/programming/workspace/my-dsh`，当前集成分支 `codex/kaogong-rc3-completion`。插件兼容公开宿主接口，不修改 Harness 源码或原生Editor。
 
-目前已在独立3101实际验证冷角色、原生输入/工具、统计、合成资料与同准确包移除重装恢复；[当前证据及剩余门槛](evidence/2026-10-25/rc3-fresh-installed-current.json)是进度入口。正式注册、推送和清理仍由11控制，不能仅因本说明存在就认定已执行。最终准确包重装后的Native问题/Stop/审批矩阵已通过。source入口实测带显式TSX_TSCONFIG_PATH，未设置该变量的裸pnpm start:web仍在只读兼容核对，不能提前写作已验入口。
+目前已在独立3101实际验证冷角色、原生输入/工具、统计、合成资料与同准确包移除重装恢复；[当前证据及剩余门槛](evidence/2026-10-25/rc3-fresh-installed-current.json)是进度入口。正式profile已官方离线注册准确W.7/K.7，3080尚未运行；推送和最后安全清理由11继续控制。最终准确包重装后的Native问题/Stop/审批矩阵已通过。K.7已使用官方stock源码命令、Native cwd且不设置TSX_TSCONFIG_PATH实际验收；无需用户添加该变量。
 
 | 顺序 | 操作 | 影响与核对 |
 | --- | --- | --- |
 | 1 | 核对实际CLI入口、Native提交与目标 `DSH_HOME` / web profile，停止该目标自有进程 | 只选一个目标；从D盘启动不表示profile也在D盘。保留其他实例及原生工作区。 |
 | 2 | 在服务停止时备份目标profile及配置，记录插件、12个既有bundle、9个既有依赖、会话/存储与资料引用清单及hash | 新增私有备份，不提交凭据或业务数据到仓库。不得用整库覆盖方式升级。 |
-| 3 | 使用新的专用角色工作目录 `D:/programming/workspace/my-dsh/workspaces/kaogong` | 用户已授权创建且已通过官方公开WorkspaceRegistry登记；`/workspaces/`被Git忽略。它用于老师生成学习文件，不能把原材料根当cwd。切换roleCwd仍是后续正式配置步骤，登记目录本身不表示插件已启用。 |
+| 3 | 使用新的专用角色工作目录 `D:/programming/workspace/my-dsh/workspaces/kaogong` | 用户已授权创建且已通过官方公开WorkspaceRegistry登记；`/workspaces/`被Git忽略。它用于老师生成学习文件，不能把原材料根当cwd。正式roleCwd已精确切到该目录并启用考公；该登记不改变原资料根，也未启动3080。 |
 | 4 | 核对准确W.7/K.6归档的版本、bytes及SHA，对照公开receipt；经官方CLI在所选profile安装 | 新增/更新所选插件、对应bundle与锁定；保留其他插件、依赖和配置，不手工改原生bundle。版本不匹配时停止，不临时放宽peer范围。 |
-| 5 | 仅在考公自己的配置中将 `roleCwd` 指向上述已登记专用目录，保留其他原有配置并显式启用所需插件 | 旧正式配置仍disabled且cwd指向原材料根；升级前不能误以为旧配置已经安全。新部署使用标准Native preset和应用私有角色/Skills，无需全局注册班主任模式。 |
+| 5 | 仅在考公自己的配置中将 `roleCwd` 指向上述已登记专用目录，保留其他原有配置并显式启用所需插件 | 旧正式配置原为disabled且cwd指向原材料根；本次已精确改为启用并使用新专用目录，其他配置保留。新部署使用标准Native preset和应用私有角色/Skills，无需全局注册班主任模式。 |
 | 6 | 启动选定官方入口，验证菜单、空新学习实例、角色创建/冷恢复、Native输入/轨迹/提问/Stop/审批 | 新学习实例为空；不迁、不删旧会话、成绩、笔记或学习记录。不要把Native idle/unknown当作业务完成。 |
 | 7 | 有需要时在资料库界面只读预览原资料，检查来源revision、目标空库、条数、私有排除、图像/PDF/MinerU引用和fingerprint | 预览不搬原文件、不接管历史会话、不自动共享。正式资料当前仅只读清点；必须对这一份具体materials-only计划另行明确确认后才写入新目标。 |
 | 8 | 显式将资料库公开题库/资料授权给指定学习实例，在应用里刷新后再使用；按需撤销 | 私有/来源不明资料不默认共享；撤销阻断后续读取并清旧阅读正文/图像，不删除原资料和已发Native历史。 |
@@ -21,11 +21,15 @@
 官方compiled CLI的安装命令形态如下。执行前先按步骤1设置并复核目标 `DSH_HOME`；文件均来自插件仓库，安装到所选profile而非复制进Harness源码：
 
 ```powershell
-node D:/programming/workspace/deepseek-harness/apps/cli/lib/bin.js plugin --profile web add D:/programming/workspace/my-dsh/plugins/worktable/01_content/dist/v0.10.0-rc.3.7/dsh-worktable.tgz D:/programming/workspace/my-dsh/plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.6.tgz --offline
+node D:/programming/workspace/deepseek-harness/apps/cli/lib/bin.js plugin --profile web add D:/programming/workspace/my-dsh/plugins/worktable/01_content/dist/v0.10.0-rc.3.7/dsh-worktable.tgz D:/programming/workspace/my-dsh/plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.7.tgz --offline
 ```
 
 原资料路径仍以实际明确配置为准：`materialSourceHome`是只读资料元数据来源；`legacyMaterialRoot`是原集合根；`questionImageRoot`是题图根；`mineru.outputDir`是实际解析作业根。这四者不能互相猜测、改为同一个目录或用新的roleCwd替代。资料不存在/证明不符时保留并拒绝，不猜路径补齐，不自动运行MinerU。
 
+
+正式安装后的核对已完成：工作台9文件、考公65文件与准确归档逐一hash一致；其他9依赖/12bundle及原patch/MinerU/题图路径保持深相等。正式profile未启动。独立验收同包移除重装的28个Session/存储/配置hash相同；正式资料仅只读清点，尚未导入。
+
+Windows临时工作树清理曾触发长路径/链接遍历事故，3个Native tracked文件已按官方提交精确恢复、2个编译依赖库按官方构建重建；最终Native clean22ddee且K.7四入口Host167/公开types通过。后续按nofollow清点→非递归断指针→零链接证明→删除自有文件，详见[脱敏恢复记录](evidence/2026-10-25/rc3-cleanup-recovery.json)。这不是接入需要修改Native源码，亦不能隐去此次实际触及及恢复。
 ## 以下为旧阶段操作记录与背景（按当前接入顺序解释）
 
 2026-10-24 最新检查点：原生 rc.3 已从 D 盘原仓库完成官方构建并启动 3080，使用原 C 盘 home；[启动与验证详情](harness-rc3-readiness.md)。下文适配、隔离验收和正式部署顺序继续有效；本次原生启动不代表各插件已完成新版本验收，较早的停机表述按当时状态解读。

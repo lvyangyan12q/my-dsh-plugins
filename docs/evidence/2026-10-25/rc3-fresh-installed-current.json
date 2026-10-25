@@ -2,8 +2,8 @@
   "schema": 1,
   "date": "2026-10-25",
   "scope": "Fresh Kaogong deployment on unpatched Harness rc.3; synthetic data only",
-  "status": "explicit-source-entry-passed-stock-default-entry-blocked",
-  "source": "edcdae28518ca62db063d47701dd65cc66bccdc1",
+  "status": "passed-stock-source-scope-formally-registered-not-started-remote-pending",
+  "source": "81fa66b355daa8fd776aed5de8ef51eca6621ad4",
   "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
   "archives": [
     {
@@ -14,16 +14,16 @@
     },
     {
       "name": "@deepseek-ai/dsh-tool-kaogong",
-      "version": "0.2.0-rc.3.6",
-      "bytes": 528410,
-      "sha256": "f53057fc6b9cb281ad30c638c452db328baa50bcf03a4cfe0117f4169e68284a"
+      "version": "0.2.0-rc.3.7",
+      "bytes": 528487,
+      "sha256": "7f5fa9122b2af4e3b146d0dbd0467188cea4968c84a5039a2c20f3a3682f7537"
     }
   ],
   "currentInstalledChecks": {
-    "entry": "Official source CLI with explicit TSX_TSCONFIG_PATH; exact installed archives; bare start:web without that variable not yet verified",
+    "entry": "Official stock source CLI from Native cwd: node --import tsx/esm apps/cli/src/bin.ts web; TSX_TSCONFIG_PATH unset",
     "nativeMenu": "Preserved; no Kaogong global mode entries",
-    "coldRoles": "Counselor, teacher and advisor restore with enabled Native input; no catalogue-incomplete error",
-    "exactRoundReview": "Native kaogong_practice_read for explicit validated round returns 9 correct and 1 incorrect",
+    "coldRoles": "K7 stock startup restores prior counselor and new advisor with enabled Native input; standard Native preset and private application role",
+    "exactRoundReview": "K7 actual private teaching Skill plus explicit practice_read returns single-round answered10/correct9/incorrect1/unanswered0",
     "plan": "90 percent accuracy, 10 answered questions, 1 public material and bank count10 visible",
     "lesson": "Explicit learner completion persisted with exact practice link, reflection and saved summary",
     "materials": "Original synthetic PDF/PNG remain readable from pinned source; private lecture excluded from consumer",
@@ -37,9 +37,9 @@
     "taskPanel": "Native-admitted task may remain idle/unknown; no resume error; not inferred to mean lesson completion",
     "removeReinstall": {
       "method": "Stop owned host; official CLI remove both plugins and reinstall exact same archives",
-      "verifiedFiles": 26,
+      "verifiedFiles": 28,
       "allSha256Equal": true,
-      "after": "Same lesson, score, original material and Native history restored"
+      "after": "Exact W7/K7 remove/add: all28 Session/storage/config hashes equal; stock restart retains empty instance, enabled advisor and prior90percent/10-question completed lesson/reflection"
     },
     "finalNativeMatrix": {
       "question": "Real two-option ask_user_question selected then submitted; model confirmed",
@@ -49,7 +49,9 @@
       "accessMode": "Workspace modification mode retained",
       "scoreAfter": "Plan still 90 percent and 10 answered questions",
       "pendingNativeOperation": false
-    }
+    },
+    "newEmptyInstance": "0 questions,0 materials,empty bank; first advisor model identifies class-advisor; existing scores remain0",
+    "nativeMatrixVersionBoundary": "Full question/Stop/deny/allow matrix on exact W7/K6; K7 changes only config candidate discovery, with W7 bridge/scoring source unchanged. K7 repeats four-entry, actual private role/Skill/round read,new role and stock cold lifecycle; no entire model-matrix or physicalIME repeat claimed"
   },
   "earlierInstalledChecks": {
     "K5": "Synthetic v3 import; ten-question scoring, learner reflection, explicit completion; instance isolation and shared-source revocation",
@@ -58,7 +60,7 @@
   },
   "review": {
     "baseline": "a81ac773fd2599744085ffd098cc32d3f4418e2c",
-    "target": "edcdae28518ca62db063d47701dd65cc66bccdc1",
+    "target": "81fa66b355daa8fd776aed5de8ef51eca6621ad4",
     "standardsFindings": 0,
     "specFindings": 0,
     "scope": "Source review; independent of installed acceptance"
@@ -70,12 +72,25 @@
     "formalMaterials": "Read-only inventory only; concrete materials-only plan and confirmation required before import",
     "privateOrUnproven": "No default sharing",
     "physicalIME": "Bounded reuse of existing human Native rc.3 editor candidate/backspace/newline proof; no new physical test claimed",
-    "nativeSourceModified": false
+    "nativeFinalState": "Clean official22ddee with no retained source patch; actual cleanup incident and recovery documented separately"
   },
   "pending": [
-    "K6 default stock source startup without TSX_TSCONFIG_PATH refused Native scope; K7 clean install and actual stock startup validation required before formal registration",
-    "Formal plugin registration with dedicated registered roleCwd; preserve unrelated dependencies/bundles and configs",
-    "Remote delivery and authorized cleanup",
-    "Any formal material import requires its own concrete preview and confirmation"
-  ]
+    "Actual remote push proof and closing delivery ticket11",
+    "Safe no-follow cleanup of three active owned worktrees",
+    "Formal material import needs its own concrete preview and confirmation"
+  ],
+  "formalRegistration": {
+    "officialOfflineCLI": true,
+    "versions": "W7/K7",
+    "started": false,
+    "port3080Running": false,
+    "roleCwd": "Dedicated officially registered application workspace, not original materials root",
+    "kaogongEnabled": true,
+    "otherDependencies": 9,
+    "otherBundles": 12,
+    "otherPatchesMineruImagePaths": "Deep-equal to original",
+    "installedPayload": "All9 W files and65 K files hashes equal archives",
+    "formalMaterialsImported": false,
+    "historyMigratedOrDeleted": false
+  }
 }

@@ -1,5 +1,11 @@
 # rc.3 实施工单图
 
+## 最终当前入口 · 2026-10-25 · W.7 / K.7
+
+准确W.7/K.7已通过官方stock源码命令（无TSX_TSCONFIG_PATH）的真实角色/Skill/精确轮次、空新实例与同包卸载重装恢复，28个持久文件hash相同；20/13/10恢复closed。正式profile已注册准确归档并使用已登记专用roleCwd，但3080未运行。11保持in-progress等实际push及最后安全清理。09历史迁移open排除、正式原资料仅只读清点未导入，资料接入仍另预览确认。
+
+[当前脱敏实页记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)、[事故恢复记录](../../../evidence/2026-10-25/rc3-cleanup-recovery.json)及[逐步接入说明](../../../worktable-integration.md)为当前入口。以下W.7/K.6或stock入口阻塞段落仅为对应历史，不代表当前仍阻塞。准确版本的Native矩阵与IME证据边界分别保留。
+
 ## 当前交付检查点 · 2026-10-25 · W.7 / K.6
 
 当前准确包同源 `edcdae28518ca62db063d47701dd65cc66bccdc1`，脱敏[实际验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)与[逐步接入说明](../../../worktable-integration.md)置于当前入口。独立source CLI已验证角色冷恢复输入可用、精确轮次9/10读取、计划统计、显式课堂完成保持、原PDF/PNG读取，以及官方CLI移除再安装同准确包后26个持久文件hash一致。最终准确包重装后的Native问题/Stop/审批拒绝与允许一次已实际复验通过，10按此独立安装范围关闭。
