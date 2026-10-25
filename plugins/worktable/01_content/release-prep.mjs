@@ -220,7 +220,8 @@ if (anchorRun.status !== 0) {
   console.error(anchorRun.stderr || anchorRun.stdout)
   process.exit(1)
 }
-console.log('[release-prep] split anchor dom tests passed (8 scenarios, on installed artifact)')
+console.log(anchorRun.stdout.trim())
+console.log('[release-prep] split anchor dom tests passed (on installed artifact)')
 const nativePanelTest = join(HERE, '..', '04_test', 'project-navigation-installed.test.mjs')
 const nativePanelRun = spawnSync(process.execPath, [nativePanelTest, join(inst, 'node_modules', 'dsh-worktable', 'lib', 'client.js')], { cwd: HERE, stdio: 'pipe', encoding: 'utf8' })
 if (nativePanelRun.status !== 0) {
