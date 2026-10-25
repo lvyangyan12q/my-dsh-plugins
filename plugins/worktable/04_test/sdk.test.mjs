@@ -4,7 +4,15 @@ import {mkdtemp,rm} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {mountApplications} from '../01_content/src/framework/host.mjs'
-import {requireProtocol} from '../01_content/src/sdk.mjs'
+import {describeProtocol,requireProtocol} from '../01_content/src/sdk.mjs'
+
+test('planned target ownership inspection has an explicit discoverable requirement, distinct from pure legacy source inspection',()=>{
+ const descriptor=describeProtocol()
+ assert.ok(requireProtocol(descriptor,['legacy-role-target-inspection-v1']).features.includes('legacy-role-target-inspection-v1'))
+ const older={...descriptor,features:descriptor.features.filter(feature=>feature!=='legacy-role-target-inspection-v1')}
+ assert.ok(requireProtocol(older,['legacy-role-source-inspection-v1']))
+ assert.throws(()=>requireProtocol(older,['legacy-role-target-inspection-v1']),/legacy-role-target-inspection-v1/)
+})
 
 test('independent consumer discovers declared protocol and refuses unknown versions or missing features without creating work',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'worktable-sdk-')),services=new Map(),effects=[];

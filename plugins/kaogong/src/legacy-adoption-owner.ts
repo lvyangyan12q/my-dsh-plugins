@@ -41,12 +41,12 @@ export function createAdoptionOwner(ctx:Context,host:KaogongHost,metadata:Domain
  }):()=>{}
  const workflow=new LegacyAdoptionWorkflow({
   store:{read:async id=>{const row=journals.get(id);if(!row)return null;const stored=plans.get(row.planId);if(!stored||stored.fingerprint!==row.planFingerprint||stored.id!==row.id)fail('ADOPTION_CHECKPOINT_INVALID');const {planId,planFingerprint,...journal}=row;return {...journal,plan:stored.plan}},write:async row=>{const {plan,...journal}=row,stored=plans.get(plan.id);if(stored&&stored.fingerprint!==plan.fingerprint)fail('ADOPTION_INTENT_CONFLICT');if(!stored)await plans.put(plan.id,{id:plan.id,fingerprint:plan.fingerprint,plan});await journals.put(row.id,{...journal,planId:plan.id,planFingerprint:plan.fingerprint})}},
-  source:{verify:async(plan,phase)=>{if(!config.legacySourceHome)fail('EXPLICIT_LEGACY_HOME_REQUIRED');await revalidatePlanSource(plan,config.legacySourceHome);if(phase)await revalidateAdoptionEvidence(plan,await capture());if(phase)for(const role of plan.roles){const inspection=await ctx.worktableRoles.inspectLegacySource('kaogong',role.roleId,role.sourceKey);if(inspection.status!=='ready'||inspection.fingerprint!==role.inspection.fingerprint)fail('LEGACY_NATIVE_SOURCE_CHANGED')}}},
+  source:{verify:async(plan,phase)=>{if(!config.legacySourceHome)fail('EXPLICIT_LEGACY_HOME_REQUIRED');await revalidatePlanSource(plan,config.legacySourceHome);if(phase)await revalidateAdoptionEvidence(plan,await capture());if(phase)for(const role of plan.roles){const inspection=await ctx.worktableRoles.inspectLegacySource('kaogong',role.roleId,role.sourceKey,{instanceId:plan.targets.history.instanceId});if(inspection.status!=='ready'||inspection.fingerprint!==role.inspection.fingerprint)fail('LEGACY_NATIVE_SOURCE_CHANGED')}}},
   applications:ctx.worktableApplications,
   target:{run:(instanceId,operation)=>host.importState(instanceId,state=>operation(adoptionTarget(state)))},
   privacy:{markPrivate:async(instanceId,ids,sourceRevision)=>{for(const id of ids)await privacy.put(privateKnowledgeKey(instanceId,id),{instanceId,id,sourceRevision})}},
   roles:{apply:async(plan,role)=>{
-   const fresh=await ctx.worktableRoles.inspectLegacySource('kaogong',role.roleId,role.sourceKey)
+   const fresh=await ctx.worktableRoles.inspectLegacySource('kaogong',role.roleId,role.sourceKey,{instanceId:plan.targets.history.instanceId})
    if(fresh.status!=='ready'||fresh.fingerprint!==role.inspection.fingerprint)fail('LEGACY_NATIVE_SOURCE_CHANGED')
    const preview=await ctx.worktableRoles.previewAdoption(plan.targets.history.instanceId,role.roleId,role.sourceKey)
    if(preview.status==='blocked'||preview.sourceFingerprint!==role.inspection.fingerprint||!preview.fingerprint)fail('LEGACY_NATIVE_TARGET_BLOCKED')
@@ -62,7 +62,7 @@ export function createAdoptionOwner(ctx:Context,host:KaogongHost,metadata:Domain
  })
  const run=<T>(operation:()=>Promise<T>)=>{if(closing)return Promise.reject(Error('Adoption service is stopping'));const task=Promise.resolve().then(operation);pending.add(task);void task.finally(()=>pending.delete(task)).catch(()=>{});return task}
  return {
-  prepare:()=>run(async()=>{const snapshot=await capture(),evidence=await inspectAdoptionEvidence(snapshot,{materialRoot:config.legacyMaterialRoot,questionImageRoot:config.questionImageRoot.get(),mineruRoot:config.mineru.get()?.outputDir});const plan=pinAdoptionEvidence(await prepareLegacyAdoption({snapshot,materialEvidence:evidence.materials,inspectRole:input=>ctx.worktableRoles.inspectLegacySource('kaogong',input.roleId,input.sourceKey)}),evidence);await workflow.remember(plan);return adoptionPreview(plan)}),
+  prepare:()=>run(async()=>{const snapshot=await capture(),evidence=await inspectAdoptionEvidence(snapshot,{materialRoot:config.legacyMaterialRoot,questionImageRoot:config.questionImageRoot.get(),mineruRoot:config.mineru.get()?.outputDir});const plan=pinAdoptionEvidence(await prepareLegacyAdoption({snapshot,materialEvidence:evidence.materials,inspectRole:(input,target)=>ctx.worktableRoles.inspectLegacySource('kaogong',input.roleId,input.sourceKey,target)}),evidence);await workflow.remember(plan);return adoptionPreview(plan)}),
   inspect:(id:string)=>run(async()=>{const row=await workflow.inspect(id);return adoptionPreview(row.plan,row.status)}),
   apply:(input:{id:string;fingerprint:string;confirmed:boolean})=>run(()=>ctx.worktableApplications.withProvision(input.id,async()=>{const row=await workflow.apply(input);return adoptionPreview(row.plan,row.status)})),
   exportPlan:(id:string)=>run(async()=>structuredClone((await workflow.inspect(id)).plan)),

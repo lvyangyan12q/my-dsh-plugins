@@ -22,6 +22,17 @@ const {default:Storage}=await load('packages/storage/storage/lib/index.js')
 const {JsonStorageBackend}=await load('packages/storage/storage-json/lib/index.js')
 const {DomainFacility}=await load('packages/storage/storage-domain/lib/index.js')
 const response=()=>({status:0,value:null,writeHead(code){this.status=code},end(value){this.value=JSON.parse(value)}})
+test('actual Host rejects an older descriptor without planned target inspection before registration or writes, regardless of JavaScript argument acceptance',async()=>{
+ const calls=[],descriptor=describeProtocol(),ctx={
+  worktableProtocol:{describe:()=>({...descriptor,features:descriptor.features.filter(feature=>feature!=='legacy-role-target-inspection-v1')})},
+  worktableRoles:{inspectLegacySource:async(_app,_role,_source,_target)=>{calls.push('inspect');return {status:'ready'}}},
+  worktableApplications:{contribute:async()=>{calls.push('application registration');throw Error('registration must not start')}},
+  storageDomain:{open:async()=>{calls.push('storage open');throw Error('storage must not open')}},
+ }
+ await assert.rejects(mountKaogong(ctx,{}),/legacy-role-target-inspection-v1/)
+ assert.deepEqual(calls,[])
+})
+
 test('actual production Host installs empty views, routes tools by native Session and enforces explicit library grant/revoke and pinned adoption recovery',async()=>{
  const root=await mkdtemp(join(tmpdir(),'kaogong-production-')),nativeContext=new Context();await nativeContext.plugin(Storage);const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend);const facility=new DomainFacility(nativeContext,{backend:'json'});const apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate);const routes=new Map(),tools=new Map(),owners=new Map();let stop,otherPool,publicRoles,publicTasks;let nativeCreates=0,nativePrompts=0;
  const legacyHome=await legacyFixture();let failImport=false,importPuts=0
@@ -76,4 +87,36 @@ test('actual production Host installs empty views, routes tools by native Sessio
   assert.equal((await resources.call({viewId:exported.targets.history.viewId,resourceId:'teaching',action:'read'})).value.rows.length,1,'private original lecture remains usable by its own teaching context')
   await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:true});assert.equal((await apps.snapshot()).instances.length,5);assert.deepEqual(await readFile(join(legacyHome,'storages/kaogong_knowledge.json')),original)
  }finally{await publicTasks?.close();await publicRoles?.dispose();await stop?.();await otherPool?.close();await resources.close();await apps.close();await backend.close();await nativeContext.fiber.dispose();await rm(root,{recursive:true,force:true});await rm(legacyHome,{recursive:true,force:true})}
+})
+
+for(const ownershipAt of ['prepare','apply'])test(`actual Host blocks a source Session owned by another application before ${ownershipAt} target or business import`,async()=>{
+ const root=await mkdtemp(join(tmpdir(),'kaogong-owned-source-')),legacyHome=await legacyFixture(),nativeContext=new Context()
+ await nativeContext.plugin(Storage)
+ const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend)
+ const facility=new DomainFacility(nativeContext,{backend:'json'}),apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate)
+ const preset='personal-workbench.kaogong-teacher.v1',roles=new RoleDirectory(await RoleStore.open(join(root,'roles.json')),apps,{validate:async()=>({presetId:preset}),validateAttachment:async()=>{},validateExisting:async()=>{},hydrateLegacy:async()=>assert.fail('empty history'),validateLegacy:async row=>({sessionId:row.sessionId,presetId:row.presetId,cwd:row.creation.cwd,status:'current'}),create:async()=>assert.fail('preflight cannot create Native Sessions')},apps.gate)
+ const routes=new Map(),ctx={worktableProtocol:{describe:describeProtocol},storageDomain:facility,worktableApplications:apps,worktableResources:resources,worktableRoles:roles,worktableCapabilities:{contribute:()=>()=>{}},worktableTaskOwners:{contribute:()=>()=>{}},agentPresets:{register:async()=>async()=>{}},connection:{admit:()=>({peer:{}})},webServer:{register:route=>{routes.set(route.kind+':'+route.path,route);return()=>{}}},tools:{declare:()=>{},register:()=>()=>{}}}
+ let stop
+ try{
+  await apps.contribute({id:'foreign',title:'Foreign',version:'1',protocolVersion:1,kind:'deep',views:[{id:'page',title:'Page'}]})
+  roles.contribute('foreign',[{id:'teacher',title:'Private foreign teacher',agent:{kind:'agent',source:'managed',id:'teacher'},creation:{cwd:root}}])
+  const owner=await apps.createInstance('foreign',null)
+  if(ownershipAt==='prepare')await roles.attach(owner.id,'teacher','existing-native',null,0)
+  const path=join(legacyHome,'storages/personal_workbench_role_bindings.json'),source=JSON.parse(await readFile(path,'utf8'))
+  source.tables.bindings.synthetic={key:{appId:'kaogong',instanceId:'default',roleId:'teacher',subject:'行测-资料分析'},sessionId:'existing-native',presetId:preset,creation:{cwd:root},phase:'ready',selectedPreset:true,previousSessionIds:[]}
+  await writeFile(path,JSON.stringify(source))
+  stop=await mountKaogong(ctx,{legacySourceHome:legacyHome,roleCwd:root,questionImageRoot:{get:()=>undefined},mineru:{get:()=>undefined}})
+  const adoption=async body=>{const req=Readable.from([JSON.stringify(body)]);Object.assign(req,{method:'POST',url:'/api/kaogong/adoption',headers:{'content-type':'application/json'}});const res=response();await routes.get('exact:/api/kaogong/adoption').handler(req,res);return res}
+  const before=await apps.snapshot()
+  const preview=await adoption({action:'prepare',sourceKey:'legacy-default'})
+  assert.equal(preview.status,200);assert.equal(preview.value.status,ownershipAt==='prepare'?'blocked':'ready')
+  if(ownershipAt==='prepare')assert.ok(preview.value.roles.some(role=>role.blockers.some(row=>row.code==='session-owned')))
+  else await roles.attach(owner.id,'teacher','existing-native',null,0)
+  const roleBytes=await readFile(join(root,'roles.json'))
+  const result=await adoption({action:'apply',id:preview.value.id,fingerprint:preview.value.fingerprint,confirmed:true})
+  assert.equal(result.status,409);assert.equal(result.value.code,ownershipAt==='prepare'?'ADOPTION_PLAN_BLOCKED_OR_CHANGED':'LEGACY_NATIVE_SOURCE_CHANGED')
+  const after=await apps.snapshot();assert.deepEqual(after.instances,before.instances);assert.deepEqual(after.views,before.views)
+  assert.deepEqual(await readFile(join(root,'roles.json')),roleBytes)
+  assert.doesNotMatch(JSON.stringify(preview.value),/Private foreign teacher/)
+ }finally{await stop?.();await roles.dispose();await resources.close();await apps.close();await backend.close();await nativeContext.fiber.dispose();await rm(root,{recursive:true,force:true});await rm(legacyHome,{recursive:true,force:true})}
 })

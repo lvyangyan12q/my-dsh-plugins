@@ -22,7 +22,7 @@ export class RoleStore{
 export class RoleDirectory {
  constructor(store,applications,authority,gate=new AdmissionGate()){this.gate=gate;this.store=store;this.applications=applications;this.authority=authority;this.roles=new Map();this.pending=Promise.resolve();this.closing=false;this.adoptions=new RoleAdoptions(this,reject)}
  contributeLegacy(appId,inspector){return this.adoptions.contribute(appId,inspector)}
- inspectLegacySource(appId,roleId,sourceKey){return this.serial(()=>this.adoptions.inspect(appId,roleId,sourceKey))}
+ inspectLegacySource(appId,roleId,sourceKey,target){return this.serial(()=>this.adoptions.inspect(appId,roleId,sourceKey,target))}
  previewAdoption(instanceId,roleId,sourceKey){return this.serial(()=>this.adoptions.preview(instanceId,roleId,sourceKey))}
  applyAdoption(instanceId,roleId,sourceKey,fingerprint,confirmed){return this.serial(()=>this.adoptions.apply(instanceId,roleId,sourceKey,fingerprint,confirmed))}
  resolveSession(appId,sessionId,options){return this.serial(()=>this.adoptions.resolveSession(appId,sessionId,options))}

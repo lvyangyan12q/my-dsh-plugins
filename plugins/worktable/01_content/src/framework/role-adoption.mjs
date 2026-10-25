@@ -69,24 +69,29 @@ export class RoleAdoptions {
   this.assertOwner(appId,owner)
   return {owner,definition,source,sourceFingerprint:digest(source),inspectionFingerprint:digest({source,definition,evidence}),evidence}
  }
- async inspect(appId,roleId,sourceKey){
+ async inspect(appId,roleId,sourceKey,target){
   try{
    const plan=await this.inspectTrusted(appId,roleId,sourceKey)
+   if(target)await this.checkOwnership(appId,roleId,target.instanceId,plan)
    return {status:'ready',fingerprint:plan.inspectionFingerprint,blockers:[],source:{...plan.source,agent:plan.source.agent??plan.definition.agent},native:plan.evidence}
   }catch(error){return {status:'blocked',fingerprint:null,blockers:[{code:error.code??'legacy-preview-failed',reason:error.code?error.message:'旧绑定无法验证，原记录保留。'}]}}
+ }
+ async checkOwnership(appId,roleId,instanceId,plan){
+  if(!text(instanceId))this.reject('legacy-target-invalid','接管预检需要固定目标身份。')
+  const {source,sourceFingerprint}=plan,state=await this.directory.store.snapshot(),key=keyOf(instanceId,roleId),binding=state.bindings.find(row=>row.key===key)??null
+  if(state.bindings.some(row=>row.key!==key&&row.appId===appId&&row.adoption?.sourceKey===source.sourceKey))this.reject('legacy-source-owned','旧绑定来源已经接管到其他实例或角色。')
+  if(binding&&(!binding.adoption||binding.adoption.sourceKey!==source.sourceKey||binding.adoption.sourceFingerprint!==sourceFingerprint||binding.revision!==binding.adoption.bindingRevision))this.reject('adoption-binding-changed','目标角色已有不同或更新的绑定，未覆盖原身份。')
+  const ids=new Set([source.sessionId,...source.previousSessions.map(row=>row.sessionId)])
+  if(state.bindings.some(row=>row.key!==key&&[row.sessionId,...row.previousSessionIds].some(id=>ids.has(id))))this.reject('session-owned','当前或历史原生会话已归属其他角色或实例。')
+  this.assertOwner(appId,plan.owner)
+  return binding
  }
  async prepare(instanceId,roleId,sourceKey){
   const directory=this.directory
   const {instance}=await directory.definition(instanceId,roleId,true)
   const plan=await this.inspectTrusted(instance.appId,roleId,sourceKey,{instanceId,roleId})
-  const {owner,definition,source,sourceFingerprint,evidence}=plan
-  const state=await directory.store.snapshot(),key=keyOf(instanceId,roleId)
-  const binding=state.bindings.find(row=>row.key===key)??null
-  if(state.bindings.some(row=>row.key!==key&&row.appId===instance.appId&&row.adoption?.sourceKey===sourceKey))this.reject('legacy-source-owned','旧绑定来源已经接管到其他实例或角色。')
-  if(binding&&(!binding.adoption||binding.adoption.sourceKey!==sourceKey||binding.adoption.sourceFingerprint!==sourceFingerprint||binding.revision!==binding.adoption.bindingRevision))this.reject('adoption-binding-changed','目标角色已有不同或更新的绑定，未覆盖原身份。')
-  const ids=new Set([source.sessionId,...source.previousSessions.map(row=>row.sessionId)])
-  if(state.bindings.some(row=>row.key!==key&&[row.sessionId,...row.previousSessionIds].some(id=>ids.has(id))))this.reject('session-owned','当前或历史原生会话已归属其他角色或实例。')
-  this.assertOwner(instance.appId,owner)
+  const {definition,source,evidence}=plan
+  const binding=await this.checkOwnership(instance.appId,roleId,instanceId,plan)
   await directory.applications.assertInstanceReady?.(instanceId,true)
   const fingerprint=binding?.adoption.fingerprint??digest({source,definition,instanceRevision:instance.revision,binding,evidence})
   return {...plan,instance,binding,fingerprint}
