@@ -35,14 +35,14 @@ const {loadProfileDirectory,createRuntimeResolution,PluginPackages}=await import
 const resolution=await createRuntimeResolution({installAnchor:anchor,home,profile:loadProfileDirectory('dsh',profile,anchor)})
 const ctx=new Context();await ctx.plugin(PluginPackages,{resolution})
 try{
- const anchors={}
+ const anchors={},directories=new Map()
  for(const name of ['@deepseek-ai/cordis','@deepseek-ai/dsh-agent-preset-registry','@deepseek-ai/dsh-scope']){
   const rows=ctx.pluginPackages.resolution.entries.filter(row=>row.scope==='installation'&&row.name===name);assert.equal(rows.length,1,name+' must have one official installation owner')
   const row=rows[0],dir=await realpath(row.packageDir),rel=relative(await realpath(native),dir);assert.ok(rel&&!rel.startsWith('..')&&!isAbsolute(rel),name+' escapes the official installation')
-  const pkg=JSON.parse(await readFile(join(dir,'package.json'),'utf8'));assert.equal(pkg.name,name);assert.equal(pkg.version,row.version);anchors[name]={version:row.version,directory:rel.replaceAll('\\\\','/')}
+  const pkg=JSON.parse(await readFile(join(dir,'package.json'),'utf8'));assert.equal(pkg.name,name);assert.equal(pkg.version,row.version);directories.set(name,dir);anchors[name]={version:row.version,directory:rel.replaceAll('\\\\','/')}
  }
  assert.equal(anchors['@deepseek-ai/dsh-agent-preset-registry'].version,anchors['@deepseek-ai/dsh-scope'].version)
- const scopeEntry=hostRequire.resolve('@deepseek-ai/dsh-scope'),scope=await import(pathToFileURL(scopeEntry).href),key={},owned=scope.createScope(ctx,key)
+ const scopeEntry=createRequire(join(directories.get('@deepseek-ai/dsh-scope'),'package.json')).resolve('@deepseek-ai/dsh-scope'),scope=await import(pathToFileURL(scopeEntry).href),key={},owned=scope.createScope(ctx,key)
  try{assert.equal(scope.scopeOf(owned.ctx),key)}finally{await owned.dispose()}
  const installed=await import(pathToFileURL(consumerRequire.resolve('@deepseek-ai/dsh-tool-kaogong')).href)
  const worktable=await import(pathToFileURL(consumerRequire.resolve('dsh-worktable')).href)
