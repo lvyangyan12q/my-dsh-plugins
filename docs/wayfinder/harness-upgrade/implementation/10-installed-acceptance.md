@@ -84,3 +84,9 @@ target: 0.2.1-rc.3
 K.4已通过规定完整pack并保存[公开来源回执](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.4.receipt.json)：源码 `ece1144b9543133ba4b101555df5db0478ff15e2`，524312 bytes、64文件，SHA256 `cc1fe69df1f676ee9a52aba877c5ebf5ac46ae2f17ccb132d92a5ed23d24f88d`，精确依赖W.5。构建/公开类型、Host154、客户端13、领域21、归档1及官方CLI无开发依赖祖先安装身份门禁均通过；Host明确包含source/compiled真实子进程和独立Scope副本，客户端包含4项撤销DOM回归。64文件唯一新增项是公开native-role-scope声明，无源码/测试/map入包。
 
 之前K.3在compiled入口实际完成3次模型请求：班主任身份答复、任课老师调用私有教学Skill并取得实际工具结果、普通未绑定Native会话对同Skill返回unknown，支持该入口的私有能力隔离；未将其写作完整课堂完成。该自有compiled进程已停止。独立3101随后经官方CLI安装K.4并启动source入口，K.4真实UI及完整教学/撤销缓存/恢复仍待复验，不用K.3compiled或新辅助门禁替代。13/15/16/10保持开放，正式环境和资料未改，未推送。
+
+## W.6 / K.5 配对候选已保存 · 2026-10-25
+
+同源 `edc5e09765938932cef2fdc597e5cb6be9aea0a1` 的两份候选经顺序完整pack通过，并仅新增精确归档与脱敏回执：[W.6](../../../../plugins/worktable/01_content/dist/v0.10.0-rc.3.6/release-receipt.json)双资产各581082 bytes，SHA256 `5dd0abf1c32f557382e738b13d397323589debf452b5c81c059d7d22520dc1de`；[K.5](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.5.receipt.json)528228 bytes、65文件，SHA256 `90c1601d328e8b423f8fa7c32c3587ac4db42aecaa2d93c0c9b8d1ba438bda91`。W官方合同9、源码359（357通过/2旧环境跳过）、根lease4、安装后锚点10及发布门禁通过；K Host164、客户端13、领域21、归档1、公开类型及官方CLI无开发祖先身份门禁通过。
+
+独立3101已停止此前自有source进程，准备仅在该实例切换独立v3合成资料并安装W.6/K.5。真实CSS/focus滚动、v3具体预览/接入与练习评分、Native完整流程及恢复仍待准确新包验收；13/15/17/18/10均不因pack关闭。旧归档原字节保留，正式插件配置和资料未改，未推送。

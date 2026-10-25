@@ -1,0 +1,37 @@
+{
+  "status": "candidate-pending-installed-browser-computed-css-and-full-user-flow",
+  "version": "0.10.0-rc.3.6",
+  "source": "edc5e09765938932cef2fdc597e5cb6be9aea0a1",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "entry": "01_content npm run pack",
+  "archiveFiles": 9,
+  "assets": [
+    {
+      "file": "plugins/worktable/01_content/dist/v0.10.0-rc.3.6/dsh-worktable-0.10.0-rc.3.6.tgz",
+      "bytes": 581082,
+      "sha256": "5dd0abf1c32f557382e738b13d397323589debf452b5c81c059d7d22520dc1de"
+    },
+    {
+      "file": "plugins/worktable/01_content/dist/v0.10.0-rc.3.6/dsh-worktable.tgz",
+      "bytes": 581082,
+      "sha256": "5dd0abf1c32f557382e738b13d397323589debf452b5c81c059d7d22520dc1de"
+    }
+  ],
+  "gates": {
+    "officialContracts": 9,
+    "source": {
+      "total": 359,
+      "pass": 357,
+      "fail": 0,
+      "skip": 2,
+      "skipScope": "existing old rc2 environment checks"
+    },
+    "nativeRootLease": 4,
+    "installedAnchors": 10,
+    "independentOfflineNpmInstallImport": true,
+    "installedClientFactoryAndNativeUI": true,
+    "rootLockVersionsAligned": true
+  },
+  "formalDeployed": false,
+  "pushed": false
+}
