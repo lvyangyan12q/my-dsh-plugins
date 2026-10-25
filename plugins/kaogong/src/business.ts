@@ -53,8 +53,8 @@ export interface Config {
 /** Schemastery schema for {@link Config}. */
 export const Config = z.object({
   materialSourceHome: z.string().description('新部署保留资料的旧home绝对路径；仅资料接入预览读取题库和知识，不读取会话或学习记录，不移动原文件'),
-  legacySourceHome: z.string().description('旧考公独立 home 的明确绝对路径；仅点击接管预览时只读检查，不自动迁移或写旧目录'),
-  legacyMaterialRoot: z.string().description('旧资料集合的明确绝对根目录；仅接管预览使用，与MinerU作业outputDir独立，留空不推断'),
+  legacySourceHome: z.string().description('历史配置保留；新部署不启用旧会话或学习接管。新资料接入请显式配置 materialSourceHome'),
+  legacyMaterialRoot: z.string().description('旧资料集合的明确绝对根目录；仅资料接入预览使用，与MinerU作业outputDir独立，留空不推断'),
   roleCwd: z.string().description('角色新会话的明确绝对目录；留空不注册角色。课堂内容仍可读，恢复原生角色入口前需配置目录'),
   questionImageRoot: z.string().description('历史题目图片的持久绝对目录；留空仅提供随包的两张已核验图片').volatile(),
   topN: z.natural().min(1).default(8),
