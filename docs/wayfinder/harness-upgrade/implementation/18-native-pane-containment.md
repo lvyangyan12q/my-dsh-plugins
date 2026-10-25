@@ -3,13 +3,20 @@ id: harness-rc3-native-pane-containment
 title: 原生会话长路径焦点触发横向隐式滚动的工作台兼容
 parent: harness-rc3-installed-acceptance
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 implementation_status: source-verified
-acceptance_status: pending-new-archive-and-installed-cua
+acceptance_status: passed-current-fresh-installed-scope
 assignee: worktable-native-pane-clip
 blocked_by: []
 target: 0.2.1-rc.3
 ---
+
+## 当前 Resolution · 2026-10-25 · W.7 / K.6
+
+Resolution：最终W.7/K.6浏览器computed双轴overflow均clip，内联priority均important；长路径/焦点操作后会话根scrollLeft=0、正文起点920，与应用右边界一致。此前准确包关闭split释放lease与Native内层滚动保留已实测，最终重装保留原生菜单/对话。本票当前兼容范围关闭，不修改Native或私有Editor。
+
+精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
+
 
 # Native 根容器溢出兼容 · 2026-10-25
 

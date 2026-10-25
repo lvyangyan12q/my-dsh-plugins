@@ -3,13 +3,28 @@ id: harness-rc3-practice-source-projection
 title: 按已授权来源接入练习展示证明
 parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 implementation_status: production-source-integrated
-acceptance_status: pending-new-k5-installed-user-flow
+acceptance_status: passed-current-explicit-source-entry-installed-scope
 assignee: kaogong-practice-proof
 blocked_by: [harness-rc3-kaogong-fresh-materials]
 target: 0.2.1-rc.3
 ---
+
+## 最终当前范围 Resolution · 2026-10-25 · W.7 / K.6
+
+准确最终包在官方CLI移除/重装和source冷恢复后，真实Native问题卡选项提交及模型确认、长生成Stop明确停止、独立合成文件的原生审批拒绝/允许一次均通过：拒绝文件不存在，允许文件精确内容一致，访问模式仍是工作区内修改。完成后计划页仍90%/10题；同课堂、练习关联、反思、显式完成、总结、原资料及Native历史保持。当前无待处理原生操作。本票按该独立安装与全新部署范围关闭；早前失败/待验段落仅作历史，以下边界持续有效。
+
+实际source启动带显式 `TSX_TSCONFIG_PATH`，不能据此声称未设置它的裸 `pnpm start:web` 已通过；该官方入口兼容只读核对仍待。正式注册/推送/清理由11继续处理。09历史会话/学习迁移排除并保留open；正式旧资料仅只读清点、未导入，写新空库仍须单独具体预览确认。IME仅使用已记录的同Native人工证据，不新增人工测试声明。
+
+[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)持有准确版本、SHA与证据边界。
+
+## 当前 Resolution · 2026-10-25 · W.7 / K.6
+
+原创合成v3十题按已授权owner的固定计划与索引签发，保留原stem/答案/评分；实际答对9题、1题学习者错误，反思与课堂显式完成保留。最终K.6 Native精确round读取再次确认9对1错，计划统计90%/10题，冷重装后同轮次/课堂恢复。新文本带经过验证的roundId，历史unknown回执不重放。本票保留开放等待10最终准确包矩阵统一验收，不将原题资料修复自动批准。
+
+精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
+
 # 17 · 按已授权资料来源接入练习展示证明
 
 状态：Host 必要接线与辅助回归已实现；新 K.5 官方安装及实际应用课堂/练习闭环待验收。K.4 冻结包不覆盖。

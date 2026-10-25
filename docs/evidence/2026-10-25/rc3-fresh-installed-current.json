@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "date": "2026-10-25",
+  "scope": "Fresh Kaogong deployment on unpatched Harness rc.3; synthetic data only",
+  "status": "passed-current-isolated-installed-scope-formal-delivery-pending",
+  "source": "edcdae28518ca62db063d47701dd65cc66bccdc1",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "archives": [
+    {
+      "name": "dsh-worktable",
+      "version": "0.10.0-rc.3.7",
+      "bytes": 581294,
+      "sha256": "5c567fd10f2199cd24a29fe06c9defda2d022d954f78f577482866ca4fa20ec5"
+    },
+    {
+      "name": "@deepseek-ai/dsh-tool-kaogong",
+      "version": "0.2.0-rc.3.6",
+      "bytes": 528410,
+      "sha256": "f53057fc6b9cb281ad30c638c452db328baa50bcf03a4cfe0117f4169e68284a"
+    }
+  ],
+  "currentInstalledChecks": {
+    "entry": "Official source CLI with explicit TSX_TSCONFIG_PATH; exact installed archives; bare start:web without that variable not yet verified",
+    "nativeMenu": "Preserved; no Kaogong global mode entries",
+    "coldRoles": "Counselor, teacher and advisor restore with enabled Native input; no catalogue-incomplete error",
+    "exactRoundReview": "Native kaogong_practice_read for explicit validated round returns 9 correct and 1 incorrect",
+    "plan": "90 percent accuracy, 10 answered questions, 1 public material and bank count10 visible",
+    "lesson": "Explicit learner completion persisted with exact practice link, reflection and saved summary",
+    "materials": "Original synthetic PDF/PNG remain readable from pinned source; private lecture excluded from consumer",
+    "nativeRoot": {
+      "computedOverflowX": "clip",
+      "computedOverflowY": "clip",
+      "inlinePriority": "important",
+      "scrollLeft": 0,
+      "bodyLeft": 920
+    },
+    "taskPanel": "Native-admitted task may remain idle/unknown; no resume error; not inferred to mean lesson completion",
+    "removeReinstall": {
+      "method": "Stop owned host; official CLI remove both plugins and reinstall exact same archives",
+      "verifiedFiles": 26,
+      "allSha256Equal": true,
+      "after": "Same lesson, score, original material and Native history restored"
+    },
+    "finalNativeMatrix": {
+      "question": "Real two-option ask_user_question selected then submitted; model confirmed",
+      "stop": "Long generation stopped through Native Stop and explicit stopped state",
+      "deny": "Outside-workspace synthetic write denied in Native approval; file absent",
+      "allowOnce": "Separate outside-workspace synthetic write allowed once; exact content verified; denied file remains absent",
+      "accessMode": "Workspace modification mode retained",
+      "scoreAfter": "Plan still 90 percent and 10 answered questions",
+      "pendingNativeOperation": false
+    }
+  },
+  "earlierInstalledChecks": {
+    "K5": "Synthetic v3 import; ten-question scoring, learner reflection, explicit completion; instance isolation and shared-source revocation",
+    "K4": "Actual Native question card; Stop; deny and separately allow-once with exact independent synthetic file verification",
+    "boundary": "These earlier candidate checks are not relabelled as final W7/K6 Native matrix results"
+  },
+  "review": {
+    "baseline": "a81ac773fd2599744085ffd098cc32d3f4418e2c",
+    "target": "edcdae28518ca62db063d47701dd65cc66bccdc1",
+    "standardsFindings": 0,
+    "specFindings": 0,
+    "scope": "Source review; independent of installed acceptance"
+  },
+  "preservation": {
+    "formalSourceImported": false,
+    "historicalSessionsMigrated": false,
+    "historicalLearningMigrated": false,
+    "formalMaterials": "Read-only inventory only; concrete materials-only plan and confirmation required before import",
+    "privateOrUnproven": "No default sharing",
+    "physicalIME": "Bounded reuse of existing human Native rc.3 editor candidate/backspace/newline proof; no new physical test claimed",
+    "nativeSourceModified": false
+  },
+  "pending": [
+    "Check official pnpm start:web entry without explicit TSX_TSCONFIG_PATH; current source-entry evidence has that variable explicitly set",
+    "Formal plugin registration with dedicated registered roleCwd; preserve unrelated dependencies/bundles and configs",
+    "Remote delivery and authorized cleanup",
+    "Any formal material import requires its own concrete preview and confirmation"
+  ]
+}

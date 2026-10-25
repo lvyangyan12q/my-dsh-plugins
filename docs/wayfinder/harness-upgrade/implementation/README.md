@@ -1,5 +1,13 @@
 # rc.3 实施工单图
 
+## 当前交付检查点 · 2026-10-25 · W.7 / K.6
+
+当前准确包同源 `edcdae28518ca62db063d47701dd65cc66bccdc1`，脱敏[实际验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)与[逐步接入说明](../../../worktable-integration.md)置于当前入口。独立source CLI已验证角色冷恢复输入可用、精确轮次9/10读取、计划统计、显式课堂完成保持、原PDF/PNG读取，以及官方CLI移除再安装同准确包后26个持久文件hash一致。最终准确包重装后的Native问题/Stop/审批拒绝与允许一次已实际复验通过，10按此独立安装范围关闭。
+
+07/08/10/13/15/16/17/18/19已按当前全新部署及独立实页Resolution关闭；11正式注册/推送/清理待执行。实际source入口带显式TSX_TSCONFIG_PATH，裸pnpm start:web兼容尚待只读核对，不自动扩大已验范围。09历史会话/学习接管继续open并排除，不迁不删；正式旧资料只读清点，导入新资料库仍须具体预览与明确确认。物理IME仅引用既有同Native人工证据，不声称新一次人工输入验收。固定a81ac77→edcdae2两轴源码review均0 finding，但源码review不能替代这些实际门槛。
+
+以下历史更新按各自日期与版本解释，不能覆盖本节当前结果。
+
 本轮由用户于 2026-10-24 调用 implement-spec 启动。集成分支为 `codex/worktable-framework`，起点 `a81ac773fd2599744085ffd098cc32d3f4418e2c`；目标宿主为官方 `0.2.1-rc.3` / `22ddee3792402c3e70ec5f86a63c3e3e895a2f60`。只修改插件，不修改 Harness 源码或编译产物，不自动切换正式 3080。
 
 唯一要求入口为[框架规格 HU01—HU08](../../worktable-platform/framework-spec.md#host-upgrade-requirements)。历史票的 closed 保持原含义；新实现及真实验收分别记录，不将契约测试当成用户闭环。

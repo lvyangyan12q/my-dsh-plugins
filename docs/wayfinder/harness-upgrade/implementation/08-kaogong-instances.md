@@ -3,11 +3,27 @@ id: harness-rc3-kaogong-instances
 title: 考公六领域实例隔离和受控资料库
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 assignee: rc3-kaogong-host
 blocked_by: [harness-upgrade-kaogong-ownership, harness-rc3-legacy-role-contract, harness-rc3-kaogong-state-partition]
+acceptance_status: passed-current-explicit-source-entry-installed-scope
 target: 0.2.1-rc.3
 ---
+
+## 最终当前范围 Resolution · 2026-10-25 · W.7 / K.6
+
+准确最终包在官方CLI移除/重装和source冷恢复后，真实Native问题卡选项提交及模型确认、长生成Stop明确停止、独立合成文件的原生审批拒绝/允许一次均通过：拒绝文件不存在，允许文件精确内容一致，访问模式仍是工作区内修改。完成后计划页仍90%/10题；同课堂、练习关联、反思、显式完成、总结、原资料及Native历史保持。当前无待处理原生操作。本票按该独立安装与全新部署范围关闭；早前失败/待验段落仅作历史，以下边界持续有效。
+
+实际source启动带显式 `TSX_TSCONFIG_PATH`，不能据此声称未设置它的裸 `pnpm start:web` 已通过；该官方入口兼容只读核对仍待。正式注册/推送/清理由11继续处理。09历史会话/学习迁移排除并保留open；正式旧资料仅只读清点、未导入，写新空库仍须单独具体预览确认。IME仅使用已记录的同Native人工证据，不新增人工测试声明。
+
+[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)持有准确版本、SHA与证据边界。
+
+## 当前 Resolution · 2026-10-25 · W.7 / K.6
+
+同实例共享课堂与统计，不同实例保持各自课堂/草稿/完成状态；原始资料库与学习实例通过显式只读授权连接，私有讲义不外泄，撤销后新读取拒绝且旧阅读缓存隐藏。最终包计划页显示90%/10题/1份资料/题库10，冷重装后实例与26个持久文件hash保持。最终10矩阵和正式交付仍单列，不以正式旧资料迁移补齐本轮。
+
+精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
+
 
 ## 当前范围覆盖 · 2026-10-25
 

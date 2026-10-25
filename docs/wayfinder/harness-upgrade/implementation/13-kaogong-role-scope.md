@@ -3,13 +3,20 @@ id: harness-rc3-kaogong-role-scope
 title: 考公全新部署的应用私有角色与Skill
 parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 implementation_status: production-source-integrated
-acceptance_status: blocked-source-compiled-scope-identity
+acceptance_status: passed-current-fresh-installed-scope
 assignee: kaogong-roles-scope
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+## 当前 Resolution · 2026-10-25 · W.7 / K.6
+
+Resolution：当前全新部署角色范围已通过。最终W.7/K.6 source入口的辅导员、任课老师及班主任冷恢复后Native输入可用，无Skills目录不完整或resume错误；精确轮次Native工具读取返回9对1错。原生菜单无考公模式，应用私有Persona/Skill与普通会话隔离已实测。旧K.2/K.3失败记录仅作历史；不执行旧Session交接。本票按当前范围关闭，完整Native矩阵仍归10。
+
+精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
+
 
 ## 最新 K.3 真实复验：仍未通过 · 2026-10-25
 

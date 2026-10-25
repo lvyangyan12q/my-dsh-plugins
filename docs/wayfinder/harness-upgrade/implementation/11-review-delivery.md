@@ -9,6 +9,13 @@ blocked_by: [harness-rc3-installed-acceptance]
 target: 0.2.1-rc.3
 ---
 
+## 当前交付边界 · 2026-10-25 · W.7 / K.6
+
+准确W.7/K.6已永久归档，固定a81ac77→edcdae2 Standards与Spec源码审查各0 finding，独立实页、同包重装后Native问题/Stop/审批拒绝与允许一次均通过，证据见当前脱敏记录。正式注册（启用考公并将roleCwd切至已登记专用工作区）、远程推送、获准范围清理仍待；正式原资料仅只读清点未导入，旧会话/学习迁移排除且09保持open。11不因源码、归档或独立实例通过而提前关闭。
+
+[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)与[逐步接入说明](../../../worktable-integration.md)为当前入口；以下保留旧版本历史，不作当前状态。
+
+
 按 implement-spec 完成最终 Standards/Spec 两轴审查，用户确认比较基线 a81ac773fd2599744085ffd098cc32d3f4418e2c。所有问题由单一修复实施者处理后复验。
 
 - [ ] 准确记录 SDK/应用/Host 版本、归档 SHA、已验范围和上游公开能力缺口。

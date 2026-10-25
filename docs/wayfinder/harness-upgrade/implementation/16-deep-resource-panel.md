@@ -3,13 +3,20 @@ id: harness-rc3-deep-resource-panel
 title: 深度应用的显式只读资料连接入口
 parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 implementation_status: source-verified
-acceptance_status: pending-new-archives-and-installed-user-flow
+acceptance_status: passed-current-fresh-installed-scope
 assignee: worktable-deep-resource-panel
 blocked_by: []
 target: 0.2.1-rc.3
 ---
+
+## 当前 Resolution · 2026-10-25 · W.7 / K.6
+
+Resolution：当前通用深度应用显式只读授权/撤销入口已通过真实用户操作：选择公开资料及已有学习实例、授权并刷新读取，私有讲义排除；撤销状态及后续403生效，消费应用清掉旧正文/图片。最终同包重装后资料与连接归属保持。本票按当前范围关闭，正式资料导入不因此获准。
+
+精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
+
 
 ## W.5/K.3 实际面板验收 · 2026-10-25
 

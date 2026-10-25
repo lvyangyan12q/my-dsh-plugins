@@ -3,13 +3,28 @@ id: harness-rc3-kaogong-fresh-materials
 title: 全新考公部署的旧资料保留与只读接入
 parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 implementation_status: production-source-integrated
-acceptance_status: grant-revoke-host-passed-reader-cache-blocked
+acceptance_status: passed-current-explicit-source-entry-installed-scope
 assignee: kaogong-materials
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+## 最终当前范围 Resolution · 2026-10-25 · W.7 / K.6
+
+准确最终包在官方CLI移除/重装和source冷恢复后，真实Native问题卡选项提交及模型确认、长生成Stop明确停止、独立合成文件的原生审批拒绝/允许一次均通过：拒绝文件不存在，允许文件精确内容一致，访问模式仍是工作区内修改。完成后计划页仍90%/10题；同课堂、练习关联、反思、显式完成、总结、原资料及Native历史保持。当前无待处理原生操作。本票按该独立安装与全新部署范围关闭；早前失败/待验段落仅作历史，以下边界持续有效。
+
+实际source启动带显式 `TSX_TSCONFIG_PATH`，不能据此声称未设置它的裸 `pnpm start:web` 已通过；该官方入口兼容只读核对仍待。正式注册/推送/清理由11继续处理。09历史会话/学习迁移排除并保留open；正式旧资料仅只读清点、未导入，写新空库仍须单独具体预览确认。IME仅使用已记录的同Native人工证据，不新增人工测试声明。
+
+[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)持有准确版本、SHA与证据边界。
+
+## 当前 Resolution · 2026-10-25 · W.7 / K.6
+
+合成v3资料经具体UI预览与显式确认接入独立空库，题库、原PDF/PNG与证明原址保留；私有讲义仅资料库自有视图可读，学习实例只收到公开来源。撤销后新读取拒绝，阅读器正文/图片缓存清理，最终同包重装仍能从固定根读取原讲义。正式资料只读清点未导入，其接入必须另给具体materials-only预览并确认；当前票保留开放直至10最后矩阵与资料边界统一归档。
+
+精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
+
 
 ## 最新 W.5/K.3 真实授权复验 · 2026-10-25
 
