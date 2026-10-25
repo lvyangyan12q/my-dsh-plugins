@@ -87,7 +87,7 @@ Desktop/macOS、非空队列实际交互、部分私有能力和并发负例仍�
 
 用户最新选择“全新的部署安装，历史会话不处理，之前资料保存”。当前集成分支为 `codex/kaogong-rc3-completion`，起点为 `a2a10d01b0c8327cb1f0cec031c897d143b4a4c1`。本轮使用新学习实例和新应用私有角色；旧Native会话、旧学习记录及其回执原址保留，不迁不删。[12工作台Windows Web阶段](12-worktable-freeze.md)继续closed，冻结归档不覆盖。
 
-- [13新部署私有角色与Skill](13-kaogong-role-scope.md)处于in-progress：源码接线待实施，真实普通聊天、课堂、私有Skill和生命周期仍待验。旧Session A/B迁移提案保留为superseded历史说明，不实施、不再等待其路线或逐会话执行确认；新部署不贡献考公专用全局模式。
+- [13新部署私有角色与Skill](13-kaogong-role-scope.md)处于in-progress：生产公开SDK/私有角色接线已合入，合并Host回归148/148通过；新归档、真实模型普通聊天、课堂和完整生命周期仍待验。旧Session A/B迁移提案保留为superseded历史说明，不实施、不再等待其路线或逐会话执行确认；新部署不贡献考公专用全局模式。
 - [15资料保留与接入](15-kaogong-fresh-materials.md)处于in-progress：分别清点题库、讲义、图片、PDF和MinerU读取关系，原址及原文件保留。向新资料库写入前先给出materials-only具体影响预览，确认对应计划；新学习实例通过显式只读授权使用，私有/未知资料不默认共享。
 - [14接管前置检查](14-kaogong-adoption-preflight.md)源码已合入，公开协议与来源检查11/11通过，新包安装仍待验；该历史会话占用保护保留，但不是本轮全新部署的前置，不据此执行旧接管。
 - [07课堂](07-classroom-application.md)、[08实例隔离](08-kaogong-instances.md)、[10组合验收](10-installed-acceptance.md)、[11组合交付](11-review-delivery.md)按本轮全新部署适用范围继续验收；[09历史学习接管](09-legacy-adoption.md)和旧要求原文保留，当前不执行、不作为前置，也不标记已完成。范围适用性见[规格补记](../../worktable-platform/framework-spec.md#fresh-kaogong-deployment-scope)。

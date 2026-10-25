@@ -4,8 +4,8 @@ title: 考公全新部署的应用私有角色与Skill
 parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
 status: in-progress
-implementation_status: pending-production-sdk-and-application-wiring
-acceptance_status: public-contract-prototypes-only
+implementation_status: production-source-integrated
+acceptance_status: pending-new-archive-native-model-run
 assignee: kaogong-roles-scope
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
@@ -25,13 +25,21 @@ target: 0.2.1-rc.3
 
 ## 当前待办与验收
 
-- [ ] 完成生产公开SDK作用域与考公接线；原型只证明Native接缝，尚未通过生产或实页验收。
+- [x] 生产公开SDK作用域与考公接线已合入；真实Native服务的Host回归通过，新归档及真实模型实页仍待验。
 - [ ] 新部署菜单不出现考公专用模式，应用内可显式创建并继续各私有角色。
 - [ ] 真实模型普通对话及课堂、私有Skill激活、同实例多视图、跨实例拒绝、原生问题/审批/Stop和刷新重启留证。
 - [ ] 缺失、停用或owner撤销不静默改用其他角色；释放作用域不删除业务记录或会话原件。
 - [ ] 新归档与实际安装验证，准确声明新SDK能力和版本，不覆盖已冻结Worktable `.3`或考公 `.1`。
 
 资料接入若写入新资料库目标，先给出materials-only具体影响预览并确认对应计划，见15。本轮不再请求旧Session A/B路线或逐会话交接执行确认；将来若另行恢复历史迁移需求，须重新定义范围及具体授权。
+
+## 生产源码切片 · 2026-10-25
+
+实现 `95702a5` 经集成合并 `c57205caba30fb9249b548dc209ad56832002eff`。新增Host-only `contributeSessionScopes`，以 `native-role-session-scope-v1` 明确准入；创建前在独立可释放scope校验角色Skill，`agent/created` 按持久intent/ready身份挂载应用persona与私有Skill，`agent/pre-step` 复验归属和当前scope。停用或撤销后拒绝继续该应用角色，不回退通用执行；无归属Agent不因目录相同而获得教学Skill。
+
+考公新角色使用已存在的 `standard`，安装官方persona、filesystem Skill、Skill工具和提问插件到已核验的原生Agent Context，不注册各角色的全局preset。新增精确rc.3 `dsh-scope` 运行依赖；旧会话和资料没有迁移、改写或删除，旧绑定与新声明不符时明确拒绝自动接管。
+
+合并后的真实公开Native服务Host回归148/148通过，核心SDK/能力/角色公开合同32/32通过。额外旧rc.2组合检查4项中2通过、2旧环境跳过，跳过不作本版通过证据。测试使用真实注册器、系统persona及Skill作用域，但没有模型调用或最终归档安装；不能据此关闭菜单实页、普通聊天、教学、刷新重启或完整生命周期验收。新Worktable候选版本和考公包必须声明新增feature及精确依赖，不覆盖冻结Worktable `.3`和考公 `.1`。
 
 ## 历史提案：已被上述全新部署范围替代（superseded）
 
