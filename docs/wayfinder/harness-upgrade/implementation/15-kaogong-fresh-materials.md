@@ -5,11 +5,19 @@ parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
 status: in-progress
 implementation_status: production-source-integrated
-acceptance_status: pending-concrete-materials-plan-and-installed-run
+acceptance_status: synthetic-import-passed-grant-revoke-ui-blocked
 assignee: kaogong-materials
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+## 最新真实安装结果 · 2026-10-25
+
+准确 Worktable `0.10.0-rc.3.4` / Kaogong `0.2.0-rc.3.2` 在独立3101已通过合成资料的真实UI预览及显式确认接入：10道题、1份有来源证明资料、1份私有讲义和6个证明文件；原始来源保持。资料库自己的视图能阅读私有讲义，未授权学习实例显示0份资料，未发生默认全库共享。
+
+**完整资料授权验收受阻**：普通深度应用当前缺少可直接操作的只读资料授权及撤销UI，因而不能验证用户从资料库授权、学习读取、撤销后拒绝的真实完整流程；该UI仍在独立源码切片补齐。另有[13角色创建冲突](13-kaogong-role-scope.md)，新候选整体不通过，真实AI请求为0次。上述合成接入不能替代正式资料具体预览及确认；正式资料未导入。
+
+资料隔离的来源意图辅助回归已通过，但实际unknown恢复、完整授权/撤销、图片及刷新/重启矩阵仍未由此关闭。3101自有进程已停止，数据保留供复验；本票保持in-progress，不正式注册、不推送假完成。
 
 # 资料保留与新部署接入 · 2026-10-25
 
