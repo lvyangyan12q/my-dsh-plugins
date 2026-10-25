@@ -59,11 +59,11 @@ target: 0.2.1-rc.3
 ## 执行顺序与拒绝条件
 
 1. **预备校验。**确认通用preset真实存在、能激活所需工具/提问/Skill；确认新私有作用域模块已经通过同实例、多实例、普通原生直接聊天和重启测试。原型成功不替代此门禁。
-2. **收敛在途执行。**逐条核对实际Agent、已接受原生请求、问题/审批、队列和未知准入。任何running/waiting/unknown/未决审批都阻止对应角色切换。用户可以先处理或明确Stop；Stop不表示回滚已发生写入，队列不自动清空、转移或重发。退出后重新预览。
+2. **收敛在途执行。**先建立持久迁移屏障，阻止该角色新任务提交、并发创建/替换及旧Agent新执行；现有角色replace与任务不共享同一事务，不能靠各自gate宣称原子切换。逐条核对实际Agent、已接受原生请求、问题/审批、队列和未知准入。任何running/waiting/unknown/未决审批都阻止对应角色切换。用户可以先处理或明确Stop；Stop不表示回滚已发生写入，队列不自动清空、转移或重发。退出后重新预览。
 3. **固定交接计划。**只有源事实、owner、课堂/任务处置及target都明确的具体计划可请求执行确认。新旧角色映射不明、跨实例已占用、重复来源、旧格式待迁移等保持blocked。
-4. **逐项交接。**A类在最后一次空白校验后调用公开select，并flush及重读；locked即停止。B类通过新的幂等公开交接操作建立通用Session，验证ID/preset/cwd和私有scope后才切当前绑定；不能直接编辑roles.v1.json。应用实例及业务记录身份保持。建立失败/返回不同ID/响应丢失都保留未知回执，不自动新建第二次。
+4. **逐项交接。**A类须先实现新的公开SDK空会话CAS切换/恢复合同：固定同一owner、Session、bindingRevision和cwd，重新核对Native仍blank，再协调Native preset与应用绑定变更，保存过渡证据、flush及重读；locked即停止。现有replace固定新UUID、attach沿用old.agent、read/finish继续核对旧preset，均不能直接实现A；禁止先select再手改ledger补结果。B类通过新的幂等公开交接操作建立通用Session，验证ID/preset/cwd和私有scope后才切当前绑定；不能直接编辑roles.v1.json。应用实例及业务记录身份保持。建立失败/返回不同ID/响应丢失都保留未知回执，不自动新建第二次。
 5. **处理业务引用。**按下面的课堂/任务规则完成后，再把旧Session登记为历史；原始日志与资料原址保留。
-6. **撤出声明。**只撤出具体计划列出的考公自有旧preset注册。先让关联Agent停止并释放持有，随后通过官方插件生命周期重载/重启，防止保留generation继续执行。清点全局默认或外部配置引用的修改须有各自明确影响和确认。
+6. **撤出声明。**只撤出具体计划列出的考公自有旧preset注册。须实现并验证retired Session执行栅栏，停止并排空关联旧Agent、释放持有，再撤出声明并以正式目标Host冷重启实测；旧Agent持有的generation可能继续活着，不能用菜单消失代替执行禁令。栅栏、释放及冷重启验证完成前，不保证旧Agent无法执行。清点全局默认或外部配置引用的修改须有各自明确影响和确认。
 7. **最终验收。**旧菜单不再出现自有考公模式、新角色从应用入口创建和继续、同实例多视图/跨实例隔离、原生轨迹/问题/审批/Stop、新旧历史入口、刷新重启及回退边界均留证。
 
 ## 未完成课堂、任务与历史owner
@@ -71,7 +71,7 @@ target: 0.2.1-rc.3
 - `Lessons.prepare`当前会核对已保存的`binding.sessionId/presetId`，不同就拒绝“静默替换”。因此不能只调用角色replace后声称旧课堂自然继续。已完成课堂保持原binding和完成证据；未完成课堂需显式“交接继续”记录，保留旧binding及原因并关联新的当前会话。未实现这个受控操作前，该课堂继续发送保持阻止。
 - 练习原题快照、答案、提交顺序、`review`及`reviewClaim.taskId/requestId`保持。`sending/unknown`必须对照原请求事实处理；不能改成ready重讲、改sent完成或重复发送。评分与错题统计不因新Session而重算。
 - Worktable待发任务固定`sessionId/bindingRevision`；旧prepared内容只保留供审阅，不能替换字段后重发。用户明确放弃后，若仍需要执行，应在新角色重新准备；已accepted请求只在原会话查轨迹与恢复业务回执。
-- 历史owner保存每条`sessionId/presetId/cwd`，不把旧历史“转成”新Session写入上下文。`previousSessionIds`只有ID时不足以授权历史工具；需逐条核验并形成`historicalSessions`身份依据。旧历史写入继续拒绝，读权限不自动扩大到其他实例。
+- 历史owner保存每条`sessionId/presetId/cwd`，不把旧历史“转成”新Session写入上下文。`previousSessionIds`只有ID时不足以授权历史工具；需逐条核验并形成`historicalSessions`身份依据。旧历史写入继续拒绝，读权限不自动扩大到其他实例。此处只读只覆盖考公业务工具，不覆盖原生文件写入、终端等通用工具；retired执行栅栏与旧Agent排空属于独立待实现门禁，Native输入UI也不据此声称强只读。
 - 尚未接管的旧default需要先确认其业务归属与历史实例，不能借本次角色交接绕开09的具体旧数据迁移预览。上次部分导入合成计划及回执保留，不重放、不用新计划覆盖未知状态。
 
 ## 恢复、回退和可逆范围
