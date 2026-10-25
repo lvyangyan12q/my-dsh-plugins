@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-kaogong",
   "description": "武汉公务员考试学习套件：错题本（归纳问题点/总结）+ 倒排学习计划与进度",
-  "version": "0.2.0-rc.3.3",
+  "version": "0.2.0-rc.3.4",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
