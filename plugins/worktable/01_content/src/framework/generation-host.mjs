@@ -4,8 +4,12 @@ import {RequestLifetime} from './request-lifetime.mjs'
 import {readRequestText} from './request-body.mjs'
 /** Authenticated ownership API; no submit, native channel, arbitrary root or arbitrary file endpoint. */
 export function mountGenerations(ctx){let owner=null,closing=false;
- ctx.inject(['worktableApplications','worktableCompositions','worktableTasks','worktableRoles','worktableAdmission','profileContext','connection','sessionController','sessionPersistence'],child=>child.effect(async function*(){
-  const service=new GenerationDirectory(join(child.profileContext.dir,'worktable-platform','generations.v1.json'),{applications:child.worktableApplications,compositions:child.worktableCompositions,tasks:child.worktableTasks,roles:child.worktableRoles,gate:child.worktableAdmission,inspectNative:async id=>{await child.sessionPersistence.flush();return child.sessionController.inspect(id)}}),lifetime=new RequestLifetime(),runtime={service,lifetime,connection:child.connection};owner=runtime;
+ ctx.inject(['worktableApplications','worktableCompositions','worktableTasks','worktableRoles','worktableAdmission','profileContext','connection','sessionPersistence'],child=>child.effect(async function*(){
+  const service=new GenerationDirectory(join(child.profileContext.dir,'worktable-platform','generations.v1.json'),{applications:child.worktableApplications,compositions:child.worktableCompositions,tasks:child.worktableTasks,roles:child.worktableRoles,gate:child.worktableAdmission,inspectNative:async id=>{
+   await child.sessionPersistence.flush()
+   const handle=await child.sessionPersistence.open(id,'read')
+   try{return await handle.read()}finally{await handle.close()}
+  }}),lifetime=new RequestLifetime(),runtime={service,lifetime,connection:child.connection};owner=runtime;
   try{child.provide('worktableGenerations',service)}catch(error){if(owner===runtime)owner=null;await service.close();throw error}
   yield async()=>{if(owner===runtime)owner=null;await lifetime.close(()=>service.close())}
  },'worktable generation owner'));
