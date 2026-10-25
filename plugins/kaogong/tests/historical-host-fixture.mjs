@@ -10,4 +10,3 @@ export async function mountHistoricalFixture(ctx,config){
  const owner=createAdoptionOwner(historical,{importState:async(id,operation)=>{const lease=await pool.acquire(id);try{return await operation(lease.state)}finally{await lease.release()}}},state,plans,config),remove=mountAdoptionHttp(historical,owner)
  return async()=>{await owner.close();await remove();await pool.close();await stop();for(const {domain}of domains.values())await domain.close()}
 }
-

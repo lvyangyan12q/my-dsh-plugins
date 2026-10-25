@@ -36,3 +36,9 @@ test('independent consumer discovers declared protocol and refuses unknown versi
   await assert.rejects(applications.createInstance('sdk-example',null),/停用/);await remove();
  }finally{for(const effect of effects.reverse()){const dispose=effect();if(typeof dispose==='function')await dispose()}await rm(dir,{recursive:true,force:true})}
 })
+
+test('private Native Session roles require the explicit owner-scope SDK feature',()=>{
+ const descriptor=describeProtocol(),feature='native-role-session-scope-v1'
+ assert.ok(requireProtocol(descriptor,[feature]))
+ assert.throws(()=>requireProtocol({...descriptor,features:descriptor.features.filter(row=>row!==feature)},[feature]),/native-role-session-scope-v1/)
+})

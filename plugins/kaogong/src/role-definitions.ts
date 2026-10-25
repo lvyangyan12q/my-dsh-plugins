@@ -4,6 +4,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
 import type { RoleDefinition, PrivateCapability } from 'dsh-worktable/sdk'
 import { TAXONOMY } from './taxonomy.ts'
+import { kaogongRoleScopeOwner } from './role-session-scope.ts'
 
 export const legacyTeacherPresetId = 'personal-workbench.kaogong-teacher.v1'
 export const teachingSkillProvider = 'kaogong-packaged-teaching'
@@ -19,11 +20,11 @@ export async function kaogongRolePresets() {
     { id: 'kaogong.counselor.v1', roleId: 'counselor', name: '辅导员', file: '辅导员' },
     ...roleSubjects.map((subject, index) => ({ id: subjectPresetIds[index]!, roleId: subjectRoleIds[index]!, name: subject, file: '老师', subject })),
   ]
-  return Promise.all(rows.map(async row => ({ id: row.id, name: row.name, description: '考公持续课堂角色', plugins: [
-    { name: '@deepseek-ai/dsh-persona', config: { prefix: (await readFile(new URL(`../roles/personas/${row.file}.md`, import.meta.url), 'utf8')).replaceAll('{科目}', row.subject ?? '已确认科目'), complete: false, includeRuntimeContext: true } },
-    { name: '@deepseek-ai/dsh-skill-filesystem', config: { providerName: teachingSkillProvider, includeDefaultRoots: false, customSkillDirs: [], bundledSkillDir: fileURLToPath(new URL('../roles/skills/', import.meta.url)), watch: false } },
-    { name: '@deepseek-ai/dsh-tool-skill', config: {} },
-    { name: '@deepseek-ai/dsh-tool-ask-user', config: {} },
+  return Promise.all(rows.map(async row => ({ id: row.id, roleId: row.roleId, name: row.name, description: '考公持续课堂角色', plugins: [
+    { name: '@deepseek-ai/dsh-persona' as const, config: { prefix: (await readFile(new URL(`../roles/personas/${row.file}.md`, import.meta.url), 'utf8')).replaceAll('{科目}', row.subject ?? '已确认科目'), complete: false, includeRuntimeContext: true } },
+    { name: '@deepseek-ai/dsh-skill-filesystem' as const, config: { providerName: teachingSkillProvider, includeDefaultRoots: false, customSkillDirs: [], bundledSkillDir: fileURLToPath(new URL('../roles/skills/', import.meta.url)), watch: false } },
+    { name: '@deepseek-ai/dsh-tool-skill' as const, config: {} },
+    { name: '@deepseek-ai/dsh-tool-ask-user' as const, config: {} },
   ] })))
 }
 
@@ -33,7 +34,7 @@ export function kaogongPrivateCapabilities(): PrivateCapability[] {
     {id:'class-advisor',title:'班主任',presetId:'kaogong.class-advisor.v1'},
     {id:'counselor',title:'辅导员',presetId:'kaogong.counselor.v1'},
     ...roleSubjects.map((title,index)=>({id:subjectRoleIds[index]!,title,presetId:subjectPresetIds[index]!}))]
-  return [...rows.map(row=>({...row,kind:'agent' as const,enabled:true,userInvocable:true,modelInvocable:true})),
+  return [...rows.map(row=>({...row,presetId:'standard',sessionScoped:true as const,kind:'agent' as const,enabled:true,userInvocable:true,modelInvocable:true})),
     {id:'kaogong-teach',title:'考公教学',kind:'skill',provider:teachingSkillProvider,enabled:true,userInvocable:true,modelInvocable:true}]
 }
 export function kaogongRoleDefinitions(cwd?: string): RoleDefinition[] {
@@ -48,8 +49,8 @@ export function kaogongRoleDefinitions(cwd?: string): RoleDefinition[] {
 export async function installKaogongRoles(ctx: Context, cwd?: string) {
   const removers: (() => void | Promise<void>)[] = []
   try {
-    for (const preset of await kaogongRolePresets()) removers.push(await ctx.agentPresets.register(preset))
     removers.push(ctx.worktableCapabilities.contribute('kaogong',kaogongPrivateCapabilities()))
+    removers.push(ctx.worktableCapabilities.contributeSessionScopes('kaogong',kaogongRoleScopeOwner(ctx,await kaogongRolePresets())))
     removers.push(ctx.worktableRoles.contribute('kaogong',kaogongRoleDefinitions(cwd)))
   } catch (error) {
     await Promise.allSettled(removers.reverse().map(remove=>Promise.resolve().then(remove)))

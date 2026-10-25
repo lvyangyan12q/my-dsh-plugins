@@ -150,3 +150,21 @@ MIT
 
 
 0.7.2补充焦点归属：原生区域隐藏期间若用户已进入模块、选择框或按钮，放弃旧原生焦点恢复；即使新控件随后失焦，resize也不把焦点抢回旧composer。仅未发生新焦点选择且当前焦点仍中立时恢复隐藏前焦点，visibility/inert始终独立恢复。
+
+
+### 应用私有的原生会话角色
+
+Host 消费方须检查 `native-role-session-scope-v1`。应用可将私有 Agent 声明为
+`{kind:"agent", presetId:"standard", sessionScoped:true, ...}`，再通过
+`worktableCapabilities.contributeSessionScopes(appId, owner)` 提供可信安装器。
+这不会向原生创作模式菜单注册角色。
+
+`owner.prepare` 创建独立、可释放且继承基础 preset 的校验作用域；平台在其中校验
+角色声明的真实 Skill provider 与模型调用权限。`owner.mount` 只接收已由持久角色绑定
+核实的原生 Agent Context，在 `agent/created` 完成前安装系统 persona、Skill 和工具。
+`agent/pre-step` 重新核实实例、目录、角色、所有者与实际 Skill；停用或撤销后拒绝继续执行，
+不会降级成通用 Agent。安装器必须返回精确且幂等的释放函数，不得写入全局 Context。
+这些 Host 接口不暴露给浏览器或模型参数。
+
+此接口不迁移旧会话或替换旧 preset。考公全新部署用新的学习实例；旧会话与资料原址保留。
+普通通用会话不能仅凭相同目录获得应用角色。

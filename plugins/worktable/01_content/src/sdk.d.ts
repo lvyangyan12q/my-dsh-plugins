@@ -46,8 +46,13 @@ export interface GenerationTarget {projectId:string|null;appId:string;instanceId
 export interface GenerationDescriptor {id:string;target:GenerationTarget;taskId?:string;sessionId:string;root:string;manifestPath:string;status:'preparing'|'prepared'|'preview'|'applying'|'applied'|'revoked'}
 export interface GenerationDirectory {list(viewId:string):Promise<GenerationDescriptor[]>;recover(input:{id:string;confirmed:true}):Promise<GenerationDescriptor>}
 export type CapabilityRef={kind:'agent'|'skill';id:string}&({source:'managed'}|{source:'application';ownerAppId:string})
-export type PrivateCapability={id:string;title:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}&({kind:'agent';presetId:string}|{kind:'skill';provider:string})
-export interface CapabilityDirectory {contribute(appId:string,definitions:PrivateCapability[]):Disposer;list(appId?:string):Promise<unknown[]>}
+export type PrivateCapability={id:string;title:string;enabled:boolean;userInvocable:boolean;modelInvocable:boolean}&({kind:'agent';presetId:string;sessionScoped?:true}|{kind:'skill';provider:string})
+/** Host-only installer. prepare creates an isolated disposable preflight scope, mount receives only a verified Native Agent context. */
+export interface RoleSessionScopeOwner {
+ prepare(input:{capabilityId:string;cwd:string;baseScope:object}):Promise<{scope:object;dispose:Disposer}>
+ mount(input:{capabilityId:string;cwd:string;context:import('@deepseek-ai/cordis').Context}):Disposer|Promise<Disposer>
+}
+export interface CapabilityDirectory {contribute(appId:string,definitions:PrivateCapability[]):Disposer;contributeSessionScopes(appId:string,owner:RoleSessionScopeOwner):Disposer;list(appId?:string):Promise<unknown[]>}
 export interface RoleDefinition {id:string;title:string;agent:CapabilityRef&{kind:'agent'};creation:{cwd:string};skills?:(CapabilityRef&{kind:'skill'})[]}
 export interface NativeRoleIdentity {sessionId:string;presetId:string;creation:{cwd:string}}
 /** The application derives this snapshot from its read-only legacy inspector, never browser input. Supply history IDs for platform native hydration, or full identities for backward compatibility; at least one history list is required. */

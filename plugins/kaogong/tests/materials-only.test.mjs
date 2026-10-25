@@ -67,4 +67,3 @@ test('material-only private image proof belongs to its own library and cannot be
  assert.equal((await readAdoptedAsset(input)).toString(),'private material');assert.equal(calls,1)
  await assert.rejects(readAdoptedAsset({...input,instanceId:'foreign',ownRecord:undefined}),{code:'LEGACY_ASSET_UNAVAILABLE'});assert.equal(calls,1)
 })
-
