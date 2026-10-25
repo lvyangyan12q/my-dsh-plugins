@@ -24,6 +24,7 @@ const source = readFileSync(BUNDLE, 'utf8')
 // 模拟浏览器 CSSStyleDeclaration：未设置的属性读作 ''（插件保存/还原依赖该语义）
 class StyleProxy {
   constructor() {
+    this._priorities={}
     return new Proxy(this, {
       get(t, k) {
         if (k === Symbol.toPrimitive) return () => 'style'
@@ -32,8 +33,9 @@ class StyleProxy {
     })
   }
   getPropertyValue(k) { return Object.prototype.hasOwnProperty.call(this, k) ? this[k] : '' }
-  setProperty(k, v) { this[k] = v }
-  removeProperty(k) { delete this[k] }
+  getPropertyPriority(k) { return this._priorities?.[k] ?? '' }
+  setProperty(k, v, priority='') { this[k] = v; (this._priorities??={})[k]=priority }
+  removeProperty(k) { delete this[k];if(this._priorities)delete this._priorities[k] }
 }
 // 万能桩：任何未实现的 DOM API（getContext 等）返回自身同型桩
 const universalStub = new Proxy(function () { return universalStub }, {
@@ -349,5 +351,28 @@ function fresh() {
   if (JSON.parse(saved.get('dsh.worktable.split.v2')).unrelated.marker !== 'preserved') fail('I.other-layout', 'resize overwrote another saved layout')
   splitStore.close()
   ok('I. native question default/persisted/drag width and other-layout preservation')
+}
+// J tests only the actual store's CSS lease lifecycle; browser computed overflow/focus remains an installed UI gate.
+{
+  const {sandbox,splitStore,allEls}=fresh()
+  const root=new FakeEl('DIV','native-root',{phase:'active'}).setRect({left:280,top:0,right:1280,bottom:800})
+  const body=new FakeEl('MAIN').setRect({left:280,top:0,right:1280,bottom:800})
+  root.appendChild(body);allEls.push(root);sandbox.document.body.appendChild(root)
+  root.style.setProperty('overflow-x','hidden','important');root.style.setProperty('overflow-y','auto')
+  const inner=new FakeEl('PRE');inner.scrollLeft=57;body.appendChild(inner)
+  splitStore.open(makeSpec('native-overflow-lease'))
+  for(const axis of ['overflow-x','overflow-y'])if(root.style.getPropertyValue(axis)!=='clip')fail('J.containment',axis+' must be clip while split owns the root')
+  splitStore.syncAnchor()
+  root._connected=false
+  const next=new FakeEl('DIV','native-next',{phase:'active'}).setRect({left:280,top:0,right:1280,bottom:800})
+  next.appendChild(new FakeEl('MAIN').setRect({left:280,top:0,right:1280,bottom:800}))
+  next.style.setProperty('overflow-y','hidden','important');allEls.splice(0,1,next);sandbox.document.body.appendChild(next)
+  splitStore.syncAnchor()
+  if(root.style.getPropertyValue('overflow-x')!=='hidden'||root.style.getPropertyPriority('overflow-x')!=='important'||root.style.getPropertyValue('overflow-y')!=='auto')fail('J.old-root','detached root original overflow was not restored')
+  if(next.style.getPropertyValue('overflow-x')!=='clip'||next.style.getPropertyValue('overflow-y')!=='clip')fail('J.new-root','replacement root not contained')
+  splitStore.close()
+  if(next.style.getPropertyValue('overflow-x')!==''||next.style.getPropertyValue('overflow-y')!=='hidden'||next.style.getPropertyPriority('overflow-y')!=='important')fail('J.close','replacement root overflow not exactly restored')
+  if(inner.scrollLeft!==57)fail('J.inner','native inner scroll was reset')
+  ok('J. native root double-axis containment lease, same-root reanchor, detached replacement and exact restore')
 }
 console.log('all anchor-dom tests passed: ' + pass + '/' + pass)
