@@ -90,7 +90,7 @@ export class RoleAdoptions {
   const directory=this.directory
   const {instance}=await directory.definition(instanceId,roleId,true)
   const plan=await this.inspectTrusted(instance.appId,roleId,sourceKey,{instanceId,roleId})
-  const {owner,definition,source,sourceFingerprint,evidence}=plan
+  const {definition,source,evidence}=plan
   const binding=await this.checkOwnership(instance.appId,roleId,instanceId,plan)
   await directory.applications.assertInstanceReady?.(instanceId,true)
   const fingerprint=binding?.adoption.fingerprint??digest({source,definition,instanceRevision:instance.revision,binding,evidence})
