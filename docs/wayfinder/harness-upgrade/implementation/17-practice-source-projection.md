@@ -41,3 +41,9 @@ target: 0.2.1-rc.3
 - 相同题号/完全相同题目值的两个真实 owner 不能串用证明；全局配置切换后，原 owner 继续仅用自己的固定计划。
 
 已通过 Host 164/164（含既有 verified loader 回归）、客户端 13/13、公开 Host 类型检查。私有 v3 预览和辅助日志保存在本机验收目录；未操作 3101、正式数据、安装注册或发布包。真实资料导入仍需具体预览后显式确认，辅助回归不代替官方安装闭环。
+
+### Owned讲评明确引用本轮ID · 2026-10-25
+
+真实准备任务显示原PracticeState快照不含其持久key；若只携快照，模型可能无法区分多个相同内容轮次。新prepareOwned review文本从既有payload/record/score校验通过的id生成明确roundId及kaogong_practice_read的精确JSON参数，并要求不得省略或改用最近轮。只改新准备文本：原capture快照、fingerprint、评分、业务schema和owner版本不变，不改旧admitted任务，也不重放。
+
+新增回归以两个内容完全一致、key不同的实际提交快照验证文本区分，JSON快照/hash不变，轮次/成绩/既有receipt不写；未知id仍拒绝。该测试纳入唯一Host清单，当前165/165及官方Host类型通过。仍待W.7 scope catalogue竞态修复集成、新配对归档和真实显式roundId读取复验；本段不是新包或旧任务重放批准。

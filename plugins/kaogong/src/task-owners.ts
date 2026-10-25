@@ -32,7 +32,10 @@ export function registerTaskOwners(host:KaogongHost, owners:ApplicationTaskOwner
     // A single materials reference preserves source/grant validation for every chosen material.
     const contexts=value.materialIds.length?[{resourceId:'teaching',selection:{kind:'materials',ids:value.materialIds}}]:[]
     if(contexts.length)await resources.call({viewId:context.viewId,resourceId:'teaching',action:'read'})
-    return {id,text:`/kaogong-teach ${kind==='review'?'讲评本轮真实提交结果，不重复提交成绩、不自动打卡。':'继续已保存课堂，不自动宣布完成。'}\n以下是应用核验的数据：\n${JSON.stringify(value.content)}`,contexts,token:{fingerprint:fingerprint(value)}}
+    const instruction=kind==='review'
+     ?`讲评本轮真实提交结果，不重复提交成绩、不自动打卡。\n本次已核验的 roundId 为 ${JSON.stringify(id)}。先调用 kaogong_practice_read，参数为 ${JSON.stringify({roundId:id})}，只核对这一轮；不得省略 roundId 或用最近一轮替代。`
+     :'继续已保存课堂，不自动宣布完成。'
+    return {id,text:`/kaogong-teach ${instruction}\n以下是应用核验的数据：\n${JSON.stringify(value.content)}`,contexts,token:{fingerprint:fingerprint(value)}}
    }),
    validate:async task=>{await load(task)},
    beforeSubmit:async task=>host.state(task.instanceId,async state=>{
