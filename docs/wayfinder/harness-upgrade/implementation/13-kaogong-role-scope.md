@@ -1,15 +1,44 @@
 ---
 id: harness-rc3-kaogong-role-scope
-title: 考公私有角色与旧模式撤出的历史会话交接方案
+title: 考公全新部署的应用私有角色与Skill
 parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
-status: open
-implementation_status: awaiting-route-and-concrete-plan-confirmation
+status: in-progress
+implementation_status: pending-production-sdk-and-application-wiring
 acceptance_status: public-contract-prototypes-only
-assignee: null
+assignee: kaogong-roles-scope
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+# 当前范围：全新部署 · 2026-10-25
+
+用户最新指示为“**不用管历史的会话，全新的部署安装就可以，但是之前的资料需要保存**”。本轮据此采用新的应用角色和学习实例，不实施旧Session的A/B交接，不再等待该历史交接路线确认。以下历史提案继续保留以解释之前的研究，不能作为已批准或正在执行的迁移方案。
+
+## 本票实现边界
+
+- 新学习实例从空状态开始。班主任、辅导员、任课老师是应用私有角色，复用已有通用Native Agent，以可信Session到应用实例/角色的绑定，在该Agent自己的公开作用域挂载系统人格和教学Skill；不为新角色注册全局专用模式，不把人格混作首条user消息。
+- 新角色创建、并发收敛、普通原生直接聊天、任务、课堂和练习都核对同一可信身份；私有Skill仍在角色声明及实际scope中接受校验，不能删声明绕过门禁。未绑定Agent和其他实例不获得该人格、Skill或资料权限。
+- 本轮不创建旧模式兼容注册以承接旧Session。旧Native会话、其原preset/cwd/日志和旧学习记录均不迁移、不改写、不删除；新部署不以旧会话继续执行或旧记录接管作为验收前置。不承诺从新部署继续旧Agent；用户要求的是原件保存，不是历史会话续用。
+- 旧题库、讲义、图片、PDF和MinerU产物的原址及读取关系由[15资料保留与接入](15-kaogong-fresh-materials.md)清点。新学习实例不加载旧成绩、错题、课堂状态或老师历史；资料是否可供新实例读取，必须以明确的资料范围及只读授权处理。
+- [14占用预检](14-kaogong-adoption-preflight.md)已合入的保护继续保留，但历史Session接管不是本轮新部署前置。不得据本范围变化删除unknown接管回执或解除其隔离。
+
+## 当前待办与验收
+
+- [ ] 完成生产公开SDK作用域与考公接线；原型只证明Native接缝，尚未通过生产或实页验收。
+- [ ] 新部署菜单不出现考公专用模式，应用内可显式创建并继续各私有角色。
+- [ ] 真实模型普通对话及课堂、私有Skill激活、同实例多视图、跨实例拒绝、原生问题/审批/Stop和刷新重启留证。
+- [ ] 缺失、停用或owner撤销不静默改用其他角色；释放作用域不删除业务记录或会话原件。
+- [ ] 新归档与实际安装验证，准确声明新SDK能力和版本，不覆盖已冻结Worktable `.3`或考公 `.1`。
+
+资料接入若写入新资料库目标，先给出materials-only具体影响预览并确认对应计划，见15。本轮不再请求旧Session A/B路线或逐会话交接执行确认；将来若另行恢复历史迁移需求，须重新定义范围及具体授权。
+
+## 历史提案：已被上述全新部署范围替代（superseded）
+
+以下内容是用户改为全新部署之前的只读研究和未实施方案。原文保留，不作为本轮前置、不等待确认、不据此改变任何原会话或学习记录。
+
+<details>
+<summary>展开已被新部署范围替代的历史A/B交接提案</summary>
 
 # 主方案（待确认，未执行）
 
@@ -109,3 +138,5 @@ target: 0.2.1-rc.3
 - [ ] 全量只读清点并产出可审阅的逐条IDs/revisions/fingerprint预览。
 - [ ] 用户确认具体计划后，先在合成旧格式资料和独立Host复验，再按单独批准范围执行。
 - [ ] 新角色普通对话/课堂/练习及历史恢复真实验收后，确认所有旧自有模式已撤出。
+
+</details>
