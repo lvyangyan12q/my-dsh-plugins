@@ -98,3 +98,8 @@ Review reserves the durable round only when explicitly sent, so competing window
 ### rc.3 接管根目录
 
 legacyMaterialRoot 是仅在明确旧数据预览时读取的材料集合绝对根；它与解析器实际作业根 mineru.outputDir 独立。例如集合根为 materials/kaogong 时，既有作业根可能为 materials/kaogong/storage/mineru。不得把解析器 outputDir 改为集合根，也不从 outputDir 猜测父目录。题图根 questionImageRoot 另行明确配置。留空的集合根不自动接管材料，普通新实例不会读取旧库。离线预览分别传 --material-root、--question-image-root、--mineru-root；它始终不执行原生接管。
+
+
+### 候选发布门禁
+
+唯一入口仍为 npm run pack。除了 DSH_SOURCE 指向已构建且未经补丁的官方安装外，须设置 KAOGONG_WORKTABLE_ARCHIVE 为精确匹配的 Worktable 候选 tgz，KAOGONG_INSTALL_GATE_ROOT 为本机自有的独立测试目录，其所有祖先不得包含开发 node_modules。归档在永久保存前会通过官方 compiled CLI 安装到新 HOME，再以官方 public PluginPackages runtime resolution 检查 installation 范围的 Cordis、preset、Scope 身份并导入实际安装产物。该门禁不创建链接补齐 Native peer，不运行模型或服务，不改变正式 profile；日志保留在新测试目录。真实浏览器教学和生命周期仍需另验。

@@ -22,6 +22,8 @@ const temp=resolve(root,'.scratch','pack-'+randomUUID()),releases=resolve(root,'
 await mkdir(temp,{recursive:true});await mkdir(releases,{recursive:true})
 try{
  const [pack]=JSON.parse(run(['pack','--ignore-scripts','--json','--pack-destination',temp]))
+ const identity=spawnSync(process.execPath,[resolve(root,'scripts/check-installed-identity.mjs'),resolve(temp,pack.filename)],{cwd:root,env:process.env,encoding:'utf8',maxBuffer:8*1024*1024})
+ process.stdout.write(identity.stdout??'');process.stderr.write(identity.stderr??'');assert.equal(identity.status,0,'Official installed dependency identity gate failed')
  const destination=resolve(releases,pack.filename)
  await copyFile(resolve(temp,pack.filename),destination,constants.COPYFILE_EXCL)
  console.log(destination)
