@@ -72,3 +72,9 @@ target: 0.2.1-rc.3
 修复后的 K.3 / W.5 精确组合已产新不可变归档：[公开来源回执](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.3.receipt.json)。K.3为521739 bytes、63文件，SHA256 `500f00ffabafbc73b6b98df6b5227881cd2c9bdaed2c3de8411cd62e8f3d1ebf`，源码 `0e09e6c20dd13062a7efb6a5a62813df3375a343`。构建/公开类型、Host153、客户端9、领域21、归档1均通过；新增官方compiled CLI隔离安装门禁在无开发依赖祖先的全新HOME核验真实公共PluginPackages installation Cordis/preset/Scope身份及实际K/W Host导入，全部通过。
 
 独立3101已由官方CLI安装该准确组合并启动，真实浏览器角色创建、模型、授权/撤销与恢复仍在复验。历史K.2失败证据保留，新辅助门禁不能提前取消其两个实际阻塞或关闭13/15/16/10。本票保持open；没有正式资料接入、正式注册或推送，既有归档均保留原字节。
+
+## 双入口与阅读器修复已集成 · 2026-10-25
+
+双入口Scope修复 `41482be` 与撤销后阅读器清理 `824b26f` 已合入 `6cafbe9c1e5d894b0e143c279f208bee42eac3b2`。合并后Host154/154、客户端13/13与官方公开Host类型检查通过；发布清单包含新阅读器测试，未再强制把所有Scope解析到LIB掩盖SOURCE差异。仍需K.4准确新归档及source CLI真实复验，13/15/10不因此关闭。
+
+后续独立3101切换同一未经补丁Native的compiled CLI入口，K.3实际新建班主任成功并完成真实身份回答；任课老师的私有教学Skill已出现工具调用轨迹。该检查点真实模型请求已为2次，工具及课堂完整结果仍待核实，不能写作课堂完成。它是K.3 compiled入口证据，不能替代仍待执行的K.4 source入口验收，也不取消此前K.3 source运行失败记录。正式资料及环境保持不变。
