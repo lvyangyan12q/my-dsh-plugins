@@ -167,7 +167,7 @@ target: 0.2.1-rc.3
 
 - 官方 profile 安装可保留考公 optionalDependencies 的第二份同版本 `dsh-scope`。该包的作用域标签是模块实例身份，不因版本号相同而相等。旧验证代码用应用副本 `createScope`，原生 SystemPrompt 无法识别该标签，第一次打开班主任即发生全局 `deployment:persona-prefix` 重复注册；不涉及模型请求或已有会话迁移。
 - 资料与 role 创建未知状态保持保守恢复：本修复不清除 creationAttempt、重发创建、不迁移或删除会话；真实验收须显式选择新实例/角色或既有恢复操作。
-- 验证作用域通过公开 Native preset peer 模块入口（`import.meta.resolve`）及以该入口为锚的 Node 包解析获取同一 `dsh-scope`，核对公开 package.json 的包名/同版版本与公共 createScope/scopeOf 函数。没有硬编码宿主目录、读取内部 Map/Symbol、修改宿主或回退到全局 Persona。真实 mount 仅接受该 Native 模块能够识别的 Agent.ctx。
+- 验证作用域只接受当前运行实例公开 `ctx.get('pluginPackages').resolution.entries` 中 `scope: 'installation'` 的 `dsh-scope` 与 preset registry 条目（官方 `@deepseek-ai/dsh-app-boot` 的 `PluginPackages` / `RuntimeResolutionEntry` 类型）。每项必须唯一、为绝对包目录且带版本；按该目录公开 package.json 自解析入口并核对包名、版本与公共 createScope/scopeOf 函数。profile 同版副本、开发祖先或可解析的 peer 均不能替代 installation 身份；服务、条目缺失或重复明确拒绝。没有硬编码宿主目录、读取内部 Map/Symbol、修改宿主或回退到全局 Persona。真实 mount 仅接受该 Native 模块能够识别的 Agent.ctx。
 - Persona/SkillFilesystem/SkillTool/AskUser 仍经传入 Native Agent.ctx 安装；后三者的实际安装构建没有另行导入 scopeOf/scopeTarget/ScopedLayers，所需技能与工具通过原生注入服务注册，撤销保留原生基础 persona 和私有角色停用护栏。
-- 辅助合同使用真实官方 Agent/Persona/Skill 与独立同版 scope 模块副本，保留独立模块身份，避免 source 路径别名掩盖。标准 preset 包含原生 persona；覆盖两角色隔离、重复打开、普通会话不继承私有技能、卸载精确撤销。恢复修复前源码时以同一测试配置精确复现重复 section，修复后 Host 153/153 与公开 Host 类型检查通过。
+- 辅助合同通过官方 createRuntimeResolution + initProfile/loadProfileDirectory + 实际 PluginPackages service 构造独立 profile，物理保留第二份同版 scope；同时使用真实官方 Agent/Persona/Skill 与独立同版 scope 模块副本，保留独立模块身份，避免 source 路径别名掩盖。额外覆盖缺少运行元数据（即使开发 peer 可解析）、缺少 installation scope、重复 installation scope 都拒绝，不回退到 profile 或开发目录。标准 preset 包含原生 persona；覆盖两角色隔离、重复打开、普通会话不继承私有技能、卸载精确撤销。恢复修复前源码时以同一测试配置精确复现重复 section，修复后 Host 153/153 与公开 Host 类型检查通过。
 - 辅助合同不是官方安装闭环：新 K.3/W.5 候选仍需官方 CLI 安装后通过真实界面创建班主任、辅导员、任课老师及原生模型任务验证。冻结 W.4/K.2 不覆盖。
