@@ -53,3 +53,7 @@ resume是显式使用动作，更新最近使用顺序而不新建实例/视图�
 
 
 0.9.4平台generation ledger增加可选applyIntent（候选recipe/slot hash和OCC）与显式recovery审计。它不改变业务schema；旧applying无intent仅在原目标完整一致且不存在本generation的持久draft/active引用时可核实未提交。已提交但旧intent缺失时保守拒绝，不自动重放。恢复仅prepared或确认applied，原生请求/active产物保留，用户仍需分别预览、应用、启用。正式验收待root。
+
+### Native根容器的分栏溢出所有权
+
+分栏挂载期间仅对已选定会话根租用overflow-x/y:clip，双轴一起应用以避免单轴clip与hidden耦合成可滚动hidden。原内联值/priority在关闭和换根时恢复，同根重锚不重存租用值；Native后来主动改写的属性保留。不遍历正文，不改内部scrollBody或代码区域，不读写scroll offset；不改变任何会话、草稿、审批及持久化结构。源码回归与浏览器computed/focus滚动验收分别记录，后者以最终新归档真实安装为准。

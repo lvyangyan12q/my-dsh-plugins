@@ -1,4 +1,5 @@
 import {CompositionEditor} from './compositionEditor'
+import {containNativePane} from './nativePaneContainment.mjs'
 import { captureAnnotationTarget, resolveAnnotationTarget, type AnnotationTarget } from './annotationTarget'
 import type { AnnotationInsertion } from './hostInput'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
@@ -98,6 +99,7 @@ type SplitState = {
   savedMarginTop: string
   /** 打开前会话根上 --dsh-chat-user-width 的内联值（关闭时原样恢复；0.1.1 上该变量闲置无害） */
   savedWidthVar: string
+  releaseNativeOverflow: (()=>void) | null
   observer: ResizeObserver | null
   fallback: MutationObserver | null
   yieldObserver: MutationObserver | null
@@ -799,6 +801,7 @@ export const splitStore: SplitState = {
   savedMarginRight: '',
   savedMarginTop: '',
   savedWidthVar: '',
+  releaseNativeOverflow: null,
   narrowPaneId: undefined,
   nativeHidden: false,
   savedNativeVisibility: '',
@@ -865,6 +868,7 @@ export const splitStore: SplitState = {
     this.topWs = hasTopWs ? [...saved!.topWs] : top.map((p) => p.min)
     this.leftWs = hasLeftWs ? [...saved!.leftWs] : (left ? [left.min] : [])
     this.root = root
+    this.releaseNativeOverflow = containNativePane(root)
     this.header = header
     this.viewArea = viewArea
     this.savedWidthVar = root.style.getPropertyValue('--dsh-chat-user-width')
@@ -989,6 +993,8 @@ export const splitStore: SplitState = {
     // 仅锚点元素真正更换时才记录「打开前」原值——同元素重锚（hero→active 头部出现）
     // 必须保留最初存档，否则关闭时会把已应用的 margin/变量误还原成「新原值」
     if (oldRoot !== next) {
+      this.releaseNativeOverflow?.()
+      this.releaseNativeOverflow=containNativePane(next)
       this.savedWidthVar = next.style.getPropertyValue('--dsh-chat-user-width')
     }
     if (oldViewArea !== viewArea) {
@@ -1415,6 +1421,8 @@ export const splitStore: SplitState = {
   close(restoreSession = true) {
     this.restoreSessionOnClose = restoreSession
     this.restoreNativeView()
+    this.releaseNativeOverflow?.()
+    this.releaseNativeOverflow=null
     if (this.root && this.root.isConnected) {
       if (this.savedWidthVar) this.root.style.setProperty('--dsh-chat-user-width', this.savedWidthVar)
       else this.root.style.removeProperty('--dsh-chat-user-width')
