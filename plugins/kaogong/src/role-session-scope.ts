@@ -1,7 +1,9 @@
 import type { Context, Plugin } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-app-boot'
 import {createRequire} from 'node:module'
 import {readFile} from 'node:fs/promises'
 import {pathToFileURL} from 'node:url'
+import {join,isAbsolute} from 'node:path'
 import * as Persona from '@deepseek-ai/dsh-persona'
 import * as SkillFilesystem from '@deepseek-ai/dsh-skill-filesystem'
 import * as SkillTool from '@deepseek-ai/dsh-tool-skill'
@@ -11,13 +13,18 @@ import type { kaogongRolePresets } from './role-definitions.ts'
 
 /** Trusted packaged role code only. The platform supplies a verified Native Agent context. */
 export function kaogongRoleScopeOwner(ctx: Context, templates: Awaited<ReturnType<typeof kaogongRolePresets>>): RoleSessionScopeOwner {
-  // Scope keys are process-local identities. Resolve through the host preset peer, never our optional copy.
+  // Scope tags belong to the running Native installation, never a same-version profile/development peer.
   let scopeModule: Promise<typeof import('@deepseek-ai/dsh-scope')> | undefined
   const hostScope = () => scopeModule ??= (async () => {
     const presetName='@deepseek-ai/dsh-agent-preset-registry',scopeName='@deepseek-ai/dsh-scope'
-    const presetRequire=createRequire(import.meta.resolve(presetName)),scopeEntry=presetRequire.resolve(scopeName)
-    const preset=JSON.parse(await readFile(presetRequire.resolve(presetName+'/package.json'),'utf8'))
-    const scope=JSON.parse(await readFile(createRequire(scopeEntry).resolve(scopeName+'/package.json'),'utf8'))
+    const entries=ctx.get('pluginPackages')?.resolution?.entries
+    if(!Array.isArray(entries))throw new Error('NATIVE_ROLE_SCOPE_METADATA_UNAVAILABLE')
+    const installed=(name:string)=>{const rows=entries.filter(row=>row.name===name&&row.scope==='installation');if(rows.length!==1||typeof rows[0]!.packageDir!=='string'||!isAbsolute(rows[0]!.packageDir)||typeof rows[0]!.version!=='string')throw new Error('NATIVE_ROLE_SCOPE_INSTALLATION_IDENTITY_UNAVAILABLE');return rows[0]!}
+    const presetPackage=installed(presetName),scopePackage=installed(scopeName)
+    const presetManifest=join(presetPackage.packageDir,'package.json'),scopeManifest=join(scopePackage.packageDir,'package.json')
+    const preset=JSON.parse(await readFile(presetManifest,'utf8')),scope=JSON.parse(await readFile(scopeManifest,'utf8'))
+    if(preset.version!==presetPackage.version||scope.version!==scopePackage.version)throw new Error('NATIVE_ROLE_SCOPE_INSTALLATION_METADATA_CHANGED')
+    const scopeEntry=createRequire(scopeManifest).resolve(scopeName)
     if(preset.name!==presetName||scope.name!==scopeName||typeof preset.version!=='string'||scope.version!==preset.version)throw new Error('Native role scope package identity does not match the preset runtime')
     const runtime=await import(pathToFileURL(scopeEntry).href)
     if(typeof runtime.createScope!=='function'||typeof runtime.scopeOf!=='function')throw new Error('Native role scope public API is unavailable')

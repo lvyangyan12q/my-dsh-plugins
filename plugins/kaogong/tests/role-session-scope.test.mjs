@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import {test} from 'node:test'
 import {createRequire,registerHooks} from 'node:module'
-import {mkdtemp,rm,mkdir,copyFile} from 'node:fs/promises'
+import {mkdtemp,rm,mkdir,copyFile,readFile,writeFile,realpath} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {resolve,join} from 'node:path'
 import {pathToFileURL,fileURLToPath} from 'node:url'
@@ -58,6 +58,25 @@ test('new application roles use one generic native Agent with isolated system pe
   await ctx.plugin({apply:mountRoles})
   for(let wait=0;wait<100&&!ctx.get('worktableRoles');wait++)await new Promise(done=>setTimeout(done,10))
   assert.ok(ctx.get('worktableRoles'),'Role Host must finish async profile ownership')
+  removeRoles=await installKaogongRoles(ctx,dir)
+  await assert.rejects(ctx.worktableRoles.ensure('instance-a','class-advisor'),/NATIVE_ROLE_SCOPE_METADATA_UNAVAILABLE/,'A resolvable development peer cannot stand in for running Native installation metadata')
+  await removeRoles();removeRoles=undefined
+  const {PluginPackages,createRuntimeResolution,initProfile,loadProfileDirectory}=await load('packages/boot/app-boot/lib/index.js')
+  const installAnchor=resolve(native,'apps/cli/package.json'),profileDir=join(dir,'profiles','web'),profileScope=join(profileDir,'node_modules','@deepseek-ai','dsh-scope')
+  initProfile(profileDir,[]);await mkdir(join(profileScope,'lib'),{recursive:true})
+  await copyFile(resolve(native,'packages/core/scope/package.json'),join(profileScope,'package.json'));await copyFile(resolve(native,'packages/core/scope/lib/index.js'),join(profileScope,'lib/index.js'))
+  const manifest=JSON.parse(await readFile(join(profileDir,'package.json'),'utf8'));manifest.dependencies={'@deepseek-ai/dsh-scope':'0.2.1-rc.3'};await writeFile(join(profileDir,'package.json'),JSON.stringify(manifest))
+  const resolution=await createRuntimeResolution({installAnchor,home:dir,profile:loadProfileDirectory('dsh',profileDir,installAnchor)})
+  const originalScope=resolution.entries.find(row=>row.name==='@deepseek-ai/dsh-scope'&&row.scope==='installation')
+  for(const entries of [resolution.entries.filter(row=>row!==originalScope),[...resolution.entries,originalScope]]){
+   const metadata=await ctx.plugin(PluginPackages,{resolution:{...resolution,entries}})
+   try{removeRoles=await installKaogongRoles(ctx,dir);await assert.rejects(ctx.worktableRoles.ensure('instance-a','class-advisor'),/NATIVE_ROLE_SCOPE_INSTALLATION_IDENTITY_UNAVAILABLE/,'Missing or duplicate installation identity must never fall back to a profile/dev peer')}
+   finally{await removeRoles?.();removeRoles=undefined;await metadata.dispose()}
+  }
+  await ctx.plugin(PluginPackages,{resolution})
+  const installationScope=ctx.pluginPackages.resolution.entries.filter(row=>row.name==='@deepseek-ai/dsh-scope'&&row.scope==='installation')
+  assert.equal(installationScope.length,1)
+  assert.notEqual(await realpath(profileScope),await realpath(installationScope[0].packageDir),'The actual official profile fixture retains a second physical same-version scope package')
   removeRoles=await installKaogongRoles(ctx,dir)
   const advisor=await ctx.worktableRoles.ensure('instance-a','class-advisor')
   const teacher=await ctx.worktableRoles.ensure('instance-b','teacher.data-analysis')
