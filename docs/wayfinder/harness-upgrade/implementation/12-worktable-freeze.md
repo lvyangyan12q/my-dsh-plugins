@@ -3,9 +3,9 @@ id: harness-rc3-worktable-freeze
 title: 工作台独立验收、定版与提交
 parent: worktable-ai-framework-spec
 labels: [ready-for-agent]
-status: in-progress
+status: closed
 acceptance_status: closed-windows-web-stage
-delivery_status: pending-remote-receipt
+delivery_status: closed
 assignee: null
 blocked_by: [harness-rc3-host-consumers]
 target: 0.2.1-rc.3
@@ -71,13 +71,13 @@ target: 0.2.1-rc.3
 | 停用、卸载和重装 | `.2`官方管理UI停用与卸载态原生可用；`.3`同版本官方CLI remove/add及冷恢复。持久记录不被安装操作删除或覆盖 | 当前范围已验 |
 | 布局和可访问性 | `.2`1280桌面明暗、390窄屏模块/原生切换、Tab/Shift+Tab和Esc；`.3`最终页面重开显示正常。不外推Desktop/macOS或任意生成页 | 已测范围保留 |
 | 保护与正式注册 | 原生未修改、七个用户保护文件及双资产核验；正式web profile仅更新Worktable，其他8个依赖引用与bundle选择保持，未自动重启3080 | 已注册，见下方回执 |
-| 远程交付 | 集成提交、可跟踪双归档及文档准备；推送与远端精确提交仍待root实际回执 | 待回执 |
+| 远程交付 | 集成代码、可跟踪双归档及定版文档已推送；2026-10-25实际ls-remote核对冻结提交 `fe67e0ef…` | 已核验 |
 
 未覆盖范围继续保留：Desktop/macOS实际验收、非空队列实际交互、部分私有能力失败及并发/迟到分支、完整内嵌原生标题栏和未发送图片自动恢复。后两项沿用用户已批准的阶段方案：同Session原生视图及从标注历史重新附加图片；原要求未删除。考公HU05/HU06/HU08及HU07业务部分仍另行开放。
 
 ## 提交边界与接续
 
-初稿检查点曾为正式profile未切换且本轮未推送；该记录已由末尾正式注册回执更新。当前Windows Web阶段验收和正式Worktable引用注册已完成，远程精确提交仍待推送回执，再闭合本票交付状态。注册不代表自动重启正式宿主。
+初稿检查点曾为正式profile未切换且本轮未推送；该记录现已由末尾正式注册及远程回执更新。当前Windows Web阶段验收、正式Worktable引用注册及远程冻结提交核验完成，本票按此有限范围闭合；注册没有自动重启正式宿主。
 
 考公角色出现在原生模式菜单、来源预检未提前发现已归属会话、合成接管部分导入的隔离与恢复，保留在考公接入待办及独立开发分支；不合入未完成的预检改动，也不执行正式旧资料迁移。平台定版后的考公适配应继续遵守公开SDK、实例隔离和具体迁移预览确认要求。
 
@@ -132,3 +132,11 @@ target: 0.2.1-rc.3
 当前实现和Windows Web阶段验收完成，正式插件引用已注册；远程精确提交核对仍待实际推送回执。本票delivery格保持未勾，未把“已准备提交”写为已推送。可跟踪双归档及机器可读来源见[版本交付目录](../../../../plugins/worktable/releases/v0.10.0-rc.3.3/README.md)。
 
 正式安装的 `lib/index.js`、`lib/client.js`、`lib/sdk.js`、`lib/sdk.d.ts` 与插件manifest已同冻结归档解包逐文件核对，字节严格相同。原生仓库保持官方 `22ddee3792…`，tracked源码无变化；既有未跟踪 `.dsh` 配置保留。自有3097验收进程及18573合作网页辅助进程均核对身份后停止，相关监听为0；正式3080未由本轮自动启动或停止。
+
+## Resolution · 2026-10-25
+
+工作台Windows Web当前阶段按本票已测范围闭合。集成冻结提交 `fe67e0ef979eeb7c2aa9e27e59d301e19cc97c99` 已成功推送至用户指定仓库，并用实际 `git ls-remote` 核对 `refs/heads/codex/worktable-framework` 精确等于该提交。该远程提交包含实现、准确 `.3` 双归档、来源manifest及定版说明；不是仅提交本地文档或原型。
+
+正式web profile注册及安装bundle/SDK/manifest与冻结包逐文件字节一致已核验；其他8个依赖引用和bundle选择不变，原生源码未修改。自有验收实例及合作网页辅助进程已按身份核对关闭，正式3080未由本轮自动重启。七个用户保护文件及旧冻结包保持，私有日志、模型配置、鉴权入口与业务home未提交。
+
+本票关闭不表示整个历史规格或全部故事完成：大框架规格、HU05/HU06/HU08及HU07考公业务部分、10/11考公组合验收交付票继续开放；考公接入与角色菜单问题按用户顺序延期。Desktop/macOS、非空队列实际流程、部分私有能力失败及并发/迟到分支、完整原生内嵌标题与未发送图片恢复等限制沿用上文，不删除原要求或把辅助合同冒充实页通过。
