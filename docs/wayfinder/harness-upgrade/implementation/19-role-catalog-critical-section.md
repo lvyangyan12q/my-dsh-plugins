@@ -1,3 +1,15 @@
+---
+id: harness-rc3-role-catalog-critical-section
+title: 私有角色目录完整生命周期串行化与冷恢复
+parent: harness-rc3-kaogong-role-scope
+labels: [ready-for-agent]
+status: in-progress
+implementation_status: production-source-integrated
+acceptance_status: pending-new-w7-k6-installed-cold-editor
+assignee: kaogong-cold-role-skills
+blocked_by: []
+target: 0.2.1-rc.3
+---
 # Role Skill catalogue stability during cold restore
 
 ## Reproduced defect

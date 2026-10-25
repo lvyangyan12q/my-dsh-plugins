@@ -109,3 +109,7 @@ Desktop/macOS、非空队列实际交互、部分私有能力和并发负例仍�
 ### 原生根容器隐式横滚兼容
 
 [18 Native根容器溢出兼容](18-native-pane-containment.md)记录W.5/K.4实际审批长路径focus导致root隐藏横滚190px的缺口。仅在split持有根期间租用双轴overflow clip并精确释放，不改Native或内部滚动；源码/DOM门禁已过，真实最终归档CUA仍待，不将样式字段或JSDOM当作CSS布局验收，也不覆盖冻结候选。
+
+### 私有角色目录冷恢复验收缺口
+
+[19目录生命周期临界区](19-role-catalog-critical-section.md)已合入源码，prepare/validate/dispose、mount/assert和精确释放采用同一队列，首次mount当前Agent判断也在临界区内。合并Host165/165与官方Host类型通过；相关Worktable39项（37通过、2旧环境跳过）。真实新W.7/K.6冷启动编辑器复验仍待，源码测试不关闭13/10/19。
