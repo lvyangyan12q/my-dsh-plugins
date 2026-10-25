@@ -22,6 +22,17 @@ const {default:Storage}=await load('packages/storage/storage/lib/index.js')
 const {JsonStorageBackend}=await load('packages/storage/storage-json/lib/index.js')
 const {DomainFacility}=await load('packages/storage/storage-domain/lib/index.js')
 const response=()=>({status:0,value:null,writeHead(code){this.status=code},end(value){this.value=JSON.parse(value)}})
+test('actual Host rejects an older descriptor without planned target inspection before registration or writes, regardless of JavaScript argument acceptance',async()=>{
+ const calls=[],descriptor=describeProtocol(),ctx={
+  worktableProtocol:{describe:()=>({...descriptor,features:descriptor.features.filter(feature=>feature!=='legacy-role-target-inspection-v1')})},
+  worktableRoles:{inspectLegacySource:async(_app,_role,_source,_target)=>{calls.push('inspect');return {status:'ready'}}},
+  worktableApplications:{contribute:async()=>{calls.push('application registration');throw Error('registration must not start')}},
+  storageDomain:{open:async()=>{calls.push('storage open');throw Error('storage must not open')}},
+ }
+ await assert.rejects(mountKaogong(ctx,{}),/legacy-role-target-inspection-v1/)
+ assert.deepEqual(calls,[])
+})
+
 test('actual production Host installs empty views, routes tools by native Session and enforces explicit library grant/revoke and pinned adoption recovery',async()=>{
  const root=await mkdtemp(join(tmpdir(),'kaogong-production-')),nativeContext=new Context();await nativeContext.plugin(Storage);const backend=new JsonStorageBackend(join(root,'data'));nativeContext.storage.backend.register('json',backend);const facility=new DomainFacility(nativeContext,{backend:'json'});const apps=new ApplicationDirectory(join(root,'apps.json')),resources=new ResourceDirectory(join(root,'resources.json'),apps,apps.gate);const routes=new Map(),tools=new Map(),owners=new Map();let stop,otherPool,publicRoles,publicTasks;let nativeCreates=0,nativePrompts=0;
  const legacyHome=await legacyFixture();let failImport=false,importPuts=0
