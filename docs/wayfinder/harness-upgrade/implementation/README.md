@@ -93,3 +93,7 @@ Desktop/macOS、非空队列实际交互、部分私有能力和并发负例仍�
 - [07课堂](07-classroom-application.md)、[08实例隔离](08-kaogong-instances.md)、[10组合验收](10-installed-acceptance.md)、[11组合交付](11-review-delivery.md)按本轮全新部署适用范围继续验收；[09历史学习接管](09-legacy-adoption.md)和旧要求原文保留，当前不执行、不作为前置，也不标记已完成。范围适用性见[规格补记](../../worktable-platform/framework-spec.md#fresh-kaogong-deployment-scope)。
 
 本轮具体确认门槛针对资料接入写新目标，不要求旧Session A/B路线确认。旧unknown合成接管回执和部分导入目标继续隔离，不重试、清理或覆盖；先前合成旧学习计划的批准不能套用到新的资料计划或正式数据。只读清点不启动旧考公修复、recover或MinerU轮询，不能用整库覆盖新实例。本文是范围与进度记录，不表示已清点真实资料、已确认具体计划或已部署新考公包。
+
+### 2026-10-25 候选集成更新
+
+资料来源隔离修复与 Kaogong rc.3.2 / Worktable rc.3.4 元数据已合入 `5fe314ab473d9bf23777af4df94b6b18db45ec38`；合并后生产 Host153/153及官方 Host类型通过。具体边界见[15资料接入](15-kaogong-fresh-materials.md)。新 Kaogong 完整 pack、实际归档安装和原生 AI 正在后续验收；这不是正式部署、资料 apply 或工单关闭记录。13/15保持 in-progress，07/08/10/11保持open；平台12和冻结回退包状态不变。
