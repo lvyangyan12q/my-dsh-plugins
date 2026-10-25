@@ -1,0 +1,24 @@
+{
+  "status": "candidate-pending-installed-ui-native-ai-recovery",
+  "archive": "plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.2.tgz",
+  "buildSource": "5fe314ab473d9bf23777af4df94b6b18db45ec38",
+  "docsSource": "8843d34de1222ef69d4644c301185a42abac743f",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "harnessVersion": "0.2.1-rc.3",
+  "version": "0.2.0-rc.3.2",
+  "worktablePeer": "0.10.0-rc.3.4",
+  "bytes": 520960,
+  "sha256": "6f30424b5fa8c643dbc36bd065d11b083276ca10f52906752e7cbce01b663aef",
+  "files": 63,
+  "releaseGates": {
+    "host": 153,
+    "client": 9,
+    "domain": 21,
+    "artifact": 1,
+    "buildPublicTypes": true
+  },
+  "unpackedHostFactory": true,
+  "unpackedClientFactory": true,
+  "dependencyMode": "Unpacked candidate Worktable peer and official Native public dependencies; registry install not claimed",
+  "formalDataModified": false
+}
