@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import {test} from 'node:test'
-import {createRequire} from 'node:module'
-import {mkdtemp,rm} from 'node:fs/promises'
+import {createRequire,registerHooks} from 'node:module'
+import {mkdtemp,rm,mkdir,copyFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {resolve,join} from 'node:path'
-import {pathToFileURL} from 'node:url'
-import {installKaogongRoles,kaogongRolePresets} from '../src/role-definitions.ts'
+import {pathToFileURL,fileURLToPath} from 'node:url'
+
 import {mountRoles} from '../../worktable/01_content/src/framework/role-host.mjs'
 import {AdmissionGate} from '../../worktable/01_content/src/framework/admission.mjs'
 
@@ -14,6 +14,14 @@ assert.ok(native,'Set KAOGONG_TEST_RUNTIME to built official DSH checkout')
 const require=createRequire(resolve(native,'packages/client/ui-renderer/package.json'))
 const {Context}=require('@deepseek-ai/cordis')
 const load=async path=>await import(pathToFileURL(resolve(native,path)).href)
+// Official installs may keep a second same-version dsh-scope next to optional plugin dependencies.
+// Its private Symbol must not become the identity of the host Agent/Prompt/Skill scope.
+await mkdir(new URL('../.scratch/',import.meta.url),{recursive:true})
+const dependencyCopy=await mkdtemp(resolve(fileURLToPath(new URL('../.scratch/',import.meta.url)),'scope-copy-'))
+await copyFile(resolve(native,'packages/core/scope/lib/index.js'),join(dependencyCopy,'scope.mjs'))
+const roleScopeUrl=new URL('../src/role-session-scope.ts',import.meta.url).href
+const hooks=registerHooks({resolve(specifier,context,next){if(specifier==='@deepseek-ai/dsh-scope'&&context.parentURL===roleScopeUrl)return {url:pathToFileURL(join(dependencyCopy,'scope.mjs')).href,shortCircuit:true};return next(specifier,context)}})
+const {installKaogongRoles,kaogongRolePresets}=await import('../src/role-definitions.ts')
 
 test('new application roles use one generic native Agent with isolated system personas and Skills', {timeout:15000}, async()=>{
  const dir=await mkdtemp(join(tmpdir(),'kaogong-session-roles-')),ctx=new Context(),handles=new Map()
@@ -31,7 +39,7 @@ test('new application roles use one generic native Agent with isolated system pe
   const {SkillRegistry}=await load('packages/skill/skill/lib/index.js')
   await ctx.plugin(SkillRegistry)
   await ctx.plugin((await load('packages/preset/agent-preset-registry/lib/index.js')).default,{default:'standard'})
-  await ctx.agentPresets.register({id:'standard',name:'Native standard',plugins:[]})
+  await ctx.agentPresets.register({id:'standard',name:'Native standard',plugins:[{name:pathToFileURL(resolve(native,'packages/preset/persona/lib/index.js')).href,config:{prefix:'Native standard persona.',suffix:'Native standard suffix.'}}]})
   ctx.provide('worktableAdmission',new AdmissionGate())
   ctx.provide('profileContext',{dir})
   ctx.provide('connection',{admit:()=>({})})
@@ -53,6 +61,7 @@ test('new application roles use one generic native Agent with isolated system pe
   removeRoles=await installKaogongRoles(ctx,dir)
   const advisor=await ctx.worktableRoles.ensure('instance-a','class-advisor')
   const teacher=await ctx.worktableRoles.ensure('instance-b','teacher.data-analysis')
+  assert.equal((await ctx.worktableRoles.ensure('instance-a','class-advisor')).sessionId,advisor.sessionId,'Repeated role opening must not mount a second persona')
   assert.equal(advisor.presetId,'standard','New application roles must not need their own native mode')
   assert.equal(teacher.presetId,'standard')
   const {assembleContextFor}=await load('packages/core/agent/lib/index.js')
@@ -61,6 +70,8 @@ test('new application roles use one generic native Agent with isolated system pe
   assert.equal(await personaOf(advisor),definitions.find(row=>row.id==='kaogong.class-advisor.v1').plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix)
   assert.equal(await personaOf(teacher),definitions.find(row=>row.id==='kaogong.teacher.data-analysis.v1').plugins.find(row=>row.name==='@deepseek-ai/dsh-persona').config.prefix)
   assert.notEqual(await personaOf(advisor),await personaOf(teacher))
+  const foreignScope=await import(pathToFileURL(join(dependencyCopy,'scope.mjs')).href)
+  assert.equal(foreignScope.scopeOf(handles.get(advisor.sessionId).agent.ctx),undefined,'The fixture preserves a second incompatible same-version scope identity')
   assert.equal(await ctx.skills.get('kaogong-teach'),undefined)
   for(const binding of [advisor,teacher]){
    const agent=handles.get(binding.sessionId).agent
@@ -75,9 +86,11 @@ test('new application roles use one generic native Agent with isolated system pe
   enabled=true
   const plain=await ctx.agents.create({sessionId:'unbound-native',meta:{cwd:dir,agentPreset:'standard'},setup:async context=>{await ctx.agentPresets.mount(context,'standard')}})
   handles.set('unbound-native',plain)
+  assert.equal((await ctx.systemPrompt.assemble(assembleContextFor(plain.agent))).sections.find(row=>row.name==='deployment:persona-prefix').text,'Native standard persona.','Unrelated standard Native sessions retain their own persona')
   assert.equal(await ctx.skills.get('kaogong-teach',{scope:plain.agent,cwd:dir}),undefined,'An unrelated native Session does not inherit teaching Skills')
   assert.equal((await enter(plain.agent)).kind,'continue')
   await removeRoles();removeRoles=undefined
+  assert.equal(await personaOf(advisor),'Native standard persona.','Withdrawing the app releases only its own overlay and preserves the Native standard persona')
   await assert.rejects(enter(handles.get(advisor.sessionId).agent),/停用|未就绪|能力缺失/)
   assert.equal(await ctx.skills.get('kaogong-teach',{scope:handles.get(advisor.sessionId).agent,cwd:dir}),undefined,'Owner withdrawal releases its private Skill')
  } finally {
@@ -85,5 +98,6 @@ test('new application roles use one generic native Agent with isolated system pe
   for(const handle of handles.values())await handle.dispose()
   await ctx.fiber.dispose()
   await rm(dir,{recursive:true,force:true})
+  hooks.deregister();await rm(dependencyCopy,{recursive:true,force:true})
  }
 })
