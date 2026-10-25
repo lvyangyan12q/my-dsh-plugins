@@ -9,6 +9,16 @@ blocked_by: [harness-upgrade-kaogong-ownership, harness-rc3-legacy-role-contract
 target: 0.2.1-rc.3
 ---
 
+## 当前范围覆盖 · 2026-10-25
+
+本节优先于下方保留的历史实施记录。本轮按用户最新决定采用全新部署：使用原生标准 preset，角色人格及 Skills 由考公应用私有管理；不迁移、不删除历史会话、学习记录或成绩，也不把保留旧 preset IDs 作为新部署要求。角色范围与原生执行边界见[13](13-kaogong-role-scope.md)。
+
+原题库、讲义、图片、PDF 与 MinerU 资料保留原址。先只读清点、展示 materials-only 具体预览，经明确确认后才写入新的空资料库；不默认共享私人或来源不明资料。接入及隔离要求见[15](15-kaogong-fresh-materials.md)。历史[09](09-legacy-adoption.md)不构成本轮前置，原票与历史正文保留，历史联合迁移未执行，09未关闭；旧接管计划批准不替代本轮具体资料计划批准。
+
+当前独立验收入口为 3101，目标为准确 Worktable `0.10.0-rc.3.4` / Kaogong `0.2.0-rc.3.2` 归档组合。新包真实安装 UI、原生 AI 与恢复的完整验收仍 pending；下方 3097 开发 link、旧版本及接管准备只证明相应历史检查点。本票未据此关闭。
+
+## 历史要求与检查点（按上述当前范围解释）
+
 实现 HU05/06：考公独立通过 Worktable SDK 注册，去除 personal-workbench 运行依赖。私有角色/Skills 归应用所有；新学习实例为空，同实例多视图共享状态，不同实例默认隔离。历史学习与资料库的归属按已确认决策，正式接管由09另行处理。
 
 - [ ] notebook/progress/bank/knowledge/practice/lessons 六领域均有明确 owner；activeLesson、日期键、默认计划及浏览器草稿不跨实例串用。
