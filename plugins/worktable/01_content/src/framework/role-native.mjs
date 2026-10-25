@@ -39,9 +39,17 @@ export function createRoleAuthority(ctx,capabilities){
   if(!workspace(row.creation.cwd).sessionIds.includes(row.sessionId))reject('workspace-membership','角色会话不在原生工作区中。')
   return {sessionId:row.sessionId,presetId:row.presetId,cwd:stored.header.cwd,status:'current'}
  }
+ const nativeAgent=(row,agent)=>{
+  if(agent?.id!==row.sessionId||agent.session?.id!==row.sessionId||ctx.agentPresets.presetForSession(agent.session)!==row.presetId||!same(agent.session.header?.cwd,row.creation.cwd))reject('native-identity','原生Agent、预设或工作目录与持久角色绑定不一致。')
+  const registered=workspace(row.creation.cwd)
+  if(row.phase==='ready'&&!registered.sessionIds.includes(row.sessionId))reject('workspace-membership','原生Agent不属于角色登记的工作区。')
+ }
  return {
   validate:async(definition,appId)=>{workspace(definition.creation.cwd);return capabilities.validateRole(definition,appId)},
   validateExisting:existing,
+  sessionCapability:binding=>capabilities.nativeSessionCapability(binding),
+  activateSession:async(capability,binding,definition,agent,assertBinding)=>{nativeAgent(binding,agent);await capabilities.mountNativeSession(capability,binding,definition,agent,assertBinding)},
+  assertSession:async(capability,binding,definition,agent)=>{nativeAgent(binding,agent);await capabilities.assertNativeSession(capability,binding,definition,agent)},
   hydrateLegacy,
   validateLegacy:async(row,{allowMissing=false,creation}={})=>{
    if(creation&&!same(creation.cwd,row.creation.cwd))reject('workspace-changed','旧绑定目录与应用声明不同，未改写旧会话目录。')
