@@ -90,3 +90,9 @@ K.4已通过规定完整pack并保存[公开来源回执](../../../../plugins/ka
 同源 `edc5e09765938932cef2fdc597e5cb6be9aea0a1` 的两份候选经顺序完整pack通过，并仅新增精确归档与脱敏回执：[W.6](../../../../plugins/worktable/01_content/dist/v0.10.0-rc.3.6/release-receipt.json)双资产各581082 bytes，SHA256 `5dd0abf1c32f557382e738b13d397323589debf452b5c81c059d7d22520dc1de`；[K.5](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.5.receipt.json)528228 bytes、65文件，SHA256 `90c1601d328e8b423f8fa7c32c3587ac4db42aecaa2d93c0c9b8d1ba438bda91`。W官方合同9、源码359（357通过/2旧环境跳过）、根lease4、安装后锚点10及发布门禁通过；K Host164、客户端13、领域21、归档1、公开类型及官方CLI无开发祖先身份门禁通过。
 
 独立3101已停止此前自有source进程，准备仅在该实例切换独立v3合成资料并安装W.6/K.5。真实CSS/focus滚动、v3具体预览/接入与练习评分、Native完整流程及恢复仍待准确新包验收；13/15/17/18/10均不因pack关闭。旧归档原字节保留，正式插件配置和资料未改，未推送。
+
+### 计划页的既有统计投影 · 2026-10-25
+
+真实“计划与统计”入口此前只有今日计划：指标区仅允许非focused课堂，导致plan页隐藏。现只调整既有四项指标的可见性，显式plan页可见；非focused standalone课堂保持原展示，focused课堂仍隐藏。指标值继续来自原dashboard，不新增统计、不改变累计/单轮口径或计算。
+
+新增3项实际React DOM回归并纳入唯一客户端清单：通过深度应用导航查看10题/90%，空实例0题/0%，以及standalone与focused课堂的原边界。当前客户端16/16、完整构建及官方Host/客户端类型通过。此为源码验证；新W.7/K.6组合及真实页面仍待，不覆盖既有包或改运行实例。

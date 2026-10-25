@@ -28,7 +28,7 @@ export type DashboardData = {
 export type KaogongViewProps = {
   /** Hide without unmounting to retain the current practice and reader state. */
   embedded?: boolean
-  /** Dedicated learning window excludes dashboard statistics and planning. */
+  /** Focused classrooms exclude dashboard statistics; the explicit plan page keeps its metrics. */
   focusedStudy?: boolean
   active?: boolean
   pageId?: string
@@ -185,6 +185,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
     }
   }
   const shown = (id: string) => pageId === undefined || pageId === id
+  const showStatistics=pageId==='plan'||(!focusedStudy&&shown('classroom'))
 
   const requests = useRequestOwner()
   const refresh = useCallback(async () => {
@@ -419,7 +420,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
               onSelectPage?.('practice')
             }} /></div>
             {data !== null && <>
-              <section hidden={focusedStudy || !shown('classroom')} style={{ display: !focusedStudy && shown('classroom') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
+              <section hidden={!showStatistics} style={{ display: showStatistics ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
                 <Metric label="距离考试" value={`${data.daysToExam}`} suffix="天" accent={colors.blue} />
                 <Metric label="计划完成" value={pct(data.pastDonePct)} suffix={`${data.pastDone}/${data.pastDays} 天`} accent={colors.green} />
                 <Metric label="做题正确率" value={pct(data.accuracyRate)} suffix={`${data.totalQuestions} 题`} accent={colors.red} />
