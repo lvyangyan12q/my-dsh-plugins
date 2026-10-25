@@ -5,11 +5,19 @@ parent: harness-rc3-kaogong-instances
 labels: [ready-for-agent]
 status: in-progress
 implementation_status: production-source-integrated
-acceptance_status: pending-new-archive-native-model-run
+acceptance_status: blocked-installed-role-persona-collision
 assignee: kaogong-roles-scope
 blocked_by: [harness-rc3-worktable-freeze]
 target: 0.2.1-rc.3
 ---
+
+## 最新真实安装结果 · 2026-10-25
+
+独立3101已安装准确 Worktable `0.10.0-rc.3.4` / Kaogong `0.2.0-rc.3.2` 候选，原生模式选择器实际仅显示宿主标准模式，未出现考公班主任、辅导员或任课老师条目，这一菜单边界通过。
+
+**候选未通过角色验收**：首次点击创建班主任时，真实组合运行报 `duplicate deployment:persona-prefix`，角色没有完成创建。源码/类型测试未覆盖这一安装后的原生人格组合冲突，修复仍在独立源码切片处理中；当前归档不能因此视为可交付。真实模型请求为0次，角色人格、私有Skill、教学/问题/审批/Stop及冷启动恢复均未完成实际验收，本票保持in-progress。
+
+3101仅停止了本轮自有进程，合成实例及回执保留供新候选复验；没有注册到正式环境、推送完成声明或修改正式资料。
 
 # 当前范围：全新部署 · 2026-10-25
 
