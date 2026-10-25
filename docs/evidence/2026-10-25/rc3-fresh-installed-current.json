@@ -76,8 +76,7 @@
   },
   "pending": [
     "Actual remote push proof and closing delivery ticket11",
-    "Safe no-follow cleanup of three active owned worktrees",
-    "Formal material import needs its own concrete preview and confirmation"
+    "Any formal material import requires its own concrete preview and confirmation"
   ],
   "formalRegistration": {
     "officialOfflineCLI": true,
@@ -92,5 +91,18 @@
     "installedPayload": "All9 W files and65 K files hashes equal archives",
     "formalMaterialsImported": false,
     "historyMigratedOrDeleted": false
+  },
+  "finalOwnedCleanup": {
+    "completedWorktrees": 15,
+    "activeOwnedRemaining": 0,
+    "method": "No-follow inventory; nonrecursive pointer removal; zero-links proof; Git removes owned files",
+    "unrelatedScratch": "Excluded",
+    "archivesBranchesData": "Retained"
+  },
+  "finalProcessState": {
+    "ownedAcceptanceHostStopped": true,
+    "port3101Listeners": 0,
+    "port3080Listeners": 0,
+    "browser": "Only owned3101 tab closed"
   }
 }

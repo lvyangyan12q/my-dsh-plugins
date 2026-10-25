@@ -6,9 +6,18 @@ labels: [ready-for-agent]
 status: in-progress
 assignee: null
 blocked_by: [harness-rc3-installed-acceptance]
-acceptance_status: formal-registered-remote-push-and-final-cleanup-pending
+acceptance_status: formal-registered-safe-cleanup-complete-remote-push-pending
 target: 0.2.1-rc.3
 ---
+
+## 当前仅剩远程交付 · 2026-10-25
+
+- [x] 准确W.7/K.7独立验收及正式注册，其他配置/数据保持。
+- [x] 自有验收进程已验证后停止；3101及3080均无listener，仅自建3101浏览器tab关闭。
+- [x] 本轮15个已合并工作树（含首次遗留孤儿及最终3个）按nofollow扫描、非递归断指针、零链接证明后安全清理。全部分支、永久/备份包、完整验收home及合成/原资料保留，旧阶段和其他scratch未清理。
+- [ ] 实际远程push成功并核验远程分支HEAD。
+
+11保持in-progress，仅远程交付待实际证明。正式3080未启动，资料接入仍需单独具体预览确认。
 
 ## 当前交付前沿 · 2026-10-25 · W.7 / K.7
 

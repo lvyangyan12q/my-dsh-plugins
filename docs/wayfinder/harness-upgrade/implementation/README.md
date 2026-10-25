@@ -2,7 +2,7 @@
 
 ## 最终当前入口 · 2026-10-25 · W.7 / K.7
 
-准确W.7/K.7已通过官方stock源码命令（无TSX_TSCONFIG_PATH）的真实角色/Skill/精确轮次、空新实例与同包卸载重装恢复，28个持久文件hash相同；20/13/10恢复closed。正式profile已注册准确归档并使用已登记专用roleCwd，但3080未运行。11保持in-progress等实际push及最后安全清理。09历史迁移open排除、正式原资料仅只读清点未导入，资料接入仍另预览确认。
+准确W.7/K.7已通过官方stock源码命令（无TSX_TSCONFIG_PATH）的真实角色/Skill/精确轮次、空新实例与同包卸载重装恢复，28个持久文件hash相同；20/13/10恢复closed。正式profile已注册准确归档并使用已登记专用roleCwd，但3080未运行。本轮15个已合并工作树已安全清理，自有验收进程及页面已关闭，3101/3080无listener；11保持in-progress仅等实际push。09历史迁移open排除、正式原资料仅只读清点未导入，资料接入仍另预览确认。
 
 [当前脱敏实页记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)、[事故恢复记录](../../../evidence/2026-10-25/rc3-cleanup-recovery.json)及[逐步接入说明](../../../worktable-integration.md)为当前入口。以下W.7/K.6或stock入口阻塞段落仅为对应历史，不代表当前仍阻塞。准确版本的Native矩阵与IME证据边界分别保留。
 

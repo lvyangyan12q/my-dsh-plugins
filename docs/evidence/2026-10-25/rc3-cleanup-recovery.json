@@ -11,10 +11,11 @@
     "regression": "Merged K7 Host167/167 and official public declarations passed"
   },
   "subsequentCleanup": {
-    "completedOwnedWorktrees": 12,
+    "completedOwnedWorktrees": 15,
     "method": "Node lstat no-follow inventory; non-recursive pointer removal; zero-links proof; then Git/PowerShell removal of owned files",
-    "preserved": "Materials,acceptance data,frozen archives,Native source and shared source dependencies",
-    "activeOwnedRemaining": 3
+    "preserved": "All branches,permanent and backup archives,full acceptance home,synthetic and original materials retained; older unrelated scratch excluded",
+    "activeOwnedRemaining": 0,
+    "generatedArchiveHandling": "Only final generated K7 archive was preserved outside cleaned checkout after exact SHA match with permanent archive"
   },
   "boundary": "Actual incident and exact recovery, not a claim Native was never touched; no permanent Native source patch remains"
 }
