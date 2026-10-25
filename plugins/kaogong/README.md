@@ -1,6 +1,6 @@
 # Kaogong
 
-DSH Web `0.2.1-rc.3` + Worktable `0.10.0-rc.3.5` learning application: notebook, plan/progress, question bank, knowledge reader, durable practice and lessons. Install the prebuilt bundle through the [official release instructions](../../README.md#prebuilt-installation).
+DSH Web `0.2.1-rc.3` + Worktable `0.10.0-rc.3.6` learning application: notebook, plan/progress, question bank, knowledge reader, durable practice and lessons. Install the prebuilt bundle through the [official release instructions](../../README.md#prebuilt-installation).
 
 ## rc.3 Application Boundary
 

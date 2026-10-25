@@ -46,6 +46,8 @@ if (manifest.version !== pkg.version) {
   console.error('[release-prep] FAIL: package.json(' + pkg.version + ') != dsh.plugin.json(' + manifest.version + ')')
   process.exit(1)
 }
+const lock = JSON.parse(readFileSync(join(HERE, 'package-lock.json'), 'utf8'))
+if (lock.name !== pkg.name || lock.version !== pkg.version || lock.packages?.['']?.version !== pkg.version) throw new Error('package-lock root identity/version must match the candidate package')
 const VERSION = pkg.version
 console.log('[release-prep] version = ' + VERSION)
 const outDir = join(HERE, 'dist', 'v' + VERSION)
