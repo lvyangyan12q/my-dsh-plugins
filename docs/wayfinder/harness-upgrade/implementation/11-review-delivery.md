@@ -21,7 +21,7 @@ target: 0.2.1-rc.3
 
 ## 当前交付前沿 · 2026-10-25 · W.7 / K.7
 
-20/13/10的stock默认启动及准确W.7/K.7同包重装实页已通过。正式profile已官方离线安装准确归档，9个W文件/65个K文件逐一hash相符；仅精确启用考公并设置已登记专用roleCwd及明确原资料根，其他9依赖/12bundle/patch/MinerU/题图路径深相等。正式3080未运行，正式资料未导入、历史未迁删。固定a81ac77→81fa66b两轴源码review各0finding，追加发布身份门禁未改产品行为。
+20/13/10的stock默认启动及准确W.7/K.7同包重装实页已通过。正式profile已官方离线安装准确归档，9个W文件/65个K文件逐一hash相符；仅精确启用考公并设置已登记专用roleCwd及明确原资料根，根依赖总数前后均9（替换W/K两项、其余7项保持）/原12个bundle保留且安装后共13个bundle/patch/MinerU/题图路径深相等。正式3080未运行，正式资料未导入、历史未迁删。固定a81ac77→81fa66b两轴源码review各0finding，追加发布身份门禁未改产品行为。
 
 本票保持in-progress，等待实际远程push证明与最后3个active自有工作树安全清理。已完成12个旧工作树nofollow断指针后清理；首次Windows清理事故、3个Native tracked文件精确恢复及2个官方编译库重建如实记录在[恢复证据](../../../evidence/2026-10-25/rc3-cleanup-recovery.json)，最终Native clean22ddee且K7 Host167/公开types通过，不能将其描述为从未触及Native。
 

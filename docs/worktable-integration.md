@@ -27,7 +27,7 @@ node D:/programming/workspace/deepseek-harness/apps/cli/lib/bin.js plugin --prof
 原资料路径仍以实际明确配置为准：`materialSourceHome`是只读资料元数据来源；`legacyMaterialRoot`是原集合根；`questionImageRoot`是题图根；`mineru.outputDir`是实际解析作业根。这四者不能互相猜测、改为同一个目录或用新的roleCwd替代。资料不存在/证明不符时保留并拒绝，不猜路径补齐，不自动运行MinerU。
 
 
-正式安装后的核对已完成：工作台9文件、考公65文件与准确归档逐一hash一致；其他9依赖/12bundle及原patch/MinerU/题图路径保持深相等。正式profile未启动。独立验收同包移除重装的28个Session/存储/配置hash相同；正式资料仅只读清点，尚未导入。
+正式安装后的核对已完成：工作台9文件、考公65文件与准确归档逐一hash一致；根依赖总数前后均9（替换W/K两项、其余7项保持）/原12个bundle保留且安装后共13个bundle及原patch/MinerU/题图路径保持深相等。正式profile未启动。独立验收同包移除重装的28个Session/存储/配置hash相同；正式资料仅只读清点，尚未导入。
 
 Windows临时工作树清理曾触发长路径/链接遍历事故，3个Native tracked文件已按官方提交精确恢复、2个编译依赖库按官方构建重建；最终Native clean22ddee且K.7四入口Host167/公开types通过。后续按nofollow清点→非递归断指针→零链接证明→删除自有文件，详见[脱敏恢复记录](evidence/2026-10-25/rc3-cleanup-recovery.json)。这不是接入需要修改Native源码，亦不能隐去此次实际触及及恢复。
 ## 以下为旧阶段操作记录与背景（按当前接入顺序解释）
