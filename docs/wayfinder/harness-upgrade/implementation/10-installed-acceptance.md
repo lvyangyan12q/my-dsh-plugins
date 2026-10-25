@@ -78,3 +78,9 @@ target: 0.2.1-rc.3
 双入口Scope修复 `41482be` 与撤销后阅读器清理 `824b26f` 已合入 `6cafbe9c1e5d894b0e143c279f208bee42eac3b2`。合并后Host154/154、客户端13/13与官方公开Host类型检查通过；发布清单包含新阅读器测试，未再强制把所有Scope解析到LIB掩盖SOURCE差异。仍需K.4准确新归档及source CLI真实复验，13/15/10不因此关闭。
 
 后续独立3101切换同一未经补丁Native的compiled CLI入口，K.3实际新建班主任成功并完成真实身份回答；任课老师的私有教学Skill已出现工具调用轨迹。该检查点真实模型请求已为2次，工具及课堂完整结果仍待核实，不能写作课堂完成。它是K.3 compiled入口证据，不能替代仍待执行的K.4 source入口验收，也不取消此前K.3 source运行失败记录。正式资料及环境保持不变。
+
+## K.4 准确候选归档与分入口验收 · 2026-10-25
+
+K.4已通过规定完整pack并保存[公开来源回执](../../../../plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.4.receipt.json)：源码 `ece1144b9543133ba4b101555df5db0478ff15e2`，524312 bytes、64文件，SHA256 `cc1fe69df1f676ee9a52aba877c5ebf5ac46ae2f17ccb132d92a5ed23d24f88d`，精确依赖W.5。构建/公开类型、Host154、客户端13、领域21、归档1及官方CLI无开发依赖祖先安装身份门禁均通过；Host明确包含source/compiled真实子进程和独立Scope副本，客户端包含4项撤销DOM回归。64文件唯一新增项是公开native-role-scope声明，无源码/测试/map入包。
+
+之前K.3在compiled入口实际完成3次模型请求：班主任身份答复、任课老师调用私有教学Skill并取得实际工具结果、普通未绑定Native会话对同Skill返回unknown，支持该入口的私有能力隔离；未将其写作完整课堂完成。该自有compiled进程已停止。独立3101随后经官方CLI安装K.4并启动source入口，K.4真实UI及完整教学/撤销缓存/恢复仍待复验，不用K.3compiled或新辅助门禁替代。13/15/16/10保持开放，正式环境和资料未改，未推送。
