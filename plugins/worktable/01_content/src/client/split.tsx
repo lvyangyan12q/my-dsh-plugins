@@ -1,3 +1,4 @@
+import {paneExtents, resizeNeighbors} from './paneGeometry.mjs'
 import {CompositionEditor} from './compositionEditor'
 import { leftPanesOf } from './layoutPanes'
 import { TerminalStart } from './TerminalStart'
@@ -56,6 +57,8 @@ export type SplitPane = {
   active?: number
   /** 头部折叠：true = 隐藏窗格标题与标签栏（内容占满；随 spec 持久化） */
   collapsed?: boolean
+  /** Content minimization is independent from hiding the header. */
+  minimized?: boolean
 }
 
 export type LayoutSpec = {
@@ -65,7 +68,7 @@ export type LayoutSpec = {
   main: SplitPane[]
   /** 左列整高内容窗（可选；存在时右侧列 = top 行 + 底部聊天，chatSide 固定 right） */
   left?: SplitPane | null
-  /** 左列上下叠放的其余窗（第一窗仍是 left；一起构成左列，均分高度） */
+  /** 左列上下叠放的其余窗（第一窗仍是 left；一起构成左列，可独立拖动高度） */
   leftMore?: SplitPane[] | null
   leftWidth?: { default: number; min: number; max: number }
   chatWidth: { default: number; min: number; max: number }
@@ -83,16 +86,16 @@ export type LayoutSpec = {
   preferFileGeometry?: boolean
 }
 
-export type LayoutGeometry = { chatW: number; topH: number; leftW: number; paneWs: Record<string, number>; topWs: Record<string, number>; leftWs: Record<string, number> }
+export type LayoutGeometry = { chatW: number; topH: number; leftW: number; paneWs: Record<string, number>; topWs: Record<string, number>; leftWs: Record<string, number>; leftHs?: Record<string, number> }
 
 export function layoutGeometryOf(spec: LayoutSpec, state = splitStore): LayoutGeometry {
   const widths = (panes: SplitPane[], values: number[]) => Object.fromEntries(panes.map((p,i)=>[p.id, Number.isFinite(values[i]) ? values[i] : p.min]))
-  return {chatW:state.chatW,topH:state.topH,leftW:state.leftW,paneWs:widths(spec.main ?? [],state.paneWs),topWs:widths(spec.top ?? [],state.topWs),leftWs:widths(leftPanesOf(spec),state.leftWs)}
+  return {chatW:state.chatW,topH:state.topH,leftW:state.leftW,paneWs:widths(spec.main ?? [],state.paneWs),topWs:widths(spec.top ?? [],state.topWs),leftWs:widths(leftPanesOf(spec),state.leftWs),leftHs:widths(leftPanesOf(spec),state.leftHs)}
 }
 
 export function cachedLayoutGeometry(spec: LayoutSpec): LayoutGeometry {
   const saved=loadSaved(spec.id)
-  return layoutGeometryOf(spec, {...splitStore,chatW:saved && saved.chatW>=0?saved.chatW:spec.chatWidth.default,topH:saved && saved.topH>=0?saved.topH:spec.topHeight?.default ?? 200,leftW:saved && saved.leftW>=0?saved.leftW:spec.leftWidth?.default ?? 260,paneWs:saved?.paneWs ?? [],topWs:saved?.topWs ?? [],leftWs:saved?.leftWs ?? []})
+  return layoutGeometryOf(spec, {...splitStore,chatW:saved && saved.chatW>=0?saved.chatW:spec.chatWidth.default,topH:saved && saved.topH>=0?saved.topH:spec.topHeight?.default ?? 200,leftW:saved && saved.leftW>=0?saved.leftW:spec.leftWidth?.default ?? 260,paneWs:saved?.paneWs ?? [],topWs:saved?.topWs ?? [],leftWs:saved?.leftWs ?? [],leftHs:saved?.leftHs ?? []})
 }
 
 type Geom = { left: number; top: number; right: number; bottom: number }
@@ -115,6 +118,7 @@ type SplitState = {
   paneWs: number[]
   topWs: number[]
   leftWs: number[]
+  leftHs: number[]
   root: HTMLElement | null
   header: HTMLElement | null
   viewArea: HTMLElement | null
@@ -152,6 +156,7 @@ type SplitState = {
   setChatW(w: number): void
   setTopH(h: number): void
   setLeftW(w: number): void
+  setLeftH(i: number, h: number): void
   setPaneW(i: number, w: number): void
   setTopW(i: number, w: number): void
   setPaneContent(row: PaneRow, i: number, content: SplitContent | null): void
@@ -180,7 +185,7 @@ const PERSIST_KEY = 'dsh.worktable.split.v2'
 const NATIVE_CHAT_MIN = 360
 function contentMinimum(spec: LayoutSpec): number {
   const main = spec.main ?? []
-  return main.reduce((total, pane) => total + pane.min, 0) + Math.max(0, main.length - 1) * GAP
+  return main.reduce((total, pane) => total + pane.min, 0) + Math.max(0, main.length - 1) * GAP + (spec.left ? spec.leftWidth?.min ?? 160 : 0)
 }
 function nativeSingleSurface(spec: LayoutSpec, width: number): boolean {
   return width < Math.max(NARROW_WIDTH, contentMinimum(spec) + Math.max(NATIVE_CHAT_MIN, spec.chatWidth.min))
@@ -188,6 +193,13 @@ function nativeSingleSurface(spec: LayoutSpec, width: number): boolean {
 function nativeChatWidth(spec: LayoutSpec, width: number, wanted: number): number {
   const minimum = Math.max(NATIVE_CHAT_MIN, spec.chatWidth.min)
   return clamp(Math.round(wanted), minimum, Math.max(minimum, width - contentMinimum(spec)))
+}
+
+function leftColumnWidth(spec: LayoutSpec, width: number, chatW: number, wanted: number): number {
+  if(!spec.left)return 0
+  const lo=spec.leftWidth?.min ?? 160
+  const mainMin=(spec.main??[]).reduce((sum,p)=>sum+p.min,0)+Math.max(0,(spec.main??[]).length-1)*GAP
+  return clamp(wanted,lo,Math.max(lo,Math.min(spec.leftWidth?.max??Infinity,width-chatW-mainMin)))
 }
 
 /** 内置内容窗图标 */
@@ -776,7 +788,7 @@ function resolveAnchor(root: HTMLElement): { header: HTMLElement | null; viewAre
   return { header, viewArea: second ?? first! }
 }
 
-function loadSaved(layoutId: string): { chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[]; leftWs: number[] } | null {
+function loadSaved(layoutId: string): { chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[]; leftWs: number[]; leftHs: number[] } | null {
   try {
     const raw = localStorage.getItem(PERSIST_KEY)
     if (!raw) return null
@@ -789,13 +801,14 @@ function loadSaved(layoutId: string): { chatW: number; topH: number; leftW: numb
       paneWs: Array.isArray(s.paneWs) ? s.paneWs : [],
       topWs: Array.isArray(s.topWs) ? s.topWs : [],
       leftWs: Array.isArray(s.leftWs) ? s.leftWs : [],
+      leftHs: Array.isArray(s.leftHs) ? s.leftHs : [],
     }
   } catch {
     return null
   }
 }
 
-function persistSaved(layoutId: string, s: { chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[]; leftWs: number[] }) {
+function persistSaved(layoutId: string, s: { chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[]; leftWs: number[]; leftHs: number[] }) {
   try {
     const raw = localStorage.getItem(PERSIST_KEY)
     const all = raw ? JSON.parse(raw) : {}
@@ -820,6 +833,7 @@ export const splitStore: SplitState = {
   paneWs: [],
   topWs: [],
   leftWs: [],
+  leftHs: [],
   root: null,
   header: null,
   viewArea: null,
@@ -882,7 +896,7 @@ export const splitStore: SplitState = {
     const left = spec.left ?? null
     const fromFile=spec.fileGeometry
     const values=(panes:SplitPane[],map:Record<string,number>)=>panes.map(p=>Number.isFinite(map?.[p.id])?map[p.id]:p.min)
-    const saved = fromFile ? {chatW:fromFile.chatW,topH:fromFile.topH,leftW:fromFile.leftW,paneWs:values(main,fromFile.paneWs),topWs:values(top,fromFile.topWs),leftWs:values(leftPanesOf(spec),fromFile.leftWs)} : spec.preferFileGeometry ? null : loadSaved(spec.id)
+    const saved = fromFile ? {chatW:fromFile.chatW,topH:fromFile.topH,leftW:fromFile.leftW,paneWs:values(main,fromFile.paneWs),topWs:values(top,fromFile.topWs),leftWs:values(leftPanesOf(spec),fromFile.leftWs),leftHs:leftPanesOf(spec).map(p=>fromFile.leftHs?.[p.id] ?? 0)} : spec.preferFileGeometry ? null : loadSaved(spec.id)
     // 布局文件提供的几何优先：文件里带 preferFileGeometry 时忽略本地缓存的旧尺寸
     // （换窗格数量后旧宽度/高度会让新布局看起来是乱的）
     const hasChatW = !!saved && saved.chatW >= 0
@@ -897,6 +911,7 @@ export const splitStore: SplitState = {
     this.paneWs = hasPaneWs ? [...saved!.paneWs] : main.map((p) => p.min)
     this.topWs = hasTopWs ? [...saved!.topWs] : top.map((p) => p.min)
     this.leftWs = hasLeftWs ? [...saved!.leftWs] : leftPanesOf(spec).map(p=>p.min)
+    this.leftHs = saved?.leftHs?.length === leftPanesOf(spec).length && saved.leftHs.some(h=>h>0) ? [...saved.leftHs] : leftPanesOf(spec).map(()=>0)
     this.root = root
     this.header = header
     this.viewArea = viewArea
@@ -943,6 +958,7 @@ export const splitStore: SplitState = {
         const share = Math.round(avail / top.length)
         this.topWs = top.map((p) => Math.max(p.min, share))
       }
+      if (!this.leftHs.some(h=>h>0)) this.leftHs = leftPanesOf(spec).map(()=>Math.max(0, (rowH0-BAR_H-Math.max(0,leftPanesOf(spec).length-1)*GAP)/leftPanesOf(spec).length))
       if (left && !hasLeftWs) this.leftWs = leftPanesOf(spec).map(p=>Math.max(p.min, this.leftW))
     }
     this.applyMargin()
@@ -1113,9 +1129,7 @@ export const splitStore: SplitState = {
     const topH = hasTop
       ? clamp(this.topH, spec.topHeight?.min ?? 80, Math.max(spec.topHeight?.min ?? 80, rowH - BAR_H - 80))
       : 0
-    const leftW = hasLeft
-      ? clamp(this.leftW, spec.leftWidth?.min ?? 160, Math.max(spec.leftWidth?.min ?? 160, colW - 260))
-      : 0
+    const leftW = leftColumnWidth(spec,colW,chatW,this.leftW)
     const chatFull = spec.chatFullHeight === true
     const gap = Math.max(0, colW - chatW) + 'px'
     const mt = (BAR_H + (hasTop && !chatFull ? topH : 0)) + 'px'
@@ -1161,50 +1175,37 @@ export const splitStore: SplitState = {
     const spec = this.spec
     if (!g || !spec || !spec.left) return
     const colW = g.right - g.left
-    const lo = spec.leftWidth?.min ?? 160
-    const hi = Math.max(lo, colW - 260)
-    this.leftW = clamp(Math.round(w), lo, hi)
+    this.leftW = leftColumnWidth(spec,colW,nativeChatWidth(spec,colW,this.chatW),Math.round(w))
     this.applyMargin()
     this.persist()
     this.onSpecMutated?.(this.spec)
     this.notify()
   },
 
+  setLeftH(i, h) {
+    const {geom:g,spec}=this
+    if(!g || !spec)return
+    this.leftHs=resizeNeighbors(leftPanesOf(spec),this.leftHs,g.bottom-g.top-BAR_H,i,h,GAP,()=>80)
+    this.persist();this.notify()
+  },
+
   setPaneW(i, w) {
-    const g = this.geom
-    const spec = this.spec
-    if (!g || !spec) return
-    const main = spec.main ?? []
-    if (i < 0 || i >= main.length) return
-    const colW = g.right - g.left
-    const chatW = nativeChatWidth(spec, colW, this.chatW)
-    const contentW = Math.max(0, colW - chatW - (spec.left ? this.leftW : 0))
-    const othersMin = main.reduce((a, p, k) => a + (k === i ? 0 : p.min), 0)
-    const lo = main[i].min
-    const hi = Math.max(lo, contentW - othersMin - Math.max(0, main.length - 1) * GAP)
-    const next = this.paneWs.slice()
-    next[i] = clamp(Math.round(w), lo, hi)
-    this.paneWs = next
-    this.persist()
-    this.notify()
+    const {geom:g,spec}=this
+    if(!g || !spec)return
+    const colW=g.right-g.left
+    const total=Math.max(0,colW-nativeChatWidth(spec,colW,this.chatW)-leftColumnWidth(spec,colW,nativeChatWidth(spec,colW,this.chatW),this.leftW))
+    this.paneWs=resizeNeighbors(spec.main??[],this.paneWs,total,i,w,GAP)
+    this.persist();this.notify()
   },
 
   setTopW(i, w) {
-    const g = this.geom
-    const spec = this.spec
-    if (!g || !spec) return
-    const top = spec.top ?? []
-    if (i < 0 || i >= top.length) return
-    const colW = g.right - g.left
-    const othersMin = top.reduce((a, p, k) => a + (k === i ? 0 : p.min), 0)
-    const lo = top[i].min
-    const rowW=colW-(spec.left?this.leftW:spec.chatFullHeight?nativeChatWidth(spec,colW,this.chatW):0)
-    const hi = Math.max(lo, rowW - othersMin - Math.max(0, top.length - 1) * GAP)
-    const next = this.topWs.slice()
-    next[i] = clamp(Math.round(w), lo, hi)
-    this.topWs = next
-    this.persist()
-    this.notify()
+    const {geom:g,spec}=this
+    if(!g || !spec)return
+    const colW=g.right-g.left
+    const chatW=nativeChatWidth(spec,colW,this.chatW)
+    const total=Math.max(0,colW-leftColumnWidth(spec,colW,chatW,this.leftW)-(spec.chatFullHeight?chatW:0))
+    this.topWs=resizeNeighbors(spec.top??[],this.topWs,total,i,w,GAP)
+    this.persist();this.notify()
   },
 
   setPaneContent(row, i, content) {
@@ -1431,6 +1432,8 @@ export const splitStore: SplitState = {
       else if (row === 'top') { const n = this.topWs.slice(); n[i] = v; this.topWs = n }
       else { const n = this.paneWs.slice(); n[i] = v; this.paneWs = n }
     }
+    const leftHeights=new Map(leftPanesOf(spec).map((pane,i)=>[pane.id,this.leftHs[i]]))
+    this.leftHs=left.map(pane=>leftHeights.get(pane.id)??80)
     const aW = wsOf(aRow)[aI]
     const bW = wsOf(bRow)[bI]
     setWs(aRow, aI, bW)
@@ -1454,7 +1457,7 @@ export const splitStore: SplitState = {
 
   persist() {
     if (!this.spec) return
-    persistSaved(this.spec.id, { chatW: this.chatW, topH: this.topH, leftW: this.leftW, paneWs: this.paneWs, topWs: this.topWs, leftWs: this.leftWs })
+    persistSaved(this.spec.id, { chatW: this.chatW, topH: this.topH, leftW: this.leftW, paneWs: this.paneWs, topWs: this.topWs, leftWs: this.leftWs, leftHs: this.leftHs })
     this.onLayoutPersisted?.(this.spec, layoutGeometryOf(this.spec,this))
   },
 
@@ -1508,42 +1511,35 @@ if (typeof document !== 'undefined' && document.body) {
   taObserver.observe(document.body, { childList: true, subtree: true })
 }
 
-/** 分配各窗宽度（最后一个拿余量） */
-function allocate(panes: SplitPane[], ws: number[], total: number) {
-  const out: { pane: SplitPane; left: number; width: number }[] = []
-  const gapTotal = Math.max(0, panes.length - 1) * GAP
-  const avail = Math.max(0, total - gapTotal)
-  let x = 0
-  panes.forEach((p, i) => {
-    const w = i === panes.length - 1 ? Math.max(0, avail - x) : ws[i]
-    out.push({ pane: p, left: x, width: w })
-    x += w + GAP
-  })
-  return out
+/** Derive visible extents; persistence keeps the manual geometry separately. */
+function allocate(panes: SplitPane[], ws: number[], total: number, minimum?: (pane: SplitPane)=>number) {
+  const widths=paneExtents(panes,ws,total,GAP,minimum)
+  let x=0
+  return panes.map((pane,i)=>{const item={pane,left:x,width:widths[i]};x+=widths[i]+GAP;return item})
 }
 
-/** 通用分隔线拖拽（chat/top/pane/topPane） */
-function makeDividerHandler(kind: 'left' | 'chat' | 'top' | 'pane' | 'topPane', index?: number) {
+/** Pointer deltas avoid coordinate offsets from left columns and left-side chat. */
+function makeDividerHandler(kind: 'left' | 'chat' | 'top' | 'pane' | 'topPane' | 'leftPane', index?: number) {
   return (e: any) => {
     e.preventDefault()
     const target = e.currentTarget as HTMLElement
     try { target.setPointerCapture(e.pointerId) } catch {}
+    const spec=splitStore.spec,g=splitStore.geom
+    if(!spec || !g)return
+    const startX=e.clientX,startY=e.clientY,colW=g.right-g.left
+    const chatW=nativeChatWidth(spec,colW,splitStore.chatW)
+    const total=kind==='pane'?colW-chatW-leftColumnWidth(spec,colW,chatW,splitStore.leftW):kind==='topPane'?colW-leftColumnWidth(spec,colW,chatW,splitStore.leftW)-(spec.chatFullHeight?chatW:0):g.bottom-g.top-BAR_H
+    const extents=kind==='pane'?paneExtents(spec.main,splitStore.paneWs,total,GAP):kind==='topPane'?paneExtents(spec.top??[],splitStore.topWs,total,GAP):kind==='leftPane'?paneExtents(leftPanesOf(spec),splitStore.leftHs,total,GAP,()=>80):[]
+    const initial=kind==='left'?splitStore.leftW:kind==='chat'?chatW:kind==='top'?splitStore.topH:extents[index??0]
     const onMove = (ev: PointerEvent) => {
-      const g = splitStore.geom
-      if (!g) return
-      if (kind === 'left') {
-        splitStore.setLeftW(ev.clientX - g.left)
-      } else if (kind === 'chat') {
-        splitStore.setChatW(g.right - ev.clientX)
-      } else if (kind === 'top') {
-        splitStore.setTopH(ev.clientY - g.top - BAR_H)
-      } else if (kind === 'pane' && index != null) {
-        const prefix = splitStore.paneWs.slice(0, index).reduce((a, b) => a + b, 0) + index * GAP
-        splitStore.setPaneW(index, ev.clientX - (g.left + prefix))
-      } else if (kind === 'topPane' && index != null) {
-        const prefix = splitStore.topWs.slice(0, index).reduce((a, b) => a + b, 0) + index * GAP
-        splitStore.setTopW(index, ev.clientX - (g.left + prefix))
-      }
+      if(splitStore.spec?.id!==spec.id)return
+      const dx=ev.clientX-startX,dy=ev.clientY-startY
+      if(kind==='left')splitStore.setLeftW(initial+dx)
+      else if(kind==='chat')splitStore.setChatW(initial+(spec.chatSide==='left'&&!spec.left?dx:-dx))
+      else if(kind==='top')splitStore.setTopH(initial+dy)
+      else if(kind==='pane')splitStore.setPaneW(index!,initial+dx)
+      else if(kind==='topPane')splitStore.setTopW(index!,initial+dx)
+      else splitStore.setLeftH(index!,initial+dy)
     }
     const onUp = () => {
       target.removeEventListener('pointermove', onMove)
@@ -3132,10 +3128,10 @@ function PanePicker(props: { row: PaneRow; index: number; layoutId: string; pane
   )
 }
 
-type PoolItem = { spec: LayoutSpec; chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[] }
+type PoolItem = { spec: LayoutSpec; chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[]; leftHs: number[] }
 
 /** 单个工作区渲染层（geom 为 null 时用 0 几何渲染，外层 display:none 保活，保留网页/MD 滚动/激活标签等状态） */
-function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[] }) {
+function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: number; topH: number; leftW: number; paneWs: number[]; topWs: number[]; leftHs: number[] }) {
   const g = props.geom ?? { left: 0, top: 0, right: 0, bottom: 0 }
   const spec = props.spec
   const top = spec.top ?? []
@@ -3153,9 +3149,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   const topH = hasTop
     ? clamp(props.topH, spec.topHeight?.min ?? 80, Math.max(spec.topHeight?.min ?? 80, rowH - BAR_H - 80))
     : 0
-  const leftW = hasLeft
-    ? clamp(props.leftW, spec.leftWidth?.min ?? 160, Math.max(spec.leftWidth?.min ?? 160, colW - 260))
-    : 0
+  const leftW = leftColumnWidth(spec,colW,chatW,props.leftW)
   const chatFull = spec.chatFullHeight === true
   // 左列布局（hasLeft）下，右列可写宽度 = 总宽 - 左列；主行还要再让出聊天列，
   // 否则主行会越过右边界压到聊天窗（原实现对 leftCount>0 的路径没有预设可用，缺陷未被发现）。
@@ -3163,13 +3157,13 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   const contentW = Math.max(0, rightColW - chatW)
   const contentX = hasLeft ? g.left + leftW : (chatLeft ? g.left + chatW : g.left)
   const topRowX = hasLeft ? g.left + leftW : contentX
-  const topRowW = hasLeft ? rightColW : (chatFull ? contentW : colW)
+  const topRowW = chatFull ? contentW : rightColW
 
   const topItems = allocate(top, props.topWs, topRowW)
   const mainItems = allocate(main, props.paneWs, contentW)
   const leftPanes = leftPanesOf(spec)
   const leftTotalH = g.bottom - g.top - BAR_H
-  const leftSlotH = leftPanes.length ? Math.max(80, Math.floor(leftTotalH / leftPanes.length)) : 0
+  const leftItems = allocate(leftPanes, props.leftHs, leftTotalH, ()=>80)
 
   const barTop = g.top
   const bodyTop = barTop + BAR_H + topH
@@ -3274,7 +3268,8 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
         <button type="button" className="dsh-wt_splitClose" aria-label="退出分栏（Esc）" onClick={() => splitStore.close()}>✕</button>
       </div>
       {/* 左列整高内容窗 */}
-      {leftPanes.map((pane, i) => renderPane({ pane, left: 0, width: leftW }, 'left', i, g.left, barTop + BAR_H + i * leftSlotH, leftSlotH))}
+      {leftItems.map((it, i) => renderPane({ pane:it.pane, left:0, width:leftW }, 'left', i, g.left, barTop + BAR_H + it.left, it.width))}
+      {!narrow && leftItems.slice(0,-1).map((it,i)=><div key={'lh'+it.pane.id} className="dsh-wt_splitDivider dsh-wt_splitDividerH" role="separator" title="拖动调整左列上下高度" style={{position:'fixed',left:g.left,top:barTop+BAR_H+it.left+it.width-DIVIDER/2,width:leftW,height:DIVIDER,zIndex:72}} onPointerDown={makeDividerHandler('leftPane',i)} />)}
       {/* 顶部通栏行（左列布局时为右侧列顶行） */}
       {hasTop && topItems.map((it, i) => renderPane(it, 'top', i, topRowX, topY, topH))}
       {/* 主行内容窗 */}
@@ -3326,6 +3321,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
         }}
         onPointerDown={makeDividerHandler(hasLeft ? 'left' : 'chat')}
       />}
+      {!narrow && hasLeft && <div className="dsh-wt_splitDivider" role="separator" title="拖动调整聊天宽度" style={{position:'fixed',left:g.right-chatW-DIVIDER/2,top:chatFull?topY:bodyTop,width:DIVIDER,height:chatFull?g.bottom-topY:mainH,zIndex:72}} onPointerDown={makeDividerHandler('chat')} />}
       <AnnotationOverlay />
     </>
   )
@@ -3344,6 +3340,7 @@ function SplitWorkspace() {
     leftW: splitStore.leftW,
     paneWs: [...splitStore.paneWs],
     topWs: [...splitStore.topWs],
+    leftHs: [...splitStore.leftHs],
   })
   const poolRef = useRef<Map<string, PoolItem>>(new Map())
   const [, setPoolTick] = useState(0)
@@ -3359,6 +3356,7 @@ function SplitWorkspace() {
         leftW: splitStore.leftW,
         paneWs: [...splitStore.paneWs],
         topWs: [...splitStore.topWs],
+        leftHs: [...splitStore.leftHs],
       })
       // 保活池上限 6 个（LRU：删最老的），避免长时间使用内存膨胀
       while (poolRef.current.size > 6) {
@@ -3375,6 +3373,7 @@ function SplitWorkspace() {
       leftW: splitStore.leftW,
       paneWs: [...splitStore.paneWs],
       topWs: [...splitStore.topWs],
+      leftHs: [...splitStore.leftHs],
     })
     setPoolTick((t) => t + 1)
     }
@@ -3417,6 +3416,7 @@ function SplitWorkspace() {
               leftW={isActive ? snap.leftW : item.leftW}
               paneWs={isActive ? snap.paneWs : item.paneWs}
               topWs={isActive ? snap.topWs : item.topWs}
+              leftHs={isActive ? snap.leftHs : item.leftHs}
             />
           </div>
         )

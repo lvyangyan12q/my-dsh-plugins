@@ -100,3 +100,29 @@ test('supported references survive round trip while runtime fields are excluded'
     assert.equal(JSON.stringify(read.document).includes('private'),false);assert.equal('runtime' in read.document.spec,false)
   }finally{await rm(dir,{recursive:true,force:true})}
 })
+
+
+test('version 3 keeps pane minimization and left heights, and upgrades version 2 with an exact backup',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-layout-v3-'))
+  try{
+    const value=layout();value.spec.left={id:'l1',title:'Left',min:120,minimized:true};value.spec.leftMore=[{id:'l2',title:'Left 2',min:120}]
+    value.geometry.leftWs={l1:240,l2:240};value.geometry.leftHs={l1:210,l2:390}
+    const saved=await saveProjectLayout(dir,value,null)
+    assert.equal(saved.status,'ok');assert.equal(saved.document.version,3)
+    assert.deepEqual((await readProjectLayout(dir)).document.geometry.leftHs,{l1:210,l2:390})
+    assert.equal(saved.document.spec.left.minimized,true)
+    const sub=join(dir,'.dsh-worktable'),file=join(sub,'layout.json')
+    const old={...saved.document,version:2};delete old.spec.left.minimized;delete old.geometry.leftHs
+    const bytes=JSON.stringify(old,null,3)+'\n';await writeFile(file,bytes)
+    const read=await readProjectLayout(dir);assert.equal(read.status,'ok');assert.equal(read.document.version,2)
+    const upgraded=await saveProjectLayout(dir,{...read.document,geometry:{...read.document.geometry,leftHs:{l1:200,l2:400}}},1)
+    assert.equal(upgraded.status,'ok');assert.equal(upgraded.document.version,3)
+    assert.equal(await readFile(join(sub,'layout-backup-v2-revision-1.json'),'utf8'),bytes)
+    assert.deepEqual(upgraded.document.geometry.leftHs,{l1:200,l2:400})
+    const invalid=structuredClone(value);invalid.geometry.leftHs.l1=-1
+    assert.equal((await saveProjectLayout(dir,invalid,2)).status,'invalid')
+    const changedOld=bytes+' ';await writeFile(file,changedOld)
+    assert.equal((await saveProjectLayout(dir,value,1)).status,'error')
+    assert.equal(await readFile(file,'utf8'),changedOld)
+  }finally{await rm(dir,{recursive:true,force:true})}
+})

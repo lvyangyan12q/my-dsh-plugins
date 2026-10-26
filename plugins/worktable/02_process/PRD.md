@@ -5,7 +5,7 @@
 ## 数据归属
 
 - 应用注册、实例、视图引用：Host profileContext.dir/worktable-platform/applications.v1.json，schema=1。profileContext来自官方Launcher公开服务，缺失时不猜全局目录。
-- 有目录的项目布局、标签位置与尺寸：每项目固定使用 `.dsh-worktable/layout.json`（版本2），文件为主，既有浏览器 localStorage 为缓存和兼容来源。无目录项目及全局展示偏好继续使用浏览器存储，不批量清空原数据；application 内容只保存 appId/instanceId/viewId/title 引用。
+- 有目录的项目布局、标签位置与尺寸：每项目固定使用 `.dsh-worktable/layout.json`（版本3），文件为主，既有浏览器 localStorage 为缓存和兼容来源。无目录项目及全局展示偏好继续使用浏览器存储，不批量清空原数据；application 内容只保存 appId/instanceId/viewId/title 引用。
 - 业务资料和内部网页状态：仍由网页/应用所有；普通网页不声明跨视图同步。
 - 原生会话、轨迹、审批和凭据：仍由DSH所有。网页接入不自动新建或重绑会话。
 
@@ -14,6 +14,8 @@
 register校验稳定应用ID、协议版本和独立http/https入口。createInstance仅由显式新建触发。latest按应用和projectId（可null）恢复最近实例；没有实例时返回空而非偷偷创建。attach仅允许未归属→一个项目或同项目幂等，并校验revision。createView沿用实例；关闭、移动标签和渲染池淘汰都不拥有删实例权限。注销注册保留实例/视图，resolveView显示缺应用。
 
 ## 保存与恢复
+
+版本3新增独立窗格 minimized 状态及以窗格ID索引的 geometry.leftHs（左列高度）；collapsed 继续仅隐藏标题栏，leftWs 仍表示宽度。geometry 保存最近手动展开尺寸，自动补位只计算显示几何。左列上下、顶行/主行相邻窗宽度、上下分区、聊天及左右列分隔条均使用邻窗联动和视口限制；尺寸快照含左列高度，关闭重开和目录恢复按窗格身份投影。兼容读取版本1/2；版本2首次升级写入前在同目录保留 layout-backup-v2-revision-N.json 原字节备份，备份失败不升级；版本1来源继续保留。未知版本拒绝且不写回。
 
 项目布局文件由布局专用存储模块负责，使用规范化目录的跨进程锁、预期 revision 校验、同目录临时文件和原子替换。受支持的界面与布局脚本共用协议。窗格/标签和所有可拖动尺寸进入同一快照保存队列；防抖任务保存提交时捕获的项目、目录与几何，不读取另一个当前项目的状态。只有服务端确认提交才显示已经保存，冲突保留草稿并要求明确处理。
 
