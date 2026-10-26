@@ -1,8 +1,8 @@
 ---
 id: kaogong-standalone-00-directory-consolidation
 title: 目录、文档与资料收拢
-status: open
-assignee: null
+status: in_progress
+assignee: codex
 blocked_by: []
 ---
 
@@ -20,4 +20,4 @@ blocked_by: []
 - [ ] docs索引/引用可达，迁移清单写明已完成与仍保留原址的原因。
 
 ## Resolution
-尚未实施。记录准确源码/包、实际结果和仍缺项后才能关闭。
+已认领并开始执行。复制/哈希清点、题库知识快照格式验证已完成，详细计数及待办见 [现场记录](../migration-progress.md)。配置、proof、文档归档及真实读取闭环尚未完成，保持 in_progress。

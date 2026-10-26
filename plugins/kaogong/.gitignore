@@ -2,3 +2,5 @@ node_modules/
 storage/
 .env
 .env.*
+materials/
+archive/local/

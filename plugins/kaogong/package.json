@@ -24,8 +24,6 @@
     "lib/*.mjs",
     "lib/types/**/*.d.ts",
     "cordis.patch.yml",
-    "题目_images/verified/资料600-2023-hebei-retail-growth.png",
-    "题目_images/verified/资料600-2024-jiangsu-17.png",
     "roles/personas/老师.md",
     "roles/personas/班主任.md",
     "roles/personas/辅导员.md",

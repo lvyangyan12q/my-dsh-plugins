@@ -56,7 +56,7 @@ export const Config = z.object({
   legacySourceHome: z.string().description('历史配置保留；新部署不启用旧会话或学习接管。新资料接入请显式配置 materialSourceHome'),
   legacyMaterialRoot: z.string().description('旧资料集合的明确绝对根目录；仅资料接入预览使用，与MinerU作业outputDir独立，留空不推断'),
   roleCwd: z.string().description('角色新会话的明确绝对目录；留空不注册角色。课堂内容仍可读，恢复原生角色入口前需配置目录'),
-  questionImageRoot: z.string().description('历史题目图片的持久绝对目录；留空仅提供随包的两张已核验图片').volatile(),
+  questionImageRoot: z.string().description('历史题目图片的持久绝对目录；真实图片仅本地保存，留空不提供历史图片').volatile(),
   topN: z.natural().min(1).default(8),
   mineru: z.object({
     token: z.string().role('secret').description('MinerU API token；仅服务端使用，留空读取 MINERU_TOKEN'),

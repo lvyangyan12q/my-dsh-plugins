@@ -1,24 +1,6 @@
----
-id: harness-upgrade-kaogong-ownership
-title: 确定考公实例的数据归属与旧学习接管方式
-parent: harness-upgrade-map
-labels: [wayfinder:grilling]
-status: closed
-assignee: null
-blocked_by: [harness-upgrade-kaogong-research]
----
+<!-- kaogong-history-redirect -->
+# 考公历史文档已归档
 
-## Question
+[原文（编号、状态、版本及证据保留）](../../../../plugins/kaogong/archive/docs/wayfinder/harness-upgrade/issues/04-kaogong-ownership.md)。
 
-依据考公迁移研究，哪些题库、图片和讲义可以显式共享，哪些学习记录、角色任务及原生会话必须属于独立实例？旧 default 学习如何被显式接管，并在不复制成绩、不改变旧会话 cwd、不重建老师的情况下继续学习？
-
-需要决定旧记录的入口、接管前影响预览、旧身份到新实例的映射、未接管/失败时的保留行为，以及新实例的初始状态。不可由研究者替用户选择历史资料或默认项目；如涉及关键交互，再按需制作最小原型。
-
-
-## Resolution · 2026-10-24
-
-用户明确选择：旧学习记录归入一个历史学习实例；新学习实例为空。可共享题库和原始资料由资料库实例保管，经显式只读授权使用。旧笔记、成绩和老师会话保持私有，迁移前提供影响预览并由用户确认。
-
-历史实例保持原题目快照、评分、顺序、完成证据及 Session/preset/cwd；不是把旧学习记录复制到所有新实例。来源不明的知识条目默认保留私有；资料库只接收可证明为原始来源的条目和资源引用，不移动图片、讲义或 MinerU 实体目录，不执行重新评分。共享必须显式授权并可撤销；不能因知道旧全局表名绕过实例隔离。跨实例工具上下文从可信角色/任务绑定获得，不能只相信模型给出的 instanceId。
-
-接管需只读预检、稳定映射、幂等回执和失败/未知恢复；未确认、冲突或失败时保留旧记录与角色身份，不自动重建老师或改 cwd。正式 apply 仍需对具体预览确认，本条决策不等于批准尚未生成的正式数据迁移。
+本轮独立版规格和工单从 [考公文档入口](../../../../plugins/kaogong/docs/README.md) 进入。历史验收不代表独立版完成。

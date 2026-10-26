@@ -1,6 +1,6 @@
 # 当前实施工单
 
-本地Markdown为工单源，读取各票status/blocked_by，不从历史closed推断本轮完成。全部当前为open，尚无实施认领。
+本地Markdown为工单源，读取各票status/blocked_by，不从历史closed推断本轮完成。00已认领执行中；01—07仍为open，未以旧版本验收替代本轮证据。
 
 | 票 | 标题 | 依赖 |
 |---|---|---|
