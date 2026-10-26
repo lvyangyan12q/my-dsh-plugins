@@ -240,7 +240,8 @@ test('real project opening retains failed pending reads and retries on the next 
     if (failure === 'read') f.files.set(widgetManifestPath(b), async () => { throw new Error('read failed') })
     const open = evaluate(section(indexSource, '  const openSplit = useCallback(', '\n  /** 打开「工作台」控制室') + '\nexport { openSplit }', {
       useCallback: fn => fn, engineIdsRef: { current: new Set() }, projects: { views: {} }, splitStore: f.splitStore,
-      currentSessionOf: () => null, sessionBridge: null, projectAttachRef: {}, projectsRef: { current: { projects: { bindings: {}, views: {} } } },
+      currentSessionOf: () => null, sessionBridge: null, projectAttachRef: {}, projectsRef: { current: { projects: { bindings: {}, views: {}, folders: {} } } },
+      layoutOpenSequence:{current:0},mountedRef:{current:true},layoutClient:{current:{flushAll:async()=>{}}},
       revealProject: async (_target, mount) => { mount(); return true },
       ackProjectNotify() {}, pendingMountRef: f.pendingMountRef, applyWidgetManifest: f.apply, persistPendingWidgets() {},
     }).openSplit
