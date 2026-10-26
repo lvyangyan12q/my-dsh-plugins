@@ -1,5 +1,9 @@
 # 当前规格与设计
 
+## 2026-10-26 项目布局落盘方案
+
+[Worktable 项目布局落盘与恢复调整方案](worktable-project-layout.md)：一个项目固定使用一份 `.dsh-worktable/layout.json`，覆盖文件主存储、浏览器缓存兼容、完整尺寸保存、目录恢复、旧文件迁移和冲突保护。主验收入口已获用户确认，状态 open、标签 ready-for-agent；本次仅整理方案，尚未实施或验收。
+
 ## 2026-10-24 升级规格已回写
 
 当前要求以[框架规格 HU01—HU08](../wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements)为详细入口；[旧完整闭环规格](../wayfinder/workbench-completion/spec.md)已同步当前宿主与考公接续边界，[后续范围](../wayfinder/worktable-platform/continuation-spec.md)保留历史阶段并链接新升级。

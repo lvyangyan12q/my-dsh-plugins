@@ -63,6 +63,8 @@ export type LayoutSpec = {
   main: SplitPane[]
   /** 左列整高内容窗（可选；存在时右侧列 = top 行 + 底部聊天，chatSide 固定 right） */
   left?: SplitPane | null
+  /** 左列上下叠放的其余窗（第一窗仍是 left；一起构成左列，均分高度） */
+  leftMore?: SplitPane[] | null
   leftWidth?: { default: number; min: number; max: number }
   chatWidth: { default: number; min: number; max: number }
   topHeight?: { default: number; min: number; max: number }
@@ -79,6 +81,18 @@ export type LayoutSpec = {
 type Geom = { left: number; top: number; right: number; bottom: number }
 
 type PaneRow = 'left' | 'top' | 'main'
+
+/** 左列窗口列表：left 为第一窗，leftMore 为其余（上下叠放，均分高度） */
+function leftPanesOf(spec: any): SplitPane[] {
+  if (!spec || !spec.left) return []
+  return [spec.left, ...(Array.isArray(spec.leftMore) ? spec.leftMore : [])]
+}
+
+/** 把左列窗口列表写回 spec（保持 left / leftMore 两个字段） */
+function withLeftPanes(spec: any, panes: SplitPane[]): any {
+  const [first, ...rest] = panes
+  return { ...spec, left: first ?? null, leftMore: rest.length ? rest : null }
+}
 
 type SplitState = {
   active: boolean
@@ -393,12 +407,13 @@ function cancelAnnot() {
 function windowLabelOf(row: PaneRow, index: number): string {
   const spec = splitStore.spec
   if (!spec) return '窗口?'
-  let num = spec.left ? 2 : 1
-  if (row === 'left') num = 1
-  else if (row === 'top') num = num + index
-  else { num += (spec.top?.length ?? 0) + index }
+  const leftCount = leftPanesOf(spec).length
+  let num = leftCount + 1
+  if (row === 'left') num = index + 1
+  else if (row === 'top') num = leftCount + 1 + index
+  else { num = leftCount + 1 + (spec.top?.length ?? 0) + index }
   let label = '窗口' + num
-  const pane = row === 'left' ? spec.left : row === 'top' ? spec.top?.[index] : spec.main?.[index]
+  const pane = row === 'left' ? leftPanesOf(spec)[index] : row === 'top' ? spec.top?.[index] : spec.main?.[index]
   const title = pane?.title
   if (title) label += '「' + title + '」'
   const tab = pane?.tabs?.[pane.active ?? 0]
@@ -847,14 +862,18 @@ export const splitStore: SplitState = {
     }
     if (spec.top) this.spec.top = spec.top.map(normalize)
     if (spec.left) this.spec.left = normalize(spec.left)
+    if (spec.leftMore && spec.leftMore.length) this.spec.leftMore = spec.leftMore.map(normalize)
     this.spec.main = (spec.main ?? []).map(normalize)
     const main = this.spec.main ?? []
     const top = spec.top ?? []
     const left = spec.left ?? null
     const saved = loadSaved(spec.id)
-    const hasChatW = !!saved && saved.chatW >= 0
-    const hasTopH = !!saved && saved.topH >= 0
-    const hasLeftW = !!saved && saved.leftW >= 0
+    // 布局文件提供的几何优先：文件里带 preferFileGeometry 时忽略本地缓存的旧尺寸
+    // （换窗格数量后旧宽度/高度会让新布局看起来是乱的）
+    const fileGeometry = (spec as any).preferFileGeometry === true
+    const hasChatW = !fileGeometry && !!saved && saved.chatW >= 0
+    const hasTopH = !fileGeometry && !!saved && saved.topH >= 0
+    const hasLeftW = !fileGeometry && !!saved && saved.leftW >= 0
     const hasPaneWs = !!saved && saved.paneWs.length === main.length
     const hasTopWs = !!saved && saved.topWs.length === top.length
     const hasLeftWs = !!saved && saved.leftWs.length === (left ? 1 : 0)
@@ -945,7 +964,7 @@ export const splitStore: SplitState = {
     this.active = true
     this.notify()
     // An explicit layout activation resumes its visible application views, including cached layers.
-    const panes = [...(this.spec?.top ?? []), ...(this.spec?.main ?? []), ...(this.spec?.left ? [this.spec.left] : [])]
+    const panes = [...(this.spec?.top ?? []), ...(this.spec?.main ?? []), ...leftPanesOf(this.spec)]
     const viewIds = panes.map(p => p.tabs?.[p.active ?? 0]?.content).filter((c): c is ApplicationContent => c?.kind === 'application').map(c => c.viewId)
     try { window.dispatchEvent(new CustomEvent('dsh:application-layout-opened', { detail: { viewIds } })) } catch {}
     return true
@@ -1087,8 +1106,10 @@ export const splitStore: SplitState = {
     const gap = Math.max(0, colW - chatW) + 'px'
     const mt = (BAR_H + (hasTop && !chatFull ? topH : 0)) + 'px'
     const chatLeft = !hasLeft && spec.chatSide === 'left'
-    this.lastMarginLeft = hasLeft ? leftW + 'px' : (chatLeft ? '' : gap)
-    this.lastMarginRight = hasLeft ? '' : (chatLeft ? gap : '')
+    // 聊天列必须靠外边距真正把原生区压到右侧 chatW：只设 --dsh-chat-user-width 时，
+    // 该变量在部分宿主版本上不生效，原生对话会铺满右侧并被窗格盖住。
+    this.lastMarginLeft = chatLeft ? '' : gap
+    this.lastMarginRight = chatLeft ? gap : ''
     this.lastMarginTop = mt
     viewArea.style.marginLeft = this.lastMarginLeft
     viewArea.style.marginRight = this.lastMarginRight
@@ -1178,8 +1199,9 @@ export const splitStore: SplitState = {
     const tab: PaneTab = { id: 't' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2), title: tabTitleOf(content), content, active: 0 }
     const mutate = (pane: SplitPane): SplitPane => ({ ...pane, content: null, tabs: [tab], active: 0 })
     if (row === 'left') {
-      if (!spec.left || i !== 0) return
-      this.spec = { ...spec, left: mutate(spec.left) }
+      const lp = leftPanesOf(spec)
+      if (!lp[i]) return
+      this.spec = withLeftPanes(spec, lp.map((p, k) => (k === i ? mutate(p) : p)))
     } else if (row === 'top') {
       const top = [...(spec.top ?? [])]
       if (!top[i]) return
@@ -1200,14 +1222,15 @@ export const splitStore: SplitState = {
   setTabContent(row, index, tabId, content) {
     const spec = this.spec
     if (!spec) return
-    const edited = row === 'left' ? spec.left : row === 'top' ? spec.top?.[index] : spec.main[index]
+    const edited = row === 'left' ? leftPanesOf(spec)[index] : row === 'top' ? spec.top?.[index] : spec.main[index]
     if (edited?.tabs?.some((t) => t.id === tabId)) this.onPaneContentEdited?.(spec.id, edited.id)
     const mutate = (pane: SplitPane): SplitPane => {
       const tabs = (pane.tabs ?? []).map((t) => (t.id === tabId ? { ...t, content, title: tabTitleOf(content) } : t))
       return { ...pane, tabs }
     }
     if (row === 'left') {
-      if (spec.left && index === 0) this.spec = { ...spec, left: mutate(spec.left) }
+      const lp = leftPanesOf(spec)
+      if (lp[index]) this.spec = withLeftPanes(spec, lp.map((p, k) => (k === index ? mutate(p) : p)))
     } else if (row === 'top') {
       const top = [...(spec.top ?? [])]
       if (top[index]) { top[index] = mutate(top[index]); this.spec = { ...spec, top } }
@@ -1222,7 +1245,7 @@ export const splitStore: SplitState = {
   openTab(row, i, content) {
     const spec = this.spec
     if (!spec) return
-    const edited = row === 'left' ? spec.left : row === 'top' ? spec.top?.[i] : spec.main[i]
+    const edited = row === 'left' ? leftPanesOf(spec)[i] : row === 'top' ? spec.top?.[i] : spec.main[i]
     if (edited) this.onPaneContentEdited?.(spec.id, edited.id)
     const mutate = (pane: SplitPane): SplitPane => {
       const tabs = [...(pane.tabs ?? [])]
@@ -1234,8 +1257,9 @@ export const splitStore: SplitState = {
       return { ...pane, content: null, tabs, active: tabs.length - 1 }
     }
     if (row === 'left') {
-      if (!spec.left || i !== 0) return
-      this.spec = { ...spec, left: mutate(spec.left) }
+      const lp = leftPanesOf(spec)
+      if (!lp[i]) return
+      this.spec = withLeftPanes(spec, lp.map((p, k) => (k === i ? mutate(p) : p)))
     } else if (row === 'top') {
       const top = [...(spec.top ?? [])]
       if (!top[i]) return
@@ -1255,15 +1279,16 @@ export const splitStore: SplitState = {
   closeTab(row, i, tabId) {
     const spec = this.spec
     if (!spec) return
-    const edited = row === 'left' ? spec.left : row === 'top' ? spec.top?.[i] : spec.main[i]
+    const edited = row === 'left' ? leftPanesOf(spec)[i] : row === 'top' ? spec.top?.[i] : spec.main[i]
     if (edited?.tabs?.some((t) => t.id === tabId)) this.onPaneContentEdited?.(spec.id, edited.id)
     const mutate = (pane: SplitPane): SplitPane => {
       const tabs = (pane.tabs ?? []).filter((t) => t.id !== tabId)
       return { ...pane, tabs, active: 0 }
     }
     if (row === 'left') {
-      if (!spec.left || i !== 0) return
-      this.spec = { ...spec, left: mutate(spec.left) }
+      const lp = leftPanesOf(spec)
+      if (!lp[i]) return
+      this.spec = withLeftPanes(spec, lp.map((p, k) => (k === i ? mutate(p) : p)))
     } else if (row === 'top') {
       const top = [...(spec.top ?? [])]
       if (!top[i]) return
@@ -1286,8 +1311,8 @@ export const splitStore: SplitState = {
     if (fromRow === toRow && fromI === toI) return
     const top = [...(spec.top ?? [])]
     const main = [...spec.main]
-    const left = spec.left ? { ...spec.left } : null
-    const arrOf = (row: PaneRow): SplitPane[] => (row === 'left' ? (left ? [left] : []) : row === 'top' ? top : main)
+    const left = leftPanesOf(spec).map((p) => ({ ...p }))
+    const arrOf = (row: PaneRow): SplitPane[] => (row === 'left' ? left : row === 'top' ? top : main)
     const fromArr = arrOf(fromRow)
     const toArr = arrOf(toRow)
     const fromPane = fromArr[fromI]
@@ -1300,13 +1325,13 @@ export const splitStore: SplitState = {
     const fromTabs = (fromPane.tabs ?? []).filter((t) => t.id !== tabId)
     const toTabs = [...(toPane.tabs ?? []), tab]
     const setPane = (row: PaneRow, i: number, pane: SplitPane) => {
-      if (row === 'left') spec.left = pane
+      if (row === 'left') { left[i] = pane }
       else if (row === 'top') top[i] = pane
       else main[i] = pane
     }
     setPane(fromRow, fromI, { ...fromPane, tabs: fromTabs, active: 0 })
     setPane(toRow, toI, { ...toPane, tabs: toTabs, active: toTabs.length - 1 })
-    this.spec = { ...spec, left: left ?? null, top: top.length > 0 ? top : null, main }
+    this.spec = withLeftPanes({ ...spec, top: top.length > 0 ? top : null, main }, left)
     this.onSpecMutated?.(this.spec)
     this.persist()
     this.notify()
@@ -1321,8 +1346,9 @@ export const splitStore: SplitState = {
       return { ...pane, active: idx }
     }
     if (row === 'left') {
-      if (!spec.left || i !== 0) return
-      this.spec = { ...spec, left: mutate(spec.left) }
+      const lp = leftPanesOf(spec)
+      if (!lp[i]) return
+      this.spec = withLeftPanes(spec, lp.map((p, k) => (k === i ? mutate(p) : p)))
     } else if (row === 'top') {
       const top = [...(spec.top ?? [])]
       if (!top[i]) return
@@ -1344,8 +1370,9 @@ export const splitStore: SplitState = {
     if (!spec) return
     const mutate = (pane: SplitPane): SplitPane => ({ ...pane, collapsed: !pane.collapsed })
     if (row === 'left') {
-      if (!spec.left || i !== 0) return
-      this.spec = { ...spec, left: mutate(spec.left) }
+      const lp = leftPanesOf(spec)
+      if (!lp[i]) return
+      this.spec = withLeftPanes(spec, lp.map((p, k) => (k === i ? mutate(p) : p)))
     } else if (row === 'top') {
       const top = [...(spec.top ?? [])]
       if (!top[i]) return
@@ -1367,10 +1394,10 @@ export const splitStore: SplitState = {
     if (!spec) return
     const top = [...(spec.top ?? [])]
     const main = [...spec.main]
-    const left = spec.left ? { ...spec.left } : null
-    const arrOf = (row: PaneRow): SplitPane[] => (row === 'left' ? (left ? [left] : []) : row === 'top' ? top : main)
+    const left = leftPanesOf(spec).map((p) => ({ ...p }))
+    const arrOf = (row: PaneRow): SplitPane[] => (row === 'left' ? left : row === 'top' ? top : main)
     const setOf = (row: PaneRow, i: number, pane: SplitPane) => {
-      if (row === 'left') spec.left = pane
+      if (row === 'left') { left[i] = pane }
       else if (row === 'top') top[i] = pane
       else main[i] = pane
     }
@@ -1389,7 +1416,7 @@ export const splitStore: SplitState = {
     const bW = wsOf(bRow)[bI]
     setWs(aRow, aI, bW)
     setWs(bRow, bI, aW)
-    this.spec = { ...spec, left: left ?? null, top: top.length > 0 ? top : null, main }
+    this.spec = withLeftPanes({ ...spec, top: top.length > 0 ? top : null, main }, left)
     this.onSpecMutated?.(this.spec)
     this.persist()
     this.notify()
@@ -1398,7 +1425,7 @@ export const splitStore: SplitState = {
   setChatSide(side) {
     const spec = this.spec
     if (!spec) return
-    if (spec.left) return // 左列布局：聊天固定右下
+    if (leftPanesOf(spec).length) return // 左列布局：聊天固定右下
     this.spec = { ...spec, chatSide: side }
     this.onSpecMutated?.(this.spec)
     this.applyMargin()
@@ -2922,7 +2949,7 @@ function PaneTabBody(props: { tab: PaneTab; row: PaneRow; index: number; layoutI
   const content = props.tab.content
   if (content.kind === 'application') return <ApplicationPane content={content} projects={splitEnv?.custom?.getProjects?.() ?? []} onOpen={(next) => {
     if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
-    const target = props.row === 'left' ? splitStore.spec.left : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
+    const target = props.row === 'left' ? leftPanesOf(splitStore.spec)[props.index] : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
     if (target?.id !== props.paneId || !target.tabs?.some(t => t.id === props.tab.id && t.content.kind === 'application' && t.content.viewId === content.viewId)) return
     splitStore.openTab(props.row, props.index, next)
   }} reloadKey={props.reloadKey} />
@@ -3017,7 +3044,7 @@ function PaneBody(props: { pane: SplitPane; row: PaneRow; index: number; layoutI
       )}
       {addingApplication && <div className="dsh-wt_appBackdrop" onClick={() => setAddingApplication(false)}><div className="dsh-wt_appDialog" role="dialog" aria-modal="true" aria-label="添加应用" onClick={e => e.stopPropagation()} onKeyDown={e => { if (e.key === 'Escape') setAddingApplication(false) }}><ApplicationPicker key={props.layoutId + ':' + pane.id} projectId={currentProject} onCancel={() => setAddingApplication(false)} onOpen={next => {
         if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
-        const target = row === 'left' ? splitStore.spec.left : row === 'top' ? splitStore.spec.top?.[index] : splitStore.spec.main[index]
+        const target = row === 'left' ? leftPanesOf(splitStore.spec)[index] : row === 'top' ? splitStore.spec.top?.[index] : splitStore.spec.main[index]
         if (target?.id !== pane.id) return
         splitStore.openTab(row, index, next)
         setAddingApplication(false)
@@ -3053,12 +3080,12 @@ function PanePicker(props: { row: PaneRow; index: number; layoutId: string; pane
   const currentProject = availableProjects.some(p => p.id === props.layoutId) ? props.layoutId : null
   if (composing) return <CompositionEditor projectId={currentProject} onCancel={() => setComposing(false)} onOpen={next => {
     if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
-    const target = props.row === 'left' ? splitStore.spec.left : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
+    const target = props.row === 'left' ? leftPanesOf(splitStore.spec)[props.index] : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
     if (target?.id === props.paneId) pick(next)
   }}/>
   if (applications) return <ApplicationPicker projectId={currentProject} onCancel={() => setApplications(false)} onOpen={(next) => {
     if (!splitStore.active || splitStore.spec?.id !== props.layoutId) return
-    const target = props.row === 'left' ? splitStore.spec.left : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
+    const target = props.row === 'left' ? leftPanesOf(splitStore.spec)[props.index] : props.row === 'top' ? splitStore.spec.top?.[props.index] : splitStore.spec.main[props.index]
     if (target?.id === props.paneId) pick(next)
   }} />
   return (
@@ -3098,7 +3125,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   const colW = g.right - g.left
   const rowH = g.bottom - g.top
   const narrow = colW > 0 && nativeSingleSurface(spec, colW)
-  const choices = [...(spec.left ? [{ pane: spec.left, row: 'left' as PaneRow, index: 0 }] : []), ...top.map((pane, index) => ({ pane, row: 'top' as PaneRow, index })), ...main.map((pane, index) => ({ pane, row: 'main' as PaneRow, index }))]
+  const choices = [...leftPanesOf(spec).map((pane, index) => ({ pane, row: 'left' as PaneRow, index })), ...top.map((pane, index) => ({ pane, row: 'top' as PaneRow, index })), ...main.map((pane, index) => ({ pane, row: 'main' as PaneRow, index }))]
   const selectedPaneId = splitStore.narrowPaneId === null ? null : choices.find(c => c.pane.id === splitStore.narrowPaneId)?.pane.id ?? choices[0]?.pane.id
   const narrowView = selectedPaneId == null ? 'native' : 'pane:' + selectedPaneId
   const chatW = nativeChatWidth(spec, colW, props.chatW)
@@ -3109,14 +3136,19 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
     ? clamp(props.leftW, spec.leftWidth?.min ?? 160, Math.max(spec.leftWidth?.min ?? 160, colW - 260))
     : 0
   const chatFull = spec.chatFullHeight === true
-  const contentW = Math.max(0, colW - chatW)
+  // 左列布局（hasLeft）下，右列可写宽度 = 总宽 - 左列；主行还要再让出聊天列，
+  // 否则主行会越过右边界压到聊天窗（原实现对 leftCount>0 的路径没有预设可用，缺陷未被发现）。
+  const rightColW = hasLeft ? Math.max(0, colW - leftW) : colW
+  const contentW = Math.max(0, rightColW - chatW)
   const contentX = hasLeft ? g.left + leftW : (chatLeft ? g.left + chatW : g.left)
   const topRowX = hasLeft ? g.left + leftW : contentX
-  const topRowW = hasLeft ? Math.max(0, colW - leftW) : (chatFull ? contentW : colW)
+  const topRowW = hasLeft ? rightColW : (chatFull ? contentW : colW)
 
   const topItems = allocate(top, props.topWs, topRowW)
   const mainItems = allocate(main, props.paneWs, contentW)
-  const leftItem = spec.left ? { pane: spec.left, left: 0, width: leftW } : null
+  const leftPanes = leftPanesOf(spec)
+  const leftTotalH = g.bottom - g.top - BAR_H
+  const leftSlotH = leftPanes.length ? Math.max(80, Math.floor(leftTotalH / leftPanes.length)) : 0
 
   const barTop = g.top
   const bodyTop = barTop + BAR_H + topH
@@ -3221,7 +3253,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
         <button type="button" className="dsh-wt_splitClose" aria-label="退出分栏（Esc）" onClick={() => splitStore.close()}>✕</button>
       </div>
       {/* 左列整高内容窗 */}
-      {leftItem && renderPane(leftItem, 'left', 0, g.left, barTop + BAR_H, g.bottom - barTop - BAR_H)}
+      {leftPanes.map((pane, i) => renderPane({ pane, left: 0, width: leftW }, 'left', i, g.left, barTop + BAR_H + i * leftSlotH, leftSlotH))}
       {/* 顶部通栏行（左列布局时为右侧列顶行） */}
       {hasTop && topItems.map((it, i) => renderPane(it, 'top', i, topRowX, topY, topH))}
       {/* 主行内容窗 */}

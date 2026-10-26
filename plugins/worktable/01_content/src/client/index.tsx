@@ -165,6 +165,9 @@ const PRESET_DEFS = [
   { id: 'l13', leftCount: 0, topCount: 1, contentCount: 3, chatFull: true, topHeightDefault: 420, topHeightRatio: 0.55 },
   { id: 'g4', leftCount: 0, topCount: 2, contentCount: 2, chatFull: true, topHeightRatio: 0.5 },
   { id: 'l23', leftCount: 0, topCount: 2, contentCount: 3, chatFull: true, topHeightRatio: 0.5 },
+  // 上 1 下 2 + 对话贴右下：窗口1 顶部通栏，窗口2/3 主行（窗口2 在窗口1 正下方），窗口3 独立一列，对话在其右侧。
+  // 引擎顶行只能通栏、无法只占某列，故「左列上下两窗 + 独立一列」以本拓扑近似，且不与已有预设拓扑重复。
+  { id: 'l2c', leftCount: 0, topCount: 1, contentCount: 2, chatFull: false },
 ] as const
 
 /** 侧栏图标备选集（emoji）：布局/快捷方式/入驻项目的图标，点击可换（首项 🧱 为布局默认） */
@@ -215,9 +218,60 @@ function buildLayout(presetId: string, name: string): LayoutSpec {
   }
 }
 
+/* ---------------- 布局落盘：跟着项目文件夹走（可选，向后兼容） ----------------
+ * 除了原有的 localStorage，项目有文件夹时把布局 spec 另存一份到
+ *   <项目文件夹>\.dsh-worktable\layout-<项目ID>.json
+ * 打开项目时优先采用该文件（缺省/损坏时回落到 localStorage 存档）。
+ * 任何失败都静默忽略，不影响原有使用。
+ */
+const LAYOUT_FILE_VERSION = 1
+
+function layoutFilePath(folder: string, projectId: string): string {
+  const base = String(folder || '').replace(/[\\/]+$/, '')
+  return base + '\\.dsh-worktable\\layout-' + projectId + '.json'
+}
+
+async function readLayoutFile(folder: string, projectId: string): Promise<any | null> {
+  if (!folder) return null
+  try {
+    const res = await fetch('/api/worktable/file?path=' + encodeURIComponent(layoutFilePath(folder, projectId)), { cache: 'no-store', credentials: 'same-origin' })
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data || data.version !== LAYOUT_FILE_VERSION || !data.spec || data.spec.id !== projectId) return null
+    return data.spec
+  } catch {
+    return null
+  }
+}
+
+async function writeLayoutFile(folder: string, projectId: string, spec: any): Promise<boolean> {
+  if (!folder || !spec || spec.id !== projectId) return false
+  const base = String(folder).replace(/[\\/]+$/, '')
+  try {
+    // .dsh-worktable 可能还不存在：先建目录（已存在时服务端返回 200）
+    await fetch('/api/worktable/mkdir', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: base + '\\.dsh-worktable' }),
+    }).catch(() => null)
+    const res = await fetch('/api/worktable/write', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        path: layoutFilePath(base, projectId),
+        content: JSON.stringify({ version: LAYOUT_FILE_VERSION, projectId, savedAt: new Date().toISOString(), spec }, null, 2),
+      }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 /** 布局缩略图（迷你窗格示意；聊天窗蓝色 💬） */
-function presetThumb(defId: string) {
-  const cell = (chat: boolean, key: string) => (
+function presetThumb(defId: string) {  const cell = (chat: boolean, key: string) => (
     <span key={key} className={'dsh-wt_thumbCell' + (chat ? ' dsh-wt_thumbChat' : '')}>{chat ? '💬' : ''}</span>
   )
   if (defId === '2h') {
@@ -279,6 +333,15 @@ function presetThumb(defId: string) {
           <span className="dsh-wt_thumbRow">{cell(false, 'b')}</span>
         </span>
         <span className="dsh-wt_thumbCol">{cell(true, 'c')}</span>
+      </span>
+    )
+  }
+  if (defId === 'l2c') {
+    // 上 1 下 2：窗口1 顶部通栏，窗口2/3 主行，对话贴右下（💬）——窗口1/2 上下相邻、窗口3 独立一列
+    return (
+      <span className="dsh-wt_thumb">
+        <span className="dsh-wt_thumbRow">{cell(false, 'a')}</span>
+        <span className="dsh-wt_thumbRow">{cell(false, 'b')}{cell(false, 'c')}{cell(true, 'd')}</span>
       </span>
     )
   }
@@ -1211,6 +1274,8 @@ function WorktableSection(props: any) {
   )
   /** 控制室动作引用（每渲染同步，供 env 闭包读取） */
   const actionsRef = useRef<{ openSplit: (spec: LayoutSpec) => void; openConsole: (explicitBound?: string | null) => void } | null>(null)
+  /** 布局落盘防抖计时器：projectId → timer（写 <项目文件夹>\.dsh-worktable\layout-<id>.json） */
+  const layoutFileTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   /** 提醒确认动作引用（每渲染同步；env 闭包用） */
   const ackRef = useRef<((projectId: string) => void) | null>(null)
   /** 视图状态最新快照（供 env 闭包读取控制室主题） */
@@ -1492,6 +1557,24 @@ function WorktableSection(props: any) {
         }
         return { ...prev, views: { ...prev.views, [spec.id]: spec } }
       })
+      // 同时写一份到项目文件夹（防抖 600ms）；没有文件夹/不可写就静默跳过
+      const folder = projectsRef.current.projects.folders[spec.id]
+      if (folder) {
+        const pending = layoutFileTimers.current.get(spec.id)
+        if (pending) clearTimeout(pending)
+        layoutFileTimers.current.set(spec.id, setTimeout(() => {
+          layoutFileTimers.current.delete(spec.id)
+          // 几何一并落盘：下次打开按文件尺寸还原（拖动分隔条也算）
+          const current = splitStore.spec && splitStore.spec.id === spec.id ? splitStore.spec : spec
+          const withGeometry: any = {
+            ...current,
+            leftWidth: { ...(current.leftWidth || { default: 260, min: 160, max: 1100 }), default: splitStore.leftW },
+            chatWidth: { ...(current.chatWidth || { default: 360, min: 240, max: 600 }), default: splitStore.chatW },
+            topHeight: { ...(current.topHeight || { default: 200, min: 120, max: 700 }), default: splitStore.topH },
+          }
+          void writeLayoutFile(folder, spec.id, withGeometry)
+        }, 600))
+      }
     }
     splitStore.onPaneContentEdited = (projectId, paneId) => {
       widgetRegistry.revokePane(projectId, paneId)
@@ -1664,7 +1747,22 @@ function buildCustomLayoutPrompt(req: string): string {
     engineIdsRef.current.add(spec.id)
     const before = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
     const target = projectsRef.current.projects.bindings[spec.id] ?? before
-    if (!await revealProject(target, () => { splitStore.open(projectsRef.current.projects.views[spec.id] ?? spec) })) return
+    // 布局落盘：项目有文件夹时优先用 <文件夹>\.dsh-worktable\layout-<id>.json；
+    // 没有该文件则把当前存档写一份过去（首次自动落地）。
+    const folder = projectsRef.current.projects.folders[spec.id]
+    let opened: LayoutSpec = projectsRef.current.projects.views[spec.id] ?? spec
+    if (folder) {
+      const fromFile = await readLayoutFile(folder, spec.id)
+      if (fromFile) {
+        opened = { ...(fromFile as LayoutSpec), preferFileGeometry: true } as LayoutSpec
+        persistProjects((prev) => (prev.layouts.some((l) => l.id === spec.id)
+          ? { ...prev, layouts: prev.layouts.map((l) => (l.id === spec.id ? (fromFile as LayoutSpec) : l)) }
+          : { ...prev, views: { ...prev.views, [spec.id]: fromFile as LayoutSpec } }))
+      } else {
+        void writeLayoutFile(folder, spec.id, opened)
+      }
+    }
+    if (!await revealProject(target, () => { splitStore.open(opened) })) return
     if (splitStore.active && splitStore.spec?.id === spec.id) {
       // 记录打开前会话（关项目时回切）与该项目「归属会话」（切到别的会话 = 自动关项目）
       let prev: string | null = null
