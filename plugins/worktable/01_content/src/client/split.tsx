@@ -1,3 +1,4 @@
+import type { CustomSource } from './customTask'
 import {CompositionEditor} from './compositionEditor'
 import { leftPanesOf } from './layoutPanes'
 import { TerminalStart } from './TerminalStart'
@@ -290,8 +291,8 @@ type SplitEnv = {
     getProjects: () => { id: string; name: string }[]
     currentProjectId: () => string | null
     getSessions: () => Promise<{ groups: { title: string; sessions: { id: string; title: string; isCurrent: boolean }[] }[]; current: string }>
-    submit: (projectId: string, projectName: string, requirement: string) => Promise<void>
-    sendToSession: (sessionId: string, projectName: string, requirement: string) => Promise<void>
+    submit: (projectId: string, projectName: string, requirement: string, group?: any, windowLabel?: string, source?: CustomSource) => Promise<string>
+    sendToSession: (sessionId: string, projectId: string, projectName: string, requirement: string, windowLabel?: string, source?: CustomSource) => Promise<void>
   }
   /** 控制室：卡片数据订阅 + 打开项目 / 跳绑定对话 + 主题 */
   console?: {
@@ -2786,7 +2787,7 @@ function SelectPop(props: {
 }
 
 /** 自定义窗口：居中对话框。两种模式：新建专属会话 / 发送到已有会话（默认当前会话）。 */
-function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number }) {
+function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number; source?: CustomSource }) {
   const paneTitle = props.row === undefined ? (props.paneTitle ?? '') :
     (windowLabelOf(props.row, props.index ?? 0).match(/^窗口\d+/)?.[0] ?? '')
   try { (window as any).__dshLastCustomPaneTitle = paneTitle } catch {}
@@ -2840,16 +2841,16 @@ function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number }
           if (!newGroupParent.trim() || !newGroupName.trim()) { setFail(T('custom.groupNeedPath')); return }
           group = { kind: 'new', parent: newGroupParent.trim(), name: newGroupName.trim() }
         }
-        const sid = await custom.submit(projectId, pname, text, group, paneTitle)
+        const sid = await custom.submit(projectId, pname, text, group, paneTitle, props.source)
         setBindNote((custom.autoBind?.(sid) ?? 'none') as any)
       } else {
         if (!sessionId) return
-        await custom.sendToSession(sessionId, projectId, pname, text, paneTitle)
+        await custom.sendToSession(sessionId, projectId, pname, text, paneTitle, props.source)
         setBindNote((custom.autoBind?.(sessionId) ?? 'none') as any)
       }
       setDone(true)
     } catch (e) {
-      setFail(String(e))
+      setFail(e instanceof Error ? e.message : '提交失败，请检查项目和会话后重试。')
     } finally {
       setBusy(false)
     }
@@ -2987,7 +2988,7 @@ function PaneTabBody(props: { tab: PaneTab; row: PaneRow; index: number; layoutI
   if (content.type === 'scm') return <GitPane />
   if (content.type === 'tasks') return <JobsPane />
   if (content.type === 'terminal') return <TerminalStart requiresStart={props.tab.requiresTerminalStart===true} label={T('pane.termStart')} description={T('pane.termRestored')}><TerminalPane /></TerminalStart>
-  if (content.type === 'custom') return <CustomPane paneTitle={props.paneTitle ?? ''} row={props.row} index={props.index} />
+  if (content.type === 'custom') return <CustomPane paneTitle={props.paneTitle ?? ''} row={props.row} index={props.index} source={{projectId:props.layoutId,paneId:props.paneId,tabId:props.tab.id}} />
   return (
     <div className="dsh-wt_paneWip">
       <span className="dsh-wt_paneWipIcon" aria-hidden>{BUILTIN_ICONS[content.type]}</span>
