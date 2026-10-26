@@ -13,6 +13,19 @@ const { createSessionSnapshotAdapter, sendHostSession, childSessionIdsOf, pendin
 const list = (running = false) => ({ phase: 'ready', ids: ['a'], byId: { a: { id: 'a', running, retainedBy: { mainView: 1 } } }, projectionsBySession: {} })
 const source = (patch = {}) => ({ getSnapshot: () => new Map([['a', { running: false, pendingInteraction: undefined, completionUnread: false, ...patch }]]) })
 
+test('custom text is prepared only after host ready and a rejected target never sends', async () => {
+  let ready, entered, prepared=0, sends=0
+  const waiting=new Promise(r=>{ready=r}), started=new Promise(r=>{entered=r})
+  const sessions={async using(_id,_options,fn) {entered();return fn({ready:waiting})}}
+  const pending=sendHostSession({sessions},'s',()=>{prepared++;throw new Error('target changed')})
+  await started
+  assert.equal(prepared,0)
+  ready({session:{async prompt(){sends++}}})
+  await assert.rejects(pending,/target changed/)
+  assert.equal(prepared,1)
+  assert.equal(sends,0)
+})
+
 test('legacy snapshots are passed through unchanged', () => {
   const snapshot = { current: 'a', byId: { a: { completed: true, pendingInteraction: { key: 'x' } } } }
   assert.equal(createSessionSnapshotAdapter()(snapshot, source()), snapshot)

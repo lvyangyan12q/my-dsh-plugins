@@ -1,4 +1,4 @@
-import { submitCustomTask, type CustomSource } from './customTask'
+import { submitCustomTask, createCustomHostSession, type CustomSource, type CustomSessionGroup } from './customTask'
 import {readHostTaskFacts} from './sessionCompat'
 import { createProjectNavigation, waitForConversationAnchor } from './projectNavigation'
 import {configureTaskFacts} from './taskPanel'
@@ -745,14 +745,14 @@ function hideBindTip() {
 
 /** 把文本送入指定会话：宿主同款寻址（binding(id).session.prompt / sendSession(会话面)），
  *  插件是根级上下文，无作用域的 conversation.send 会报 requires a session scope，不可用。 */
-async function promptIntoSession(sessionId: string, text: string): Promise<void> {
+async function promptIntoSession(sessionId: string, text: string | (() => string)): Promise<void> {
   const b = sessionBridge
   if (!b) throw new Error('bridge unavailable')
   await sendHostSession(b, sessionId, text)
 }
 
 /** 新建会话的分组选择：未分组 / 加入现有分组 / 新建一个分组（父目录 + 名称） */
-export type NewSessionGroup = { kind: 'none' } | { kind: 'existing'; workspaceId: string } | { kind: 'new'; parent: string; name: string }
+export type NewSessionGroup = CustomSessionGroup
 
 /** 插件知识包：附在窗口任务提示词里，让接收方跳过对插件源码的重新侦察，直接干活 */
 const KNOWLEDGE_PACK = [
@@ -799,50 +799,29 @@ function buildWindowTaskText(projectId: string, projectName: string, windowLabel
 }
 
 /** 自定义窗口任务：新建一个专属会话（可选指定分组/项目文件夹），注入窗口身份 + 知识包，并打开该会话 */
-export async function createCustomSession(projectId: string, projectName: string, requirement: string, group?: NewSessionGroup, windowLabel = '', folder: string | null = null, source?: CustomSource): Promise<string> {
+export async function createCustomSession(projectId: string, projectName: string, requirement: string, group?: NewSessionGroup, windowLabel = '', folder: string | null = null, source?: CustomSource, submission?: object): Promise<string> {
   const b = sessionBridge
   if (!b || typeof b.sessions?.create !== 'function') throw new Error('会话服务不可用，请重新打开工作台。')
-  return submitCustomTask({projectId,folder,window:windowLabel,source}, {
+  return submitCustomTask({projectId,folder,window:windowLabel,source,submission,intent:JSON.stringify([requirement,group])}, {
     ...customTaskDependencies(projectId,folder,windowLabel,projectName,requirement,'new',source),
-    create: async () => {
-      // 分组解析：existing → 直接带 workspaceId 建会话；new → 先建目录并注册为工作区
-      let workspaceId: string | null = null
-      const g = group ?? { kind: 'none' as const }
-      if (g.kind === 'existing') {
-        if (!g.workspaceId) throw new Error('请选择现有分组。')
-        workspaceId = g.workspaceId
-      } else if (g.kind === 'new') {
-        const ws = b.workspaces as any
-        if (!ws || typeof ws.create !== 'function') throw new Error('workspaces unavailable')
-        const parent = g.parent.replace(/[\\/]+$/, '')
-        const name = g.name.replace(/^[\\/]+/, '').replace(/[\\/]+$/, '')
-        if (!parent || !name) throw new Error('invalid group path')
-        const full = joinPath(parent, name)
-        try { await ws.createDirectory?.(parent, name) } catch { /* 宿主 browse 能力本机为 native 时不可用 */ }
+    create: (validate) => createCustomHostSession({
+      sessions:b.sessions,workspaces:b.workspaces,
+      mkdir:async(path) => {
         try {
-          // 兜底：插件服务端 mkdir（父目录必须已存在，避免误建深层目录）
-          const r = await fetch('/api/worktable/mkdir', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: full }) })
-          const d = await r.json()
-          if (!r.ok || !d?.ok) throw new Error(d?.error ?? 'mkdir failed')
-        } catch (cause) { throw new Error('分组目录创建失败，请检查目录权限后重试。', {cause}) }
-        const view = await ws.create({ path: full })
-        workspaceId = view?.workspaceId ?? view?.id ?? null
-        if (!workspaceId) throw new Error('workspace create failed')
-      }
-      // 会话工作目录优先级：显式分组（workspaceId）> 项目文件夹（cwd）> 默认
-      let createOpts: any = {}
-      if (workspaceId) createOpts = { workspaceId }
-      else if (folder) createOpts = { cwd: folder }
-      return await createHostSession(b.sessions, b.workspaces, createOpts, g.kind === 'none' ? 'none' : 'auto')
-    },
-    configure: async (sessionId) => { await ensureSessionPreset(sessionId); await ensureSessionModel(sessionId) },
+          const response=await fetch('/api/worktable/mkdir',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({path})})
+          const data=await response.json()
+          if (!response.ok || !data?.ok) throw new Error(data?.error ?? 'mkdir failed')
+        } catch (cause) { throw new Error('分组目录创建失败，请检查目录权限后重试。',{cause}) }
+      },
+    },group ?? {kind:'none'},folder,validate),
+    configure: async (sessionId,validate) => { await ensureSessionPreset(sessionId); validate(); await ensureSessionModel(sessionId); validate() },
   })
 }
 
 /** 把自定义需求直接发到用户选定的已有会话（默认当前会话），带窗口身份 + 知识包 */
-export async function sendCustomToSession(sessionId: string, projectId: string, projectName: string, requirement: string, windowLabel = '', folder: string | null = null, source?: CustomSource): Promise<void> {
+export async function sendCustomToSession(sessionId: string, projectId: string, projectName: string, requirement: string, windowLabel = '', folder: string | null = null, source?: CustomSource, submission?: object): Promise<void> {
   if (!sessionBridge) throw new Error('会话服务不可用，请重新打开工作台。')
-  await submitCustomTask({projectId,folder,window:windowLabel,source,sessionId}, customTaskDependencies(projectId,folder,windowLabel,projectName,requirement,'send',source))
+  await submitCustomTask({projectId,folder,window:windowLabel,source,sessionId,submission,intent:requirement}, customTaskDependencies(projectId,folder,windowLabel,projectName,requirement,'send',source))
 }
 
 function customTaskDependencies(projectId: string, folder: string | null, windowLabel: string, projectName: string, requirement: string, mode: 'new' | 'send', source?: CustomSource) {
@@ -863,7 +842,7 @@ function customTaskDependencies(projectId: string, folder: string | null, window
       try { await openHostSession(clientCtx, sessionBridge!.sessions, sessionId) } catch {}
     },
     bind: (_target: unknown, sessionId: string) => prepareWidgetTask(projectId,folder,sessionId,windowLabel),
-    send: (sessionId: string, bindings: WidgetBinding[]) => promptIntoSession(sessionId,buildWindowTaskText(projectId,projectName,windowLabel,requirement,folder,mode,bindings)),
+    send: (sessionId: string, prepare: () => WidgetBinding[]) => promptIntoSession(sessionId,() => buildWindowTaskText(projectId,projectName,windowLabel,requirement,folder,mode,prepare())),
   }
 }
 
@@ -1359,8 +1338,8 @@ function WorktableSection(props: any) {
         currentProjectId: () => (splitStore.active && splitStore.spec ? splitStore.spec.id : null),
         getSessions: () => fetchSessionGroups(),
         getProjectFolder: (id: string) => projectsRef.current.projects.folders[id] ?? null,
-        sendToSession: (sessionId, projectId, projectName, requirement, windowLabel, source) => sendCustomToSession(sessionId, projectId, projectName, requirement, windowLabel, projectsRef.current.projects.folders[projectId] ?? null, source),
-        submit: (projectId, projectName, requirement, group, windowLabel, source) => createCustomSession(projectId, projectName, requirement, group, windowLabel, projectsRef.current.projects.folders[projectId] ?? null, source),
+        sendToSession: (sessionId, projectId, projectName, requirement, windowLabel, source, submission) => sendCustomToSession(sessionId, projectId, projectName, requirement, windowLabel, projectsRef.current.projects.folders[projectId] ?? null, source, submission),
+        submit: (projectId, projectName, requirement, group, windowLabel, source, submission) => createCustomSession(projectId, projectName, requirement, group, windowLabel, projectsRef.current.projects.folders[projectId] ?? null, source, submission),
         // 分组（宿主工作区）数据源：读 ctx.workspaces 快照，供新建对话选分组
         getWorkspaces: () => {
           try {
@@ -1377,9 +1356,9 @@ function WorktableSection(props: any) {
         createWorkspace: (path: string) => sessionBridge?.workspaces?.create?.({ path }),
         createWorkspaceDir: (parent: string, name: string) => sessionBridge?.workspaces?.createDirectory?.(parent, name),
         // 自动绑定规则：当前项目未绑定 → 绑定到刚新建/发送的会话；已绑定 → 不改（返回 'kept'）
-        autoBind: (sessionId: string): 'auto' | 'kept' | 'none' => {
+        autoBind: (sessionId: string, expectedProjectId?: string): 'auto' | 'kept' | 'none' => {
           const pid = splitStore.active && splitStore.spec ? splitStore.spec.id : null
-          if (!pid || typeof sessionId !== 'string' || !sessionId) return 'none'
+          if (!pid || (expectedProjectId && expectedProjectId !== pid) || typeof sessionId !== 'string' || !sessionId) return 'none'
           const already = projectsRef.current.projects.bindings[pid]
           if (already) return 'kept'
           persistProjects((prev) => (prev.bindings[pid] ? prev : { ...prev, bindings: { ...prev.bindings, [pid]: sessionId } }))

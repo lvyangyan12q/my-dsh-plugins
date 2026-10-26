@@ -303,8 +303,8 @@ type SplitEnv = {
     getProjects: () => { id: string; name: string }[]
     currentProjectId: () => string | null
     getSessions: () => Promise<{ groups: { title: string; sessions: { id: string; title: string; isCurrent: boolean }[] }[]; current: string }>
-    submit: (projectId: string, projectName: string, requirement: string, group?: any, windowLabel?: string, source?: CustomSource) => Promise<string>
-    sendToSession: (sessionId: string, projectId: string, projectName: string, requirement: string, windowLabel?: string, source?: CustomSource) => Promise<void>
+    submit: (projectId: string, projectName: string, requirement: string, group?: any, windowLabel?: string, source?: CustomSource, submission?: object) => Promise<string>
+    sendToSession: (sessionId: string, projectId: string, projectName: string, requirement: string, windowLabel?: string, source?: CustomSource, submission?: object) => Promise<void>
   }
   /** 控制室：卡片数据订阅 + 打开项目 / 跳绑定对话 + 主题 */
   console?: {
@@ -2801,6 +2801,8 @@ function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number; 
   const groupTouchedRef = useRef(false)
   const [newGroupParent, setNewGroupParent] = useState('')
   const [newGroupName, setNewGroupName] = useState('')
+  const submission = useRef({}).current
+  const submitting = useRef(false)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [fail, setFail] = useState('')
@@ -2824,7 +2826,8 @@ function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number; 
   }, [custom])
   const submit = async () => {
     const text = requirement.trim()
-    if (!text || !projectId || !custom) return
+    if (!text || !projectId || !custom || submitting.current || done) return
+    submitting.current = true
     setBusy(true)
     setFail('')
     try {
@@ -2832,22 +2835,26 @@ function CustomPane(props: { paneTitle?: string; row?: PaneRow; index?: number; 
       const pname = proj?.name ?? projectId
       if (mode === 'new') {
         let group: any = { kind: 'none' }
-        if (groupMode === 'existing' && groupId) group = { kind: 'existing', workspaceId: groupId }
+        if (groupMode === 'existing') {
+          if (!groupId) { setFail('请选择现有分组。'); return }
+          group = { kind: 'existing', workspaceId: groupId }
+        }
         else if (groupMode === 'new') {
           if (!newGroupParent.trim() || !newGroupName.trim()) { setFail(T('custom.groupNeedPath')); return }
           group = { kind: 'new', parent: newGroupParent.trim(), name: newGroupName.trim() }
         }
-        const sid = await custom.submit(projectId, pname, text, group, paneTitle, props.source)
-        setBindNote((custom.autoBind?.(sid) ?? 'none') as any)
+        const sid = await custom.submit(projectId, pname, text, group, paneTitle, props.source, submission)
+        setBindNote((custom.autoBind?.(sid, projectId) ?? 'none') as any)
       } else {
         if (!sessionId) return
-        await custom.sendToSession(sessionId, projectId, pname, text, paneTitle, props.source)
-        setBindNote((custom.autoBind?.(sessionId) ?? 'none') as any)
+        await custom.sendToSession(sessionId, projectId, pname, text, paneTitle, props.source, submission)
+        setBindNote((custom.autoBind?.(sessionId, projectId) ?? 'none') as any)
       }
       setDone(true)
     } catch (e) {
       setFail(e instanceof Error ? e.message : '提交失败，请检查项目和会话后重试。')
     } finally {
+      submitting.current = false
       setBusy(false)
     }
   }
