@@ -4,6 +4,7 @@ import { mountApplications, protectWorktableRoutes } from './framework/host.mjs'
 import { mountTasks } from './framework/task-host.mjs'
 import { mountGenerations } from './framework/generation-host.mjs'
 import { mountRoles } from './framework/role-host.mjs'
+import { mountProjectLayouts } from './layout/project-layout-host.mjs'
 import { readdirSync, realpathSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, resolve as pathResolve, sep } from 'node:path'
@@ -297,6 +298,7 @@ export function apply(ctx: Context) {
   mountRoles(ctx)
   mountTasks(ctx)
   mountGenerations(ctx)
+  mountProjectLayouts(ctx)
 
   // 本地文件读取（资源管理器点击 .html 后浏览器标签内打开）
   registerRoute({
