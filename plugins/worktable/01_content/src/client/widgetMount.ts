@@ -64,6 +64,9 @@ export class WidgetMountRegistry {
     const projects = projectId ? [this.records[projectId] ?? {}] : Object.values(this.records)
     return projects.flatMap((panes) => Object.values(panes)).filter((b) => b.enabled)
   }
+  available(): boolean {
+    try { if (!this.storage) return false; this.storage.getItem(WIDGET_BINDINGS_KEY); return true } catch { return false }
+  }
   begin(projectId: string, spec: WidgetSpec, folder: string, sessionId: string, window: string): WidgetBinding[] {
     if (!this.storage) throw new Error('project storage unavailable')
     if (!folder || !sessionId || spec.id !== projectId) throw new Error('project folder or session unavailable')
