@@ -8,7 +8,7 @@ const code=buildSync({entryPoints:[fileURLToPath(new URL('../01_content/src/clie
 
 test('actual pane dividers resize adjacent windows and persist left heights across reopen',async()=>{
   const dom=new JSDOM('<div id="mount"></div><div class="wSkVaW_root" data-phase="hero"><div class="wSkVaW_body"></div></div>',{url:'http://127.0.0.1/'})
-  const names=['self','window','document','navigator','localStorage','MutationObserver','ResizeObserver','requestAnimationFrame','cancelAnimationFrame','CustomEvent','IS_REACT_ACT_ENVIRONMENT'],old=Object.fromEntries(names.map(n=>[n,Object.getOwnPropertyDescriptor(globalThis,n)]))
+  const names=['HTMLElement','self','window','document','navigator','localStorage','MutationObserver','ResizeObserver','requestAnimationFrame','cancelAnimationFrame','CustomEvent','IS_REACT_ACT_ENVIRONMENT'],old=Object.fromEntries(names.map(n=>[n,Object.getOwnPropertyDescriptor(globalThis,n)]))
   for(const name of names)Object.defineProperty(globalThis,name,{value:name==='IS_REACT_ACT_ENVIRONMENT'?true:name==='ResizeObserver'?class{observe(){}disconnect(){}}:name==='requestAnimationFrame'?()=>0:name==='cancelAnimationFrame'?()=>{}:dom.window[name],configurable:true,writable:true})
   dom.window.HTMLCanvasElement.prototype.getContext=()=>null
   dom.window.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}})
@@ -57,5 +57,26 @@ test('actual pane dividers resize adjacent windows and persist left heights acro
     await drag([...dom.window.document.querySelectorAll('[title="拖动调整聊天宽度"]')].find(el=>dom.window.getComputedStyle(el).visibility!=='hidden'),40,0)
     assert.equal(splitStore.chatW,leftChatBefore+40)
     assert.ok(panes().filter(p=>p.title.startsWith('m')).every(p=>p.left>=100+splitStore.chatW))
+    const native=dom.window.document.querySelector('.wSkVaW_body')
+    // Chrome serializes fractional pixel assignments with less precision than DOMRect.
+    // Model that browser CSSOM boundary while exercising the public pointer/UI path.
+    for(const field of ['marginLeft','marginRight','marginTop']){
+      let proto=Object.getPrototypeOf(native.style),descriptor
+      while(proto&&!descriptor){descriptor=Object.getOwnPropertyDescriptor(proto,field);proto=Object.getPrototypeOf(proto)}
+      Object.defineProperty(native.style,field,{configurable:true,get(){return descriptor.get.call(this)},set(value){descriptor.set.call(this,/^-?[\d.]+px$/.test(value)?Number(parseFloat(value).toFixed(3))+'px':value)}})
+    }
+    await act(async()=>{splitStore.close();Object.assign(rect,{right:1456.3636474609375,width:1356.3636474609375});splitStore.open({...spec,id:'fractional-cssom',left:null,leftMore:null,top:null,main:[pane('m1')],fileGeometry:{chatW:395,topH:250,leftW:0,paneWs:{m1:960},topWs:{},leftWs:{},leftHs:{}}})})
+    await drag([...dom.window.document.querySelectorAll('[title="拖动调整聊天宽度"]')].find(el=>dom.window.getComputedStyle(el).visibility!=='hidden'),-35,0)
+    assert.equal(splitStore.active,true,'CSSOM normalization of our own drag must not yield the workspace')
+    await act(async()=>{[...dom.window.document.querySelectorAll('[aria-label="收起窗口1"]')].find(el=>dom.window.getComputedStyle(el).visibility!=='hidden').click()})
+    assert.equal(splitStore.active,true,'minimizing with fractional geometry must keep the workspace open')
+    await act(async()=>{[...dom.window.document.querySelectorAll('[aria-label="展开窗口1：m1"]')].find(el=>dom.window.getComputedStyle(el).visibility!=='hidden').click()})
+    assert.equal(splitStore.active,true,'restoring with fractional geometry must keep the workspace open')
+    await act(async()=>{Object.assign(rect,{right:700.3636474609375,width:600.3636474609375});splitStore.refreshGeom();splitStore.applyMargin();splitStore.notify()})
+    assert.equal(splitStore.active,true,'narrow-mode CSSOM writes must not yield the workspace')
+    await act(async()=>{Object.assign(rect,{right:1456.3636474609375,width:1356.3636474609375});splitStore.syncAnchor()})
+    assert.equal(splitStore.active,true,'reanchoring records the browser-normalized margins')
+    await act(async()=>{native.style.marginLeft='17px';await Promise.resolve()})
+    assert.equal(splitStore.active,false,'a real external margin override still yields the workspace')
   }finally{if(root)await act(async()=>{splitStore.close();root.unmount()});dom.window.close();for(const n of names)old[n]?Object.defineProperty(globalThis,n,old[n]):delete globalThis[n]}
 })
