@@ -184,15 +184,19 @@ function sourceFunction(source, startText, endText, name, bindings) {
   return module.exports[name]
 }
 
-test('actual custom-window creation forwards Ungrouped and project cwd through the host helper', async () => {
+test('custom submission preserves explicit Ungrouped and project cwd through the public host helper', async () => {
+  const customCode = buildSync({ entryPoints: [fileURLToPath(new URL('../01_content/src/client/customTask.ts', import.meta.url))], bundle: true, write: false, platform: 'node', format: 'cjs' }).outputFiles[0].text
+  const customModule = { exports: {} }
+  runInNewContext(customCode, {module:customModule,exports:customModule.exports})
   const calls = []
-  const create = sourceFunction(indexSource, 'export async function createCustomSession(', '\n/** 把自定义需求', 'createCustomSession', {
-    sessionBridge: { sessions: { using() {}, async create(opts) { calls.push({ ...opts }); return 'synthetic' } }, workspaces: new Proxy({}, { get() { assert.fail('no workspace for explicit Ungrouped') } }) },
-    createHostSession, prepareWidgetTask: () => [], buildWindowTaskText: () => 'synthetic task', ensureSessionPreset: async () => {}, ensureSessionModel: async () => {},
-    markPluginSessionOpen: () => {}, clientCtx: {}, openHostSession: async () => {}, promptIntoSession: async () => {},
+  const sessions = {using() {},async create(opts) {calls.push({...opts});return 'synthetic'}}
+  const workspaces = new Proxy({}, {get() {assert.fail('no workspace for explicit Ungrouped')}})
+  await customModule.exports.submitCustomTask({projectId:'p',folder:'C:/fixture/Projects',window:'窗口1'}, {
+    getProject:()=>({folder:'C:/fixture/Projects',spec:{id:'p',main:[{id:'pane'}]}}),storageAvailable:()=>true,
+    create:()=>createHostSession(sessions,workspaces,{cwd:'C:/fixture/Projects'},'none'),
+    configure:async()=>{},open:async()=>{},bind:()=>[],send:async()=>{},
   })
-  await create('p', 'project', 'synthetic', { kind: 'none' }, '', 'C:/fixture/Projects')
-  assert.deepEqual(calls, [{ cwd: 'C:/fixture/Projects' }])
+  assert.deepEqual(calls,[{cwd:'C:/fixture/Projects'}])
 })
 
 test('blank-session restriction only applies to explicit Ungrouped on the retained-scope host', () => {
