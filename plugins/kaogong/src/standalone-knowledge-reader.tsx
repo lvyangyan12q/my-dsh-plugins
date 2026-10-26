@@ -6,7 +6,7 @@ import {useLearningHttp} from './view-context.tsx'
 import type { Entry } from './knowledge-reader.tsx'
 
 async function readable(response:Response,description:string){
-  if(response.status===403)throw new Error('资料引用已撤销或尚未授权，请在工作台“资料连接”中核对并显式授权后刷新。')
+  if(response.status===403)throw new Error('资料引用已撤销或尚未授权，请在考公“资料来源与授权”中核对并显式授权后刷新。')
   if(response.status===401)throw new Error('资料访问未获授权，请登录当前DSH并核对资料连接后刷新。')
   if(!response.ok)throw new Error(description+'，当前资料已隐藏，请刷新重试。')
   return response.json()

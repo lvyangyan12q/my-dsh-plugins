@@ -4,7 +4,7 @@ import * as Persona from '@deepseek-ai/dsh-persona'
 import * as SkillFilesystem from '@deepseek-ai/dsh-skill-filesystem'
 import * as SkillTool from '@deepseek-ai/dsh-tool-skill'
 import * as AskUser from '@deepseek-ai/dsh-tool-ask-user'
-import type { RoleSessionScopeOwner } from 'dsh-worktable/sdk'
+import type {StudyRoleScopeOwner as RoleSessionScopeOwner} from './study-contracts.ts'
 import type { kaogongRolePresets } from './role-definitions.ts'
 
 /** Trusted packaged role code only. The platform supplies a verified Native Agent context. */

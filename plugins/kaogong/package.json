@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-kaogong",
   "description": "武汉公务员考试学习套件：错题本（归纳问题点/总结）+ 倒排学习计划与进度",
-  "version": "0.2.0-rc.3.7",
+  "version": "0.3.0-rc.3.1",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -23,6 +23,7 @@
     "lib/client.js",
     "lib/*.mjs",
     "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.mts",
     "cordis.patch.yml",
     "roles/personas/老师.md",
     "roles/personas/班主任.md",
@@ -41,20 +42,24 @@
     "client": {
       "platform": "web",
       "inject": [
-        "worktableApplicationViews"
+        "slots",
+        "layout",
+        "uiWorkspace",
+        "sidebarRight",
+        "sidebarRightTabs"
       ]
     }
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "build:host": "tsdown -c tsdown.host.config.ts",
-    "build:client": "tsdown -c tsdown.config.ts && tsc -p tsconfig.client.json",
+    "build:host": "node scripts/build.mjs --host",
+    "build:client": "node scripts/build.mjs --client",
     "build:types": "node scripts/check-host-types.mjs --emit",
     "test:artifact": "node --test tests/package.test.mjs",
-    "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
-    "test:practice": "tsx --test tests/practice-rounds.test.mjs tests/views.test.mjs",
-    "test:runtime": "tsx scripts/check-practice-runtime.mjs",
-    "typecheck:client": "tsc -p tsconfig.client.json --noEmit --emitDeclarationOnly false",
+    "test": "node scripts/test-current.mjs",
+    "test:practice": "node scripts/test-current.mjs --domain",
+    "test:runtime": "node scripts/test-current.mjs --host",
+    "typecheck:client": "node scripts/check-client-types.mjs",
     "typecheck:host": "node scripts/check-host-types.mjs",
     "test:platform": "node scripts/test-current.mjs",
     "pack": "node scripts/pack-release.mjs",
@@ -99,16 +104,21 @@
     "lucide-react": "0.468.0",
     "tsdown": "^0.22.2",
     "typescript": "^5.9.0",
-    "dsh-worktable": "file:../worktable/01_content"
+    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-ui-session": "0.2.1-rc.3"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "4.0.5",
     "@deepseek-ai/dsh-host-webserver": "0.2.1-rc.3",
-    "dsh-worktable": "0.10.0-rc.3.7",
     "@deepseek-ai/schemastery": "3.18.5",
     "@deepseek-ai/dsh-tools": "0.2.1-rc.3",
     "@deepseek-ai/dsh-storage-domain": "0.2.1-rc.3",
     "@deepseek-ai/dsh-client-connection": "0.2.1-rc.3",
-    "@deepseek-ai/dsh-agent-preset-registry": "0.2.1-rc.3"
+    "@deepseek-ai/dsh-agent-preset-registry": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-api-session-controller": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-session-persistence": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-workspace": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-skill": "0.2.1-rc.3"
   }
 }

@@ -5,9 +5,10 @@ import {dirname,resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {randomUUID} from 'node:crypto'
 import {spawnSync} from 'node:child_process'
-import {npmCli} from '../../../scripts/release-tools.mjs'
+import {cleanBuildOutput} from './build-output.mjs'
+import {npmCli} from './npm-cli.mjs'
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'))
-assert(pkg.version==='0.2.0-rc.3.7'&&pkg.engines.dsh==='0.2.1-rc.3'&&pkg.peerDependencies['dsh-worktable']==='0.10.0-rc.3.7','Candidate must target the reviewed rc.3 platform')
+assert(pkg.version==='0.3.0-rc.3.1'&&pkg.engines.dsh==='0.2.1-rc.3'&&!pkg.peerDependencies['dsh-worktable'],'Candidate must target the reviewed rc.3 platform')
 assert(!JSON.stringify(pkg).includes('dsh-personal-workbench'),'Legacy runtime dependency is forbidden')
 assert(process.env.DSH_SOURCE,'Set DSH_SOURCE to the built official acceptance checkout')
 process.env.KAOGONG_TEST_RUNTIME=process.env.DSH_SOURCE
@@ -27,4 +28,4 @@ try{
  const destination=resolve(releases,pack.filename)
  await copyFile(resolve(temp,pack.filename),destination,constants.COPYFILE_EXCL)
  console.log(destination)
-}finally{await rm(temp,{recursive:true,force:true})}
+}finally{await cleanBuildOutput(root,temp)}

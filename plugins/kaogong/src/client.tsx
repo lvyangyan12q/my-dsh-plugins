@@ -63,11 +63,11 @@ export function StudyLearningTab(props:LearningTabProps){
   const info=props.useTabInfo(),params=info.tab.navigation.params
   const [selection,setSelection]=useState<StudySelection|null>(null),[error,setError]=useState('')
   const target=params&&'profileId'in params?params:null
-  useEffect(()=>{setSelection(null);setError('');const abort=new AbortController();if(!target||target.sessionId!==props.sessionId){setError('学习面板与原生会话归属不符');return()=>abort.abort()}
+  useEffect(()=>{setSelection(null);setError('');const abort=new AbortController();if(params!==undefined&&(!target||target.sessionId!==props.sessionId)){setError('学习面板与原生会话归属不符');return()=>abort.abort()}
     const stop=()=>abort.abort();info.tab.signal.addEventListener('abort',stop,{once:true})
-    void studyRequest<StudySelection>({action:'session-context',viewId:target.viewId,sessionId:props.sessionId},abort.signal).then(value=>{if(abort.signal.aborted)return;if(value.profile.id!==target.profileId||value.view.id!==target.viewId||value.view.profileId!==target.profileId)throw new Error('学习档案与原生会话归属不符');setSelection(value)}).catch(cause=>{if(!abort.signal.aborted)setError(cause.message)})
+    void studyRequest<StudySelection>({action:'session-context',...(target?{viewId:target.viewId}:{}),sessionId:props.sessionId},abort.signal).then(value=>{if(abort.signal.aborted)return;if(value.view.profileId!==value.profile.id||target&&(value.profile.id!==target.profileId||value.view.id!==target.viewId))throw new Error('学习档案与原生会话归属不符');setSelection(value)}).catch(cause=>{if(!abort.signal.aborted)setError(cause.message)})
     return()=>{abort.abort();info.tab.signal.removeEventListener('abort',stop)}
-  },[target?.profileId,target?.viewId,target?.sessionId,props.sessionId,info.tab.signal])
+  },[params===undefined,target?.profileId,target?.viewId,target?.sessionId,props.sessionId,info.tab.signal])
   if(error)return <p role="alert">{error}</p>
   return selection?<ScopedStudyView {...selection} native={props.native} pool={props.pool} panel sessionId={props.sessionId}/>:<p role="status">正在核对学习档案…</p>
 }

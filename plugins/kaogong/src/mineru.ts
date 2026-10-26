@@ -105,7 +105,7 @@ export class Mineru {
     const job: Job = { id, batchId: data.batch_id, source, subject: subject.trim(), title: basename(source), pages }
     await mkdir(this.jobDir(id), { recursive: true })
     await writeFile(resolve(this.jobDir(id), 'job.json'), JSON.stringify(job, null, 2))
-    const upload = await this.fetcher(url, { method: 'PUT', body: bytes, redirect: 'error', signal: AbortSignal.timeout(300000) })
+    const upload = await this.fetcher(url, { method: 'PUT', body: new Uint8Array(bytes), redirect: 'error', signal: AbortSignal.timeout(300000) })
     if (!upload.ok) throw new Error('MinerU upload failed HTTP ' + upload.status + '; document id: ' + id)
     return { id, state: 'submitted', pages }
   }

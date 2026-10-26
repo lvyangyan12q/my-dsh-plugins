@@ -1,10 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
-import type { RoleDefinition, PrivateCapability } from 'dsh-worktable/sdk'
+import type {StudyRoleDefinition as RoleDefinition,StudyCapability as PrivateCapability} from './study-contracts.ts'
 import { TAXONOMY } from './taxonomy.ts'
-import { kaogongRoleScopeOwner } from './role-session-scope.ts'
 
 export const legacyTeacherPresetId = 'personal-workbench.kaogong-teacher.v1'
 export const teachingSkillProvider = 'kaogong-packaged-teaching'
@@ -27,7 +25,6 @@ export async function kaogongRolePresets() {
     { name: '@deepseek-ai/dsh-tool-ask-user' as const, config: {} },
   ] })))
 }
-
 /** Explicit deployment location is captured by each durable intent, not inferred from process cwd. */
 export function kaogongPrivateCapabilities(): PrivateCapability[] {
   const rows = [{id:'teacher',title:'默认老师',presetId:legacyTeacherPresetId},
@@ -43,18 +40,4 @@ export function kaogongRoleDefinitions(cwd?: string): RoleDefinition[] {
     id:row.id,title:row.title,creation:{cwd},agent:{kind:'agent',source:'application',ownerAppId:'kaogong',id:row.id},
     skills:[{kind:'skill',source:'application',ownerAppId:'kaogong',id:'kaogong-teach'}],
   }))
-}
-
-/** Registration owns declarations only; no native Session is created or silently adopted. */
-export async function installKaogongRoles(ctx: Context, cwd?: string) {
-  const removers: (() => void | Promise<void>)[] = []
-  try {
-    removers.push(ctx.worktableCapabilities.contribute('kaogong',kaogongPrivateCapabilities()))
-    removers.push(ctx.worktableCapabilities.contributeSessionScopes('kaogong',kaogongRoleScopeOwner(ctx,await kaogongRolePresets())))
-    removers.push(ctx.worktableRoles.contribute('kaogong',kaogongRoleDefinitions(cwd)))
-  } catch (error) {
-    await Promise.allSettled(removers.reverse().map(remove=>Promise.resolve().then(remove)))
-    throw error
-  }
-  return async () => { for (const remove of removers.reverse()) await remove() }
 }

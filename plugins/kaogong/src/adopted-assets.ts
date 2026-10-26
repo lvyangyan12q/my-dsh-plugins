@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto'
-import type {ResourceDirectory} from 'dsh-worktable/sdk'
+import type {StudySources as ResourceDirectory} from './study-sources.ts'
 import {fingerprint,type LegacyAdoptionPlan} from './legacy-adoption-plan.ts'
 import {readLegacyMaterialAsset} from './legacy-material-evidence.mjs'
 import {readLegacyBankImageAsset} from './legacy-bank-image-evidence.mjs'

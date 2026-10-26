@@ -1,5 +1,7 @@
 import {createHash} from 'node:crypto'
-import type {ApplicationOwnedTask, ApplicationTaskContext, ApplicationTaskOwner, ApplicationTaskOwners, ResourceDirectory} from 'dsh-worktable/sdk'
+import type {TeachingTask as ApplicationOwnedTask, TeachingContext as ApplicationTaskContext, TeachingOwner as ApplicationTaskOwner} from './study-contracts.ts'
+import type {StudyTeaching as ApplicationTaskOwners} from './study-teaching.ts'
+import type {StudySources as ResourceDirectory} from './study-sources.ts'
 import type {KvTable} from '@deepseek-ai/dsh-storage-domain'
 import type {KaogongHost} from './instance-host.ts'
 import type {KaogongInstanceState} from './instance-state.ts'
@@ -65,7 +67,7 @@ export function registerTaskOwners(host:KaogongHost, owners:ApplicationTaskOwner
     await receipts.put(task.id,{...receipt,status:'done'})
    }),
   }
-  disposers.push(owners.contribute('kaogong',kind,owner))
+  disposers.push(owners.register(kind,owner))
  }
  return async()=>{for(const remove of disposers.reverse())await remove()}
 }

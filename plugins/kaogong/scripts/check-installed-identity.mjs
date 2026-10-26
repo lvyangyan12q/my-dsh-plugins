@@ -5,11 +5,10 @@ import {dirname,join,resolve,isAbsolute,relative} from 'node:path'
 import {randomUUID} from 'node:crypto'
 import {spawnSync} from 'node:child_process'
 
-const archive=resolve(process.argv[2]??''),native=process.env.DSH_SOURCE,base=process.env.KAOGONG_INSTALL_GATE_ROOT,worktable=process.env.KAOGONG_WORKTABLE_ARCHIVE
+const archive=resolve(process.argv[2]??''),native=process.env.DSH_SOURCE,base=process.env.KAOGONG_INSTALL_GATE_ROOT
 assert(native&&isAbsolute(native),'DSH_SOURCE must identify the built official installation')
 assert(base&&isAbsolute(base),'KAOGONG_INSTALL_GATE_ROOT must identify a separate owned C test directory')
-assert(worktable&&isAbsolute(worktable),'KAOGONG_WORKTABLE_ARCHIVE must identify the exact reviewed peer archive')
-await access(archive);await access(worktable)
+await access(archive)
 // A development ancestor must never rescue a missing production peer.
 for(let parent=resolve(base);;parent=dirname(parent)){assert(!existsSync(join(parent,'node_modules')),'Installed identity root has a development node_modules ancestor: '+parent);if(dirname(parent)===parent)break}
 const root=join(base,'identity-'+randomUUID()),home=join(root,'home'),profile=join(home,'profiles','web')
@@ -17,11 +16,10 @@ await mkdir(root,{recursive:true})
 const env={...process.env,DSH_HOME:home,DSH_TELEMETRY_DISABLED:'1'}
 for(const key of ['NODE_PATH','NODE_OPTIONS','TSX_TSCONFIG_PATH','KAOGONG_TEST_RUNTIME','DEEPSEEK_API_KEY','OPENAI_API_KEY','COMMANDCODE_API_KEY','DSH_TOKEN'])delete env[key]
 const run=async(args,name)=>{const result=spawnSync(process.execPath,args,{cwd:root,env,encoding:'utf8',timeout:180000,maxBuffer:8*1024*1024,windowsHide:true});await writeFile(join(root,name+'.private.log'),String(result.stdout??'')+'\n'+String(result.stderr??''));assert.equal(result.status,0,'Official installed identity '+name+' failed; see '+join(root,name+'.private.log'));return result.stdout}
-await run([join(native,'apps/cli/lib/bin.js'),'plugin','--profile','web','add',worktable,archive,'--offline'],'official-cli-install')
+await run([join(native,'apps/cli/lib/bin.js'),'plugin','--profile','web','add',archive,'--offline','--ignore-scripts'],'official-cli-install')
 const installed=JSON.parse(await readFile(join(profile,'node_modules/@deepseek-ai/dsh-tool-kaogong/package.json'),'utf8'))
-const peer=JSON.parse(await readFile(join(profile,'node_modules/dsh-worktable/package.json'),'utf8'))
-assert.equal(installed.version,'0.2.0-rc.3.7');assert.equal(installed.dependencies['get-tsconfig'],'5.0.0-beta.5');
-const lock=await readFile(join(profile,'pnpm-lock.yaml'),'utf8');assert.ok(lock.includes('get-tsconfig@5.0.0-beta.5:'),'Official clean installation must lock the exact runtime dependency');assert.equal(peer.version,'0.10.0-rc.3.7');assert.equal(installed.peerDependencies['dsh-worktable'],peer.version)
+assert.equal(installed.version,'0.3.0-rc.3.1');assert.equal(installed.peerDependencies['dsh-worktable'],undefined);assert.equal(installed.dependencies['get-tsconfig'],'5.0.0-beta.5');
+const lock=await readFile(join(profile,'pnpm-lock.yaml'),'utf8');assert.ok(lock.includes('get-tsconfig@5.0.0-beta.5:'),'Official clean installation must lock the exact runtime dependency');assert.doesNotMatch(lock,/dsh-worktable/)
 const verify=join(root,'verify-installed.mjs')
 await writeFile(verify,`
 import assert from 'node:assert/strict'
@@ -50,9 +48,8 @@ try{
  const configManifest=JSON.parse(await readFile(join(dirname(dirname(configEntry)),'package.json'),'utf8'));assert.equal(configManifest.name,'get-tsconfig');assert.equal(configManifest.version,'5.0.0-beta.5')
  const configAPI=await import(pathToFileURL(configEntry).href);assert.equal(typeof configAPI.getTsconfig,'function')
  const installed=await import(pathToFileURL(kaogongEntry).href)
- const worktable=await import(pathToFileURL(consumerRequire.resolve('dsh-worktable')).href)
- assert.equal(typeof installed.apply,'function');assert.equal(typeof worktable.apply,'function')
- console.log(JSON.stringify({officialCLI:true,noDevelopmentAncestor:true,publicRuntimeResolution:true,installedHostImport:true,officialScopeIdentity:true,independentPinnedTsconfig:true,anchors}))
+ assert.equal(typeof installed.apply,'function')
+ console.log(JSON.stringify({officialCLI:true,independentNoWorktable:true,noDevelopmentAncestor:true,publicRuntimeResolution:true,installedHostImport:true,officialScopeIdentity:true,independentPinnedTsconfig:true,anchors}))
 }finally{await ctx.fiber.dispose()}
 `)
 const output=await run([verify],'runtime-identity')

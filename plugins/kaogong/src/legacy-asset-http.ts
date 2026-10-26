@@ -1,5 +1,5 @@
 import type {IncomingMessage,ServerResponse} from 'node:http'
-import type {ResourceDirectory} from 'dsh-worktable/sdk'
+import type {StudySources as ResourceDirectory} from './study-sources.ts'
 import type {KaogongInstanceState} from './instance-state.ts'
 import {readAdoptedAsset,type ProvenAssetPlan} from './adopted-assets.ts'
 export const legacyAssetPaths=['/api/kaogong/legacy-image','/api/kaogong/legacy-question-image'] as const

@@ -20,3 +20,5 @@ blocked_by: [kaogong-standalone-03-plan-tasks, kaogong-standalone-04-practice-st
 
 ## Resolution
 尚未实施。记录准确源码/包、实际结果和仍缺项后才能关闭。
+
+01交接：普通Native会话已排除私有考公工具，但这不等于模型写入安全完成。06须逐一审计当前businessRegistry所有写工具（包括bank、knowledge、record、practice提交及plan_set/done），改为只读/建议，或具有明确页面确认的允许操作；不得由AI改写原题答案、评分快照或自动完成学习任务。HTTP学习者手动操作仍须可用。

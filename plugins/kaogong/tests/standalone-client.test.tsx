@@ -47,3 +47,24 @@ test('a restored Native learning tab requires the Host to confirm the exact curr
     assert.deepEqual(requests,[{action:'session-context',viewId:'view-a',sessionId:'native-original'}])
   }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
+
+test('a cold-restored Native tab without ephemeral navigation params asks Host for its exact Session context',async()=>{
+  const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'})
+  const values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
+  const saved=new Map(Object.keys(values).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))
+  for(const[key,value]of Object.entries(values))Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})
+  const prior=globalThis.fetch,requests:unknown[]=[],controller=new AbortController(),root=createRoot(document.getElementById('root')!)
+  globalThis.fetch=async(_input,options)=>{const body=options?.body?JSON.parse(String(options.body)):null;requests.push(body);return new Response(JSON.stringify({error:'Session不属于考公角色'}),{status:409})}
+  try{
+    const {StudyLearningTab}=await import('../src/client.tsx')
+    const props={sessionId:'native-cold',useTabInfo:()=>({tab:{signal:controller.signal,navigation:{params:undefined}}})}
+    await act(async()=>root.render(<StudyLearningTab {...props as never}/>))
+    assert.deepEqual(requests,[{action:'session-context',sessionId:'native-cold'}])
+    assert.match(document.body.textContent??'',/Session不属于考公角色/)
+    assert.equal(document.querySelector('[aria-label="考公学习内容"]'),null)
+    const mismatched={...props,useTabInfo:()=>({tab:{signal:controller.signal,navigation:{params:{sessionId:'another-session',profileId:'study-a',viewId:'view-a'}}}})}
+    await act(async()=>root.render(<StudyLearningTab {...mismatched as never}/>))
+    assert.match(document.body.textContent??'',/学习面板与原生会话归属不符/)
+    assert.equal(requests.length,1,'supplied mismatched params never fall back to Session lookup')
+  }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
+})

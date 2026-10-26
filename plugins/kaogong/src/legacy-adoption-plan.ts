@@ -1,6 +1,6 @@
 import {createHash,randomUUID} from 'node:crypto'
 import {isAbsolute} from 'node:path'
-import type {RoleAdoptionPreview} from 'dsh-worktable/sdk'
+import type {HistoricalRolePreview as RoleAdoptionPreview} from './historical-adoption-contracts.ts'
 import {questionRecord,planConfig,dayPlan,bankQuestion,knowledgeEntry,practiceRound} from './schemas.ts'
 import {lessonRecord,lessonSelection} from './lesson-schema.ts'
 import {roleSubjects,subjectRoleIds} from './role-definitions.ts'

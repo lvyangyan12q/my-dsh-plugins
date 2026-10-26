@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { ApplicationDirectory, RoleDirectory } from 'dsh-worktable/sdk'
+import type { StudyWorkspace as ApplicationDirectory } from './study-workspace.ts'
+import type { StudyRoles as RoleDirectory } from './study-roles.ts'
 import type { KaogongInstancePool, KaogongInstanceState } from './instance-state'
 import { CommandGate } from './command-gate'
 
