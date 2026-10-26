@@ -185,12 +185,21 @@ const NARROW_BAR_H = 38
 const PERSIST_KEY = 'dsh.worktable.split.v2'
 // Native question/approval controls need this column width; never restyle native DOM.
 const NATIVE_CHAT_MIN = 360
+function rowMinimum(panes: SplitPane[] | null | undefined): number {
+  const expanded=(panes??[]).filter(pane=>!pane.minimized)
+  return expanded.reduce((total,pane)=>total+pane.min,0)+Math.max(0,expanded.length-1)*GAP
+}
+function leftMinimum(spec: LayoutSpec): number {
+  const expanded=leftPanesOf(spec).filter(pane=>!pane.minimized)
+  return expanded.length?Math.max(spec.leftWidth?.min??160,...expanded.map(pane=>pane.min)):0
+}
 function contentMinimum(spec: LayoutSpec): number {
-  const main = (spec.main ?? []).filter(p=>!p.minimized)
-  return main.reduce((total, pane) => total + pane.min, 0) + Math.max(0, main.length - 1) * GAP + (leftPanesOf(spec).some(p=>!p.minimized) ? spec.leftWidth?.min ?? 160 : 0)
+  return leftMinimum(spec)+Math.max(rowMinimum(spec.main),spec.chatFullHeight?rowMinimum(spec.top):0)
 }
 function nativeSingleSurface(spec: LayoutSpec, width: number): boolean {
-  return width < Math.max(NARROW_WIDTH, contentMinimum(spec) + Math.max(NATIVE_CHAT_MIN, spec.chatWidth.min))
+  const nativeMin=Math.max(NATIVE_CHAT_MIN,spec.chatWidth.min)
+  const required=spec.chatFullHeight?contentMinimum(spec)+nativeMin:leftMinimum(spec)+Math.max(rowMinimum(spec.main)+nativeMin,rowMinimum(spec.top))
+  return width<Math.max(NARROW_WIDTH,required)
 }
 function nativeChatWidth(spec: LayoutSpec, width: number, wanted: number): number {
   const minimum = Math.max(NATIVE_CHAT_MIN, spec.chatWidth.min)
@@ -198,11 +207,10 @@ function nativeChatWidth(spec: LayoutSpec, width: number, wanted: number): numbe
 }
 
 function leftColumnWidth(spec: LayoutSpec, width: number, chatW: number, wanted: number): number {
-  if(!leftPanesOf(spec).some(p=>!p.minimized))return 0
-  const lo=spec.leftWidth?.min ?? 160
-  const main=(spec.main??[]).filter(p=>!p.minimized)
-  const mainMin=main.reduce((sum,p)=>sum+p.min,0)+Math.max(0,main.length-1)*GAP
-  return clamp(wanted,lo,Math.max(lo,Math.min(spec.leftWidth?.max??Infinity,width-chatW-mainMin)))
+  const lo=leftMinimum(spec)
+  if(!lo)return 0
+  const rightMinimum=Math.max(rowMinimum(spec.main)+chatW,rowMinimum(spec.top)+(spec.chatFullHeight?chatW:0))
+  return clamp(wanted,lo,Math.max(lo,Math.min(spec.leftWidth?.max??Infinity,width-rightMinimum)))
 }
 
 /** One projection drives both pane placement and the native host margins. */
@@ -216,12 +224,17 @@ function workspaceGeometry(spec:LayoutSpec,g:Geom,state:{chatW:number;topH:numbe
   // Without main content the native row takes its released width. A full-height
   // native column instead leaves the remaining top content the complete height.
   const chatW=!hasMain&&(!hasTop||!chatFull)?rightColW:manualChatW
-  const topH=!hasTop?0:!hasMain&&chatFull?Math.max(0,rowH-BAR_H):clamp(state.topH,spec.topHeight?.min??80,Math.max(spec.topHeight?.min??80,rowH-BAR_H-80))
+  const topMinimum=Math.max(80,spec.topHeight?.min??80)
+  const rightHeightMinimum=hasTop?topMinimum+(!chatFull||hasMain?80:0):80
+  const leftCount=leftPanesOf(spec).filter(pane=>!pane.minimized).length
+  const leftHeightMinimum=leftCount*80+Math.max(0,leftCount-1)*GAP
+  const leftH=Math.max(0,rowH-BAR_H)
+  const topH=!hasTop?0:!hasMain&&chatFull?Math.max(0,rowH-BAR_H):clamp(state.topH,topMinimum,Math.max(topMinimum,rowH-BAR_H-80))
   const contentW=Math.max(0,rightColW-chatW)
   const contentX=hasLeft?g.left+leftW:chatLeft?g.left+chatW:g.left
   const topRowX=hasLeft?g.left+leftW:chatFull?contentX:g.left
   const topRowW=chatFull?contentW:rightColW
-  return {colW,rowH,hasLeft,hasTop,hasMain,chatFull,chatLeft,chatW,topH,leftW,contentW,contentX,topRowX,topRowW,narrow:colW>0&&(nativeSingleSurface(spec,colW)||rowH<BAR_H+(hasTop&&hasMain?160:80))}
+  return {colW,rowH,hasLeft,hasTop,hasMain,chatFull,chatLeft,chatW,topH,leftW,leftH,contentW,contentX,topRowX,topRowW,narrow:colW>0&&(nativeSingleSurface(spec,colW)||rowH<BAR_H+Math.max(rightHeightMinimum,leftHeightMinimum))}
 }
 
 function narrowSelection(spec:LayoutSpec,selected:string|null|undefined):string|null {
@@ -968,7 +981,7 @@ export const splitStore: SplitState = {
         this.leftW = clamp(Math.round(colW0 * 0.38), lo, Math.max(lo, colW0 - 260))
       }
       if (top.length > 0 && !hasTopH) {
-        const lo = spec.topHeight?.min ?? 80
+        const lo = Math.max(80,spec.topHeight?.min ?? 80)
         const ratio = spec.topHeightRatio ?? 0.35
         this.topH = clamp(Math.round((rowH0 - BAR_H) * ratio), lo, Math.max(lo, rowH0 - BAR_H - 80))
       }
@@ -1177,7 +1190,7 @@ export const splitStore: SplitState = {
     const spec = this.spec
     if (!g || !spec) return
     const rowH = g.bottom - g.top
-    const lo = spec.topHeight?.min ?? 80
+    const lo = Math.max(80,spec.topHeight?.min ?? 80)
     const hi = Math.max(lo, rowH - BAR_H - 80)
     this.topH = clamp(Math.round(h), lo, hi)
     this.applyMargin()
@@ -1201,15 +1214,14 @@ export const splitStore: SplitState = {
   setLeftH(i, h) {
     const {geom:g,spec}=this
     if(!g || !spec)return
-    this.leftHs=resizeExpandedNeighbors(leftPanesOf(spec),this.leftHs,g.bottom-g.top-BAR_H,i,h,GAP,()=>80)
+    this.leftHs=resizeExpandedNeighbors(leftPanesOf(spec),this.leftHs,workspaceGeometry(spec,g,this).leftH,i,h,GAP,()=>80)
     this.persist();this.notify()
   },
 
   setPaneW(i, w) {
     const {geom:g,spec}=this
     if(!g || !spec)return
-    const colW=g.right-g.left
-    const total=Math.max(0,colW-nativeChatWidth(spec,colW,this.chatW)-leftColumnWidth(spec,colW,nativeChatWidth(spec,colW,this.chatW),this.leftW))
+    const total=workspaceGeometry(spec,g,this).contentW
     this.paneWs=resizeExpandedNeighbors(spec.main??[],this.paneWs,total,i,w,GAP)
     this.persist();this.notify()
   },
@@ -1217,9 +1229,7 @@ export const splitStore: SplitState = {
   setTopW(i, w) {
     const {geom:g,spec}=this
     if(!g || !spec)return
-    const colW=g.right-g.left
-    const chatW=nativeChatWidth(spec,colW,this.chatW)
-    const total=Math.max(0,colW-leftColumnWidth(spec,colW,chatW,this.leftW)-(spec.chatFullHeight?chatW:0))
+    const total=workspaceGeometry(spec,g,this).topRowW
     this.topWs=resizeExpandedNeighbors(spec.top??[],this.topWs,total,i,w,GAP)
     this.persist();this.notify()
   },
@@ -1561,11 +1571,10 @@ function makeDividerHandler(kind: 'left' | 'chat' | 'top' | 'pane' | 'topPane' |
     try { target.setPointerCapture(e.pointerId) } catch {}
     const spec=splitStore.spec,g=splitStore.geom
     if(!spec || !g)return
-    const startX=e.clientX,startY=e.clientY,colW=g.right-g.left
-    const chatW=nativeChatWidth(spec,colW,splitStore.chatW)
-    const total=kind==='pane'?colW-chatW-leftColumnWidth(spec,colW,chatW,splitStore.leftW):kind==='topPane'?colW-leftColumnWidth(spec,colW,chatW,splitStore.leftW)-(spec.chatFullHeight?chatW:0):g.bottom-g.top-BAR_H
-    const extents=kind==='pane'?expandedExtents(spec.main,splitStore.paneWs,total,GAP):kind==='topPane'?expandedExtents(spec.top??[],splitStore.topWs,total,GAP):kind==='leftPane'?expandedExtents(leftPanesOf(spec),splitStore.leftHs,total,GAP,()=>80):[]
+    const startX=e.clientX,startY=e.clientY
     const projected=workspaceGeometry(spec,g,splitStore)
+    const total=kind==='pane'?projected.contentW:kind==='topPane'?projected.topRowW:projected.leftH
+    const extents=kind==='pane'?expandedExtents(spec.main,splitStore.paneWs,total,GAP):kind==='topPane'?expandedExtents(spec.top??[],splitStore.topWs,total,GAP):kind==='leftPane'?expandedExtents(leftPanesOf(spec),splitStore.leftHs,total,GAP,()=>80):[]
     const initial=kind==='left'?projected.leftW:kind==='chat'?projected.chatW:kind==='top'?projected.topH:extents[index??0]
     const onMove = (ev: PointerEvent) => {
       if(splitStore.spec!==spec)return
@@ -3179,7 +3188,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   const spec = props.spec
   const top = spec.top ?? []
   const main = spec.main ?? []
-  const {hasLeft,hasTop,hasMain,chatLeft,colW,rowH,narrow,chatW,topH,leftW,chatFull,contentW,contentX,topRowX,topRowW}=workspaceGeometry(spec,g,props)
+  const {hasLeft,hasTop,hasMain,chatLeft,colW,rowH,narrow,chatW,topH,leftW,leftH,chatFull,contentW,contentX,topRowX,topRowW}=workspaceGeometry(spec,g,props)
   const choices=layoutPanes(spec)
   const windowName=(row:PaneRow,index:number)=>'窗口'+(choices.findIndex(item=>item.row===row&&item.index===index)+1)
   const selectedPaneId=narrowSelection(spec,splitStore.narrowPaneId)
@@ -3188,8 +3197,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   const topItems = allocate(top, props.topWs, topRowW)
   const mainItems = allocate(main, props.paneWs, contentW)
   const leftPanes = leftPanesOf(spec)
-  const leftTotalH = g.bottom - g.top - BAR_H
-  const leftItems = allocate(leftPanes, props.leftHs, leftTotalH, ()=>80)
+  const leftItems = allocate(leftPanes, props.leftHs, leftH, ()=>80)
   const visibleLeftItems=leftItems.filter(it=>!it.pane.minimized),visibleTopItems=topItems.filter(it=>!it.pane.minimized),visibleMainItems=mainItems.filter(it=>!it.pane.minimized)
 
   const barTop = g.top
