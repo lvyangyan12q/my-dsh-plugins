@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-26",
+  "version": "0.10.0-rc.3.4",
+  "sourceCommit": "e29037e7f6c775014e8b2f6db211b67c34e090c0",
+  "artifactSha256": "973861d693c020e0e8dfc89f999f6eca3c910aff9990c68f2ddc5f6c7816cf13",
+  "platform": "Windows Web",
+  "runtime": {"version": "0.2.1-rc.3", "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60", "trackedSourceChanges": 0},
+  "isolation": {"home": "fresh task-owned home", "browserContext": "dedicated isolated context", "port": 3107, "productionProfileTouched": false, "modelMessagesSentByAcceptance": 0},
+  "installation": {
+    "entry": "official CLI plugin add of the fixed final tgz",
+    "attempts": [
+      {"environment": "previous development-link home", "accepted": false, "reason": "Manifest changed to archive but the actual module link still resolved to development source; lib/client.js differed."},
+      {"environment": "new empty isolated home", "accepted": true, "actualInstallationIsDevelopmentSource": false, "archiveFilesCompared": 9, "allBytesEqual": true}
+    ]
+  },
+  "scenarios": {
+    "geometryOnlySave": {"passed": true, "beforeRevision": 6, "afterRevision": 7, "beforeChatWidth": 487, "afterChatWidth": 527, "operation": "visible divider pointer interaction followed by completed file save"},
+    "closeAndReopen": {"passed": true, "titleAndBuiltinReferencesRestored": true, "geometryRestored": true},
+    "coldBrowserDirectoryRestore": {"passed": true, "removedWorktableKeys": 4, "localStorageCountImmediatelyAfterClear": 0, "projectCardsBeforeDirectoryRestore": 0, "projectIdentityPreserved": true, "titleAndBuiltinReferencesRestored": true, "geometry": {"chatW": 527, "topH": 266, "leftW": 260, "paneWs": {"p3": 1021}, "topWs": {"p1": 729, "p2": 729}, "leftWs": {}}},
+    "officialHostColdRestart": {"passed": true, "revisionRestored": 7, "projectIdentityPreserved": true, "titleAndReferencesRestored": true, "geometryUnchanged": true},
+    "legacyMigration": {"passed": true, "stableProjectId": "layout-legacy-acceptance", "newVersion": 2, "newRevision": 1, "oldFileBytesPreserved": true, "oldFileSha256": "5f82e7cd42aeb03b36355067abb642da4c4d4b95ba770b3ec3739c9071a40744"},
+    "damagedFile": {"passed": true, "visibleError": true, "automaticReplacement": false, "originalBytesPreserved": true, "sha256": "cbdf3b1f91ae32fe1ea292ac6cccf19222f97929f531523f0d15d885052c00c4"},
+    "restoredTerminal": {"passed": true, "explicitStartButtonVisible": true, "automaticTerminalWebSocketConnections": 0, "liveShellFunctionalityClaimed": false},
+    "cliBrowserConflict": {"passed": true, "supportedCliAdvancedRevision": 8, "staleBrowserConflictVisible": true, "fileUnchangedAfterRejectedBrowserSave": true, "explicitDiscardAndReloadRestoredNewestTitle": true},
+    "newTabSaveAndReopen": {"passed": true, "revision": 9, "mainTabContent": {"kind": "builtin", "type": "browser"}, "tabRestoredAfterCloseAndReopen": true}
+  },
+  "evidenceTypes": ["actual installed official host", "live browser UI and DOM", "authenticated layout endpoint", "on-disk byte comparison"],
+  "cleanup": {"ownedTestHostStopped": true, "formalHostRestarted": false},
+  "limits": ["Windows Web on exact official rc.3 only", "Desktop and macOS not verified", "Layout references are not an application-data or native-session backup", "No claim for arbitrary external editor concurrent writes"]
+}

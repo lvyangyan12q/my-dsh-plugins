@@ -2,7 +2,7 @@
 
 ## 2026-10-26 项目布局落盘方案
 
-[Worktable 项目布局落盘与恢复调整方案](worktable-project-layout.md)：一个项目固定使用一份 `.dsh-worktable/layout.json`，覆盖文件主存储、浏览器缓存兼容、完整尺寸保存、目录恢复、旧文件迁移和冲突保护。主验收入口已获用户确认，状态 open、标签 ready-for-agent；本次仅整理方案，尚未实施或验收。
+[Worktable 项目布局落盘与恢复调整方案](worktable-project-layout.md)：一个项目固定使用一份 `.dsh-worktable/layout.json`。实现与最终包真实 Windows Web 验收已完成，等待远程推送核对；详见[验收回执](worktable-project-layout/04-acceptance.md)与[两轴审查](worktable-project-layout/review.md)。
 
 ## 2026-10-24 升级规格已回写
 

@@ -1,0 +1,97 @@
+{
+  "sourceCommit": "e29037e7f6c775014e8b2f6db211b67c34e090c0",
+  "version": "0.10.0-rc.3.4",
+  "entry": "npm run pack",
+  "native": {
+    "version": "0.2.1-rc.3",
+    "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+    "tests": 9,
+    "passed": 9,
+    "failed": 0
+  },
+  "compatibility": {
+    "tests": 382,
+    "passed": 380,
+    "failed": 0,
+    "skipped": 2
+  },
+  "skipped": [
+    {
+      "name": "official unpatched rc.2 public parser accepts the exact managed definition and preserves its enabled plugin layer",
+      "reason": "WORKTABLE_NATIVE_RC2_ROOT is not configured; this candidate targets and separately checks exact official rc.3."
+    },
+    {
+      "name": "official rc.2 plugin Config schemas accept every managed base row including required search deployment choice",
+      "reason": "WORKTABLE_NATIVE_RC2_ROOT is not configured; rc.2 compatibility is not claimed by this validation."
+    }
+  ],
+  "artifact": {
+    "files": 9,
+    "bytes": 587654,
+    "sha256": "973861d693c020e0e8dfc89f999f6eca3c910aff9990c68f2ddc5f6c7816cf13",
+    "names": [
+      "dsh-worktable.tgz",
+      "dsh-worktable-0.10.0-rc.3.4.tgz"
+    ],
+    "dualHashesEqual": true,
+    "cleanNpmInstall": "passed",
+    "importAssertions": "passed",
+    "factoryEvaluation": "passed",
+    "extractedClientAnchorScenarios": {
+      "passed": 11,
+      "failed": 0
+    },
+    "installedServerHomeScenarios": {
+      "passed": 3,
+      "failed": 0
+    },
+    "installedNativePanelAnnotation": "passed",
+    "installedGenerationFactoryUi": "passed",
+    "installedCollapsedSidebarDialog": "passed"
+  },
+  "environmentDiagnosis": [
+    {
+      "attempt": 1,
+      "outcome": "stopped before publication",
+      "compatibility": {
+        "tests": 381,
+        "passed": 375,
+        "failed": 4,
+        "skipped": 2
+      },
+      "causes": [
+        "System TEMP used an 8.3 user path while native realpath returned its long form; generation path equality and lifecycle/recovery rename-interception assertions disagreed.",
+        "The sibling test directory could not resolve jsdom from the package-local dependency junction."
+      ]
+    },
+    {
+      "attempt": 2,
+      "outcome": "stopped before publication",
+      "compatibility": {
+        "tests": 382,
+        "passed": 379,
+        "failed": 1,
+        "skipped": 2
+      },
+      "causes": [
+        "Moving TEMP to the deep F-drive worktree resolved path aliases but made an existing 80ms resource-lease watchdog fail, including in a focused run."
+      ]
+    },
+    {
+      "attempt": 3,
+      "outcome": "passed",
+      "changes": [
+        "Used the original system TEMP directory canonicalized to its actual long path, set only in child-process TEMP/TMP.",
+        "Added a test-worktree-only dependency junction at the sibling tests parent; dependency target remained unchanged."
+      ],
+      "focusedTasks": {
+        "passed": 8,
+        "failed": 0,
+        "resourceLeaseMs": 17.0255
+      },
+      "sourceOrAssertionChanges": false
+    }
+  ],
+  "realInstalledHostAcceptance": "passed; see host-acceptance.json",
+  "ticket04": "awaiting remote push verification"
+}
