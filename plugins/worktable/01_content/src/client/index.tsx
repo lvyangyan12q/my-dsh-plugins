@@ -8,7 +8,8 @@ import { NS, zh, en, type WorktableKey } from './locales'
 import { isAbs, joinPath, parentPathOf, basenameOf } from './pathutil'
 import {applicationViews} from './applicationViews'
 import { ApplicationLauncher, type ApplicationContent } from './applicationEntry'
-import { findConversationRoot, splitStore, SplitWorkspace, setSplitT, setSplitEnv, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
+import { findConversationRoot, splitStore, SplitWorkspace, setSplitT, setSplitEnv, layoutGeometryOf, cachedLayoutGeometry, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
+import { ProjectLayoutClient, layoutSnapshot, resolveProjectDirectory } from './projectLayoutClient.mjs'
 import { createAnnotationInput } from './hostInput'
 import { worktableUpgrade } from './hostTransport'
 import { WidgetMountRegistry, newWidgetId, widgetManifestPath, type WidgetBinding } from './widgetMount'
@@ -218,60 +219,9 @@ function buildLayout(presetId: string, name: string): LayoutSpec {
   }
 }
 
-/* ---------------- 布局落盘：跟着项目文件夹走（可选，向后兼容） ----------------
- * 除了原有的 localStorage，项目有文件夹时把布局 spec 另存一份到
- *   <项目文件夹>\.dsh-worktable\layout-<项目ID>.json
- * 打开项目时优先采用该文件（缺省/损坏时回落到 localStorage 存档）。
- * 任何失败都静默忽略，不影响原有使用。
- */
-const LAYOUT_FILE_VERSION = 1
-
-function layoutFilePath(folder: string, projectId: string): string {
-  const base = String(folder || '').replace(/[\\/]+$/, '')
-  return base + '\\.dsh-worktable\\layout-' + projectId + '.json'
-}
-
-async function readLayoutFile(folder: string, projectId: string): Promise<any | null> {
-  if (!folder) return null
-  try {
-    const res = await fetch('/api/worktable/file?path=' + encodeURIComponent(layoutFilePath(folder, projectId)), { cache: 'no-store', credentials: 'same-origin' })
-    if (!res.ok) return null
-    const data = await res.json()
-    if (!data || data.version !== LAYOUT_FILE_VERSION || !data.spec || data.spec.id !== projectId) return null
-    return data.spec
-  } catch {
-    return null
-  }
-}
-
-async function writeLayoutFile(folder: string, projectId: string, spec: any): Promise<boolean> {
-  if (!folder || !spec || spec.id !== projectId) return false
-  const base = String(folder).replace(/[\\/]+$/, '')
-  try {
-    // .dsh-worktable 可能还不存在：先建目录（已存在时服务端返回 200）
-    await fetch('/api/worktable/mkdir', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ path: base + '\\.dsh-worktable' }),
-    }).catch(() => null)
-    const res = await fetch('/api/worktable/write', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        path: layoutFilePath(base, projectId),
-        content: JSON.stringify({ version: LAYOUT_FILE_VERSION, projectId, savedAt: new Date().toISOString(), spec }, null, 2),
-      }),
-    })
-    return res.ok
-  } catch {
-    return false
-  }
-}
-
 /** 布局缩略图（迷你窗格示意；聊天窗蓝色 💬） */
-function presetThumb(defId: string) {  const cell = (chat: boolean, key: string) => (
+function presetThumb(defId: string) {
+  const cell = (chat: boolean, key: string) => (
     <span key={key} className={'dsh-wt_thumbCell' + (chat ? ' dsh-wt_thumbChat' : '')}>{chat ? '💬' : ''}</span>
   )
   if (defId === '2h') {
@@ -1274,8 +1224,19 @@ function WorktableSection(props: any) {
   )
   /** 控制室动作引用（每渲染同步，供 env 闭包读取） */
   const actionsRef = useRef<{ openSplit: (spec: LayoutSpec) => void; openConsole: (explicitBound?: string | null) => void } | null>(null)
-  /** 布局落盘防抖计时器：projectId → timer（写 <项目文件夹>\.dsh-worktable\layout-<id>.json） */
-  const layoutFileTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const [layoutStates, setLayoutStates] = useState<Record<string, any>>({})
+  const [layoutCandidates, setLayoutCandidates] = useState<{files:string[];choose:(file:string)=>void}|null>(null)
+  const layoutOpenSequence = useRef(0)
+  const folderAssignmentSequence = useRef(new Map<string,number>())
+  const layoutClient = useRef<any>(null)
+  if (!layoutClient.current) layoutClient.current = new ProjectLayoutClient({onChange:(state:any)=>{
+    if (mountedRef.current) setLayoutStates(prev=>({...prev,[state.folder]:state}))
+  }})
+  useEffect(()=>{
+    const flush=()=>{void layoutClient.current.flushAll()}
+    window.addEventListener('pagehide',flush)
+    return ()=>{window.removeEventListener('pagehide',flush);void layoutClient.current.flushAll();layoutClient.current.dispose()}
+  },[])
   /** 提醒确认动作引用（每渲染同步；env 闭包用） */
   const ackRef = useRef<((projectId: string) => void) | null>(null)
   /** 视图状态最新快照（供 env 闭包读取控制室主题） */
@@ -1509,11 +1470,11 @@ function WorktableSection(props: any) {
   }
 
   const persistProjects = (patch: Partial<ProjectsState> | ((prev: ProjectsState) => ProjectsState)) => {
-    setProjects((prev) => {
-      const next = typeof patch === 'function' ? patch(prev) : { ...prev, ...patch }
-      try { localStorage.setItem(PROJECTS_KEY, JSON.stringify(next)) } catch {}
-      return next
-    })
+    const prev=projectsRef.current.projects
+    const next = typeof patch === 'function' ? patch(prev) : { ...prev, ...patch }
+    projectsRef.current.projects = next
+    try { localStorage.setItem(PROJECTS_KEY, JSON.stringify(next)) } catch {}
+    setProjects(next)
   }
 
   // 自愈：启动时若控制室存档是坏布局（旧版关掉控制室标签造成窗格退化成选择器），立即重建默认面板
@@ -1557,24 +1518,15 @@ function WorktableSection(props: any) {
         }
         return { ...prev, views: { ...prev.views, [spec.id]: spec } }
       })
-      // 同时写一份到项目文件夹（防抖 600ms）；没有文件夹/不可写就静默跳过
-      const folder = projectsRef.current.projects.folders[spec.id]
-      if (folder) {
-        const pending = layoutFileTimers.current.get(spec.id)
-        if (pending) clearTimeout(pending)
-        layoutFileTimers.current.set(spec.id, setTimeout(() => {
-          layoutFileTimers.current.delete(spec.id)
-          // 几何一并落盘：下次打开按文件尺寸还原（拖动分隔条也算）
-          const current = splitStore.spec && splitStore.spec.id === spec.id ? splitStore.spec : spec
-          const withGeometry: any = {
-            ...current,
-            leftWidth: { ...(current.leftWidth || { default: 260, min: 160, max: 1100 }), default: splitStore.leftW },
-            chatWidth: { ...(current.chatWidth || { default: 360, min: 240, max: 600 }), default: splitStore.chatW },
-            topHeight: { ...(current.topHeight || { default: 200, min: 120, max: 700 }), default: splitStore.topH },
-          }
-          void writeLayoutFile(folder, spec.id, withGeometry)
-        }, 600))
-      }
+    }
+    splitStore.onLayoutPersisted = (spec,geometry)=>{
+      const pr=projectsRef.current.projects, folder=pr.folders[spec.id]
+      if(folder) layoutClient.current.schedule(folder,layoutSnapshot(spec,geometry,pr.nameOverrides[spec.id] ?? spec.title))
+    }
+    splitStore.onBeforeClose = id=>{
+      ++layoutOpenSequence.current
+      const folder=projectsRef.current.projects.folders[id]
+      if(folder)void layoutClient.current.flush(folder)
     }
     splitStore.onPaneContentEdited = (projectId, paneId) => {
       widgetRegistry.revokePane(projectId, paneId)
@@ -1583,7 +1535,7 @@ function WorktableSection(props: any) {
       }
       persistPendingWidgets()
     }
-    return () => { splitStore.onSpecMutated = null; splitStore.onPaneContentEdited = null }
+    return () => { splitStore.onSpecMutated = null; splitStore.onPaneContentEdited = null; splitStore.onLayoutPersisted=null;splitStore.onBeforeClose=null }
   }, [])
 
   // 分栏引擎 UI 文案（窗选择器等）
@@ -1743,27 +1695,43 @@ function buildCustomLayoutPrompt(req: string): string {
   /** 分栏工作区入口（M1 引擎）：项目卡片调用 openSplit(spec) 打开声明式布局；
    * 若该 id 存在视图覆盖（用户在设置里变更过视图），用覆盖布局替换打开。
    * 若项目绑定了会话，打开后右侧对话窗自动切换过去。 */
-  const openSplit = useCallback(async (spec: LayoutSpec) => {
+  const openSplit = useCallback(async (spec: LayoutSpec, legacyFile?: string) => {
+    const sequence=++layoutOpenSequence.current
+    await layoutClient.current.flushAll()
+    if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
     engineIdsRef.current.add(spec.id)
     const before = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
     const target = projectsRef.current.projects.bindings[spec.id] ?? before
-    // 布局落盘：项目有文件夹时优先用 <文件夹>\.dsh-worktable\layout-<id>.json；
-    // 没有该文件则把当前存档写一份过去（首次自动落地）。
-    const folder = projectsRef.current.projects.folders[spec.id]
+    let folder = projectsRef.current.projects.folders[spec.id]
     let opened: LayoutSpec = projectsRef.current.projects.views[spec.id] ?? spec
+    let initialize=false
     if (folder) {
-      const fromFile = await readLayoutFile(folder, spec.id)
-      if (fromFile) {
-        opened = { ...(fromFile as LayoutSpec), preferFileGeometry: true } as LayoutSpec
+      const result=await layoutClient.current.read(folder,spec.id,legacyFile)
+      if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
+      folder=result.folder ?? folder
+      if(result.status==='ambiguous') {
+        setLayoutCandidates({files:result.candidates ?? [],choose:file=>{setLayoutCandidates(null);void openSplit(spec,file)}})
+        return
+      }
+      if(result.status==='ok'||result.status==='legacy') {
+        const restored=await resolveProjectDirectory(projectsRef.current.projects,result.document,folder)
+        if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
+        if(restored.error || result.document.project.id!==spec.id) {setNavigationError(restored.error ?? '该目录布局属于另一个项目，请使用从目录恢复');return}
+        opened={...restored.spec,fileGeometry:result.document.geometry,preferFileGeometry:true}
         persistProjects((prev) => (prev.layouts.some((l) => l.id === spec.id)
-          ? { ...prev, layouts: prev.layouts.map((l) => (l.id === spec.id ? (fromFile as LayoutSpec) : l)) }
-          : { ...prev, views: { ...prev.views, [spec.id]: fromFile as LayoutSpec } }))
-      } else {
-        void writeLayoutFile(folder, spec.id, opened)
+          ? { ...prev, nameOverrides:{...prev.nameOverrides,[spec.id]:result.document.project.name},folders:{...prev.folders,[spec.id]:folder},layouts: prev.layouts.map((l) => (l.id === spec.id ? restored.spec : l)) }
+          : { ...prev, nameOverrides:{...prev.nameOverrides,[spec.id]:result.document.project.name},folders:{...prev.folders,[spec.id]:folder},views: { ...prev.views, [spec.id]: restored.spec } }))
+        initialize=result.status==='legacy'
+      } else if(result.status==='missing') {
+        initialize=true
+      } else if(result.status==='stale')return
+      else {
+        setNavigationError(result.message ?? '布局文件不可读取；当前显示浏览器缓存，禁止自动覆盖文件')
       }
     }
-    if (!await revealProject(target, () => { splitStore.open(opened) })) return
+    if (!await revealProject(target, () => { if(sequence===layoutOpenSequence.current)splitStore.open(opened) })) return
     if (splitStore.active && splitStore.spec?.id === spec.id) {
+      if(initialize && folder){layoutClient.current.schedule(folder,layoutSnapshot(splitStore.spec,layoutGeometryOf(splitStore.spec),opened.title));void layoutClient.current.flush(folder)}
       // 记录打开前会话（关项目时回切）与该项目「归属会话」（切到别的会话 = 自动关项目）
       let prev: string | null = null
       try { prev = before } catch {}
@@ -1779,6 +1747,31 @@ function buildCustomLayoutPrompt(req: string): string {
       }
     }
   }, [projects.views])
+
+  const restoreProjectFolder = async (folder:string,legacyFile?:string) => {
+    if(!isAbs(folder)){setPickErr(prev=>({...prev,add:t('add.folderManualAbs')}));return}
+    const sequence=++layoutOpenSequence.current
+    await layoutClient.current.flushAll()
+    const result=await layoutClient.current.read(folder,undefined,legacyFile)
+    if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
+    if(result.status==='ambiguous'){
+      setLayoutCandidates({files:result.candidates ?? [],choose:file=>{setLayoutCandidates(null);void restoreProjectFolder(folder,file)}});return
+    }
+    if(!['ok','legacy'].includes(result.status)) {setPickErr(prev=>({...prev,add:result.message ?? (result.status==='missing'?'该目录没有可恢复的布局文件':'布局文件不可恢复')}));return}
+    folder=result.folder ?? folder
+    const restored=await resolveProjectDirectory(projectsRef.current.projects,result.document,folder)
+    if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
+    if(restored.error){setPickErr(prev=>({...prev,add:restored.error}));return}
+    const spec=restored.spec as LayoutSpec
+    if(result.status==='legacy') {
+      layoutClient.current.schedule(folder,layoutSnapshot(spec,result.document.geometry));await layoutClient.current.flush(folder)
+      if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
+      if(layoutClient.current.state(folder).status!=='saved'){setPickErr(prev=>({...prev,add:'旧布局尚未迁移成功，请重试'}));return}
+    }
+    persistProjects(prev=>({...prev,nameOverrides:{...prev.nameOverrides,[spec.id]:result.document.project.name},layouts:prev.layouts.some(l=>l.id===spec.id)?prev.layouts.map(l=>l.id===spec.id?spec:l):[...prev.layouts,spec],folders:{...prev.folders,[spec.id]:folder}}))
+    invalidatePickState();setAddOpen(false);setNavigationError(null)
+    void openSplit(spec)
+  }
 
   /** 打开「工作台」控制室：已绑定 → 打开并切换绑定对话；explicitBound 供强制绑定流程传入刚绑定的会话 */
   const openConsole = useCallback(async (explicitBound?: string | null) => {
@@ -1945,6 +1938,7 @@ function buildCustomLayoutPrompt(req: string): string {
 
   /** 使在途选择请求失效并清空选择器 UI 状态（弹窗关闭/切换目标时调用） */
   const invalidatePickState = () => {
+    ++layoutOpenSequence.current
     pickSeqRef.current++
     pickBusyRef.current = false
     setPickBusy(false)
@@ -1963,8 +1957,7 @@ function buildCustomLayoutPrompt(req: string): string {
     setPickBusy(false)
     if (target === 'add') { setWsFolderParent(p); setWsFolderError(false) }
     else if (bindPick) {
-      if (projectsRef.current.projects.folders[bindPick.id] !== p) invalidateWidgetProject(bindPick.id)
-      persistProjects((prev) => ({ ...prev, folders: { ...prev.folders, [bindPick.id]: p } }))
+      void assignProjectFolder(bindPick.id,p)
     }
     setManualPathFor(null)
     setManualPathText('')
@@ -1975,9 +1968,39 @@ function buildCustomLayoutPrompt(req: string): string {
   const changeBindFolder = () => {
     if (!bindPick || pickBusyRef.current) return
     pickFolder('bind', (p) => {
-      if (projectsRef.current.projects.folders[bindPick.id] !== p) invalidateWidgetProject(bindPick.id)
-      persistProjects((prev) => ({ ...prev, folders: { ...prev.folders, [bindPick.id]: p } }))
+      void assignProjectFolder(bindPick.id,p)
     })
+  }
+
+  const assignProjectFolder = async (id:string,folder:string,legacyFile?:string) => {
+    const sequence=(folderAssignmentSequence.current.get(id) ?? 0)+1
+    folderAssignmentSequence.current.set(id,sequence)
+    const current=()=>mountedRef.current && folderAssignmentSequence.current.get(id)===sequence
+    const pr=projectsRef.current.projects, oldFolder=pr.folders[id]
+    const active=splitStore.spec?.id===id ? splitStore.spec : null
+    const spec=active ?? pr.layouts.find(l=>l.id===id) ?? pr.views[id]
+    const snapshot=spec ? layoutSnapshot(spec,active?layoutGeometryOf(spec):cachedLayoutGeometry(spec),pr.nameOverrides[id] ?? spec.title):null
+    if(oldFolder)await layoutClient.current.flush(oldFolder)
+    if(!current())return
+    const result=await layoutClient.current.read(folder,id,legacyFile)
+    if(!current())return
+    folder=result.folder ?? folder
+    if(result.status==='ambiguous'){setLayoutCandidates({files:result.candidates ?? [],choose:file=>{setLayoutCandidates(null);void assignProjectFolder(id,folder,file)}});return}
+    if(!['ok','legacy','missing'].includes(result.status)){setPickErr(prev=>({...prev,bind:result.message ?? '无法读取目录布局，未更改项目目录'}));return}
+    if(result.document){
+      const restored=await resolveProjectDirectory({...pr,folders:{...pr.folders,[id]:folder}},result.document,folder)
+      if(!current())return
+      if(restored.error || result.document.project.id!==id){setPickErr(prev=>({...prev,bind:restored.error ?? '该目录已有其他项目布局，请使用从目录恢复'}));return}
+    }
+    if(result.status==='legacy' || result.status==='missing'&&snapshot){
+      layoutClient.current.schedule(folder,result.status==='legacy'?layoutSnapshot(result.document.spec,result.document.geometry,result.document.project.name):snapshot)
+      await layoutClient.current.flush(folder)
+      if(!current())return
+      if(layoutClient.current.state(folder).status!=='saved'){setPickErr(prev=>({...prev,bind:'布局尚未保存，未更改项目目录'}));return}
+    }
+    if(oldFolder!==folder)invalidateWidgetProject(id)
+    persistProjects(prev=>({...prev,folders:{...prev.folders,[id]:folder}}))
+    if(active){splitStore.close(false);void openSplit(active)}
   }
 
   /** 绑定 / 解绑会话（弹窗保持打开，绑定结果即时显示在「绑定对话」框里） */
@@ -2288,6 +2311,15 @@ function buildCustomLayoutPrompt(req: string): string {
       else delete next[id]
       return { ...prev, nameOverrides: next }
     })
+    const pr=projectsRef.current.projects,folder=pr.folders[id]
+    if(folder)void (async()=>{
+      if(layoutClient.current.state(folder).status==='idle')await layoutClient.current.read(folder,id)
+      const latest=projectsRef.current.projects
+      if(latest.folders[id]!==folder)return
+      const active=splitStore.spec?.id===id ? splitStore.spec : null
+      const spec=active ?? latest.layouts.find(l=>l.id===id) ?? latest.views[id]
+      if(spec)layoutClient.current.schedule(folder,layoutSnapshot(spec,active?layoutGeometryOf(spec):cachedLayoutGeometry(spec),latest.nameOverrides[id] ?? spec.title))
+    })()
   }
 
 
@@ -2309,6 +2341,9 @@ function buildCustomLayoutPrompt(req: string): string {
       const r = await fetch('/api/worktable/mkdir', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: folderPath }) })
       if (!r.ok) { setWsFolderError(true); setPickErr((prev) => ({ ...prev, add: t('add.folderCreateFail') })); return }
     } catch { setWsFolderError(true); setPickErr((prev) => ({ ...prev, add: t('add.folderCreateFail') })); return }
+    const stored=await layoutClient.current.read(folderPath)
+    if(stored.status==='ok' || stored.status==='legacy' || stored.status==='ambiguous'){await restoreProjectFolder(folderPath);return}
+    if(stored.status!=='missing'){setPickErr(prev=>({...prev,add:stored.message ?? '目录布局不可读取，未创建项目'}));return}
     const layout = buildLayout(wsPreset, name)
     persistProjects((prev) => ({ ...prev, layouts: [...prev.layouts, layout], folders: { ...prev.folders, [layout.id]: folderPath } }))
     invalidatePickState() // 保存成功：失效在途选择请求（防止旧选择器稍后返回写回已重置的表单）
@@ -2325,13 +2360,13 @@ function buildCustomLayoutPrompt(req: string): string {
 
   // ── 变更视图：所有项目通用。布局项目 = 重建其布局条目；入驻项目 = 建立/更新视图覆盖。
   // 现有窗内容（标签）按序迁入新拓扑，不丢失。 ──
-  const applyLayoutChange = (id: string, presetId: string) => {
+  const applyLayoutChange = async (id: string, presetId: string) => {
     invalidateWidgetProject(id)
     const layout = projects.layouts.find((l) => l.id === id)
     const meta = metas[id]
     const current = layout ?? projects.views[id]
     const sources = current
-      ? [...(current.top ?? []), ...current.main]
+      ? [...(current.left ? [current.left,...(current.leftMore ?? [])]:[]),...(current.top ?? []), ...current.main]
           .map((pp) => pp.tabs ?? [])
           .filter((tabs) => tabs.length > 0)
       : []
@@ -2359,9 +2394,16 @@ function buildCustomLayoutPrompt(req: string): string {
       : { ...prev, views: { ...prev.views, [id]: next } })
     // 该视图当前打开时：关旧开新，工作区即时变为新视图
     const wasOpen = splitStore.active && splitStore.spec?.id === id
+    const folder=projectsRef.current.projects.folders[id]
+    if(folder){
+      if(layoutClient.current.state(folder).status==='idle')await layoutClient.current.read(folder,id)
+      layoutClient.current.schedule(folder,layoutSnapshot(next,cachedLayoutGeometry(next)))
+      await layoutClient.current.flush(folder)
+    }
     if (wasOpen) {
       splitStore.close()
-      openSplit(next)
+      if(folder && layoutClient.current.state(folder).status!=='saved')splitStore.open(next)
+      else void openSplit(next)
     }
     setViewPickFor(null)
   }
@@ -2652,7 +2694,36 @@ function buildCustomLayoutPrompt(req: string): string {
     }
   }
 
+  const reloadLayoutFolder = (folder:string) => {
+    const pr=projectsRef.current.projects,id=Object.entries(pr.folders).find(([,value])=>value===folder)?.[0]
+    const spec=pr.layouts.find(l=>l.id===id) ?? (id?pr.views[id]:null)
+    if(!spec)return
+    layoutClient.current.discard(folder)
+    if(splitStore.spec?.id===id)splitStore.close(false)
+    setNavigationError(null);void openSplit(spec)
+  }
+  const persistenceNotice = <div className="dsh-wt_layoutPersistence" aria-live="polite">
+    {Object.values(layoutStates).filter((state:any)=>state.status!=='idle' && (state.status!=='saved' || projects.folders[activeSplitId ?? '']===state.folder)).map((state:any)=>{
+      const id=Object.entries(projects.folders).find(([,folder])=>folder===state.folder)?.[0]
+      const name=id?(projects.nameOverrides[id] ?? projects.layouts.find(l=>l.id===id)?.title ?? metas[id]?.name ?? id):t('layout.file')
+      const label=state.status==='saving'?t('layout.saving'):state.status==='saved'?t('layout.saved'):state.status==='conflict'?t('layout.conflict'):t('layout.unsaved')
+      return <div key={state.folder} role={['saving','saved'].includes(state.status)?'status':'alert'} title={state.folder}>
+        <span>{name} · {label}</span>
+        {state.message && <span> · {state.message}</span>}
+        {!['saving','saved'].includes(state.status) && <>
+          <button type="button" className="dsh-wt_bindFolderChange" onClick={()=>{if(state.status!=='conflict'||window.confirm(t('layout.confirmOverwrite')))void layoutClient.current.retry(state.folder)}}>{state.status==='conflict'?t('layout.retryDraft'):t('layout.retry')}</button>
+          <button type="button" className="dsh-wt_bindFolderChange" onClick={()=>reloadLayoutFolder(state.folder)}>{t('layout.reload')}</button>
+        </>}
+      </div>
+    })}
+  </div>
+
   const projectCreationDialogs = <>
+      {layoutCandidates && <div className="dsh-wt_appBackdrop" onClick={()=>setLayoutCandidates(null)}><div className="dsh-wt_appDialog" role="dialog" aria-modal="true" aria-label={t('layout.chooseLegacy')} onClick={e=>e.stopPropagation()}>
+        <p>{t('layout.chooseLegacy')}</p>
+        {layoutCandidates.files.map(file=><button key={file} type="button" className="dsh-wt_addBtn" onClick={()=>layoutCandidates.choose(file)}>{file}</button>)}
+        <button type="button" onClick={()=>setLayoutCandidates(null)}>{t('layout.cancel')}</button>
+      </div></div>}
       {addOpen && <div className="dsh-wt_popBackdrop" onClick={() => { invalidatePickState(); setAddOpen(false) }} />}
       {addOpen && (
         <div className="dsh-wt_menu dsh-wt_add dsh-wt_pop" role="dialog" aria-modal="true" aria-label="添加项目" onKeyDown={e => { if (e.key === 'Escape' && !(e.nativeEvent as any)?.isComposing) { invalidatePickState(); setAddOpen(false) } }} style={{ position: 'fixed', left: Math.min(popLeft, Math.max(12, window.innerWidth - 372)), top: popTop, width: 360, maxWidth: 'calc(100vw - 24px)', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto', zIndex: 80 }}>
@@ -2700,6 +2771,7 @@ function buildCustomLayoutPrompt(req: string): string {
               </div>
             )}
             {pickErr.add && <p className="dsh-wt_addError">{pickErr.add}</p>}
+            <button type="button" className="dsh-wt_addBtn" disabled={!wsFolderParent.trim()} onClick={()=>{void restoreProjectFolder(wsFolderParent.trim())}}>{t('layout.restore')}</button>
             <button type="button" className="dsh-wt_addBtn" onClick={saveLayout}>{t('add.layoutSave')}</button>
           </div>
           {wsError && <p className="dsh-wt_addError">{t('add.layoutInvalid')}</p>}
@@ -2756,6 +2828,7 @@ function buildCustomLayoutPrompt(req: string): string {
       : bottomInset > 0 ? { marginBottom: bottomInset } : undefined
     return (
       <>{projectCreationDialogs}<div ref={rootRef} className="dsh-wt_section dsh-wt_rail" style={railStyle}>
+        {persistenceNotice}
         {navigationError && <div role="alert" style={{ padding: 8, whiteSpace: 'normal' }}>{navigationError}</div>}
         <div className="dsh-wt_divider" />
         <div className="dsh-wt_railBox">
@@ -2773,6 +2846,7 @@ function buildCustomLayoutPrompt(req: string): string {
 
   return (
     <div ref={rootRef} className={'dsh-wt_section' + (isFloat ? ' dsh-wt_float' : '')} style={isFloat ? floatStyle : dockedStyle}>
+      {persistenceNotice}
       {navigationError && <div role="alert" style={{ padding: 8, whiteSpace: 'normal' }}>{navigationError}</div>}
       <div className="dsh-wt_divider" />
       <div className="dsh-wt_header">

@@ -350,4 +350,33 @@ function fresh() {
   splitStore.close()
   ok('I. native question default/persisted/drag width and other-layout preservation')
 }
+// —— J. File-first geometry and geometry-only persistence use actual bundle store ——
+{
+  const {sandbox,splitStore,allEls}=fresh()
+  const root=new FakeEl('DIV','wSkVaW_root',{phase:'active'}).setRect({left:200,top:0,right:1800,bottom:900})
+  const header=new FakeEl('HEADER').setRect({left:200,top:0,right:1800,bottom:40})
+  const body=new FakeEl('MAIN').setRect({left:200,top:40,right:1800,bottom:900})
+  root.appendChild(header);root.appendChild(body);allEls.push(root);sandbox.document.body.appendChild(root)
+  const spec=makeSpec('file-geometry')
+  spec.top=[{id:'topA',title:'top',min:100,content:null}]
+  spec.main=[{id:'right',title:'right',min:100,content:null},{id:'left',title:'left',min:100,content:null}]
+  spec.left={id:'side1',title:'side',min:100,content:null}
+  spec.leftMore=[{id:'side2',title:'side2',min:100,content:null}]
+  spec.fileGeometry={chatW:480,topH:290,leftW:300,paneWs:{left:210,right:330},topWs:{topA:1100},leftWs:{side2:300,side1:300}}
+  spec.preferFileGeometry=true
+  sandbox.localStorage.getItem=()=>JSON.stringify({[spec.id]:{chatW:360,topH:100,leftW:150,paneWs:[500,600],topWs:[20],leftWs:[50]}})
+  if(!splitStore.open(spec))fail('J.open','file layout did not open')
+  if(splitStore.chatW!==480 || splitStore.topH!==290 || splitStore.leftW!==300)fail('J.dimensions','file dimensions lost to cached/default values')
+  if(splitStore.paneWs[0]!==330 || splitStore.paneWs[1]!==210)fail('J.identity','file widths did not follow pane identity')
+  let captured=null,closed=null
+  splitStore.onLayoutPersisted=(s,geometry)=>{captured={s,geometry}}
+  splitStore.onBeforeClose=id=>{closed=id}
+  splitStore.setChatW(450)
+  if(captured?.geometry.chatW!==450 || captured?.s.id!==spec.id)fail('J.resize','geometry-only edit did not emit project geometry')
+  splitStore.openTab('left',1,{kind:'builtin',type:'explorer'})
+  if(captured?.s.leftMore[0].tabs[0].content.type!=='explorer')fail('J.leftMore','left stack tab not included in saved snapshot')
+  splitStore.close()
+  if(closed!==spec.id)fail('J.close','close did not flush the original project')
+  ok('J. file geometry by pane identity, resize persistence and left stack tab preservation')
+}
 console.log('all anchor-dom tests passed: ' + pass + '/' + pass)
