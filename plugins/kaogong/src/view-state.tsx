@@ -6,6 +6,7 @@ import type { DashboardData, PracticeData, PracticeContext, PracticeResult, Modu
 import type { Entry } from './knowledge-reader.tsx'
 import type { LessonView } from './lesson-schema.ts'
 import { readLearningPreferences, writeLearningPreferences } from './learning-preferences.ts'
+import {readLearnerDraft,writeLearnerDraft} from './learner-draft.ts'
 
 /** Fixed types and namespaces for the default instance's transient values. */
 type ViewValues = {
@@ -25,6 +26,7 @@ type ViewValues = {
   'roles.selected': LearningRoleKey
   'roles.opened': LearningRoleKey[]
   'lesson.view': LessonView | null
+  'lesson.resumeId': string | null
   'lesson.list': { id: string; subject: string; objective: string; completed: boolean; updatedAt: string }[]
   'lesson.draft': { id: string; subject: string; objective: string; knowledgePoint: string; reflections: boolean; material: boolean; legacyNoteId: string }
   'lesson.form': boolean; 'lesson.notes': string; 'lesson.notesDirty': boolean; 'lesson.error': string; 'lesson.busy': boolean; 'lesson.confirmed': boolean
@@ -37,12 +39,19 @@ export class KaogongViewState {
   private requests = new Map<string, number>()
   private practiceCommand = false
   constructor(readonly instanceId='default',readonly viewId?:string) {
+    const draft=readLearnerDraft(instanceId)
+    if(draft){if(draft.goal)this.cell('lesson.draft',draft.goal);this.cell('lesson.form',draft.form);this.cell('lesson.resumeId',draft.lessonId);this.cell('lesson.notes',draft.notes);this.cell('lesson.notesDirty',draft.notesDirty)}
     const saved = readLearningPreferences(instanceId,viewId)
     if (!saved) return
     this.cell('study.open', saved.studyOpen)
     this.cell('study.page', saved.page)
     this.cell('study.pane', saved.pane)
     this.cell('roles.selected', { appId: 'kaogong', instanceId, ...saved.role })
+  }
+  private saveLearnerDraft(){
+    if(this.viewId)return
+    const goal=this.cells.get('lesson.draft') as Cell<ViewValues['lesson.draft']>|undefined
+    writeLearnerDraft(this.instanceId,{version:1,form:this.cell('lesson.form',false).value,lessonId:this.cell('lesson.view',null).value?.lesson.request.lessonId??this.cell('lesson.resumeId',null).value,notes:this.cell('lesson.notes','').value,notesDirty:this.cell('lesson.notesDirty',false).value,...(goal?{goal:goal.value}:{})})
   }
 
   private saveDisplayChoices() {
@@ -76,6 +85,7 @@ export class KaogongViewState {
       const cell: Cell<ViewValues[K]> = { value: initial, listeners: new Set<() => void>(), set: action => {
         cell.value = typeof action === 'function' ? action(cell.value) : action
         if (key === 'study.open' || key === 'study.page' || key === 'study.pane' || key === 'roles.selected') this.saveDisplayChoices()
+        if(['lesson.draft','lesson.form','lesson.view','lesson.notes','lesson.notesDirty'].includes(key))this.saveLearnerDraft()
         for (const listener of cell.listeners) listener()
       } }
       this.cells.set(key, cell)

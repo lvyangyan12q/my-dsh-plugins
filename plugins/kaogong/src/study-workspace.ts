@@ -60,6 +60,10 @@ export class StudyWorkspace {
     })
   }
   async assertProfile(id: string) {
+    for (const [, value] of this.domain.table('handoffs').entries()) {
+      const receipt=value as {status?:unknown;profiles?:{id:string}[]} | null
+      if(receipt&&['applying','unknown'].includes(String(receipt.status))&&receipt.profiles?.some(row=>row.id===id))throw Error('当前档案承接结果待核对，原记录保留')
+    }
     const state = await this.list(), row = state.profiles.find(row => row.id === id)
     if (!row || id === 'default') throw Error('需要明确的备考档案')
     return row
@@ -69,6 +73,7 @@ export class StudyWorkspace {
     if (!context) throw Error('学习视图未登记')
     const row = state.profiles.find(row => row.id === context.profileId)
     if (!row) throw Error('学习视图所属档案不可用')
+    await this.assertProfile(row.id)
     const app = application(row.kind)
     return { profile: row, application: app, instance: { ...row, appId: app.id, projectId: row.projectId ?? null }, view: { ...context, instanceId: row.id, type: 'page' } }
   }

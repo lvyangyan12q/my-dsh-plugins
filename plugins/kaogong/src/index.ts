@@ -8,5 +8,5 @@ import {Config} from './business.ts'
 import {mountKaogong} from './production-host.ts'
 export {Config}
 export const name='kaogong'
-export const inject=['tools','storageDomain','webServer','connection','agentPresets','sessionController','sessionPersistence','workspaceRegistry','skills']
+export const inject=['tools','storageDomain','webServer','connection','agentPresets','sessionController','sessionPersistence','workspaceRegistry','skills','agents']
 export function apply(ctx:Context,config:Config){ctx.effect(async function*(){const dispose=await mountKaogong(ctx,config);yield dispose},'Kaogong independent study Host')}

@@ -59,7 +59,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher }: { active: boo
         const rows = await request<typeof list>('list', {})
         if (!current()) return
         setList(rows)
-        const id = owner.cell('lesson.view', null).value?.lesson.request.lessonId
+        const id = owner.cell('lesson.view', null).value?.lesson.request.lessonId??owner.cell('lesson.resumeId',null).value
         const value = id ? await request<LessonView>('read', { lessonId: id }) : await request<LessonView | null>('current', {})
         if (value) {
           if (current()) {

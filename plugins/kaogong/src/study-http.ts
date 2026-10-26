@@ -3,10 +3,11 @@ import type { StudyWorkspace } from './study-workspace.ts'
 import type { StudySources } from './study-sources.ts'
 import type { StudyRoles } from './study-roles.ts'
 import type { StudyTeaching } from './study-teaching.ts'
+import type { CurrentStudyHandoff } from './current-study-handoff.ts'
 
 /** A small authenticated study command boundary, separate from business routes
  * which always require a Host-registered viewId. */
-export function mountStudyHttp(ctx: Context, workspace: StudyWorkspace, sources: StudySources, roles: StudyRoles, teaching: StudyTeaching) {
+export function mountStudyHttp(ctx: Context, workspace: StudyWorkspace, sources: StudySources, roles: StudyRoles, teaching: StudyTeaching, handoff?: CurrentStudyHandoff) {
   return ctx.webServer.register({ kind: 'exact', path: '/api/kaogong/study', handler: async (req, res) => {
     const send = (status: number, value: unknown) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(value)) }
     const admission = ctx.connection.admit(req)
@@ -18,6 +19,13 @@ export function mountStudyHttp(ctx: Context, workspace: StudyWorkspace, sources:
       for await (const chunk of req) { text += chunk.toString(); if (text.length > 180000) throw Error('学习请求过大') }
       const body = JSON.parse(text || '{}')
       if (!body || typeof body !== 'object' || Array.isArray(body)) throw Error('学习请求格式无效')
+      if (body.action === 'current-preview' || body.action === 'current-confirm') {
+        const allowed = body.action === 'current-preview' ? ['action'] : ['action','id','digest','confirmed','continueProfileId']
+        if (!handoff || Object.keys(body).some(key=>!allowed.includes(key))) throw Error('当前来源只能由部署配置指定')
+        const value=body.action === 'current-preview' ? await handoff.preview() : await handoff.confirm(body)
+        if(body.action==='current-confirm')await roles.activateRetainedSessions()
+        send(200,value); return
+      }
       if (body.action === 'create') {
         if (Object.keys(body).some(key => !['action', 'title', 'kind', 'confirmed'].includes(key))) throw Error('不能指定档案身份')
         send(200, await workspace.create(body.title, body.kind, body.confirmed)); return

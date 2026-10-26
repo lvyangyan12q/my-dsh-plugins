@@ -35,6 +35,8 @@ import { KNOWLEDGE_KINDS } from './types.ts'
 
 /** Plugin configuration, validated by the schemastery schema below. */
 export interface Config {
+  /** Explicit old profile inside this Native home; never supplied by a browser. */
+  currentSourceProfile?: string
   /** Old bank/knowledge source, read only after explicit material preview. */
   materialSourceHome?: string
   /** Read only on explicit adoption preview; mounting never reads or writes this old home. */
@@ -52,6 +54,7 @@ export interface Config {
 
 /** Schemastery schema for {@link Config}. */
 export const Config = z.object({
+  currentSourceProfile: z.string().description('当前隔离学习元数据来源profile绝对路径；须在同一Native home内，仅明确预览确认后承接，不搬会话或学习存储'),
   materialSourceHome: z.string().description('新部署保留资料的旧home绝对路径；仅资料接入预览读取题库和知识，不读取会话或学习记录，不移动原文件'),
   legacySourceHome: z.string().description('历史配置保留；新部署不启用旧会话或学习接管。新资料接入请显式配置 materialSourceHome'),
   legacyMaterialRoot: z.string().description('旧资料集合的明确绝对根目录；仅资料接入预览使用，与MinerU作业outputDir独立，留空不推断'),

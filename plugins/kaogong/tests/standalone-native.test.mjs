@@ -1,11 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, readdir, lstat, realpath } from 'node:fs/promises'
+import { mkdtemp, mkdir, rm, readdir, lstat, realpath, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve, relative, isAbsolute } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Readable } from 'node:stream'
 import { mountKaogong } from '../src/production-host.ts'
+import { inject as productionInject } from '../src/index.ts'
 
 const native = process.env.DSH_SOURCE ?? 'D:/programming/workspace/deepseek-harness'
 const load = file => import(pathToFileURL(resolve(native, file.replace('/lib/', '/src/').replace(/\.js$/, '.ts'))).href)
@@ -61,7 +62,10 @@ test('independent role HTTP creates a standard Native Session with private teach
     ctx.provide('storageDomain', new DomainFacility(ctx, { backend: 'json' }))
     ctx.provide('webServer', { register: row => { routes.set(row.kind + ':' + row.path, row); return () => routes.delete(row.kind + ':' + row.path) } })
     ctx.provide('connection', { admit: () => ({ peer: {} }) })
-    stop = await mountKaogong(ctx, { roleCwd: root, questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined } })
+    ctx.provide('profileContext',{home:root,dir:profileDir})
+    await new Promise((resolve, reject) => ctx.inject(productionInject, scope => {
+      mountKaogong(scope, { roleCwd: root, currentSourceProfile:join(root,'profiles/old'), questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined } }).then(dispose => { stop=dispose; resolve() }, reject)
+    }))
     const created = await post({ action: 'create', title: '角色验证', kind: 'learner', confirmed: true })
     const viewId = created.value.view.id
     const ensured = await post({ action: 'role-ensure', viewId, roleId: 'class-advisor' })
@@ -105,6 +109,15 @@ test('independent role HTTP creates a standard Native Session with private teach
     assert.equal((await post({ action: 'task-submit', viewId, id: uncertain.value.id, revision: unknown.value.revision })).status, 409)
     assert.equal((await post({ action: 'task-recover', viewId, id: uncertain.value.id })).status, 409)
     assert.equal(admitted.length, 2)
+    // Native can have opened a retained blank Session before the study panel.
+    // Explicit handoff must mount its exact existing Agent, never replace/send it.
+    const sourceDirectory=join(root,'profiles/old/worktable-platform');await mkdir(sourceDirectory,{recursive:true})
+    const source={applications:{schema:1,applications:[],instances:[{id:'retained-study',appId:'kaogong',title:'保留档案',revision:1,projectId:null,createdAt:1,lastOpenedAt:1}],views:[{id:'retained-view',instanceId:'retained-study',type:'page'}]},resources:{schema:1,connections:[]},roles:{schema:1,bindings:[{key:JSON.stringify(['retained-study','teacher']),appId:'kaogong',instanceId:'retained-study',roleId:'teacher',sessionId:ordinaryId,presetId:'standard',phase:'ready',revision:2,creation:{cwd:root},previousSessionIds:[],agent:{kind:'agent',source:'application',ownerAppId:'kaogong',id:'teacher'}}],capabilities:[]},tasks:{schema:4,bindings:[],capabilities:[],tasks:[]},migrations:{schema:1,baselines:[],plans:[]}}
+    for(const[name,data]of Object.entries(source))await writeFile(join(sourceDirectory,name+'.v1.json'),JSON.stringify(data))
+    const preview=await post({action:'current-preview'});assert.equal(preview.status,200,JSON.stringify(preview.value))
+    const handoff=await post({action:'current-confirm',id:preview.value.id,digest:preview.value.digest,confirmed:true});assert.equal(handoff.status,200,JSON.stringify(handoff.value))
+    assert.equal((await ctx.skills.get('kaogong-teach',{scope:handles.get(ordinaryId).agent,cwd:root}))?.provider,'kaogong-packaged-teaching')
+    assert.equal(admitted.length,2)
   } finally {
     await stop?.()
     for (const handle of handles.values()) await handle.dispose()

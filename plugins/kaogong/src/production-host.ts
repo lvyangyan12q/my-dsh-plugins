@@ -4,6 +4,7 @@ import {StudySources} from './study-sources.ts'
 import {StudyRoles} from './study-roles.ts'
 import {mountStudyHttp} from './study-http.ts'
 import {StudyTeaching} from './study-teaching.ts'
+import {CurrentStudyHandoff} from './current-study-handoff.ts'
 import {registerTaskOwners} from './task-owners.ts'
 import {defineDomain,domainTable} from '@deepseek-ai/dsh-storage-domain'
 import {z} from 'zod'
@@ -43,7 +44,9 @@ export async function mountKaogong(ctx:Context,config:Config){
   disposers.push(await roles.install())
   const teaching=new StudyTeaching(ctx,workspace,roles,sources)
   disposers.push(()=>teaching.close())
-  disposers.push(mountStudyHttp(ctx,workspace,sources,roles,teaching))
+  const handoff=new CurrentStudyHandoff(ctx,workspace,config.currentSourceProfile)
+  disposers.push(()=>handoff.close())
+  disposers.push(mountStudyHttp(ctx,workspace,sources,roles,teaching,handoff))
   const meta=await ctx.storageDomain.open(metadata)
   disposers.push(()=>meta.close())
   const adoptionState=await ctx.storageDomain.open(adoptionDomain)

@@ -25,7 +25,7 @@ export class StudyTeaching {
   private table() { return this.workspace.domain.table('teaching') }
   private row(id: string) { const row = this.table().get(id) as Draft | undefined; if (!row) throw Error('教学任务不存在'); return row }
   private async put(row: Draft) { await this.table().put(row.id, row); return structuredClone(row) }
-  private present(row: Draft) { return structuredClone(row.status === 'submitting' ? { ...row, status: 'unknown', notice: '准入结果未确认，请查看原生会话；不会自动重发。' } : row) }
+  private present(row: Draft) { return structuredClone(row.status === 'submitting' ? { ...row, status: 'unknown', notice: '准入结果未确认，请查看原生会话；不会自动重发。' } : row.historicalHandoff&&row.status==='prepared'?{...row,notice:'保留的旧准备上下文仅供查看；请根据当前授权重新准备，不会重发旧请求。'}:row) }
   private owner(row: Draft) { const owner = row.preparation && this.owners.get(row.preparation.kind); if (!owner || owner.version !== row.preparation?.ownerVersion) throw Error('教学记录的可信所有者不可用'); return owner }
   async list(viewId: string) { const context = await this.workspace.resolveView(viewId); return [...this.table().entries()].map(([, row]) => row as Draft).filter(row => row.instanceId === context.instance.id).map(row => this.present(row)) }
   private async create(viewId: string, roleId: string, text: unknown, references: Reference[], preparation?: Draft['preparation']) {
@@ -49,6 +49,7 @@ export class StudyTeaching {
   edit(viewId: string, id: string, revision: number, text: unknown, contexts: { id: string; text: string }[]) {
     return this.serial(async () => {
       const row = await this.owned(viewId, id)
+      if (row.historicalHandoff) throw Error('保留的旧准备上下文不可编辑发送，请根据当前授权重新准备')
       if (row.status !== 'prepared' || row.revision !== revision) throw Error('教学准备已变化，请刷新')
       if (!Array.isArray(contexts) || contexts.length > row.contexts.length || new Set(contexts.map(row => row.id)).size !== contexts.length || contexts.some(value => !row.contexts.some(row => row.id === value.id) || typeof value.text !== 'string' || value.text.length > 16000)) throw Error('只能编辑或移除已准备的资料上下文')
       return this.put({ ...row, revision: row.revision + 1, text: textOf(text), contexts: contexts.map(value => ({ ...row.contexts.find(row => row.id === value.id)!, text: value.text })) })
@@ -71,6 +72,7 @@ export class StudyTeaching {
   submit(viewId: string, id: string, revision: number) {
     return this.serial(async () => {
       let row = await this.owned(viewId, id)
+      if (row.historicalHandoff) throw Error('保留的旧教学回执不可重发，请根据当前授权重新准备')
       if (row.status !== 'prepared' || row.revision !== revision) throw Error('教学任务已变化、已发送或结果未知；不会重发')
       row = { ...row, revision: row.revision + 1, status: 'submitting', requestId: randomUUID(), submittedAt: Date.now() }; await this.put(row)
       let attempted = false

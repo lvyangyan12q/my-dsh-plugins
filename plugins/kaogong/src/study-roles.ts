@@ -177,6 +177,16 @@ export class StudyRoles {
     await this.assertNative(record.agent)
     return { appId: 'kaogong', instanceId: binding.instanceId, roleId: binding.roleId, sessionId }
   }
+  /** Native may already display a retained blank Session before the learner
+   * confirms metadata transfer. Compose only that exact idle, proven Agent. */
+  async activateRetainedSessions() {
+    for (const row of this.rows()) {
+      const agent=this.ctx.agents?.get(row.sessionId as never)
+      if(!agent||this.live.has(row.sessionId))continue
+      if(row.phase!=='ready'||agent.status!=='idle')throw Error('已有原生角色仍在运行或身份待确认，请停止后重新核对承接回执')
+      await this.mountNative(agent)
+    }
+  }
   async close() {
     if (this.stopped) return
     this.stopped = true; for (const remove of this.removers.splice(0)) remove(); await this.operations
