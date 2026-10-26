@@ -3,7 +3,7 @@ id: worktable-layout-acceptance
 parent: worktable-project-layout-spec
 title: 最终产物验收与远程交付
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: null
 blocked_by: [worktable-layout-storage, worktable-layout-client, worktable-layout-tooling]
 ---
@@ -14,7 +14,9 @@ blocked_by: [worktable-layout-storage, worktable-layout-client, worktable-layout
 
 ## Resolution
 
-实现和最终产物验收已完成，等待远程推送及 SHA 核对后关闭。
+第一阶段实现、最终产物验收及远程交付已完成，按本地跟踪器关闭。本次扩展的05—07和父规格继续open，不因本票关闭而视为新增功能已实现。
+
+- 用户明确确认公开目标与完整推送范围后，集成分支已推送并核对远程初始SHA与本地 `95cb71b91676511b0cc9465be8c98ee17287fa96` 一致；[草稿PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已创建并附加到本任务，方向为 codex/worktable-project-layout → main，未合并。
 
 - 代码集成 `e29037e`；Standards 初审 1 项、Spec 初审 3 项及追加 1 项均修复，独立定向复审两个轴剩余 0 项。详见[审查报告](review.md)。
 - 最终候选 `0.10.0-rc.3.4` 使用唯一打包入口生成：官方 rc.3 契约 9/9，兼容回归 380 通过、0 失败、2 项可选 rc.2 测试跳过；结构 9 文件、独立安装/导入、最终 bundle 分栏 11 场景及服务端目录验证通过。环境失败和重试原因保留在[打包回执](evidence/pack-validation.json)。

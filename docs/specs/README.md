@@ -2,7 +2,7 @@
 
 ## 2026-10-26 项目布局落盘方案
 
-[Worktable 项目布局落盘与恢复调整方案](worktable-project-layout.md)：一个项目固定使用一份 `.dsh-worktable/layout.json`。第一阶段已实现并完成最终包 Windows Web 验收；新增窗口收起补位、完整宽高拖拽、自定义窗口创建前校验已纳入规格及05—07工单，尚未实现，先创建草稿PR。父规格保持open；已有[验收回执](worktable-project-layout/04-acceptance.md)与[两轴审查](worktable-project-layout/review.md)不替代新增范围验收。
+[Worktable 项目布局落盘与恢复调整方案](worktable-project-layout.md)：一个项目固定使用一份 `.dsh-worktable/layout.json`。第一阶段已实现并完成最终包 Windows Web 验收及远程交付，[草稿PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已创建；新增窗口收起补位、完整宽高拖拽、自定义窗口创建前校验已纳入规格及05—07工单，尚未实现。父规格保持open；已有[验收回执](worktable-project-layout/04-acceptance.md)与[两轴审查](worktable-project-layout/review.md)不替代新增范围验收。
 
 ## 2026-10-24 升级规格已回写
 

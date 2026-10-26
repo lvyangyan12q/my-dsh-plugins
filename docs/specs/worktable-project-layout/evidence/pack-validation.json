@@ -93,5 +93,6 @@
     }
   ],
   "realInstalledHostAcceptance": "passed; see host-acceptance.json",
-  "ticket04": "awaiting remote push verification"
+  "ticket04": "closed; first-phase remote delivery completed",
+  "pullRequest": "https://github.com/lvyangyan12q/my-dsh-plugins/pull/4"
 }

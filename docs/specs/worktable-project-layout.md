@@ -7,8 +7,9 @@ assignee: null
 testing_seam_confirmation: confirmed
 created: 2026-10-26
 updated: 2026-10-26
-delivery_stage: draft-pr-prepared
-publication_status: awaiting-explicit-destination-confirmation
+delivery_stage: draft-pr
+publication_status: pushed
+pull_request: https://github.com/lvyangyan12q/my-dsh-plugins/pull/4
 increment_status: specified-not-implemented
 ---
 
@@ -249,4 +250,4 @@ increment_status: specified-not-implemented
 
 父规格保持 open，直到新增交互与前置校验也通过各自验收；创建 PR 或推送第一阶段不能自动关闭新增工单。已有应用、角色、任务与宿主升级的其他约束继续有效。
 
-草稿 PR 文案已准备，目标为当前 origin 的公开仓库 `lvyangyan12q/my-dsh-plugins`，目标分支为 main，来源为 codex/worktable-project-layout。自动审批要求用户直接确认该公开目标及源码、测试、文档和冻结包的推送范围；本次推送未执行，PR 尚未创建。
+用户已直接确认公开目标及源码、测试、文档和冻结包的推送范围，分支已推送至当前 origin 的公开仓库 `lvyangyan12q/my-dsh-plugins`。[草稿 PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已创建，目标分支为 main，来源为 codex/worktable-project-layout。第一阶段远程交付已完成，新增05—07继续open；未合并或安装到正式profile。
