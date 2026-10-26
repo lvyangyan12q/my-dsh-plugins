@@ -1751,27 +1751,8 @@ function buildCustomLayoutPrompt(req: string): string {
 
   const restoreProjectFolder = async (folder:string,legacyFile?:string) => {
     if(!isAbs(folder)){setPickErr(prev=>({...prev,add:t('add.folderManualAbs')}));return}
-    const sequence=++layoutOpenSequence.current
-    await layoutClient.current.flushAll()
-    const result=await layoutClient.current.read(folder,undefined,legacyFile)
-    if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
-    if(result.status==='ambiguous'){
-      setLayoutCandidates({files:result.candidates ?? [],choose:file=>{setLayoutCandidates(null);void restoreProjectFolder(folder,file)}});return
-    }
-    if(!['ok','legacy'].includes(result.status)) {setPickErr(prev=>({...prev,add:result.message ?? (result.status==='missing'?'该目录没有可恢复的布局文件':'布局文件不可恢复')}));return}
-    folder=result.folder ?? folder
-    const restored=await resolveProjectDirectory(projectsRef.current.projects,result.document,folder)
-    if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
-    if(restored.error){setPickErr(prev=>({...prev,add:restored.error}));return}
-    const spec=restored.spec as LayoutSpec
-    if(result.status==='legacy') {
-      layoutClient.current.schedule(folder,layoutSnapshot(spec,result.document.geometry));await layoutClient.current.flush(folder)
-      if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
-      if(layoutClient.current.state(folder).status!=='saved'){setPickErr(prev=>({...prev,add:'旧布局尚未迁移成功，请重试'}));return}
-    }
-    persistProjects(prev=>({...prev,nameOverrides:{...prev.nameOverrides,[spec.id]:result.document.project.name},layouts:prev.layouts.some(l=>l.id===spec.id)?prev.layouts.map(l=>l.id===spec.id?spec:l):[...prev.layouts,spec],folders:{...prev.folders,[spec.id]:folder}}))
-    invalidatePickState();setAddOpen(false);setNavigationError(null)
-    void openSplit(spec)
+    ++layoutOpenSequence.current
+    await layoutMutations.current.restoreDirectory(folder,legacyFile)
   }
 
   /** 打开「工作台」控制室：已绑定 → 打开并切换绑定对话；explicitBound 供强制绑定流程传入刚绑定的会话 */
@@ -1981,6 +1962,7 @@ function buildCustomLayoutPrompt(req: string): string {
       projects:()=>projectsRef.current.projects,
       meta:(id:string)=>projectsRef.current.metas[id],
       navigation:()=>layoutOpenSequence.current,
+      picker:()=>pickSeqRef.current,
       capture:(id:string)=>{
         const p=projectsRef.current.projects,active=splitStore.spec?.id===id?splitStore.spec:null
         const spec=active ?? p.layouts.find(l=>l.id===id) ?? p.views[id]
@@ -2005,6 +1987,7 @@ function buildCustomLayoutPrompt(req: string): string {
       confirmLoad:()=>window.confirm('该目录已有布局，确认保存当前目录的修改并载入目标目录布局？'),
       presetChanged:(id:string)=>setViewPickFor(current=>current===id?null:current),
       restore:restoreProjectFolder,
+      restored:(spec:LayoutSpec)=>{invalidatePickState();setAddOpen(false);setNavigationError(null);void openSplit(spec)},
       created:(layout:LayoutSpec)=>{
         invalidatePickState();setWsName('');setWsFolderParent('');setWsError(false);setWsFolderError(false);setAddOpen(false)
         void openSplit(layout);reportUsed(layout.id)

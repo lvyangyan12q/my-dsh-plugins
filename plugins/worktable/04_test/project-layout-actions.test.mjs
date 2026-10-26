@@ -7,16 +7,16 @@ const gate=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {prom
 const tick=()=>new Promise(r=>setImmediate(r))
 const spec=id=>({id,title:id,top:null,main:[{id:'p1',title:'窗口1',min:100,tabs:[],active:0}],chatWidth:{default:360,min:240,max:600}})
 function fixture(){
- const state={projects:{layouts:[spec('A'),spec('B')],folders:{A:'/old',B:'/B'},views:{},nameOverrides:{},iconOverrides:{}},width:400,active:'A',navigation:0,opened:[],closed:0,saved:[],dialog:true}
+ const state={projects:{layouts:[spec('A'),spec('B')],folders:{A:'/old',B:'/B'},views:{},nameOverrides:{},iconOverrides:{}},width:400,active:'A',navigation:0,picker:0,opened:[],closed:0,saved:[],dialog:true}
  const geometry=()=>({chatW:state.width,topH:200,leftW:260,paneWs:{p1:300},topWs:{},leftWs:{}})
- const workspace={projects:()=>state.projects,meta:()=>null,navigation:()=>state.navigation,
+ const workspace={projects:()=>state.projects,meta:()=>null,navigation:()=>state.navigation,picker:()=>state.picker,
    capture:id=>{const s=state.projects.layouts.find(p=>p.id===id);return s?layoutSnapshot(s,geometry()):null},geometry,
    commit:fn=>{state.projects=fn(state.projects)},invalidate(){},
    replace(id,next,navigation){if(state.active!==id || state.navigation!==navigation)return null;state.closed++;state.opened.push(id);return layoutSnapshot(next,geometry())},
    reload(id,navigation){if(state.active===id && state.navigation===navigation){state.closed++;state.opened.push(id)}},
  }
- const store={flush:async()=>{},read:async()=>({status:'missing',folder:'/new'}),schedule:(folder,layout)=>state.saved.push({folder,layout}),state:()=>({status:'saved'})}
- const ui={error(){},choose(){},confirmLoad:()=>true,presetChanged(){},restore:async()=>{},created:layout=>state.opened.push(layout.id)}
+ const store={flush:async()=>{},flushAll:async()=>{},read:async()=>({status:'missing',folder:'/new'}),schedule:(folder,layout)=>state.saved.push({folder,layout}),state:()=>({status:'saved'})}
+ const ui={error(){},choose(){},confirmLoad:()=>true,presetChanged(){},restore:async()=>{},restored:layout=>state.opened.push(layout.id),created:layout=>state.opened.push(layout.id)}
  const dependencies={store,workspace,ui,createLayout:(_preset,name)=>({...spec('new'),title:name}),makeDirectory:async()=>true}
  const actions=new ProjectLayoutMutations(dependencies)
  return {state,store,workspace,ui,dependencies,actions}
@@ -71,4 +71,40 @@ test('a failed old-directory save leaves the registration and new target untouch
  store.read=async()=>{reads++;return {status:'missing',folder:'/new'}}
  await actions.assignDirectory('A','/new')
  assert.equal(state.projects.folders.A,'/old');assert.equal(reads,0);assert.equal(state.saved.length,0)
+})
+
+test('accepting another selected directory or navigation during restore prevents stale import',async()=>{
+ for(const generation of ['picker','navigation']){
+  const {state,store,actions}=fixture(),reading=gate();state.projects.layouts=[];state.projects.folders={};store.read=()=>reading.promise
+  const operation=actions.restoreDirectory('/A')
+  await tick();state[generation]++;reading.resolve({status:'ok',folder:'/A',document:layoutSnapshot(spec('A'),{})});await operation
+  assert.equal(state.projects.layouts.length,0,generation);assert.deepEqual(state.opened,[],generation);assert.equal(state.saved.length,0,generation)
+ }
+})
+
+test('changing the selected directory while legacy migration saves cannot register or open the old target',async()=>{
+ const {state,store,actions}=fixture(),saving=gate();state.projects.layouts=[];state.projects.folders={}
+ store.read=async()=>({status:'legacy',folder:'/A',document:layoutSnapshot(spec('A'),{})});store.flush=()=>saving.promise
+ const operation=actions.restoreDirectory('/A')
+ await tick();state.picker++;saving.resolve();await operation
+ assert.equal(state.projects.layouts.length,0);assert.deepEqual(state.opened,[]);assert.equal(state.saved[0].folder,'/A')
+})
+
+test('a still-current restore registers and opens the file project with its stable identity',async()=>{
+ const {state,store,actions}=fixture();state.projects.layouts=[];state.projects.folders={}
+ store.read=async()=>({status:'ok',folder:'/A',document:layoutSnapshot(spec('A'),{})})
+ await actions.restoreDirectory('/A')
+ assert.equal(state.projects.layouts[0].id,'A');assert.equal(state.projects.folders.A,'/A');assert.deepEqual(state.opened,['A'])
+})
+
+test('a selected-directory change during canonical registration lookup also cancels restoration',async()=>{
+ const {state,store,actions}=fixture(),lookup=gate(),originalFetch=globalThis.fetch
+ state.projects.layouts=[];state.projects.folders={existing:'/other'}
+ store.read=async()=>({status:'ok',folder:'/A',document:layoutSnapshot(spec('A'),{})})
+ globalThis.fetch=()=>lookup.promise
+ try{
+  const operation=actions.restoreDirectory('/A')
+  await tick();state.picker++;lookup.resolve({json:async()=>({status:'missing',folder:'/other'})});await operation
+  assert.equal(state.projects.layouts.length,0);assert.deepEqual(state.opened,[])
+ }finally{globalThis.fetch=originalFetch}
 })

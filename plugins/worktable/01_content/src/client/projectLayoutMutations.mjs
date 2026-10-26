@@ -90,4 +90,28 @@ export class ProjectLayoutMutations {
     this.workspace.commit(p=>({...p,layouts:[...p.layouts,layout],folders:{...p.folders,[layout.id]:folder}}))
     this.ui.created(layout)
   }
+  async restoreDirectory(folder,legacyFile) {
+    const navigation=this.workspace.navigation(),picker=this.workspace.picker()
+    const current=()=>this.alive() && this.workspace.navigation()===navigation && this.workspace.picker()===picker
+    await this.store.flushAll()
+    if(!current())return
+    const result=await this.store.read(folder,undefined,legacyFile)
+    if(!current())return
+    if(result.status==='ambiguous'){this.ui.choose(result.candidates ?? [],file=>this.ui.restore(folder,file));return}
+    if(!['ok','legacy'].includes(result.status)){this.ui.error('add',result.message ?? (result.status==='missing'?'该目录没有可恢复的布局文件':'布局文件不可恢复'));return}
+    folder=result.folder ?? folder
+    const restored=await resolveProjectDirectory(this.workspace.projects(),result.document,folder)
+    if(!current())return
+    if(restored.error){this.ui.error('add',restored.error);return}
+    const spec=restored.spec
+    if(result.status==='legacy'){
+      this.store.schedule(folder,layoutSnapshot(spec,result.document.geometry))
+      await this.store.flush(folder)
+      if(!current())return
+      if(this.store.state(folder).status!=='saved'){this.ui.error('add','旧布局尚未迁移成功，请重试');return}
+    }
+    if(!current())return
+    this.workspace.commit(p=>({...p,nameOverrides:{...p.nameOverrides,[spec.id]:result.document.project.name},layouts:p.layouts.some(l=>l.id===spec.id)?p.layouts.map(l=>l.id===spec.id?spec:l):[...p.layouts,spec],folders:{...p.folders,[spec.id]:folder}}))
+    this.ui.restored(spec)
+  }
 }
