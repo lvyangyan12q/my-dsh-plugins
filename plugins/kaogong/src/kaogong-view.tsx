@@ -1,3 +1,4 @@
+import type {PracticeCounts} from './practice-statistics.ts'
 import { useCallback, useEffect } from 'react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { KnowledgeLibrary } from './knowledge-reader.tsx'
@@ -13,6 +14,7 @@ export type DashboardData = {
   pastDays: number
   pastDone: number
   pastDonePct: number
+  practiceStatistics?: PracticeCounts & {errorReasons:{reason:string;count:number}[]}
   totalQuestions: number
   totalCorrect: number
   totalWrong: number
@@ -20,7 +22,7 @@ export type DashboardData = {
   bankTotal: number
   knowledgeTotal: number
   todayPlan: { phase: string; items: { subject: string; kind: string; title: string; done: boolean }[] }
-  modules: { subject: string; availableCount: number; practicedCount: number; wrongCount: number; accuracyRate: number }[]
+  modules: { submittedCount?:number;answeredCount?:number;unansweredCount?:number;uniqueQuestionCount?:number; subject: string; availableCount: number; practicedCount: number; wrongCount: number; accuracyRate: number }[]
   weakPoints: { subject: string; knowledgePoint: string; wrongCount: number; errorRate: number }[]
   recentKnowledge: { id: string; title: string; subject: string; knowledgePoint: string; kind: string; content: string; updatedAt: string }[]
 }
@@ -47,6 +49,9 @@ export type PracticeResult = {
   projection: 'complete' | 'pending'
   review: 'ready' | 'sending' | 'sent'
   totalCount: number
+  answeredCount?: number
+  unansweredCount?: number
+  incorrectCount?: number
   correctCount: number
   accuracyRate: number
   results: { id: string; subject: string; knowledgePoint: string; stem: string; options: string[]; source: string; userAnswer: string; correct: boolean; correctAnswer: string; explanation: string }[]
@@ -483,7 +488,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                   {result.projection === 'pending' && <p role="status">成绩已保存，错题本同步待恢复。<button data-pwb-button onClick={() => { void practiceRequest<PracticeData>('read', { roundId: result.roundId }).then(value => setResult(value.result)).catch(cause => setError(String(cause))) }}>重试同步</button></p>}
                   {result.review === 'sending' && <p role="status">{admitted.includes(result.roundId) ? '讲评已发送，完成状态待同步。' : '讲评已保留发送位置；请在辅导员待发送区发送或重试，刷新后需核实原会话。'}</p>}
                   {admitted.includes(result.roundId) && result.review !== 'sent' && <button data-pwb-button onClick={() => { void completeReview(result.roundId).catch(() => {}) }}>同步讲评完成状态</button>}
-                  <div style={{ padding: 12, borderRadius: 6, background: result.accuracyRate >= .8 ? '#f0fdf4' : '#fff7ed', color: result.accuracyRate >= .8 ? colors.green : '#9a3412' }}><strong>{result.correctCount}/{result.totalCount} 题正确，正确率 {pct(result.accuracyRate)}</strong></div>
+                  <div style={{ padding: 12, borderRadius: 6, background: result.accuracyRate >= .8 ? '#f0fdf4' : '#fff7ed', color: result.accuracyRate >= .8 ? colors.green : '#9a3412' }}><strong>{result.correctCount}/{result.totalCount} 题正确，正确率 {pct(result.accuracyRate)}（全部提交题量含未答为分母）</strong><p>实际作答 {result.answeredCount??result.results.filter(row=>row.userAnswer!=='').length} 题 · 未答 {result.unansweredCount??result.results.filter(row=>row.userAnswer==='').length} 题 · 已答做错 {result.incorrectCount??result.results.filter(row=>row.userAnswer!==''&&!row.correct).length} 题</p></div>
                   {result.results.map(entry => <div key={entry.id} style={{ padding: '12px 0', borderBottom: `1px solid ${colors.line}` }}><strong style={{ color: entry.correct ? colors.green : colors.red }}>{entry.correct ? '正确' : '需要复盘'} · {entry.knowledgePoint}</strong>{!entry.correct && <><p style={{ margin: '5px 0 0', color: colors.muted, fontSize: 13, lineHeight: 1.6 }}>正确答案：{entry.correctAnswer}{entry.explanation ? `。${entry.explanation}` : ''}</p><select aria-label={`选择 ${entry.knowledgePoint} 的错误原因`} value={errorReasonsByQuestion[entry.id] ?? ''} onChange={event => setErrorReasonsByQuestion(previous => ({ ...previous, [entry.id]: event.target.value }))} style={{ marginTop: 8, minHeight: 30, border: `1px solid ${colors.line}`, borderRadius: 5, color: colors.ink }}><option value="">选择错误原因</option>{errorReasons.map(reason => <option key={reason} value={reason}>{reason}</option>)}</select><textarea aria-label={`反思 ${entry.knowledgePoint}`} value={reflectionNotes[entry.id] ?? ''} onChange={event => setReflectionNotes(previous => ({ ...previous, [entry.id]: event.target.value }))} style={{ display: 'block', width: '100%', boxSizing: 'border-box', minHeight: 64, marginTop: 8 }} /></>}</div>)}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}><button data-pwb-button data-variant="primary" type="button" disabled={practiceBusy || result.review !== 'ready' || admitted.includes(result.roundId)} onClick={() => { void openTeacher(practiceItem, result) }} style={buttonStyle(true)}>{result.review === 'sent' ? '已交辅导员' : result.review === 'sending' ? '讲评发送待核实' : '辅导员讲评'}</button><button data-pwb-button type="button" disabled={practiceBusy} onClick={() => { void saveReflection() }} style={buttonStyle(false)}>保存错因并总结</button><button data-pwb-button type="button" disabled={practiceBusy} onClick={repeatPractice} style={buttonStyle(false)}>再来 {practiceItem.limit} 题</button>{practiceItem.planIndex !== undefined && <button data-pwb-button type="button" onClick={() => { void toggleItem(practiceItem.planIndex!, true) }} style={buttonStyle(false)}>完成任务</button>}</div>
                   {moduleSummary && <div style={{ marginTop: 16, padding: 14, border: `1px solid #bfdbfe`, borderRadius: 7, background: '#f8fbff' }}><strong>本模块错题归纳</strong><div style={{ marginTop: 7, color: colors.muted, fontSize: 13 }}>累计 {moduleSummary.totalQuestions} 题，做错 {moduleSummary.totalWrong} 题，正确率 {pct(moduleSummary.accuracyRate)}</div>{moduleSummary.weakPoints.length > 0 && <div style={{ marginTop: 10 }}>{moduleSummary.weakPoints.map(point => <div key={point.knowledgePoint} style={{ marginTop: 7, fontSize: 13 }}><strong>{point.knowledgePoint}</strong>：错 {point.wrongCount}/{point.totalCount}，主要错因 {point.topReasons.join('、')}。{point.suggestion}</div>)}</div>}</div>}
