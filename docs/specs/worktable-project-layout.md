@@ -7,7 +7,8 @@ assignee: null
 testing_seam_confirmation: confirmed
 created: 2026-10-26
 updated: 2026-10-26
-delivery_stage: draft-pr
+delivery_stage: draft-pr-prepared
+publication_status: awaiting-explicit-destination-confirmation
 increment_status: specified-not-implemented
 ---
 
@@ -247,3 +248,5 @@ increment_status: specified-not-implemented
 用户已确认一项目一份固定布局文件及主验收入口，随后授权实施及推送；第一阶段已完成实现和最终包的真实 Windows Web 验收。后续新增收起补位、拖拽和会话创建前校验，本次要求先更新规格、创建草稿 PR，未实施新增生产代码。详见[实施工单](worktable-project-layout/README.md)、[第一阶段验收](worktable-project-layout/04-acceptance.md)及[两轴审查](worktable-project-layout/review.md)。正式 profile 未安装或重启，未发布远端 tag/Release。
 
 父规格保持 open，直到新增交互与前置校验也通过各自验收；创建 PR 或推送第一阶段不能自动关闭新增工单。已有应用、角色、任务与宿主升级的其他约束继续有效。
+
+草稿 PR 文案已准备，目标为当前 origin 的公开仓库 `lvyangyan12q/my-dsh-plugins`，目标分支为 main，来源为 codex/worktable-project-layout。自动审批要求用户直接确认该公开目标及源码、测试、文档和冻结包的推送范围；本次推送未执行，PR 尚未创建。
