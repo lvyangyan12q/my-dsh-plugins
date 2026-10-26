@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type {RoleFacade,TaskFacade} from 'dsh-worktable/sdk'
+import type {RoleFacade,TaskFacade} from './study-client-contracts.ts'
 import type {LearningRoleKey} from './client-runtime.ts'
 import type { DashboardData, PracticeData, PracticeContext, PracticeResult, ModuleSummary } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'

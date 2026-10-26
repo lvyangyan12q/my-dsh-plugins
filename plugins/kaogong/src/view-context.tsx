@@ -1,7 +1,7 @@
 import {createContext,useContext,useMemo} from 'react'
 import type {ImgHTMLAttributes} from 'react'
 import type {ViewTransport} from './client-runtime.ts'
-import type {RoleFacade,TaskFacade} from 'dsh-worktable/sdk'
+import type {RoleFacade,TaskFacade} from './study-client-contracts.ts'
 import {practiceRequest,readPracticeDraft,savePracticeDraft,readAdmittedReviews,markAdmittedReview} from './practice-client.ts'
 
 export const KaogongTransportContext=createContext<ViewTransport|null>(null)

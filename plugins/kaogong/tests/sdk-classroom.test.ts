@@ -4,7 +4,7 @@ import {JSDOM} from 'jsdom'
 import React,{act} from 'react'
 import {createRoot} from 'react-dom/client'
 
-test('SDK classroom keeps learning mounted and opens the original native teacher without rendering another composer',async()=>{
+test('standalone classroom keeps learning mounted and opens the original native teacher without rendering another composer',async()=>{
   const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'})
   const globals={React,window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
   const previous=new Map(Object.keys(globals).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))
@@ -17,7 +17,7 @@ test('SDK classroom keeps learning mounted and opens the original native teacher
   try{
     const {KaogongApplicationView}=await import('../src/client.tsx')
     const roles={ensure:async(id:string)=>({phase:'ready',sessionId:'original-'+id,revision:2}),open:async(...value:unknown[])=>{opened.push(value)}}
-    const props={application:{id:'kaogong',title:'考公学习',kind:'deep',version:'candidate',views:[{id:'page',title:'学习'}]},instance:{id:'learning-a',appId:'kaogong',projectId:null,revision:1},view:{id:'view-a',instanceId:'learning-a',type:'page'},roles,tasks:{prepare:async()=>({id:'prepared'})}}
+    const props={profile:{id:'learning-a',kind:'learner',title:'备考',revision:1},view:{id:'view-a',profileId:'learning-a'},roles,tasks:{prepare:async()=>({id:'prepared'})}}
     await act(async()=>root.render(React.createElement(KaogongApplicationView,props as never)))
     const content=document.querySelector('[aria-label="考公学习内容"]')
     const teacher=[...document.querySelectorAll('button')].find(button=>button.textContent?.includes('任课老师'))!
@@ -41,12 +41,12 @@ test('owned teaching prepares only persistent references and never calls browser
   const roles={ensure:async(id:string)=>({phase:'ready',sessionId:'same-'+id,revision:3}),open:async(...args:unknown[])=>{calls.push(['open',...args])}}
   const tasks={prepare:async(input:unknown)=>{calls.push(['ordinary',input])},prepareOwned:async(input:unknown)=>{calls.push(['owned',input]);return {id:'prepared'}}}
   await prepareLearningTask({instanceId:'learning-a',roles,tasks} as never,{kind:'lesson',context:{subject:'行测-资料分析',title:'学习目标',limit:5},lessonEvidence:{id:'lesson-a',title:'课堂',source:'browser',content:'untrusted'}} as never,null)
-  assert.deepEqual(calls,[['open','teacher.data-analysis','same-teacher.data-analysis',3],['owned',{roleId:'teacher.data-analysis',kind:'lesson',payload:{lessonId:'lesson-a'}}]])
+  assert.deepEqual(calls,[['owned',{roleId:'teacher.data-analysis',kind:'lesson',payload:{lessonId:'lesson-a'}}],['open','teacher.data-analysis','same-teacher.data-analysis',3]])
   calls.length=0
   await assert.rejects(()=>prepareLearningTask({instanceId:'learning-a',roles,tasks:{prepare:tasks.prepare}} as never,{kind:'review',context:{},result:{roundId:'round-a'}} as never,null),/接口/)
   assert.deepEqual(calls,[],'missing owned lifecycle fails before creating or opening a Session')
   await prepareLearningTask({instanceId:'learning-a',roles,tasks} as never,{kind:'review',context:{},result:{roundId:'round-a',correctCount:999}} as never,null)
-  assert.deepEqual(calls.at(-1),['owned',{roleId:'counselor',kind:'review',payload:{roundId:'round-a'}}])
+  assert.deepEqual(calls[0],['owned',{roleId:'counselor',kind:'review',payload:{roundId:'round-a'}}])
 })
 
 test('selected role hover stays legible inside the classroom without changing native buttons outside it',async()=>{
@@ -57,12 +57,12 @@ test('selected role hover stays legible inside the classroom without changing na
  const root=createRoot(document.getElementById('root')!)
  try{
   const {KaogongApplicationView}=await import('../src/client.tsx')
-  const props={application:{id:'kaogong',title:'考公学习',kind:'deep',version:'candidate',views:[{id:'page',title:'学习'}]},instance:{id:'hover-study',appId:'kaogong',projectId:null,revision:1},view:{id:'hover-view',instanceId:'hover-study',type:'page'},roles:{ensure:async()=>({phase:'ready',sessionId:'native-advisor',revision:1}),open:async()=>{}},tasks:{prepare:async()=>({})}}
+  const props={profile:{id:'hover-study',kind:'learner',title:'备考',revision:1},view:{id:'hover-view',profileId:'hover-study'},roles:{ensure:async()=>({phase:'ready',sessionId:'native-advisor',revision:1}),open:async()=>{}},tasks:{prepare:async()=>({})}}
   await act(async()=>root.render(React.createElement(KaogongApplicationView,props as never)))
   const advisor=[...document.querySelectorAll('.kg-sdk-classroom button')].find(button=>button.textContent==='班主任')!
   await act(async()=>advisor.click());assert.equal(advisor.getAttribute('aria-pressed'),'true');advisor.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}))
   const nativeHover=document.createElement('style');nativeHover.textContent='button[data-pwb-button]:not(:disabled):hover{background:rgba(38,49,72,.06)}';document.head.append(nativeHover)
-  assert.equal(dom.window.getComputedStyle(advisor).backgroundColor,'rgb(164, 76, 50)');assert.equal(dom.window.getComputedStyle(advisor).color,'rgb(255, 250, 246)')
+  assert.equal(dom.window.getComputedStyle(advisor).backgroundColor,'rgb(47, 98, 72)');assert.equal(dom.window.getComputedStyle(advisor).color,'rgb(255, 255, 255)')
   const outside=document.getElementById('native')!;outside.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}));nativeHover.textContent+=' ';assert.equal(dom.window.getComputedStyle(outside).backgroundColor,'rgba(38, 49, 72, 0.06)')
  }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;for(const [key,descriptor]of previous){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key)}dom.window.close()}
 })
