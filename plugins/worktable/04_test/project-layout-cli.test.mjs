@@ -21,11 +21,14 @@ test('layout CLI preserves populated tabs, renames stacked left panes, and rejec
     assert.equal(run(folder,'set','--top','1','--main','2','--title','Project').status,0)
     const initial=await readProjectLayout(folder),layout=initial.document
     layout.spec.main[1].tabs=[{id:'tab',title:'Keep this',content:{kind:'file',path:'/project/notes.md'}}];layout.spec.main[1].active=0
-    layout.spec.left={id:'left-one',title:'Left',min:100};layout.spec.leftMore=[{id:'left-two',title:'Second',min:100}]
+    layout.spec.left={id:'left-one',title:'Left',min:100,minimized:true};layout.spec.leftMore=[{id:'left-two',title:'Second',min:100}]
+    layout.geometry.leftHs={'left-one':220,'left-two':380}
     assert.equal((await saveProjectLayout(folder,layout,layout.revision)).status,'ok')
     const renamed=run(folder,'rename-pane','left-two','新名称');assert.equal(renamed.status,0,renamed.stderr)
     let current=await readProjectLayout(folder);assert.equal(current.document.spec.leftMore[0].title,'新名称')
     assert.deepEqual(current.document.spec.main[1].tabs,layout.spec.main[1].tabs)
+    assert.equal(current.document.version,3);assert.equal(current.document.spec.left.minimized,true)
+    assert.deepEqual(current.document.geometry.leftHs,{'left-one':220,'left-two':380})
     const bytes=await readFile(join(folder,'.dsh-worktable','layout.json'),'utf8')
     const rejected=run(folder,'set','--main','1');assert.equal(rejected.status,1);assert.match(rejected.value.message,/移除已有内容/)
     assert.equal(await readFile(join(folder,'.dsh-worktable','layout.json'),'utf8'),bytes)

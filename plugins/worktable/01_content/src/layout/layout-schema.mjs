@@ -19,7 +19,7 @@ function pane(value,seen){
     result.tabs=value.tabs.map(tab=>{requireValue(object(tab));text(tab.id);text(tab.title,true);requireValue(!tabs.has(tab.id));tabs.add(tab.id);return {id:tab.id,title:tab.title,content:content(tab.content)}})
   }
   if(value.active!==undefined){requireValue(Number.isSafeInteger(value.active)&&value.active>=0&&(!result.tabs?.length?value.active===0:value.active<result.tabs.length));result.active=value.active}
-  if(value.collapsed!==undefined){requireValue(typeof value.collapsed==='boolean');result.collapsed=value.collapsed}
+  for(const key of ['collapsed','minimized'])if(value[key]!==undefined){requireValue(typeof value[key]==='boolean');result[key]=value[key]}
   return result
 }
 function dimension(value){requireValue(object(value));const result={default:number(value.default),min:number(value.min),max:number(value.max)};requireValue(result.min<=result.max);return result}
@@ -39,15 +39,16 @@ export function validateLayout(value){
   if(source.icon!==undefined)spec.icon=text(source.icon,true)
   const geometry={chatW:number(value.geometry.chatW),topH:number(value.geometry.topH),leftW:number(value.geometry.leftW)}
   const rows={paneWs:spec.main,topWs:spec.top??[],leftWs:spec.left?[spec.left,...(spec.leftMore??[])]:[]}
+  rows.leftHs=rows.leftWs
   for(const [key,panes] of Object.entries(rows)){
-    const widths=value.geometry[key];requireValue(object(widths));const ids=new Set(panes.map(p=>p.id));geometry[key]={}
+    const widths=value.geometry[key]??(key==='leftHs'?{}:undefined);requireValue(object(widths));const ids=new Set(panes.map(p=>p.id));geometry[key]={}
     for(const [id,width] of Object.entries(widths)){requireValue(ids.has(id));Object.defineProperty(geometry[key],id,{value:number(width),enumerable:true,writable:true,configurable:true})}
   }
   return {project,spec,geometry}
 }
 
 export function validateDocument(value){
-  requireValue(object(value)&&value.version===2&&Number.isSafeInteger(value.revision)&&value.revision>0)
+  requireValue(object(value)&&[2,3].includes(value.version)&&Number.isSafeInteger(value.revision)&&value.revision>0)
   text(value.savedAt);requireValue(Number.isFinite(Date.parse(value.savedAt)))
-  return {version:2,revision:value.revision,savedAt:value.savedAt,...validateLayout(value)}
+  return {version:value.version,revision:value.revision,savedAt:value.savedAt,...validateLayout(value)}
 }

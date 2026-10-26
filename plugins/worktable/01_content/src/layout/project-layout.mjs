@@ -1,5 +1,6 @@
-import {mkdir,realpath,open,rename,unlink,lstat,stat,readdir} from 'node:fs/promises'
+import {mkdir,realpath,open,rename,unlink,lstat,stat,readdir,copyFile,readFile} from 'node:fs/promises'
 import {isAbsolute,join} from 'node:path'
+import {constants} from 'node:fs'
 import {randomUUID} from 'node:crypto'
 import {validateLayout,validateDocument} from './layout-schema.mjs'
 
@@ -29,7 +30,7 @@ async function readJson(file){
 async function loadMain(folder){
   if(!await layoutDirectory(folder))return null
   let value;try{value=await readJson(join(folder,'.dsh-worktable','layout.json'))}catch(error){if(error.code==='ENOENT')return null;throw error}
-  if(value?.version!==2)throw new LayoutError('unsupported','布局文件版本不兼容，原文件保留。')
+  if(![2,3].includes(value?.version))throw new LayoutError('unsupported','布局文件版本不兼容，原文件保留。')
   try{return validateDocument(value)}catch{throw new LayoutError('invalid','布局文件结构无效，原文件保留。')}
 }
 async function locked(folder,run){
@@ -87,9 +88,20 @@ export async function saveProjectLayout(folder,layout,expectedRevision){
       if((current?.revision??null)!==expectedRevision)throw new LayoutError('conflict','布局已经被其他写入方更新，请重新加载后重试。')
       if(current&&current.project.id!==layout.project.id)throw new LayoutError('conflict','项目目录已属于另一个项目，不能覆盖其布局。')
       if(current?.revision===Number.MAX_SAFE_INTEGER)throw new LayoutError('invalid','布局修订已达到安全上限，原文件保留。')
-      const document={version:2,revision:(current?.revision??0)+1,savedAt:new Date().toISOString(),...layout}
+      const document={version:3,revision:(current?.revision??0)+1,savedAt:new Date().toISOString(),...layout}
       const bytes=JSON.stringify(document,null,2)
       if(Buffer.byteLength(bytes)>MAX_BYTES)throw new LayoutError('invalid','布局内容过大。')
+      if(current?.version===2){
+        // Keep the exact pre-upgrade bytes; fail closed if the backup cannot be made.
+        const backup=join(dir,'layout-backup-v2-revision-'+current.revision+'.json')
+        try{await copyFile(join(dir,'layout.json'),backup,constants.COPYFILE_EXCL)}catch(error){
+          if(error.code!=='EEXIST')throw error
+          const info=await lstat(backup)
+          if(!info.isFile()||info.isSymbolicLink()||info.size>MAX_BYTES)throw new LayoutError('error','布局升级备份不是有效普通文件，原文件保留。')
+          const [source,prior]=await Promise.all([readFile(join(dir,'layout.json')),readFile(backup)])
+          if(!source.equals(prior))throw new LayoutError('error','布局升级备份与原文件不一致，原文件保留。')
+        }
+      }
       const temp=join(dir,'layout.tmp-'+randomUUID());let handle
       try{handle=await open(temp,'wx');await handle.writeFile(bytes,'utf8');await handle.sync();await handle.close();handle=null;await rename(temp,join(dir,'layout.json'))}
       finally{await handle?.close();await unlink(temp).catch(error=>{if(error.code!=='ENOENT')throw error})}
