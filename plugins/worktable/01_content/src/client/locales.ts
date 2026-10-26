@@ -6,6 +6,8 @@
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
+  'pane.termStart': '启动终端',
+  'pane.termRestored': '已恢复终端标签。启动后将创建新的终端进程。',
   'layout.file': '项目布局',
   'layout.saving': '正在保存',
   'layout.saved': '布局已保存',
@@ -256,6 +258,8 @@ export type WorktableKey = keyof typeof zh
 
 /** English dictionary, checked complete against the zh key set. */
 export const en = {
+  'pane.termStart': 'Start terminal',
+  'pane.termRestored': 'Terminal tab restored. Starting creates a new terminal process.',
   'layout.file': 'Project layout',
   'layout.saving': 'Saving layout',
   'layout.saved': 'Layout saved',

@@ -1,4 +1,6 @@
 import {CompositionEditor} from './compositionEditor'
+import { leftPanesOf } from './layoutPanes'
+import { TerminalStart } from './TerminalStart'
 import { captureAnnotationTarget, resolveAnnotationTarget, type AnnotationTarget } from './annotationTarget'
 import type { AnnotationInsertion } from './hostInput'
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
@@ -40,7 +42,7 @@ export type SplitContent =
   | { kind: 'file'; path: string }
 
 /** 一个内容标签页 */
-export type PaneTab = { id: string; title: string; content: SplitContent }
+export type PaneTab = { id: string; title: string; content: SplitContent; requiresTerminalStart?: boolean }
 
 export type SplitPane = {
   id: string
@@ -96,12 +98,6 @@ export function cachedLayoutGeometry(spec: LayoutSpec): LayoutGeometry {
 type Geom = { left: number; top: number; right: number; bottom: number }
 
 type PaneRow = 'left' | 'top' | 'main'
-
-/** 左列窗口列表：left 为第一窗，leftMore 为其余（上下叠放，均分高度） */
-function leftPanesOf(spec: any): SplitPane[] {
-  if (!spec || !spec.left) return []
-  return [spec.left, ...(Array.isArray(spec.leftMore) ? spec.leftMore : [])]
-}
 
 /** 把左列窗口列表写回 spec（保持 left / leftMore 两个字段） */
 function withLeftPanes(spec: any, panes: SplitPane[]): any {
@@ -873,11 +869,9 @@ export const splitStore: SplitState = {
     this.spec = { ...spec, title: spec.id === '__wt_unassigned_applications__' ? '应用视图' : spec.title, chatSide: spec.chatSide === 'left' ? 'left' : 'right' }
     // 向后兼容归一化：单内容声明 → 一个标签页
     const normalize = (p: SplitPane): SplitPane => {
-      if (p.tabs && p.tabs.length > 0) return p
-      if (p.content) {
-        return { ...p, content: null, tabs: [{ id: 't1', title: tabTitleOf(p.content), content: p.content }], active: 0 }
-      }
-      return { ...p, content: null, tabs: [], active: 0 }
+      const normalized:SplitPane=p.tabs?.length?p:p.content?{...p,content:null,tabs:[{id:'t1',title:tabTitleOf(p.content),content:p.content}],active:0}:{...p,content:null,tabs:[],active:0}
+      if(!spec.preferFileGeometry)return normalized
+      return {...normalized,tabs:normalized.tabs?.map(tab=>tab.content.kind==='builtin' && tab.content.type==='terminal'?{...tab,requiresTerminalStart:true}:tab)}
     }
     if (spec.top) this.spec.top = spec.top.map(normalize)
     if (spec.left) this.spec.left = normalize(spec.left)
@@ -2992,7 +2986,7 @@ function PaneTabBody(props: { tab: PaneTab; row: PaneRow; index: number; layoutI
   if (content.type === 'explorer') return <ExplorerPane row={props.row} index={props.index} />
   if (content.type === 'scm') return <GitPane />
   if (content.type === 'tasks') return <JobsPane />
-  if (content.type === 'terminal') return <TerminalPane />
+  if (content.type === 'terminal') return <TerminalStart requiresStart={props.tab.requiresTerminalStart===true} label={T('pane.termStart')} description={T('pane.termRestored')}><TerminalPane /></TerminalStart>
   if (content.type === 'custom') return <CustomPane paneTitle={props.paneTitle ?? ''} row={props.row} index={props.index} />
   return (
     <div className="dsh-wt_paneWip">

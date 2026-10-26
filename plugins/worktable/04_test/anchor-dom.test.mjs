@@ -379,4 +379,22 @@ function fresh() {
   if(closed!==spec.id)fail('J.close','close did not flush the original project')
   ok('J. file geometry by pane identity, resize persistence and left stack tab preservation')
 }
+// —— K. Restored terminal declarations are inert until explicit startup ——
+{
+  const {sandbox,splitStore,allEls}=fresh()
+  const root=new FakeEl('DIV','wSkVaW_root',{phase:'active'}).setRect({left:200,top:0,right:1500,bottom:900})
+  const header=new FakeEl('HEADER').setRect({left:200,top:0,right:1500,bottom:40})
+  const body=new FakeEl('MAIN').setRect({left:200,top:40,right:1500,bottom:900})
+  root.appendChild(header);root.appendChild(body);allEls.push(root);sandbox.document.body.appendChild(root)
+  const spec=makeSpec('restored-terminal');spec.preferFileGeometry=true
+  spec.main[0].content={kind:'builtin',type:'terminal'}
+  if(!splitStore.open(spec))fail('K.open','terminal layout did not open')
+  if(splitStore.spec.main[0].tabs[0].requiresTerminalStart!==true)fail('K.restored','restored terminal was permitted to auto-start')
+  splitStore.closeTab('main',0,splitStore.spec.main[0].tabs[0].id)
+  splitStore.openTab('main',0,{kind:'builtin',type:'terminal'})
+  const pane=splitStore.spec.main[0]
+  if(pane.tabs[pane.active].requiresTerminalStart===true)fail('K.manual','explicit new terminal selection lost normal launch behavior')
+  splitStore.close()
+  ok('K. restored terminals require start; newly selected terminals retain launch intent')
+}
 console.log('all anchor-dom tests passed: ' + pass + '/' + pass)

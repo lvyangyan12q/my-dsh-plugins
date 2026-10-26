@@ -86,6 +86,8 @@ export class ProjectLayoutClient {
 export function layoutSnapshot(spec, geometry, name=spec.title) {
   const clean=copy(spec)
   delete clean.preferFileGeometry; delete clean.fileGeometry
+  const panes=[...(clean.left?[clean.left,...(clean.leftMore ?? [])]:[]),...(clean.top ?? []),...(clean.main ?? [])]
+  for(const pane of panes)for(const tab of pane.tabs ?? [])delete tab.requiresTerminalStart
   return {project:{id:spec.id,name:name || spec.title || spec.id},spec:clean,geometry:copy(geometry)}
 }
 
