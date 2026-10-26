@@ -49,6 +49,7 @@
   },
   "scripts": {
     "build": "node build.mjs",
+    "test:layout": "node --test ../04_test/project-layout.test.mjs ../04_test/project-layout-http.test.mjs ../04_test/project-layout-client.test.mjs ../04_test/project-layout-cli.test.mjs",
     "check": "node --check lib/index.js && node --check lib/client.js",
     "pack": "node release-prep.mjs",
     "test:gate": "node client-factory-gate.test.mjs",
