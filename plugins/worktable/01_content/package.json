@@ -49,7 +49,7 @@
   },
   "scripts": {
     "build": "node build.mjs",
-    "test:layout": "node --test ../04_test/project-layout.test.mjs ../04_test/project-layout-http.test.mjs ../04_test/project-layout-client.test.mjs ../04_test/project-layout-cli.test.mjs ../04_test/project-layout-actions.test.mjs ../04_test/terminal-start.test.mjs ../04_test/annotation-target.test.mjs",
+    "test:layout": "node --test ../04_test/custom-task.test.mjs ../04_test/project-layout.test.mjs ../04_test/project-layout-http.test.mjs ../04_test/project-layout-client.test.mjs ../04_test/project-layout-cli.test.mjs ../04_test/project-layout-actions.test.mjs ../04_test/terminal-start.test.mjs ../04_test/annotation-target.test.mjs",
     "check": "node --check lib/index.js && node --check lib/client.js",
     "pack": "node release-prep.mjs",
     "test:gate": "node client-factory-gate.test.mjs",
