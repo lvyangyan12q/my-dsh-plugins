@@ -15,7 +15,7 @@ export function openHostSession(ctx: any, sessions: any, id: string): any {
 }
 
 /** Own a temporary reference on 0.2; borrowing a cold binding is no longer sufficient. */
-export async function sendHostSession(bridge: any, id: string, text: string): Promise<void> {
+export async function sendHostSession(bridge: any, id: string, text: string | (() => string)): Promise<void> {
   const sessions = bridge?.sessions
   const check = (result: any) => {
     if (result?.kind === 'error' || result?.ok === false) {
@@ -26,15 +26,15 @@ export async function sendHostSession(bridge: any, id: string, text: string): Pr
     // Select one available transport BEFORE sending. A rejection/timeout must never retry
     // through a second transport: the first request may already have reached the host.
     if (session && typeof bridge?.conversation?.sendSession === 'function') {
-      check(await bridge.conversation.sendSession(session, text, [], 'queue'))
+      check(await bridge.conversation.sendSession(session, typeof text === 'function' ? text() : text, [], 'queue'))
       return
     }
     if (session && typeof session.prompt === 'function') {
-      check(await session.prompt([{ type: 'text', text }], 'queue'))
+      check(await session.prompt([{ type: 'text', text: typeof text === 'function' ? text() : text }], 'queue'))
       return
     }
     const conv = sessions?.scope?.(id)?.get?.('conversation')
-    if (typeof conv?.send === 'function') { check(await conv.send(text)); return }
+    if (typeof conv?.send === 'function') { check(await conv.send(typeof text === 'function' ? text() : text)); return }
     throw new Error('no send path: session face unavailable')
   }
   if (typeof sessions?.using === 'function') {
