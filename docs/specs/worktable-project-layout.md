@@ -2,15 +2,15 @@
 id: worktable-project-layout-spec
 title: Worktable 项目布局落盘与恢复调整方案
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: null
 testing_seam_confirmation: confirmed
 created: 2026-10-26
 updated: 2026-10-26
-delivery_stage: validated-awaiting-push
-publication_status: pending-increment-push
+delivery_stage: ready-for-review
+publication_status: pushed
 pull_request: https://github.com/lvyangyan12q/my-dsh-plugins/pull/4
-increment_status: validated
+increment_status: complete
 ---
 
 # Worktable 项目布局落盘与恢复调整方案
@@ -174,13 +174,13 @@ increment_status: validated
 ### 8. 窗口收起、自动补位与拖拽尺寸（已实现）
 
 - 复用现有分栏引擎，覆盖内容窗的左列、顶行和主行；原生对话继续由宿主管理并保留最低可用空间。本轮不引入独立浮窗、任意重叠或自由摆放模式。
-- 最小交互提案是“收起按钮 → 标题恢复条 → 点击展开”。整行/整列全部收起时，该区域仅保留必要恢复入口，剩余区域联动扩展；全部内容窗收起时仍能找回每个窗口。恢复条的具体摆放在 PR 设计审阅时确认，不视为已经完成的界面。
+- 已实现确认的最小交互：“收起按钮 → 工作区标题栏恢复按钮 → 点击展开”。恢复按钮可滚动，整行/整列全部收起时其余区域联动扩展；全部内容窗收起时原生聊天填满可用区域，仍能找回每个窗口。
 - 收起窗口不参与展开窗面积分配，但仍参与稳定身份、编号和任务归属枚举；不能通过过滤显示窗口重新编号。左列两个窗收起其中一个后，主行窗口仍保持原编号。
 - 收起不销毁标签或已经挂载的应用/终端，不隐式 Stop、重发任务或取消产物绑定；隐藏内容失去焦点及交互，展开不重复启动运行资源。
 - 拖动实际分隔条调整宽高；左右邻窗及上下邻区联动，遵守最小尺寸和当前视口。左列多个内容窗之间新增可拖动的高度分隔条；不把左列宽度数组当作高度使用。
 - 保存最近手动设置的尺寸/比例及逐窗收起状态。自动补位是派生几何，不能覆盖手动基准；展开时按手动基准在可用空间内重新分配，不能承诺在视口变小后仍恢复不可能容纳的绝对像素。
 - 原有 `collapsed` 表示隐藏标题栏，不能直接改解释成收起整个窗口。新增独立的 `minimized` 状态，旧文件缺省为展开；保留已有隐藏标题栏行为和恢复路径。
-- 建议新增写入格式版本 3，明确表达逐窗收起、左列高度及展开几何基准。版本 1/2 读取后兼容转换；升级采用已有互斥和原子写入，保留迁移前来源。rc.3.4 的版本 2 读取器须继续拒绝未知新版且不覆盖文件，禁止靠忽略未知字段丢失新状态。
+- 新增写入格式版本 3，明确表达逐窗收起、左列高度及展开几何基准。版本 1/2 读取后兼容转换；升级采用已有互斥和原子写入，保留迁移前来源。rc.3.4 的版本 2 读取器须继续拒绝未知新版且不覆盖文件，禁止靠忽略未知字段丢失新状态。
 - 这些扩展不修改已冻结的 rc.3.4 双资产，后续实现使用新候选版本重新构建、安装和验收。
 
 ### 9. 自定义窗口身份与创建前校验（已实现）
@@ -248,8 +248,8 @@ increment_status: validated
 
 用户已确认一项目一份固定布局文件及主验收入口，随后授权实施及推送；第一阶段已完成实现和最终包的真实 Windows Web 验收。后续新增收起补位、拖拽和会话创建前校验，本次已完成新增生产代码、两轴独立复查和rc.3.6最终包真实安装验收。详见[实施工单](worktable-project-layout/README.md)、[第一阶段验收](worktable-project-layout/04-acceptance.md)及[两轴审查](worktable-project-layout/review.md)。正式 profile 未安装或重启，未发布远端 tag/Release。
 
-新增交互与前置校验已通过各自验收，07等待远程推送及PR转可审阅后关闭父规格。已有应用、角色、任务与宿主升级的其他约束继续有效。
+新增交互与前置校验已通过各自验收，分支已推送且PR已转可审阅；07及父规格现已关闭。已有应用、角色、任务与宿主升级的其他约束继续有效。
 
-用户已直接确认公开目标及源码、测试、文档和冻结包的推送范围，分支已推送至当前 origin 的公开仓库 `lvyangyan12q/my-dsh-plugins`。[草稿 PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已创建，目标分支为 main，来源为 codex/worktable-project-layout。第一阶段远程交付已完成，新增05、06、08—10已完成，07远程交付收口中；未合并到main或安装到正式profile。
+用户已直接确认公开目标及源码、测试、文档和冻结包的推送范围，分支已推送至当前 origin 的公开仓库 `lvyangyan12q/my-dsh-plugins`。[PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已转可审阅，目标分支为 main，来源为 codex/worktable-project-layout。第一阶段远程交付已完成，全部实施工单已完成，增量双资产远端下载哈希核验一致；未合并到main或安装到正式profile。
 
 本次增量验收：[rc.3.6宿主回执](worktable-project-layout/evidence/increment-host-acceptance.json)、[打包回执](worktable-project-layout/evidence/increment-pack-validation.json)、[Standards](worktable-project-layout/review-increment-standards.md)、[Spec](worktable-project-layout/review-increment-spec.md)和[集中修复](worktable-project-layout/review-increment-fixes.md)。包括最终宿主发现的CSSOM规范化误退出修复；rc.3.5未覆盖且未作为交付包。

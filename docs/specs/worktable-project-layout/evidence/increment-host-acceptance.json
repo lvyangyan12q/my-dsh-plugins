@@ -171,7 +171,9 @@
   },
   "cleanup": {
     "ownedTestHostsStopped": true,
-    "formalHostRestarted": false
+    "formalHostRestarted": false,
+    "implementerWorktreesRemoved": 6,
+    "rootDependenciesPreserved": true
   },
   "limits": [
     "Windows Web exact rc.3 only; Desktop/macOS not verified",

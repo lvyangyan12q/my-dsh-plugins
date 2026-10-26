@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-26",
+  "repository": "https://github.com/lvyangyan12q/my-dsh-plugins",
+  "branch": "codex/worktable-project-layout",
+  "assetCommit": "ed623b92997ff87f97b0a6878180b202ee37160f",
+  "version": "0.10.0-rc.3.6",
+  "verification": "downloaded both files from raw.githubusercontent.com at the exact asset commit",
+  "expectedSha256": "ed01dc63394b1ebc2e8ba54fdf96b4673ab2683a48072ec15562594130e0a6da",
+  "fixedNameSha256": "ed01dc63394b1ebc2e8ba54fdf96b4673ab2683a48072ec15562594130e0a6da",
+  "versionedNameSha256": "ed01dc63394b1ebc2e8ba54fdf96b4673ab2683a48072ec15562594130e0a6da",
+  "pullRequest": {
+    "url": "https://github.com/lvyangyan12q/my-dsh-plugins/pull/4",
+    "title": "Worktable：项目布局落盘、窗口收起与安全提交",
+    "draft": false,
+    "state": "open",
+    "base": "main",
+    "browserConfirmed": true,
+    "conflicts": false
+  },
+  "mainMerged": false,
+  "tagOrReleaseCreated": false,
+  "formalProfileInstalled": false
+}

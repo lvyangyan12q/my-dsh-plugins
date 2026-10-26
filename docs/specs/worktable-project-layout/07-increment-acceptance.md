@@ -3,7 +3,7 @@ id: worktable-layout-increment-acceptance
 parent: worktable-project-layout-spec
 title: 新增范围最终包验收
 labels: [ready-for-agent]
-status: open
+status: closed
 assignee: root
 blocked_by: [worktable-layout-custom-races, worktable-layout-region-minimize]
 ---
@@ -14,7 +14,7 @@ blocked_by: [worktable-layout-custom-races, worktable-layout-region-minimize]
 
 ## Resolution
 
-本地验收完成，等待推送及PR转可审阅后关闭。
+本地与远端交付完成。源码、测试、文档和rc.3.6双资产已推送至codex/worktable-project-layout；[PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已更新最终标题/正文并转为可审阅。远端按资产提交ed623b9下载两份tgz，SHA均与本地验收SHA一致。父规格与全部工单关闭，main未合并。
 
 rc.3.6来源9fdc30c，双资产SHA为ed01dc63394b1ebc2e8ba54fdf96b4673ab2683a48072ec15562594130e0a6da。402项源码回归400通过/0失败/2可选跳过，原生rc.3契约9/9，实际归档9文件、干净安装导入与安装逐文件字节比对通过。
 
@@ -23,3 +23,5 @@ rc.3.6来源9fdc30c，双资产SHA为ed01dc63394b1ebc2e8ba54fdf96b4673ab2683a480
 Standards P3和Spec P2均集中修复、独立复查0剩余。最终包rc.3.5另发现CSSOM小数边距误判接管，保留冻结包，使用新rc.3.6修复重验；自身调整保持打开、真实外部17px改写仍让位。
 
 证据：[宿主](evidence/increment-host-acceptance.json)、[打包](evidence/increment-pack-validation.json)、[规范复查](review-increment-standards.md)、[规格复查](review-increment-spec.md)、[集中修复](review-increment-fixes.md)。正式profile仍为rc.3.3，未安装/重启；未合并main，未创建远端tag/Release。
+
+收尾：6个本任务实施工作树已清理，根依赖与验收日志保留；隔离宿主均已停止。远端回执见[increment-remote-verification.json](evidence/increment-remote-verification.json)。

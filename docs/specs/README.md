@@ -2,7 +2,7 @@
 
 ## 2026-10-26 项目布局落盘方案
 
-[Worktable 项目布局落盘与恢复](worktable-project-layout.md)：一项目一份 `.dsh-worktable/layout.json`，现已完成收起补位、宽高拖拽、版本3保存与自定义安全提交。rc.3.6通过隔离Windows Web最终安装验收，两轴剩余发现为0；[PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)交付收口中。第一阶段证据与[本次增量回执](worktable-project-layout/evidence/increment-host-acceptance.json)分别保留。
+[Worktable 项目布局落盘与恢复](worktable-project-layout.md)：一项目一份 `.dsh-worktable/layout.json`，现已完成收起补位、宽高拖拽、版本3保存与自定义安全提交。rc.3.6通过隔离Windows Web最终安装验收，两轴剩余发现为0；[PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已推送并可审阅，父规格与工单关闭。第一阶段证据与[本次增量回执](worktable-project-layout/evidence/increment-host-acceptance.json)分别保留。
 
 ## 2026-10-24 升级规格已回写
 
