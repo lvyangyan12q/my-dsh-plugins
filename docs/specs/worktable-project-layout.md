@@ -10,7 +10,7 @@ updated: 2026-10-26
 delivery_stage: draft-pr
 publication_status: pushed
 pull_request: https://github.com/lvyangyan12q/my-dsh-plugins/pull/4
-increment_status: specified-not-implemented
+increment_status: implementing
 ---
 
 # Worktable 项目布局落盘与恢复调整方案

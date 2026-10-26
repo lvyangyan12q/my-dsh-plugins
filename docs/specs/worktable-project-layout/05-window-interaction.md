@@ -1,20 +1,19 @@
 ---
 id: worktable-layout-window-interaction
 parent: worktable-project-layout-spec
-title: 窗口收起补位与完整尺寸拖拽
+title: 补齐窗口宽高拖拽与保存
 labels: [ready-for-agent]
 status: open
 assignee: null
 blocked_by: []
-design_status: proposed-for-pr-review
 ---
 
-实现父规格新增窗口交互：单窗/整行/整列收起后释放面积，展开窗自动补位；分隔条调整宽高并支持左列上下高度；稳定身份、内容与运行上下文保留。最小标题恢复条交互在草稿 PR 中审阅，实施前遵守仓库 UI 设计确认规则。
+通过实际分隔条完成邻窗联动宽高拖拽，尤其是 leftMore 上下高度。保留最小尺寸和原生聊天空间，关闭重开仍恢复尺寸。
 
-新增独立收起状态，不改变原 collapsed 的隐藏标题栏含义；手动几何与自动补位分开，保存左列高度和展开基准。采用明确的新文件版本与兼容迁移，不能覆盖 rc.3.4 冻结资产。
+版本3契约：pane.minimized 为可选布尔值；geometry.leftHs 是以 paneId 为键的有限非负高度。geometry 中现有数值保存最近手动展开基准，自动补位只作派生渲染，不能回写覆盖基准。leftWs 保持宽度含义。新写入 version:3，兼容读取版本1/2并在首次升级写入前保留原字节备份。未知版本拒绝且原文件不变。共享校验、客户端快照和 CLI 同步支持。
 
-沿用已确认真实 Worktable 交互及存储接缝，测试收放、补位、全部收起、尺寸约束、运行上下文、版本往返；不通过源字符串断言模拟行为。
+在真实 bundle 分隔交互及实际存储/CLI公开接缝逐条红绿验证，更新 PRD。
 
 ## Resolution
 
-仅规格与设计提案已整理；尚未实现或验收。
+待实施。

@@ -1,17 +1,17 @@
 ---
 id: worktable-layout-increment-acceptance
 parent: worktable-project-layout-spec
-title: 新增窗口交互与提交保护最终验收
+title: 新增范围最终包验收
 labels: [ready-for-agent]
 status: open
 assignee: null
-blocked_by: [worktable-layout-window-interaction, worktable-layout-custom-validation]
+blocked_by: [worktable-layout-custom-races, worktable-layout-region-minimize]
 ---
 
-使用新的最终候选包，在隔离官方宿主验证父规格新增用例，包括收起补位、分隔条拖拽、旧/新格式恢复、leftMore 与收起窗的稳定任务归属、无效提交零创建/零发送、重复点击及真正的提交中变化。
+使用新版本最终包，在隔离官方宿主完成拖拽、单窗/区域收起、重开、清测试缓存后目录恢复、稳定归属和提交保护。实际安装并逐文件核对9文件、双资产哈希；两轴独立审查，修复后推送PR4并转为可审阅。
 
-保留 rc.3.4 的已有证据和未验范围；不得把第一阶段的380项通过或创建草稿PR当作本票完成。正式 profile 安装与重启另行处理，不能仅凭改源码宣称 GUI 已生效。
+保留rc.3.4第一阶段证据，不覆盖冻结资产、不安装重启正式profile。仅全部要求证据完成才关闭父规格。
 
 ## Resolution
 
-待05和06实现后验收；本次仅建立依赖和验收要求。
+待实施。

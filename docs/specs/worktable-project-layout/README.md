@@ -8,11 +8,16 @@
 | [02](02-client.md) | 无，共用下方接口约定 | 布局快照、保存队列、状态、恢复入口、分栏兼容 |
 | [03](03-tooling.md) | 01 | 布局命令行工具与使用文档 |
 | [04](04-acceptance.md) | 01、02、03 | 最终产物、真实宿主验收、两轴审查与推送 |
-| [05](05-window-interaction.md) | 无；最小 UI 在 PR 中审阅 | 窗口收起补位、宽高拖拽及新格式保存 |
-| [06](06-custom-window-validation.md) | 无 | 自定义提交前校验、稳定归属和可读错误 |
-| [07](07-increment-acceptance.md) | 05、06 | 新增范围的最终包与真实宿主验收 |
+| [06](06-custom-window-validation.md) | 无 | 自定义提交前校验 |
+| [08](08-custom-submit-races.md) | 06 | 重复提交及途中变化保护 |
+| [05](05-window-interaction.md) | 无 | 完整宽高拖拽与版本3保存 |
+| [09](09-single-minimize.md) | 05 | 单窗收起、补位及展开恢复 |
+| [10](10-region-minimize.md) | 09 | 整行、整列和全部收起 |
+| [07](07-increment-acceptance.md) | 08、10 | 最终包、真实宿主、审查与PR交付 |
 
-01—04已完成第一阶段实现、验收与远程交付。[草稿PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)已创建供审阅。05—07是本次规格增量，尚未实现；父规格保持open，不因第一阶段代码或证据存在而提前关闭新增要求。
+01—04已完成，增量沿用[草稿PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)。用户调用 implement-spec 确认以上六张纵向工单及最小UI，当前并行前沿为06、05。增量审查基线固定为 `0ef4597ada997131da4d64a66590e5efb14e1cc4`。父规格保持open直到新增验收完成。
+
+版本3扩展契约见[05](05-window-interaction.md)：独立 pane.minimized、geometry.leftHs 与手动展开基准；现有 collapsed 和 leftWs 含义不变。
 
 ## 并行实施接口约定
 
