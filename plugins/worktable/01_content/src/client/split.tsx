@@ -1124,6 +1124,7 @@ export const splitStore: SplitState = {
     this.chatW = nativeChatWidth(spec, colW, w)
     this.applyMargin()
     this.persist()
+    this.onSpecMutated?.(this.spec)
     this.notify()
   },
 
@@ -1137,6 +1138,7 @@ export const splitStore: SplitState = {
     this.topH = clamp(Math.round(h), lo, hi)
     this.applyMargin()
     this.persist()
+    this.onSpecMutated?.(this.spec)
     this.notify()
   },
 
@@ -1150,6 +1152,7 @@ export const splitStore: SplitState = {
     this.leftW = clamp(Math.round(w), lo, hi)
     this.applyMargin()
     this.persist()
+    this.onSpecMutated?.(this.spec)
     this.notify()
   },
 
@@ -1430,6 +1433,7 @@ export const splitStore: SplitState = {
     this.onSpecMutated?.(this.spec)
     this.applyMargin()
     this.persist()
+    this.onSpecMutated?.(this.spec)
     this.notify()
   },
 
