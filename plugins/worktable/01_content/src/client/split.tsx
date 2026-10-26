@@ -205,6 +205,31 @@ function leftColumnWidth(spec: LayoutSpec, width: number, chatW: number, wanted:
   return clamp(wanted,lo,Math.max(lo,Math.min(spec.leftWidth?.max??Infinity,width-chatW-mainMin)))
 }
 
+/** One projection drives both pane placement and the native host margins. */
+function workspaceGeometry(spec:LayoutSpec,g:Geom,state:{chatW:number;topH:number;leftW:number}) {
+  const colW=Math.max(0,g.right-g.left),rowH=Math.max(0,g.bottom-g.top)
+  const hasLeft=leftPanesOf(spec).some(p=>!p.minimized),hasTop=!!spec.top?.some(p=>!p.minimized),hasMain=spec.main.some(p=>!p.minimized)
+  const chatFull=spec.chatFullHeight===true,chatLeft=!hasLeft&&spec.chatSide==='left'
+  const manualChatW=nativeChatWidth(spec,colW,state.chatW)
+  const leftW=leftColumnWidth(spec,colW,manualChatW,state.leftW)
+  const rightColW=Math.max(0,colW-leftW)
+  // Without main content the native row takes its released width. A full-height
+  // native column instead leaves the remaining top content the complete height.
+  const chatW=!hasMain&&(!hasTop||!chatFull)?rightColW:manualChatW
+  const topH=!hasTop?0:!hasMain&&chatFull?Math.max(0,rowH-BAR_H):clamp(state.topH,spec.topHeight?.min??80,Math.max(spec.topHeight?.min??80,rowH-BAR_H-80))
+  const contentW=Math.max(0,rightColW-chatW)
+  const contentX=hasLeft?g.left+leftW:chatLeft?g.left+chatW:g.left
+  const topRowX=hasLeft?g.left+leftW:chatFull?contentX:g.left
+  const topRowW=chatFull?contentW:rightColW
+  return {colW,rowH,hasLeft,hasTop,hasMain,chatFull,chatLeft,chatW,topH,leftW,contentW,contentX,topRowX,topRowW,narrow:colW>0&&(nativeSingleSurface(spec,colW)||rowH<BAR_H+(hasTop&&hasMain?160:80))}
+}
+
+function narrowSelection(spec:LayoutSpec,selected:string|null|undefined):string|null {
+  if(selected===null)return null
+  const expanded=layoutPanes(spec).filter(item=>!item.pane.minimized)
+  return expanded.find(item=>item.pane.id===selected)?.pane.id??expanded[0]?.pane.id??null
+}
+
 /** 内置内容窗图标 */
 const BUILTIN_ICONS: Record<BuiltinType, string> = {
   browser: '🌐',
@@ -925,9 +950,9 @@ export const splitStore: SplitState = {
     this.savedNativeVisibility = viewArea.style.visibility
     this.savedNativeInert = viewArea.inert === true
     this.refreshGeom()
-    // Reconcile old widths against both the native control minimum and module space.
+    // Sanitize the native minimum; viewport constraints remain a derived projection.
     if (this.geom) {
-      this.chatW = nativeChatWidth(spec, this.geom.right - this.geom.left, this.chatW)
+      this.chatW = Math.max(NATIVE_CHAT_MIN,spec.chatWidth.min,this.chatW)
     }
     // 均衡默认：无存档尺寸时按当前可用空间比例分配，
     // 不再出现“其余窗全部贴 min、最后一个吃掉全部余量”的悬殊观感。
@@ -1081,6 +1106,8 @@ export const splitStore: SplitState = {
   },
 
   setNarrowView(paneId) {
+    const target=paneId&&layoutPanes(this.spec).find(item=>item.pane.id===paneId)
+    if(target?.pane.minimized)this.toggleMinimized(target.row,target.index)
     this.narrowPaneId = paneId
     this.applyMargin()
     this.notify()
@@ -1091,9 +1118,8 @@ export const splitStore: SplitState = {
     const g = this.geom
     const spec = this.spec
     if (!viewArea || !g || !spec) return
-    const colW = g.right - g.left
-    const rowH = g.bottom - g.top
-    if (nativeSingleSurface(spec, colW)) {
+    const {colW,chatW,topH,chatFull,chatLeft,narrow}=workspaceGeometry(spec,g,this)
+    if (narrow) {
       this.lastMarginLeft = ''
       this.lastMarginRight = ''
       this.lastMarginTop = NARROW_BAR_H + 'px'
@@ -1101,7 +1127,7 @@ export const splitStore: SplitState = {
       viewArea.style.marginRight = ''
       viewArea.style.marginTop = this.lastMarginTop
       this.root?.style.setProperty('--dsh-chat-user-width', Math.round(colW) + 'px')
-      if (this.narrowPaneId !== null) {
+      if (narrowSelection(spec,this.narrowPaneId) !== null) {
         if (!this.nativeHidden) {
           const active = document.activeElement
           this.savedNativeFocus = active instanceof HTMLElement && viewArea.contains(active) ? active : null
@@ -1121,22 +1147,9 @@ export const splitStore: SplitState = {
       return
     }
     this.restoreNativeView()
-    const hasLeft = leftPanesOf(spec).some(p=>!p.minimized)
-    const hasTop = !!spec.top?.some(p=>!p.minimized)
-    const chatW = nativeChatWidth(spec, colW, this.chatW)
-    // 会话内容宽 clamp(680px, …, 920px) 不随挤出的聊天列收缩 → 显式钉到挤出的列宽
-    // （close/重锚定时原样恢复；0.1.1 上该 CSS 变量闲置，设置无害）
-    if (this.root && this.root.isConnected) {
-      this.root.style.setProperty('--dsh-chat-user-width', Math.round(chatW) + 'px')
-    }
-    const topH = hasTop
-      ? clamp(this.topH, spec.topHeight?.min ?? 80, Math.max(spec.topHeight?.min ?? 80, rowH - BAR_H - 80))
-      : 0
-    const leftW = leftColumnWidth(spec,colW,chatW,this.leftW)
-    const chatFull = spec.chatFullHeight === true
+    if (this.root?.isConnected)this.root.style.setProperty('--dsh-chat-user-width',Math.round(chatW)+'px')
     const gap = Math.max(0, colW - chatW) + 'px'
-    const mt = (BAR_H + (hasTop && !chatFull ? topH : 0)) + 'px'
-    const chatLeft = !hasLeft && spec.chatSide === 'left'
+    const mt = (BAR_H + (!chatFull ? topH : 0)) + 'px'
     // 聊天列必须靠外边距真正把原生区压到右侧 chatW：只设 --dsh-chat-user-width 时，
     // 该变量在部分宿主版本上不生效，原生对话会铺满右侧并被窗格盖住。
     this.lastMarginLeft = chatLeft ? '' : gap
@@ -1552,9 +1565,10 @@ function makeDividerHandler(kind: 'left' | 'chat' | 'top' | 'pane' | 'topPane' |
     const chatW=nativeChatWidth(spec,colW,splitStore.chatW)
     const total=kind==='pane'?colW-chatW-leftColumnWidth(spec,colW,chatW,splitStore.leftW):kind==='topPane'?colW-leftColumnWidth(spec,colW,chatW,splitStore.leftW)-(spec.chatFullHeight?chatW:0):g.bottom-g.top-BAR_H
     const extents=kind==='pane'?expandedExtents(spec.main,splitStore.paneWs,total,GAP):kind==='topPane'?expandedExtents(spec.top??[],splitStore.topWs,total,GAP):kind==='leftPane'?expandedExtents(leftPanesOf(spec),splitStore.leftHs,total,GAP,()=>80):[]
-    const initial=kind==='left'?splitStore.leftW:kind==='chat'?chatW:kind==='top'?splitStore.topH:extents[index??0]
+    const projected=workspaceGeometry(spec,g,splitStore)
+    const initial=kind==='left'?projected.leftW:kind==='chat'?projected.chatW:kind==='top'?projected.topH:extents[index??0]
     const onMove = (ev: PointerEvent) => {
-      if(splitStore.spec?.id!==spec.id)return
+      if(splitStore.spec!==spec)return
       const dx=ev.clientX-startX,dy=ev.clientY-startY
       if(kind==='left')splitStore.setLeftW(initial+dx)
       else if(kind==='chat')splitStore.setChatW(initial+(spec.chatSide==='left'&&!leftPanesOf(spec).some(p=>!p.minimized)?dx:-dx))
@@ -3165,29 +3179,11 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   const spec = props.spec
   const top = spec.top ?? []
   const main = spec.main ?? []
-  const hasLeft = leftPanesOf(spec).some(p=>!p.minimized)
-  const hasTop = top.some(p=>!p.minimized)
-  const chatLeft = !hasLeft && spec.chatSide === 'left'
-  const colW = g.right - g.left
-  const rowH = g.bottom - g.top
-  const narrow = colW > 0 && nativeSingleSurface(spec, colW)
-  const choices = layoutPanes(spec)
+  const {hasLeft,hasTop,hasMain,chatLeft,colW,rowH,narrow,chatW,topH,leftW,chatFull,contentW,contentX,topRowX,topRowW}=workspaceGeometry(spec,g,props)
+  const choices=layoutPanes(spec)
   const windowName=(row:PaneRow,index:number)=>'窗口'+(choices.findIndex(item=>item.row===row&&item.index===index)+1)
-  const selectedPaneId = splitStore.narrowPaneId === null ? null : choices.find(c => !c.pane.minimized && c.pane.id === splitStore.narrowPaneId)?.pane.id ?? choices.find(c=>!c.pane.minimized)?.pane.id
-  const narrowView = selectedPaneId == null ? 'native' : 'pane:' + selectedPaneId
-  const chatW = nativeChatWidth(spec, colW, props.chatW)
-  const topH = hasTop
-    ? clamp(props.topH, spec.topHeight?.min ?? 80, Math.max(spec.topHeight?.min ?? 80, rowH - BAR_H - 80))
-    : 0
-  const leftW = leftColumnWidth(spec,colW,chatW,props.leftW)
-  const chatFull = spec.chatFullHeight === true
-  // 左列布局（hasLeft）下，右列可写宽度 = 总宽 - 左列；主行还要再让出聊天列，
-  // 否则主行会越过右边界压到聊天窗（原实现对 leftCount>0 的路径没有预设可用，缺陷未被发现）。
-  const rightColW = hasLeft ? Math.max(0, colW - leftW) : colW
-  const contentW = Math.max(0, rightColW - chatW)
-  const contentX = hasLeft ? g.left + leftW : (chatLeft ? g.left + chatW : g.left)
-  const topRowX = hasLeft ? g.left + leftW : contentX
-  const topRowW = chatFull ? contentW : rightColW
+  const selectedPaneId=narrowSelection(spec,splitStore.narrowPaneId)
+  const narrowView=selectedPaneId===null?'native':'pane:'+selectedPaneId
 
   const topItems = allocate(top, props.topWs, topRowW)
   const mainItems = allocate(main, props.paneWs, contentW)
@@ -3286,7 +3282,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
   return (
     <>
       {/* 标题栏 */}
-      <div className="dsh-wt_splitBar" style={{ position: 'fixed', left: g.left, top: barTop, width: narrow ? colW : (hasLeft || chatFull ? contentW : (hasTop ? colW : contentW)), height: narrow ? NARROW_BAR_H : undefined, zIndex: 70 }}>
+      <div className="dsh-wt_splitBar" style={{ position: 'fixed', left: g.left, top: barTop, width: colW, height: narrow ? NARROW_BAR_H : undefined, zIndex: 70 }}>
         {narrow && <select className="dsh-wt_narrowSelect" aria-label="切换模块或原生对话" value={narrowView} onChange={event => splitStore.setNarrowView(event.target.value === 'native' ? null : event.target.value.slice(5))}>
           {choices.map(({ pane }, index) => <option key={pane.id} value={'pane:' + pane.id}>{pane.title || '模块 ' + (index + 1)}</option>)}
           <option value="native">原生对话</option>
@@ -3300,7 +3296,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
             onClick={() => splitStore.setChatSide(chatLeft ? 'right' : 'left')}
           >⇄</button>
         )}
-        <div role="toolbar" aria-label="收起的窗口" style={{display:'flex',gap:4,minWidth:0,overflowX:'auto'}}>{choices.filter(c=>c.pane.minimized).map(({pane,row,index})=><button key={pane.id} type="button" className="dsh-wt_splitFlip" style={{flexShrink:0,width:'auto',maxWidth:160,padding:'0 4px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}} aria-label={'展开'+windowName(row,index)+'：'+pane.title} title={'展开'+windowName(row,index)+'：'+pane.title} onClick={()=>splitStore.toggleMinimized(row,index)}>{pane.title || windowLabelOf(row,index)}</button>)}</div>
+        <div role="toolbar" aria-label="收起的窗口" style={{display:'flex',gap:4,minWidth:0,maxWidth:'100%',overflowX:'auto',overflowY:'hidden',height:20,scrollbarWidth:'none',flex:choices.some(c=>c.pane.minimized)?'1 1 auto':'0 0 auto'}}>{choices.filter(c=>c.pane.minimized).map(({pane,row,index})=><button key={pane.id} type="button" className="dsh-wt_splitFlip" style={{flexShrink:0,width:'auto',maxWidth:160,padding:'0 4px',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}} aria-label={'展开'+windowName(row,index)+'：'+pane.title} title={'展开'+windowName(row,index)+'：'+pane.title} onClick={()=>splitStore.toggleMinimized(row,index)}>{pane.title || windowLabelOf(row,index)}</button>)}</div>
         <button type="button" className="dsh-wt_splitClose" aria-label="退出分栏（Esc）" onClick={() => splitStore.close()}>✕</button>
       </div>
       {/* 左列整高内容窗 */}
@@ -3311,7 +3307,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
       {/* 主行内容窗 */}
       {mainItems.map((it) => renderPane(it, 'main', it.index, contentX, bodyTop, mainH))}
       {/* 顶部/主行水平分隔线 */}
-      {!narrow && hasTop && (
+      {!narrow && hasTop && (hasMain || !chatFull) && (
         <div
           className="dsh-wt_splitDivider dsh-wt_splitDividerH"
           role="separator"
@@ -3343,7 +3339,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
         />
       ))}
       {/* 聊天分隔线（左列布局 = 左/右列边界；其余 = 内容与聊天之间） */}
-      {!narrow && <div
+      {!narrow && (hasLeft || hasMain || hasTop && chatFull) && <div
         className="dsh-wt_splitDivider"
         role="separator"
         title={hasLeft ? '拖动调整左右列宽' : '拖动调整聊天宽度'}
@@ -3357,7 +3353,7 @@ function WorkspaceLayer(props: { spec: LayoutSpec; geom: Geom | null; chatW: num
         }}
         onPointerDown={makeDividerHandler(hasLeft ? 'left' : 'chat')}
       />}
-      {!narrow && hasLeft && <div className="dsh-wt_splitDivider" role="separator" title="拖动调整聊天宽度" style={{position:'fixed',left:g.right-chatW-DIVIDER/2,top:chatFull?topY:bodyTop,width:DIVIDER,height:chatFull?g.bottom-topY:mainH,zIndex:72}} onPointerDown={makeDividerHandler('chat')} />}
+      {!narrow && hasLeft && (hasMain || hasTop && chatFull) && <div className="dsh-wt_splitDivider" role="separator" title="拖动调整聊天宽度" style={{position:'fixed',left:g.right-chatW-DIVIDER/2,top:chatFull?topY:bodyTop,width:DIVIDER,height:chatFull?g.bottom-topY:mainH,zIndex:72}} onPointerDown={makeDividerHandler('chat')} />}
       <AnnotationOverlay />
     </>
   )
