@@ -19,3 +19,24 @@ export function resizeNeighbors(panes, wanted, total, index, size, gap = 1, mini
   extents[index]=Math.min(hi,Math.max(lo,size));extents[index+1]=pair-extents[index]
   return extents
 }
+
+
+/** Keep original indices/identities while giving only expanded panes an extent. */
+export function expandedExtents(panes, wanted, total, gap = 1, minimum = pane => pane.min) {
+  const visible=panes.map((pane,index)=>({pane,index})).filter(item=>!item.pane.minimized)
+  const values=paneExtents(visible.map(item=>item.pane),visible.map(item=>wanted[item.index]),total,gap,minimum)
+  const result=panes.map(()=>0)
+  visible.forEach((item,i)=>{result[item.index]=values[i]})
+  return result
+}
+
+/** Hidden panes retain their last manual baseline while visible neighbors resize. */
+export function resizeExpandedNeighbors(panes, wanted, total, index, size, gap = 1, minimum = pane => pane.min) {
+  const visible=panes.map((pane,index)=>({pane,index})).filter(item=>!item.pane.minimized)
+  const selected=visible.findIndex(item=>item.index===index)
+  if(selected<0||selected>=visible.length-1)return wanted.slice()
+  const resized=resizeNeighbors(visible.map(item=>item.pane),visible.map(item=>wanted[item.index]),total,selected,size,gap,minimum)
+  const result=wanted.slice()
+  visible.forEach((item,i)=>{result[item.index]=resized[i]})
+  return result
+}
