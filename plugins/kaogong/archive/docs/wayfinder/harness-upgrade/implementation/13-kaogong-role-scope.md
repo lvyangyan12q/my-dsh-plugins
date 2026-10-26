@@ -19,19 +19,19 @@ target: 0.2.1-rc.3
 
 本票当前范围关闭。问题/Stop/审批拒绝及允许一次完整模型矩阵按准确W.7/K.6证据保留：K.7仅修改配置候选发现，W.7、Native桥接和评分业务代码相同；K.7新增四入口、真实角色/工具及生命周期证据，不伪称完整矩阵或物理IME重做。正式profile已官方离线注册W.7/K.7并精确启用考公及专用已登记roleCwd，其他依赖/bundle/patch/资料引用保持；正式3080未启动。11远程推送/最后清理待完成；正式原资料未导入、历史未迁删，09继续open排除。
 
-[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)与[清理事故及恢复](../../../evidence/2026-10-25/rc3-cleanup-recovery.json)持有准确边界。下方状态为早期历史，不覆盖本节。
+[当前脱敏验收记录](../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json)与[清理事故及恢复](../../../../../../../docs/evidence/2026-10-25/rc3-cleanup-recovery.json)持有准确边界。下方状态为早期历史，不覆盖本节。
 
 ## 当前阻塞：官方默认源码启动 · 2026-10-25
 
 先前准确W.7/K.6在显式 `TSX_TSCONFIG_PATH` 下的冷恢复、课堂、统计、重装与Native问题/Stop/审批矩阵证据继续成立，但未设置该变量、从Native目录使用官方原命令启动时仍可触发 `NATIVE_ROLE_SCOPE_RUNTIME_UNRECOGNIZED`，因此本票恢复in-progress，禁止正式注册或将此前闭合解释为裸启动通过。
 
-[20默认启动适配](20-default-source-startup.md)采用已声明公开get-tsconfig API仅提出配置候选，仍须实际activeTSX、安装范围映射及Native公共scope probe认可。源码已合入，新K.7必须通过干净官方离线安装及compiled/explicit-source/default-source/负例回归，并在官方stock入口实际复验；不要求用户加环境变量回避。本次没有改变Native、已验归档、正式配置或旧资料。
+[20默认启动适配](../../../../../../../docs/wayfinder/harness-upgrade/implementation/20-default-source-startup.md)采用已声明公开get-tsconfig API仅提出配置候选，仍须实际activeTSX、安装范围映射及Native公共scope probe认可。源码已合入，新K.7必须通过干净官方离线安装及compiled/explicit-source/default-source/负例回归，并在官方stock入口实际复验；不要求用户加环境变量回避。本次没有改变Native、已验归档、正式配置或旧资料。
 
 ## 当前 Resolution · 2026-10-25 · W.7 / K.6
 
 Resolution：当前全新部署角色范围已通过。最终W.7/K.6 source入口的辅导员、任课老师及班主任冷恢复后Native输入可用，无Skills目录不完整或resume错误；精确轮次Native工具读取返回9对1错。原生菜单无考公模式，应用私有Persona/Skill与普通会话隔离已实测。旧K.2/K.3失败记录仅作历史；不执行旧Session交接。本票按当前范围关闭，完整Native矩阵仍归10。
 
-精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
+精确版本、SHA、入口及证据边界见[当前脱敏验收记录](../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json)。以下为历史检查点；其中待验/失败不代表本节当前结果。
 
 
 ## 最新 K.3 真实复验：仍未通过 · 2026-10-25

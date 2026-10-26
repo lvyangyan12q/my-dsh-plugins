@@ -15,33 +15,57 @@ const entries = [
   'wayfinder/workbench-completion/implementation/10-kaogong.md',
 ]
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex')
+const archiveRoot = path.join(root, 'archive/docs')
 const manifest = []
+const originalRootIndex = process.argv.indexOf('--original-root')
+const originalRoot = originalRootIndex < 0 ? undefined : process.argv[originalRootIndex + 1]
+if (originalRoot && !path.isAbsolute(originalRoot)) throw Error('ABSOLUTE_ORIGINAL_ROOT_REQUIRED')
+let previous = []
+try { previous = JSON.parse(await fs.readFile(path.join(originalRoot ?? archiveRoot, 'index.json'), 'utf8')) } catch (error) { if (error.code !== 'ENOENT') throw error }
+await fs.mkdir(path.join(archiveRoot, 'originals'), {recursive:true})
+await fs.writeFile(path.join(archiveRoot, 'originals/.gitattributes'), '* -text\n')
 for (const entry of entries) {
   const source = path.join(repo, 'docs', entry)
-  const destination = path.join(root, 'archive/docs', entry)
+  const destination = path.join(archiveRoot, entry)
+  const original = path.join(archiveRoot, 'originals', entry)
   if ((await fs.lstat(source)).isSymbolicLink()) throw Error('Linked source')
   const sourceBytes = await fs.readFile(source)
   const redirected = sourceBytes.toString('utf8').startsWith('<!-- kaogong-history-redirect -->')
-  const bytes = redirected ? await fs.readFile(destination) : sourceBytes
-  await fs.mkdir(path.dirname(destination), { recursive: true })
-  try { await fs.writeFile(destination, bytes, { flag: 'wx' }) }
-  catch (e) { if (e.code !== 'EEXIST') throw e }
-  if (digest(await fs.readFile(destination)) !== digest(bytes)) throw Error('Archive conflict')
+  let bytes
+  try { bytes = await fs.readFile(originalRoot ? path.join(originalRoot, entry) : original) }
+  catch (error) { if (error.code !== 'ENOENT') throw error; bytes = redirected ? await fs.readFile(destination) : sourceBytes }
+  const old = previous.find(row => row.archive === entry)
+  if (originalRoot && old && digest(bytes) !== old.sha256) throw Error('Original source bytes conflict')
+  await fs.mkdir(path.dirname(original), { recursive: true })
+  if (originalRoot) await fs.writeFile(original, bytes)
+  try { await fs.writeFile(original, bytes, { flag: 'wx' }) }
+  catch (error) { if (error.code !== 'EEXIST') throw error }
+  if (digest(await fs.readFile(original)) !== digest(bytes)) throw Error('Archive conflict')
   const references = []
-  for (const match of bytes.toString('utf8').matchAll(/\]\(([^)\r\n]+)\)/g)) {
-    const link = match[1]
-    if (/^(?:[a-z]+:|#|\/)/i.test(link)) continue
-    const originalTarget = path.resolve(path.dirname(source), link.split('#')[0])
-    let exists = false
-    try { await fs.access(originalTarget); exists = true } catch {}
-    references.push({ link, originalTarget: path.relative(repo, originalTarget).replaceAll('\\', '/'), exists })
+  const rendered = bytes.toString('utf8').replace(/\]\(([^)\r\n]+)\)/g, (match, link) => {
+    if (/^(?:[a-z]+:|#|\/)/i.test(link)) return match
+    const [file, ...fragment] = link.split('#')
+    const originalTarget = path.resolve(path.dirname(source), file)
+    const sourceRelative = path.relative(path.join(repo, 'docs'), originalTarget).replaceAll('\\', '/')
+    const target = entries.includes(sourceRelative) ? path.join(archiveRoot, sourceRelative) : originalTarget
+    const archiveTarget = path.relative(path.dirname(destination), target).replaceAll('\\', '/') + (fragment.length ? '#' + fragment.join('#') : '')
+    references.push({ link, originalTarget: path.relative(repo, originalTarget).replaceAll('\\', '/'), archiveTarget })
+    return `](${archiveTarget})`
+  })
+  for (const reference of references) {
+    const target = path.resolve(path.dirname(destination), reference.archiveTarget.split('#')[0])
+    try { await fs.access(target); reference.exists = true } catch { reference.exists = false }
   }
-  manifest.push({ source: 'docs/' + entry, archive: entry, sha256: digest(bytes), references })
+  await fs.mkdir(path.dirname(destination), { recursive: true })
+  await fs.writeFile(destination, rendered)
+  manifest.push({ source: 'docs/' + entry, archive: entry, original: 'originals/' + entry, sha256: digest(bytes), canonicalTextSha256: digest(Buffer.from(bytes.toString('utf8').replaceAll('\r\n', '\n'))), renderedTextSha256: digest(Buffer.from(rendered.replaceAll('\r\n', '\n'))), references })
   if (process.argv.includes('--redirect') && !redirected) {
     const link = path.relative(path.dirname(source), destination).replaceAll('\\', '/')
     await fs.writeFile(source, `<!-- kaogong-history-redirect -->\n# 考公历史文档已归档\n\n[原文（编号、状态、版本及证据保留）](${link})。\n\n本轮独立版规格和工单从 [考公文档入口](${path.relative(path.dirname(source), path.join(root, 'docs/README.md')).replaceAll('\\', '/')}) 进入。历史验收不代表独立版完成。\n`)
   }
 }
-await fs.writeFile(path.join(root, 'archive/docs/index.json'), JSON.stringify(manifest, null, 2))
-await fs.writeFile(path.join(root, 'archive/docs/README.md'), '# 考公历史档案\n\n此处是逐字节核验的历史文档，不是本轮规格或完成证明。原状态与版本原样保留。\n\n归档阶段保留原址以保护既有链接。`index.json` 记录原址、SHA256及各相对引用的原仓库目标；阅读档案中的历史相对链接时以该目标为准。共享平台/Harness资料继续留在根docs。现行入口为 [考公文档](../../docs/README.md)。\n\n' + manifest.map(row => `- [${row.source}](${row.archive})`).join('\n') + '\n')
-console.log(JSON.stringify({ archived: manifest.length, references: manifest.reduce((n, r) => n + r.references.length, 0), missingOriginalReferences: manifest.flatMap(r => r.references.filter(v => !v.exists).map(v => ({source:r.source,...v}))) }))
+await fs.writeFile(path.join(archiveRoot, 'index.json'), JSON.stringify(manifest, null, 2))
+await fs.writeFile(path.join(archiveRoot, 'README.md'), '# 考公历史档案\n\n归档文档保留原编号、状态、版本和证据边界；历史验收不代表本轮独立版完成。相对链接已按每个原始目标精确重定位。`originals/` 保存逐字节原文，`index.json` 同时记录原文原始字节SHA256、规范LF文本SHA256及引用映射；可读副本文本哈希按LF计算，避免Windows检出换行造成误报。共享平台/Harness材料继续留在根docs。现行入口为 [考公文档](../../docs/README.md)。\n\n' + manifest.map(row => `- [${row.source}](${row.archive}) · [逐字节原文](${row.original})`).join('\n') + '\n')
+const missing = manifest.flatMap(row => row.references.filter(ref => !ref.exists).map(ref => ({ source: row.source, ...ref })))
+console.log(JSON.stringify({ archived: manifest.length, references: manifest.reduce((n, row) => n + row.references.length, 0), missingReferences: missing }))
+if (missing.length) process.exitCode = 1

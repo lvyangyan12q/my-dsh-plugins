@@ -2,55 +2,75 @@
   {
     "source": "docs/ticket04-kaogong-evidence.md",
     "archive": "ticket04-kaogong-evidence.md",
+    "original": "originals/ticket04-kaogong-evidence.md",
     "sha256": "18fb25b5f025841ff9fcd84e089d5187fb283113629df54337688e4ea6845b75",
+    "canonicalTextSha256": "f8b4f4e8258bb96307566c0336b242cfb5dc45e4e8911dd928a1220ba6e9b3c5",
+    "renderedTextSha256": "f8b4f4e8258bb96307566c0336b242cfb5dc45e4e8911dd928a1220ba6e9b3c5",
     "references": []
   },
   {
     "source": "docs/application-platform-kaogong-evidence.md",
     "archive": "application-platform-kaogong-evidence.md",
+    "original": "originals/application-platform-kaogong-evidence.md",
     "sha256": "59c6645463f326aae06f1a5a2ec33e8041ab9f5841219e98bfeeba2d1e90b5ba",
+    "canonicalTextSha256": "3b7441a7676f3b3fc6cfdfc83347a0aa88a928b40bd9a886c6a5f77a9bdb56a2",
+    "renderedTextSha256": "3b7441a7676f3b3fc6cfdfc83347a0aa88a928b40bd9a886c6a5f77a9bdb56a2",
     "references": []
   },
   {
     "source": "docs/wayfinder/harness-upgrade/issues/02-kaogong-migration.md",
     "archive": "wayfinder/harness-upgrade/issues/02-kaogong-migration.md",
+    "original": "originals/wayfinder/harness-upgrade/issues/02-kaogong-migration.md",
     "sha256": "89824f6766181d3d1204619bb2ad354d81d7081fe802d3634fa50d28d0655ccf",
+    "canonicalTextSha256": "89824f6766181d3d1204619bb2ad354d81d7081fe802d3634fa50d28d0655ccf",
+    "renderedTextSha256": "89824f6766181d3d1204619bb2ad354d81d7081fe802d3634fa50d28d0655ccf",
     "references": []
   },
   {
     "source": "docs/wayfinder/harness-upgrade/issues/04-kaogong-ownership.md",
     "archive": "wayfinder/harness-upgrade/issues/04-kaogong-ownership.md",
+    "original": "originals/wayfinder/harness-upgrade/issues/04-kaogong-ownership.md",
     "sha256": "b5eb7b84d73eb01447eb28a77d397e6ad376fe0c61d370934fd8c4b051554456",
+    "canonicalTextSha256": "bf406668db8690120aef841dab0ba14e91d84f9808c9ec3055e2b546a90679f7",
+    "renderedTextSha256": "bf406668db8690120aef841dab0ba14e91d84f9808c9ec3055e2b546a90679f7",
     "references": []
   },
   {
     "source": "docs/wayfinder/harness-upgrade/implementation/08-kaogong-instances.md",
     "archive": "wayfinder/harness-upgrade/implementation/08-kaogong-instances.md",
+    "original": "originals/wayfinder/harness-upgrade/implementation/08-kaogong-instances.md",
     "sha256": "4dfb25a039bea12bb0af7d313e96e47d90b45c1eab22a8b4b7f1a2e096290e60",
+    "canonicalTextSha256": "449200422a202d7164b74b3c8ed3368c10ae9f70742a80c0cf2982a9b08e9786",
+    "renderedTextSha256": "ff8cfa82d96d015062ce8a9396176b0a20fb842773d9968d4a5efd2e34d9f136",
     "references": [
       {
         "link": "../../../evidence/2026-10-25/rc3-fresh-installed-current.json",
         "originalTarget": "docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
+        "archiveTarget": "../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
         "exists": true
       },
       {
         "link": "../../../evidence/2026-10-25/rc3-fresh-installed-current.json",
         "originalTarget": "docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
+        "archiveTarget": "../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
         "exists": true
       },
       {
         "link": "13-kaogong-role-scope.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/13-kaogong-role-scope.md",
+        "archiveTarget": "13-kaogong-role-scope.md",
         "exists": true
       },
       {
         "link": "15-kaogong-fresh-materials.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/15-kaogong-fresh-materials.md",
+        "archiveTarget": "15-kaogong-fresh-materials.md",
         "exists": true
       },
       {
         "link": "09-legacy-adoption.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/09-legacy-adoption.md",
+        "archiveTarget": "../../../../../../../docs/wayfinder/harness-upgrade/implementation/09-legacy-adoption.md",
         "exists": true
       }
     ]
@@ -58,36 +78,45 @@
   {
     "source": "docs/wayfinder/harness-upgrade/implementation/13-kaogong-role-scope.md",
     "archive": "wayfinder/harness-upgrade/implementation/13-kaogong-role-scope.md",
+    "original": "originals/wayfinder/harness-upgrade/implementation/13-kaogong-role-scope.md",
     "sha256": "75869afe1f575c78edb5a33e8347a85d94fcce6d4d3d0365672765741b4dfbd7",
+    "canonicalTextSha256": "90e1d0ef913664492f4acb5e07023e564e933c98639a586d73efcefb496ba693",
+    "renderedTextSha256": "6e7f496462326d318f6814432889e1b4c3ae930dd0e591d548f3b99d7e9a41a5",
     "references": [
       {
         "link": "../../../evidence/2026-10-25/rc3-fresh-installed-current.json",
         "originalTarget": "docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
+        "archiveTarget": "../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
         "exists": true
       },
       {
         "link": "../../../evidence/2026-10-25/rc3-cleanup-recovery.json",
         "originalTarget": "docs/evidence/2026-10-25/rc3-cleanup-recovery.json",
+        "archiveTarget": "../../../../../../../docs/evidence/2026-10-25/rc3-cleanup-recovery.json",
         "exists": true
       },
       {
         "link": "20-default-source-startup.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/20-default-source-startup.md",
+        "archiveTarget": "../../../../../../../docs/wayfinder/harness-upgrade/implementation/20-default-source-startup.md",
         "exists": true
       },
       {
         "link": "../../../evidence/2026-10-25/rc3-fresh-installed-current.json",
         "originalTarget": "docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
+        "archiveTarget": "../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
         "exists": true
       },
       {
         "link": "15-kaogong-fresh-materials.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/15-kaogong-fresh-materials.md",
+        "archiveTarget": "15-kaogong-fresh-materials.md",
         "exists": true
       },
       {
         "link": "14-kaogong-adoption-preflight.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/14-kaogong-adoption-preflight.md",
+        "archiveTarget": "14-kaogong-adoption-preflight.md",
         "exists": true
       }
     ]
@@ -95,11 +124,15 @@
   {
     "source": "docs/wayfinder/harness-upgrade/implementation/14-kaogong-adoption-preflight.md",
     "archive": "wayfinder/harness-upgrade/implementation/14-kaogong-adoption-preflight.md",
+    "original": "originals/wayfinder/harness-upgrade/implementation/14-kaogong-adoption-preflight.md",
     "sha256": "fcbc309191aed29f621333ba5b4a516559e9d4db2e9cbe7b2d837fa05a433c47",
+    "canonicalTextSha256": "656334c13d7c9fb3468b2f0a06fd98f91fc550286dc158e1a3e1436a6d7bcb56",
+    "renderedTextSha256": "b274889c8f13cc39e3182b3c38762da0863586e1f8a687cd7d89a5f98b8b9671",
     "references": [
       {
         "link": "09-legacy-adoption.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/09-legacy-adoption.md",
+        "archiveTarget": "../../../../../../../docs/wayfinder/harness-upgrade/implementation/09-legacy-adoption.md",
         "exists": true
       }
     ]
@@ -107,41 +140,51 @@
   {
     "source": "docs/wayfinder/harness-upgrade/implementation/15-kaogong-fresh-materials.md",
     "archive": "wayfinder/harness-upgrade/implementation/15-kaogong-fresh-materials.md",
+    "original": "originals/wayfinder/harness-upgrade/implementation/15-kaogong-fresh-materials.md",
     "sha256": "20e2889b6f1ce8ebad9c36f18655b591cb50be1f7dbf127748abd8647a74ce9a",
+    "canonicalTextSha256": "2b558af36e443f9b2caf8ca98382d6c280778819d3db7d66cb65c755497471fe",
+    "renderedTextSha256": "51d5f4fedcb8902d66a7399e5ec1cdc08f171cf454aa08b204c53ed44db1af32",
     "references": [
       {
         "link": "../../../evidence/2026-10-25/rc3-fresh-installed-current.json",
         "originalTarget": "docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
+        "archiveTarget": "../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
         "exists": true
       },
       {
         "link": "../../../evidence/2026-10-25/rc3-fresh-installed-current.json",
         "originalTarget": "docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
+        "archiveTarget": "../../../../../../../docs/evidence/2026-10-25/rc3-fresh-installed-current.json",
         "exists": true
       },
       {
         "link": "13-kaogong-role-scope.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/13-kaogong-role-scope.md",
+        "archiveTarget": "13-kaogong-role-scope.md",
         "exists": true
       },
       {
         "link": "13-kaogong-role-scope.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/13-kaogong-role-scope.md",
+        "archiveTarget": "13-kaogong-role-scope.md",
         "exists": true
       },
       {
         "link": "09-legacy-adoption.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/09-legacy-adoption.md",
+        "archiveTarget": "../../../../../../../docs/wayfinder/harness-upgrade/implementation/09-legacy-adoption.md",
         "exists": true
       },
       {
         "link": "14-kaogong-adoption-preflight.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/14-kaogong-adoption-preflight.md",
+        "archiveTarget": "14-kaogong-adoption-preflight.md",
         "exists": true
       },
       {
         "link": "17-practice-source-projection.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/implementation/17-practice-source-projection.md",
+        "archiveTarget": "../../../../../../../docs/wayfinder/harness-upgrade/implementation/17-practice-source-projection.md",
         "exists": true
       }
     ]
@@ -149,16 +192,21 @@
   {
     "source": "docs/wayfinder/workbench-completion/implementation/10-kaogong.md",
     "archive": "wayfinder/workbench-completion/implementation/10-kaogong.md",
+    "original": "originals/wayfinder/workbench-completion/implementation/10-kaogong.md",
     "sha256": "2404fa87d6284016e075294361a8ec709ef43127ce1cd11f379e242089e5bf88",
+    "canonicalTextSha256": "2404fa87d6284016e075294361a8ec709ef43127ce1cd11f379e242089e5bf88",
+    "renderedTextSha256": "924254f7a7b8c6b538d2d7d0b6afe2c34d7e0d5ff67b59a5b601b56db2a7a531",
     "references": [
       {
         "link": "../../worktable-platform/framework-spec.md#host-upgrade-requirements",
         "originalTarget": "docs/wayfinder/worktable-platform/framework-spec.md",
+        "archiveTarget": "../../../../../../../docs/wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements",
         "exists": true
       },
       {
         "link": "../../harness-upgrade/map.md",
         "originalTarget": "docs/wayfinder/harness-upgrade/map.md",
+        "archiveTarget": "../../../../../../../docs/wayfinder/harness-upgrade/map.md",
         "exists": true
       }
     ]

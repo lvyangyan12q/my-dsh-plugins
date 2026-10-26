@@ -1,27 +1,34 @@
-# 工单00现场记录
+# 工单00归位验收与正式切换清单
 
-2026-10-25，执行分支 `codex/kaogong-standalone-closed-loop`。根仓库原有未提交文件保持原样。未启动、停止或修改任何 Native 实例。
+2026-10-26。工单00完成的是目录收拢、复制证明和保留决策；独立功能、正式配置切换及真实完整学习闭环由01—07继续验收。没有用历史rc.3.7的通过记录代替本轮完成。
 
-## 已执行
+## 已完成与证据
 
-- 增加 Git 排除 `materials/`、`archive/local/`，npm 明确排除资料、归档、scratch、storage、环境配置和发行包目录；现有发行 files 白名单保留。
-- `scripts/migrate-materials.mjs` 使用 lstat 清点，不跟随链接，不删除原件，不修改运行配置或来源证明。完整私有清单位于 `materials/manifests/migration.json`。
-- 旧真实根共 9,741 个实体文件，3,808,973,989 字节，91 个链接；外部 `workspace/kaogong` 为指向该根的 junction，未重复搬运、未移除。
-- 5,672 个资料及旧 storage 文件复制至 materials，3,546,970,789 字节，每文件核验原件与新件 SHA256。storage 中的历史运行文件仅离线保留，尚待细分归档，不接管为当前学习记录。
-- 53 个历史源码/配置/未知文件复制到 `archive/local/legacy-root`，1,160,145 字节，逐文件哈希一致。
-- 4,016 个依赖/工具缓存实体文件及所有链接留原址，待引用/占用与可重建性核验；没有清理。
-- 正式 home 仅复制 `kaogong_bank.json`、`kaogong_knowledge.json` 至 `materials/source-home/storages`，原件/新件哈希核验一致。现有 `inspectMaterials` 检查通过：3,994题、72条知识，其中3条笔记仍只作为源记录保留；没有导入业务域。独立哈希清单在 `materials/manifests/source-home.json`。
+- 真实旧根仍为 `D:/programming/workspace/my-dsh/materials/kaogong`；外部 `D:/programming/workspace/kaogong` 是其junction，只清点一次。共9,741个实体文件、3,808,973,989字节；91个链接全部在旧node_modules，未跟随、未清理。
+- 5,308个PDF、文字、题图及MinerU资料文件复制到插件 `materials/`，3,541,427,779字节；53个历史源码/未知文件、1,160,145字节和364个旧storage运行文件/备份、5,543,010字节归 `archive/local/legacy-root/`。独立只读复验对所有5,725个有副本的文件重新核对原件与副本SHA256，全部一致。
+- 初次整storage复制遗留的364个多余运行文件副本，已在主开发目录用 `reconcile-material-storage.mjs --apply` 精确移除。移除前原件/归档/多余副本三方哈希相同，资料目标nofollow清点为零链接；只逐文件unlink及空目录rmdir，未递归删除。结果为selected364、pending364、links0、sourceDeleted:false、archiveDeleted:false。旧运行文件归档保留，不作为当前学习记录接管。
+- 正式home仅题库与知识两个JSON复制到 `materials/source-home/storages/`；原件/副本哈希一致。原有只读格式检查确认3,994题、72条知识。没有复制凭据、Native Session或当前运行数据库到Git。
+- 新根按18个具体声明PDF路径和固定SHA256生成离线位置映射，不改原始题库、答案、来源manifest或旧proof。真实读取和完整二次复验得到与旧根相同的40条来源、1,692张图片；32条私有/不可证明记录保持原分类。没有把这些离线证据写入已applied计划，也没有重复导入或发送任务。
+- 9份考公专属历史文档归 `archive/docs/`，原址留迁移指引；21个历史相对链接按原始目标精确重定位，目标全部存在。`originals/`逐字节原文以Git `-text`保护；索引同时记录原字节SHA256和规范LF文本SHA256，避免Windows检出换行误报。共享Harness/平台/课堂文档留原址。
+- Git排除materials、archive/local及原题图片目录；npm明确排除上述资料、storage、scratch、环境配置、release。dry-run为29个文件，无私有目录或原题图片。此前已跟踪的两张PNG与canonical materials副本SHA256一致，已用`git rm --cached`从后续树移除；既有远程历史不重写，冻结发行包不改字节。
 
-## 尚未完成，不得关闭工单
+私有逐文件证明在主插件 `materials/manifests/`：`migration.json`、`source-home.json`、`old-root-evidence.json`、`location-map.json`、`relocated-root-evidence.json`及`ticket00-audit.json`。这些文件不进入Git/npm。公开脚本为 `audit-material-migration.mjs`、`verify-material-relocation.mjs`、`reconcile-material-storage.mjs`；前两者只读源数据，最后一个默认preview，只有显式--apply才清理经证明的额外复制件。
 
-storage 内容细分、正式配置与已 apply proof 清点、位置映射接入正式读取链路、真实评分读取验证、清理与零链接复扫。
+## 精确保留与07切换矩阵
 
-## 后续验证
+| 对象 | 当前具体位置/字段 | 本票处理与仍保留原因 | 07需完成的验证 |
+|---|---|---|---|
+| 正式资料元数据 | 正式web/cordis.patch.yml中的`materialSourceHome: C:/Users/pc-zzy/.dsh` | 原配置保留；新的source-home快照已核验，改变sourceHome会改变sourceRevision，不能套用旧计划fingerprint | 新独立发行包中预览明确新source-home及差异，页面确认后才接入 |
+| 正式PDF/讲义证明 | 同配置`legacyMaterialRoot: D:/programming/workspace/my-dsh/materials/kaogong` | 旧根和外部junction保留。新根证据已通过离线映射，但运行读取仍校验原rootIdentity、sourceAliases和每文件receipt | 使用具体位置回执并保留旧proof；实际授权读取、撤销和恢复通过后才切换 |
+| 正式题图 | 同配置`questionImageRoot`指向旧根的`题目_images` | 新根图像字节一致；旧授权及题图证明仍绑定旧真实路径 | 新图索引与题干/选项/答案快照匹配，已提交轮次不被重写 |
+| 正式解析作业 | 同配置`mineru.outputDir`指向旧根`storage/mineru` | job.json及rebuild-manifest含原始绝对PDF路径，完整复制且原文不替换 | 新作业与旧作业分清归属；PDF、表格、图片读取及评分实测 |
+| 已接入的新实例资料 | fresh-acceptance/home的`kaogong_material_import_rc3.json`与`kaogong_material_plans_rc3.json` | 只读核对2个applied回执，fingerprint与计划对应；来源分别为synthetic-materials-only-3101-v2和v3下source-home、original-synthetic-materials、question-images及其storage/mineru。与真实旧资料根不同，不能把它们改成真实题库路径；精确ID/指纹/域文件哈希仅在私有audit中 | 保留这两个来源树及绑定，先验证当前学习/成绩/草稿/共享/角色承接，再做任何正式配置变更；不能自动重发任务 |
+| 正式home的资料导入回执 | C:/Users/pc-zzy/.dsh/storages | 未发现上述资料回执两个域文件；这仅表示指定正式home未有这类回执，不代表其他home无数据 | 启动前重新核对在用home、Native会话和草稿 |
+| 两张旧插件路径题图 | 插件`题目_images/verified`中两张资料600 PNG | 代码旧fallback仍引用，物理本地副本保留且Git忽略；canonical副本在materials内。合并本票若Git删除checkout副本，须立即从已核验canonical位置恢复这两张本地忽略副本 | 独立发行去掉随包原题的隐含依赖，真实图全部经资料权限读取 |
+| 历史源码/运行记录/备份 | archive/local/legacy-root | 417个归档文件保留，未自动迁到当前业务域 | 无需自动接管；只有用户页面明确操作才能改变学习状态 |
+| 依赖/工具缓存 | 旧根node_modules、.pdftool、.tmp，共4,016个实体文件及91个依赖链接 | 未证明全部可重建/无占用/无独有产物，保持原址；不因名称像缓存就删 | 只有明确无剩余引用后按nofollow、非递归断链接、零链接复扫流程处理 |
+| Native状态与老师工作目录 | .dsh凭据/会话/运行域；roleCwd为my-dsh/workspaces/kaogong | 留原home及cwd，无修改Native源码或共享依赖，无停用未知进程 | 准确包安装和正式切换前核对在用状态、备份与具体影响，回退不覆盖新增学习 |
 
-- 9份考公专属历史文档已逐字节归档，原址留指引，21个历史相对引用的原始目标均存在，详见 `archive/docs/index.json`。共享平台、课堂/Harness文档留原址。
-- Git check-ignore 已核验本次资料与私有归档被忽略。npm dry-run 暴露旧白名单仍含两张原题图片，已移除这两个条目并明确排除题目图片目录；尚未生成新发行包。
-- 只读原始证据检查：旧根40条来源、32条私有/不可证明条目、1,692张关联图片；直接指定新根会因原始绝对路径触发安全拒绝。
-- 新增独立离线位置映射适配器，逐个固定18个声明PDF路径对应的新位置与SHA256，不改原始元数据/manifest/既有proof。新根真实读取与二次完整复验恢复同样40条来源和1,692张图片；32条私有/不可证明记录仍保持原分类。完整新证据与映射只写入被忽略的 manifests。该适配器尚未接入正式运行配置，不能声称已完成切换。
-- 位置映射测试通过：限定别名、原件不变、重复映射和越界拒绝、文件字节变化后拒绝。
+## 验证边界
 
-目前旧资料根和 junction 完整保留，所有有效运行引用仍可使用旧位置；新复制目录尚未切为正式来源。原生凭据、会话、当前学习记录与老师 cwd 未变。旧 rc.3.7 验收不计作本轮独立版验收。
+已有迁移安全测试通过：只重定位固定别名、原件保留、字节变更拒绝、重复别名和越界拒绝。资料新位置的图文/PDF真实读取与哈希已验证；本票未运行模型、未改评分记录，也未声称无Worktable的Native学习闭环已完成。独立轮次评分、两档案权限、刷新/重启/准确包卸载重装和最终切换均由[07](tickets/07-acceptance-delivery.md)承担。

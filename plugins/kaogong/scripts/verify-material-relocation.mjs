@@ -4,7 +4,12 @@ import { inspectMaterials, materialEvidenceSnapshot } from '../src/materials-ins
 import { inspectLegacyMaterialEvidence, revalidateLegacyMaterialEvidence } from '../src/legacy-material-evidence.mjs'
 import { createMaterialLocationIO } from '../src/material-location-map.mjs'
 
-const root = path.resolve(import.meta.dirname, '../materials')
+const rootIndex = process.argv.indexOf('--plugin-root')
+const outputIndex = process.argv.indexOf('--output-dir')
+const root = rootIndex < 0 ? path.resolve(import.meta.dirname, '../materials') : path.join(process.argv[rootIndex + 1], 'materials')
+const output = outputIndex < 0 ? path.join(root, 'manifests') : process.argv[outputIndex + 1]
+if (!path.isAbsolute(root) || !path.isAbsolute(output)) throw Error('ABSOLUTE_MIGRATION_PATH_REQUIRED')
+await fs.mkdir(output, {recursive:true})
 const manifest = path.join(root, 'manifests')
 const old = JSON.parse(await fs.readFile(path.join(manifest, 'old-root-evidence.json'), 'utf8'))
 const migration = JSON.parse(await fs.readFile(path.join(manifest, 'migration.json'), 'utf8'))
@@ -21,6 +26,6 @@ const input = { snapshot: materialEvidenceSnapshot(snapshot), materialRoot: root
 const next = await inspectLegacyMaterialEvidence(input)
 if (JSON.stringify(next.summary.counts) !== JSON.stringify(old.summary.counts)) throw Error('RELOCATION_COVERAGE_CHANGED')
 await revalidateLegacyMaterialEvidence({ ...input, evidence: next.evidence })
-await fs.writeFile(path.join(manifest, 'location-map.json'), JSON.stringify(map, null, 2))
-await fs.writeFile(path.join(manifest, 'relocated-root-evidence.json'), JSON.stringify(next, null, 2))
+await fs.writeFile(path.join(output, 'location-map.json'), JSON.stringify(map, null, 2))
+await fs.writeFile(path.join(output, 'relocated-root-evidence.json'), JSON.stringify(next, null, 2))
 console.log(JSON.stringify({ aliases: map.aliases.length, ...next.summary, applied: false }))

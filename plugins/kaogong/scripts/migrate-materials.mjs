@@ -9,6 +9,17 @@ const source = path.resolve(root, '../../materials/kaogong')
 const target = path.join(root, 'materials')
 const apply = process.argv.includes('--copy')
 const digest = async file => crypto.createHash('sha256').update(await fs.readFile(file)).digest('hex')
+async function ensureDirectory(directory) {
+  const relative = path.relative(root, directory)
+  if (path.isAbsolute(relative) || relative === '..' || relative.startsWith('..' + path.sep)) throw Error('Destination outside plugin')
+  let current = root
+  for (const part of ['', ...relative.split(path.sep).filter(Boolean)]) {
+    if (part) current = path.join(current, part)
+    try { await fs.mkdir(current) } catch (error) { if (error.code !== 'EEXIST') throw error }
+    const stat = await fs.lstat(current)
+    if (!stat.isDirectory() || stat.isSymbolicLink()) throw Error('Linked or invalid destination directory')
+  }
+}
 const files = [], links = []
 const materialRoots = new Set(['讲义', '题目', '讲义_text', '题目_text', '题目_images', 'storage'])
 function destination(relative) {
@@ -33,15 +44,8 @@ if ((await fs.lstat(source)).isSymbolicLink()) throw new Error('Source root must
 await scan(source)
 for (const file of files) {
   if (!apply || !file.newPath) continue
-  // Verify each ancestor to avoid writing through an existing junction.
-  let current = root
-  for (const part of path.relative(root, path.dirname(file.newPath)).split(path.sep).filter(Boolean)) {
-    await fs.mkdir(current, { recursive: true })
-    if ((await fs.lstat(current)).isSymbolicLink()) throw new Error(`Linked destination: ${current}`)
-    current = path.join(current, part)
-  }
-  await fs.mkdir(current, { recursive: true })
-  if ((await fs.lstat(current)).isSymbolicLink()) throw new Error(`Linked destination: ${current}`)
+  await ensureDirectory(path.dirname(file.newPath))
+  if ((await fs.lstat(file.oldPath)).isSymbolicLink() || (await fs.realpath(file.oldPath)).toLowerCase() !== file.oldPath.toLowerCase()) throw Error('Source path changed')
   try { await fs.copyFile(file.oldPath, file.newPath, fs.constants.COPYFILE_EXCL) }
   catch (error) { if (error.code !== 'EEXIST') throw error }
   if (!(await fs.lstat(file.newPath)).isFile() || (await fs.lstat(file.newPath)).isSymbolicLink()) throw new Error(`Invalid destination: ${file.newPath}`)
@@ -49,6 +53,6 @@ for (const file of files) {
   file.verified = true
 }
 const result = { source, target, mode: apply ? 'copied-and-verified' : 'inventory', generatedAt: new Date().toISOString(), count: files.length, bytes: files.reduce((n, f) => n + f.bytes, 0), links, files, references: 'pending: retain original paths and proofs' }
-await fs.mkdir(path.join(target, 'manifests'), { recursive: true })
-await fs.writeFile(path.join(target, 'manifests', 'migration.json'), JSON.stringify(result, null, 2))
+await ensureDirectory(path.join(target, 'manifests'))
+await fs.writeFile(path.join(target, 'manifests', apply ? 'migration.json' : 'migration-inventory.json'), JSON.stringify(result, null, 2))
 console.log(JSON.stringify({ mode: result.mode, count: result.count, bytes: result.bytes, links: links.length }))

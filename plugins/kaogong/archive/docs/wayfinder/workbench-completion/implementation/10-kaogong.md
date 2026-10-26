@@ -16,7 +16,7 @@ followup_blocked_by: [harness-upgrade-kaogong-ownership, harness-upgrade-classro
 
 状态保持 open；考公已重新纳入 rc.3 与派生 Worktable SDK 的接入规划；工作台适配、旧学习归属和课堂原型仍是前置，尚未实施或验收。
 
-原工单范围、依赖和未完成验收保留，rc.3 具体增量依据[框架规格 HU02、HU05—HU08](../../worktable-platform/framework-spec.md#host-upgrade-requirements)。followup_status 为 pending-decisions，路线见[升级地图](../../harness-upgrade/map.md)，不因旧 ready-for-agent 标签自动执行未决迁移。
+原工单范围、依赖和未完成验收保留，rc.3 具体增量依据[框架规格 HU02、HU05—HU08](../../../../../../../docs/wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements)。followup_status 为 pending-decisions，路线见[升级地图](../../../../../../../docs/wayfinder/harness-upgrade/map.md)，不因旧 ready-for-agent 标签自动执行未决迁移。
 
 - [ ] 以公开 SDK 接入应用/实例/视图/资源/私有能力/角色/任务，移除旧personal-workbench运行时依赖。
 - [ ] 六领域及浏览器草稿按已确认实例归属隔离；旧笔记不整库公开，未知归属记录保留。
