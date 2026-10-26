@@ -15,11 +15,11 @@
 | [10](10-region-minimize.md) | 09 | 整行、整列和全部收起 |
 | [07](07-increment-acceptance.md) | 08、10 | 最终包、真实宿主、审查与PR交付 |
 
-01—04已完成，增量沿用[草稿PR #4](https://github.com/lvyangyan12q/my-dsh-plugins/pull/4)。用户调用 implement-spec 确认以上六张纵向工单及最小UI，当前并行前沿为06、05。增量审查基线固定为 `0ef4597ada997131da4d64a66590e5efb14e1cc4`。父规格保持open直到新增验收完成。
+01—04及新增05、06、08—10已完成。增量审查基线为 `0ef4597ada997131da4d64a66590e5efb14e1cc4`，两轴发现已集中修复并独立复查为0。rc.3.6通过打包、隔离实际安装及宿主用户流程，07等待远程交付收口。
 
-版本3扩展契约见[05](05-window-interaction.md)：独立 pane.minimized、geometry.leftHs 与手动展开基准；现有 collapsed 和 leftWs 含义不变。
+版本3契约：独立 pane.minimized、geometry.leftHs 与最近手动展开基准，现有 collapsed 和 leftWs 含义不变；兼容读取版本1/2，版本2首次升级前保留原字节备份。收起及自动补位不覆盖手动尺寸，身份枚举仍包含隐藏窗格。
 
-## 并行实施接口约定
+## 第一阶段接口约定（历史）
 
 新增受宿主 connection.admit 保护的 `/api/worktable/project-layout`。客户端通过同源凭据 POST JSON 调用。
 
@@ -30,6 +30,6 @@
 - geometry 为 `{chatW,topH,leftW,paneWs,topWs,leftWs}`；三种数组使用 `{[paneId]:number}`，避免仅凭数组下标套用旧窗格宽度。几何数值为有限非负值，当前视口的最终钳制由分栏引擎负责。
 - 规范校验与 Node 文件存储由共享 ESM 模块导出；工具从同一模块使用读取/保存协议，不另外实现文件格式与锁。
 
-以上是rc.3.4已实现的版本2接口。05新增收起及左列高度时使用明确的版本3扩展方案，保留版本1/2读取和未知版本拒绝保护，具体新字段在实现前固定；不覆盖上述历史接口的事实或已有冻结包。
+以上保留rc.3.4版本2接口历史。当前读取版本2/3，新写入版本3；版本1仍以legacy候选显式迁移。版本3增加pane.minimized及可选geometry.leftHs，版本2首次升级前保留原字节备份。未知版本拒绝，已冻结包不覆盖。
 
 每张工单记录实际红绿测试与 Resolution。状态只有验收满足时才改 closed；04 及规格不得因源码测试通过就假记真实安装完成。

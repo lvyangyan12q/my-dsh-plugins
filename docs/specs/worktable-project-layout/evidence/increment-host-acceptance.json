@@ -1,0 +1,181 @@
+{
+  "date": "2026-10-26",
+  "version": "0.10.0-rc.3.6",
+  "sourceCommit": "9fdc30c",
+  "artifactSha256": "ed01dc63394b1ebc2e8ba54fdf96b4673ab2683a48072ec15562594130e0a6da",
+  "platform": "Windows Web",
+  "runtime": {
+    "version": "0.2.1-rc.3",
+    "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+    "trackedSourceChanges": 0
+  },
+  "isolation": {
+    "home": "new task-owned isolated home",
+    "browser": "worktable-increment-acceptance",
+    "port": 3107,
+    "formalProfileVersionUnchanged": "0.10.0-rc.3.3",
+    "modelMessagesSent": 0
+  },
+  "installation": {
+    "entry": "official CLI plugin add of final tgz into a new empty home",
+    "archiveFilesCompared": 9,
+    "allBytesEqual": true,
+    "developmentLink": false
+  },
+  "scenarios": {
+    "geometryOnlyDrag": {
+      "passed": true,
+      "directions": [
+        "left stacked height",
+        "main neighboring width",
+        "top neighboring width",
+        "top/main height",
+        "left column width",
+        "native chat width"
+      ],
+      "before": {
+        "chatW": 360,
+        "topH": 220,
+        "leftW": 260,
+        "paneWs": {
+          "p5": 360,
+          "p6": 360
+        },
+        "topWs": {
+          "p3": 450,
+          "p4": 450
+        },
+        "leftWs": {
+          "p1": 260,
+          "p2": 260
+        },
+        "leftHs": {}
+      },
+      "after": {
+        "chatW": 385,
+        "topH": 255,
+        "leftW": 280,
+        "paneWs": {
+          "p5": 412.68182373046875,
+          "p6": 322.68182373046875
+        },
+        "topWs": {
+          "p3": 342.68182373046875,
+          "p4": 392.68182373046875
+        },
+        "leftWs": {
+          "p1": 260,
+          "p2": 260
+        },
+        "leftHs": {
+          "p1": 435.1363525390625,
+          "p2": 315.1363525390625
+        }
+      },
+      "oldVersion": 2,
+      "newVersion": 3
+    },
+    "singleMinimize": {
+      "passed": true,
+      "iframeNode": true,
+      "iframeIdentity": true,
+      "iframeDraft": "网页内容保留",
+      "customNode": true,
+      "customDraft": "最终包草稿保留",
+      "singleNeighborFilled": true
+    },
+    "allRegionsMinimize": {
+      "passed": true,
+      "allHidden": true,
+      "recoveryButtons": 6,
+      "nativeViewWidth": 1356.3636474609375,
+      "availableWidth": 1356.3636474609375,
+      "geometryUnchanged": true
+    },
+    "narrowRecovery": {
+      "passed": true,
+      "selector": true,
+      "nativeVisible": true,
+      "recoveryButtons": 6,
+      "restoredDraft": "最终包草稿保留"
+    },
+    "submissionDoubleClickAndMidflightClose": {
+      "passed": true,
+      "directoryChecks": 1,
+      "creates": 0,
+      "sends": 0,
+      "error": "创建对话失败：项目或窗口已经变化，请重新打开目标窗口。",
+      "draft": "最终包草稿保留",
+      "boundary": "actual CustomPane new-session UI with delayed read-only directory response and real session facade counters"
+    },
+    "closeAndReopen": {
+      "passed": true,
+      "sameRects": true,
+      "active": true,
+      "minimized": true,
+      "geometryUnchanged": true
+    },
+    "coldBrowserDirectoryRestore": {
+      "passed": true,
+      "removedDedicatedLocalStorageKeys": 7,
+      "remainingImmediatelyAfterClear": 0,
+      "projectListedBeforeRestore": false,
+      "projectIdPreserved": true,
+      "geometryEqual": true,
+      "specEqual": true,
+      "rectsEqual": true,
+      "revision": 5,
+      "active": true
+    },
+    "officialHostColdRestart": {
+      "passed": true,
+      "projectIdPreserved": true,
+      "geometryEqual": true,
+      "specEqual": true,
+      "rectsEqual": true,
+      "revision": 5,
+      "cssomValuesEqual": true,
+      "externalOverrideStillYields": true
+    },
+    "v2UpgradeBackup": {
+      "passed": true,
+      "originalBytesPreserved": true,
+      "sha256": "13845e8d52226078a3a47ee037738d6d17001331dedb170ff5f2632ebc821a4d"
+    },
+    "frozenV2Reader": {
+      "passed": true,
+      "readerSource": "0ef4597",
+      "newVersionRead": "unsupported",
+      "newVersionSave": "unsupported",
+      "originalBytesPreserved": true
+    },
+    "fractionalCssomRegression": {
+      "passed": true,
+      "expectedMargin": "971.364px",
+      "actualMargin": "971.364px",
+      "layoutRemainsOpen": true,
+      "realExternalMargin17StillYields": true
+    }
+  },
+  "rejectedCandidate": {
+    "version": "0.10.0-rc.3.5",
+    "sha256": "3b7124971766456a4d6407400956ab082ee5bf36eedbfb4afda1c83d959f39d5",
+    "packGatesPassed": true,
+    "hostAccepted": false,
+    "reason": "CSSOM serialization rounded fractional margin and the ownership observer closed its own layout",
+    "sample": {
+      "beforeSerialization": "961.3636474609375px",
+      "afterSerialization": "961.364px"
+    },
+    "assetOverwritten": false
+  },
+  "cleanup": {
+    "ownedTestHostsStopped": true,
+    "formalHostRestarted": false
+  },
+  "limits": [
+    "Windows Web exact rc.3 only; Desktop/macOS not verified",
+    "No live model task success claimed; post-create races and invalid-target matrix additionally covered at public source seams",
+    "Layout references are not an application-data/session backup"
+  ]
+}

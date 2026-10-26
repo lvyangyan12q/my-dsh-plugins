@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-26",
+  "version": "0.10.0-rc.3.6",
+  "sourceCommit": "9fdc30c",
+  "entry": "npm run pack",
+  "nativeRc3Contracts": {
+    "pass": 9,
+    "fail": 0
+  },
+  "sourceContracts": {
+    "tests": 402,
+    "pass": 400,
+    "fail": 0,
+    "skipped": 2,
+    "skipReason": "optional old rc.2 runtime root not configured"
+  },
+  "layoutFocused": {
+    "pass": 56,
+    "fail": 0
+  },
+  "installedGates": [
+    "exact nine-file archive",
+    "clean npm install and server import",
+    "client ModuleLoader factory/inject",
+    "role navigation",
+    "split anchor DOM",
+    "native panel/annotation callbacks",
+    "generation factory/UI",
+    "collapsed-sidebar project dialog",
+    "server home resolution"
+  ],
+  "dualAssetSha256": "ed01dc63394b1ebc2e8ba54fdf96b4673ab2683a48072ec15562594130e0a6da",
+  "sameSha": true,
+  "archiveFileCount": 9,
+  "finalHostReceipt": "increment-host-acceptance.json",
+  "standardsRemaining": 0,
+  "specRemaining": 0,
+  "previousFrozenAssetsModified": false
+}
