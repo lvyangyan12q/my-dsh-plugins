@@ -1132,13 +1132,17 @@ export const splitStore: SplitState = {
     const spec = this.spec
     if (!viewArea || !g || !spec) return
     const {colW,chatW,topH,chatFull,chatLeft,narrow}=workspaceGeometry(spec,g,this)
+    const setMargins=(left:string,right:string,top:string)=>{
+      viewArea.style.marginLeft=left
+      viewArea.style.marginRight=right
+      viewArea.style.marginTop=top
+      // Compare future mutations with what the browser actually accepted/serialized.
+      this.lastMarginLeft=viewArea.style.marginLeft
+      this.lastMarginRight=viewArea.style.marginRight
+      this.lastMarginTop=viewArea.style.marginTop
+    }
     if (narrow) {
-      this.lastMarginLeft = ''
-      this.lastMarginRight = ''
-      this.lastMarginTop = NARROW_BAR_H + 'px'
-      viewArea.style.marginLeft = ''
-      viewArea.style.marginRight = ''
-      viewArea.style.marginTop = this.lastMarginTop
+      setMargins('','',NARROW_BAR_H+'px')
       this.root?.style.setProperty('--dsh-chat-user-width', Math.round(colW) + 'px')
       if (narrowSelection(spec,this.narrowPaneId) !== null) {
         if (!this.nativeHidden) {
@@ -1165,12 +1169,7 @@ export const splitStore: SplitState = {
     const mt = (BAR_H + (!chatFull ? topH : 0)) + 'px'
     // 聊天列必须靠外边距真正把原生区压到右侧 chatW：只设 --dsh-chat-user-width 时，
     // 该变量在部分宿主版本上不生效，原生对话会铺满右侧并被窗格盖住。
-    this.lastMarginLeft = chatLeft ? '' : gap
-    this.lastMarginRight = chatLeft ? gap : ''
-    this.lastMarginTop = mt
-    viewArea.style.marginLeft = this.lastMarginLeft
-    viewArea.style.marginRight = this.lastMarginRight
-    viewArea.style.marginTop = mt
+    setMargins(chatLeft?'':gap,chatLeft?gap:'',mt)
   },
 
   setChatW(w) {
