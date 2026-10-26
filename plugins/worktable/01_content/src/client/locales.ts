@@ -6,6 +6,18 @@
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
+  'layout.file': '项目布局',
+  'layout.saving': '正在保存',
+  'layout.saved': '布局已保存',
+  'layout.unsaved': '布局未保存',
+  'layout.conflict': '布局保存冲突',
+  'layout.confirmOverwrite': '磁盘布局已有更新。确认保留当前布局并覆盖该版本？',
+  'layout.retry': '重试保存',
+  'layout.retryDraft': '保留当前布局并重试',
+  'layout.reload': '放弃未保存修改并重新载入',
+  'layout.restore': '从目录恢复',
+  'layout.chooseLegacy': '选择要恢复的旧布局文件',
+  'layout.cancel': '取消',
   'title': '工作台',
   'rail.title': '工作台（展开侧边栏查看）',
   'handle.title': '按住拖动位置 · 双击复位',
@@ -244,6 +256,18 @@ export type WorktableKey = keyof typeof zh
 
 /** English dictionary, checked complete against the zh key set. */
 export const en = {
+  'layout.file': 'Project layout',
+  'layout.saving': 'Saving layout',
+  'layout.saved': 'Layout saved',
+  'layout.unsaved': 'Layout not saved',
+  'layout.conflict': 'Layout save conflict',
+  'layout.confirmOverwrite': 'The disk layout has changed. Keep your current layout and replace that version?',
+  'layout.retry': 'Retry save',
+  'layout.retryDraft': 'Keep current layout and retry',
+  'layout.reload': 'Discard unsaved changes and reload',
+  'layout.restore': 'Restore from directory',
+  'layout.chooseLegacy': 'Choose a legacy layout file to restore',
+  'layout.cancel': 'Cancel',
   'title': 'Worktable',
   'rail.title': 'Worktable (expand sidebar to view)',
   'handle.title': 'Drag to move · double-click to reset',

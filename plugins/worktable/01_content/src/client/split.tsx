@@ -76,6 +76,21 @@ export type LayoutSpec = {
   chatFullHeight?: boolean
   /** 顶行首次打开时高度占可用高度比例（0~1；0.5 = 上下等分）；拖动后由存档值覆盖 */
   topHeightRatio?: number
+  /** File geometry is projected by pane identity, never old browser array position. */
+  fileGeometry?: LayoutGeometry
+  preferFileGeometry?: boolean
+}
+
+export type LayoutGeometry = { chatW: number; topH: number; leftW: number; paneWs: Record<string, number>; topWs: Record<string, number>; leftWs: Record<string, number> }
+
+export function layoutGeometryOf(spec: LayoutSpec, state = splitStore): LayoutGeometry {
+  const widths = (panes: SplitPane[], values: number[]) => Object.fromEntries(panes.map((p,i)=>[p.id, Number.isFinite(values[i]) ? values[i] : p.min]))
+  return {chatW:state.chatW,topH:state.topH,leftW:state.leftW,paneWs:widths(spec.main ?? [],state.paneWs),topWs:widths(spec.top ?? [],state.topWs),leftWs:widths(leftPanesOf(spec),state.leftWs)}
+}
+
+export function cachedLayoutGeometry(spec: LayoutSpec): LayoutGeometry {
+  const saved=loadSaved(spec.id)
+  return layoutGeometryOf(spec, {...splitStore,chatW:saved && saved.chatW>=0?saved.chatW:spec.chatWidth.default,topH:saved && saved.topH>=0?saved.topH:spec.topHeight?.default ?? 200,leftW:saved && saved.leftW>=0?saved.leftW:spec.leftWidth?.default ?? 260,paneWs:saved?.paneWs ?? [],topWs:saved?.topWs ?? [],leftWs:saved?.leftWs ?? []})
 }
 
 type Geom = { left: number; top: number; right: number; bottom: number }
@@ -119,6 +134,8 @@ type SplitState = {
   lastMarginRight: string
   lastMarginTop: string
   onSpecMutated: ((spec: LayoutSpec) => void) | null
+  onLayoutPersisted: ((spec: LayoutSpec, geometry: LayoutGeometry) => void) | null
+  onBeforeClose: ((projectId: string) => void) | null
   /** Manual edits revoke that pane's automatic result binding; lockPane itself does not. */
   onPaneContentEdited: ((projectId: string, paneId: string) => void) | null
   listeners: Set<() => void>
@@ -827,6 +844,8 @@ export const splitStore: SplitState = {
   lastMarginRight: '',
   lastMarginTop: '',
   onSpecMutated: null,
+  onLayoutPersisted: null,
+  onBeforeClose: null,
   onPaneContentEdited: null,
   listeners: new Set(),
 
@@ -867,22 +886,23 @@ export const splitStore: SplitState = {
     const main = this.spec.main ?? []
     const top = spec.top ?? []
     const left = spec.left ?? null
-    const saved = loadSaved(spec.id)
+    const fromFile=spec.fileGeometry
+    const values=(panes:SplitPane[],map:Record<string,number>)=>panes.map(p=>Number.isFinite(map?.[p.id])?map[p.id]:p.min)
+    const saved = fromFile ? {chatW:fromFile.chatW,topH:fromFile.topH,leftW:fromFile.leftW,paneWs:values(main,fromFile.paneWs),topWs:values(top,fromFile.topWs),leftWs:values(leftPanesOf(spec),fromFile.leftWs)} : spec.preferFileGeometry ? null : loadSaved(spec.id)
     // 布局文件提供的几何优先：文件里带 preferFileGeometry 时忽略本地缓存的旧尺寸
     // （换窗格数量后旧宽度/高度会让新布局看起来是乱的）
-    const fileGeometry = (spec as any).preferFileGeometry === true
-    const hasChatW = !fileGeometry && !!saved && saved.chatW >= 0
-    const hasTopH = !fileGeometry && !!saved && saved.topH >= 0
-    const hasLeftW = !fileGeometry && !!saved && saved.leftW >= 0
+    const hasChatW = !!saved && saved.chatW >= 0
+    const hasTopH = !!saved && saved.topH >= 0
+    const hasLeftW = !!saved && saved.leftW >= 0
     const hasPaneWs = !!saved && saved.paneWs.length === main.length
     const hasTopWs = !!saved && saved.topWs.length === top.length
-    const hasLeftWs = !!saved && saved.leftWs.length === (left ? 1 : 0)
+    const hasLeftWs = !!saved && saved.leftWs.length === leftPanesOf(spec).length
     this.chatW = hasChatW ? saved!.chatW : spec.chatWidth.default
     this.topH = hasTopH ? saved!.topH : (spec.topHeight?.default ?? 200)
     this.leftW = hasLeftW ? saved!.leftW : (spec.leftWidth?.default ?? 260)
     this.paneWs = hasPaneWs ? [...saved!.paneWs] : main.map((p) => p.min)
     this.topWs = hasTopWs ? [...saved!.topWs] : top.map((p) => p.min)
-    this.leftWs = hasLeftWs ? [...saved!.leftWs] : (left ? [left.min] : [])
+    this.leftWs = hasLeftWs ? [...saved!.leftWs] : leftPanesOf(spec).map(p=>p.min)
     this.root = root
     this.header = header
     this.viewArea = viewArea
@@ -916,7 +936,7 @@ export const splitStore: SplitState = {
         this.topH = clamp(Math.round((rowH0 - BAR_H) * ratio), lo, Math.max(lo, rowH0 - BAR_H - 80))
       }
       if (!hasPaneWs) {
-        const contentW = Math.max(0, colW0 - this.chatW)
+        const contentW = Math.max(0, colW0 - this.chatW - (left ? this.leftW : 0))
         const avail = Math.max(main.length * 120, contentW - Math.max(0, main.length - 1) * GAP)
         const share = Math.round(avail / main.length)
         this.paneWs = main.map((p) => Math.max(p.min, share))
@@ -929,7 +949,7 @@ export const splitStore: SplitState = {
         const share = Math.round(avail / top.length)
         this.topWs = top.map((p) => Math.max(p.min, share))
       }
-      if (left && !hasLeftWs) this.leftWs = [Math.max(left.min, this.leftW)]
+      if (left && !hasLeftWs) this.leftWs = leftPanesOf(spec).map(p=>Math.max(p.min, this.leftW))
     }
     this.applyMargin()
     this.observer = new ResizeObserver(() => {
@@ -1164,7 +1184,7 @@ export const splitStore: SplitState = {
     if (i < 0 || i >= main.length) return
     const colW = g.right - g.left
     const chatW = nativeChatWidth(spec, colW, this.chatW)
-    const contentW = Math.max(0, colW - chatW)
+    const contentW = Math.max(0, colW - chatW - (spec.left ? this.leftW : 0))
     const othersMin = main.reduce((a, p, k) => a + (k === i ? 0 : p.min), 0)
     const lo = main[i].min
     const hi = Math.max(lo, contentW - othersMin - Math.max(0, main.length - 1) * GAP)
@@ -1184,7 +1204,8 @@ export const splitStore: SplitState = {
     const colW = g.right - g.left
     const othersMin = top.reduce((a, p, k) => a + (k === i ? 0 : p.min), 0)
     const lo = top[i].min
-    const hi = Math.max(lo, colW - othersMin - Math.max(0, top.length - 1) * GAP)
+    const rowW=colW-(spec.left?this.leftW:spec.chatFullHeight?nativeChatWidth(spec,colW,this.chatW):0)
+    const hi = Math.max(lo, rowW - othersMin - Math.max(0, top.length - 1) * GAP)
     const next = this.topWs.slice()
     next[i] = clamp(Math.round(w), lo, hi)
     this.topWs = next
@@ -1242,6 +1263,7 @@ export const splitStore: SplitState = {
       if (main[index]) { main[index] = mutate(main[index]); this.spec = { ...spec, main } }
     }
     this.onSpecMutated?.(this.spec)
+    this.persist()
     this.notify()
   },
 
@@ -1433,17 +1455,18 @@ export const splitStore: SplitState = {
     this.onSpecMutated?.(this.spec)
     this.applyMargin()
     this.persist()
-    this.onSpecMutated?.(this.spec)
     this.notify()
   },
 
   persist() {
     if (!this.spec) return
     persistSaved(this.spec.id, { chatW: this.chatW, topH: this.topH, leftW: this.leftW, paneWs: this.paneWs, topWs: this.topWs, leftWs: this.leftWs })
+    this.onLayoutPersisted?.(this.spec, layoutGeometryOf(this.spec,this))
   },
 
   restoreSessionOnClose: true,
   close(restoreSession = true) {
+    if (this.spec) this.onBeforeClose?.(this.spec.id)
     this.restoreSessionOnClose = restoreSession
     this.restoreNativeView()
     if (this.root && this.root.isConnected) {
