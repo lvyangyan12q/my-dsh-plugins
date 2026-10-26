@@ -33,6 +33,15 @@ function storage(seed = {}) {
 }
 const specOf = id => ({ id, title: id, left: null, top: [{ id: 'p1', title: '窗口1', content: null }], main: [{ id: 'p2', title: '窗口2', content: null }] })
 const resultOf = (b, extra = {}) => JSON.stringify({ version: 2, projectId: b.projectId, paneId: b.paneId, bindingId: b.bindingId, window: b.window, path: 'daily-station.html', kind: 'html', ...extra })
+test('second left-stack window keeps task ownership and all later window numbers',()=>{
+  const spec={...specOf('stack'),left:{id:'left1'},leftMore:[{id:'left2'}]}
+  assert.deepEqual(Array.from(widgetTargets(spec),t=>[t.pane.id,t.window]),[['left1','窗口1'],['left2','窗口2'],['p1','窗口3'],['p2','窗口4']])
+  const registry=new WidgetMountRegistry(storage(),()=>newWidgetId())
+  const binding=registry.begin('stack',spec,'C:/stack','session','窗口2').find(b=>b.paneId==='left2')
+  assert.ok(binding)
+  const restored=registry.resolve(binding,resultOf(binding),spec,'C:/stack')
+  assert.equal(restored.target.row,'left');assert.equal(restored.target.index,1);assert.equal(restored.target.pane.id,'left2')
+})
 function registryFixture() {
   const store = storage()
   let next = 0

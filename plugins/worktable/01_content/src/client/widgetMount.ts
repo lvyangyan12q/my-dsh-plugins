@@ -1,8 +1,9 @@
 import { joinPath } from './pathutil'
+import { layoutPanes } from './layoutPanes'
 
 /** Browser-local ownership of auto-mounted results. Folders never identify projects. */
 export const WIDGET_BINDINGS_KEY = 'dsh.worktable.widgetBindings.v2'
-export type WidgetSpec = { id: string; left?: any; top?: any[] | null; main: any[] }
+export type WidgetSpec = { id: string; left?: any; leftMore?: any[] | null; top?: any[] | null; main: any[] }
 export type WidgetBinding = {
   projectId: string
   paneId: string
@@ -22,14 +23,7 @@ export function newWidgetId(prefix = 'binding'): string {
 
 export function widgetTargets(spec: WidgetSpec | null | undefined): WidgetTarget[] {
   if (!spec) return []
-  const out: WidgetTarget[] = []
-  const add = (row: WidgetTarget['row'], panes: any[]) => panes.forEach((pane, index) => {
-    if (pane && typeof pane.id === 'string') out.push({ row, index, pane, window: '窗口' + (out.length + 1) })
-  })
-  add('left', spec.left ? [spec.left] : [])
-  add('top', spec.top ?? [])
-  add('main', spec.main ?? [])
-  return out
+  return layoutPanes(spec).filter(({pane})=>pane && typeof pane.id==='string').map((target,index)=>({...target,window:'窗口'+(index+1)}))
 }
 
 export function widgetManifestPath(binding: WidgetBinding): string {
