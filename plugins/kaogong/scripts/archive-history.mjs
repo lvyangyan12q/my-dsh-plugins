@@ -23,7 +23,7 @@ if (originalRoot && !path.isAbsolute(originalRoot)) throw Error('ABSOLUTE_ORIGIN
 let previous = []
 try { previous = JSON.parse(await fs.readFile(path.join(originalRoot ?? archiveRoot, 'index.json'), 'utf8')) } catch (error) { if (error.code !== 'ENOENT') throw error }
 await fs.mkdir(path.join(archiveRoot, 'originals'), {recursive:true})
-await fs.writeFile(path.join(archiveRoot, 'originals/.gitattributes'), '* -text\n')
+await fs.writeFile(path.join(archiveRoot, 'originals/.gitattributes'), '* -text -whitespace\n')
 for (const entry of entries) {
   const source = path.join(repo, 'docs', entry)
   const destination = path.join(archiveRoot, entry)
