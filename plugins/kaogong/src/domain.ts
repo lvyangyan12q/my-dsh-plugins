@@ -8,11 +8,14 @@
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
 import { createHash } from 'node:crypto'
 import type { DomainGlobalSpec } from '@deepseek-ai/dsh-storage-domain'
+import { reviewRecord } from './error-reviews.ts'
+import type { ReviewRecord } from './error-reviews.ts'
 import { TAXONOMY } from './taxonomy.ts'
 import { lessonRecord, lessonSelection } from './lesson-schema.ts'
 import type { Lesson, LessonSelection } from './lesson-schema.ts'
 import { questionRecord, planConfig, dayPlan, bankQuestion, knowledgeEntry, practiceRound } from './schemas.ts'
 import type { PracticeRound } from './schemas.ts'
+import {studyPlanDomain} from './study-plan.ts'
 import type { QuestionRecord, PlanConfig, DayPlanRecord, BankQuestionRecord, KnowledgeEntryRecord } from './schemas.ts'
 
 export { questionRecord, planConfig, dayItem, dayPlan, bankQuestion, knowledgeEntry } from './schemas.ts'
@@ -84,6 +87,8 @@ export function instanceDomainSpecs(instanceId: string) {
     || instanceId.length > 200 || instanceId === 'default') throw new Error('需要明确的新实例身份；旧 default 只能经预览接管')
   const prefix = 'kaogong_i_' + createHash('sha256').update(instanceId).digest('hex') + '_'
   return {
+    plan: defineDomain({...studyPlanDomain,name:prefix+'plan'}),
+    reviews: defineDomain({name:prefix+'reviews',version:1,tables:{reviews:domainTable<string,ReviewRecord>(reviewRecord)}}),
     notebook: defineDomain({ ...notebookDomainSpec, name: prefix + 'notebook' }),
     progress: defineDomain({ ...progressDomainSpec, name: prefix + 'progress' }),
     bank: defineDomain({ ...bankDomainSpec, name: prefix + 'bank' }),

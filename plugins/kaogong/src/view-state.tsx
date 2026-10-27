@@ -28,7 +28,7 @@ type ViewValues = {
   'lesson.view': LessonView | null
   'lesson.resumeId': string | null
   'lesson.list': { id: string; subject: string; objective: string; completed: boolean; updatedAt: string }[]
-  'lesson.draft': { id: string; subject: string; objective: string; knowledgePoint: string; reflections: boolean; material: boolean; legacyNoteId: string }
+  'lesson.draft': { id: string; subject: string; objective: string; knowledgePoint: string; reflections: boolean; practice?:boolean; material: boolean; legacyNoteId: string }
   'lesson.form': boolean; 'lesson.notes': string; 'lesson.notesDirty': boolean; 'lesson.error': string; 'lesson.busy': boolean; 'lesson.confirmed': boolean
 }
 type Cell<T> = { value: T; listeners: Set<() => void>; set: Dispatch<SetStateAction<T>> }
