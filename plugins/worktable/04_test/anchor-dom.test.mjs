@@ -397,4 +397,21 @@ function fresh() {
   splitStore.close()
   ok('K. restored terminals require start; newly selected terminals retain launch intent')
 }
+// Legacy layouts from the early left-stack patch omitted both left-pane minima.
+{
+  const {sandbox,splitStore,allEls}=fresh()
+  const root=new FakeEl('DIV','wSkVaW_root',{phase:'hero'}).setRect({left:280,top:76,right:1920,bottom:855})
+  const body=new FakeEl('MAIN').setRect({left:280,top:76,right:1920,bottom:855})
+  root.appendChild(body);allEls.push(root);sandbox.document.body.appendChild(root)
+  const spec=makeSpec('legacy-stacked-minimum')
+  spec.left={id:'p1',title:'Window 1',content:{kind:'iframe',url:'about:blank'}}
+  spec.leftMore=[{id:'p2',title:'Window 2',content:{kind:'iframe',url:'about:blank'}}]
+  spec.leftWidth={default:838,min:420,max:1400}
+  splitStore.open(spec)
+  if(splitStore.spec.left.min!==200 || splitStore.spec.leftMore[0].min!==200)fail('L.min','legacy pane defaults missing in actual installed bundle')
+  if(!Number.isFinite(splitStore.leftW) || splitStore.leftW<=0)fail('L.width','legacy left column lost its finite manual width')
+  if(splitStore.spec.left.tabs[0].content.url!=='about:blank' || splitStore.spec.leftMore[0].id!=='p2')fail('L.references','legacy identity or content changed')
+  splitStore.close()
+  ok('L. legacy left-stack defaults and references survive actual installed bundle opening')
+}
 console.log('all anchor-dom tests passed: ' + pass + '/' + pass)

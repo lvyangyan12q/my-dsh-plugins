@@ -1,3 +1,4 @@
+import {normalizeLegacyPaneMinimums} from './legacy-pane-minimum.mjs'
 import {mkdir,realpath,open,rename,unlink,lstat,stat,readdir,copyFile,readFile} from 'node:fs/promises'
 import {isAbsolute,join} from 'node:path'
 import {constants} from 'node:fs'
@@ -46,7 +47,7 @@ async function locked(folder,run){
 const legacyName=name=>typeof name==='string'&&/^layout-(?!backup-)[A-Za-z0-9][A-Za-z0-9._-]{0,255}\.json$/.test(name)
 function legacyDocument(value){
   if(value?.version!==1)throw new LayoutError('unsupported','旧布局文件版本不兼容，原文件保留。')
-  const spec=value.spec
+  const spec=normalizeLegacyPaneMinimums(value.spec)
   if(!spec||typeof value.projectId!=='string'||value.projectId!==spec.id)throw new LayoutError('invalid','旧布局项目身份不一致，原文件保留。')
   const widths=panes=>Object.fromEntries((panes??[]).map(p=>[p.id,p.min]))
   let layout

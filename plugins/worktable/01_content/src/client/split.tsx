@@ -1,3 +1,4 @@
+import {normalizeLegacyPaneMinimums} from '../layout/legacy-pane-minimum.mjs'
 import {expandedExtents, resizeExpandedNeighbors} from './paneGeometry.mjs'
 import type { CustomSource } from './customTask'
 import {CompositionEditor} from './compositionEditor'
@@ -901,6 +902,7 @@ export const splitStore: SplitState = {
   listeners: new Set(),
 
   open(spec) {
+    spec = normalizeLegacyPaneMinimums(spec)
     if (this.active) {
       // 反选：同一布局再点 = 关闭；不同布局 = 替换（先关旧的）
       if (this.spec?.id === spec.id) {

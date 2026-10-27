@@ -126,3 +126,31 @@ test('version 3 keeps pane minimization and left heights, and upgrades version 2
     assert.equal(await readFile(file,'utf8'),changedOld)
   }finally{await rm(dir,{recursive:true,force:true})}
 })
+
+
+test('legacy missing pane minima migrate without changing references and modern files stay strict',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'worktable-legacy-min-'))
+  try{
+    const sub=join(dir,'.dsh-worktable');await mkdir(sub)
+    const spec=layout().spec
+    spec.left={id:'left1',title:'Left 1',tabs:[{id:'tab1',title:'Keep',content:{kind:'iframe',url:'about:blank'}}],active:0}
+    spec.leftMore=[{id:'left2',title:'Left 2',content:null}]
+    spec.top=[{id:'top1',title:'Top',content:null}]
+    delete spec.main[0].min
+    const bytes=JSON.stringify({version:1,projectId:spec.id,spec}),legacy=join(sub,'layout-'+spec.id+'.json')
+    await writeFile(legacy,bytes)
+    const candidate=await readProjectLayout(dir)
+    assert.equal(candidate.status,'legacy','missing legacy minima are a supported old shape')
+    const restored=candidate.document.spec
+    for(const pane of [restored.left,...restored.leftMore,...restored.top,...restored.main])assert.equal(pane.min,200)
+    assert.deepEqual(restored.left.tabs,spec.left.tabs)
+    assert.equal((await saveProjectLayout(dir,candidate.document,null)).status,'ok')
+    assert.equal(await readFile(legacy,'utf8'),bytes)
+    const current=await readProjectLayout(dir);assert.equal(current.document.version,3)
+    const file=join(sub,'layout.json');delete current.document.spec.left.min
+    const invalid=JSON.stringify(current.document);await writeFile(file,invalid)
+    assert.equal((await readProjectLayout(dir)).status,'invalid','modern documents do not silently repair missing required fields')
+    assert.equal((await saveProjectLayout(dir,candidate.document,1)).status,'invalid')
+    assert.equal(await readFile(file,'utf8'),invalid)
+  }finally{await rm(dir,{recursive:true,force:true})}
+})

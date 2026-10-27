@@ -80,3 +80,31 @@ test('actual pane dividers resize adjacent windows and persist left heights acro
     assert.equal(splitStore.active,false,'a real external margin override still yields the workspace')
   }finally{if(root)await act(async()=>{splitStore.close();root.unmount()});dom.window.close();for(const n of names)old[n]?Object.defineProperty(globalThis,n,old[n]):delete globalThis[n]}
 })
+
+
+test('legacy stacked panes without min remain visible and keep their labels and tabs',async()=>{
+  const dom=new JSDOM('<div id="mount"></div><div class="wSkVaW_root" data-phase="hero"><div class="wSkVaW_body"></div></div>',{url:'http://127.0.0.1/'})
+  const names=['HTMLElement','self','window','document','navigator','localStorage','MutationObserver','ResizeObserver','requestAnimationFrame','cancelAnimationFrame','CustomEvent','IS_REACT_ACT_ENVIRONMENT'],old=Object.fromEntries(names.map(n=>[n,Object.getOwnPropertyDescriptor(globalThis,n)]))
+  for(const name of names)Object.defineProperty(globalThis,name,{value:name==='IS_REACT_ACT_ENVIRONMENT'?true:name==='ResizeObserver'?class{observe(){}disconnect(){}}:name==='requestAnimationFrame'?()=>0:name==='cancelAnimationFrame'?()=>{}:dom.window[name],configurable:true,writable:true})
+  dom.window.HTMLCanvasElement.prototype.getContext=()=>null
+  dom.window.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}})
+  for(const e of document.querySelectorAll('.wSkVaW_root,.wSkVaW_body'))e.getBoundingClientRect=()=>({left:280,top:76,right:1920,bottom:855,width:1640,height:779})
+  const module={exports:{}};new Function('require','module','exports',code)(require,module,module.exports)
+  const {splitStore,SplitWorkspace}=module.exports
+  const pane=id=>({id,title:id,tabs:[{id:'tab-'+id,title:id,content:{kind:'iframe',url:'about:blank'}}],active:0})
+  const spec={id:'legacy-left',title:'Legacy',left:pane('p1'),leftMore:[pane('p2')],top:null,main:[{...pane('p3'),min:200,minimized:true}],chatWidth:{default:492,min:360,max:640},leftWidth:{default:838,min:420,max:1400},preferFileGeometry:true}
+  let root
+  try{
+    await act(async()=>{root=createRoot(document.getElementById('mount'));root.render(React.createElement(SplitWorkspace));splitStore.open(spec)})
+    for(const id of ['p1','p2']){
+      const e=document.querySelector('[data-worktable-pane="'+id+'"]')
+      assert.ok(parseFloat(e.style.width)>0,id+' must not be zero-width')
+      assert.equal(dom.window.getComputedStyle(e).visibility,'visible')
+      assert.equal(e.querySelector('iframe').getAttribute('src'),'about:blank')
+      assert.ok(document.querySelector('[aria-label="收起窗口'+(id==='p1'?1:2)+'"]'))
+    }
+    assert.equal(splitStore.spec.left.min,200);assert.equal(splitStore.spec.leftMore[0].min,200)
+    assert.deepEqual(splitStore.spec.left.tabs,spec.left.tabs)
+    assert.equal(spec.left.min,undefined,'legacy input is not mutated')
+  }finally{if(root)await act(async()=>{splitStore.close();root.unmount()});dom.window.close();for(const n of names)old[n]?Object.defineProperty(globalThis,n,old[n]):delete globalThis[n]}
+})
