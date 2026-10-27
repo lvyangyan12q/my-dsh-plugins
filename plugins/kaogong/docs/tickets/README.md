@@ -1,6 +1,6 @@
 # 当前实施工单
 
-本地Markdown为工单源，读取各票status/blocked_by，不从历史closed推断本轮完成。00目录归位、01独立Host/原生入口及02当前档案承接已closed；04练习账本统计已closed；03计划任务已closed；05错题复习已closed；06—07仍为open，正式切换和真实完整学习闭环列入07，未以旧版本验收替代本轮证据。
+本地Markdown为工单源，读取各票status/blocked_by，不从历史closed推断本轮完成。2026-10-28，00—07均closed；最终准确包、无Worktable真实完整闭环、正式独立profile注册与E3原位升级见[最终验收](../evidence/07-final-acceptance.md)。历史工作台适配和源码测试未作为本轮实装替代。
 
 | 票 | 标题 | 依赖 |
 |---|---|---|

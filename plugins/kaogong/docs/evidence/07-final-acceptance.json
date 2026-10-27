@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "completedOn": "2026-10-28",
+  "branch": "codex/kaogong-standalone-closed-loop",
+  "spec": "docs/spec.md",
+  "ticketsClosed": ["00", "01", "02", "03", "04", "05", "06", "07"],
+  "release": {
+    "version": "0.3.0-rc.3.1",
+    "file": "releases/deepseek-ai-dsh-tool-kaogong-0.3.0-rc.3.1.tgz",
+    "sha256": "26911f185861352297e9d458c22bc0666c19c75a0028e744004743afed0cbfdd",
+    "runtimeCommit": "d45db1b4264a4ecad0e86999d886060a3b6ac53c",
+    "guideCommit": "5a68bcb",
+    "testedRuntimeArchiveSha256": "d6270491f6b2ac3d2cb25d1eb19c11e83dfec7c6a5fb9afb42c013f6c2a2dd89",
+    "files": 97,
+    "identicalFilesAfterGuideRevision": 96,
+    "changedOnly": ["package/README.md"],
+    "officialInstalledProfiles": 3,
+    "eachInstalledFileMatchesArchive": true,
+    "worktableRequiredOrEnabled": false
+  },
+  "native": {
+    "version": "0.2.1-rc.3",
+    "commit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+    "trackedFilesUnchanged": true,
+    "officialScopeIdentity": true
+  },
+  "checks": {
+    "buildAndDeclarations": true,
+    "hostPassed": 46,
+    "clientPassed": 25,
+    "domainPassed": 21,
+    "artifactPassed": 1,
+    "cleanOfficialInstallWithoutDevelopmentAncestor": true,
+    "standardsFindings": 0,
+    "specFindingsResolved": 5,
+    "additionalRuntimeFindingsResolved": 3
+  },
+  "realUserPaths": {
+    "manualWithoutModel": true,
+    "completeLearningLoop": true,
+    "twoLearnerIsolation": true,
+    "originalLectureAndImage": true,
+    "planPreviewAndConfirmation": true,
+    "gradingAndReflections": true,
+    "errorReviewAndConfirmation": true,
+    "progressAndFutureAdjustment": true,
+    "sourceRevokeAndExplicitRegrant": true,
+    "identicalRetryStatus": 200,
+    "conflictingRetryStatus": 409,
+    "pageCloseReopenRefreshAndHostRestart": true,
+    "exactArchiveUninstallReinstall": true,
+    "unsentNativeRoleDraftsRestored": true,
+    "unfinishedAnswersRestored": ["A", "B"],
+    "dirtyLessonDraftRestored": true
+  },
+  "scoredLearners": [
+    {"submitted":10,"answered":5,"blank":5,"correct":1,"answeredIncorrect":4,"unique":10,"accuracy":0.1,"tasksCompleted":3,"tasksTotal":23},
+    {"submitted":10,"answered":10,"blank":0,"correct":3,"answeredIncorrect":7,"unique":10,"accuracy":0.3,"tasksCompleted":3,"tasksTotal":23}
+  ],
+  "nativeModel": {
+    "privateSkillAndActualReadTools": true,
+    "nativeQuestionAnswered": true,
+    "approvalRejectedMarkerAbsent": true,
+    "approvalAllowOnceMarkerExact": true,
+    "permanentAccessModeUnchanged": true,
+    "stopObservedWhileGenerating": true,
+    "storageFilesUnchangedByStop": 17,
+    "aiProposalsInertUntilLearnerPage": true,
+    "missingEvidenceCompletionBlocked": true,
+    "ordinaryUnboundSessionHasNoPrivateToolsOrSkill": true,
+    "ownedTeachingAdmissionAcceptedAndFinalized": true,
+    "noAutomaticResend": true
+  },
+  "preservation": {
+    "protectedOriginalFiles": 36,
+    "byteUnchangedOriginals": 34,
+    "expectedIndependentProfilePackageAndLockChanges": 2,
+    "retainedScore": "9/10",
+    "retainedNativeSessionAndCwd": true,
+    "oldAppliedMaterialPlansUnchanged": 2,
+    "materialCopiesVerified": 5308,
+    "archivedFilesVerified": 417,
+    "oldLinksRetained": 91,
+    "sourceMutated": false,
+    "credentialsCopied": false,
+    "userDirtyFilesPreserved": 8,
+    "formalProfile": "kaogong-standalone",
+    "originalWebProfilePreserved": true,
+    "legacyGlobalLearningNotAutomaticallyAdopted": true
+  },
+  "cleanup": {
+    "worktreesRemovedAfterZeroLinkRescan": 11,
+    "uniqueIgnoredFilesPreserved": 23,
+    "uniqueIgnoredBytesPreserved": 2095996,
+    "allBranchesPreserved": true,
+    "ownedAcceptanceInstancesStopped": 3
+  },
+  "limits": {
+    "manualImeVerified": false,
+    "importedBankEntries": 3994,
+    "shareableMaterialEntries": 40,
+    "privateLibraryEntries": 29,
+    "notesRetainedAtSource": 3,
+    "blockedBankReferencesVisible": 1746,
+    "missingAssociationIndexVisible": 1,
+    "privateEntriesWithoutImageProofVisible": 26,
+    "noLongTermMasteryClaim": true
+  },
+  "privateEvidenceExcludedFromGitAndPackage": true
+}

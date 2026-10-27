@@ -1,5 +1,13 @@
 # 执行交接：考公目录收拢与独立学习闭环
 
+## 最终交付（2026-10-28）
+
+本轮00—07均closed，完整结果与限制见[最终验收](evidence/07-final-acceptance.md)。独立`0.3.0-rc.3.1`最终归档SHA256为`26911f185861352297e9d458c22bc0666c19c75a0028e744004743afed0cbfdd`，运行代码至`d45db1b`，随包指南修订至`5a68bcb`。最终包三处安装逐文件一致，源码/声明及46/25/21/1门禁、真实无Worktable完整闭环与Native模型矩阵通过。
+
+正式新增`kaogong-standalone` profile，原web保留；当前E3在原home的`kaogong-independent02`原位升级，9/10、反思、已完成/未完成课堂、原Session/cwd、资料及发送回执保留。36项原文件保护清单仅预期的独立profile package/lock两项变化。新真实资料仅在明确预览确认后接入，既有synthetic-v2/v3计划不重写。人工IME未验证、资料未证明引用据实列在最终验收。
+
+11个自建工作树已零链接复扫、私有归档后清理；所有分支保留。交付分支为`codex/kaogong-standalone-closed-loop`。以下保留原始交接及阶段性进度，不能将历史“尚待完成”段落当作最终状态。
+
 ## 用户要求
 在 D:/programming/workspace/my-dsh/plugins/kaogong 单独创建执行会话，后续基于该目录开发。将对应 spec/ticket、资料和题目归位；其他考公内容有依据地归档或删除。当前已退出规划模式，用户明确要求进行交接；本任务应直接执行，不再重复规划或仅承诺能力。
 
