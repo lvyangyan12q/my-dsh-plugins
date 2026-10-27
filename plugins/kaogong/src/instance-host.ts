@@ -3,9 +3,9 @@ import type { StudyWorkspace as ApplicationDirectory } from './study-workspace.t
 import type { StudyRoles as RoleDirectory } from './study-roles.ts'
 import type { KaogongInstancePool, KaogongInstanceState } from './instance-state'
 import { CommandGate } from './command-gate'
+import {modelToolAccess, requireModelToolAccess} from './model-tool-policy.ts'
 
 type Registry = ReturnType<typeof import('./business-registry.ts').businessRegistry> & {dispose?():Promise<void>}
-const readTools = new Set(['kaogong_list_questions', 'kaogong_analyze_errors', 'kaogong_summarize_weaknesses', 'kaogong_taxonomy', 'kaogong_plan_view', 'kaogong_progress_status', 'kaogong_bank_list', 'kaogong_knowledge_read', 'kaogong_knowledge_search', 'kaogong_knowledge_list', 'kaogong_practice_read', 'kaogong_lesson_read'])
 export class KaogongHost {
   private readonly pending = new Set<Promise<unknown>>()
   private closing = false
@@ -65,7 +65,8 @@ export class KaogongHost {
   async tool(name: string, args: unknown, execution: unknown): Promise<unknown> {
     const sessionId = (execution as { agent?: { session?: {id?: unknown} } })?.agent?.session?.id
     if (typeof sessionId !== 'string' || !sessionId) throw new Error('Native execution Session required')
-    const binding = await this.services.roles.resolveSession('kaogong', sessionId, { access: readTools.has(name) ? 'read' : 'write' })
+    const access = requireModelToolAccess(name)
+    const binding = await this.services.roles.resolveSession('kaogong', sessionId, { access })
     return this.operation(binding.instanceId, name, async registry => {
       const tool = registry.tools.get(name)
       if (!tool) throw new Error('Tool unavailable')
@@ -73,8 +74,9 @@ export class KaogongHost {
     })
   }
   async active(name: string, context: {agent: {session: {id: string}}}): Promise<boolean> {
-    if (this.closing) return false
-    try { await this.services.roles.resolveSession('kaogong', context.agent.session.id, {access: readTools.has(name) ? 'read' : 'write'}); return true } catch { return false }
+    const access = modelToolAccess(name)
+    if (this.closing || !access) return false
+    try { await this.services.roles.resolveSession('kaogong', context.agent.session.id, {access}); return true } catch { return false }
   }
   async close(): Promise<void> {
     this.closing = true

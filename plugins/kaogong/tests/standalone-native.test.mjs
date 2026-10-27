@@ -86,6 +86,17 @@ test('independent role HTTP creates a standard Native Session with private teach
     assert.equal(progress.unansweredCount,0)
     assert.deepEqual(progress.errorReasons,[])
     await assert.rejects(progressTool.execute({}, {agent:handles.get(ordinaryId).agent}))
+    // Model-supplied confirmation never grants learner-page authority.
+    const modelWrites = ['kaogong_record_question', 'kaogong_delete_question', 'kaogong_bank_add', 'kaogong_bank_delete', 'kaogong_bank_review', 'kaogong_practice', 'kaogong_practice_submit', 'kaogong_pdf_parse', 'kaogong_pdf_collect', 'kaogong_knowledge_add', 'kaogong_knowledge_delete']
+    const admittedTools = await ctx.tools.resolve({agent, signal:new AbortController().signal})
+    try {
+      for (const name of modelWrites) {
+        assert.equal(ctx.tools.get(name, agent, admittedTools), undefined, name + ' must be unavailable to the model')
+        await assert.rejects(ctx.tools.get(name, agent).execute({confirmed:true, id:'model-chosen'}, {agent}), /LEARNER_PAGE_REQUIRED/, name)
+      }
+      assert.ok(ctx.tools.get('kaogong_progress_status', agent, admittedTools))
+      assert.ok(ctx.tools.get('kaogong_lesson_read', agent, admittedTools))
+    } finally { admittedTools.dispose() }
     const again = await post({ action: 'role-ensure', viewId, roleId: 'class-advisor' })
     const restored = await post({ action: 'session-context', sessionId: ensured.value.sessionId })
     assert.equal(restored.status, 200)
