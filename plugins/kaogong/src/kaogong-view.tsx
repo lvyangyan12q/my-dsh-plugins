@@ -51,7 +51,7 @@ export type PracticeResult = {
   accuracyRate: number
   results: { id: string; subject: string; knowledgePoint: string; stem: string; options: string[]; source: string; userAnswer: string; correct: boolean; correctAnswer: string; explanation: string }[]
 }
-export type PracticeContext = { subject: string; title: string; knowledgePoint?: string; limit: number; planIndex?: number }
+export type PracticeContext = { subject: string; title: string; knowledgePoint?: string; limit: number; planIndex?: number;taskId?:string;planRevision?:number }
 /** Ticket 06 can resolve a role binding from this evidence without parsing the legacy prompt. */
 export type KaogongTeachingRequest =
   | { kind: 'lesson'; context: Readonly<PracticeContext>; lessonEvidence?: { id: string; title: string; source: string; content: string } }

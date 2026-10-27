@@ -26,6 +26,9 @@ import type { QuestionRecord, PlanConfig, DayPlanRecord, BankQuestionRecord, Kno
 import { PracticeRounds, PracticeError } from './practice-rounds.ts'
 import { loadVerifiedPracticeMaterials, loadVerifiedPracticeOptions } from './verified-practice-materials.ts'
 import { Lessons } from './lessons.ts'
+import {registerStudyPlanRoutes} from './study-plan-http.ts'
+import {registerStudyPlanTools} from './study-plan-tools.ts'
+import type {StudyPlan} from './study-plan.ts'
 import { lessonCreate, lessonCommand, lessonLink, lessonSummaryInput, lessonConfirm } from './lesson-schema.ts'
 import type { Lesson } from './lesson-schema.ts'
 import { z as wire } from 'zod'
@@ -251,6 +254,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
   const current = () => ({ mineru: config.mineru.get(), questionImageRoot: config.questionImageRoot.get() })
   const hasDocumentRoot = () => !!current().mineru?.outputDir && isAbsolute(current().mineru!.outputDir!)
   const topN = config.topN ?? DEFAULT_TOP_N
+  ctx.effect(()=>registerStudyPlanRoutes(ctx,state),'kaogong.study-plan')
   registerMineruTools(ctx, mineru, knowledgeEntries)
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact', path: '/api/kaogong/knowledge',
@@ -485,7 +489,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
     },
     presentCall: args => ({ card: 'generic', title: '只读核对已完成练习轮次', kind: 'other', rawInput: args }),
   }))
-  registerProgressTools(ctx, planConfig, days, questions, topN)
+  registerProgressTools(ctx, planConfig, days, questions, topN, practice, state.plan)
   registerBankTools(ctx, bankQuestions, questions, practice)
   registerKnowledgeTools(ctx, knowledgeEntries)
 }
@@ -872,228 +876,10 @@ function registerProgressTools(
   days: KvTable<string, DayPlanRecord>,
   questions: KvTable<string, QuestionRecord>,
   topN: number,
+  practice: PracticeRounds,
+  studyPlan: StudyPlan,
 ): void {
-  ctx.tools.register(defineTool({
-    name: 'kaogong_plan_set',
-    description:
-      '设置备考计划并生成倒排学习日程：指定考试日期、每天学习模块数与科目权重，'
-      + '从今天倒排到考试日，按基础/强化/冲刺三阶段排满每一天。',
-    parameters: {
-      examDate: { type: 'string', description: '考试日期 YYYY-MM-DD，例如 2027-03-01。省略则沿用当前设置。' },
-      dailyModules: { type: 'integer', description: '每天学习模块数（一个模块 ≈ 一个知识点/一次练习），默认沿用当前设置。' },
-      subjects: {
-        type: 'array',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            name: { type: 'string', required: true, description: '科目名，如"行测-判断推理"。' },
-            weight: { type: 'integer', description: '权重（越大排得越多），默认 1。' },
-          },
-        },
-        description: '备考科目与权重；省略则用全部科目、等权重。',
-      },
-    },
-    output: {
-      schema: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          examDate: { type: 'string', required: true },
-          today: { type: 'string', required: true },
-          totalDays: { type: 'integer', required: true },
-          daysToExam: { type: 'integer', required: true },
-          dailyModules: { type: 'integer', required: true },
-          subjects: { type: 'array', required: true, items: { type: 'string' } },
-          phases: {
-            type: 'array',
-            required: true,
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                phase: { type: 'string', required: true, enum: ['foundation', 'reinforce', 'sprint'] },
-                days: { type: 'integer', required: true },
-              },
-            },
-          },
-        },
-      },
-      render: (_args, value) => [{
-        type: 'text',
-        text: '已生成倒排计划：考试 ' + value.examDate + '，距今天还有 ' + value.daysToExam + ' 天，共排 ' + value.totalDays + ' 天'
-          + '（基础 ' + phaseDays(value, 'foundation') + ' 天 / 强化 ' + phaseDays(value, 'reinforce') + ' 天 / 冲刺 ' + phaseDays(value, 'sprint') + ' 天）。'
-          + '每天 ' + value.dailyModules + ' 个模块。',
-      }],
-    },
-    async execute(args) {
-      const current = planConfig.get()
-      const examDate = args.examDate ?? current.examDate
-      if (!isValidIsoDate(examDate)) throw new Error('examDate must be a valid YYYY-MM-DD date')
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(examDate)) throw new Error('examDate 必须是 YYYY-MM-DD')
-      const dailyModules = args.dailyModules && args.dailyModules > 0 ? args.dailyModules : current.dailyModules
-      const subjects = args.subjects && args.subjects.length > 0
-        ? args.subjects.map(s => ({ name: s.name.trim(), weight: s.weight && s.weight > 0 ? s.weight : 1 }))
-        : current.subjects
-      const validSubjects = new Set(TAXONOMY.map(subject => subject.subject))
-      for (const subject of subjects) {
-        if (!subject.name) throw new Error('subjects 中的 name 不能为空')
-        if (!validSubjects.has(subject.name)) throw new Error('不支持的科目：' + subject.name + '，请先调用 kaogong_taxonomy')
-      }
-      if (subjects.length === 0) throw new Error('subjects 不能为空')
-
-      const config: PlanConfig = { examDate, dailyModules, subjects }
-      const today = todayStr()
-      const plan = generatePlan(config, today)
-      await planConfig.set(config)
-      await writeDays(days, plan.days)
-      return {
-        examDate,
-        today,
-        totalDays: plan.totalDays,
-        daysToExam: daysToExam(today, examDate),
-        dailyModules,
-        subjects: subjects.map(s => s.name),
-        phases: plan.phases.map(p => ({ phase: p.phase, days: p.days })),
-      }
-    },
-    presentCall: args => ({ card: 'generic', title: '设置学习计划', kind: 'other', rawInput: args }),
-  }))
-
-  ctx.tools.register(defineTool({
-    name: 'kaogong_plan_view',
-    description: '查看某天（默认今天）的学习计划，以及整体进度。',
-    parameters: {
-      date: { type: 'string', description: '日期 YYYY-MM-DD，默认今天。' },
-    },
-    output: {
-      schema: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          configured: { type: 'boolean', required: true },
-          examDate: { type: 'string', required: true },
-          today: { type: 'string', required: true },
-          daysToExam: { type: 'integer', required: true },
-          totalDays: { type: 'integer', required: true },
-          pastDays: { type: 'integer', required: true },
-          pastDone: { type: 'integer', required: true },
-          date: { type: 'string', required: true },
-          phase: { type: 'string', required: true, enum: ['foundation', 'reinforce', 'sprint'] },
-          items: {
-            type: 'array',
-            required: true,
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                subject: { type: 'string', required: true },
-                kind: { type: 'string', required: true, enum: ['learn', 'review', 'practice', 'mock'] },
-                title: { type: 'string', required: true },
-                done: { type: 'boolean', required: true },
-              },
-            },
-          },
-        },
-      },
-      render: (_args, value) => {
-        if (!value.configured) return [{ type: 'text', text: '尚未生成学习计划，请先调用 kaogong_plan_set。' }]
-        const lines = [
-          '考试 ' + value.examDate + '，距今天 ' + value.daysToExam + ' 天。',
-          '整体进度：过去 ' + value.pastDays + ' 天中完成 ' + value.pastDone + ' 天。',
-          '【' + value.date + '】（' + phaseLabel(value.phase) + '阶段）',
-        ]
-        if (value.items.length === 0) lines.push('- 当天无安排')
-        value.items.forEach((item, i) => {
-          lines.push((item.done ? '✅' : '⬜') + ' ' + (i + 1) + '. [' + item.kind + '] ' + item.title)
-        })
-        return [{ type: 'text', text: lines.join('\n') }]
-      },
-    },
-    async execute(args) {
-      const config = planConfig.get()
-      const today = todayStr()
-      const target = args.date ?? today
-      if (!isValidIsoDate(target)) throw new Error('date must be a valid YYYY-MM-DD date')
-      const all = Array.from(days.entries())
-      const configured = all.length > 0
-
-      let pastDays = 0
-      let pastDone = 0
-      for (const [date, plan] of all) {
-        if (date <= today) {
-          pastDays++
-          if (plan.items.length > 0 && plan.items.every(item => item.done)) pastDone++
-        }
-      }
-
-      const day = days.get(target)
-      return {
-        configured,
-        examDate: config.examDate,
-        today,
-        daysToExam: daysToExam(today, config.examDate),
-        totalDays: all.length,
-        pastDays,
-        pastDone,
-        date: target,
-        phase: day?.phase ?? 'foundation',
-        items: day?.items ?? [],
-      }
-    },
-    presentCall: args => ({ card: 'generic', title: '查看计划', kind: 'other', rawInput: args }),
-  }))
-
-  ctx.tools.register(defineTool({
-    name: 'kaogong_plan_done',
-    description: '把某天（默认今天）的某个学习项标记为完成/未完成。',
-    parameters: {
-      date: { type: 'string', description: '日期 YYYY-MM-DD，默认今天。' },
-      index: { type: 'integer', description: '第几个学习项（从 0 开始），默认 0。' },
-      done: { type: 'boolean', description: '是否完成，默认 true。' },
-    },
-    output: {
-      schema: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          date: { type: 'string', required: true },
-          phase: { type: 'string', required: true, enum: ['foundation', 'reinforce', 'sprint'] },
-          items: {
-            type: 'array',
-            required: true,
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                subject: { type: 'string', required: true },
-                kind: { type: 'string', required: true, enum: ['learn', 'review', 'practice', 'mock'] },
-                title: { type: 'string', required: true },
-                done: { type: 'boolean', required: true },
-              },
-            },
-          },
-        },
-      },
-      render: (_args, value) => {
-        const done = value.items.filter(item => item.done).length
-        return [{ type: 'text', text: '【' + value.date + '】已完成 ' + done + '/' + value.items.length + ' 项。' }]
-      },
-    },
-    async execute(args) {
-      const date = args.date ?? todayStr()
-      if (!isValidIsoDate(date)) throw new Error('date must be a valid YYYY-MM-DD date')
-      const day = days.get(date)
-      if (day === undefined) throw new Error('该日期没有计划，请先 kaogong_plan_set 或指定正确日期')
-      const index = args.index ?? 0
-      if (index < 0 || index >= day.items.length) throw new Error('index 超出该日学习项范围（0-' + (day.items.length - 1) + '）')
-      const done = args.done ?? true
-      const items = day.items.map((item, i) => (i === index ? { ...item, done } : item))
-      await days.put(date, { ...day, items })
-      return { date, phase: day.phase, items }
-    },
-    presentCall: args => ({ card: 'generic', title: '标记完成', kind: 'other', rawInput: args }),
-  }))
+  registerStudyPlanTools(ctx, studyPlan)
 
   ctx.tools.register(defineTool({
     name: 'kaogong_progress_status',

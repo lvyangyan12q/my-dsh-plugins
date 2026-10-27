@@ -1,4 +1,4 @@
-export type LearnerDraft={version:1;form:boolean;lessonId:string|null;notes:string;notesDirty:boolean;goal?:{id:string;subject:string;objective:string;knowledgePoint:string;reflections:boolean;material:boolean;legacyNoteId:string}}
+export type LearnerDraft={version:1;form:boolean;lessonId:string|null;notes:string;notesDirty:boolean;goal?:{id:string;subject:string;objective:string;knowledgePoint:string;reflections:boolean;practice?:boolean;material:boolean;legacyNoteId:string}}
 const record=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==='object'&&!Array.isArray(value)
 const text=(value:unknown,max:number):value is string=>typeof value==='string'&&value.length<=max
 function validate(value:unknown):LearnerDraft|null{

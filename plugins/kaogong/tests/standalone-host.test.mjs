@@ -58,6 +58,26 @@ async function fixture(options = {}) {
     await rm(actual, { recursive: true })
   } }
 }
+test('plan HTTP uses the existing authenticated Host view gate and saves only explicitly confirmed previews',async()=>{
+ const app=await fixture()
+ try{
+  const made=await app.request('/api/kaogong/study',{action:'create',title:'计划档案',kind:'learner',confirmed:true}),view=made.value.view.id
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view,undefined,false)).status,403)
+  assert.equal((await app.request('/api/kaogong/plan?viewId=foreign')).status,403)
+  const empty=await app.request('/api/kaogong/plan?viewId='+view);assert.equal(empty.value.goal,null)
+  const preview=await app.request('/api/kaogong/plan?viewId='+view,{action:'preview',operation:'append',baseRevision:0,task:{subject:'行测-资料分析',kind:'learn',title:'阅读总结',requirePractice:false}})
+  assert.equal(preview.status,200);assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks.length,0)
+  const confirmed=await app.request('/api/kaogong/plan?viewId='+view,{action:'confirm',id:preview.value.id,revision:0,confirmed:true});assert.equal(confirmed.value.tasks.length,1)
+  const taskId=confirmed.value.tasks[0].id,start=await app.request('/api/kaogong/plan/start?viewId='+view,{id:taskId,revision:1})
+  assert.equal(start.status,200)
+  const retry=await app.request('/api/kaogong/plan/start?viewId='+view,{id:taskId,revision:1});assert.equal(retry.value.lesson.lesson.request.lessonId,start.value.lesson.lesson.request.lessonId)
+  const lessonId=start.value.lesson.lesson.request.lessonId
+  await app.request('/api/kaogong/lesson/summary?viewId='+view,{lessonId,notes:'手动阅读总结已保存'})
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks[0].status,'in-progress')
+  assert.equal((await app.request('/api/kaogong/lesson/confirm?viewId='+view,{lessonId,confirmed:true})).status,200)
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks[0].status,'completed')
+ }finally{await app.close()}
+})
 
 test('without Worktable, Host lists an empty study space and creates a profile only after authenticated learner confirmation', async () => {
   const app = await fixture()
