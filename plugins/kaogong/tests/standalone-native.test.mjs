@@ -18,10 +18,10 @@ test('independent role HTTP creates a standard Native Session with private teach
   let loseAdmissionResponse = false
   const workspace = { id: 'native-study-workspace', path: root, sessionIds: [] }
   let stop, backend
-  const post = async body => {
-    const req = Readable.from([JSON.stringify(body)]), res = { status: 0, writeHead(value) { this.status = value }, end(value) { this.value = JSON.parse(value) } }
-    Object.assign(req, { method: 'POST', url: '/api/kaogong/study', headers: { 'content-type': 'application/json' } })
-    await routes.get('exact:/api/kaogong/study').handler(req, res)
+  const post = async (body, path='/api/kaogong/study') => {
+    const req = Readable.from(body === undefined ? [] : [JSON.stringify(body)]), res = { status: 0, writeHead(value) { this.status = value }, end(value) { this.value = JSON.parse(value) } }
+    Object.assign(req, { method: body === undefined ? 'GET' : 'POST', url: path, headers: { 'content-type': 'application/json' } })
+    await routes.get('exact:'+path.split('?')[0]).handler(req, res)
     return res
   }
   try {
@@ -96,7 +96,33 @@ test('independent role HTTP creates a standard Native Session with private teach
       }
       assert.ok(ctx.tools.get('kaogong_progress_status', agent, admittedTools))
       assert.ok(ctx.tools.get('kaogong_lesson_read', agent, admittedTools))
+      assert.ok(ctx.tools.get('kaogong_plan_set', agent, admittedTools), 'plan suggestion must remain available')
+      assert.ok(ctx.tools.get('kaogong_plan_done', agent, admittedTools), 'completion suggestion must remain available')
     } finally { admittedTools.dispose() }
+    const planPath = '/api/kaogong/plan?viewId='+viewId
+    const initialPlan = (await post(undefined,planPath)).value
+    assert.equal(initialPlan.goal,null)
+    const exam = new Date(); exam.setDate(exam.getDate()+7)
+    const examDate = [exam.getFullYear(),String(exam.getMonth()+1).padStart(2,'0'),String(exam.getDate()).padStart(2,'0')].join('-')
+    const suggestion = JSON.parse((await ctx.tools.get('kaogong_plan_set',agent).execute({examDate,dailyModules:1,subjects:[{name:'行测-资料分析',weight:1}],confirmed:true,instanceId:'foreign-profile'},{agent})).summary)
+    assert.equal(suggestion.effective,false)
+    const pendingPlan = (await post(undefined,planPath)).value
+    assert.equal(pendingPlan.revision,initialPlan.revision)
+    assert.equal(pendingPlan.goal,null)
+    assert.deepEqual(pendingPlan.tasks,[])
+    assert.equal(pendingPlan.drafts.some(row=>row.id===suggestion.proposalId),true)
+    const confirmedPlan = await post({action:'confirm',id:suggestion.proposalId,revision:pendingPlan.revision,confirmed:true},planPath)
+    assert.equal(confirmedPlan.status,200,JSON.stringify(confirmedPlan.value))
+    assert.ok(confirmedPlan.value.tasks.length>0)
+    const effectivePlan = confirmedPlan.value
+    const completion = JSON.parse((await ctx.tools.get('kaogong_plan_done',agent).execute({taskId:effectivePlan.tasks[0].id,done:true,confirmed:true},{agent})).summary)
+    assert.equal(completion.effective,false)
+    assert.deepEqual((await post(undefined,planPath)).value,effectivePlan)
+    await ctx.tools.get('kaogong_plan_view',agent).execute({}, {agent})
+    await ctx.tools.get('kaogong_practice_read',agent).execute({}, {agent})
+    await ctx.tools.get('kaogong_lesson_read',agent).execute({}, {agent})
+    assert.deepEqual((await post(undefined,planPath)).value,effectivePlan)
+    await assert.rejects(ctx.tools.get('kaogong_plan_set',agent).execute({examDate},{agent:handles.get(ordinaryId).agent}))
     const again = await post({ action: 'role-ensure', viewId, roleId: 'class-advisor' })
     const restored = await post({ action: 'session-context', sessionId: ensured.value.sessionId })
     assert.equal(restored.status, 200)

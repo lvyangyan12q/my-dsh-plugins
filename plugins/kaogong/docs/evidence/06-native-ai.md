@@ -16,7 +16,7 @@
 | 题库写入 | `kaogong_bank_add`、`kaogong_bank_delete`、`kaogong_bank_review` | 模型不可用，保持原题、答案及审核记录 |
 | 作答与评分 | `kaogong_practice`、`kaogong_practice_submit` | 模型不可用；学习者页面发放与提交仍可用 |
 | 解析与知识库 | `kaogong_pdf_parse`、`kaogong_pdf_collect`、`kaogong_knowledge_add`、`kaogong_knowledge_delete` | 模型不可用，阻止解析任务和知识库的隐含写入 |
-| 计划与完成建议 | `kaogong_plan_set`、`kaogong_plan_done` | 等待03合入建议实现后审计并开放；本阶段仍拒绝旧直接写入实现 |
+| 计划与完成建议 | `kaogong_plan_set`、`kaogong_plan_done` | 03实现已合入：前者只保存未生效草稿，后者只返回建议；两者不接受页面确认权限 |
 
 `KaogongHost.tool` 在创建动态 registry、来源覆盖、PDF job owner 和 knowledge wrapper 之前检查显式能力清单。`active` 使用相同清单决定实际 Native 步骤的工具准入。新工具默认不可用于模型；模型提供的 `confirmed`、档案 ID 或其他参数不产生学习者页面权限。真实 Session、私有作用域、Scope 身份和来源撤销校验保持原样。HTTP 路由继续通过身份准入及 Host 登记 viewId 执行。
 
@@ -28,6 +28,16 @@
 - 教学任务既有公开测试继续验证：准备不发送；明确发送后保存 Native admission/flush 回执；响应丢失为 unknown，重复发送与恢复重发拒绝。
 - 私有 `kaogong-teach` 和三类 persona 已纠正旧直接入库、交卷或打卡指令，明确页面确认及 Native Stop/空闲不等于完成。
 
+## 合并03与05基础后的验证
+
+同步集成提交 `b5df33cb77a93cba3576c96bed9bd1fee81f0e4a` 后，审计03的两个建议工具并加入显式能力清单。
+
+- TDD红灯：Native步骤准入缺少计划建议；开放仅此两个惰性建议处理器后转绿。
+- 真实标准 Native Agent 调用 plan_set，即使携带 `confirmed:true` 和模型指定的其他档案字段，也只得到 `effective:false`；HTTP读取的目标仍为null、任务为空、有效版本不变，仅草稿出现。
+- 同一草稿经学习者HTTP明确确认后才产生正式任务；模型随后调用 plan_done 返回 `effective:false`，再读页面的完整计划及任务状态完全不变。
+- 连续调用 plan_view、practice_read、lesson_read 不改变有效计划；普通Native Session不能调用建议工具。
+- 合并后公开 Host 41/41、Client 18/18、构建后领域回归21/21、发行内容门禁1/1通过。完整构建包含官方Host/Client声明门禁。领域测试首次因尚未构建lib无法导入；构建当前源码后重跑通过，未使用旧lib代替。
+
 ## 尚需完成
 
-03/05合入后验证计划建议不生效、页面确认才生效，以及完整手动学习闭环；准确发行包真实模型加载私有 Skill、上下文读取、提问、审批拒绝/允许一次、Stop、角色草稿切换与普通会话隔离。上述项目未以本文件的源码测试替代。
+05正式复习日程关联仍在集成；准确发行包中须验证完整手动学习闭环、真实模型加载私有 Skill、上下文读取、提问、审批拒绝/允许一次、Stop、角色草稿切换与普通会话隔离。上述项目未以本文件的源码测试替代，06仍保持open。
