@@ -35,17 +35,19 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
     const practice = new PracticeRounds(rounds.table('rounds'), bank.table('questions'), notebook.table('questions'))
     const teaching = new Lessons(lessonRecords, knowledge.table('entries'), practice,
       key => options.readBinding?.(instanceId, key) ?? Promise.resolve(null), lessonSelection)
+    const errors=new ErrorReviews(rounds.table('rounds'),reviews.table('reviews'))
     const plan=new StudyPlan(planDomain.global,async(task,input)=>{
+      if(task.reviewOccurrence){if(task.status!=='in-progress'||task.reviewHistoryCount===undefined)throw Error('请先开始本次复习任务');const proof=errors.readConfirmed(JSON.stringify([task.reviewOccurrence.roundId,task.reviewOccurrence.questionId]),undefined,task.reviewHistoryCount);if(proof.subject!==task.subject)throw Error('复习科目与任务不一致');return proof}
       if(!input.roundId)throw Error('需要匹配的已提交练习轮次及错因反思证据')
       const round=(await practice.readCompleted(input.roundId))?.round,result=round?.result
       if(!round||!result||round.context.taskId!==task.id||round.context.planRevision!==task.startedFromRevision||round.context.subject!==task.subject||result.results.some(q=>!q.userAnswer.trim())||task.requireReflections&&result.results.some(q=>!q.correct&&!round.reflections.some(r=>r.id===q.id&&r.errorReason)))throw Error('练习轮次、任务关联或错因反思证据不完整')
       return {roundId:round.roundId,total:result.totalCount,correct:result.correctCount,reflectedIds:round.reflections.map(r=>r.id)}
-    })
+    },async task=>{const {row,review}=errors.readForPlan(JSON.stringify([task.reviewOccurrence!.roundId,task.reviewOccurrence!.questionId]));if(row.subject!==task.subject)throw Error('复习科目与任务不一致');return review.history.length})
     let closing: Promise<void> | undefined
     const state = Object.freeze({
       instanceId, questions: notebook.table('questions'), planConfig: progress.global, days: progress.table('days'),
       bankQuestions: bank.table('questions'), knowledgeEntries: knowledge.table('entries'), rounds: rounds.table('rounds'),
-      lessonRecords, lessonSelection, practice, lessons: teaching, plan, errors:new ErrorReviews(rounds.table('rounds'),reviews.table('reviews')),
+      lessonRecords, lessonSelection, practice, lessons: teaching, plan, errors,
     })
     return { state, close() {
       return closing ??= (async () => {
@@ -137,3 +139,5 @@ export class KaogongInstancePool {
     })()
   }
 }
+
+

@@ -9,7 +9,8 @@ export function registerStudyPlanRoutes(registry:BusinessRegistry,state:KaogongI
  const stopStart=registry.webServer.register({kind:'exact',path:'/api/kaogong/plan/start',handler:async(req,res)=>{
   const send=(code:number,value:unknown)=>{res.writeHead(code,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value))}
   try{if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json'))throw Error('POST JSON required');let text='';for await(const part of req){text+=part;if(text.length>10000)throw Error('请求过大')}const args=z.object({id:z.string().uuid(),revision:z.number().int().nonnegative()}).strict().parse(JSON.parse(text));const current=await state.plan.start(args.id,args.revision),task=current.tasks.find(t=>t.id===args.id)!;
-   if(task.kind==='learn'){const lesson=await state.lessons.create({lessonId:task.lessonId!,subject:task.subject,objective:task.title,materialIds:[],requirePractice:task.requirePractice,requireReflections:task.requireReflections,taskId:task.id,planRevision:task.startedFromRevision});send(200,{state:current,lesson})}
+   if(task.reviewOccurrence){send(200,{state:current,reviewOccurrence:JSON.stringify([task.reviewOccurrence.roundId,task.reviewOccurrence.questionId])})}
+   else if(task.kind==='learn'){const lesson=await state.lessons.create({lessonId:task.lessonId!,subject:task.subject,objective:task.title,materialIds:[],requirePractice:task.requirePractice,requireReflections:task.requireReflections,taskId:task.id,planRevision:task.startedFromRevision});send(200,{state:current,lesson})}
    else {const round=await state.practice.startForTask({subject:task.subject,title:task.title,limit:10,planRevision:task.startedFromRevision},task.id);send(200,{state:current,round})}
   }catch(error){send(409,{error:error instanceof Error?error.message:'任务开始失败'})}
  }})
@@ -33,3 +34,4 @@ export function registerStudyPlanRoutes(registry:BusinessRegistry,state:KaogongI
  }})
  return ()=>{stopStart();stopPlan()}
 }
+

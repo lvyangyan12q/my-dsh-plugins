@@ -7,9 +7,11 @@ import {JSDOM} from 'jsdom'
 test('learner reviews historical errors with explicit queue and completion confirmations',async()=>{
  const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map(),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
  for(const[key,value]of Object.entries(values)){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})}
+ let planOpened=0
  const oldFetch=globalThis.fetch,commands:any[]=[]
  const occurrence={id:'occurrence',questionId:'q1',roundId:'round-old',subject:'行测-资料分析',knowledgePoint:'直接读取',stem:'原题第一项是2',options:['A. 1','B. 2'],userAnswer:'A',correctAnswer:'B',explanation:'第一项为2',source:'原题来源',errorReason:'审题不清',notes:'过去的笔记',submittedAt:'2026-10-27',review:null as any}
  globalThis.fetch=async(input,init)=>{
+  if(String(input).includes('/plan')&&!init?.body)return new Response(JSON.stringify({revision:4}))
   if(init?.body){const body=JSON.parse(String(init.body));commands.push(body);if(body.action==='enroll')occurrence.review={stage:0,status:'scheduled',dueAt:'2099-10-28',history:[]};if(body.action==='answer'){occurrence.review.history=[{id:'attempt',answer:'B',correct:true,answeredAt:'2026-10-27'}];return new Response(JSON.stringify({id:'attempt',answer:'B',correct:true,answeredAt:'2026-10-27'}))};if(body.action==='confirm')occurrence.review={stage:1,status:'scheduled',dueAt:'2026-10-30',history:[{id:'attempt',answer:'B',correct:true,answeredAt:'2026-10-27',reflection:body.reflection,confirmedAt:'2026-10-27'}]}}
   return new Response(JSON.stringify({occurrences:[occurrence],queue:{total:occurrence.review?1:0,due:0}}))
  }
@@ -17,7 +19,7 @@ test('learner reviews historical errors with explicit queue and completion confi
  const root=createRoot(document.getElementById('root')!)
  try{
   const {ErrorReviewPanel}=await import('../src/error-review-panel.tsx')
-  await act(async()=>root.render(<ErrorReviewPanel/>))
+  await act(async()=>root.render(<ErrorReviewPanel onPlan={()=>{planOpened++}}/>))
   assert.match(document.body.textContent??'',/原题第一项是2.*原作答：A.*答案：B/s)
   const click=async(text:string)=>act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent===text)!.click())
   await click('加入复习队列')
@@ -34,8 +36,13 @@ test('learner reviews historical errors with explicit queue and completion confi
   await click('确认本次复习完成')
   assert.equal(commands.at(-1).action,'confirm')
   assert.match(document.body.textContent??'',/第1阶段/)
+  await click('预览加入学习计划')
+  assert.equal(commands.at(-1).action,'preview');assert.equal(commands.at(-1).operation,'append');assert.equal(commands.at(-1).baseRevision,4)
+  assert.deepEqual(commands.at(-1).task.reviewOccurrence,{roundId:'round-old',questionId:'q1'});assert.equal(planOpened,1)
+  assert.equal(commands.some(body=>body.action==='confirm'&&body.revision!==undefined),false)
  }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
+
 
 
 

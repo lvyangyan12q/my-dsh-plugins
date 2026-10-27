@@ -361,3 +361,35 @@ test('error occurrences survive a later correct round and require explicit enrol
   assert.equal((await app.request(url)).status,403)
  }finally{await app.close()}
 })
+
+test('review plan proposals stay inert and completion requires a new confirmed occurrence attempt after starting',async()=>{
+ const app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),viewId=learner.view.id,planUrl='/api/kaogong/plan?viewId='+viewId,errorUrl='/api/kaogong/errors?viewId='+viewId
+  const preview=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:preview.id,fingerprint:preview.fingerprint,confirmed:true})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+  const round=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+  await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:round.roundId,answers:[{id:'first',answer:'A'}]})
+  const item=(await app.request(errorUrl)).value.occurrences[0]
+  await app.request(errorUrl,{action:'enroll',id:item.id,confirmed:true})
+  const answer=async requestId=>(await app.request(errorUrl,{action:'answer',id:item.id,answer:'B',requestId,earlyConfirmed:true})).value
+  const old=await answer('before-task');await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:old.id,reflection:'先前复习',confirmed:true})
+  const draft=(await app.request(planUrl,{action:'preview',baseRevision:0,operation:'append',task:{subject:item.subject,title:'复习原错题',kind:'review',reviewOccurrence:{roundId:item.roundId,questionId:item.questionId}}})).value
+  assert.deepEqual(draft.tasks[0].reviewOccurrence,{roundId:item.roundId,questionId:item.questionId})
+  assert.equal((await app.request(planUrl)).value.tasks.length,0)
+  let plan=(await app.request(planUrl,{action:'confirm',id:draft.id,revision:0,confirmed:true})).value
+  const task=plan.tasks[0]
+  assert.equal((await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).status,409)
+  const started=(await app.request('/api/kaogong/plan/start?viewId='+viewId,{id:task.id,revision:plan.revision})).value
+  assert.equal(started.round,undefined);assert.equal(started.reviewOccurrence,item.id);plan=started.state
+  assert.equal((await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).status,409)
+  const fresh=await answer('after-task')
+  assert.equal((await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).status,409)
+  await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:fresh.id,reflection:'本次重新答题核对',confirmed:true})
+  const complete=(await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).value
+  assert.equal(complete.tasks[0].status,'completed');assert.equal(complete.tasks[0].evidence.proof.attemptId,fresh.id)
+  assert.equal((await app.request('/api/kaogong/dashboard?viewId='+viewId)).value.practiceStatistics.submittedCount,1)
+ }finally{await app.close()}
+})
