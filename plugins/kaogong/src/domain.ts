@@ -102,4 +102,3 @@ export function instanceDomainSpecs(instanceId: string) {
     }),
   }
 }
-

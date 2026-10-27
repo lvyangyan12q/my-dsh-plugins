@@ -361,8 +361,3 @@ test('error occurrences survive a later correct round and require explicit enrol
   assert.equal((await app.request(url)).status,403)
  }finally{await app.close()}
 })
-
-
-
-
-

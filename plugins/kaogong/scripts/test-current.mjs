@@ -17,4 +17,3 @@ for(const [kind,files]of groups){
  const result=spawnSync(process.execPath,['--import',loader,'--test',...filter,...files.map(file=>resolve(root,'tests',file))],{cwd:root,stdio:'inherit',windowsHide:true,env:{...process.env,DSH_SOURCE:native,KAOGONG_TEST_RUNTIME:native,TSX_TSCONFIG_PATH:kind==='client'?resolve(root,'tsconfig.test-client.json'):resolve(native,'tsconfig.json')}})
  if(result.status!==0){process.exitCode=result.status??1;break}
 }
-
