@@ -40,3 +40,13 @@ export function writeLearningPreferences(value: LearningPreferences,instanceId='
   try { window.localStorage.setItem(storageKey(instanceId,viewId), JSON.stringify(validated)) }
   catch { /* Disabled or full browser storage must not prevent learning navigation. */ }
 }
+
+/** Profile-owned display preference, independent of the currently open role/Session. */
+const teacherSubjectKey=(instanceId:string)=>`kaogong/instances/${encodeURIComponent(instanceId)}/teacher-subject/v1`
+export function readTeacherSubject(instanceId:string):string|null {
+  try{const value=window.localStorage.getItem(teacherSubjectKey(instanceId));return value!==null&&(value===''||TAXONOMY.some(row=>row.subject===value))?value:null}catch{return null}
+}
+export function writeTeacherSubject(instanceId:string,value:string){
+  if(value!==''&&!TAXONOMY.some(row=>row.subject===value))return
+  try{window.localStorage.setItem(teacherSubjectKey(instanceId),value)}catch{/* Navigation works without browser persistence. */}
+}

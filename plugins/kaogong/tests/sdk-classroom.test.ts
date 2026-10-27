@@ -66,3 +66,35 @@ test('selected role hover stays legible inside the classroom without changing na
   const outside=document.getElementById('native')!;outside.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}));nativeHover.textContent+=' ';assert.equal(dom.window.getComputedStyle(outside).backgroundColor,'rgba(38, 49, 72, 0.06)')
  }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;for(const [key,descriptor]of previous){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key)}dom.window.close()}
 })
+
+test('switching advisor and counselor returns to the profile last subject teacher and original Session',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map(),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
+ for(const[key,value]of Object.entries(values)){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true})}
+ const prior=globalThis.fetch;globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?{todayPlan:{items:[]},weakPoints:[],modules:[],totalQuestions:0}:String(input).includes('/current')?null:[]))
+ const root=createRoot(document.getElementById('root')!),opened:unknown[]=[],bindings=new Map<string,string>()
+ try{
+  const{ScopedStudyView,KaogongViewStatePool}=await import('../src/client.tsx'),{Simulate}=await import('react-dom/test-utils')
+  let pool=new KaogongViewStatePool();const roles={read:async()=>null,ensure:async(id:string)=>{if(!bindings.has(id))bindings.set(id,'original-'+id);return {phase:'ready' as const,sessionId:bindings.get(id)!,revision:2}},open:async(...args:unknown[])=>{opened.push(args)}}
+  const surface=(profileId='subject-profile')=>React.createElement(ScopedStudyView,{profile:{id:profileId,kind:'learner',title:profileId,revision:1},view:{id:'view-'+profileId,profileId},roles,pool})
+  await act(async()=>root.render(surface()))
+  const select=()=>document.querySelector<HTMLSelectElement>('[aria-label="教师科目"]')!,click=async(title:string)=>act(async()=>[...document.querySelectorAll('nav[aria-label="学习角色"] button')].find(button=>button.textContent===title)!.click())
+  await act(async()=>{select().value='行测-资料分析';Simulate.change(select())})
+  await click('任课老师');await click('班主任');assert.equal(select().value,'行测-资料分析')
+  await click('辅导员');assert.equal(select().value,'行测-资料分析');await click('任课老师')
+  assert.deepEqual(opened,[['teacher.data-analysis','original-teacher.data-analysis',2],['class-advisor','original-class-advisor',2],['counselor','original-counselor',2],['teacher.data-analysis','original-teacher.data-analysis',2]])
+  assert.equal(bindings.size,3);assert.equal(bindings.has('teacher'),false)
+  await act(async()=>root.render(surface('other-profile')));assert.equal(select().value,'')
+  await act(async()=>root.render(surface()));assert.equal(select().value,'行测-资料分析')
+  pool.forView('subject-profile','view-subject-profile:native-data').cell('roles.selected',{appId:'kaogong',instanceId:'subject-profile',roleId:'class-advisor'}).set({appId:'kaogong',instanceId:'subject-profile',roleId:'class-advisor'})
+  await act(async()=>root.render(React.createElement(ScopedStudyView,{profile:{id:'subject-profile',kind:'learner',title:'备考',revision:1},view:{id:'view-subject-profile',profileId:'subject-profile'},roleId:'teacher.data-analysis',sessionId:'native-data',panel:true,roles,pool})))
+  assert.equal(select().value,'行测-资料分析');assert.equal(document.querySelector('nav[aria-label="学习角色"] button[aria-pressed=true]')?.textContent,'任课老师')
+  await click('班主任')
+  assert.equal(document.querySelector('nav[aria-label="学习角色"] button[aria-pressed=true]')?.textContent,'任课老师','Native Host role remains authoritative until its Session context changes')
+  await act(async()=>root.render(React.createElement(ScopedStudyView,{profile:{id:'subject-profile',kind:'learner',title:'备考',revision:1},view:{id:'view-subject-profile',profileId:'subject-profile'},roleId:'counselor',sessionId:'native-counselor',panel:true,roles,pool})))
+  assert.equal(select().value,'行测-资料分析');assert.equal(document.querySelector('nav[aria-label="学习角色"] button[aria-pressed=true]')?.textContent,'辅导员')
+  await click('任课老师');assert.deepEqual(opened.at(-1),['teacher.data-analysis','original-teacher.data-analysis',2])
+  pool.dispose();pool=new KaogongViewStatePool();await act(async()=>root.render(surface()));assert.equal(select().value,'行测-资料分析','profile teacher choice survives rebuilding the view owner')
+
+
+ }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
+})

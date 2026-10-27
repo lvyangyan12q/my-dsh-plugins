@@ -31,3 +31,11 @@ Native保留右栏组件时，main和隐藏右栏可同时呈现同一轮次/错
 两个公开页面DOM回归分别先红后绿：main和hidden aside双挂载同一共享练习轮次，选择可见答案后两份对应控件都checked，隐藏副本更新后可见副本同步而不取消；同一错题发生项的两个复习视图分别选择答案时，各自组保持选中且本组仍单选。检查真实input.checked属性，不以HTML checked属性或仅状态值替代。
 
 本次验证：Client24/24及完整构建（含Host/Client声明门禁）通过；仓库外dual-radio-validation.log保留输出。两项新增回归已在默认Client入口涉及的原测试文件中，无需另加孤立测试命令。此前准确包保持冻结，须重新生成并实装包含本修复的准确包后核对真实Native双挂载。
+
+## 准确包实装追加修复：返回原科目老师
+
+原生老师草稿仍在原Session，但teacher→班主任→辅导员会覆盖当前roles.selected并丢失教师subject，使再点任课老师导航到generic teacher。现按备考档案单独保存最后教师科目（有界显示偏好，浏览器存储不可用时仍可导航），与当前角色选择分开；班主任/辅导员的真实角色key不携带教师科目。打开任务教师也更新相同偏好。Native右栏的当前角色以Host session-context返回的roleId为权威，旧presentation选择不覆盖实际Session身份；实际老师科目同步到偏好。
+
+公开React角色界面先红后绿：选择资料分析老师→班主任→辅导员→任课老师，只定位teacher.data-analysis/class-advisor/counselor三个原Session，无generic teacher；切档案独立、重建视图owner恢复科目。旧右栏presentation为班主任但Host为teacher.data-analysis时显示真实任课老师和资料分析；导航尚未使Host Session变化时不以本地选项冒充新角色，Host切辅导员后显示辅导员，仍可回原科目老师。没有读写Native草稿/消息、cwd、角色Scope或绑定。
+
+本次Client25/25及完整构建（含Host/Client声明门禁）通过，日志仓库外teacher-subject-validation.log。冻结包不改；07须以包含此修复的新准确包复验实际三角色草稿切换。

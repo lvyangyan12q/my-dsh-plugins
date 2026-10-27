@@ -5,7 +5,7 @@ import type {LearningRoleKey} from './client-runtime.ts'
 import type { DashboardData, PracticeData, PracticeContext, PracticeResult, ModuleSummary } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'
 import type { LessonView } from './lesson-schema.ts'
-import { readLearningPreferences, writeLearningPreferences } from './learning-preferences.ts'
+import { readLearningPreferences, writeLearningPreferences, readTeacherSubject, writeTeacherSubject } from './learning-preferences.ts'
 import {readLearnerDraft,writeLearnerDraft} from './learner-draft.ts'
 
 /** Fixed types and namespaces for the default instance's transient values. */
@@ -23,6 +23,7 @@ type ViewValues = {
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: RoleFacade | null; tasks: TaskFacade | null
   'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
+  'roles.teacherSubject': string
   'roles.selected': LearningRoleKey
   'roles.opened': LearningRoleKey[]
   'lesson.view': LessonView | null
@@ -42,6 +43,7 @@ export class KaogongViewState {
   constructor(readonly instanceId='default',readonly viewId?:string) {
     const draft=readLearnerDraft(instanceId)
     if(draft){if(draft.goal)this.cell('lesson.draft',draft.goal);this.cell('lesson.form',draft.form);this.cell('lesson.resumeId',draft.lessonId);this.cell('lesson.notes',draft.notes);this.cell('lesson.notesDirty',draft.notesDirty)}
+    if(!viewId){const subject=readTeacherSubject(instanceId);if(subject!==null)this.cell('roles.teacherSubject',subject)}
     const saved = readLearningPreferences(instanceId,viewId)
     if (!saved) return
     this.cell('study.open', saved.studyOpen)
@@ -89,6 +91,7 @@ export class KaogongViewState {
     if (!this.cells.has(key)) {
       const cell: Cell<ViewValues[K]> = { value: initial, listeners: new Set<() => void>(), set: action => {
         cell.value = typeof action === 'function' ? action(cell.value) : action
+        if(key==='roles.teacherSubject'&&!this.viewId)writeTeacherSubject(this.instanceId,cell.value as string)
         if (key === 'study.open' || key === 'study.page' || key === 'study.pane' || key === 'roles.selected') this.saveDisplayChoices()
         if(['lesson.draft','lesson.form','lesson.view','lesson.notes','lesson.notesDirty'].includes(key))this.saveLearnerDraft()
         for (const listener of cell.listeners) listener()
