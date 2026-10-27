@@ -325,8 +325,8 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
           if (day.items.length > 0 && day.items.every(item => item.done)) pastDone++
         }
       }
-      const notebookQuestions = allQuestions(questions)
-      const analysis = analyzeQuestions(notebookQuestions)
+      const statistics = practice.statistics()
+      const analysis = {byKnowledgePoint: statistics.byKnowledgePoint}
       const weakPoints = analysis.byKnowledgePoint
         .filter(point => point.wrongCount > 0)
         .slice(0, topN)
@@ -348,16 +348,19 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
           content: entry.content.slice(0, 180),
           updatedAt: entry.updatedAt,
         }))
-      const bySubject = new Map(analysis.bySubject.map(stat => [stat.subject, stat]))
+      const bySubject = new Map(statistics.bySubject.map(stat => [stat.subject, stat]))
       const modules = TAXONOMY.map(entry => {
         const stat = bySubject.get(entry.subject)
-        const answered = notebookQuestions.filter(question => question.subject === entry.subject && (question.result === 'correct' || question.result === 'wrong'))
         return {
           subject: entry.subject,
           availableCount: allBankQuestions(bankQuestions).filter(question => question.subject === entry.subject && question.reviewStatus === 'approved').length,
-          practicedCount: stat?.totalCount ?? 0,
-          wrongCount: stat?.wrongCount ?? 0,
-          accuracyRate: answered.length === 0 ? 0 : answered.filter(question => question.result === 'correct').length / answered.length,
+          practicedCount: stat?.submittedCount ?? 0,
+          submittedCount: stat?.submittedCount ?? 0,
+          answeredCount: stat?.answeredCount ?? 0,
+          unansweredCount: stat?.unansweredCount ?? 0,
+          uniqueQuestionCount: stat?.uniqueQuestionCount ?? 0,
+          wrongCount: stat?.incorrectCount ?? 0,
+          accuracyRate: stat?.accuracyRate ?? 0,
         }
       })
       const todayPlan = days.get(today)
@@ -369,10 +372,11 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
         pastDays,
         pastDone,
         pastDonePct: pastDays === 0 ? 0 : pastDone / pastDays,
-        totalQuestions: analysis.totalQuestions,
-        totalCorrect: analysis.totalCorrect,
-        totalWrong: analysis.totalWrong,
-        accuracyRate: analysis.accuracyRate,
+        totalQuestions: statistics.submittedCount,
+        totalCorrect: statistics.correctCount,
+        totalWrong: statistics.incorrectCount,
+        accuracyRate: statistics.accuracyRate,
+        practiceStatistics: statistics,
         bankTotal: bankQuestions.size,
         knowledgeTotal: knowledgeEntries.size,
         todayPlan: {
@@ -441,7 +445,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
     const input = wire.object({ roundId: roundIdWire, entries: reflectionWire }).strict().parse(body)
     const result = await practice.reflect(input.roundId, input.entries)
     const round = await practice.read(input.roundId)
-    return { result, subject: round.context.subject, summary: summarizeModule(questions, round.context.subject, topN) }
+    return { result, subject: round.context.subject, summary: practice.summary(round.context.subject, topN) }
   })
   // Business review claims are owned exclusively by the native task receipt lifecycle.
   practiceRoute('review', async () => { throw new PracticeError('Use the application task preview and native admission receipt', 403) })
@@ -489,7 +493,11 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
     },
     presentCall: args => ({ card: 'generic', title: '只读核对已完成练习轮次', kind: 'other', rawInput: args }),
   }))
+<<<<<<< HEAD
   registerProgressTools(ctx, planConfig, days, questions, topN, practice, state.plan)
+=======
+  registerProgressTools(ctx, planConfig, days, questions, topN, practice)
+>>>>>>> codex/kaogong-standalone-closed-loop
   registerBankTools(ctx, bankQuestions, questions, practice)
   registerKnowledgeTools(ctx, knowledgeEntries)
 }
@@ -877,7 +885,10 @@ function registerProgressTools(
   questions: KvTable<string, QuestionRecord>,
   topN: number,
   practice: PracticeRounds,
+<<<<<<< HEAD
   studyPlan: StudyPlan,
+=======
+>>>>>>> codex/kaogong-standalone-closed-loop
 ): void {
   registerStudyPlanTools(ctx, studyPlan)
 
@@ -901,6 +912,14 @@ function registerProgressTools(
           pastDonePct: { type: 'number', required: true },
           accuracyRate: { type: 'number', required: true },
           totalWrong: { type: 'integer', required: true },
+          submittedRoundCount: { type: 'integer', required: true },
+          submittedCount: { type: 'integer', required: true },
+          answeredCount: { type: 'integer', required: true },
+          unansweredCount: { type: 'integer', required: true },
+          uniqueQuestionCount: { type: 'integer', required: true },
+          correctCount: { type: 'integer', required: true },
+          incorrectCount: { type: 'integer', required: true },
+          errorReasons: {type:'array',required:true,items:{type:'object',additionalProperties:false,properties:{reason:{type:'string',required:true},count:{type:'integer',required:true}}}},
           weakPoints: {
             type: 'array',
             required: true,
@@ -921,13 +940,15 @@ function registerProgressTools(
         const lines = [
           '考试 ' + value.examDate + '，距今天 ' + value.daysToExam + ' 天。',
           '计划进度：过去 ' + value.pastDays + ' 天完成 ' + value.pastDone + ' 天（' + pctText(value.pastDonePct) + '）。',
-          '做题正确率（不含跳过）：' + pctText(value.accuracyRate) + '，错题 ' + value.totalWrong + ' 题。',
+          '系统判分正确率（全部提交题量含未答为分母）：' + pctText(value.accuracyRate) + '，错题 ' + value.totalWrong + ' 题。',
+          '累计提交 ' + value.submittedCount + ' 题，实际作答 ' + value.answeredCount + '，未答 ' + value.unansweredCount + '，去重题数 ' + value.uniqueQuestionCount + '。',
           '薄弱考点：',
         ]
         if (value.weakPoints.length === 0) lines.push('- 暂无错题')
         for (const wp of value.weakPoints) {
           lines.push('- 【' + wp.subject + '】' + wp.knowledgePoint + '：错 ' + wp.wrongCount + '（' + pctText(wp.errorRate) + '）')
         }
+        lines.push('跨轮次错因：' + (value.errorReasons.map(row=>row.reason+' '+row.count+'次').join('；') || '暂无'))
         return [{ type: 'text', text: lines.join('\n') }]
       },
     },
@@ -945,7 +966,8 @@ function registerProgressTools(
         }
       }
 
-      const analysis = analyzeQuestions(allQuestions(questions))
+      const statistics = practice.statistics()
+      const analysis = {byKnowledgePoint: statistics.byKnowledgePoint}
       const weakPoints = analysis.byKnowledgePoint
         .filter(kp => kp.wrongCount > 0)
         .slice(0, topN)
@@ -959,8 +981,16 @@ function registerProgressTools(
         pastDays,
         pastDone,
         pastDonePct: pastDays === 0 ? 0 : pastDone / pastDays,
-        accuracyRate: analysis.accuracyRate,
-        totalWrong: analysis.totalWrong,
+        accuracyRate: statistics.accuracyRate,
+        totalWrong: statistics.incorrectCount,
+        submittedRoundCount: statistics.submittedRoundCount,
+        submittedCount: statistics.submittedCount,
+        answeredCount: statistics.answeredCount,
+        unansweredCount: statistics.unansweredCount,
+        uniqueQuestionCount: statistics.uniqueQuestionCount,
+        correctCount: statistics.correctCount,
+        incorrectCount: statistics.incorrectCount,
+        errorReasons: statistics.errorReasons.map(({reason,count})=>({reason,count})),
         weakPoints,
       }
     },
@@ -1298,6 +1328,11 @@ function registerBankTools(
         additionalProperties: false,
         properties: {
           totalCount: { type: 'integer', required: true },
+          submittedCount: { type: 'integer', required: true },
+          answeredCount: { type: 'integer', required: true },
+          unansweredCount: { type: 'integer', required: true },
+          incorrectCount: { type: 'integer', required: true },
+          uniqueQuestionCount: { type: 'integer', required: true },
           roundId: { type: 'string', required: true },
           projection: { type: 'string', required: true, enum: ['complete', 'pending'] },
           correctCount: { type: 'integer', required: true },
@@ -1331,7 +1366,7 @@ function registerBankTools(
     },
     async execute(args) {
       const value = await practice.submit(roundIdWire.parse(args.roundId), answersWire.parse(args.answers))
-      return { roundId: value.roundId, projection: value.projection, totalCount: value.totalCount, correctCount: value.correctCount, accuracyRate: value.accuracyRate,
+      return { roundId: value.roundId, projection: value.projection, totalCount: value.totalCount, submittedCount: value.submittedCount, answeredCount: value.answeredCount, unansweredCount: value.unansweredCount, incorrectCount: value.incorrectCount, uniqueQuestionCount: value.uniqueQuestionCount, correctCount: value.correctCount, accuracyRate: value.accuracyRate,
         results: value.results.map(({ id, subject, knowledgePoint, correct, correctAnswer, explanation }) => ({ id, subject, knowledgePoint, correct, correctAnswer, explanation })) }
     },
     presentCall: args => ({ card: 'generic', title: '提交作答', kind: 'other', rawInput: args }),

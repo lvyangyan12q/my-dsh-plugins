@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
-import { mkdtemp, rm, lstat, readdir, realpath, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, lstat, readdir, realpath, mkdir, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -17,7 +17,7 @@ const { JsonStorageBackend } = await load('packages/storage/storage-json/lib/ind
 const { DomainFacility } = await load('packages/storage/storage-domain/lib/index.js')
 
 async function fixture(options = {}) {
-  const root = await mkdtemp(join(tmpdir(), 'kaogong-standalone-'))
+  const root = options.root ?? await mkdtemp(join(tmpdir(), 'kaogong-standalone-'))
   const context = new Context()
   await context.plugin(Storage)
   const backend = new JsonStorageBackend(join(root, 'storage'))
@@ -35,10 +35,10 @@ async function fixture(options = {}) {
     const source = join(root, 'source', 'storages')
     await mkdir(source, { recursive: true })
     const question = { subject: '行测-资料分析', knowledgePoint: '直接读取', questionType: '单选', stem: '数列第一项为2，直接读取第一项是多少？', options: ['A. 1', 'B. 2'], correctAnswer: 'B', explanation: '第一项为2。', difficulty: 'easy', source: '合成边界题', origin: 'local', reviewStatus: 'approved', reviewNotes: '', tags: [], createdAt: '2026-10-26', reviewedAt: '2026-10-26' }
-    await writeFile(join(source, 'kaogong_bank.json'), JSON.stringify({ unit: { name: 'kaogong_bank', version: 2 }, global: null, tables: { questions: { first: question } } }))
+    await writeFile(join(source, 'kaogong_bank.json'), JSON.stringify({ unit: { name: 'kaogong_bank', version: 2 }, global: null, tables: { questions: options.source === true ? { first: question } : Object.fromEntries(Array.from({length:options.source},(_,i)=>["q"+i,{...question,knowledgePoint:i<5?"直接读取":"增长率"}])) } }))
     await writeFile(join(source, 'kaogong_knowledge.json'), JSON.stringify({ unit: { name: 'kaogong_knowledge', version: 1 }, global: null, tables: { entries: {} } }))
   }
-  const stop = await mountKaogong(ctx, { questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined }, ...(options.source ? { materialSourceHome: join(root, 'source') } : {}) })
+  const stop = await mountKaogong(ctx, { questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined }, ...(options.source || options.sourceHome ? { materialSourceHome: options.sourceHome ?? join(root, 'source') } : {}) })
   const request = async (path, body, auth = true) => {
     const req = Readable.from(body === undefined ? [] : [JSON.stringify(body)])
     Object.assign(req, { url: path, method: body === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json' }, auth })
@@ -48,7 +48,7 @@ async function fixture(options = {}) {
     await route.handler(req, res)
     return res
   }
-  return { request, tools, async close() {
+  return { request, tools, root, async suspend() { await stop(); await backend.close(); await context.fiber.dispose(); return root }, async close() {
     await stop(); await backend.close(); await context.fiber.dispose()
     const actual = await realpath(root), base = await realpath(tmpdir())
     assert.ok(actual.toLowerCase().startsWith((base + '/').replaceAll('/', '\\').toLowerCase()) || actual.startsWith(base + '/'))
@@ -123,4 +123,142 @@ test('a confirmed local library import can be granted and revoked without Workta
     const preserved = await app.request('/api/kaogong/practice/read?viewId=' + learner.view.id, { roundId: issued.value.roundId })
     assert.equal(preserved.value.result.correctCount, 1)
   } finally { await app.close() }
+})
+
+
+test('scored round ledger counts repeated question slots and unique questions separately through the Host dashboard', async () => {
+  const app=await fixture({source:10})
+  try {
+    const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+    const library=await create('library'),learner=await create('learner'),viewId=learner.view.id
+    const preview=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+    assert.equal((await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:preview.id,fingerprint:preview.fingerprint,confirmed:true})).status,200)
+    await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+    let previousRoundId
+    for(let i=0;i<2;i++){
+      const round=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析',previousRoundId})).value
+      assert.equal(round.returned,10)
+      assert.doesNotMatch(JSON.stringify(round),/correctAnswer|explanation/)
+      const scored=await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:round.roundId,answers:round.questions.map(row=>({id:row.id,answer:'B'}))})
+      assert.equal(scored.status,200);previousRoundId=round.roundId
+    }
+    const data=(await app.request('/api/kaogong/dashboard?viewId='+viewId)).value
+    assert.equal(data.totalQuestions,20)
+    assert.equal(data.practiceStatistics.submittedCount,20)
+    assert.equal(data.practiceStatistics.uniqueQuestionCount,10)
+    assert.equal(data.practiceStatistics.answeredCount,20)
+    assert.equal(data.practiceStatistics.unansweredCount,0)
+    assert.equal(data.practiceStatistics.accuracyRate,1)
+    assert.equal(data.modules.find(row=>row.subject==='行测-资料分析').practicedCount,20)
+  } finally { await app.close() }
+})
+
+
+test('partial submitted rounds expose answered and blank slots with the full-round denominator and idempotent retries', async () => {
+  const app=await fixture({source:10})
+  try {
+    const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+    const library=await create('library'),learner=await create('learner'),viewId=learner.view.id
+    const preview=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+    await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:preview.id,fingerprint:preview.fingerprint,confirmed:true})
+    await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+    const round=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+    const answers=round.questions.map((row,i)=>({id:row.id,answer:i<3?'B':i<5?'A':''}))
+    const scored=await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:round.roundId,answers})
+    assert.equal(scored.status,200)
+    assert.equal(scored.value.correctCount,3)
+    assert.equal(scored.value.answeredCount,5)
+    assert.equal(scored.value.unansweredCount,5)
+    assert.equal(scored.value.incorrectCount,2)
+    assert.equal(scored.value.accuracyRate,.3)
+    assert.deepEqual((await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:round.roundId,answers})).value,scored.value)
+    assert.equal((await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:round.roundId,answers:answers.map(row=>({...row,answer:'B'}))})).status,409)
+    const data=(await app.request('/api/kaogong/dashboard?viewId='+viewId)).value
+    assert.equal(data.practiceStatistics.submittedCount,10)
+    assert.equal(data.practiceStatistics.answeredCount,5)
+    assert.equal(data.practiceStatistics.unansweredCount,5)
+    assert.equal(data.practiceStatistics.incorrectCount,2)
+    assert.equal(data.practiceStatistics.accuracyRate,.3)
+  } finally { await app.close() }
+})
+
+
+test('historical wrong-answer causes remain visible after a newer correct round and survive Host restart', async () => {
+  let app=await fixture({source:10})
+  try {
+    const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+    const library=await create('library'),learner=await create('learner'),viewId=learner.view.id
+    const preview=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+    await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:preview.id,fingerprint:preview.fingerprint,confirmed:true})
+    await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+    const first=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+    await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:first.roundId,answers:first.questions.map(row=>({id:row.id,answer:'A'}))})
+    await app.request('/api/kaogong/practice/reflection?viewId='+viewId,{roundId:first.roundId,entries:[{id:first.questions[0].id,errorReason:'审题不清',notes:'保留本轮反思'}]})
+    const second=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析',previousRoundId:first.roundId})).value
+    await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:second.roundId,answers:second.questions.map(row=>({id:row.id,answer:'B'}))})
+    const reflected=await app.request('/api/kaogong/practice/reflection?viewId='+viewId,{roundId:second.roundId,entries:[]})
+    assert.equal(reflected.value.summary.totalQuestions,20)
+    assert.equal(reflected.value.summary.totalWrong,10)
+    assert.ok(reflected.value.summary.errorReasonBreakdown.some(row=>row.reason==='审题不清'&&row.count===1))
+    const root=await app.suspend();app=await fixture({root})
+    const restored=(await app.request('/api/kaogong/practice/read?viewId='+viewId,{roundId:first.roundId})).value
+    assert.equal(restored.result.correctCount,0)
+    assert.equal(restored.reflections[0].notes,'保留本轮反思')
+    const data=(await app.request('/api/kaogong/dashboard?viewId='+viewId)).value
+    assert.equal(data.practiceStatistics.submittedCount,20)
+    assert.equal(data.practiceStatistics.incorrectCount,10)
+    assert.ok(data.practiceStatistics.errorReasons.some(row=>row.reason==='审题不清'&&row.count===1))
+  } finally { await app.close() }
+})
+
+
+test('the cumulative ledger is not truncated by the 100-row history presentation limit',async()=>{
+ const app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),viewId=learner.view.id
+  const preview=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:preview.id,fingerprint:preview.fingerprint,confirmed:true})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+  for(let i=0;i<101;i++){
+   const issued=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+   assert.equal((await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:issued.roundId,answers:[{id:'first',answer:'B'}]})).status,200)
+  }
+  const open=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+  const history=(await app.request('/api/kaogong/practice/history?viewId='+viewId,{})).value
+  assert.equal(history.rounds.length,100)
+  assert.ok(open.roundId)
+  const data=(await app.request('/api/kaogong/dashboard?viewId='+viewId)).value
+  assert.equal(data.practiceStatistics.submittedCount,101)
+  assert.equal(data.practiceStatistics.submittedRoundCount,101)
+  assert.equal(data.practiceStatistics.uniqueQuestionCount,1)
+ }finally{await app.close()}
+})
+
+test('later bank revisions cannot change an issued round or its saved grade and an open round resumes after restart',async()=>{
+ let app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),viewId=learner.view.id
+  const adopt=async library=>{const p=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value;assert.equal((await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:p.id,fingerprint:p.fingerprint,confirmed:true})).status,200)}
+  await adopt(library)
+  const grant=(await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})).value
+  const issued=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+  const originalStem=issued.questions[0].stem,root=await app.suspend();app=await fixture({root})
+  const resumed=(await app.request('/api/kaogong/practice/read?viewId='+viewId,{roundId:issued.roundId})).value
+  assert.equal(resumed.result,null);assert.equal(resumed.questions[0].stem,originalStem)
+  const source=join(root,'source/storages/kaogong_bank.json'),bank=JSON.parse(await readFile(source,'utf8'))
+  bank.tables.questions.first.correctAnswer='A';bank.tables.questions.first.stem='后来的不同题干'
+  await writeFile(source,JSON.stringify(bank))
+  // Source home remains explicit after restart; its new revision is previewed into another empty library.
+  const rootAgain=await app.suspend();app=await fixture({root:rootAgain,source:false,sourceHome:join(rootAgain,'source')})
+  const newer=await create('library');await adopt(newer)
+  await app.request('/api/kaogong/study',{action:'source-revoke',viewId,id:grant.id,revision:grant.revision})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:newer.view.id,resourceId:'question-bank'})
+  const scored=(await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:issued.roundId,answers:[{id:'first',answer:'B'}]})).value
+  assert.equal(scored.correctCount,1);assert.equal(scored.results[0].correctAnswer,'B');assert.equal(scored.results[0].stem,originalStem)
+  const later=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+  assert.equal(later.questions[0].stem,'后来的不同题干')
+  assert.equal((await app.request('/api/kaogong/practice/read?viewId='+viewId,{roundId:issued.roundId})).value.result.correctCount,1)
+ }finally{await app.close()}
 })
