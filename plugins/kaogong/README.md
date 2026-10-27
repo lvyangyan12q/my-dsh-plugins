@@ -1,6 +1,6 @@
 # 考公学习插件
 
-独立候选版本 `0.3.0-rc.3.1`，运行于官方 DSH Web `0.2.1-rc.3`，不需要安装或启用 Worktable。当前为候选实现：00—05已完成源码闭环，06模型边界源码已就绪，06/07的准确发行包真实模型与完整学习、重启重装验收仍待完成。历史 rc.3.7 仅为旧适配基线。
+独立版本 `0.3.0-rc.3.1`，运行于官方 DSH Web `0.2.1-rc.3`，不需要安装或启用 Worktable。实现状态及准确包验收记录见仓库中的[工单索引](docs/tickets/README.md)和[最终验收](docs/evidence/07-final-acceptance.md)。历史 rc.3.7 仅为旧适配基线。
 
 原生侧栏的“考公学习”提供学习总览、学习计划、练习训练、错题与复习、学习进度、资料库。课堂使用完整 Native 对话及原生右侧学习面板，保留模型、轨迹、提问、审批和 Stop，只有一个聊天输入框。班主任、科目老师与辅导员使用标准 preset 和私有 Persona/kaogong-teach Skill；普通会话不能访问档案数据。
 
@@ -52,7 +52,7 @@ node --test tests/package.test.mjs
 
 完整构建包含官方Host/Client声明门禁。npm run pack执行上述检查及官方CLI准确归档安装身份检查；还须设置KAOGONG_INSTALL_GATE_ROOT为本机自有隔离验收目录，祖先不得含开发node_modules。不需要Worktable归档参数。成功后在releases生成不可覆盖的版本归档；既有同名包不会被替换。
 
-包白名单、源码测试和DOM检查不能代替准确包实际浏览器验收。最终仍须在无Worktable的DSH中完成真实学习路径、私有Skill/提问/审批拒绝及允许一次/Stop、来源撤销、两个档案、刷新重启与准确包卸载重装。当前范围和证据见[文档入口](docs/README.md)及[工单索引](docs/tickets/README.md)。回退只处理插件和配置，不整库覆盖新学习记录。
+包白名单、源码测试和DOM检查不能代替准确包实际浏览器验收。发行验收覆盖无Worktable的DSH中的真实学习路径、私有Skill/提问/审批拒绝及允许一次/Stop、来源撤销、两个档案、刷新重启与准确包卸载重装。具体范围、结果和限制见[文档入口](docs/README.md)及[最终验收](docs/evidence/07-final-acceptance.md)。回退只处理插件和配置，不整库覆盖新学习记录。
 
 ### 核验过的练习图示补充
 
