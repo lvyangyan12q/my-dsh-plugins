@@ -1,3 +1,4 @@
+import {ErrorReviews} from './error-reviews.ts'
 import type { DomainFacility, DomainSpec, Domain, KvTable, DomainGlobal } from '@deepseek-ai/dsh-storage-domain'
 import { instanceDomainSpecs } from './domain.ts'
 import { PracticeRounds } from './practice-rounds.ts'
@@ -16,7 +17,7 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
   try {
     const notebook = await open(specs.notebook), progress = await open(specs.progress)
     const bank = await open(specs.bank), knowledge = await open(specs.knowledge)
-    const rounds = await open(specs.practice), lessons = await open(specs.lessons)
+    const rounds = await open(specs.practice), lessons = await open(specs.lessons), reviews = await open(specs.reviews)
     // Native KvTable/DomainGlobal validate on open, not put/set. Refuse a foreign
     // lesson or navigation pointer before writing it into this owner's namespace.
     const lessonRecords = checkedTable(lessons.table('lessons'), value => {
@@ -36,7 +37,7 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
     const state = Object.freeze({
       instanceId, questions: notebook.table('questions'), planConfig: progress.global, days: progress.table('days'),
       bankQuestions: bank.table('questions'), knowledgeEntries: knowledge.table('entries'), rounds: rounds.table('rounds'),
-      lessonRecords, lessonSelection, practice, lessons: teaching,
+      lessonRecords, lessonSelection, practice, lessons: teaching, errors:new ErrorReviews(rounds.table('rounds'),reviews.table('reviews')),
     })
     return { state, close() {
       return closing ??= (async () => {
@@ -127,3 +128,4 @@ export class KaogongInstancePool {
     })()
   }
 }
+
