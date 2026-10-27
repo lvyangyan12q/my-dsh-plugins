@@ -314,17 +314,9 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
     kind: 'exact',
     path: '/api/kaogong/dashboard',
     handler: (_req, res) => {
-      const config = planConfig.get()
-      const today = todayStr()
-      const allDays = Array.from(days.entries())
-      let pastDays = 0
-      let pastDone = 0
-      for (const [date, day] of allDays) {
-        if (date <= today) {
-          pastDays++
-          if (day.items.length > 0 && day.items.every(item => item.done)) pastDone++
-        }
-      }
+      const today=todayStr(),effective=state.plan.read()
+      const allDays=[...new Set(effective.tasks.flatMap(t=>t.date?[t.date]:[]))]
+      const pastDates=allDays.filter(date=>date<=today),pastDays=pastDates.length,pastDone=pastDates.filter(date=>effective.tasks.filter(t=>t.date===date).every(t=>t.status==='completed')).length
       const statistics = practice.statistics()
       const analysis = {byKnowledgePoint: statistics.byKnowledgePoint}
       const weakPoints = analysis.byKnowledgePoint
@@ -363,11 +355,13 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
           accuracyRate: stat?.accuracyRate ?? 0,
         }
       })
+      const todayTasks=effective.tasks.filter(t=>t.date===today),taskCount=effective.tasks.length,completedTaskCount=effective.tasks.filter(t=>t.status==='completed').length
       const todayPlan = days.get(today)
       sendJson(res, 200, {
         today,
-        examDate: config.examDate,
-        daysToExam: daysToExam(today, config.examDate),
+        examDate: effective.goal?.examDate??null,
+        daysToExam: effective.goal?.examDate?daysToExam(today,effective.goal.examDate):null,
+        taskCount,completedTaskCount,taskCompletionRate:taskCount?completedTaskCount/taskCount:0,planRevision:effective.revision,externalMocks:effective.externalMocks,
         totalDays: allDays.length,
         pastDays,
         pastDone,
@@ -380,8 +374,8 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
         bankTotal: bankQuestions.size,
         knowledgeTotal: knowledgeEntries.size,
         todayPlan: {
-          phase: todayPlan?.phase ?? 'foundation',
-          items: todayPlan?.items ?? [],
+          phase: todayTasks[0]?.phase ?? 'foundation',
+          items: todayTasks.map(t=>({id:t.id,subject:t.subject,kind:t.kind,title:t.title,done:t.status==='completed'})),
         },
         weakPoints,
         modules,
@@ -398,20 +392,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
         sendJson(res, 405, { error: 'method not allowed' })
         return
       }
-      try {
-        const body = await readJson(req)
-        const date = typeof body.date === 'string' ? body.date : todayStr()
-        const index = typeof body.index === 'number' ? body.index : -1
-        const done = body.done !== false
-        if (!isValidIsoDate(date) || !Number.isInteger(index) || index < 0) throw new Error('invalid plan item')
-        const day = days.get(date)
-        if (day === undefined || index >= day.items.length) throw new Error('plan item not found')
-        const items = day.items.map((item, itemIndex) => itemIndex === index ? { ...item, done } : item)
-        await days.put(date, { ...day, items })
-        sendJson(res, 200, { date, items })
-      } catch (error) {
-        sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
-      }
+      sendJson(res,410,{error:'请在学习计划页面以稳定任务ID核对依据并确认完成；旧日期索引打卡已停用'})
     },
   }), 'kaogong.planDoneRoute')
 
@@ -429,9 +410,10 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
     const input = wire.object({
       subject: wire.string().min(1).max(100), title: wire.string().max(300).optional(),
       knowledgePoint: wire.string().max(200).optional(), planIndex: wire.number().int().nonnegative().optional(),
-      previousRoundId: roundIdWire.optional(),
+      previousRoundId: roundIdWire.optional(),taskId:wire.string().uuid().optional(),planRevision:wire.number().int().nonnegative().optional(),
     }).parse(body)
     if (!TAXONOMY.some(row => row.subject === input.subject)) throw new PracticeError('invalid practice subject')
+    if(input.taskId){const task=state.plan.read().tasks.find(t=>t.id===input.taskId);if(!task||task.status!=='in-progress'||task.subject!==input.subject||task.startedFromRevision!==input.planRevision)throw new PracticeError('任务练习上下文无效',409);return practice.startForTask({subject:task.subject,title:task.title,limit:10,planRevision:task.startedFromRevision},task.id)}
     return practice.start({ subject: input.subject, title: input.title ?? '模块练习', limit: 10,
       ...(input.knowledgePoint ? { knowledgePoint: input.knowledgePoint } : {}), ...(input.planIndex !== undefined ? { planIndex: input.planIndex } : {}) }, input.previousRoundId)
   })
@@ -469,7 +451,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
   lessonRoute('prepare', input => lessons.read(lessonCommand.parse(input).lessonId))
   lessonRoute('link', input => { const args = lessonLink.parse(input); return lessons.link(args.lessonId, args.roundId) })
   lessonRoute('summary', input => { const args = lessonSummaryInput.parse(input); return lessons.saveSummary(args.lessonId, args.notes) })
-  lessonRoute('confirm', input => { const args = lessonConfirm.parse(input); return lessons.confirm(args.lessonId, args.confirmed) })
+  lessonRoute('confirm', async input => { const args=lessonConfirm.parse(input),value=await lessons.confirm(args.lessonId,args.confirmed),taskId=value.lesson.request.taskId;if(taskId){const current=state.plan.read(),task=current.tasks.find(t=>t.id===taskId);if(task&&task.status!=='completed'){const saved=await state.plan.saveSummary(taskId,current.revision,value.lesson.notes);await state.plan.complete(taskId,saved.revision,true,{roundId:value.lesson.completion?.proofs.at(-1)?.roundId})}}return value })
   ctx.tools.register(defineTool({
     name: 'kaogong_lesson_read', description: '读取持久课堂与最小摘要；不复制会话历史、不修改完成状态。省略 lessonId 返回课堂列表。',
     parameters: { lessonId: { type: 'string', description: '真实课堂 ID；省略则列出课堂。' } },
@@ -493,11 +475,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
     },
     presentCall: args => ({ card: 'generic', title: '只读核对已完成练习轮次', kind: 'other', rawInput: args }),
   }))
-<<<<<<< HEAD
   registerProgressTools(ctx, planConfig, days, questions, topN, practice, state.plan)
-=======
-  registerProgressTools(ctx, planConfig, days, questions, topN, practice)
->>>>>>> codex/kaogong-standalone-closed-loop
   registerBankTools(ctx, bankQuestions, questions, practice)
   registerKnowledgeTools(ctx, knowledgeEntries)
 }
@@ -885,10 +863,7 @@ function registerProgressTools(
   questions: KvTable<string, QuestionRecord>,
   topN: number,
   practice: PracticeRounds,
-<<<<<<< HEAD
   studyPlan: StudyPlan,
-=======
->>>>>>> codex/kaogong-standalone-closed-loop
 ): void {
   registerStudyPlanTools(ctx, studyPlan)
 
@@ -907,6 +882,7 @@ function registerProgressTools(
           today: { type: 'string', required: true },
           daysToExam: { type: 'integer', required: true },
           totalDays: { type: 'integer', required: true },
+          taskCount:{type:'integer',required:true},completedTaskCount:{type:'integer',required:true},taskCompletionRate:{type:'number',required:true},
           pastDays: { type: 'integer', required: true },
           pastDone: { type: 'integer', required: true },
           pastDonePct: { type: 'number', required: true },
@@ -938,8 +914,8 @@ function registerProgressTools(
       },
       render: (_args, value) => {
         const lines = [
-          '考试 ' + value.examDate + '，距今天 ' + value.daysToExam + ' 天。',
-          '计划进度：过去 ' + value.pastDays + ' 天完成 ' + value.pastDone + ' 天（' + pctText(value.pastDonePct) + '）。',
+          value.examDate?'考试 ' + value.examDate + '，距今天 ' + value.daysToExam + ' 天。':'考试日期待设置；无倒计时。',
+          '计划任务完成 '+value.completedTaskCount+'/'+value.taskCount+'（'+pctText(value.taskCompletionRate)+'）；与题目正确率分开。',
           '系统判分正确率（全部提交题量含未答为分母）：' + pctText(value.accuracyRate) + '，错题 ' + value.totalWrong + ' 题。',
           '累计提交 ' + value.submittedCount + ' 题，实际作答 ' + value.answeredCount + '，未答 ' + value.unansweredCount + '，去重题数 ' + value.uniqueQuestionCount + '。',
           '薄弱考点：',
@@ -953,19 +929,8 @@ function registerProgressTools(
       },
     },
     async execute() {
-      const config = planConfig.get()
-      const today = todayStr()
-      const all = Array.from(days.entries())
-
-      let pastDays = 0
-      let pastDone = 0
-      for (const [date, plan] of all) {
-        if (date <= today) {
-          pastDays++
-          if (plan.items.length > 0 && plan.items.every(item => item.done)) pastDone++
-        }
-      }
-
+      const effective=studyPlan.read(),today=todayStr()
+      const all=[...new Set(effective.tasks.flatMap(t=>t.date?[t.date]:[]))],pastDates=all.filter(date=>date<=today),pastDays=pastDates.length,pastDone=pastDates.filter(date=>effective.tasks.filter(t=>t.date===date).every(t=>t.status==='completed')).length
       const statistics = practice.statistics()
       const analysis = {byKnowledgePoint: statistics.byKnowledgePoint}
       const weakPoints = analysis.byKnowledgePoint
@@ -974,10 +939,10 @@ function registerProgressTools(
         .map(kp => ({ subject: kp.subject, knowledgePoint: kp.knowledgePoint, wrongCount: kp.wrongCount, errorRate: kp.errorRate }))
 
       return {
-        examDate: config.examDate,
+        examDate: effective.goal?.examDate??'',
         today,
-        daysToExam: daysToExam(today, config.examDate),
-        totalDays: all.length,
+        daysToExam: effective.goal?.examDate?daysToExam(today,effective.goal.examDate):0,
+        totalDays: all.length,taskCount:effective.tasks.length,completedTaskCount:effective.tasks.filter(t=>t.status==='completed').length,taskCompletionRate:effective.tasks.length?effective.tasks.filter(t=>t.status==='completed').length/effective.tasks.length:0,
         pastDays,
         pastDone,
         pastDonePct: pastDays === 0 ? 0 : pastDone / pastDays,

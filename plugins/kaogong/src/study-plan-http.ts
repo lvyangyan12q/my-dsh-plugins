@@ -6,15 +6,22 @@ import {z} from 'zod'
  * every descriptor in KaogongHost.http: admit -> owned view -> readiness -> lease.
  * This function never registers directly against the actual Host webServer. */
 export function registerStudyPlanRoutes(registry:BusinessRegistry,state:KaogongInstanceState){
- return registry.webServer.register({kind:'exact',path:'/api/kaogong/plan',handler:async(req,res)=>{
+ const stopStart=registry.webServer.register({kind:'exact',path:'/api/kaogong/plan/start',handler:async(req,res)=>{
+  const send=(code:number,value:unknown)=>{res.writeHead(code,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value))}
+  try{if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json'))throw Error('POST JSON required');let text='';for await(const part of req){text+=part;if(text.length>10000)throw Error('请求过大')}const args=z.object({id:z.string().uuid(),revision:z.number().int().nonnegative()}).strict().parse(JSON.parse(text));const current=await state.plan.start(args.id,args.revision),task=current.tasks.find(t=>t.id===args.id)!;
+   if(task.kind==='learn'){const lesson=await state.lessons.create({lessonId:task.lessonId!,subject:task.subject,objective:task.title,materialIds:[],requirePractice:task.requirePractice,requireReflections:task.requireReflections,taskId:task.id,planRevision:task.startedFromRevision});send(200,{state:current,lesson})}
+   else {const round=await state.practice.startForTask({subject:task.subject,title:task.title,limit:10,planRevision:task.startedFromRevision},task.id);send(200,{state:current,round})}
+  }catch(error){send(409,{error:error instanceof Error?error.message:'任务开始失败'})}
+ }})
+ const stopPlan=registry.webServer.register({kind:'exact',path:'/api/kaogong/plan',handler:async(req,res)=>{
   const send=(code:number,value:unknown)=>{res.writeHead(code,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value))}
   try{
    if(req.method==='GET'){send(200,state.plan.read());return}
    if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json')){send(405,{error:'POST JSON required'});return}
-   let text='';for await(const part of req){text+=part;if(text.length>100000)throw Error('请求过大')}
+   let text='';for await(const part of req){text+=part;if(text.length>100000)throw Error('璇锋眰杩囧ぇ')}
    const body=JSON.parse(text),revision=z.number().int().nonnegative().parse(body.revision??body.baseRevision)
    const allowed:Record<string,string[]>={preview:['baseRevision','operation','goal','taskId','date','task'],confirm:['id','revision','confirmed'],summary:['id','revision','summary'],complete:['id','revision','confirmed','roundId'],external:['revision','confirmed','date','title','score','maximum']}
-   if(!allowed[body.action]||Object.keys(body).some(key=>key!=='action'&&!allowed[body.action]!.includes(key)))throw Error('计划请求无效')
+   if(!allowed[body.action]||Object.keys(body).some(key=>key!=='action'&&!allowed[body.action]!.includes(key)))throw Error('璁″垝璇锋眰鏃犳晥')
    let value:unknown
    if(body.action==='preview'){const now=new Date(),today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');value=await state.plan.preview({baseRevision:revision,action:body.operation,today,...(body.goal?{goal:body.goal}:{}),taskId:body.taskId,date:body.date,task:body.task} as PlanPreview)}
    else if(body.action==='confirm')value=await state.plan.confirm(body.id,revision,body.confirmed)
@@ -22,6 +29,7 @@ export function registerStudyPlanRoutes(registry:BusinessRegistry,state:KaogongI
    else if(body.action==='complete')value=await state.plan.complete(body.id,revision,body.confirmed,{roundId:body.roundId})
    else value=await state.plan.recordExternalMock({date:body.date,title:body.title,score:body.score,maximum:body.maximum},revision,body.confirmed)
    send(200,value)
-  }catch(error){send(409,{error:error instanceof Error?error.message:'计划请求失败'})}
+  }catch(error){send(409,{error:error instanceof Error?error.message:'璁″垝璇锋眰澶辫触'})}
  }})
+ return ()=>{stopStart();stopPlan()}
 }

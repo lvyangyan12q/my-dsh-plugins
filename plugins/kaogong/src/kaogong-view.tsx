@@ -8,8 +8,11 @@ import { LessonPanel } from './lesson-panel.tsx'
 
 export type DashboardData = {
   today: string
-  examDate: string
-  daysToExam: number
+  examDate: string|null
+  daysToExam: number|null
+  taskCount?:number
+  completedTaskCount?:number
+  taskCompletionRate?:number
   totalDays: number
   pastDays: number
   pastDone: number
@@ -426,7 +429,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
             }} /></div>
             {data !== null && <>
               <section hidden={!showStatistics} style={{ display: showStatistics ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
-                <Metric label="距离考试" value={`${data.daysToExam}`} suffix="天" accent={colors.blue} />
+                <Metric label="距离考试" value={data.daysToExam===null?'待设置':`${data.daysToExam}`} suffix="天" accent={colors.blue} />
                 <Metric label="计划完成" value={pct(data.pastDonePct)} suffix={`${data.pastDone}/${data.pastDays} 天`} accent={colors.green} />
                 <Metric label="做题正确率" value={pct(data.accuracyRate)} suffix={`${data.totalQuestions} 题`} accent={colors.red} />
                 <Metric label="知识库" value={`${data.knowledgeTotal}`} suffix={`讲义/笔记 · 题库 ${data.bankTotal}`} accent={colors.muted} />
