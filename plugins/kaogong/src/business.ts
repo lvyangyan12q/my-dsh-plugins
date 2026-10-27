@@ -1,3 +1,4 @@
+import {registerErrorReviews} from './error-reviews-http.ts'
 
 /** Instance-scoped learning command registrations.
  * The production Host validates the view/native Session and leases owned state
@@ -251,6 +252,7 @@ export interface BusinessRegistry {
 /** Registers pure business commands over an already leased instance; it never opens legacy domains. */
 export function registerBusiness(ctx: BusinessRegistry, config: Config, state: import('./instance-state.ts').KaogongInstanceState, mineru: MineruAccess): void {
   const { questions, planConfig, days, bankQuestions, knowledgeEntries, practice, lessons } = state
+  registerErrorReviews(ctx,state)
   const current = () => ({ mineru: config.mineru.get(), questionImageRoot: config.questionImageRoot.get() })
   const hasDocumentRoot = () => !!current().mineru?.outputDir && isAbsolute(current().mineru!.outputDir!)
   const topN = config.topN ?? DEFAULT_TOP_N
@@ -371,6 +373,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
         totalWrong: statistics.incorrectCount,
         accuracyRate: statistics.accuracyRate,
         practiceStatistics: statistics,
+        reviewQueue: state.errors.queue(),
         bankTotal: bankQuestions.size,
         knowledgeTotal: knowledgeEntries.size,
         todayPlan: {
@@ -1637,3 +1640,4 @@ function phaseLabel(phase: 'foundation' | 'reinforce' | 'sprint' | undefined): s
 function phaseDays(value: { phases: { phase: string; days: number }[] }, phase: string): number {
   return value.phases.find(p => p.phase === phase)?.days ?? 0
 }
+
