@@ -1,5 +1,5 @@
 import type {PracticeCounts} from './practice-statistics.ts'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useId } from 'react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { KnowledgeLibrary } from './knowledge-reader.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
@@ -159,6 +159,7 @@ function optionValue(option: string): string {
 
 
 export function KaogongView({ embedded = false, focusedStudy = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
+  const answerGroupId = useId()
   const http=useLearningHttp()
   const {practiceRequest,readPracticeDraft,savePracticeDraft,readAdmittedReviews,markAdmittedReview}=usePracticeClient()
   const [data, setData] = useBusinessState('dashboard', null)
@@ -482,7 +483,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                     <div style={{ color: colors.muted, fontSize: 12 }}>第 {index + 1} 题 · {question.knowledgePoint} · {question.difficulty}</div>
                     <div style={{ color: colors.muted, fontSize: 12, overflowWrap: 'anywhere' }}>{question.id} · {question.source}</div>
                     <div style={{ margin: '8px 0', lineHeight: 1.65, overflowWrap: 'anywhere' }}>{renderQuestionStem(question)}</div>
-                    <div style={{ display: 'grid', gap: 6 }}>{question.options.map(option => <label key={option} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', border: `1px solid ${answers[question.id] === optionValue(option) ? '#93c5fd' : colors.line}`, borderRadius: 6, cursor: 'pointer', background: answers[question.id] === optionValue(option) ? colors.blueSoft : '#fff' }}><input type="radio" name={question.id} checked={answers[question.id] === optionValue(option)} onChange={() => setAnswers(previous => ({ ...previous, [question.id]: optionValue(option) }))} /><span style={{ minWidth: 0, flex: 1 }}>{renderQuestionOption(question.id,option)}</span></label>)}</div>
+                    <div style={{ display: 'grid', gap: 6 }}>{question.options.map(option => <label key={option} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', border: `1px solid ${answers[question.id] === optionValue(option) ? '#93c5fd' : colors.line}`, borderRadius: 6, cursor: 'pointer', background: answers[question.id] === optionValue(option) ? colors.blueSoft : '#fff' }}><input type="radio" name={answerGroupId+question.id} checked={answers[question.id] === optionValue(option)} onChange={() => setAnswers(previous => ({ ...previous, [question.id]: optionValue(option) }))} /><span style={{ minWidth: 0, flex: 1 }}>{renderQuestionOption(question.id,option)}</span></label>)}</div>
                   </article>)}
                   {practice.questions.length > 0 && <button data-pwb-button data-variant="primary" type="button" disabled={submitting} onClick={() => { void submitPractice() }} style={{ ...buttonStyle(true), marginTop: 16 }}>提交判分</button>}
                 </div>}

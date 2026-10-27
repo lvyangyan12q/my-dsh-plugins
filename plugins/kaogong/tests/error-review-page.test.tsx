@@ -59,3 +59,22 @@ test('an overdue review previews the current Shanghai calendar date just after m
  const root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
  try{const{ErrorReviewPanel}=await import('../src/error-review-panel.tsx');await act(async()=>root.render(<ErrorReviewPanel onPlan={()=>{}}/>));await act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent==='预览加入学习计划')!.click());assert.equal(proposed.date,'2026-10-27');assert.match(document.body.textContent??'',/下次：2026-10-26/)}finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();Object.defineProperty(globalThis,'Date',{value:RealDate,configurable:true,writable:true});if(timezone===undefined)delete process.env.TZ;else process.env.TZ=timezone;for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
+
+test('kept-mounted review views isolate radio groups for the same occurrence',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map(),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
+ for(const[key,value]of Object.entries(values)){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true})}
+ const prior=globalThis.fetch,occurrence={id:'same-occurrence',questionId:'q1',roundId:'round-old',subject:'行测-资料分析',knowledgePoint:'读取',stem:'原题',options:['A. 1','B. 2'],userAnswer:'A',correctAnswer:'B',source:'合成题',explanation:'说明',errorReason:'审题不清',notes:'',submittedAt:'2026-10-25',review:{stage:0,status:'scheduled',dueAt:'2020-01-01',history:[]}}
+ globalThis.fetch=async()=>new Response(JSON.stringify({occurrences:[occurrence],queue:{total:1,due:1}}))
+ const root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
+ try{
+  const{ErrorReviewPanel}=await import('../src/error-review-panel.tsx')
+  await act(async()=>root.render(<><main><ErrorReviewPanel/></main><aside hidden><ErrorReviewPanel/></aside></>))
+  const visible=[...document.querySelectorAll<HTMLInputElement>('main input[type=radio]')],hidden=[...document.querySelectorAll<HTMLInputElement>('aside input[type=radio]')]
+  assert.equal(visible.length,2);assert.equal(hidden.length,2)
+  await act(async()=>visible[1].click());assert.equal(visible[1].checked,true)
+  await act(async()=>hidden[0].click())
+  assert.equal(hidden[0].checked,true)
+  assert.equal(visible[1].checked,true,'hidden review does not uncheck the visible review answer')
+  await act(async()=>visible[0].click());assert.equal(visible[0].checked,true);assert.equal(visible[1].checked,false);assert.equal(hidden[0].checked,true)
+ }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
+})

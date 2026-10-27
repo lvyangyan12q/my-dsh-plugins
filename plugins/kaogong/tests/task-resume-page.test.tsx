@@ -41,3 +41,24 @@ test('continuing the same task preserves unsaved answers and notes while another
   assert.equal(document.querySelector<HTMLTextAreaElement>('[aria-label="学习者总结"]')?.value,'未保存的学习反思')
  }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
+
+test('kept-mounted main and hidden Native practice views keep both copies checked for their shared answer',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map(),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
+ for(const[key,value]of Object.entries(values)){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true})}
+ const prior=globalThis.fetch;globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?{todayPlan:{items:[]},weakPoints:[],modules:[],recentKnowledge:[],totalQuestions:0}:null))
+ const root=createRoot(document.getElementById('root')!)
+ try{
+  const {KaogongView}=await import('../src/kaogong-view.tsx'),{KaogongStateContext,KaogongViewState}=await import('../src/view-state.tsx')
+  const owner=new KaogongViewState('radio-profile'),round={roundId:'20000000-0000-4000-8000-000000000001',context:{subject:'行测-资料分析',title:'双挂载练习',limit:10},questions:[{id:'same-question',subject:'行测-资料分析',knowledgePoint:'读取',stem:'第一项是多少',options:['A. 1','B. 2'],source:'合成题',difficulty:'easy'}],returned:1,totalAvailable:1,result:null,reflections:[],reason:'合成边界',cycled:false}
+  owner.cell('practice',null).set(round as any);owner.cell('practiceItem',null).set(round.context);owner.cell('practiceRestored',false).set(true)
+  const practice=<KaogongView active embedded focusedStudy pageId="practice" onOpenTeacher={async()=>{}}/>
+  await act(async()=>root.render(<KaogongStateContext.Provider value={owner}><main>{practice}</main><aside hidden>{practice}</aside></KaogongStateContext.Provider>))
+  const visible=[...document.querySelectorAll<HTMLInputElement>('main input[type=radio]')],hidden=[...document.querySelectorAll<HTMLInputElement>('aside input[type=radio]')]
+  assert.equal(visible.length,2);assert.equal(hidden.length,2)
+  await act(async()=>visible[1].click())
+  assert.equal(visible[1].checked,true,'the visible answer stays selected when the hidden copy updates')
+  assert.equal(hidden[1].checked,true,'the hidden view reflects the same shared answer without unchecking main')
+  await act(async()=>hidden[0].click())
+  assert.equal(visible[0].checked,true);assert.equal(hidden[0].checked,true);assert.equal(visible[1].checked,false)
+ }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
+})
