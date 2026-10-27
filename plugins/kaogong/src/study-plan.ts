@@ -9,10 +9,11 @@ export const studyGoal=z.object({examDate:date.nullable(),dailyModules:z.number(
 export const reviewOccurrence=z.object({roundId:z.string().uuid(),questionId:z.string().min(1).max(300)}).strict()
 const task=z.object({id:z.string().uuid(),revision:z.number().int().positive(),subject:z.string(),title:z.string(),kind:z.enum(['learn','practice','review']),phase:z.enum(['foundation','reinforce','sprint']),date:date.nullable(),status:z.enum(['pending','in-progress','completed']),requirePractice:z.boolean(),requireReflections:z.boolean(),summary:z.string(),evidence:z.unknown().nullable(),startedFromRevision:z.number().optional(),lessonId:z.string().uuid().optional(),reviewOccurrence:reviewOccurrence.optional(),reviewHistoryCount:z.number().int().nonnegative().optional()})
 const draft=z.object({id:z.string().uuid(),baseRevision:z.number().int().nonnegative(),action:z.string(),goal:studyGoal.nullable(),tasks:z.array(task),overflow:z.array(z.string()),diff:z.array(z.object({id:z.string(),before:task.nullable(),after:task.nullable()})),createdAt:z.string()})
-export const planState=z.object({revision:z.number().int().nonnegative(),goal:studyGoal.nullable(),tasks:z.array(task),drafts:z.array(draft),history:z.array(z.object({revision:z.number(),confirmedAt:z.string(),draftId:z.string(),action:z.string(),diff:draft.shape.diff})),externalMocks:z.array(z.object({id:z.string(),date,title:z.string(),score:z.number(),maximum:z.number(),source:z.literal('learner-self-report')}))})
+const completionProposal=z.object({id:z.string().uuid(),taskId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),taskRevision:z.number().int().positive(),roundId:z.string().uuid().optional(),createdAt:z.string()})
+export const planState=z.object({revision:z.number().int().nonnegative(),goal:studyGoal.nullable(),tasks:z.array(task),drafts:z.array(draft),completionProposals:z.array(completionProposal).default([]),history:z.array(z.object({revision:z.number(),confirmedAt:z.string(),draftId:z.string(),action:z.string(),diff:draft.shape.diff})),externalMocks:z.array(z.object({id:z.string(),date,title:z.string(),score:z.number(),maximum:z.number(),source:z.literal('learner-self-report')}))})
 export type StudyTask=z.infer<typeof task>
 export type StudyPlanState=z.infer<typeof planState>
-export const studyPlanDomain=defineDomain({name:'kaogong_study_plan',version:1,tables:{},global:{schema:planState,initial:{revision:0,goal:null,tasks:[],drafts:[],history:[],externalMocks:[]}}})
+export const studyPlanDomain=defineDomain({name:'kaogong_study_plan',version:1,tables:{},global:{schema:planState,initial:{revision:0,goal:null,tasks:[],drafts:[],completionProposals:[],history:[],externalMocks:[]}}})
 export type PlanPreview={baseRevision:number;action:'generate'|'adjust'|'defer'|'append';today:string;goal?:z.infer<typeof studyGoal>;taskId?:string;date?:string;task?:{subject:string;title:string;kind:StudyTask['kind'];requirePractice?:boolean;requireReflections?:boolean;reviewOccurrence?:z.infer<typeof reviewOccurrence>}}
 /** One atomic aggregate owns plan revisions, stable tasks and explicit proposals.
  * Existing progress/round/lesson domains are neither inferred nor rewritten. */
@@ -20,7 +21,7 @@ export class StudyPlan{
  private pending:Promise<unknown>=Promise.resolve()
  constructor(private global:DomainGlobal<StudyPlanState>,private verify:(task:StudyTask,input:{roundId?:string;lessonId?:string})=>Promise<unknown>=async()=>{throw Error('作答证据不可用')},private prepareReview:(task:StudyTask)=>Promise<number>=async()=>{throw Error('复习依据不可用')}){}
  private run<T>(op:()=>Promise<T>){const p=this.pending.then(op);this.pending=p.catch(()=>{});return p}
- read(){return structuredClone(this.global.get())}
+ read(){const value=structuredClone(this.global.get());return {...value,completionProposals:value.completionProposals??[]}}
  preview(input:PlanPreview){return this.run(async()=>{
   const current=this.read();if(input.baseRevision!==current.revision)throw Error('计划版本已变化，请刷新')
   const goal=input.goal?studyGoal.parse(input.goal):current.goal;if(goal&&(goal.subjects.some(s=>!TAXONOMY.some(row=>row.subject===s.name))||new Set(goal.subjects.map(s=>s.name)).size!==goal.subjects.length))throw Error('科目设置无效')
@@ -47,8 +48,9 @@ export class StudyPlan{
    if(input.date&&(!isValidIsoDate(input.date)||input.date<input.today))throw Error('追加日期无效');if(row.reviewOccurrence&&row.kind!=='review')throw Error('错题关联仅用于复习任务')
    tasks.push({id:randomUUID(),revision:1,subject:row.subject,title:row.title.trim().slice(0,500),kind:row.kind,phase:'foundation',date:input.date??null,status:'pending',requirePractice:row.requirePractice===true,requireReflections:row.requireReflections!==false,summary:'',evidence:null,...(row.reviewOccurrence?{reviewOccurrence:reviewOccurrence.parse(row.reviewOccurrence)}:{})})
   }else throw Error('计划预览操作无效')
-  const counts=new Map<string,number>();for(const t of tasks.filter(t=>t.status!=='pending'))if(t.date)counts.set(t.date,(counts.get(t.date)??0)+1)
-  for(const t of tasks.filter(t=>t.status==='pending'))if(t.date){const used=counts.get(t.date)??0;if(goal&&used>=goal.dailyModules&&t.date>input.today)t.date=null;else counts.set(t.date,used+1)}
+  const protectedIds=new Set(current.tasks.filter(t=>t.status!=='pending'||t.date!==null&&t.date<=input.today).map(t=>t.id))
+  const counts=new Map<string,number>();for(const t of tasks.filter(t=>protectedIds.has(t.id)))if(t.date)counts.set(t.date,(counts.get(t.date)??0)+1)
+  for(const t of tasks.filter(t=>!protectedIds.has(t.id)))if(t.date){const used=counts.get(t.date)??0;if(goal&&used>=goal.dailyModules)t.date=null;else counts.set(t.date,used+1)}
   const overflow=tasks.filter(t=>t.date===null&&t.status==='pending').map(t=>t.id)
   const diff=tasks.flatMap(after=>{const before=current.tasks.find(t=>t.id===after.id)??null;return JSON.stringify(before)===JSON.stringify(after)?[]:[{id:after.id,before,after}]})
   const value={id:randomUUID(),baseRevision:current.revision,action:input.action,goal,tasks,overflow,diff,createdAt:new Date().toISOString()}
@@ -57,8 +59,25 @@ export class StudyPlan{
  confirm(id:string,revision:number,confirmed:boolean){return this.run(async()=>{const state=this.read(),proposal=state.drafts.find(row=>row.id===id);if(!proposal||revision!==state.revision||proposal.baseRevision!==revision)throw Error('计划版本已变化，请重新预览');if(confirmed!==true)throw Error('需要页面明确确认');const next={...state,revision:revision+1,goal:proposal.goal,tasks:proposal.tasks,drafts:state.drafts.filter(row=>row.id!==id),history:[...state.history,{revision:revision+1,confirmedAt:new Date().toISOString(),draftId:id,action:proposal.action,diff:proposal.diff}]};await this.global.set(next);return next})}
  start(id:string,revision:number){return this.run(async()=>{const state=this.read(),row=state.tasks.find(t=>t.id===id);if(row?.status==='in-progress'&&row.startedFromRevision===revision)return state;if(state.revision!==revision)throw Error('计划版本已变化');if(!row||row.status!=='pending')throw Error('任务不可开始');if(row.reviewOccurrence)row.reviewHistoryCount=await this.prepareReview(row);row.status='in-progress';row.startedFromRevision=revision;if(row.kind==='learn')row.lessonId=randomUUID();row.revision++;state.revision++;await this.global.set(state);return state})}
  saveSummary(id:string,revision:number,summary:string){return this.run(async()=>{const state=this.read(),row=state.tasks.find(t=>t.id===id);if(state.revision!==revision)throw Error('计划版本已变化');if(!row||row.status==='completed'||typeof summary!=='string'||summary.length>4000)throw Error('任务总结不可修改');row.summary=summary.trim();row.revision++;state.revision++;await this.global.set(state);return state})}
- complete(id:string,revision:number,confirmed:boolean,input:{roundId?:string;lessonId?:string}){return this.run(async()=>{const state=this.read(),row=state.tasks.find(t=>t.id===id);if(state.revision!==revision)throw Error('计划版本已变化');if(confirmed!==true)throw Error('需要页面明确确认');if(!row||row.status==='completed')throw Error('任务不可重复完成');if(row.kind==='learn'&&!row.summary.trim())throw Error('请先保存学习总结');const proof=row.kind!=='learn'||row.requirePractice?await this.verify(row,input):null;row.evidence={summary:row.summary,proof,confirmedAt:new Date().toISOString()};row.status='completed';row.revision++;state.revision++;state.history.push({revision:state.revision,confirmedAt:new Date().toISOString(),draftId:id,action:'learner-confirmed-completion',diff:[{id,before:this.read().tasks.find(t=>t.id===id)!,after:row}]});await this.global.set(state);return state})}
+ complete(id:string,revision:number,confirmed:boolean,input:{roundId?:string;lessonId?:string},proposalId?:string){return this.run(async()=>{const state=this.read(),row=state.tasks.find(t=>t.id===id);if(state.revision!==revision)throw Error('计划版本已变化');if(confirmed!==true)throw Error('需要页面明确确认');if(proposalId){const proposal=state.completionProposals.find(p=>p.id===proposalId);if(!proposal||proposal.taskId!==id||proposal.baseRevision!==revision||proposal.taskRevision!==row?.revision)throw Error('完成建议已过期，请重新核对')}if(!row||row.status==='completed')throw Error('任务不可重复完成');const proof=await this.completionEvidence(row,input);row.evidence={summary:row.summary,proof,confirmedAt:new Date().toISOString()};row.status='completed';row.revision++;state.revision++;state.completionProposals=state.completionProposals.filter(p=>p.taskId!==id);state.history.push({revision:state.revision,confirmedAt:new Date().toISOString(),draftId:id,action:'learner-confirmed-completion',diff:[{id,before:this.read().tasks.find(t=>t.id===id)!,after:row}]});await this.global.set(state);return state})}
  recordExternalMock(input:{date:string;title:string;score:number;maximum:number},revision:number,confirmed:boolean){return this.run(async()=>{const state=this.read();if(state.revision!==revision)throw Error('计划版本已变化');if(confirmed!==true||!isValidIsoDate(input.date)||!input.title.trim()||!Number.isFinite(input.score)||!Number.isFinite(input.maximum)||input.maximum<=0||input.score<0||input.score>input.maximum)throw Error('外部自报成绩无效');state.externalMocks.push({...input,title:input.title.trim().slice(0,500),id:randomUUID(),source:'learner-self-report'});state.revision++;await this.global.set(state);return state})}
+ private async completionEvidence(row:StudyTask,input:{roundId?:string;lessonId?:string}){
+  if(row.kind==='learn'&&!row.summary.trim())throw Error('请先保存学习总结')
+  return row.kind!=='learn'||row.requirePractice?await this.verify(row,input):null
+ }
+ proposeCompletion(taskId:string,revision:number,roundId?:string){return this.run(async()=>{
+  const state=this.read(),row=state.tasks.find(t=>t.id===taskId)
+  if(!row||row.status==='completed'||!Number.isInteger(revision)||state.revision!==revision)throw Error('任务身份或计划版本已变化')
+  const input=completionProposal.parse({id:randomUUID(),taskId,baseRevision:revision,taskRevision:row.revision,...(roundId?{roundId}:{}),createdAt:new Date().toISOString()})
+  const previous=state.completionProposals.find(p=>p.taskId===taskId&&p.baseRevision===revision&&p.taskRevision===row.revision&&p.roundId===roundId)
+  if(previous)return previous
+  await this.global.set({...state,completionProposals:[...state.completionProposals,input]});return input
+ })}
+ async previewCompletion(id:string,revision:number){
+  const state=this.read(),proposal=state.completionProposals.find(p=>p.id===id),row=state.tasks.find(t=>t.id===proposal?.taskId)
+  if(!proposal||!row||row.status==='completed'||state.revision!==revision||proposal.baseRevision!==revision||proposal.taskRevision!==row.revision)throw Error('完成建议已过期或不属于此档案')
+  try{const proof=await this.completionEvidence(row,{roundId:proposal.roundId});return {proposal,task:row,ready:true,evidence:{summary:row.summary,proof},missing:null}}
+  catch(error){return {proposal,task:row,ready:false,evidence:{summary:row.summary,proof:null},missing:error instanceof Error?error.message:'完成依据不完整'}}
+ }
  async close(){await this.pending}
 }
-

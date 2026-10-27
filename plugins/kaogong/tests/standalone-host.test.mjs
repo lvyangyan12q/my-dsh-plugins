@@ -460,3 +460,50 @@ test('review plan proposals stay inert and completion requires a new confirmed o
   assert.equal((await app.request('/api/kaogong/dashboard?viewId='+viewId)).value.practiceStatistics.submittedCount,1)
  }finally{await app.close()}
 })
+
+test('the real plan page starts an authorized task through the strict public Host contract',async()=>{
+ const app=await fixture({source:true})
+ const {JSDOM}=await import('jsdom'),dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map(),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
+ for(const[key,value]of Object.entries(values)){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true})}
+ saved.set('React',Object.getOwnPropertyDescriptor(globalThis,'React'))
+ const React=await import('react');globalThis.React=React
+ const {createRoot}=await import('react-dom/client'),root=createRoot(document.getElementById('root'))
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),viewId=learner.view.id,planUrl='/api/kaogong/plan?viewId='+viewId
+  const source=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:source.id,fingerprint:source.fingerprint,confirmed:true})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+  const draft=(await app.request(planUrl,{action:'preview',baseRevision:0,operation:'append',task:{subject:'行测-资料分析',title:'页面开始练习',kind:'practice'}})).value
+  await app.request(planUrl,{action:'confirm',id:draft.id,revision:0,confirmed:true})
+  const {StudyPlanPanel}=await import('../src/study-plan-panel.tsx'),{KaogongTransportContext}=await import('../src/view-context.tsx'),{createViewTransport}=await import('../src/client-runtime.ts'),{KaogongStateContext,KaogongViewState}=await import('../src/view-state.tsx')
+  const owner=new KaogongViewState(learner.profile.id),transport=createViewTransport({instanceId:learner.profile.id,viewId},async(input,init)=>{const response=await app.request(String(input),init?.body?JSON.parse(String(init.body)):undefined);return new Response(JSON.stringify(response.value),{status:response.status})})
+  let page='plan'
+  await React.act(async()=>root.render(React.createElement(KaogongStateContext.Provider,{value:owner},React.createElement(KaogongTransportContext.Provider,{value:transport},React.createElement(StudyPlanPanel,{onPage:value=>{page=value},onOpenTeacher:async()=>{}})))))
+  for(let i=0;i<100&&!document.querySelector('article');i++)await React.act(async()=>new Promise(resolve=>setTimeout(resolve,10)))
+  assert.ok(document.querySelector('article'),document.body.textContent)
+  await React.act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent==='开始任务').click())
+  for(let i=0;i<100&&page==='plan'&&!document.querySelector('[role=alert]');i++)await React.act(async()=>new Promise(resolve=>setTimeout(resolve,10)))
+  assert.equal(page,'practice',document.body.textContent)
+  assert.equal((await app.request(planUrl)).value.tasks[0].status,'in-progress')
+ }finally{await React.act(async()=>root.unmount());dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key);await app.close()}
+})
+
+
+
+test('appending to a full current day keeps its existing task and explicitly overflows the new task',async()=>{
+ const app=await fixture()
+ try{
+  const learner=(await app.request('/api/kaogong/study',{action:'create',kind:'learner',title:'当日容量',confirmed:true})).value,url='/api/kaogong/plan?viewId='+learner.view.id
+  const now=new Date(),today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-')
+  const goal=(await app.request(url,{action:'preview',baseRevision:0,operation:'generate',goal:{examDate:null,dailyModules:1,subjects:[{name:'行测-资料分析',weight:1}]}})).value
+  let state=(await app.request(url,{action:'confirm',id:goal.id,revision:0,confirmed:true})).value
+  const first=(await app.request(url,{action:'preview',baseRevision:state.revision,operation:'append',date:today,task:{subject:'行测-资料分析',title:'原有今日任务',kind:'learn'}})).value
+  state=(await app.request(url,{action:'confirm',id:first.id,revision:state.revision,confirmed:true})).value
+  const second=(await app.request(url,{action:'preview',baseRevision:state.revision,operation:'append',date:today,task:{subject:'行测-资料分析',title:'今日追加任务',kind:'learn'}})).value
+  assert.equal(second.tasks.find(task=>task.id===state.tasks[0].id).date,today)
+  const added=second.tasks.find(task=>task.title==='今日追加任务')
+  assert.equal(added.date,null);assert.deepEqual(second.overflow,[added.id])
+  assert.equal((await app.request(url)).value.tasks.length,1)
+ }finally{await app.close()}
+})

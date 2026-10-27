@@ -1,3 +1,4 @@
+import {studyDate} from './study-date.ts'
 import {z} from 'zod'
 import {randomUUID} from 'node:crypto'
 import type {KvTable} from '@deepseek-ai/dsh-storage-domain'
@@ -19,7 +20,7 @@ export class ErrorReviews{
    if(userAnswer!==''&&userAnswer.trim()===question.correctAnswer.trim())return []
    const reflection=round.reflections.find(row=>row.id===question.id),id=occurrenceId(roundId,question.id)
    return [{...question,id,questionId:question.id,roundId,userAnswer,submittedAt:round.score!.submittedAt,errorReason:reflection?.errorReason??'',notes:reflection?.notes??'',review:this.reviews.get(id)??null}]
-  })).filter(row=>(!filters.subject||row.subject===filters.subject)&&(!filters.knowledgePoint||row.knowledgePoint.includes(filters.knowledgePoint))&&(!filters.errorReason||row.errorReason===filters.errorReason)&&(!filters.from||row.submittedAt.slice(0,10)>=filters.from)&&(!filters.to||row.submittedAt.slice(0,10)<=filters.to)&&(!filters.status||(row.review?.status??'not-enrolled')===filters.status)).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt)||a.id.localeCompare(b.id))
+  })).filter(row=>(!filters.subject||row.subject===filters.subject)&&(!filters.knowledgePoint||row.knowledgePoint.includes(filters.knowledgePoint))&&(!filters.errorReason||row.errorReason===filters.errorReason)&&(!filters.from||studyDate(new Date(row.submittedAt))>=filters.from)&&(!filters.to||studyDate(new Date(row.submittedAt))<=filters.to)&&(!filters.status||(row.review?.status??'not-enrolled')===filters.status)).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt)||a.id.localeCompare(b.id))
   return {occurrences}
  }
  readForPlan(id:string){const row=this.occurrence(id),review=this.reviews.get(id);if(!review||review.status==='consolidated')throw new PracticeError('请先确认加入待复习队列',409);return {row,review}}
@@ -62,6 +63,3 @@ export class ErrorReviews{
   throw new PracticeError('未知复习操作')
  }
 }
-
-
-

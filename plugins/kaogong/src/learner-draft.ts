@@ -9,4 +9,6 @@ function validate(value:unknown):LearnerDraft|null{
 }
 const key=(id:string)=>'kaogong/instances/'+encodeURIComponent(id)+'/learner-draft/v1'
 export function readLearnerDraft(id:string):LearnerDraft|null{try{const text=window.localStorage.getItem(key(id));return!text||text.length>40000?null:validate(JSON.parse(text))}catch{return null}}
-export function writeLearnerDraft(id:string,value:LearnerDraft){if(id==='default'||!validate(value))return;try{window.localStorage.setItem(key(id),JSON.stringify(value))}catch{/* Browser storage availability does not write or complete Host records. */}}
+export function writeLearnerDraft(id:string,value:LearnerDraft){if(id==='default'||!validate(value))return;try{window.localStorage.setItem(key(id),JSON.stringify(value));if(value.lessonId)window.localStorage.setItem(key(id)+'/lesson/'+encodeURIComponent(value.lessonId),JSON.stringify(value))}catch{/* Browser storage availability does not write or complete Host records. */}}
+
+export function readLessonNotesDraft(id:string,lessonId:string):LearnerDraft|null{try{const value=validate(JSON.parse(window.localStorage.getItem(key(id)+'/lesson/'+encodeURIComponent(lessonId))??'null'));if(value?.lessonId===lessonId)return value;const current=readLearnerDraft(id);return current?.lessonId===lessonId?current:null}catch{return null}}

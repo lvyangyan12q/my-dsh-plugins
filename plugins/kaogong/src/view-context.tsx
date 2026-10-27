@@ -14,7 +14,7 @@ export function usePracticeClient(){
   const transport=useContext(KaogongTransportContext)
   return useMemo(()=>({
     practiceRequest:<T,>(action:string,body:unknown):Promise<T>=>transport?transport.json<T>('/api/kaogong/practice/'+action,body):practiceRequest<T>(action,body),
-    readPracticeDraft:()=>readPracticeDraft(transport?.instanceId),
+    readPracticeDraft:(roundId?:string)=>readPracticeDraft(transport?.instanceId,roundId),
     savePracticeDraft:(draft:Parameters<typeof savePracticeDraft>[0])=>savePracticeDraft(draft,transport?.instanceId),
     readAdmittedReviews:()=>readAdmittedReviews(transport?.instanceId),
     markAdmittedReview:(id:string)=>markAdmittedReview(id,transport?.instanceId),

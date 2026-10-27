@@ -63,8 +63,11 @@ test('independent role HTTP creates a standard Native Session with private teach
     ctx.provide('webServer', { register: row => { routes.set(row.kind + ':' + row.path, row); return () => routes.delete(row.kind + ':' + row.path) } })
     ctx.provide('connection', { admit: () => ({ peer: {} }) })
     ctx.provide('profileContext',{home:root,dir:profileDir})
+    const bankSource=join(root,'source/storages');await mkdir(bankSource,{recursive:true})
+    await writeFile(join(bankSource,'kaogong_bank.json'),JSON.stringify({unit:{name:'kaogong_bank',version:2},global:null,tables:{questions:{synthetic:{subject:'行测-资料分析',knowledgePoint:'直接读取',questionType:'单选',stem:'合成题首项为2，首项是多少',options:['A. 1','B. 2'],correctAnswer:'B',explanation:'首项为2',difficulty:'easy',source:'合成边界题',origin:'local',reviewStatus:'approved',reviewNotes:'',tags:[],createdAt:'2026-10-27',reviewedAt:'2026-10-27'}}}}))
+    await writeFile(join(bankSource,'kaogong_knowledge.json'),JSON.stringify({unit:{name:'kaogong_knowledge',version:1},global:null,tables:{entries:{}}}))
     await new Promise((resolve, reject) => ctx.inject(productionInject, scope => {
-      mountKaogong(scope, { roleCwd: root, currentSourceProfile:join(root,'profiles/old'), questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined } }).then(dispose => { stop=dispose; resolve() }, reject)
+      mountKaogong(scope, { roleCwd: root, materialSourceHome:join(root,'source'), currentSourceProfile:join(root,'profiles/old'), questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined } }).then(dispose => { stop=dispose; resolve() }, reject)
     }))
     const created = await post({ action: 'create', title: '角色验证', kind: 'learner', confirmed: true })
     const viewId = created.value.view.id
@@ -115,13 +118,51 @@ test('independent role HTTP creates a standard Native Session with private teach
     assert.equal(confirmedPlan.status,200,JSON.stringify(confirmedPlan.value))
     assert.ok(confirmedPlan.value.tasks.length>0)
     const effectivePlan = confirmedPlan.value
-    const completion = JSON.parse((await ctx.tools.get('kaogong_plan_done',agent).execute({taskId:effectivePlan.tasks[0].id,done:true,confirmed:true},{agent})).summary)
+    const completionTool=ctx.tools.get('kaogong_plan_done',agent)
+    const completion=JSON.parse((await completionTool.execute({taskId:effectivePlan.tasks[0].id,revision:effectivePlan.revision,done:true,confirmed:true},{agent})).summary)
     assert.equal(completion.effective,false)
-    assert.deepEqual((await post(undefined,planPath)).value,effectivePlan)
+    const proposed=(await post(undefined,planPath)).value
+    assert.equal(proposed.completionProposals.length,1)
+    assert.equal(proposed.completionProposals[0].id,completion.proposalId)
+    assert.equal(proposed.revision,effectivePlan.revision);assert.deepEqual(proposed.tasks,effectivePlan.tasks)
+    const missing=await post({action:'completion-preview',id:completion.proposalId,revision:proposed.revision},planPath)
+    assert.equal(missing.status,200);assert.equal(missing.value.ready,false)
+    assert.equal((await post({action:'completion-confirm',id:completion.proposalId,revision:proposed.revision,confirmed:true},planPath)).status,409)
+    await assert.rejects(completionTool.execute({taskId:crypto.randomUUID(),revision:proposed.revision,confirmed:true},{agent}))
+    const learnDraft=(await post({action:'preview',baseRevision:proposed.revision,operation:'append',task:{subject:'行测-资料分析',title:'有依据的完成建议',kind:'learn',requirePractice:false}},planPath)).value
+    let current=(await post({action:'confirm',id:learnDraft.id,revision:proposed.revision,confirmed:true},planPath)).value
+    const learnTask=current.tasks.at(-1)
+    current=(await post({action:'summary',id:learnTask.id,revision:current.revision,summary:'学习者自行保存总结'},planPath)).value
+    assert.equal((await post({action:'completion-preview',id:completion.proposalId,revision:current.revision},planPath)).status,409)
+    const ready=JSON.parse((await completionTool.execute({taskId:learnTask.id,revision:current.revision,confirmed:true},{agent})).summary)
+    const proof=(await post({action:'completion-preview',id:ready.proposalId,revision:current.revision},planPath)).value
+    assert.equal(proof.ready,true);assert.equal(proof.evidence.summary,'学习者自行保存总结')
+    assert.equal((await post(undefined,planPath)).value.tasks.at(-1).status,'pending')
+    assert.equal((await post({action:'completion-confirm',id:ready.proposalId,revision:current.revision,confirmed:false},planPath)).status,409)
+    const finished=await post({action:'completion-confirm',id:ready.proposalId,revision:current.revision,confirmed:true},planPath)
+    assert.equal(finished.status,200);assert.equal(finished.value.tasks.at(-1).status,'completed')
+    const library=(await post({action:'create',title:'合成资料库',kind:'library',confirmed:true})).value
+    const material=(await post({action:'prepare',viewId:library.view.id},'/api/kaogong/material-import')).value
+    assert.equal((await post({action:'apply',viewId:library.view.id,id:material.id,fingerprint:material.fingerprint,confirmed:true},'/api/kaogong/material-import')).status,200)
+    await post({action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+    const practiceDraft=(await post({action:'preview',baseRevision:finished.value.revision,operation:'append',task:{subject:'行测-资料分析',title:'必须反思的建议',kind:'practice',requireReflections:true}},planPath)).value
+    const practicePlan=(await post({action:'confirm',id:practiceDraft.id,revision:finished.value.revision,confirmed:true},planPath)).value
+    const practiceTask=practicePlan.tasks.at(-1),begun=(await post({id:practiceTask.id,revision:practicePlan.revision},'/api/kaogong/plan/start?viewId='+viewId)).value
+    assert.equal((await post({roundId:begun.round.roundId,answers:[{id:'synthetic',answer:'A'}]},'/api/kaogong/practice/submit?viewId='+viewId)).status,200)
+    const practiceSuggestion=JSON.parse((await completionTool.execute({taskId:practiceTask.id,revision:begun.state.revision,roundId:begun.round.roundId,confirmed:true},{agent})).summary)
+    const incomplete=(await post({action:'completion-preview',id:practiceSuggestion.proposalId,revision:begun.state.revision},planPath)).value
+    assert.equal(incomplete.ready,false);assert.match(incomplete.missing,/反思/)
+    assert.equal((await post({action:'completion-confirm',id:practiceSuggestion.proposalId,revision:begun.state.revision,confirmed:true},planPath)).status,409)
+    await post({roundId:begun.round.roundId,entries:[{id:'synthetic',errorReason:'审题不清',notes:'补齐真实反思'}]},'/api/kaogong/practice/reflection?viewId='+viewId)
+    const reflected=(await post({action:'completion-preview',id:practiceSuggestion.proposalId,revision:begun.state.revision},planPath)).value
+    assert.equal(reflected.ready,true);assert.equal(reflected.evidence.proof.roundId,begun.round.roundId)
+    const practiceFinished=await post({action:'completion-confirm',id:practiceSuggestion.proposalId,revision:begun.state.revision,confirmed:true},planPath)
+    assert.equal(practiceFinished.status,200)
+    await assert.rejects(completionTool.execute({taskId:practiceTask.id,revision:begun.state.revision,confirmed:true},{agent}))
     await ctx.tools.get('kaogong_plan_view',agent).execute({}, {agent})
     await ctx.tools.get('kaogong_practice_read',agent).execute({}, {agent})
     await ctx.tools.get('kaogong_lesson_read',agent).execute({}, {agent})
-    assert.deepEqual((await post(undefined,planPath)).value,effectivePlan)
+    assert.deepEqual((await post(undefined,planPath)).value,practiceFinished.value)
     await assert.rejects(ctx.tools.get('kaogong_plan_set',agent).execute({examDate},{agent:handles.get(ordinaryId).agent}))
     const again = await post({ action: 'role-ensure', viewId, roleId: 'class-advisor' })
     const restored = await post({ action: 'session-context', sessionId: ensured.value.sessionId })
@@ -130,6 +171,7 @@ test('independent role HTTP creates a standard Native Session with private teach
     assert.equal(restored.value.profile.id, created.value.profile.id)
     assert.equal((await post({ action: 'session-context', sessionId: 'ordinary-native-session' })).status, 409)
     const foreign = await post({ action: 'create', title: '另一个档案', kind: 'learner', confirmed: true })
+    assert.equal((await post({action:'completion-preview',id:completion.proposalId,revision:0},'/api/kaogong/plan?viewId='+foreign.value.view.id)).status,409)
     assert.equal((await post({ action: 'session-context', viewId: foreign.value.view.id, sessionId: ensured.value.sessionId })).status, 409)
     assert.equal((await post({ action: 'session-context', viewId: null, sessionId: ensured.value.sessionId })).status, 409)
     assert.equal(again.value.sessionId, ensured.value.sessionId)

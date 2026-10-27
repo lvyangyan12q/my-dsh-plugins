@@ -38,6 +38,7 @@ export class KaogongViewState {
   private cells = new Map<string, unknown>()
   private requests = new Map<string, number>()
   private practiceCommand = false
+  private changingLesson = false
   constructor(readonly instanceId='default',readonly viewId?:string) {
     const draft=readLearnerDraft(instanceId)
     if(draft){if(draft.goal)this.cell('lesson.draft',draft.goal);this.cell('lesson.form',draft.form);this.cell('lesson.resumeId',draft.lessonId);this.cell('lesson.notes',draft.notes);this.cell('lesson.notesDirty',draft.notesDirty)}
@@ -49,11 +50,15 @@ export class KaogongViewState {
     this.cell('roles.selected', { appId: 'kaogong', instanceId, ...saved.role })
   }
   private saveLearnerDraft(){
-    if(this.viewId)return
+    if(this.viewId||this.changingLesson)return
     const goal=this.cells.get('lesson.draft') as Cell<ViewValues['lesson.draft']>|undefined
     writeLearnerDraft(this.instanceId,{version:1,form:this.cell('lesson.form',false).value,lessonId:this.cell('lesson.view',null).value?.lesson.request.lessonId??this.cell('lesson.resumeId',null).value,notes:this.cell('lesson.notes','').value,notesDirty:this.cell('lesson.notesDirty',false).value,...(goal?{goal:goal.value}:{})})
   }
 
+  resumeLesson(view:LessonView,notes:string,dirty:boolean){
+    this.changingLesson=true
+    try{this.cell('lesson.view',null).set(view);this.cell('lesson.resumeId',null).set(view.lesson.request.lessonId);this.cell('lesson.notes','').set(notes);this.cell('lesson.notesDirty',false).set(dirty)}finally{this.changingLesson=false;this.saveLearnerDraft()}
+  }
   private saveDisplayChoices() {
     const selected = this.cell('roles.selected', { appId: 'kaogong', instanceId: this.instanceId, roleId: 'teacher' }).value
     if (!selected || selected.appId !== 'kaogong' || selected.instanceId !== this.instanceId) return

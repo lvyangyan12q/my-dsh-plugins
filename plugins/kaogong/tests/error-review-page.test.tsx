@@ -16,7 +16,7 @@ test('learner reviews historical errors with explicit queue and completion confi
   return new Response(JSON.stringify({occurrences:[occurrence],queue:{total:occurrence.review?1:0,due:0}}))
  }
  const {createRoot}=await import('react-dom/client')
- const root=createRoot(document.getElementById('root')!)
+ const root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
  try{
   const {ErrorReviewPanel}=await import('../src/error-review-panel.tsx')
   await act(async()=>root.render(<ErrorReviewPanel onPlan={()=>{planOpened++}}/>))
@@ -46,3 +46,16 @@ test('learner reviews historical errors with explicit queue and completion confi
 
 
 
+
+test('an overdue review previews the current Shanghai calendar date just after midnight',async()=>{
+ const timezone=process.env.TZ;process.env.TZ='Asia/Shanghai'
+ const RealDate=Date,instant=RealDate.parse('2026-10-26T16:30:00Z')
+ class BoundaryDate extends RealDate{constructor(...args:any[]){super(...(args.length?args:[instant]) as [any])}static now(){return instant}}
+ Object.defineProperty(globalThis,'Date',{value:BoundaryDate,configurable:true,writable:true})
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map(),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
+ for(const[key,value]of Object.entries(values)){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true})}
+ const prior=globalThis.fetch;let proposed:any
+ globalThis.fetch=async(input,init)=>{if(init?.body){proposed=JSON.parse(String(init.body));return new Response('{}')}return new Response(JSON.stringify(String(input).includes('/plan')?{revision:1}:{occurrences:[{id:'occurrence',questionId:'q1',roundId:'round-old',subject:'行测-资料分析',knowledgePoint:'读取',stem:'原题',options:['A. 1'],userAnswer:'',correctAnswer:'A',source:'合成题',explanation:'说明',errorReason:'未答',notes:'',submittedAt:'2026-10-25T16:00:00Z',review:{stage:0,status:'scheduled',dueAt:'2026-10-25T17:00:00Z',history:[]}}],queue:{total:1,due:1}}))}
+ const root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
+ try{const{ErrorReviewPanel}=await import('../src/error-review-panel.tsx');await act(async()=>root.render(<ErrorReviewPanel onPlan={()=>{}}/>));await act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent==='预览加入学习计划')!.click());assert.equal(proposed.date,'2026-10-27');assert.match(document.body.textContent??'',/下次：2026-10-26/)}finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();Object.defineProperty(globalThis,'Date',{value:RealDate,configurable:true,writable:true});if(timezone===undefined)delete process.env.TZ;else process.env.TZ=timezone;for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
+})
