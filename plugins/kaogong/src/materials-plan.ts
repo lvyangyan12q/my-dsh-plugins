@@ -5,6 +5,7 @@ import {bankQuestion,knowledgeEntry} from './schemas.ts'
 import type {LegacyMaterialEvidence} from './legacy-material-evidence.mjs'
 import type {LegacyBankImageEvidence} from './legacy-bank-image-evidence.mjs'
 import type {LegacyPrivateAssetEvidence} from './legacy-private-assets.mjs'
+import type {MaterialLocation} from './material-location.ts'
 export type MaterialSnapshot=LegacyInspectionSnapshot&{format:'kaogong-material-inspection'}
 export type MaterialImportPlan={
  format:'kaogong-material-import-plan';formatVersion:1;private:true;id:string;fingerprint:string
@@ -13,10 +14,11 @@ export type MaterialImportPlan={
  records:{domain:'bank'|'knowledge';key:string;value:unknown;hash:string}[]
  privateKnowledgeIds:string[];retainedNoteIds:string[];counts:Record<string,number>
  assetEvidence?:{materials?:LegacyMaterialEvidence;bank?:LegacyBankImageEvidence;private?:LegacyPrivateAssetEvidence}
+ location?:MaterialLocation
  policy:{sourceWrites:0;nativeSessions:'not-read-or-adopted';learningRecords:'not-read-or-copied';sharing:'explicit-readonly-only';files:'original-paths-no-copy'}
 }
 function fail(code:string):never{throw Object.assign(Error(code),{code})}
-export function prepareMaterialImport({snapshot,assetEvidence,target}:{snapshot:MaterialSnapshot;assetEvidence?:MaterialImportPlan['assetEvidence'];target?:MaterialImportPlan['target']}):MaterialImportPlan{
+export function prepareMaterialImport({snapshot,assetEvidence,target,location}:{snapshot:MaterialSnapshot;assetEvidence?:MaterialImportPlan['assetEvidence'];target?:MaterialImportPlan['target'];location?:MaterialLocation}):MaterialImportPlan{
  materialEvidenceSnapshot(snapshot)
  if(assetEvidence&&Object.values(assetEvidence).some(value=>value.sourceRevision!==snapshot.sourceRevision))fail('MATERIAL_EVIDENCE_SOURCE_CHANGED')
  const proven=new Map(assetEvidence?.materials?.entries.map(row=>[row.id,row])??[]),records:MaterialImportPlan['records']=[],privateKnowledgeIds:string[]=[],retainedNoteIds:string[]=[]
@@ -37,7 +39,7 @@ export function prepareMaterialImport({snapshot,assetEvidence,target}:{snapshot:
  if([...proven.keys()].some(id=>!records.some(row=>row.domain==='knowledge'&&row.key===id)))fail('MATERIAL_EVIDENCE_SOURCE_CHANGED')
  const evidenceFiles=[...(assetEvidence?.materials?.files??[]),...(assetEvidence?.bank?.files??[]),...(assetEvidence?.bank?.documentFiles??[]),...(assetEvidence?.private?.files??[])]
  const assetCounts={provenUniqueFiles:new Set(evidenceFiles.map(file=>file.resolvedPath)).size,bankReferenceBindings:assetEvidence?.bank?.questions.reduce((sum,row)=>sum+row.assets.reduce((total,asset)=>total+asset.bindings.length,0),0)??0,rawAssetReferences:assetEvidence?.materials?.entries.reduce((sum,row)=>sum+row.assets.length,0)??0,privateAssetReferences:assetEvidence?.private?.entries.reduce((sum,row)=>sum+row.bindings.length,0)??0,blockedBankReferences:assetEvidence?.bank?.unavailable.length??0,missingAssociationIndices:assetEvidence?.bank?.missingIndices.length??0,privateEntriesWithoutImageProof:assetEvidence?.private?.unprovenEntries.length??privateKnowledgeIds.length}
- const body={format:'kaogong-material-import-plan' as const,formatVersion:1 as const,private:true as const,id:randomUUID(),source:{home:snapshot.sourceHome,revision:snapshot.sourceRevision,files:snapshot.files.map(({name,resolvedPath,sha256,version,bytesBase64})=>({name,resolvedPath,sha256,version,bytes:Buffer.from(bytesBase64,'base64').length}))},target:structuredClone(target??{instanceId:randomUUID(),viewId:randomUUID(),appId:'kaogong-library' as const,projectId:null}),records,privateKnowledgeIds,retainedNoteIds,counts:{...assetCounts,bank:records.filter(row=>row.domain==='bank').length,knowledge:records.filter(row=>row.domain==='knowledge').length,shareableMaterials:proven.size,privateMaterials:privateKnowledgeIds.length,notesRetainedAtSource:retainedNoteIds.length},...(assetEvidence?{assetEvidence:structuredClone(assetEvidence)}:{}),policy:{sourceWrites:0 as const,nativeSessions:'not-read-or-adopted' as const,learningRecords:'not-read-or-copied' as const,sharing:'explicit-readonly-only' as const,files:'original-paths-no-copy' as const}}
+ const body={format:'kaogong-material-import-plan' as const,formatVersion:1 as const,private:true as const,id:randomUUID(),source:{home:snapshot.sourceHome,revision:snapshot.sourceRevision,files:snapshot.files.map(({name,resolvedPath,sha256,version,bytesBase64})=>({name,resolvedPath,sha256,version,bytes:Buffer.from(bytesBase64,'base64').length}))},target:structuredClone(target??{instanceId:randomUUID(),viewId:randomUUID(),appId:'kaogong-library' as const,projectId:null}),records,privateKnowledgeIds,retainedNoteIds,counts:{...assetCounts,bank:records.filter(row=>row.domain==='bank').length,knowledge:records.filter(row=>row.domain==='knowledge').length,shareableMaterials:proven.size,privateMaterials:privateKnowledgeIds.length,notesRetainedAtSource:retainedNoteIds.length},...(assetEvidence?{assetEvidence:structuredClone(assetEvidence)}:{}),...(location?{location:structuredClone(location)}:{}),policy:{sourceWrites:0 as const,nativeSessions:'not-read-or-adopted' as const,learningRecords:'not-read-or-copied' as const,sharing:'explicit-readonly-only' as const,files:'original-paths-no-copy' as const}}
  return {...body,fingerprint:fingerprint(body)}
 }
 

@@ -31,4 +31,6 @@
 
 ## 验证边界
 
+2026-10-27源码增量：新资料预览可通过成对的 `materialLocationMap` / `materialLocationEvidence` 显式配置固定00的位置映射与未改原证明；运行时应用、图文读取和练习验证使用同一回执。原rootIdentity与新rootIdentity分别保存，旧applied计划不重写。公开Host合成资料/授权撤销/冷恢复及页面确认的证据见 [07资料位置源码证据](evidence/07-material-location.md)。尚未完成准确包真实资料/正式配置切换，以上切换矩阵仍须逐项实测。
+
 已有迁移安全测试通过：只重定位固定别名、原件保留、字节变更拒绝、重复别名和越界拒绝。资料新位置的图文/PDF真实读取与哈希已验证；本票未运行模型、未改评分记录，也未声称无Worktable的Native学习闭环已完成。独立轮次评分、两档案权限、刷新/重启/准确包卸载重装和最终切换均由[07](tickets/07-acceptance-delivery.md)承担。

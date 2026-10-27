@@ -6,6 +6,7 @@ import {readLegacyBankImageAsset} from './legacy-bank-image-evidence.mjs'
 import {readLegacyPrivateAsset} from './legacy-private-assets.mjs'
 import type {Rows} from './host-resources.ts'
 import type {MaterialImportPlan} from './materials-plan.ts'
+import {materialLocationIO,assertRelocatedEvidence} from './material-location.ts'
 export type ProvenAssetPlan=LegacyAdoptionPlan|MaterialImportPlan
 const libraryId=(plan:ProvenAssetPlan)=>plan.format==='kaogong-material-import-plan'?plan.target.instanceId:plan.targets.library.instanceId
 const privateOwnerId=(plan:ProvenAssetPlan)=>plan.format==='kaogong-material-import-plan'?plan.target.instanceId:plan.targets.history.instanceId
@@ -37,13 +38,16 @@ export async function readAdoptedAsset(input:{
  if(candidates.length!==1)deny()
  const plan=candidates[0]!,{fingerprint:expected,...body}=plan
  if(fingerprint(body)!==expected)deny()
+ const location=plan.format==='kaogong-material-import-plan'?plan.location:undefined
+ const io=await materialLocationIO(location)
+ assertRelocatedEvidence(location,plan.assetEvidence?.materials)
  let bytes:Buffer
  if(input.kind==='bank'){
   const evidence=plan.assetEvidence?.bank,question=evidence?.questions.find(row=>row.questionId===input.id)
   const selected=question?.assets.flatMap(asset=>asset.bindings.filter(binding=>binding.reference===input.reference).map(binding=>({asset,binding})))??[]
   if(!evidence||!selected.length||new Set(selected.map(row=>row.asset.asset)).size!==1)deny()
   const {asset,binding}=selected[0]!
-  bytes=await readers.bank({evidence,questionId:input.id,asset:asset.asset,bindingKey:binding.bindingKey})
+  bytes=await readers.bank({evidence,questionId:input.id,asset:asset.asset,bindingKey:binding.bindingKey,io})
  }else{
   const privateEvidence=plan.assetEvidence?.private,entry=privateEvidence?.entries.find(row=>row.id===input.id)
   if(entry){
@@ -51,7 +55,7 @@ export async function readAdoptedAsset(input:{
    const bindings=entry.bindings.filter(row=>row.src===input.reference)
    if(!bindings.length||new Set(bindings.map(row=>row.asset)).size!==1)deny()
    const binding=bindings[0]!
-   bytes=await readers.private({evidence:privateEvidence!,entryId:input.id,jobId:entry.jobId,asset:binding.asset,bindingKey:binding.bindingKey,currentRecord:current,access:{kind:plan.format==='kaogong-material-import-plan'?'private-material-library':'private-history',ownerInstanceId:owner,instanceId:input.instanceId}})
+   bytes=await readers.private({evidence:privateEvidence!,entryId:input.id,jobId:entry.jobId,asset:binding.asset,bindingKey:binding.bindingKey,currentRecord:current,access:{kind:plan.format==='kaogong-material-import-plan'?'private-material-library':'private-history',ownerInstanceId:owner,instanceId:input.instanceId},io})
   }else{
    const evidence=plan.assetEvidence?.materials,entry=evidence?.entries.find(row=>row.id===input.id),content=(current as {content?:unknown}).content
    if(!evidence||!entry||owner!==libraryId(plan)||typeof content!=='string'||contentHash(content)!==entry.sourceContentSha256)deny()
@@ -60,7 +64,7 @@ export async function readAdoptedAsset(input:{
    const url=new URL(input.reference,'http://kaogong.local')
    const assets=url.searchParams.getAll('asset'),jobs=url.searchParams.getAll('id')
    if(url.pathname!=='/api/kaogong/document-image'||jobs.length!==1||jobs[0]!==entry.jobId||assets.length!==1||!entry.assets.some(row=>row.asset===assets[0]))deny()
-   bytes=await readers.material({evidence,entryId:input.id,asset:assets[0]!})
+   bytes=await readers.material({evidence,entryId:input.id,asset:assets[0]!,io})
   }
  }
  // A file read can outlive permission changes. Reauthorize the same guarded resource and source receipt.

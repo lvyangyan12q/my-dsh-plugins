@@ -7,6 +7,7 @@ import type {LegacyBankImageEvidence} from './legacy-bank-image-evidence.mjs'
 import {verifyLegacyBankPracticeEvidence,readLegacyBankImageAsset} from './legacy-bank-image-evidence.mjs'
 import {loadVerifiedPracticeMaterials,loadVerifiedPracticeOptions,type VerifiedPracticeFiles} from './verified-practice-materials.ts'
 import {fingerprint} from './legacy-adoption-plan.ts'
+import {materialLocationIO,assertRelocatedEvidence} from './material-location.ts'
 const sha=(value:string|Buffer)=>createHash('sha256').update(value).digest('hex')
 function fail():never{throw Error('练习资料的原图或核验索引已变化；请核对原资料并重新确认新计划。')}
 function owns(plan:ProvenAssetPlan,owner:string,id:string,row:BankQuestionRecord){
@@ -29,17 +30,19 @@ export async function prepareBankPracticeDisplay(input:{instanceId:string;ownBan
   if(!plan.assetEvidence?.bank)continue;const rows=groups.get(plan)??[];rows.push([id,row]);groups.set(plan,rows)
  }
  for(const[plan,rows]of groups){const evidence=plan.assetEvidence!.bank!,indices=new Set(evidence.files.map(row=>row.relativePath)),hasStem=indices.has('verified/associations.json'),hasOptions=indices.has('verified/option-repairs.json');if(!hasStem&&!hasOptions)continue
-  try{await verifyLegacyBankPracticeEvidence({evidence})}catch{fail()}
+  const location=plan.format==='kaogong-material-import-plan'?plan.location:undefined
+  const locationIO=await materialLocationIO(location);assertRelocatedEvidence(location,plan.assetEvidence?.materials)
+  try{await verifyLegacyBankPracticeEvidence({evidence,io:locationIO})}catch{fail()}
   const io=files(evidence);let stem:(id:string,value:string)=>string,option:(id:string,stem:string,values:string[])=>string[]
   try{stem=hasStem?await loadVerifiedPracticeMaterials(evidence.questionImageRoot,io):(_id,value)=>value;option=hasOptions?await loadVerifiedPracticeOptions(evidence.questionImageRoot,io):(_id,_stem,values)=>values}catch{fail()}
   for(const[id,row]of rows){if(evidence.unavailable.some(value=>value.questionId===id))continue
    const question=evidence.questions.find(value=>value.questionId===id),manual=question?.proofs.some(value=>value.kind==='stem-association'&&value.indexRelativePath==='verified/associations.json')
    const projectedStem=manual&&question?.recordSha256===fingerprint(row)?stem(id,row.stem):row.stem,projectedOptions=option(id,row.stem,row.options)
    if(projectedStem===row.stem&&JSON.stringify(projectedOptions)===JSON.stringify(row.options))continue
-   if(question){if(question.recordSha256!==fingerprint(row))fail();for(const asset of question.assets)for(const binding of asset.bindings)try{await readLegacyBankImageAsset({evidence,questionId:id,asset:asset.asset,bindingKey:binding.bindingKey})}catch{fail()}}
+   if(question){if(question.recordSha256!==fingerprint(row))fail();for(const asset of question.assets)for(const binding of asset.bindings)try{await readLegacyBankImageAsset({evidence,questionId:id,asset:asset.asset,bindingKey:binding.bindingKey,io:locationIO})}catch{fail()}}
    stems.set(id,{before:row.stem,after:projectedStem});options.set(id,{stem:row.stem,before:sha(JSON.stringify(row.options)),after:[...projectedOptions]})
   }
-  try{await verifyLegacyBankPracticeEvidence({evidence})}catch{fail()}
+  try{await verifyLegacyBankPracticeEvidence({evidence,io:locationIO})}catch{fail()}
  }
  await input.revalidate()
  return {materialStem:(id:string,stem:string)=>{const value=stems.get(id);return value?.before===stem?value.after:stem},materialOptions:(id:string,stem:string,values:string[])=>{const value=options.get(id);return value?.stem===stem&&value.before===sha(JSON.stringify(values))?[...value.after]:values}}

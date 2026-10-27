@@ -1,12 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
-import { mkdtemp, rm, lstat, readdir, realpath, mkdir, writeFile, readFile } from 'node:fs/promises'
+import { mkdtemp, rm, lstat, readdir, realpath, mkdir, writeFile, readFile, cp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Readable } from 'node:stream'
 import { mountKaogong } from '../src/production-host.ts'
+import { materialsSourceFixture } from './materials-source-fixture.mjs'
+import { inspectMaterials, materialEvidenceSnapshot } from '../src/materials-inspection.mjs'
+import { inspectLegacyMaterialEvidence } from '../src/legacy-material-evidence.mjs'
 
 const native = process.env.DSH_SOURCE ?? 'D:/programming/workspace/deepseek-harness'
 const require = createRequire(resolve(native, 'packages/client/ui-renderer/package.json'))
@@ -38,11 +41,11 @@ async function fixture(options = {}) {
     await writeFile(join(source, 'kaogong_bank.json'), JSON.stringify({ unit: { name: 'kaogong_bank', version: 2 }, global: null, tables: { questions: options.source === true ? { first: question } : Object.fromEntries(Array.from({length:options.source},(_,i)=>["q"+i,{...question,knowledgePoint:i<5?"直接读取":"增长率"}])) } }))
     await writeFile(join(source, 'kaogong_knowledge.json'), JSON.stringify({ unit: { name: 'kaogong_knowledge', version: 1 }, global: null, tables: { entries: {} } }))
   }
-  const stop = await mountKaogong(ctx, { questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined }, ...(options.source || options.sourceHome ? { materialSourceHome: options.sourceHome ?? join(root, 'source') } : {}) })
+  const stop = await mountKaogong(ctx, { questionImageRoot: { get: () => undefined }, mineru: { get: () => undefined }, ...(options.source || options.sourceHome ? { materialSourceHome: options.sourceHome ?? join(root, 'source') } : {}), ...options.config })
   const request = async (path, body, auth = true) => {
     const req = Readable.from(body === undefined ? [] : [JSON.stringify(body)])
     Object.assign(req, { url: path, method: body === undefined ? 'GET' : 'POST', headers: { 'content-type': 'application/json' }, auth })
-    const res = { status: 0, headersSent: false, writeHead(status) { this.status = status; this.headersSent = true }, end(value) { this.value = JSON.parse(value) } }
+    const res = { status: 0, headersSent: false, writeHead(status) { this.status = status; this.headersSent = true }, end(value) { this.value = Buffer.isBuffer(value) ? value : value === undefined ? null : JSON.parse(value) } }
     const route = routes.get('exact:' + path.split('?')[0])
     assert.ok(route, path)
     await route.handler(req, res)
@@ -58,6 +61,69 @@ async function fixture(options = {}) {
     await rm(actual, { recursive: true })
   } }
 }
+
+test('an explicitly confirmed relocated library pins the original proof and serves copied images only through current grants', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'kaogong-standalone-relocation-'))
+  const source = await materialsSourceFixture(join(root, 'original'), { certified: true })
+  const { snapshot } = await inspectMaterials({ home: source.materialSourceHome })
+  const old = await inspectLegacyMaterialEvidence({ snapshot: materialEvidenceSnapshot(snapshot), materialRoot: source.legacyMaterialRoot })
+  const materialRoot = join(root, 'relocated')
+  await cp(source.legacyMaterialRoot, materialRoot, { recursive: true })
+  await cp(source.materialSourceHome, join(root, 'copied-home'), { recursive: true })
+  const imageRoot = join(root, 'copied-images')
+  await cp(source.questionImageRoot, imageRoot, { recursive: true })
+  const original = old.evidence.files.find(row => row.relativePath.endsWith('.pdf'))
+  const map = { format: 'kaogong-material-location-map', version: 1, root: materialRoot, sourceEvidenceHash: old.evidence.evidenceHash, aliases: old.evidence.sourceAliases.map(alias => ({ declaredPath: alias.declaredPath, relativePath: original.relativePath, sha256: original.sha256 })) }
+  const mapPath = join(root, 'location-map.json'), evidencePath = join(root, 'original-evidence.json')
+  await writeFile(mapPath, JSON.stringify(map)); await writeFile(evidencePath, JSON.stringify(old))
+  let app = await fixture({ root, sourceHome: join(root, 'copied-home'), config: { legacyMaterialRoot: materialRoot, materialLocationMap: mapPath, materialLocationEvidence: evidencePath, questionImageRoot: { get: () => imageRoot }, mineru: { get: () => ({ outputDir: join(materialRoot, 'storage/mineru') }) } } })
+  try {
+    const create = async kind => (await app.request('/api/kaogong/study', { action: 'create', title: kind, kind, confirmed: true })).value
+    const library = await create('library'), learner = await create('learner')
+    const preview = await app.request('/api/kaogong/material-import', { action: 'prepare', viewId: library.view.id })
+    assert.equal(preview.status, 200)
+    assert.equal(preview.value.counts.shareableMaterials, 1)
+    assert.equal(preview.value.location.aliases, 1)
+    assert.equal(preview.value.location.materialRoot, await realpath(materialRoot))
+    assert.equal(preview.value.location.sourceEvidenceHash, old.evidence.evidenceHash)
+    await writeFile(mapPath, JSON.stringify({ ...map, sourceEvidenceHash: 'a'.repeat(64) }))
+    const unbound = await app.request('/api/kaogong/material-import', { action: 'prepare', viewId: library.view.id })
+    assert.equal(unbound.status, 409); assert.equal(unbound.value.code, 'MATERIAL_LOCATION_PROOF_MISMATCH')
+    await writeFile(mapPath, JSON.stringify({ ...map, aliases: [] }))
+    assert.equal((await app.request('/api/kaogong/material-import', { action: 'prepare', viewId: library.view.id })).status, 409)
+    await writeFile(mapPath, JSON.stringify(map))
+    await writeFile(evidencePath, JSON.stringify({ evidence: { ...old.evidence, rootIdentity: 'changed' } }))
+    assert.equal((await app.request('/api/kaogong/material-import', { action: 'prepare', viewId: library.view.id })).status, 409)
+    // Already previewed intent uses its immutable proof even when the configuration files are later damaged.
+    assert.equal((await app.request('/api/kaogong/material-import', { action: 'apply', viewId: library.view.id, id: preview.value.id, fingerprint: preview.value.fingerprint, confirmed: true })).status, 200)
+    const exported = (await app.request('/api/kaogong/material-import', { action: 'export', viewId: library.view.id, id: preview.value.id })).value
+    assert.deepEqual(exported.location.originalEvidence, old.evidence)
+    await app.request('/api/kaogong/study', { action: 'source-share', viewId: learner.view.id, ownerViewId: library.view.id, resourceId: 'question-bank' })
+    const issued = await app.request('/api/kaogong/practice/start?viewId=' + learner.view.id, { subject: '行测-资料分析', limit: 1 })
+    assert.equal(issued.status, 200); assert.equal(JSON.stringify(issued.value).includes('correctAnswer'), false)
+    const scored = await app.request('/api/kaogong/practice/submit?viewId=' + learner.view.id, { roundId: issued.value.roundId, answers: issued.value.questions.map(question => ({ id: question.id, answer: 'B' })) })
+    assert.equal(scored.status, 200, JSON.stringify(scored.value)); assert.equal(scored.value.correctCount, 10)
+    const shared = (await app.request('/api/kaogong/study', { action: 'source-share', viewId: learner.view.id, ownerViewId: library.view.id, resourceId: 'materials' })).value
+    const entry = old.evidence.entries[0], reference = '/api/kaogong/document-image?id=' + entry.jobId + '&asset=images%2Fsynthetic-bars-10-20.png'
+    const url = '/api/kaogong/legacy-image?viewId=' + learner.view.id + '&entryId=' + entry.id + '&reference=' + encodeURIComponent(reference)
+    const image = await app.request(url)
+    assert.equal(image.status, 200); assert.deepEqual(image.value, source.png)
+    assert.equal((await app.request(url, undefined, false)).status, 403)
+    await app.suspend()
+    app = await fixture({ root, config: { materialLocationMap: join(root, 'missing-map.json'), materialLocationEvidence: join(root, 'missing-evidence.json') } })
+    assert.equal((await app.request(url)).status, 200, 'cold reads use the confirmed plan, not changed global config')
+    assert.equal((await app.request('/api/kaogong/study', { action: 'source-revoke', viewId: learner.view.id, id: shared.id, revision: shared.revision })).status, 200)
+    assert.equal((await app.request(url)).status, 404)
+    await app.request('/api/kaogong/study', { action: 'source-share', viewId: learner.view.id, ownerViewId: library.view.id, resourceId: 'materials' })
+    await writeFile(join(materialRoot, original.relativePath), '%PDF-changed')
+    assert.equal((await app.request(url)).status, 404, 'copied PDF changes invalidate the image provenance')
+    assert.equal((await app.request('/api/kaogong/practice/start?viewId=' + learner.view.id, { subject: '行测-资料分析', limit: 1 })).status, 403)
+    await writeFile(join(materialRoot, original.relativePath), source.pdfBytes)
+    assert.equal((await app.request(url)).status, 200)
+    assert.deepEqual(await readFile(join(materialRoot, original.relativePath)), source.pdfBytes)
+    assert.deepEqual(await readFile(original.resolvedPath), source.pdfBytes)
+  } finally { await app.close() }
+})
 
 test('without Worktable, Host lists an empty study space and creates a profile only after authenticated learner confirmation', async () => {
   const app = await fixture()
