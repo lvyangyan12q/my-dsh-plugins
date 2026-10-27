@@ -73,7 +73,7 @@ export async function mountKaogong(ctx:Context,config:Config){
    const {instance}=await workspace.resolveView(viewId)
    const legacyAsset=legacyAssetPaths.includes(command.replace(/^exact:/,'') as typeof legacyAssetPaths[number])
    const combined=command==='exact:/api/kaogong/dashboard'||command==='exact:/api/kaogong/lesson/create'
-   const practiceCommand=command==='kaogong_practice'||command==='kaogong_practice_read'||command==='kaogong_practice_submit'||command.startsWith('exact:/api/kaogong/practice/')
+   const practiceCommand=command==='exact:/api/kaogong/errors'||command==='kaogong_practice'||command==='kaogong_practice_read'||command==='kaogong_practice_submit'||command.startsWith('exact:/api/kaogong/practice/')||command==='exact:/api/kaogong/plan/start'
    const needsBank=!legacyAsset&&(combined||practiceCommand||command.startsWith('kaogong_bank_'))
    const needsMaterials=!legacyAsset&&(combined||['exact:/api/kaogong/knowledge','exact:/api/kaogong/document-image','kaogong_knowledge_read','kaogong_knowledge_search','kaogong_knowledge_list'].includes(command))
    const bankSource=needsBank?await sources.call<Rows<BankQuestionRecord>>({viewId,resourceId:'question-bank',action:'read'}):null

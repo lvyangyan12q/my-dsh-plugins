@@ -1,8 +1,8 @@
 ---
 id: kaogong-standalone-03-plan-tasks
 title: 完整计划、安排与任务
-status: open
-assignee: null
+status: closed
+assignee: codex/kaogong-ticket03
 blocked_by: [kaogong-standalone-02-study-data]
 ---
 
@@ -14,8 +14,8 @@ blocked_by: [kaogong-standalone-02-study-data]
 - 未配置无默认倒计时；只自动生成可执行任务，外部模考单列；完成依据按spec。
 
 ## 验收
-- [ ] 重排未来不改已完成/默认不动进行中，过期页面拒覆盖，容量不足明确提示。
-- [ ] 学习总结确认、练习真实轮次与反思确认能回写任务/进度；Native结束不触发完成。
+- [x] 重排未来不改已完成/默认不动进行中，过期页面拒覆盖，容量不足明确提示。
+- [x] 学习总结确认、练习真实轮次与反思确认能回写任务/进度；Native结束不触发完成。
 
 ## Resolution
-尚未实施。记录准确源码/包、实际结果和仍缺项后才能关闭。
+已完成源码与公开接口/页面验收，见 [03证据](../evidence/03-plan-tasks.md)。独立增量计划域保存nullable目标、稳定任务、提案差异、确认版本与完成依据；旧原题/评分/学习域保持原格式。准确发行包真实无工作台完整验收仍由07覆盖，不以本票构建代替。

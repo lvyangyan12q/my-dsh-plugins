@@ -58,6 +58,26 @@ async function fixture(options = {}) {
     await rm(actual, { recursive: true })
   } }
 }
+test('plan HTTP uses the existing authenticated Host view gate and saves only explicitly confirmed previews',async()=>{
+ const app=await fixture()
+ try{
+  const made=await app.request('/api/kaogong/study',{action:'create',title:'计划档案',kind:'learner',confirmed:true}),view=made.value.view.id
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view,undefined,false)).status,403)
+  assert.equal((await app.request('/api/kaogong/plan?viewId=foreign')).status,403)
+  const empty=await app.request('/api/kaogong/plan?viewId='+view);assert.equal(empty.value.goal,null)
+  const preview=await app.request('/api/kaogong/plan?viewId='+view,{action:'preview',operation:'append',baseRevision:0,task:{subject:'行测-资料分析',kind:'learn',title:'阅读总结',requirePractice:false}})
+  assert.equal(preview.status,200);assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks.length,0)
+  const confirmed=await app.request('/api/kaogong/plan?viewId='+view,{action:'confirm',id:preview.value.id,revision:0,confirmed:true});assert.equal(confirmed.value.tasks.length,1)
+  const taskId=confirmed.value.tasks[0].id,start=await app.request('/api/kaogong/plan/start?viewId='+view,{id:taskId,revision:1})
+  assert.equal(start.status,200)
+  const retry=await app.request('/api/kaogong/plan/start?viewId='+view,{id:taskId,revision:1});assert.equal(retry.value.lesson.lesson.request.lessonId,start.value.lesson.lesson.request.lessonId)
+  const lessonId=start.value.lesson.lesson.request.lessonId
+  await app.request('/api/kaogong/lesson/summary?viewId='+view,{lessonId,notes:'手动阅读总结已保存'})
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks[0].status,'in-progress')
+  assert.equal((await app.request('/api/kaogong/lesson/confirm?viewId='+view,{lessonId,confirmed:true})).status,200)
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks[0].status,'completed')
+ }finally{await app.close()}
+})
 
 test('without Worktable, Host lists an empty study space and creates a profile only after authenticated learner confirmation', async () => {
   const app = await fixture()
@@ -240,5 +260,104 @@ test('later bank revisions cannot change an issued round or its saved grade and 
   const later=(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
   assert.equal(later.questions[0].stem,'后来的不同题干')
   assert.equal((await app.request('/api/kaogong/practice/read?viewId='+viewId,{roundId:issued.roundId})).value.result.correctCount,1)
+ }finally{await app.close()}
+})
+
+
+test('plan task starts from an authorized source, retries one round, and requires matching submitted evidence plus reflection',async()=>{
+ const app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),view=learner.view.id
+  const adoption=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:adoption.id,fingerprint:adoption.fingerprint,confirmed:true})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId:view,ownerViewId:library.view.id,resourceId:'question-bank'})
+  const preview=(await app.request('/api/kaogong/plan?viewId='+view,{action:'preview',baseRevision:0,operation:'append',task:{subject:'行测-资料分析',title:'真实任务练习',kind:'practice'}})).value
+  const confirmed=(await app.request('/api/kaogong/plan?viewId='+view,{action:'confirm',id:preview.id,revision:0,confirmed:true})).value,task=confirmed.tasks[0]
+  const started=(await app.request('/api/kaogong/plan/start?viewId='+view,{id:task.id,revision:1})).value
+  assert.equal(started.round.questions[0].id,'first');assert.equal(started.round.questions[0].correctAnswer,undefined)
+  const retry=(await app.request('/api/kaogong/plan/start?viewId='+view,{id:task.id,revision:1})).value
+  assert.equal(retry.round.roundId,started.round.roundId)
+  const complete=()=>app.request('/api/kaogong/plan?viewId='+view,{action:'complete',id:task.id,revision:started.state.revision,confirmed:true,roundId:started.round.roundId})
+  assert.equal((await complete()).status,409)
+  await app.request('/api/kaogong/practice/submit?viewId='+view,{roundId:started.round.roundId,answers:[{id:'first',answer:'A'}]})
+  assert.equal((await complete()).status,409)
+  await app.request('/api/kaogong/practice/reflection?viewId='+view,{roundId:started.round.roundId,entries:[{id:'first',errorReason:'审题不清',notes:'重新核对数据'}]})
+  assert.equal((await complete()).status,200)
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks[0].status,'completed')
+ }finally{await app.close()}
+})
+
+test('a required-practice lesson links its task round and learner confirmation updates overview without a fake countdown',async()=>{
+ const app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),view=learner.view.id
+  const empty=(await app.request('/api/kaogong/dashboard?viewId='+view)).value;assert.equal(empty.examDate,null);assert.equal(empty.daysToExam,null)
+  const p=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:p.id,fingerprint:p.fingerprint,confirmed:true})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId:view,ownerViewId:library.view.id,resourceId:'question-bank'})
+  const proposal=(await app.request('/api/kaogong/plan?viewId='+view,{action:'preview',baseRevision:0,operation:'append',task:{subject:'行测-资料分析',title:'学习后练习',kind:'learn',requirePractice:true}})).value
+  const saved=(await app.request('/api/kaogong/plan?viewId='+view,{action:'confirm',id:proposal.id,revision:0,confirmed:true})).value,task=saved.tasks[0]
+  const started=(await app.request('/api/kaogong/plan/start?viewId='+view,{id:task.id,revision:1})).value,lessonId=started.lesson.lesson.request.lessonId
+  const round=(await app.request('/api/kaogong/practice/start?viewId='+view,{subject:task.subject,title:task.title,taskId:task.id,planRevision:1})).value
+  assert.equal(round.context.taskId,task.id)
+  await app.request('/api/kaogong/practice/submit?viewId='+view,{roundId:round.roundId,answers:[{id:'first',answer:'B'}]})
+  assert.equal((await app.request('/api/kaogong/lesson/link?viewId='+view,{lessonId,roundId:round.roundId})).status,200)
+  await app.request('/api/kaogong/lesson/summary?viewId='+view,{lessonId,notes:'已学习并练习'})
+  assert.equal((await app.request('/api/kaogong/lesson/confirm?viewId='+view,{lessonId,confirmed:true})).status,200)
+  const dashboard=(await app.request('/api/kaogong/dashboard?viewId='+view)).value;assert.equal(dashboard.completedTaskCount,1);assert.equal(dashboard.taskCompletionRate,1)
+ }finally{await app.close()}
+})
+test('error occurrences survive a later correct round and require explicit enrollment and confirmed re-answer', async()=>{
+ let app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),other=(await app.request('/api/kaogong/study',{action:'create',kind:'learner',title:'另一个档案',confirmed:true})).value,viewId=learner.view.id
+  const preview=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:preview.id,fingerprint:preview.fingerprint,confirmed:true})
+  const grant=(await app.request('/api/kaogong/study',{action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})).value
+  const start=async()=>(await app.request('/api/kaogong/practice/start?viewId='+viewId,{subject:'行测-资料分析'})).value
+  const first=await start()
+  await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:first.roundId,answers:[{id:'first',answer:'A'}]})
+  await app.request('/api/kaogong/practice/reflection?viewId='+viewId,{roundId:first.roundId,entries:[{id:'first',errorReason:'审题不清',notes:'漏看第一项'}]})
+  const second=await start()
+  await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:second.roundId,answers:[{id:'first',answer:'B'}]})
+  const url='/api/kaogong/errors?viewId='+viewId
+  const errors=(await app.request(url)).value
+  assert.equal(errors.occurrences.length,1)
+  const item=errors.occurrences[0]
+  assert.equal(item.roundId,first.roundId);assert.equal(item.userAnswer,'A');assert.equal(item.correctAnswer,'B');assert.equal(item.notes,'漏看第一项')
+  assert.equal((await app.request('/api/kaogong/errors?viewId='+other.view.id)).value.occurrences.length,0)
+  assert.equal((await app.request(url,{action:'enroll',id:item.id})).status,409)
+  const enrolled=(await app.request(url,{action:'enroll',id:item.id,confirmed:true})).value
+  assert.equal(enrolled.stage,0);assert.equal(enrolled.status,'scheduled')
+  const attempt=(await app.request(url,{action:'answer',id:item.id,answer:'B',requestId:'review-attempt-one',earlyConfirmed:true})).value
+  assert.equal(attempt.correct,true)
+  assert.equal((await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:false})).status,409)
+  assert.equal((await app.request(url)).value.occurrences[0].review.stage,0)
+  const confirmed=(await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:true})).value
+  assert.equal(confirmed.stage,1);assert.equal(confirmed.history.length,1)
+  assert.equal((await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:true})).value.stage,1)
+  assert.equal((await app.request('/api/kaogong/dashboard?viewId='+viewId)).value.reviewQueue.total,1)
+  assert.equal((await app.request(url+'&status=not-enrolled')).value.occurrences.length,0)
+  assert.equal((await app.request(url+'&errorReason='+encodeURIComponent('审题不清'))).value.occurrences.length,1)
+  assert.equal((await app.request(url,{action:'answer',id:item.id,answer:'A',requestId:'early-without-confirm'})).status,409)
+  const wrong=(await app.request(url,{action:'answer',id:item.id,answer:'A',requestId:'review-wrong',earlyConfirmed:true})).value
+  const reset=(await app.request(url,{action:'confirm',id:item.id,attemptId:wrong.id,reflection:'重新订正',confirmed:true})).value
+  assert.equal(reset.stage,0);assert.equal(reset.status,'pending-correction')
+  for(let stage=1;stage<=3;stage++){
+   const answered=(await app.request(url,{action:'answer',id:item.id,answer:'B',requestId:'stage-'+stage,earlyConfirmed:true})).value
+   const next=(await app.request(url,{action:'confirm',id:item.id,attemptId:answered.id,reflection:'重新读取并核对',confirmed:true})).value
+   assert.equal(next.stage,stage);assert.equal(next.status,stage===3?'consolidated':'scheduled')
+  }
+  assert.equal((await app.request(url+'&status=consolidated')).value.occurrences[0].review.history.length,5)
+  const roundAgain=(await app.request('/api/kaogong/practice/read?viewId='+viewId,{roundId:first.roundId})).value
+  assert.equal(roundAgain.result.correctCount,0);assert.equal(roundAgain.result.results[0].userAnswer,'A')
+  const persistedRoot=await app.suspend();app=await fixture({root:persistedRoot})
+  const restored=(await app.request(url)).value.occurrences[0]
+  assert.equal(restored.review.stage,3);assert.equal(restored.review.history.length,5);assert.equal(restored.userAnswer,'A')
+  await app.request('/api/kaogong/study',{action:'source-revoke',viewId,id:grant.id,revision:grant.revision})
+  assert.equal((await app.request(url)).status,403)
  }finally{await app.close()}
 })

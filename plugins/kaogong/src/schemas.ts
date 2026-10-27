@@ -104,7 +104,7 @@ export type KnowledgeEntryRecord = z.infer<typeof knowledgeEntry>
 /** Issued snapshots and immutable scores stay in one durable record. */
 export const practiceRound = z.object({
   version: z.literal(1),
-  context: z.object({ subject: z.string(), title: z.string(), knowledgePoint: z.string().optional(), limit: z.literal(10), planIndex: z.number().int().nonnegative().optional() }),
+  context: z.object({ subject: z.string(), title: z.string(), knowledgePoint: z.string().optional(), limit: z.literal(10), planIndex: z.number().int().nonnegative().optional(),taskId:z.string().uuid().optional(),planRevision:z.number().int().nonnegative().optional() }),
   questions: z.array(bankQuestion.extend({ id: z.string() })).max(10),
   seenIds: z.array(z.string()),
   reason: z.string(), totalAvailable: z.number().int(), cycled: z.boolean(), createdAt: z.string(),

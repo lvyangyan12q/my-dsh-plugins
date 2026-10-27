@@ -1,7 +1,9 @@
+import {ErrorReviews} from './error-reviews.ts'
 import type { DomainFacility, DomainSpec, Domain, KvTable, DomainGlobal } from '@deepseek-ai/dsh-storage-domain'
 import { instanceDomainSpecs } from './domain.ts'
 import { PracticeRounds } from './practice-rounds.ts'
 import { Lessons } from './lessons.ts'
+import {StudyPlan} from './study-plan.ts'
 import type { Lesson, LessonSelection } from './lesson-schema.ts'
 
 type Binding = { phase: 'intent' | 'ready'; sessionId: string; presetId: string }
@@ -16,7 +18,8 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
   try {
     const notebook = await open(specs.notebook), progress = await open(specs.progress)
     const bank = await open(specs.bank), knowledge = await open(specs.knowledge)
-    const rounds = await open(specs.practice), lessons = await open(specs.lessons)
+    const rounds = await open(specs.practice), lessons = await open(specs.lessons), reviews = await open(specs.reviews)
+    const planDomain=await open(specs.plan)
     // Native KvTable/DomainGlobal validate on open, not put/set. Refuse a foreign
     // lesson or navigation pointer before writing it into this owner's namespace.
     const lessonRecords = checkedTable(lessons.table('lessons'), value => {
@@ -32,15 +35,22 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
     const practice = new PracticeRounds(rounds.table('rounds'), bank.table('questions'), notebook.table('questions'))
     const teaching = new Lessons(lessonRecords, knowledge.table('entries'), practice,
       key => options.readBinding?.(instanceId, key) ?? Promise.resolve(null), lessonSelection)
+    const plan=new StudyPlan(planDomain.global,async(task,input)=>{
+      if(!input.roundId)throw Error('需要匹配的已提交练习轮次及错因反思证据')
+      const round=(await practice.readCompleted(input.roundId))?.round,result=round?.result
+      if(!round||!result||round.context.taskId!==task.id||round.context.planRevision!==task.startedFromRevision||round.context.subject!==task.subject||result.results.some(q=>!q.userAnswer.trim())||task.requireReflections&&result.results.some(q=>!q.correct&&!round.reflections.some(r=>r.id===q.id&&r.errorReason)))throw Error('练习轮次、任务关联或错因反思证据不完整')
+      return {roundId:round.roundId,total:result.totalCount,correct:result.correctCount,reflectedIds:round.reflections.map(r=>r.id)}
+    })
     let closing: Promise<void> | undefined
     const state = Object.freeze({
       instanceId, questions: notebook.table('questions'), planConfig: progress.global, days: progress.table('days'),
       bankQuestions: bank.table('questions'), knowledgeEntries: knowledge.table('entries'), rounds: rounds.table('rounds'),
-      lessonRecords, lessonSelection, practice, lessons: teaching,
+      lessonRecords, lessonSelection, practice, lessons: teaching, plan, errors:new ErrorReviews(rounds.table('rounds'),reviews.table('reviews')),
     })
     return { state, close() {
       return closing ??= (async () => {
         const errors: unknown[] = []
+        try { await plan.close() } catch(error){errors.push(error)}
         try { await teaching.close() } catch (error) { errors.push(error) }
         try { await practice.close() } catch (error) { errors.push(error) }
         for (const result of await Promise.allSettled(opened.map(domain => domain.close()))) if (result.status === 'rejected') errors.push(result.reason)

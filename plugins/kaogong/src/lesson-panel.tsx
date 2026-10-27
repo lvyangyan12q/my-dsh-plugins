@@ -73,13 +73,14 @@ export function LessonPanel({ active, onPractice, onOpenTeacher }: { active: boo
     return () => { if (current()) owner.request('lesson') }
   }, [active, owner,http])
   const context = view ? { subject: view.lesson.request.subject, title: view.lesson.request.objective, limit: 10,
+    ...(view.lesson.request.taskId?{taskId:view.lesson.request.taskId,planRevision:view.lesson.request.planRevision}:{}),
     ...(view.lesson.request.knowledgePoint ? { knowledgePoint: view.lesson.request.knowledgePoint } : {}) } : null
   const create = () => run(async () => {
     const lessonId = draft.id || crypto.randomUUID()
     setDraft({ ...draft, id: lessonId })
     if (draft.material && !material) throw new Error('请先选择材料')
     const value = await request<LessonView>('create', { lessonId, subject: draft.subject, objective: draft.objective,
-      ...(draft.knowledgePoint.trim() ? { knowledgePoint: draft.knowledgePoint.trim() } : {}), requireReflections: draft.reflections,
+      ...(draft.knowledgePoint.trim() ? { knowledgePoint: draft.knowledgePoint.trim() } : {}), requireReflections: draft.reflections,requirePractice:draft.practice===true,
       materialIds: draft.material && material ? [material.id] : [], ...(draft.legacyNoteId.trim() ? { legacyNoteId: draft.legacyNoteId.trim() } : {}) })
     accept(value, true); setForm(false); setDraft({ ...draft, id: '', objective: '', legacyNoteId: '' })
     setList(await request<typeof list>('list', {}))
@@ -100,6 +101,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher }: { active: boo
       <label>学习目标 <input required maxLength={500} aria-label="学习目标" value={draft.objective} onChange={event => setDraft({ ...draft, objective: event.target.value })} style={{ width: '100%', boxSizing: 'border-box' }} /></label>
       <label>限定考点 <input maxLength={500} aria-label="限定考点" value={draft.knowledgePoint} onChange={event => setDraft({ ...draft, knowledgePoint: event.target.value })} /></label>
       <label><input type="checkbox" checked={draft.reflections} onChange={event => setDraft({ ...draft, reflections: event.target.checked })} />课后任务要求保存全部错题错因</label>
+      <label><input type="checkbox" checked={draft.practice===true} onChange={event=>setDraft({...draft,practice:event.target.checked})}/>本课要求课后练习（未选则保存总结并确认即可）</label>
       <label><input type="checkbox" checked={draft.material} onChange={event => setDraft({ ...draft, material: event.target.checked })} />关联当前材料{material ? `：${material.title}` : '（未选择）'}</label>
       <label>旧课堂笔记 ID <input maxLength={500} aria-label="旧课堂笔记 ID" value={draft.legacyNoteId} onChange={event => setDraft({ ...draft, legacyNoteId: event.target.value })} /></label>
       <button data-pwb-button data-variant="primary" disabled={busy} type="submit" style={{ justifySelf: 'start' }}><Save size={14} />确认目标并保存课堂</button>
@@ -111,7 +113,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher }: { active: boo
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
       {view.lesson.materials.map(row => <span key={row.id}>材料：{row.title} · {row.source} · {row.id}</span>)}
       {view.lesson.legacyNote && <span>旧笔记引用：{view.lesson.legacyNote.id}（不推断完成状态）</span>}
-      <span>课后任务：提交一轮本科目真实作答{view.lesson.request.requireReflections ? '，保存全部错题错因' : ''}，再明确确认；不代表长期掌握。</span>
+      <span>课后任务：{view.lesson.request.requirePractice===false?'保存本次学习总结后明确确认':'保存学习总结、提交一轮本科目真实作答'+(view.lesson.request.requireReflections?'，保存全部错题错因':'')+'，再明确确认'}；不代表长期掌握。</span>
       {view.evidence.map(row => <div key={row.roundId}>{row.roundId} · {row.correct}/{row.total} 正确 · {row.answered ? '已作答' : '存在未作答'} · {row.reflectionsComplete ? '反思齐全' : '待补反思'}{row.projection === 'pending' ? ' · 错题本同步待恢复' : ''}</div>)}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         <button data-pwb-button disabled={busy || !!view.lesson.completion} onClick={() => void onPractice(context).catch(cause => setError(String(cause)))}><Play size={14} />课后练习</button>
