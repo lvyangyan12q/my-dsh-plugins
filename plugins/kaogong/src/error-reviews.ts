@@ -22,9 +22,10 @@ export class ErrorReviews{
   })).filter(row=>(!filters.subject||row.subject===filters.subject)&&(!filters.knowledgePoint||row.knowledgePoint.includes(filters.knowledgePoint))&&(!filters.errorReason||row.errorReason===filters.errorReason)&&(!filters.from||row.submittedAt.slice(0,10)>=filters.from)&&(!filters.to||row.submittedAt.slice(0,10)<=filters.to)&&(!filters.status||(row.review?.status??'not-enrolled')===filters.status)).sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt)||a.id.localeCompare(b.id))
   return {occurrences}
  }
- readConfirmed(id:string,after?:string){
+ readForPlan(id:string){const row=this.occurrence(id),review=this.reviews.get(id);if(!review||review.status==='consolidated')throw new PracticeError('请先确认加入待复习队列',409);return {row,review}}
+ readConfirmed(id:string,after?:string,minimumIndex=0){
   const row=this.occurrence(id),review=this.reviews.get(id)
-  const attempt=review?.history.filter(entry=>entry.correct&&entry.confirmedAt&&(!after||entry.confirmedAt>=after)).at(-1)
+  const attempt=review?.history.slice(minimumIndex).filter(entry=>entry.correct&&entry.confirmedAt&&(!after||entry.confirmedAt>=after)).at(-1)
   if(!attempt)throw new PracticeError('尚无匹配的重新作答、反思及学习者确认',409)
   return {occurrenceId:id,roundId:row.roundId,questionId:row.questionId,subject:row.subject,knowledgePoint:row.knowledgePoint,attemptId:attempt.id,confirmedAt:attempt.confirmedAt!,reflection:attempt.reflection!}
  }
@@ -61,5 +62,6 @@ export class ErrorReviews{
   throw new PracticeError('未知复习操作')
  }
 }
+
 
 
