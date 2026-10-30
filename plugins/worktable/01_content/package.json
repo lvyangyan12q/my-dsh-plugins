@@ -1,7 +1,7 @@
 {
   "name": "dsh-worktable",
   "description": "工作台 Worktable：DeepSeek Harness 侧边栏的 agent 级项目容器（应用抽屉）",
-  "version": "0.10.0-rc.3.7",
+  "version": "0.10.0-rc.3.9",
   "repository": {
     "type": "git",
     "url": "https://github.com/Aisland-SJL/dsh-worktable.git",
@@ -9,7 +9,7 @@
   },
   "engines": {
     "node": ">=22",
-    "dsh": "0.2.1-rc.3"
+    "dsh": "0.2.1-rc.3 || 0.2.2-alpha.2"
   },
   "license": "MIT",
   "type": "module",
@@ -65,8 +65,8 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
-    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.3",
-    "@deepseek-ai/dsh-host-webserver": "0.2.1-rc.3"
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.3 || 0.2.2-alpha.2",
+    "@deepseek-ai/dsh-host-webserver": "0.2.1-rc.3 || 0.2.2-alpha.2"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {

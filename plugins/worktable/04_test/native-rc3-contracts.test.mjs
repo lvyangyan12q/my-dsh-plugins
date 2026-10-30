@@ -59,10 +59,10 @@ test('fixed official rc.3 public native contracts', { skip: !root }, async t => 
       for (const candidate of ['0.2.1-rc.4', '0.2.2', '0.2.1-alpha.2']) {
         assert.deepEqual(evaluatePluginCompatibility(manifest, {}, candidate), {
           name: manifest.name, version: manifest.version, runtimeVersion: candidate,
-          requirements: { 'engines.dsh': '0.2.1-rc.3' }, exempted: false,
+          requirements: { 'engines.dsh': manifest.engines.dsh }, exempted: false,
         })
       }
-      assert.equal(manifest.engines.dsh, '0.2.1-rc.3')
+      assert.ok(manifest.engines.dsh.split(' || ').includes('0.2.1-rc.3'))
       const explicitTrial = {[manifest.name + '@' + manifest.version]: ['0.2.1-rc.4']}
       assert.equal(evaluatePluginCompatibility(manifest, explicitTrial, '0.2.1-rc.4').exempted, true)
       assert.equal(evaluatePluginCompatibility(manifest, explicitTrial, '0.2.2').exempted, false)

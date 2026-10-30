@@ -1,0 +1,10 @@
+# runtime / local
+**/node_modules/
+.worktrees/
+.dsh-worktable/
+data/
+config/
+preview/
+tmp-*
+*.log
+.edge-proto-profile/

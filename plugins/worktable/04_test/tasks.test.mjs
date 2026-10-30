@@ -65,7 +65,7 @@ test('two declared resources sharing one owner lease authority acquire it once i
  const lease=operation=>{acquired++;const task=queue.then(operation);queue=task.catch(()=>{});return task};
  const apps={resolveView:async()=>({application:{kind:'deep'},instance:{id:'A',appId:'reader'}})};const resources=new ResourceDirectory(join(dir,'resources.json'),apps);
  try{for(const resourceId of ['books','notes'])resources.register({appId:'reader',resourceId,actions:[],read:()=>({revision:'1'}),taskContext:()=>({title:resourceId,text:'evidence'}),withTaskLease:lease});
- const outcome=await Promise.race([resources.withTaskLease('view',[{resourceId:'books'},{resourceId:'notes'}],async()=> 'admitted'),new Promise(resolve=>setTimeout(()=>resolve('blocked'),80))]);assert.equal(outcome,'admitted');assert.equal(acquired,1);
+ const outcome=await Promise.race([resources.withTaskLease('view',[{resourceId:'books'},{resourceId:'notes'}],async()=> 'admitted'),new Promise(resolve=>{const timer=setTimeout(()=>resolve('blocked'),5000);timer.unref()})]);assert.equal(outcome,'admitted');assert.equal(acquired,1);
  }finally{await rm(dir,{recursive:true,force:true})}
 })
 

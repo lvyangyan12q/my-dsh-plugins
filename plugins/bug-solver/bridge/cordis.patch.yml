@@ -1,0 +1,11 @@
+- insert:
+    - id: bug-solver-dispatch
+      name: bug-solver-dispatch
+      config:
+        projectDir: "F:\\ai-project\\my-dsh-plugins\\plugins\\bug-solver"
+        dataDir: "F:\\ai-project\\my-dsh-plugins\\plugins\\bug-solver\\data\\dispatch"
+        allowedRoots:
+          - "E:\\work\\projects"
+          - "F:\\ai-project"
+        # 允许在脏仓库上派发（主要用于只读查询分析）；实现阶段由会话另开 worktree。
+        dirtyCheck: false

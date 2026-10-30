@@ -1,5 +1,11 @@
 # 本地派生 Worktable 平台
 
+## DSH 0.2.2-alpha.2 compatibility (rc.3.9)
+
+Version 0.10.0-rc.3.9 admits exactly `0.2.1-rc.3 || 0.2.2-alpha.2`; it does not grant version exemptions. The alpha.2 gate uses official revision f3803c96974ad4a94195fb97e5c637e9c2a3afe3. Set WORKTABLE_NATIVE_ALPHA2_ROOT to that built checkout when packing. Keyless final-archive boot evidence is in ../releases/v0.10.0-rc.3.9/host-boot-evidence.json. Model-driven production workflows remain outside this compatibility check.
+
+The original rc.3 delivery notes below describe historical evidence.
+
 ## 当前 rc.3 候选与后续版本规则
 
 ### 项目布局落盘与窗口交互（rc.3.7 候选）

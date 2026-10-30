@@ -1,0 +1,19 @@
+{
+  "runtime": "0.2.2-alpha.2",
+  "worktable": {
+    "plugin": "dsh-worktable",
+    "version": "0.10.0-rc.3.9",
+    "ok": true
+  },
+  "bridge": "0.1.1",
+  "checks": {
+    "isolatedBoot": true,
+    "versionExemptions": false,
+    "authenticatedRuns": true,
+    "unauthenticatedDenied": true
+  },
+  "runs": {
+    "runs": []
+  },
+  "limits": "No model prompts, business fixes, SSH or production data used."
+}

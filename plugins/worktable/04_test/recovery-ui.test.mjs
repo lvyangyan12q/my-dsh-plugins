@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import {test} from 'node:test'
 import {createRequire} from 'node:module'
 import {fileURLToPath} from 'node:url'
-import {JSDOM} from 'jsdom'
-const require=createRequire(new URL('../01_content/package.json',import.meta.url)),React=require('react'),{act,create}=require('react-test-renderer'),{buildSync}=require('esbuild');
+
+const require=createRequire(new URL('../01_content/package.json',import.meta.url)),{JSDOM}=require('jsdom'),React=require('react'),{act,create}=require('react-test-renderer'),{buildSync}=require('esbuild');
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 test('mounting or remounting the real overlay restores an already active project without switching projects or clearing its content',async()=>{
  const dom=new JSDOM('<div data-phase="active"><header></header><main></main></div>',{url:'http://localhost',pretendToBeVisual:true}),saved=new Map();let root,module;

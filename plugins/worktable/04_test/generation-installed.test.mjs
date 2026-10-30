@@ -3,8 +3,8 @@ import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {createRequire} from 'node:module'
 import {fileURLToPath} from 'node:url'
-import {JSDOM} from 'jsdom'
-const require=createRequire(new URL('../01_content/package.json',import.meta.url)),React=require('react'),{create,act}=require('react-test-renderer')
+
+const require=createRequire(new URL('../01_content/package.json',import.meta.url)),{JSDOM}=require('jsdom'),React=require('react'),{create,act}=require('react-test-renderer')
 const bundle=process.argv[2]??fileURLToPath(new URL('../01_content/lib/client.js',import.meta.url))
 const dom=new JSDOM('<html><head></head><body></body></html>',{url:'http://localhost',pretendToBeVisual:true}),saved=new Map(),cleanup=[]
 let root,overlay,exports,overlayComponent,draft='';const requests=[];let generated=null;
