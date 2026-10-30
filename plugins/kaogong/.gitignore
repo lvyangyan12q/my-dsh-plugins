@@ -2,3 +2,6 @@ node_modules/
 storage/
 .env
 .env.*
+materials/
+archive/local/
+题目_images/

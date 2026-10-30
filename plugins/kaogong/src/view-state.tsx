@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useSyncExternalStore } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
-import type {RoleFacade,TaskFacade} from 'dsh-worktable/sdk'
+import type {RoleFacade,TaskFacade} from './study-client-contracts.ts'
 import type {LearningRoleKey} from './client-runtime.ts'
 import type { DashboardData, PracticeData, PracticeContext, PracticeResult, ModuleSummary } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'
 import type { LessonView } from './lesson-schema.ts'
-import { readLearningPreferences, writeLearningPreferences } from './learning-preferences.ts'
+import { readLearningPreferences, writeLearningPreferences, readTeacherSubject, writeTeacherSubject } from './learning-preferences.ts'
+import {readLearnerDraft,writeLearnerDraft} from './learner-draft.ts'
 
 /** Fixed types and namespaces for the default instance's transient values. */
 type ViewValues = {
@@ -17,16 +18,18 @@ type ViewValues = {
   practiceHistory: { roundId: string; context: PracticeContext; createdAt: string; submitted: boolean }[]
   'reader.store': {dispose():void} | null; 'review.admitted': string[]
   'reader.query': string; 'reader.entries': Entry[]; 'reader.selected': string; 'reader.entry': Entry | null
-  'reader.error': string; 'reader.loading': boolean
+  'reader.error': string; 'reader.loading': boolean; 'reader.refresh': number
   integration: { service: unknown } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: RoleFacade | null; tasks: TaskFacade | null
   'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
+  'roles.teacherSubject': string
   'roles.selected': LearningRoleKey
   'roles.opened': LearningRoleKey[]
   'lesson.view': LessonView | null
+  'lesson.resumeId': string | null
   'lesson.list': { id: string; subject: string; objective: string; completed: boolean; updatedAt: string }[]
-  'lesson.draft': { id: string; subject: string; objective: string; knowledgePoint: string; reflections: boolean; material: boolean; legacyNoteId: string }
+  'lesson.draft': { id: string; subject: string; objective: string; knowledgePoint: string; reflections: boolean; practice?:boolean; material: boolean; legacyNoteId: string }
   'lesson.form': boolean; 'lesson.notes': string; 'lesson.notesDirty': boolean; 'lesson.error': string; 'lesson.busy': boolean; 'lesson.confirmed': boolean
 }
 type Cell<T> = { value: T; listeners: Set<() => void>; set: Dispatch<SetStateAction<T>> }
@@ -36,7 +39,11 @@ export class KaogongViewState {
   private cells = new Map<string, unknown>()
   private requests = new Map<string, number>()
   private practiceCommand = false
+  private changingLesson = false
   constructor(readonly instanceId='default',readonly viewId?:string) {
+    const draft=readLearnerDraft(instanceId)
+    if(draft){if(draft.goal)this.cell('lesson.draft',draft.goal);this.cell('lesson.form',draft.form);this.cell('lesson.resumeId',draft.lessonId);this.cell('lesson.notes',draft.notes);this.cell('lesson.notesDirty',draft.notesDirty)}
+    if(!viewId){const subject=readTeacherSubject(instanceId);if(subject!==null)this.cell('roles.teacherSubject',subject)}
     const saved = readLearningPreferences(instanceId,viewId)
     if (!saved) return
     this.cell('study.open', saved.studyOpen)
@@ -44,7 +51,16 @@ export class KaogongViewState {
     this.cell('study.pane', saved.pane)
     this.cell('roles.selected', { appId: 'kaogong', instanceId, ...saved.role })
   }
+  private saveLearnerDraft(){
+    if(this.viewId||this.changingLesson)return
+    const goal=this.cells.get('lesson.draft') as Cell<ViewValues['lesson.draft']>|undefined
+    writeLearnerDraft(this.instanceId,{version:1,form:this.cell('lesson.form',false).value,lessonId:this.cell('lesson.view',null).value?.lesson.request.lessonId??this.cell('lesson.resumeId',null).value,notes:this.cell('lesson.notes','').value,notesDirty:this.cell('lesson.notesDirty',false).value,...(goal?{goal:goal.value}:{})})
+  }
 
+  resumeLesson(view:LessonView,notes:string,dirty:boolean){
+    this.changingLesson=true
+    try{this.cell('lesson.view',null).set(view);this.cell('lesson.resumeId',null).set(view.lesson.request.lessonId);this.cell('lesson.notes','').set(notes);this.cell('lesson.notesDirty',false).set(dirty)}finally{this.changingLesson=false;this.saveLearnerDraft()}
+  }
   private saveDisplayChoices() {
     const selected = this.cell('roles.selected', { appId: 'kaogong', instanceId: this.instanceId, roleId: 'teacher' }).value
     if (!selected || selected.appId !== 'kaogong' || selected.instanceId !== this.instanceId) return
@@ -75,7 +91,9 @@ export class KaogongViewState {
     if (!this.cells.has(key)) {
       const cell: Cell<ViewValues[K]> = { value: initial, listeners: new Set<() => void>(), set: action => {
         cell.value = typeof action === 'function' ? action(cell.value) : action
+        if(key==='roles.teacherSubject'&&!this.viewId)writeTeacherSubject(this.instanceId,cell.value as string)
         if (key === 'study.open' || key === 'study.page' || key === 'study.pane' || key === 'roles.selected') this.saveDisplayChoices()
+        if(['lesson.draft','lesson.form','lesson.view','lesson.notes','lesson.notesDirty'].includes(key))this.saveLearnerDraft()
         for (const listener of cell.listeners) listener()
       } }
       this.cells.set(key, cell)

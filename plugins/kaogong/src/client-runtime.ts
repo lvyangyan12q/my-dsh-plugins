@@ -1,4 +1,4 @@
-import type {RoleFacade} from 'dsh-worktable/sdk'
+import type {RoleFacade} from './study-client-contracts.ts'
 import {TAXONOMY} from './taxonomy.ts'
 
 export type LearningRoleKey={appId:'kaogong';instanceId:string;roleId:string;subject?:string}

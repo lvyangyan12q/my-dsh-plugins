@@ -1,6 +1,6 @@
 import {createHash,randomUUID} from 'node:crypto'
 import {isAbsolute} from 'node:path'
-import type {RoleAdoptionPreview} from 'dsh-worktable/sdk'
+import type {HistoricalRolePreview as RoleAdoptionPreview} from './historical-adoption-contracts.ts'
 import {questionRecord,planConfig,dayPlan,bankQuestion,knowledgeEntry,practiceRound} from './schemas.ts'
 import {lessonRecord,lessonSelection} from './lesson-schema.ts'
 import {roleSubjects,subjectRoleIds} from './role-definitions.ts'
@@ -43,7 +43,7 @@ export function legacyRoleInput(sourceRevision:string,id:string,binding:Record<s
  if(!roleId||!['teacher','class-advisor','counselor',...subjectRoleIds].includes(roleId))fail('LEGACY_ROLE_UNMAPPED')
  return {sourceKey:'legacy.'+fingerprint([sourceRevision,id]),roleId,revision:sourceRevision,binding:structuredClone(binding)}
 }
-export async function prepareLegacyAdoption({snapshot,inspectRole,materialEvidence}:{snapshot:LegacyInspectionSnapshot;inspectRole:(input:RoleInput)=>Promise<Inspection>;materialEvidence?:LegacyMaterialEvidence}):Promise<LegacyAdoptionPlan>{
+export async function prepareLegacyAdoption({snapshot,inspectRole,materialEvidence}:{snapshot:LegacyInspectionSnapshot;inspectRole:(input:RoleInput,target:{instanceId:string})=>Promise<Inspection>;materialEvidence?:LegacyMaterialEvidence}):Promise<LegacyAdoptionPlan>{
  if(snapshot?.format!=='kaogong-legacy-inspection'||snapshot.formatVersion!==1||snapshot.private!==true||!isAbsolute(snapshot.sourceHome)||snapshot.files.length!==7)fail('LEGACY_SNAPSHOT_INVALID')
  const expected=[...Object.keys(specs),'personal_workbench_role_bindings']
  if(snapshot.files.some((row,index)=>row.name!==expected[index]))fail('LEGACY_SNAPSHOT_INVALID')
@@ -62,7 +62,7 @@ export async function prepareLegacyAdoption({snapshot,inspectRole,materialEviden
    if(file.version!==1||file.table!=='bindings')fail('LEGACY_SNAPSHOT_INVALID')
    for(const [id,value] of Object.entries(data.tables.bindings)){
     const input=legacyRoleInput(sourceRevision,id,value as Record<string,unknown>);if(!input)continue
-    const inspection=await inspectRole(input);if(inspection.status!=='ready'||!inspection.fingerprint)blockers.push({code:'LEGACY_NATIVE_IDENTITY_BLOCKED',roleId:input.roleId})
+    const inspection=await inspectRole(input,{instanceId:targets.history.instanceId});if(inspection.status!=='ready'||!inspection.fingerprint)blockers.push({code:'LEGACY_NATIVE_IDENTITY_BLOCKED',roleId:input.roleId})
     if(input.binding.phase==='intent')counts.pendingRoleIntents=(counts.pendingRoleIntents??0)+1
     roles.push({...input,inspection})
    }

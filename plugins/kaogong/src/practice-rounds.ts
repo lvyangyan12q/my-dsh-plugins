@@ -5,6 +5,7 @@ import type { BankQuestion, Question } from './types.ts'
 import type { BankQuestionRecord, QuestionRecord, PracticeRound } from './schemas.ts'
 import { selectPractice } from './practice.ts'
 import { ERROR_REASONS } from './taxonomy.ts'
+import { practiceStatistics, practiceSummary } from './practice-statistics.ts'
 
 export class PracticeError extends Error {
   constructor(message: string, readonly status = 400) { super(message) }
@@ -55,9 +56,22 @@ export class PracticeRounds {
     if (!value) throw new PracticeError('issued practice round not found', 404)
     return value
   }
+  /** Host-issued task identity makes a lost start response safe to retry. */
+  startForTask(context: PracticeRound['context'] & {planRevision?: number}, taskId: string) {
+    return this.start({...context, taskId} as PracticeRound['context'])
+  }
   /** Issue ten distinct questions, filling the end of a cycle before repeating seen questions. */
   start(context: PracticeRound['context'], previousRoundId?: string, weak = false, difficulty?: 'easy' | 'medium' | 'hard') {
     return this.run(async () => {
+      const task = context as PracticeRound['context'] & {taskId?: string; planRevision?: number}
+      if (task.taskId) {
+        const existing = [...this.rounds.entries()].reverse().find(([, round]) => (round.context as typeof task).taskId === task.taskId)
+        if (existing) {
+          const prior = existing[1].context as typeof task
+          if (prior.subject !== task.subject || prior.knowledgePoint !== task.knowledgePoint || prior.planRevision !== task.planRevision) throw new PracticeError('Task round context changed', 409)
+          return this.view(existing[0], existing[1])
+        }
+      }
       const previous = previousRoundId ? this.round(previousRoundId) : undefined
       if (previous && (!previous.score || previous.context.subject !== context.subject || previous.context.knowledgePoint !== context.knowledgePoint)) throw new PracticeError('next round requires a submitted round in the same module')
       const originals: BankQuestion[] = [...this.bank.entries()].map(([id, row]) => ({ id, ...row }))
@@ -94,7 +108,8 @@ export class PracticeRounds {
         correct, correctAnswer: q.correctAnswer, explanation: q.explanation }
     })
     const correctCount = results.filter(row => row.correct).length
-    return { roundId: id, totalCount: results.length, correctCount, accuracyRate: results.length ? correctCount / results.length : 0, results,
+    const answeredCount = results.filter(row => row.userAnswer !== "").length
+    return { roundId: id, totalCount: results.length, submittedCount: results.length, answeredCount, unansweredCount: results.length - answeredCount, incorrectCount: answeredCount - correctCount, uniqueQuestionCount: new Set(results.map(row => row.id)).size, correctCount, accuracyRate: results.length ? correctCount / results.length : 0, results,
       projection: round.projectedRevision === round.revision ? 'complete' as const : 'pending' as const, review: round.review }
   }
   private view(id: string, round: PracticeRound) {
@@ -172,6 +187,9 @@ export class PracticeRounds {
       return { submittedAt: round.score.submittedAt, round: this.view(roundId, round) }
     })
   }
+  /** Uncapped, read-only scored ledger; never derive grades from notebook projections. */
+  statistics(subject?: string) { return practiceStatistics(this.rounds.entries(), subject) }
+  summary(subject: string, topN: number) { return practiceSummary(this.rounds.entries(), subject, topN) }
   /** History lists issued IDs without exposing open-round answers. */
   history() {
     return [...this.rounds.entries()].map(([roundId, round]) => ({ roundId, context: round.context, createdAt: round.createdAt, submitted: Boolean(round.score) }))

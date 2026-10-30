@@ -1,0 +1,46 @@
+{
+  "status": "candidate-pending-installed-native-explicit-round-review-and-plan-ui",
+  "version": "0.2.0-rc.3.6",
+  "worktablePeer": "0.10.0-rc.3.7",
+  "source": "edcdae28518ca62db063d47701dd65cc66bccdc1",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "archive": "plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.6.tgz",
+  "bytes": 528410,
+  "sha256": "f53057fc6b9cb281ad30c638c452db328baa50bcf03a4cfe0117f4169e68284a",
+  "files": 65,
+  "gates": {
+    "buildPublicTypes": true,
+    "host": 165,
+    "client": 16,
+    "domain": 21,
+    "artifact": 1,
+    "actualCompiledAndSourceNativeEntryChildProcesses": true,
+    "explicitValidatedReviewRoundId": true,
+    "planMetricsDOMCases": 3,
+    "readerRevocationDOMCases": 4
+  },
+  "officialInstalledIdentity": {
+    "officialCLI": true,
+    "noDevelopmentAncestor": true,
+    "publicRuntimeResolution": true,
+    "installedHostImport": true,
+    "officialScopeIdentity": true,
+    "anchors": {
+      "@deepseek-ai/cordis": {
+        "version": "4.0.5",
+        "directory": "vendor/cordis"
+      },
+      "@deepseek-ai/dsh-agent-preset-registry": {
+        "version": "0.2.1-rc.3",
+        "directory": "packages/preset/agent-preset-registry"
+      },
+      "@deepseek-ai/dsh-scope": {
+        "version": "0.2.1-rc.3",
+        "directory": "packages/core/scope"
+      }
+    }
+  },
+  "actualBrowserAcceptance": "pending root CUA native explicit-round review and plan metrics",
+  "formalDataChanged": false,
+  "pushed": false
+}

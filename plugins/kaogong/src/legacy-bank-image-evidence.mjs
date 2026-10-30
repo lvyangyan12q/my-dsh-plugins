@@ -270,3 +270,6 @@ export async function writeLegacyBankImageEvidence({ snapshot, questionImageRoot
   try { await io.writeFile(target, JSON.stringify(evidence, null, 2) + '\n', { flag: 'wx', mode: 0o600 }) } catch (error) { fail(error.code === 'EEXIST' ? 'OUTPUT_EXISTS' : 'OUTPUT_WRITE_FAILED') }
   return summary
 }
+
+/** Recheck only the pinned roots/index receipts before practice projection; asset reads remain individually pinned. */
+export async function verifyLegacyBankPracticeEvidence({evidence,io=fs}) { await verify(evidence,io,{rootKind:'practice-index'}) }

@@ -1,5 +1,5 @@
 import type { KaogongViewProps } from '@deepseek-ai/dsh-tool-kaogong/client'
-import type { WorkbenchAppProps } from '@deepseek-ai/dsh-personal-workbench/client'
+type LearningPageOwner={active:boolean;pageId?:string;selectPage(page:string):void;close():void}
 import { KaogongViewState } from '../src/view-state.tsx'
 
 const state = new KaogongViewState()
@@ -11,7 +11,7 @@ state.cell('query', '')
 // @ts-expect-error Answers cannot change value type.
 state.cell('answers', {}).set('A')
 
-/** Consumer composes the two published type entries without loading workbench runtime. */
-export function viewProps(owner: WorkbenchAppProps): KaogongViewProps {
+/** A consumer controls the published learning view without a platform runtime. */
+export function viewProps(owner: LearningPageOwner): KaogongViewProps {
   return { active: owner.active, pageId: owner.pageId, onSelectPage: owner.selectPage, onClose: owner.close, onOpenTeacher() {} }
 }

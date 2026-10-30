@@ -25,7 +25,7 @@ test('activated personas require real evidence and user-confirmed native handoff
   }
 })
 
-test('actual preset registry activates application personas in independent scopes without overriding deployment or model calls', async () => {
+test('diagnostic template registry activates application personas in independent scopes without overriding deployment or model calls', async () => {
   const ctx = new Context()
   ctx.baseUrl = new URL('../package.json', import.meta.url).href
   const removers = []
@@ -95,8 +95,8 @@ test('app registration has zero native commands and withdraws declarations/prese
   for (const failure of [false, true]) {
     const declarations = new Set(), presets = new Set()
     const ctx = {
-      agentPresets: { register: async preset => { presets.add(preset.id); return async () => { presets.delete(preset.id) } }, acquireScope: () => assert.fail('No preflight at registration') },
-      worktableCapabilities: {contribute:()=>()=>{}},
+      agentPresets: { register: async () => assert.fail('Application roles must not register Native modes'), acquireScope: () => assert.fail('No preflight at registration') },
+      worktableCapabilities: {contribute:()=>()=>{},contributeSessionScopes:()=>{presets.add('private-owner');return()=>presets.clear()}},
       worktableRoles: {contribute: (_app, rows)=>{if(failure)throw Error('registration failed');for(const row of rows)declarations.add(row.id);return ()=>declarations.clear()}},
       sessionController: { create: () => assert.fail('No Session at registration') },
     }
@@ -104,7 +104,7 @@ test('app registration has zero native commands and withdraws declarations/prese
     else {
       const dispose = await installKaogongRoles(ctx, 'C:/learning')
       assert.equal(declarations.size, 9)
-      assert.equal(presets.size, 9)
+      assert.equal(presets.size, 1)
       await dispose()
     }
     assert.equal(declarations.size, 0)

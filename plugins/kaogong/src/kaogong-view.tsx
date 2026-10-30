@@ -1,4 +1,5 @@
-import { useCallback, useEffect } from 'react'
+import type {PracticeCounts} from './practice-statistics.ts'
+import { useCallback, useEffect, useId } from 'react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { KnowledgeLibrary } from './knowledge-reader.tsx'
 import { DocumentMarkdown } from './document-markdown.tsx'
@@ -7,12 +8,16 @@ import { LessonPanel } from './lesson-panel.tsx'
 
 export type DashboardData = {
   today: string
-  examDate: string
-  daysToExam: number
+  examDate: string|null
+  daysToExam: number|null
+  taskCount?:number
+  completedTaskCount?:number
+  taskCompletionRate?:number
   totalDays: number
   pastDays: number
   pastDone: number
   pastDonePct: number
+  practiceStatistics?: PracticeCounts & {errorReasons:{reason:string;count:number}[]}
   totalQuestions: number
   totalCorrect: number
   totalWrong: number
@@ -20,7 +25,7 @@ export type DashboardData = {
   bankTotal: number
   knowledgeTotal: number
   todayPlan: { phase: string; items: { subject: string; kind: string; title: string; done: boolean }[] }
-  modules: { subject: string; availableCount: number; practicedCount: number; wrongCount: number; accuracyRate: number }[]
+  modules: { submittedCount?:number;answeredCount?:number;unansweredCount?:number;uniqueQuestionCount?:number; subject: string; availableCount: number; practicedCount: number; wrongCount: number; accuracyRate: number }[]
   weakPoints: { subject: string; knowledgePoint: string; wrongCount: number; errorRate: number }[]
   recentKnowledge: { id: string; title: string; subject: string; knowledgePoint: string; kind: string; content: string; updatedAt: string }[]
 }
@@ -28,7 +33,7 @@ export type DashboardData = {
 export type KaogongViewProps = {
   /** Hide without unmounting to retain the current practice and reader state. */
   embedded?: boolean
-  /** Dedicated learning window excludes dashboard statistics and planning. */
+  /** Focused classrooms exclude dashboard statistics; the explicit plan page keeps its metrics. */
   focusedStudy?: boolean
   active?: boolean
   pageId?: string
@@ -47,11 +52,14 @@ export type PracticeResult = {
   projection: 'complete' | 'pending'
   review: 'ready' | 'sending' | 'sent'
   totalCount: number
+  answeredCount?: number
+  unansweredCount?: number
+  incorrectCount?: number
   correctCount: number
   accuracyRate: number
   results: { id: string; subject: string; knowledgePoint: string; stem: string; options: string[]; source: string; userAnswer: string; correct: boolean; correctAnswer: string; explanation: string }[]
 }
-export type PracticeContext = { subject: string; title: string; knowledgePoint?: string; limit: number; planIndex?: number }
+export type PracticeContext = { subject: string; title: string; knowledgePoint?: string; limit: number; planIndex?: number;taskId?:string;planRevision?:number }
 /** Ticket 06 can resolve a role binding from this evidence without parsing the legacy prompt. */
 export type KaogongTeachingRequest =
   | { kind: 'lesson'; context: Readonly<PracticeContext>; lessonEvidence?: { id: string; title: string; source: string; content: string } }
@@ -151,6 +159,7 @@ function optionValue(option: string): string {
 
 
 export function KaogongView({ embedded = false, focusedStudy = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
+  const answerGroupId = useId()
   const http=useLearningHttp()
   const {practiceRequest,readPracticeDraft,savePracticeDraft,readAdmittedReviews,markAdmittedReview}=usePracticeClient()
   const [data, setData] = useBusinessState('dashboard', null)
@@ -164,6 +173,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
   const [seenQuestionIds, setSeenQuestionIds] = useBusinessState('seenQuestionIds', [])
   const [errorReasonsByQuestion, setErrorReasonsByQuestion] = useBusinessState('errorReasons', {})
   const [moduleSummary, setModuleSummary] = useBusinessState('moduleSummary', null)
+  const [,setReaderRefresh]=useBusinessState('reader.refresh',0)
   const [submitting, setSubmitting] = useBusinessState('submitting', false)
   const [restored, setRestored] = useBusinessState('practiceRestored', false)
   const [practiceBusy, setPracticeBusy] = useBusinessState('practiceBusy', false)
@@ -184,6 +194,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
     }
   }
   const shown = (id: string) => pageId === undefined || pageId === id
+  const showStatistics=pageId==='plan'||(!focusedStudy&&shown('classroom'))
 
   const requests = useRequestOwner()
   const refresh = useCallback(async () => {
@@ -407,7 +418,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                 <div style={{ color: colors.muted, fontSize: 14 }}>今天 {data?.today ?? '加载中'} · 聚焦行测与申论</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button data-pwb-button type="button" onClick={() => { void refresh() }} disabled={loading} style={buttonStyle(false)}>{loading ? '刷新中' : '刷新'}</button>
+                <button data-pwb-button type="button" onClick={() => { setReaderRefresh(value=>value+1);void refresh() }} disabled={loading} style={buttonStyle(false)}>{loading ? '刷新中' : '刷新'}</button>
                 {onClose && <button data-pwb-button type="button" onClick={onClose} aria-label="关闭看板" style={buttonStyle(true)}>关闭</button>}
               </div>
             </header>}
@@ -418,8 +429,8 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
               onSelectPage?.('practice')
             }} /></div>
             {data !== null && <>
-              <section hidden={focusedStudy || !shown('classroom')} style={{ display: !focusedStudy && shown('classroom') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
-                <Metric label="距离考试" value={`${data.daysToExam}`} suffix="天" accent={colors.blue} />
+              <section hidden={!showStatistics} style={{ display: showStatistics ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
+                <Metric label="距离考试" value={data.daysToExam===null?'待设置':`${data.daysToExam}`} suffix="天" accent={colors.blue} />
                 <Metric label="计划完成" value={pct(data.pastDonePct)} suffix={`${data.pastDone}/${data.pastDays} 天`} accent={colors.green} />
                 <Metric label="做题正确率" value={pct(data.accuracyRate)} suffix={`${data.totalQuestions} 题`} accent={colors.red} />
                 <Metric label="知识库" value={`${data.knowledgeTotal}`} suffix={`讲义/笔记 · 题库 ${data.bankTotal}`} accent={colors.muted} />
@@ -472,7 +483,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                     <div style={{ color: colors.muted, fontSize: 12 }}>第 {index + 1} 题 · {question.knowledgePoint} · {question.difficulty}</div>
                     <div style={{ color: colors.muted, fontSize: 12, overflowWrap: 'anywhere' }}>{question.id} · {question.source}</div>
                     <div style={{ margin: '8px 0', lineHeight: 1.65, overflowWrap: 'anywhere' }}>{renderQuestionStem(question)}</div>
-                    <div style={{ display: 'grid', gap: 6 }}>{question.options.map(option => <label key={option} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', border: `1px solid ${answers[question.id] === optionValue(option) ? '#93c5fd' : colors.line}`, borderRadius: 6, cursor: 'pointer', background: answers[question.id] === optionValue(option) ? colors.blueSoft : '#fff' }}><input type="radio" name={question.id} checked={answers[question.id] === optionValue(option)} onChange={() => setAnswers(previous => ({ ...previous, [question.id]: optionValue(option) }))} /><span style={{ minWidth: 0, flex: 1 }}>{renderQuestionOption(question.id,option)}</span></label>)}</div>
+                    <div style={{ display: 'grid', gap: 6 }}>{question.options.map(option => <label key={option} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px', border: `1px solid ${answers[question.id] === optionValue(option) ? '#93c5fd' : colors.line}`, borderRadius: 6, cursor: 'pointer', background: answers[question.id] === optionValue(option) ? colors.blueSoft : '#fff' }}><input type="radio" name={answerGroupId+question.id} checked={answers[question.id] === optionValue(option)} onChange={() => setAnswers(previous => ({ ...previous, [question.id]: optionValue(option) }))} /><span style={{ minWidth: 0, flex: 1 }}>{renderQuestionOption(question.id,option)}</span></label>)}</div>
                   </article>)}
                   {practice.questions.length > 0 && <button data-pwb-button data-variant="primary" type="button" disabled={submitting} onClick={() => { void submitPractice() }} style={{ ...buttonStyle(true), marginTop: 16 }}>提交判分</button>}
                 </div>}
@@ -481,7 +492,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
                   {result.projection === 'pending' && <p role="status">成绩已保存，错题本同步待恢复。<button data-pwb-button onClick={() => { void practiceRequest<PracticeData>('read', { roundId: result.roundId }).then(value => setResult(value.result)).catch(cause => setError(String(cause))) }}>重试同步</button></p>}
                   {result.review === 'sending' && <p role="status">{admitted.includes(result.roundId) ? '讲评已发送，完成状态待同步。' : '讲评已保留发送位置；请在辅导员待发送区发送或重试，刷新后需核实原会话。'}</p>}
                   {admitted.includes(result.roundId) && result.review !== 'sent' && <button data-pwb-button onClick={() => { void completeReview(result.roundId).catch(() => {}) }}>同步讲评完成状态</button>}
-                  <div style={{ padding: 12, borderRadius: 6, background: result.accuracyRate >= .8 ? '#f0fdf4' : '#fff7ed', color: result.accuracyRate >= .8 ? colors.green : '#9a3412' }}><strong>{result.correctCount}/{result.totalCount} 题正确，正确率 {pct(result.accuracyRate)}</strong></div>
+                  <div style={{ padding: 12, borderRadius: 6, background: result.accuracyRate >= .8 ? '#f0fdf4' : '#fff7ed', color: result.accuracyRate >= .8 ? colors.green : '#9a3412' }}><strong>{result.correctCount}/{result.totalCount} 题正确，正确率 {pct(result.accuracyRate)}（全部提交题量含未答为分母）</strong><p>实际作答 {result.answeredCount??result.results.filter(row=>row.userAnswer!=='').length} 题 · 未答 {result.unansweredCount??result.results.filter(row=>row.userAnswer==='').length} 题 · 已答做错 {result.incorrectCount??result.results.filter(row=>row.userAnswer!==''&&!row.correct).length} 题</p></div>
                   {result.results.map(entry => <div key={entry.id} style={{ padding: '12px 0', borderBottom: `1px solid ${colors.line}` }}><strong style={{ color: entry.correct ? colors.green : colors.red }}>{entry.correct ? '正确' : '需要复盘'} · {entry.knowledgePoint}</strong>{!entry.correct && <><p style={{ margin: '5px 0 0', color: colors.muted, fontSize: 13, lineHeight: 1.6 }}>正确答案：{entry.correctAnswer}{entry.explanation ? `。${entry.explanation}` : ''}</p><select aria-label={`选择 ${entry.knowledgePoint} 的错误原因`} value={errorReasonsByQuestion[entry.id] ?? ''} onChange={event => setErrorReasonsByQuestion(previous => ({ ...previous, [entry.id]: event.target.value }))} style={{ marginTop: 8, minHeight: 30, border: `1px solid ${colors.line}`, borderRadius: 5, color: colors.ink }}><option value="">选择错误原因</option>{errorReasons.map(reason => <option key={reason} value={reason}>{reason}</option>)}</select><textarea aria-label={`反思 ${entry.knowledgePoint}`} value={reflectionNotes[entry.id] ?? ''} onChange={event => setReflectionNotes(previous => ({ ...previous, [entry.id]: event.target.value }))} style={{ display: 'block', width: '100%', boxSizing: 'border-box', minHeight: 64, marginTop: 8 }} /></>}</div>)}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}><button data-pwb-button data-variant="primary" type="button" disabled={practiceBusy || result.review !== 'ready' || admitted.includes(result.roundId)} onClick={() => { void openTeacher(practiceItem, result) }} style={buttonStyle(true)}>{result.review === 'sent' ? '已交辅导员' : result.review === 'sending' ? '讲评发送待核实' : '辅导员讲评'}</button><button data-pwb-button type="button" disabled={practiceBusy} onClick={() => { void saveReflection() }} style={buttonStyle(false)}>保存错因并总结</button><button data-pwb-button type="button" disabled={practiceBusy} onClick={repeatPractice} style={buttonStyle(false)}>再来 {practiceItem.limit} 题</button>{practiceItem.planIndex !== undefined && <button data-pwb-button type="button" onClick={() => { void toggleItem(practiceItem.planIndex!, true) }} style={buttonStyle(false)}>完成任务</button>}</div>
                   {moduleSummary && <div style={{ marginTop: 16, padding: 14, border: `1px solid #bfdbfe`, borderRadius: 7, background: '#f8fbff' }}><strong>本模块错题归纳</strong><div style={{ marginTop: 7, color: colors.muted, fontSize: 13 }}>累计 {moduleSummary.totalQuestions} 题，做错 {moduleSummary.totalWrong} 题，正确率 {pct(moduleSummary.accuracyRate)}</div>{moduleSummary.weakPoints.length > 0 && <div style={{ marginTop: 10 }}>{moduleSummary.weakPoints.map(point => <div key={point.knowledgePoint} style={{ marginTop: 7, fontSize: 13 }}><strong>{point.knowledgePoint}</strong>：错 {point.wrongCount}/{point.totalCount}，主要错因 {point.topReasons.join('、')}。{point.suggestion}</div>)}</div>}</div>}

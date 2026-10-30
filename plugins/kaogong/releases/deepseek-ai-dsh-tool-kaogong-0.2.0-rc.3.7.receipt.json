@@ -1,0 +1,55 @@
+{
+  "status": "candidate-pending-installed-stock-source-user-flow",
+  "version": "0.2.0-rc.3.7",
+  "worktablePeer": "0.10.0-rc.3.7",
+  "source": "2e6ff8ccd0bd2e47044147918e63c89ecefa9d7d",
+  "integrationSource": "81fa66b355daa8fd776aed5de8ef51eca6621ad4",
+  "sourceTree": "8b365d9cfa115846b7844cbc2597873003539742",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "archive": "plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.7.tgz",
+  "bytes": 528487,
+  "sha256": "7f5fa9122b2af4e3b146d0dbd0467188cea4968c84a5039a2c20f3a3682f7537",
+  "files": 65,
+  "gates": {
+    "buildPublicTypes": true,
+    "host": 167,
+    "client": 16,
+    "domain": 21,
+    "artifact": 1,
+    "actualNativeEntryModes": [
+      "compiled",
+      "source-explicit",
+      "source-stock-noenv",
+      "plain-compiled-no-tsx"
+    ],
+    "independentCleanOfflineOfficialCLI": true,
+    "runtimeDependency": "get-tsconfig@5.0.0-beta.5",
+    "exactGeneratedProfileLock": true,
+    "actualProfileDependencyRealpathAndAPI": true
+  },
+  "officialInstalledIdentity": {
+    "officialCLI": true,
+    "noDevelopmentAncestor": true,
+    "publicRuntimeResolution": true,
+    "installedHostImport": true,
+    "officialScopeIdentity": true,
+    "independentPinnedTsconfig": true,
+    "anchors": {
+      "@deepseek-ai/cordis": {
+        "version": "4.0.5",
+        "directory": "vendor/cordis"
+      },
+      "@deepseek-ai/dsh-agent-preset-registry": {
+        "version": "0.2.1-rc.3",
+        "directory": "packages/preset/agent-preset-registry"
+      },
+      "@deepseek-ai/dsh-scope": {
+        "version": "0.2.1-rc.3",
+        "directory": "packages/core/scope"
+      }
+    }
+  },
+  "actualBrowserAcceptance": "pending root CUA stock pnpm start:web source UI",
+  "formalDataChanged": false,
+  "pushed": false
+}

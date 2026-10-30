@@ -94,7 +94,7 @@ export class Lessons {
     if (!row.completion) {
       const view = await this.view(row)
       if (!view.canConfirm) throw new PracticeError('课后任务证据不足：需完成作答及要求的错因反思', 409)
-      await this.put(id, { ...row, completion: { confirmedAt: new Date().toISOString(), proofs: view.evidence.map(({ roundId, total, correct, questionIds, reflectedIds }) => ({ roundId, total, correct, questionIds, reflectedIds })) } })
+      await this.put(id, { ...row, completion: { confirmedAt: new Date().toISOString(), ...(row.request.requirePractice!==undefined?{summary:row.notes}:{}), proofs: view.evidence.map(({ roundId, total, correct, questionIds, reflectedIds }) => ({ roundId, total, correct, questionIds, reflectedIds })) } })
     }
     return this.view(this.get(id))
   }) }
@@ -121,7 +121,7 @@ export class Lessons {
   }
   private async view(lesson: Lesson): Promise<LessonView> {
     const evidence = await Promise.all(lesson.roundIds.map(id => this.evidence(lesson, id)))
-    const canConfirm = evidence.length > 0 && evidence.every(row => row.answered && (!lesson.request.requireReflections || row.reflectionsComplete))
+    const canConfirm = (lesson.request.requirePractice===undefined||!!lesson.notes.trim()) && (lesson.request.requirePractice===false||evidence.length > 0) && evidence.every(row => row.answered && (!lesson.request.requireReflections || row.reflectionsComplete))
     const summary = JSON.stringify({ version: 1, lessonId: lesson.request.lessonId, objectiveId: lesson.objectiveId, homeworkId: lesson.homeworkId,
       subject: lesson.request.subject, objective: lesson.request.objective, materials: lesson.materials.map(({ id, title }) => ({ id, title })),
       roleKey: lesson.roleKey, binding: lesson.binding, status: lesson.completion ? 'learner-confirmed-complete' : 'unfinished',

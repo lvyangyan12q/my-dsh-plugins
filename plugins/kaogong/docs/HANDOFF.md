@@ -1,0 +1,50 @@
+# 执行交接：考公目录收拢与独立学习闭环
+
+## 最终交付（2026-10-28）
+
+本轮00—07均closed，完整结果与限制见[最终验收](evidence/07-final-acceptance.md)。独立`0.3.0-rc.3.1`最终归档SHA256为`26911f185861352297e9d458c22bc0666c19c75a0028e744004743afed0cbfdd`，运行代码至`d45db1b`，随包指南修订至`5a68bcb`。最终包三处安装逐文件一致，源码/声明及46/25/21/1门禁、真实无Worktable完整闭环与Native模型矩阵通过。
+
+正式新增`kaogong-standalone` profile，原web保留；当前E3在原home的`kaogong-independent02`原位升级，9/10、反思、已完成/未完成课堂、原Session/cwd、资料及发送回执保留。36项原文件保护清单仅预期的独立profile package/lock两项变化。新真实资料仅在明确预览确认后接入，既有synthetic-v2/v3计划不重写。人工IME未验证、资料未证明引用据实列在最终验收。
+
+11个自建工作树已零链接复扫、私有归档后清理；所有分支保留。交付分支为`codex/kaogong-standalone-closed-loop`。以下保留原始交接及阶段性进度，不能将历史“尚待完成”段落当作最终状态。
+
+## 用户要求
+在 D:/programming/workspace/my-dsh/plugins/kaogong 单独创建执行会话，后续基于该目录开发。将对应 spec/ticket、资料和题目归位；其他考公内容有依据地归档或删除。当前已退出规划模式，用户明确要求进行交接；本任务应直接执行，不再重复规划或仅承诺能力。
+
+## 已确认决策
+1. 考公完全独立于工作台运行；本轮先交独立插件，不继续把工作台作为必需后台。工作台快捷入口后续再做，不作为本轮前置。
+2. 每日模块数、科目权重、考试日期构成计划；补全程日程、调整、打卡、错题复习，不做小时级排程。
+3. 学习采用完整 DSH 原生对话 + 原生右侧学习面板，不再复制聊天输入框或修改原生布局源码。
+4. 首版不实现系统内限时整卷模考；外部模考手动记录、单列成绩，不假称系统判分。
+5. 保留当前新实例的课堂、成绩、草稿、资料关系和老师绑定。旧全局计划/错题/原生会话继续原址保存，不自动迁移。
+6. AI计划和日程调整先预览，用户确认才写入；成绩和任务完成依据真实记录。
+7. 原PDF、题库JSON、图片、MinerU成果仅本地保存并备份，不提交远程。
+
+## 现场与保护
+- Git仓库：D:/programming/workspace/my-dsh；远程 https://github.com/lvyangyan12q/my-dsh-plugins。
+- 交接前代码基线：6eb6abf0bca2f092eb41cd6c5d942f4fa5d6f3dd，原分支 codex/kaogong-rc3-completion。新实施使用 codex/kaogong-standalone-closed-loop；先核对现场，保留用户改动。
+- Native：D:/programming/workspace/deepseek-harness，官方0.2.1-rc.3，已核对提交22ddee3792402c3e70ec5f86a63c3e3e895a2f60；仅作公开接口参考和既有运行环境。
+- 正式home：C:/Users/pc-zzy/.dsh，web profile 已注册W.7/K.7。新任务应先核对当前进程和用户在用状态，不能把此前已停机当作现在停机。
+- D:/programming/workspace/kaogong 是 junction，真实目标为 D:/programming/workspace/my-dsh/materials/kaogong；不是两份独立资料。
+- 当前老师原生工作目录为 D:/programming/workspace/my-dsh/workspaces/kaogong，已经公开Registry登记。Codex开发目录与老师工作目录是两件事；不改既有Session的cwd。
+- 根仓库已有 docs/full-scope-audit.md、lefthook.yml 及 docs/evidence/2026-10-10 的原生标题栏JSON/5张截图等用户未提交文件，保持原样，不擅自发布。旧未跟踪K.1发行包也先保留归档核对。
+- 前序清理曾因Git跟随Windows junction误触3个Native跟踪文件及2个编译库，已经精确恢复、官方重建且167回归通过。必须遵守AGENTS的零链接清理规则，不能复发。
+- 已冻结W/K准确包及回退包不覆盖、不改字节。当前 installed rc.3.7 不是独立版，不应仅换版本或界面宣称完成。
+
+## 现有实现及真实缺口
+2026-10-26更新：00、01已完成。考公自身现拥有档案上下文、资料只读授权、角色绑定、教学回执及原生主侧栏/右栏，活动Host/client/声明和发行依赖已移除Worktable。独立候选 `0.3.0-rc.3.1`（SHA256 `df09c11437cf00ef430aa57d92ccb9b9c5b62c3c107a445b1e72b8672f1fb95f`）经官方CLI干净安装、默认源码/显式源码/编译入口及真实Native冷恢复/私有Skill预检通过，详情见01。运行home和准确包保留在仓库外，验收自有进程已停止。未调用模型、未切换正式home、未自动接管旧资料/学习元数据。02已完成同Native home不同profile的显式当前档案承接、继续档案及本地草稿恢复，准确包SHA256 `072cb68639cac72f7cf5b80bcfd43eab82408857e0a8003d789d80f789526d87` 实装、真实页面确认/冷恢复/重复确认通过；来源元数据、当前成绩与课稿不重写，原生空会话生命周期追加的保留口径见02。验收进程已停止。03—07仍须完成业务流程、模型确认和完整准确包验收。
+
+以下为本轮实施前基线缺口，须结合各工单新证据阅读：
+计划生成/打卡/进度、练习快照/判分、错题分析、课堂、资料证明大部分仍在。当前默认课堂，计划/进度/错题分散，缺全程日程和独立错题复习流程；未配置时仍可能显示默认2027-03-01倒计时；部分统计来自按题目ID的notebook而非轮次，重复练习需纠正统计口径。
+Host/client/角色/资料/任务直接依赖 worktable*，旧独立Dashboard为冻结提示，故需要真正独立化，不能只新增入口。
+
+## 历史证据
+根 docs/evidence/2026-10-25/rc3-fresh-installed-current.json、rc3-cleanup-recovery.json，以及 docs/wayfinder/harness-upgrade/implementation/07/08/13/15/17/19/20 等保存已验范围。混合/共享文件不整体迁走，按工单00分类。
+私有完整检查点在 C:/Users/pc-zzy/Documents/ChatGPT/deepseek-harness/.local/kaogong-completion-20261025/CHECKPOINT.md。仅在追溯事实时读取；不要将私有日志、模型配置或整home提交仓库。
+
+## 执行顺序
+先完成工单00的文档/资料盘点、归位、路径验证及归档，再按工单依赖实现独立闭环。保存每个阶段的具体变更与真实证据。迁移有已接入绝对路径证明时，先保留原址，完成位置映射与验证后再清旧副本。独有数据或来源不明内容归档，不因名称像缓存就删除。
+
+2026-10-27：03源码闭环完成：独立计划增量聚合、nullable目标、预览确认/稳定任务/容量与未来重排、真实任务轮次和课堂总结确认回写，见docs/evidence/03-plan-tasks.md。05—07继续实施，最终准确包真实验收未完成。
+
+2026-10-27：05源码闭环完成：历史错题发生项、确认入队/重新作答/反思确认、1/3/7阶段及复习计划预览，关联任务只认开始后新确认凭据。现行Host42/Client18/领域21及构建/声明通过，见docs/evidence/05-errors-review.md。06—07真实模型与最终准确包实装验收继续，未切换正式home。

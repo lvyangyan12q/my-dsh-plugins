@@ -16,15 +16,17 @@ const indexSchema = z.object({
     sourcePage: z.number().int().positive(),
   }).strict()).max(5000),
 }).strict()
+export interface VerifiedPracticeFiles {realpath(path:string):Promise<string>;stat(path:string):Promise<{size:number}>;readFile(path:string):Promise<Buffer>}
+const nativeFiles:VerifiedPracticeFiles={realpath:path=>realpath(path),stat:path=>stat(path),readFile:path=>readFile(path)}
 const sha = (bytes: string | Buffer) => createHash('sha256').update(bytes).digest('hex')
 const unchanged = (_id: string, stem: string) => stem
 
 /** Read only manually verified, content-pinned supplements. Never edit the bank or score snapshots. */
-export async function loadVerifiedPracticeMaterials(root?: string): Promise<(id: string, stem: string) => string> {
+export async function loadVerifiedPracticeMaterials(root?: string, io:VerifiedPracticeFiles=nativeFiles): Promise<(id: string, stem: string) => string> {
   if (!root || !isAbsolute(root)) return unchanged
-  const directory = await realpath(root)
+  const directory = await io.realpath(root)
   const contained = async (file: string) => {
-    const actual = await realpath(resolve(directory, file))
+    const actual = await io.realpath(resolve(directory, file))
     const offset = relative(directory, actual)
     if (!offset || offset.startsWith('..') || isAbsolute(offset)) throw new Error('Verified material path escapes configured root')
     return actual
@@ -32,14 +34,14 @@ export async function loadVerifiedPracticeMaterials(root?: string): Promise<(id:
   let indexPath: string
   try { indexPath = await contained('verified/associations.json') }
   catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return unchanged; throw error }
-  if ((await stat(indexPath)).size > 1_000_000) throw new Error('Verified material index is too large')
-  const bytes = await readFile(indexPath)
+  if ((await io.stat(indexPath)).size > 1_000_000) throw new Error('Verified material index is too large')
+  const bytes = await io.readFile(indexPath)
   if (bytes.length > 1_000_000) throw new Error('Verified material index is too large')
   const index = indexSchema.parse(JSON.parse(bytes.toString('utf8')))
   const associations = new Map<string, typeof index.associations[number]>()
   for (const row of index.associations) {
     if (associations.has(row.questionId)) throw new Error('Duplicate verified material question identity')
-    const asset = await readFile(await contained(row.asset))
+    const asset = await io.readFile(await contained(row.asset))
     if (sha(asset) !== row.assetSha256) throw new Error('Verified material image changed')
     associations.set(row.questionId, row)
   }
@@ -73,16 +75,16 @@ const unchangedOptions = (_id: string, _stem: string, options: string[]) => opti
 const terminalAdvertisement = /\s*公考最新资料[、，]更新进度微信\s*SKA674\s*$/
 
 /** Apply only individually source-verified footer exclusions; never alter stored options or grading keys. */
-export async function loadVerifiedPracticeOptions(root?: string): Promise<typeof unchangedOptions> {
+export async function loadVerifiedPracticeOptions(root?: string, io:VerifiedPracticeFiles=nativeFiles): Promise<typeof unchangedOptions> {
   if (!root || !isAbsolute(root)) return unchangedOptions
-  const directory = await realpath(root)
+  const directory = await io.realpath(root)
   let indexPath: string
-  try { indexPath = await realpath(resolve(directory, 'verified/option-repairs.json')) }
+  try { indexPath = await io.realpath(resolve(directory, 'verified/option-repairs.json')) }
   catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return unchangedOptions; throw error }
   const offset = relative(directory, indexPath)
   if (!offset || offset.startsWith('..') || isAbsolute(offset)) throw new Error('Verified option index escapes configured root')
-  if ((await stat(indexPath)).size > 1_000_000) throw new Error('Verified option index is too large')
-  const bytes = await readFile(indexPath)
+  if ((await io.stat(indexPath)).size > 1_000_000) throw new Error('Verified option index is too large')
+  const bytes = await io.readFile(indexPath)
   if (bytes.length > 1_000_000) throw new Error('Verified option index is too large')
   const index = optionRepairSchema.parse(JSON.parse(bytes.toString('utf8')))
   const associations = new Map<string, typeof index.associations[number]>()
@@ -91,10 +93,10 @@ export async function loadVerifiedPracticeOptions(root?: string): Promise<typeof
     const assets = new Set<string>()
     for (const asset of row.sourceAssets ?? []) {
       if (assets.has(asset.asset)) throw new Error('Duplicate verified option image')
-      const actual = await realpath(resolve(directory, asset.asset))
+      const actual = await io.realpath(resolve(directory, asset.asset))
       const assetOffset = relative(directory, actual)
       if (!assetOffset || assetOffset.startsWith('..') || isAbsolute(assetOffset)) throw new Error('Verified option image escapes configured root')
-      if (sha(await readFile(actual)) !== asset.assetSha256) throw new Error('Verified option image changed')
+      if (sha(await io.readFile(actual)) !== asset.assetSha256) throw new Error('Verified option image changed')
       assets.add(`题目_images/${asset.asset}`)
     }
     for (const option of row.sourceOptions ?? []) {

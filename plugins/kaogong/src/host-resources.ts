@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
-import type { ApplicationDirectory, ResourceDirectory, ResourceOwner } from 'dsh-worktable/sdk'
+import type { StudyWorkspace as ApplicationDirectory } from './study-workspace.ts'
+import type { StudySources as ResourceDirectory } from './study-sources.ts'
+import type { StudySourceOwner as ResourceOwner } from './study-contracts.ts'
 import type { KvTable } from '@deepseek-ai/dsh-storage-domain'
 import type { BankQuestionRecord, KnowledgeEntryRecord } from './domain.ts'
 import type { KaogongInstanceState } from './instance-state.ts'

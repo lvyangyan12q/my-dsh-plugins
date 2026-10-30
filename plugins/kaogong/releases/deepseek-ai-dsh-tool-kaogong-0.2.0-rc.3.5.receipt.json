@@ -1,0 +1,44 @@
+{
+  "status": "candidate-pending-installed-v3-practice-native-ai-and-recovery",
+  "version": "0.2.0-rc.3.5",
+  "worktablePeer": "0.10.0-rc.3.6",
+  "source": "edc5e09765938932cef2fdc597e5cb6be9aea0a1",
+  "nativeCommit": "22ddee3792402c3e70ec5f86a63c3e3e895a2f60",
+  "archive": "plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.2.0-rc.3.5.tgz",
+  "bytes": 528228,
+  "sha256": "90c1601d328e8b423f8fa7c32c3587ac4db42aecaa2d93c0c9b8d1ba438bda91",
+  "files": 65,
+  "gates": {
+    "buildPublicTypes": true,
+    "host": 164,
+    "client": 13,
+    "domain": 21,
+    "artifact": 1,
+    "actualCompiledAndSourceNativeEntryChildProcesses": true,
+    "readerRevocationDOMCases": 4,
+    "practiceProofHostIntegration": true
+  },
+  "identity": {
+    "officialCLI": true,
+    "noDevelopmentAncestor": true,
+    "publicRuntimeResolution": true,
+    "installedHostImport": true,
+    "officialScopeIdentity": true,
+    "anchors": {
+      "@deepseek-ai/cordis": {
+        "version": "4.0.5",
+        "directory": "vendor/cordis"
+      },
+      "@deepseek-ai/dsh-agent-preset-registry": {
+        "version": "0.2.1-rc.3",
+        "directory": "packages/preset/agent-preset-registry"
+      },
+      "@deepseek-ai/dsh-scope": {
+        "version": "0.2.1-rc.3",
+        "directory": "packages/core/scope"
+      }
+    }
+  },
+  "formalModified": false,
+  "pushed": false
+}

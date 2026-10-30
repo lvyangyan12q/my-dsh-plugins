@@ -1,0 +1,14 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import React,{act} from 'react'
+import {createRoot} from 'react-dom/client'
+import {JSDOM} from 'jsdom'
+
+test('settings preview displays retained identities and requires a separate exact confirmation before changing profiles',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
+ const saved=new Map(Object.keys(values).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));for(const[key,value]of Object.entries(values))Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})
+ const original=globalThis.fetch,calls:any[]=[],profile={id:'current-a',kind:'learner',title:'已有学习',revision:1},view={id:'current-view',profileId:'current-a'};let applied=false
+ globalThis.fetch=async(input,options)=>{const body=options?.body?JSON.parse(String(options.body)):null;calls.push(body);const result=String(input).includes('/dashboard')?{modules:[],todayPlan:{items:[]},weakPoints:[],totalQuestions:0}:body?.action==='current-preview'?{id:'preview-one',digest:'exact-source-digest',status:'prepared',profiles:[profile],views:[view],bindings:[],grants:[],teaching:[{id:'sent-task',status:'accepted'}],files:[],conflicts:[],sourceProfile:'same-home/profiles/old',runtimeProfile:'same-home/profiles/new'}:body?.action==='current-confirm'?(applied=true,{id:'preview-one',digest:'exact-source-digest',status:'applied',profiles:[profile],views:[view],bindings:[],grants:[],teaching:[],files:[],conflicts:[],sourceProfile:'same-home/profiles/old',runtimeProfile:'same-home/profiles/new'}):{profiles:applied?[profile]:[],views:applied?[view]:[],lastProfileId:applied?profile.id:null};return new Response(JSON.stringify(result))}
+ const root=createRoot(document.getElementById('root')!)
+ try{const{StudyDashboard}=await import('../src/client.tsx');await act(async()=>root.render(<StudyDashboard/>));const find=(text:string)=>[...document.querySelectorAll('button')].find(b=>b.textContent===text)!;assert.ok(find('预览承接当前学习'));await act(async()=>find('预览承接当前学习').click());assert.match(document.body.textContent??'',/current-a/);assert.equal(calls.some(row=>row?.action==='current-confirm'),false);await act(async()=>find('确认承接以上当前学习').click());assert.deepEqual(calls.find(row=>row?.action==='current-confirm'),{action:'current-confirm',id:'preview-one',digest:'exact-source-digest',confirmed:true,continueProfileId:'current-a'});assert.match(document.body.textContent??'',/已有学习/)}finally{await act(async()=>root.unmount());globalThis.fetch=original;dom.window.close();for(const[key,d]of saved)d?Object.defineProperty(globalThis,key,d):Reflect.deleteProperty(globalThis,key)}
+})

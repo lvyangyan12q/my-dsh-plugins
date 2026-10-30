@@ -19,12 +19,13 @@ export function markAdmittedReview(roundId: string,instanceId='default') { windo
 
 export type PracticeDraft = { roundId: string; answers: Record<string, string>; errorReasons: Record<string, string>; notes: Record<string, string> }
 /** Drafts contain learner input and a Host-issued pointer only. Storage failure is explicit. */
-export function savePracticeDraft(draft: PracticeDraft,instanceId='default') { window.localStorage.setItem(storageKey(instanceId,'practice-draft'), JSON.stringify(draft)) }
-export function readPracticeDraft(instanceId='default'): PracticeDraft | null {
-  const raw = window.localStorage.getItem(storageKey(instanceId,'practice-draft'))
+export function savePracticeDraft(draft: PracticeDraft,instanceId='default') { window.localStorage.setItem(storageKey(instanceId,'practice-draft'), JSON.stringify(draft)); window.localStorage.setItem(storageKey(instanceId,'practice-draft/'+draft.roundId), JSON.stringify(draft)) }
+export function readPracticeDraft(instanceId='default',roundId?:string): PracticeDraft | null {
+  const raw = (roundId?window.localStorage.getItem(storageKey(instanceId,'practice-draft/'+roundId)):null)??window.localStorage.getItem(storageKey(instanceId,'practice-draft'))
   if (!raw) return null
   const value: unknown = JSON.parse(raw)
   if (!value || typeof value !== 'object' || !('roundId' in value) || typeof value.roundId !== 'string' || !/^[0-9a-f-]{36}$/i.test(value.roundId)) throw new Error('练习草稿已损坏')
+  if(roundId&&value.roundId!==roundId)return null
   const map = (key: string): Record<string, string> => {
     const entries = Reflect.get(value, key)
     if (!entries || typeof entries !== 'object' || Array.isArray(entries) || Object.values(entries).some(row => typeof row !== 'string')) return {}

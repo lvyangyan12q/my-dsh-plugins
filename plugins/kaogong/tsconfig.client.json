@@ -16,12 +16,7 @@
       "DOM",
       "DOM.Iterable",
       "ESNext.Disposable"
-    ],
-    "paths": {
-      "dsh-worktable/sdk": [
-        "../worktable/01_content/src/sdk.d.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "src/client.tsx"
