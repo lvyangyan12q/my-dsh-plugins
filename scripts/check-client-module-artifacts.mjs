@@ -6,7 +6,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 import vm from 'node:vm'
 
 /** Materialize exact built factories with the official browser resolver; never use Node require as a fallback. */
-export async function checkClientModuleArtifacts({ root, runtime, workbench = true, profileRoot, readingLifecycle = false }) {
+export async function checkClientModuleArtifacts({ root, runtime, workbench = false, profileRoot, readingLifecycle = false }) {
   assert(runtime, 'Set DSH_SOURCE to the built official DSH checkout')
   const tools = createRequire(join(process.env.KAOGONG_TEST_TOOLS ?? runtime, 'package.json'))
   const { JSDOM } = tools('jsdom')
@@ -91,6 +91,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (installed) assert(process.argv[3], 'Installed profile directory required')
   const profileRoot = installed ? resolve(process.argv[3]) : undefined
   const root = process.argv[2] && !profileRoot ? resolve(process.argv[2]) : resolve(fileURLToPath(new URL('..', import.meta.url)))
-  console.log(JSON.stringify(await checkClientModuleArtifacts({ root, profileRoot, runtime: process.env.DSH_SOURCE })))
   console.log(JSON.stringify(await checkClientModuleArtifacts({ root, profileRoot, runtime: process.env.DSH_SOURCE, workbench: false })))
 }

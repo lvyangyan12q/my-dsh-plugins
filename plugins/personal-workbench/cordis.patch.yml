@@ -1,5 +1,0 @@
-- insert:
-    - id: personal-workbench
-      name: '@deepseek-ai/dsh-personal-workbench'
-      config:
-        teacherSessionId: ''

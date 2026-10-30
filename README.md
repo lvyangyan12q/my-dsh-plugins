@@ -1,3 +1,12 @@
+# Current plugins
+
+Maintained plugin directories: worktable, bug-solver, kaogong, project-notes and reading-statistics.
+
+personal-workbench was removed on 2026-10-30. It is not installed in the current web profile. Historical notes and optional legacy regression references below describe previous implementations; recover old source from Git history only if that historical validation is explicitly needed.
+
+The root build delegates to each maintained buildable package. bug-solver/bridge is ESM JavaScript and has no build step. The historical startup paths below are not current installation instructions.
+
+---
 # my-dsh
 
 2026-10-24 升级规划入口：[工作台与考公的新 Harness 兼容及迁移路线](docs/wayfinder/harness-upgrade/map.md)。目标先 rc.3，再建立后续升级检查；旧 alpha.2 只留回退包。本任务启动的3080已应用户要求停止，下面启动记录为历史检查点。
