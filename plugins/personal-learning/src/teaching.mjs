@@ -1,9 +1,16 @@
 import {randomUUID} from 'node:crypto'
 export const teachingSkill='personal-learning-teach'
 /** The HTTP application boundary serializes every command sharing global state. */
-export function createLearningDispatcher(app,teacher,requests,courses,maps,evidence,continuation){
- let queue=Promise.resolve()
- return (body,execution)=>{const result=queue.then(()=>execution?(body.kind==='feedback'?evidence.feedback(body,execution.agent?.session?.id):body.kind==='map'?maps.submit(body,execution.agent?.session?.id):courses.submit(body,execution.agent?.session?.id)):body?.action?.startsWith('continuation-')?continuation.request(body):body?.action?.startsWith('evidence-')?evidence.request(body):body?.action?.startsWith('map-')?maps.request(body):body?.action?.startsWith('course-')?courses.request(body):body?.action?.startsWith('request-')?requests.request(body):body?.action==='teaching-workspaces'?teacher.workspaces():body?.action==='teaching-open'?teacher.open(body.instanceId,body.workspaceId):app.request(body));queue=result.catch(()=>{});return result}
+export function createLearningDispatcher(services){
+ let queue=Promise.resolve();
+ async function dispatch(body,execution){
+  if(execution){const owner=body.kind==='feedback'?'evidence':body.kind==='map'?'maps':'courses';const method=body.kind==='feedback'?'feedback':'submit';return services[owner][method](body,execution.agent?.session?.id)}
+  if(body?.action==='teaching-workspaces')return services.teacher.workspaces();
+  if(body?.action==='teaching-open')return services.teacher.open(body.instanceId,body.workspaceId);
+  const routes={continuation:'continuation',evidence:'evidence',map:'maps',course:'courses',request:'requests'};
+  const owner=routes[body?.action?.split('-')[0]]??'app';return services[owner].request(body);
+ }
+ return (body,execution)=>{const result=queue.then(()=>dispatch(body,execution));queue=result.catch(()=>{});return result};
 }
 export function createTeaching(ctx,storage){
  let queue=Promise.resolve()
@@ -19,7 +26,7 @@ export function createTeaching(ctx,storage){
    let state=await storage.read();if(!state.instances.some(i=>i.id===instanceId))throw Error('学习实例不存在')
    state.bindings??=[];let binding=state.bindings.find(b=>b.instanceId===instanceId)
    await ready(binding?.workspaceId??workspaceId)
-   if(binding){if(binding.phase!=='ready'||!await ctx.sessionPersistence.stat(binding.sessionId))throw Error('原生会话创建结果待核对；保留原会话身份，请检查 DSH 会话列表');return structuredClone(binding)}
+   if(binding){const existing=await ctx.sessionPersistence.stat(binding.sessionId);if(existing){if(existing.agentPreset&&existing.agentPreset!=='standard')throw Error('会话预设不符');binding.phase='ready';await storage.write(state);return structuredClone(binding)}if(binding.phase==='ready')throw Error('原生会话不存在，请核对保存的会话身份');if(existing!==null&&existing!==undefined)throw Error('无法确认创建状态，保留原会话身份');const retried=await ctx.sessionController.create({sessionId:binding.sessionId,agentPreset:'standard',workspaceId:binding.workspaceId});if(retried.sessionId!==binding.sessionId||retried.agentPreset!=='standard')throw Error('原生会话身份不符');await ctx.sessionPersistence.flush();binding.phase='ready';await storage.write(state);return structuredClone(binding)}
    binding={instanceId,workspaceId,sessionId:randomUUID(),phase:'intent'}
    state.bindings.push(binding);await storage.write(state)
    const created=await ctx.sessionController.create({sessionId:binding.sessionId,agentPreset:'standard',workspaceId})

@@ -1,0 +1,1 @@
+export function acceptedArtifactRequest(state,requestId,sessionId){const request=state.requests?.find(r=>r.id===requestId&&r.sessionId===sessionId&&r.status==='accepted');const binding=state.bindings?.find(b=>b.sessionId===sessionId&&b.phase==='ready');if(!request||!binding||request.instanceId!==binding.instanceId)throw Error('产物提交归属不符');return request}
