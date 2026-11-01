@@ -20,6 +20,13 @@ test('studio selector opens another instance and remount restores it',async()=>{
  try{
   await act(async()=>root.render(React.createElement(LearningStudio)))
   assert.equal(document.querySelector('h1').textContent,'绘画')
+  const coursePane=document.querySelector('[aria-label="工作室课程"]')
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='B · 知识地图').click())
+  assert.equal(coursePane.hidden,true)
+  assert.equal(document.querySelector('[aria-label="知识地图视图"]').hidden,false)
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='A · 工作室').click())
+  assert.equal(document.querySelector('[aria-label="工作室课程"]'),coursePane)
+  assert.equal(coursePane.hidden,false)
   await act(async()=>{const select=document.querySelector('select');select.value=first.id;select.dispatchEvent(new dom.window.Event('change',{bubbles:true}))})
   assert.equal(document.querySelector('h1').textContent,'概率')
   await act(async()=>root.unmount());root=createRoot(document.getElementById('root'))
