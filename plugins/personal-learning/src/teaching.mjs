@@ -1,9 +1,9 @@
 import {randomUUID} from 'node:crypto'
 export const teachingSkill='personal-learning-teach'
 /** The HTTP application boundary serializes every command sharing global state. */
-export function createLearningDispatcher(app,teacher,requests,courses,maps,evidence){
+export function createLearningDispatcher(app,teacher,requests,courses,maps,evidence,continuation){
  let queue=Promise.resolve()
- return (body,execution)=>{const result=queue.then(()=>execution?(body.kind==='feedback'?evidence.feedback(body,execution.agent?.session?.id):body.kind==='map'?maps.submit(body,execution.agent?.session?.id):courses.submit(body,execution.agent?.session?.id)):body?.action?.startsWith('evidence-')?evidence.request(body):body?.action?.startsWith('map-')?maps.request(body):body?.action?.startsWith('course-')?courses.request(body):body?.action?.startsWith('request-')?requests.request(body):body?.action==='teaching-workspaces'?teacher.workspaces():body?.action==='teaching-open'?teacher.open(body.instanceId,body.workspaceId):app.request(body));queue=result.catch(()=>{});return result}
+ return (body,execution)=>{const result=queue.then(()=>execution?(body.kind==='feedback'?evidence.feedback(body,execution.agent?.session?.id):body.kind==='map'?maps.submit(body,execution.agent?.session?.id):courses.submit(body,execution.agent?.session?.id)):body?.action?.startsWith('continuation-')?continuation.request(body):body?.action?.startsWith('evidence-')?evidence.request(body):body?.action?.startsWith('map-')?maps.request(body):body?.action?.startsWith('course-')?courses.request(body):body?.action?.startsWith('request-')?requests.request(body):body?.action==='teaching-workspaces'?teacher.workspaces():body?.action==='teaching-open'?teacher.open(body.instanceId,body.workspaceId):app.request(body));queue=result.catch(()=>{});return result}
 }
 export function createTeaching(ctx,storage){
  let queue=Promise.resolve()
