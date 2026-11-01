@@ -1,3 +1,4 @@
+import {nativeRequestState} from './native-request-state.mjs'
 import {randomUUID} from 'node:crypto'
 const text=(v,max=8000)=>{if(typeof v!=='string'||v.length>max)throw Error('教学内容无效');return v}
 function sources(rows){if(!Array.isArray(rows)||rows.length>8)throw Error('资料数量无效');return rows.map(r=>{const url=text(r.url,2000);if(url&&!/^https?:\/\//i.test(url))throw Error('资料链接需要 HTTP(S)');return {title:text(r.title,200),url,text:text(r.text,4000)}})}
@@ -5,7 +6,7 @@ export function createRequests(ctx,storage){return {async request(body){
  const state=await storage.read(),instance=state.instances.find(i=>i.id===body.instanceId)
  if(!instance)throw Error('教学请求归属不符')
  state.requests??=[]
- if(body.action==='request-list')return structuredClone(state.requests.filter(r=>r.instanceId===instance.id))
+ if(body.action==='request-list'){const rows=state.requests.filter(r=>r.instanceId===instance.id);for(const row of rows){if(!row.requestId||!ctx.sessionController.resolveAgent)continue;try{const result=await ctx.sessionController.resolveAgent(row.sessionId);if(result.agent){row.nativeStatus=nativeRequestState(result.agent.session.snapshotEvents(),row.requestId);row.artifactStatus=state.courses?.some(c=>c.requestId===row.id)?'available':'not-submitted'}}catch{row.nativeStatus='unknown'}}await storage.write(state);return structuredClone(rows)}
  const binding=state.bindings?.find(b=>b.instanceId===instance.id&&b.phase==='ready')
  if(!binding||!await ctx.sessionPersistence.stat(binding.sessionId))throw Error('请先打开原生教学会话')
  let row
@@ -39,3 +40,4 @@ export function createRequests(ctx,storage){return {async request(body){
  }
  await storage.write(state);return structuredClone(row)
 }}}
+
