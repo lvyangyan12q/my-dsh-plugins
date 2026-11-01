@@ -9,6 +9,12 @@ export function createRequests(ctx,storage){return {async request(body){
  const binding=state.bindings?.find(b=>b.instanceId===instance.id&&b.phase==='ready')
  if(!binding||!await ctx.sessionPersistence.stat(binding.sessionId))throw Error('请先打开原生教学会话')
  let row
+ if(body.action==='request-followup'){
+  const course=state.courses?.find(c=>c.id===body.courseId&&c.instanceId===instance.id&&c.version===body.courseVersion)
+  if(!course)throw Error('课程不存在、版本变化或不属于当前学习实例')
+  const question=text(body.text,4000),experiment=text(body.experiment,2000)
+  row={id:randomUUID(),instanceId:instance.id,sessionId:binding.sessionId,revision:1,status:'prepared',text:`围绕课程「${course.title}」v${course.version}追问。\n概念：${course.concepts.join('、')}\n学习者描述的实验状态（未经自动验证）：${experiment}\n问题：${question}`,sources:structuredClone(course.sources),courseId:course.id,courseVersion:course.version};state.requests.push(row);await storage.write(state);return structuredClone(row)
+ }
  if(body.action==='request-prepare'){
   row={id:randomUUID(),instanceId:instance.id,sessionId:binding.sessionId,revision:1,status:'prepared',text:text(body.text),sources:sources(body.sources??[])};state.requests.push(row)
  }else{
