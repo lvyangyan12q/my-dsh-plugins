@@ -1,9 +1,9 @@
 import {randomUUID} from 'node:crypto'
 export const teachingSkill='personal-learning-teach'
 /** The HTTP application boundary serializes every command sharing global state. */
-export function createLearningDispatcher(app,teacher){
+export function createLearningDispatcher(app,teacher,requests){
  let queue=Promise.resolve()
- return body=>{const result=queue.then(()=>body?.action==='teaching-workspaces'?teacher.workspaces():body?.action==='teaching-open'?teacher.open(body.instanceId,body.workspaceId):app.request(body));queue=result.catch(()=>{});return result}
+ return body=>{const result=queue.then(()=>body?.action?.startsWith('request-')?requests.request(body):body?.action==='teaching-workspaces'?teacher.workspaces():body?.action==='teaching-open'?teacher.open(body.instanceId,body.workspaceId):app.request(body));queue=result.catch(()=>{});return result}
 }
 export function createTeaching(ctx,storage){
  let queue=Promise.resolve()
