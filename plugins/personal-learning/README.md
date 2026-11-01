@@ -14,3 +14,7 @@
 - 测试通过公开应用命令边界验证创建、重开恢复、无效输入不产生实例；存储设施是内存替身，未证明真实磁盘重启。
 - 宿主和客户端 bundle 构建通过。
 - 独立菜单注册与 storageDomain 适配已实现；真实安装、浏览器菜单与重启持久化验收待整体集成环境。没有伪装教学或生成成功。
+
+## Ticket 02 evidence
+
+Public application switching test followed red → green. Three tests pass, including a rendered Studio selector/remount test backed by the real application command boundary and substitute storage/fetch. Host/client build passes. Instances remain distinct and views only reopen existing identity. Real installed DSH multi-view/restart acceptance remains pending.
