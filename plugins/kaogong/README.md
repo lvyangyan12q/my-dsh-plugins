@@ -1,6 +1,6 @@
 # 考公学习插件
 
-独立版本 `0.3.0-rc.3.1`，运行于官方 DSH Web `0.2.1-rc.3`，不需要安装或启用 Worktable。实现状态及准确包验收记录见仓库中的[工单索引](docs/tickets/README.md)和[最终验收](docs/evidence/07-final-acceptance.md)。历史 rc.3.7 仅为旧适配基线。
+独立版本 `0.3.1-alpha.2.1`，面向官方 DSH Web `0.2.2-alpha.2`（`f3803c9`），不需要安装或启用 Worktable，也可与工作台在同一配置中保留各自入口。本次升级范围与验证记录见[新版宿主适配](docs/evidence/08-alpha2-upgrade.md)。旧 `0.3.0-rc.3.1` 的 rc.3 发行包及[历史验收](docs/evidence/07-final-acceptance.md)保留回退，不将其证据当作 alpha.2 实装通过。
 
 原生侧栏的“考公学习”提供学习总览、学习计划、练习训练、错题与复习、学习进度、资料库。课堂使用完整 Native 对话及原生右侧学习面板，保留模型、轨迹、提问、审批和 Stop，只有一个聊天输入框。班主任、科目老师与辅导员使用标准 preset 和私有 Persona/kaogong-teach Skill；普通会话不能访问档案数据。
 
