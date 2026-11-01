@@ -7,6 +7,14 @@ export function createApplication(storage){
   const next=queue.then(async()=>{
    const state=await storage.read()
    if(body===undefined)return structuredClone(state)
+   if(body?.action==='open'){
+    if(Object.keys(body).some(key=>!['action','instanceId'].includes(key)))throw Error('学习请求包含未知字段')
+    const instance=state.instances.find(row=>row.id===body.instanceId)
+    if(!instance)throw Error('学习实例不存在')
+    state.lastInstanceId=instance.id
+    await storage.write(state)
+    return structuredClone(instance)
+   }
    if(!body||body.action!=='create')throw Error('未知学习操作')
    if(Object.keys(body).some(key=>!['action','title','goal','priorKnowledge'].includes(key)))throw Error('学习请求包含未知字段')
    for(const [key,label,max] of [['title','名称',200],['goal','学习目标',8000],['priorKnowledge','已有基础',8000]]){
