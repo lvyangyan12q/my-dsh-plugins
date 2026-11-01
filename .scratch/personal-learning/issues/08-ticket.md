@@ -6,23 +6,22 @@
 
 **Blocked by:** 06 真实交互课程生成
 
-**Status:** in-progress
+**Status:** complete
 
 **Triage:** ready-for-agent
 
 **Implementation:** implemented
 
-**Acceptance:** partially-verified
+**Acceptance:** verified-installed-native
 
 **Confirmed:** DSH 独立菜单，工作台非必需；A 工作室主界面、B 地图导航、C 不纳入首版。真实 DSH 用户流程为主验收边界。
 
-- [ ] 编辑当前课程、参数和疑问后发往原生会话，补充解释后返回课程。
-- [ ] 经公开用户行为入口验证本票；记录真实与替身边界。
-- [ ] 实例归属正确，刷新恢复适用数据；不影响其他应用。
-- [ ] 相关失败状态可理解；演示数据不冒充真实生成。
+- [x] 编辑当前课程、参数和疑问后发往原生会话，补充解释后返回课程。
+- [x] 经公开用户行为入口验证本票；记录真实与替身边界。
+- [x] 实例归属正确，刷新恢复适用数据；不影响其他应用。
+- [x] 相关失败状态可理解；演示数据不冒充真实生成。
 
 ## Evidence
 
-上下文与受控参数快照自动化通过，原生比较请求发送及停止已验证；完整补课解释返回与真实生成课程参数恢复尚无独立完整证据，保持未关闭。
+[最终安装证据](../../../plugins/personal-learning/INSTALLED-EVIDENCE.md) 的 Final-package follow-up and supported-parameter acceptance 记录最终包真实追问、原生补充解释、返回同课，以及进程重启后真实HTML参数100/40/29恢复。最终包6ebc97432f82e763fe9a61a441ade9f6c7fa9d310d52aad6a8ec1c6970fb8feb，代码1d05fc0；不以自动化替代此处实际宿主证据。
 
-[最终安装证据](../../../plugins/personal-learning/INSTALLED-EVIDENCE.md)。最终代码1d05fc0，20项自动化通过；实际模型与边界检查范围50f203b，最终安装和导航恢复范围1d05fc0。自动化覆盖不等于所有宿主路径实测。
