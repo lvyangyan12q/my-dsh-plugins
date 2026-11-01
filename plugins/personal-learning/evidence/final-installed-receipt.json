@@ -1,0 +1,14 @@
+{
+  "archive": "C:\\Users\\pc-zzy\\AppData\\Local\\Temp\\personal-learning-installed-8dZnpv\\deepseek-ai-dsh-tool-personal-learning-0.1.0-alpha.1.tgz",
+  "sha256": "6ebc97432f82e763fe9a61a441ade9f6c7fa9d310d52aad6a8ec1c6970fb8feb",
+  "officialInstall": true,
+  "hostActivation": true,
+  "persistenceRestart": true,
+  "warnings": [
+    "ui-file-actions (@deepseek-ai/dsh-client-ui-file-actions)",
+    "ui-context-menu (@deepseek-ai/dsh-client-ui-context-menu)"
+  ],
+  "modelInvocation": false,
+  "browserUI": false,
+  "root": "C:\\Users\\pc-zzy\\AppData\\Local\\Temp\\personal-learning-installed-8dZnpv"
+}
