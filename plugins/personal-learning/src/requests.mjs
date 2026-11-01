@@ -14,6 +14,15 @@ export function createRequests(ctx,storage){return {async request(body){
  }else{
   row=state.requests.find(r=>r.id===body.id&&r.instanceId===instance.id)
   if(!row||row.sessionId!==binding.sessionId)throw Error('教学请求归属不符')
+  if(body.action==='request-withdraw'){
+   if(row.revision!==body.revision||!['prepared','accepted','unknown'].includes(row.status))throw Error('请求已变化')
+   row.status='withdrawn';row.revision++;row.notice='已撤回此请求的课程接收。原生会话可能仍在运行；如需停止，请使用原生 Stop。';await storage.write(state);return structuredClone(row)
+  }
+  if(body.action==='request-retry'){
+   if(row.status!=='withdrawn'||row.revision!==body.revision)throw Error('请先明确撤回旧请求，未知结果不会自动重发')
+   const existing=state.requests.find(r=>r.retryOf===row.id);if(existing)return structuredClone(existing)
+   const retry={id:randomUUID(),instanceId:row.instanceId,sessionId:row.sessionId,revision:1,status:'prepared',text:row.text,sources:structuredClone(row.sources),retryOf:row.id};state.requests.push(retry);await storage.write(state);return structuredClone(retry)
+  }
   if(row.status!=='prepared'||row.revision!==body.revision)throw Error('请求已变化或结果未知，不会重发')
   if(body.action==='request-edit'){row.text=text(body.text);row.sources=sources(body.sources);row.revision++}
   else if(body.action==='request-send'){
