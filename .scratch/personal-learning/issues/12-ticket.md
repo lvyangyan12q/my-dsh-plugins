@@ -12,7 +12,7 @@
 
 **Implementation:** implemented
 
-**Acceptance:** pending-native-browser
+**Acceptance:** partially-verified
 
 **Confirmed:** DSH 独立菜单，工作台非必需；A 工作室主界面、B 地图导航、C 不纳入首版。真实 DSH 用户流程为主验收边界。
 
@@ -23,5 +23,6 @@
 
 ## Evidence
 
-实现已集成；公开应用边界及真实宿主声明测试通过。已完成隔离官方安装、认证 HTTP 创建与进程重启持久化验证。真实模型生成、原生 Stop/审批及浏览器窄窗格尚未验收，不关闭本票。
+最终真实安装验证 A/B 位置与课程、反馈、地图重启恢复；推荐理由与支持参数由自动化验证，真实生成课程编辑参数后的恢复尚无独立完整证据，保持未关闭。
 
+[最终安装证据](../../../plugins/personal-learning/INSTALLED-EVIDENCE.md)。最终代码1d05fc0，20项自动化通过；实际模型与边界检查范围50f203b，最终安装和导航恢复范围1d05fc0。自动化覆盖不等于所有宿主路径实测。

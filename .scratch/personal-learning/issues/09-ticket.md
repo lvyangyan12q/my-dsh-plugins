@@ -6,22 +6,23 @@
 
 **Blocked by:** 05 固定交互样课
 
-**Status:** in-progress
+**Status:** complete
 
 **Triage:** ready-for-agent
 
 **Implementation:** implemented
 
-**Acceptance:** pending-native-browser
+**Acceptance:** verified-mixed-boundaries
 
 **Confirmed:** DSH 独立菜单，工作台非必需；A 工作室主界面、B 地图导航、C 不纳入首版。真实 DSH 用户流程为主验收边界。
 
-- [ ] 标注示例地图，区分关系类型，节点进入课程并返回保持选中。
-- [ ] 经公开用户行为入口验证本票；记录真实与替身边界。
-- [ ] 实例归属正确，刷新恢复适用数据；不影响其他应用。
-- [ ] 相关失败状态可理解；演示数据不冒充真实生成。
+- [x] 标注示例地图，区分关系类型，节点进入课程并返回保持选中。
+- [x] 经公开用户行为入口验证本票；记录真实与替身边界。
+- [x] 实例归属正确，刷新恢复适用数据；不影响其他应用。
+- [x] 相关失败状态可理解；演示数据不冒充真实生成。
 
 ## Evidence
 
-实现已集成；公开应用边界及真实宿主声明测试通过。已完成隔离官方安装、认证 HTTP 创建与进程重启持久化验证。真实模型生成、原生 Stop/审批及浏览器窄窗格尚未验收，不关闭本票。
+示例节点、课程跳转及返回选择由公开 UI 自动化验证；真实 B 地图与 A 导航通过。
 
+[最终安装证据](../../../plugins/personal-learning/INSTALLED-EVIDENCE.md)。最终代码1d05fc0，20项自动化通过；实际模型与边界检查范围50f203b，最终安装和导航恢复范围1d05fc0。自动化覆盖不等于所有宿主路径实测。
