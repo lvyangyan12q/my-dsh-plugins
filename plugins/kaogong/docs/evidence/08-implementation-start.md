@@ -25,3 +25,13 @@
 静态核对发现源码 Scope 候选发现仍限制旧版本范围，alpha.3 源码入口可能被拒绝；编译入口 probe 的实际结果需单独验证。精确依赖和公开声明也需重新核对。不能仅改 engines 或增加版本豁免。
 
 宿主源码及正式 home 未修改，未启动 3080，未执行模型或准确包验收。后续票 08 必须记录实际宿主与最终包组合，公开接口验证失败时保留真实阻塞。
+
+## 改版前源码回归实测
+
+在集成分支业务源码尚未改变时，以上述 alpha.3 目录作为 `DSH_SOURCE`：
+
+- `node scripts/test-current.mjs --host`：46 项中 45 通过，1 失败。失败为原生角色集成测试，HTTP 409，`NATIVE_ROLE_SCOPE_RUNTIME_UNRECOGNIZED`，尚未到真实模型交互。
+- `node scripts/test-current.mjs --client`：25/25 通过。
+- Host/client 官方声明检查均在前置校验处失败：宿主缺少 `packages/mcp/mcp-client/lib/types/types.d.ts`，尚未进入插件类型检查。需后续核对新版官方构建与声明路径，不能将本结果记为类型检查通过。
+
+这些是改版前基线，不是 03 或后续工单验收。原生失败已复现，不能以版本声明豁免掩盖；未切换正式实例或安装任何新包。
