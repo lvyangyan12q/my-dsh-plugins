@@ -402,6 +402,8 @@ test('error occurrences survive a later correct round and require explicit enrol
   for(const key of ['correctAnswer','explanation','userAnswer','notes','errorReason'])assert.equal(key in concealed,false)
   const attempt=(await app.request(url,{action:'answer',id:item.id,answer:'B',requestId:'review-attempt-one',earlyConfirmed:true})).value
   assert.equal(attempt.correct,true)
+  const revealed=(await app.request(url+'&mode=review')).value.occurrences[0]
+  assert.equal(revealed.correctAnswer,'B');assert.equal(revealed.review.history.length,1);assert.equal(revealed.review.history[0].id,attempt.id)
   assert.equal((await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:false})).status,409)
   assert.equal((await app.request(url)).value.occurrences[0].review.stage,0)
   const confirmed=(await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:true})).value
