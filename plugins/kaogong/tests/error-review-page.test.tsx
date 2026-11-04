@@ -16,11 +16,12 @@ test('learner reviews historical errors with explicit queue and completion confi
   return new Response(JSON.stringify({occurrences:[occurrence],queue:{total:occurrence.review?1:0,due:0}}))
  }
  const {createRoot}=await import('react-dom/client')
- const root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
+ let root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
  try{
   const {ErrorReviewPanel}=await import('../src/error-review-panel.tsx')
   const {KaogongTransportContext}=await import('../src/view-context.tsx')
-  await act(async()=>root.render(<KaogongTransportContext.Provider value={{instanceId:'profile-one',fetch:(input:any,init:any)=>fetch(input,init),url:(input:any)=>input} as any}><ErrorReviewPanel onPlan={()=>{planOpened++}}/></KaogongTransportContext.Provider>))
+  const render=()=>act(async()=>root.render(<KaogongTransportContext.Provider value={{instanceId:'profile-one',fetch:(input:any,init:any)=>fetch(input,init),url:(input:any)=>input} as any}><ErrorReviewPanel onPlan={()=>{planOpened++}}/></KaogongTransportContext.Provider>))
+  await render()
   assert.match(document.body.textContent??'',/原题第一项是2.*原作答：A.*答案：B/s)
   const click=async(text:string)=>act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent===text)!.click())
   await click('加入复习队列')
@@ -41,7 +42,14 @@ test('learner reviews historical errors with explicit queue and completion confi
   assert.equal(commands.at(-1).requestId,originalRequest)
   const textarea=document.querySelector('textarea')!
   await act(async()=>{const setter=Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value')!.set!;setter.call(textarea,'本次读清第一项');textarea.dispatchEvent(new dom.window.Event('input',{bubbles:true}));textarea.dispatchEvent(new dom.window.Event('change',{bubbles:true}))})
+  await act(async()=>root.unmount());root=createRoot(document.getElementById('root')!);await render();await click('开始错题复习')
+  assert.equal(document.querySelector('textarea')!.value,'本次读清第一项')
+  const oldDraftKeys=Object.keys(dom.window.localStorage)
+  dom.window.localStorage.setItem('unrelated-profile-draft','keep')
   await click('确认本次复习完成')
+  assert.equal(dom.window.localStorage.getItem('unrelated-profile-draft'),'keep')
+  for(const key of oldDraftKeys)assert.equal(dom.window.localStorage.getItem(key),null)
+  assert.equal((document.querySelector('input[value="B"]')as HTMLInputElement)?.checked??false,false)
   assert.equal(commands.at(-1).action,'confirm')
   assert.match(document.body.textContent??'',/第1阶段/)
   await click('预览加入学习计划')
@@ -86,4 +94,33 @@ test('kept-mounted review views isolate radio groups for the same occurrence',as
   assert.equal(visible[1].checked,true,'hidden review does not uncheck the visible review answer')
   await act(async()=>visible[0].click());assert.equal(visible[0].checked,true);assert.equal(visible[1].checked,false);assert.equal(hidden[0].checked,true)
  }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
+})
+
+
+test('review drafts and late commands stay with their profile across fresh mounts',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map()
+ for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true})){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})}
+ const {createRoot}=await import('react-dom/client'),{ErrorReviewPanel}=await import('../src/error-review-panel.tsx'),{KaogongTransportContext}=await import('../src/view-context.tsx')
+ let root=createRoot(document.getElementById('root')!),finish:((r:Response)=>void)|undefined
+ const item=(stem:string)=>({id:'same',questionId:'q',roundId:'r',subject:stem,knowledgePoint:'考点',stem,options:['A. 一','B. 二'],source:'测试',explanation:'解析',correctAnswer:'B',userAnswer:'A',notes:'',errorReason:'',submittedAt:'2026-01-01',review:{stage:0,status:'scheduled',dueAt:'2099-01-01',history:[]}})
+ let posts=0
+ const transport=(id:string)=>({instanceId:id,url:(s:string)=>s,fetch:async(_s:string,init?:RequestInit)=>{if(init?.body){posts++;return await new Promise<Response>(resolve=>{finish=resolve})}return new Response(JSON.stringify({occurrences:[item('题目'+id)]}))}})
+ const a=transport('A'),b=transport('B')
+ const render=async(t:any)=>act(async()=>root.render(<KaogongTransportContext.Provider value={t}><ErrorReviewPanel/></KaogongTransportContext.Provider>))
+ const click=async(text:string)=>act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent===text)!.click())
+ try{
+  await render(a);await click('开始错题复习');await click('提前复习');await act(async()=>(document.querySelector('input[value="B"]')as HTMLInputElement).click())
+  await render(b)
+  assert.doesNotMatch(document.body.textContent??'',/题目A/)
+  if([...document.querySelectorAll('button')].some(b=>b.textContent==='开始错题复习'))await click('开始错题复习')
+  assert.equal(!!document.querySelector('input[type=radio]'),false,'B never inherits A early consent')
+  await act(async()=>root.unmount());root=createRoot(document.getElementById('root')!)
+  await render(a);await click('开始错题复习')
+  assert.equal((document.querySelector('input[value="B"]')as HTMLInputElement).checked,true)
+  await click('提交本次复习作答');assert.equal(posts,1)
+  await render(b)
+  await act(async()=>finish!(new Response('{}')))
+  assert.doesNotMatch(document.body.textContent??'',/题目A/)
+  assert.match(document.body.textContent??'',/题目B/)
+ }finally{await act(async()=>root.unmount());dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
