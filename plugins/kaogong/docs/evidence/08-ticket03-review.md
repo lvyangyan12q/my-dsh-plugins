@@ -20,6 +20,8 @@
 
 ## 限制
 
+集成复核：修复合入 `7a4c52c` 后再次运行完整 Host，45/46 通过；唯一失败仍是改版前 alpha.3 原生 Scope 身份拒绝，无新增 Host 回归。client 26/26 已在同步集成的实现分支通过。工单状态为 implemented-pending-release-acceptance，不关闭父规格。
+
 未运行准确发行包浏览器验收或真实 Native 模型矩阵，这些属于08。父线程记录当前 alpha.3 的既有 Native runtime guard 失败和官方声明产物缺失，不将其报告为本票引入，也不绕过 guard。未启动3080、未修改其他插件或真实数据。
 
 ## 集成审查修正

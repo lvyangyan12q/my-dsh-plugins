@@ -6,7 +6,7 @@
 
 **Blocked by:** None (无实施票依赖)
 
-**Status:** implemented-pending-integration-review
+**Status:** implemented-pending-release-acceptance
 
 **Acceptance criteria:**
 
@@ -17,4 +17,4 @@
 
 **验证约定：** 沿用已确认的 Host、Native、页面确认与准确发行包测试边界；只记录实际执行结果。保留档案隔离、资料授权、真实评分与历史快照。按批准原型实现本票对应交互，验收证据完成前不勾选。
 
-**Evidence:** [实现与测试证据](../../../docs/evidence/08-ticket03-review.md)。源码与公开边界测试完成；集成审查及准确发行包验收尚未完成，不据此关闭父规格。
+**Evidence:** [实现与测试证据](../../../docs/evidence/08-ticket03-review.md)。源码与公开边界测试完成，集成审查发现的档案与迟到响应问题已修复并合入 7a4c52c；准确发行包验收尚未完成，保留验收勾选待最终实装复核，不关闭父规格。
