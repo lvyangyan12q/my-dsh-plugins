@@ -6,7 +6,7 @@
 
 **Blocked by:** None (无实施票依赖)
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-integration-review
 
 **Acceptance criteria:**
 
@@ -16,3 +16,5 @@
 - [ ] 保留历史模式答案可见的旧测试，新增复习模式揭示前不返回答案的公开接口测试。
 
 **验证约定：** 沿用已确认的 Host、Native、页面确认与准确发行包测试边界；只记录实际执行结果。保留档案隔离、资料授权、真实评分与历史快照。按批准原型实现本票对应交互，验收证据完成前不勾选。
+
+**Evidence:** [实现与测试证据](../../../docs/evidence/08-ticket03-review.md)。源码与公开边界测试完成；集成审查及准确发行包验收尚未完成，不据此关闭父规格。
