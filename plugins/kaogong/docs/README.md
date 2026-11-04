@@ -1,5 +1,7 @@
 # 考公独立学习闭环
 
+当前新增工作：[学习与复习体验改版规格](tickets/08-learning-review-experience-spec.md)（2026-11-04，open，ready-for-agent），依据已批准的第二版 Open Design 原型；替代旧页面布局并补齐学习路线与知识点复习，继承独立版数据与原生边界。下文交付状态为历史基线，不表示本轮改版完成。
+
 当前状态：2026-10-28，00—07均closed。独立Host/原生入口、档案、计划任务、轮次统计、错题复习与AI页面确认已实现并完成真实无Worktable学习闭环、模型及恢复矩阵。正式新增`kaogong-standalone`，原web保留；E3在原home的独立profile原位升级，旧资料证明、凭据、Session及原成绩保留。准确包、字节等价说明与人工IME/资料限制见[最终验收](evidence/07-final-acceptance.md)。
 
 - [交接说明](HANDOFF.md)：已确认决策、现场、授权及下一步。
