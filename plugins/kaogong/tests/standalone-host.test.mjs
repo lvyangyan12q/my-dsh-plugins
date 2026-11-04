@@ -398,6 +398,8 @@ test('error occurrences survive a later correct round and require explicit enrol
   assert.equal((await app.request(url,{action:'enroll',id:item.id})).status,409)
   const enrolled=(await app.request(url,{action:'enroll',id:item.id,confirmed:true})).value
   assert.equal(enrolled.stage,0);assert.equal(enrolled.status,'scheduled');assert.equal(Date.parse(enrolled.dueAt)-Date.parse(enrolled.enrolledAt),86400000)
+  const concealed=(await app.request(url+'&mode=review')).value.occurrences[0]
+  for(const key of ['correctAnswer','explanation','userAnswer','notes','errorReason'])assert.equal(key in concealed,false)
   const attempt=(await app.request(url,{action:'answer',id:item.id,answer:'B',requestId:'review-attempt-one',earlyConfirmed:true})).value
   assert.equal(attempt.correct,true)
   assert.equal((await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:false})).status,409)
@@ -405,6 +407,11 @@ test('error occurrences survive a later correct round and require explicit enrol
   const confirmed=(await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:true})).value
   assert.equal(confirmed.stage,1);assert.equal(confirmed.history.length,1);assert.equal(Date.parse(confirmed.dueAt)-Date.parse(confirmed.history[0].confirmedAt),259200000)
   assert.equal((await app.request(url,{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:true})).value.stage,1)
+  const nextCycle=(await app.request(url+'&mode=review')).value.occurrences[0]
+  assert.equal('correctAnswer' in nextCycle,false);assert.deepEqual(nextCycle.review.history,[])
+  const replay=(await app.request(url+'&mode=review',{action:'confirm',id:item.id,attemptId:attempt.id,reflection:'这次读清题目',confirmed:true})).value
+  assert.equal('history' in replay,false)
+
   assert.equal((await app.request('/api/kaogong/dashboard?viewId='+viewId)).value.reviewQueue.total,1)
   assert.equal((await app.request(url+'&status=not-enrolled')).value.occurrences.length,0)
   assert.equal((await app.request(url+'&errorReason='+encodeURIComponent('审题不清'))).value.occurrences.length,1)
