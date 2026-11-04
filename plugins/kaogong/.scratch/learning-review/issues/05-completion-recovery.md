@@ -4,11 +4,11 @@
 
 **What to build:** 课堂任务面板集中展示依据、总结、缺项和可选复习，学习者确认后收到准确回执；发生部分成功时继续完成剩余步骤。
 
-**Blocked by:** 01：从今日继续同一项真实任务、04：知识点主动回忆完整闭环；决策门槛：完成与部分成功恢复合同尚未定稿
+**Blocked by:** 01：从今日继续同一项真实任务、04：知识点主动回忆完整闭环
 
 **Status:** ready-for-agent
 
-**Decision gate:** [完成与部分成功恢复合同](../../../docs/wayfinder/learning-review/issues/04-completion-contract.md) 仍开放；本次生成仅批准拆分，不关闭决策。门槛完成后才可执行本票。
+**Decision gate:** 2026-11-05 已定稿，见对应决策票 Resolution；实施仍须满足本票依赖。
 
 **Acceptance criteria:**
 

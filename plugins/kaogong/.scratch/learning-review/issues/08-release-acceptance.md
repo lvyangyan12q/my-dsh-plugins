@@ -4,11 +4,11 @@
 
 **What to build:** 在临时独立 home 安装准确发行包，完成完整学习和两类复习路径，并验证重启、原位升级/重装及共存边界，形成可复核交付记录。
 
-**Blocked by:** 07：从真实学习进度调整未来安排；决策门槛：交付路径尚未定稿
+**Blocked by:** 07：从真实学习进度调整未来安排
 
 **Status:** ready-for-agent
 
-**Decision gate:** [交付路径](../../../docs/wayfinder/learning-review/issues/06-delivery-path.md) 仍开放；本次生成仅批准拆分，不关闭决策。门槛完成后才可执行本票。
+**Decision gate:** 2026-11-05 已定稿，见对应决策票 Resolution；实施仍须满足本票依赖。
 
 **Acceptance criteria:**
 

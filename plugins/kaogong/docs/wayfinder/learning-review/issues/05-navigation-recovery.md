@@ -2,7 +2,7 @@
 id: kg-navigation-recovery
 title: 四个页面怎样共享同一任务并恢复学习现场
 parent: kaogong-learning-review-map
-status: open
+status: closed
 labels: [wayfinder:grilling]
 assignee: null
 blocked_by: [kg-review-contract, kg-completion-contract]
@@ -17,3 +17,9 @@ blocked_by: [kg-review-contract, kg-completion-contract]
 推荐提取统一开始/恢复编排、业务状态归档案、展示状态归视图；保留唯一原生输入框与现有 Session，旧导航偏好提供兼容映射。资料、自由练习、模考自报与角色管理作为次级入口仍须可达。
 
 关闭需要：用户核对默认继续和返回路径、状态归属表、旧偏好兼容和窄屏右栏行为；视觉复用已批准原型，不重做整轮原型评审。
+
+## Resolution
+
+2026-11-05：用户明确确认默认继续当前档案最近操作且可恢复的未完成任务。允许用户改选；失效记录说明原因并回任务列表，不静默改开其他任务或会话。同一任务从今日、路线和复习入口恢复同一课堂/轮次/周期。
+
+业务记录和未提交业务草稿按档案与任务归属；筛选、滚动与页面展示按视图恢复。跨档案不得继承答案或角色。旧导航偏好映射到新入口，资料、自由练习、外部模考和角色管理继续可达。窄屏与原生右栏遵守已批准原型，保留唯一原生输入框与原 Session。

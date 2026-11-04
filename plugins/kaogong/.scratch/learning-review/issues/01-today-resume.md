@@ -4,11 +4,11 @@
 
 **What to build:** 今日显示真实任务与继续入口，进入任务所属原生课堂或练习；返回、刷新继续同一记录和草稿。先在此窄路径内提取共用开始/恢复操作，再接新页面，不新增另一套课堂服务。
 
-**Blocked by:** None (无实施票依赖)；决策门槛：导航恢复合同尚未定稿
+**Blocked by:** None (无实施票依赖)
 
 **Status:** ready-for-agent
 
-**Decision gate:** [导航恢复合同](../../../docs/wayfinder/learning-review/issues/05-navigation-recovery.md) 仍开放；本次生成仅批准拆分，不关闭决策。门槛完成后才可执行本票。
+**Decision gate:** 2026-11-05 已定稿，见对应决策票 Resolution；实施仍须满足本票依赖。
 
 **Acceptance criteria:**
 

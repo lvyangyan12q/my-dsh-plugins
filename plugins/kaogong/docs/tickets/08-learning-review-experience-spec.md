@@ -6,7 +6,7 @@ labels: [ready-for-agent]
 assignee: null
 blocked_by: []
 created: 2026-11-04
-execution_readiness: pending-decisions
+execution_readiness: ready
 ---
 
 ## Problem Statement
@@ -135,6 +135,10 @@ execution_readiness: pending-decisions
 - 评审预览：[第二版原型](http://127.0.0.1:7456/api/projects/kaogong-ui-20261104/raw/kaogong-study-plugin.html)。本地服务地址不是永久托管；已在仓库外保存批准版本快照，SHA256：`aa85342df6e18b85f5770c97f5b4e1bf8f7a7d65569011575417bff4af2d9540`。实施前核对该版本，避免可变预览覆盖评审依据。
 - Open Design 报告结构、语法和三组原型交互走查通过；本轮另核实预览 HTTP 200 以及新增页面存在。这些不是正式插件的实装或人工视觉验收。
 - 当前源码包版本为 `0.3.1-alpha.2.1`，既有 alpha.2 适配记录仍有独立列出的未验范围。本规格不关闭这些缺口，也不继承其通过结论作为新版证据。
-- 跟踪方式遵守仓库已选定的本地编号 Markdown 工单；本文件是本次增量规格唯一正文，标签 `ready-for-agent` 表示规格已进入本地跟踪器，不解除 `execution_readiness: pending-decisions` 的执行限制。原工单 00—07 保留历史状态。已确认规则来源于决策地图中关闭的前三票；后续决策仍开放，不将本次文档更新当作决策关闭或实施完成。
+- 跟踪方式遵守仓库已选定的本地编号 Markdown 工单；本文件是本次增量规格唯一正文，标签 `ready-for-agent` 表示规格已进入本地跟踪器，不解除 `execution_readiness: ready` 的执行限制。原工单 00—07 保留历史状态。已确认规则来源于决策地图中关闭的前三票；后续决策仍开放，不将本次文档更新当作决策关闭或实施完成。
 
 - 决策来源：[路线与覆盖](../wayfinder/learning-review/issues/01-route-identity.md)、[队列与计划](../wayfinder/learning-review/issues/02-queue-plan.md)、[复习推进](../wayfinder/learning-review/issues/03-review-contract.md)。待定项见[决策地图](../wayfinder/learning-review/map.md)；本轮[实施切片草案](08-implementation-breakdown-draft.md)尚待用户评审，未发布独立实施票。
+
+### 2026-11-05 决策定稿
+
+用户明确回复“按此合同实施”：默认继续当前档案最近操作的可恢复未完成任务；业务状态按档案、筛选和滚动按视图恢复；唯一匹配依据自动关联、多轮显示候选；保留各类任务原完成条件；部分成功明确显示，重试只补未成功步骤。以上取代正文历史待定状态，执行已就绪；实现与发行验收尚未完成。八片拆分及交付门槛沿已批准实施图，决策地图关闭仅表示规划完成。

@@ -1,7 +1,7 @@
 ---
 id: kaogong-learning-review-map
 title: 考公学习与复习改版的具体实施路径
-status: open
+status: closed
 labels: [wayfinder:map]
 assignee: null
 blocked_by: []
@@ -37,3 +37,11 @@ blocked_by: []
 - 本轮执行开发、正式数据迁移、安装、发布或推送。
 - 自适应记忆算法、科学掌握率预测、外部通知和系统内限时整卷模考。
 - 已确认视觉的重复评审；仅对新增规则无法用文字判断时补充局部交互原型。
+
+## 实施交接（2026-11-05）
+
+用户已确认剩余完成/导航合同；八片实施顺序及交付边界承接已批准 tickets。决策地图关闭表示规划完成，源码及准确包验收按实施图继续。
+
+- [完成合同](issues/04-completion-contract.md)：唯一依据自动关联，保留条件差异，部分成功只补失败步骤。
+- [导航恢复](issues/05-navigation-recovery.md)：当前档案最近操作可恢复任务，业务归档案、展示归视图。
+- [交付路径](issues/06-delivery-path.md)：按已发布八片图推进，准确包独立验收与回退保护保持。
