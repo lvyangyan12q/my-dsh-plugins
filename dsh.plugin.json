@@ -1,0 +1,12 @@
+{
+  "name": "dsh-paper-reader",
+  "description": "论文与博客中英文对照阅读器：侧栏按天聚合 X / Claude Blog 列表，主面板支持中英对照、仅中文、English 三种阅读模式",
+  "version": "0.1.0",
+  "entry": {
+    "name": "dsh-paper-reader",
+    "inject": []
+  },
+  "client": {
+    "platform": "web"
+  }
+}
