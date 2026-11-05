@@ -51,7 +51,7 @@ async function fixture(options = {}) {
     await route.handler(req, res)
     return res
   }
-  return { request, tools, root, async suspend() { await stop(); await backend.close(); await context.fiber.dispose(); return root }, async close() {
+  return { request, tools, root, async seedKnowledge(instanceId, rows) { const {instanceDomainSpecs}=await import('../src/domain.ts'); const domain=await facility.open(instanceDomainSpecs(instanceId).knowledge); for(const [id,row] of Object.entries(rows)){if(row===null)await domain.table('entries').delete(id);else await domain.table('entries').put(id,row);} await domain.close(); }, async suspend() { await stop(); await backend.close(); await context.fiber.dispose(); return root }, async close() {
     await stop(); await backend.close(); await context.fiber.dispose()
     const actual = await realpath(root), base = await realpath(tmpdir())
     assert.ok(actual.toLowerCase().startsWith((base + '/').replaceAll('/', '\\').toLowerCase()) || actual.startsWith(base + '/'))
@@ -618,5 +618,115 @@ test('route continues the started point task ahead of an older pending task',asy
   assert.equal(selected.taskId,latest.id)
   const resumed=await app.request('/api/kaogong/plan/start?viewId='+view,{id:selected.taskId,revision})
   assert.equal(resumed.value.lesson.lesson.request.lessonId,start.value.lesson.lesson.request.lessonId)
+ }finally{await app.close()}
+})
+
+test('recall enrollment is confirmed, isolated and idempotent without changing coverage',async()=>{
+ const app=await fixture();try{
+ const made=await app.request('/api/kaogong/study',{action:'create',title:'回忆',kind:'learner',confirmed:true}),view=made.value.view.id,url='/api/kaogong/recall?viewId='+view;
+ const point=(await app.request('/api/kaogong/route?viewId='+view)).value.points[0];
+ assert.equal((await app.request(url)).status,200);
+ assert.equal((await app.request(url,{action:'enroll',pointId:point.id,confirmed:false})).status,409);
+ const first=await app.request(url,{action:'enroll',pointId:point.id,confirmed:true});assert.equal(first.status,200);
+ assert.equal(Date.parse(first.value.dueAt)-Date.parse(first.value.enrolledAt),86400000);
+ assert.equal((await app.request(url,{action:'enroll',pointId:point.id,confirmed:true})).value.cycleId,first.value.cycleId);
+ assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.coverage.learned,0);
+ assert.equal((await app.request('/api/kaogong/recall?viewId=foreign')).status,403);
+ }finally{await app.close()}
+});
+
+test('recall requires an attempt before reference and refuses absent authorized material',async()=>{
+ const app=await fixture();try{
+ const made=await app.request('/api/kaogong/study',{action:'create',title:'回忆边界',kind:'learner',confirmed:true}),url='/api/kaogong/recall?viewId='+made.value.view.id;
+ const row=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value;
+ assert.equal((await app.request(url,{action:'reveal',pointId:row.pointId,cycleId:row.cycleId})).status,409);
+ const attempt=await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'我记得词语应符合语境',earlyConfirmed:true});assert.equal(attempt.status,200);
+ assert.equal((await app.request(url)).value.items[0].recall,'我记得词语应符合语境');
+ assert.equal((await app.request(url,{action:'reveal',pointId:row.pointId,cycleId:row.cycleId})).status,409);
+ assert.equal((await app.request(url,{action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'forgotten',confirmed:true})).status,409);
+ }finally{await app.close()}
+});
+
+test('recall ratings advance independent cycles once after authorized reference',async()=>{
+ const app=await fixture();try{
+ const learner=(await app.request('/api/kaogong/study',{action:'create',title:'回忆',kind:'learner',confirmed:true})).value;
+ await app.seedKnowledge(learner.profile.id,{reference:{subject:'行测-言语理解与表达',knowledgePoint:'逻辑填空',title:'参考讲义',content:'原文参考：注意语境。',kind:'讲义',source:'原创合成夹具',tags:[],createdAt:'2026-01-01',updatedAt:'2026-01-01'}});
+ const url='/api/kaogong/recall?viewId='+learner.view.id;let row=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value;
+ for(const [rating,days]of [['forgotten',1],['fuzzy',3],['remembered',7]]){
+ const cycleId=row.cycleId;const current=await app.request(url);assert.equal(current.status,200,JSON.stringify(current.value));assert.equal('references' in current.value.items[0],false);
+ assert.equal((await app.request(url,{action:'answer',pointId:row.pointId,cycleId,recall:'我的本次回忆',earlyConfirmed:true})).status,200);
+ const revealed=await app.request(url,{action:'reveal',pointId:row.pointId,cycleId});assert.equal(revealed.status,200);assert.ok(revealed.value.references[0].content.length>0);
+ const body={action:'confirm',pointId:row.pointId,cycleId,rating,confirmed:true},confirmed=await app.request(url,body);assert.equal(confirmed.status,200);row=confirmed.value;
+ assert.deepEqual(row.history.at(-1).referenceIds,['reference']);assert.equal(Date.parse(row.dueAt)-Date.parse(row.history.at(-1).confirmedAt),days*86400000);assert.notEqual(row.cycleId,cycleId);
+ assert.deepEqual((await app.request(url,body)).value,row);
+ assert.equal((await app.request(url,{...body,rating:rating==='forgotten'?'fuzzy':'forgotten'})).status,409);
+ }
+ assert.equal(row.history.length,3);assert.equal((await app.request('/api/kaogong/route?viewId='+learner.view.id)).value.coverage.learned,0)
+ }finally{await app.close()}
+});
+
+
+test('recall concurrent confirms serialize and restart rechecks reference availability',async()=>{
+ let app=await fixture();try{
+ const learner=(await app.request('/api/kaogong/study',{action:'create',title:'回忆恢复',kind:'learner',confirmed:true})).value;
+ const other=(await app.request('/api/kaogong/study',{action:'create',title:'独立档案',kind:'learner',confirmed:true})).value;
+ await app.seedKnowledge(learner.profile.id,{reference:{subject:'行测-言语理解与表达',knowledgePoint:'逻辑填空',title:'本档案讲义',content:'独有参考正文',kind:'讲义',source:'原创合成夹具',tags:[],createdAt:'2026-01-01',updatedAt:'2026-01-01'}});
+ const url='/api/kaogong/recall?viewId='+learner.view.id;
+ let row=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value;
+ assert.equal((await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'内容'})).status,409);
+ const answer={action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'本人回忆',earlyConfirmed:true};
+ const answers=await Promise.all([app.request(url,answer),app.request(url,answer)]);assert.ok(answers.every(r=>r.status===200));
+ assert.equal((await app.request(url,{...answer,recall:'冲突内容'})).status,409);
+ assert.equal((await app.request(url,{action:'reveal',pointId:row.pointId,cycleId:row.cycleId})).status,200);
+ let root=await app.suspend();app=await fixture({root});
+ let resumed=(await app.request(url)).value.items[0];assert.equal(resumed.recall,'本人回忆');assert.equal(resumed.references[0].content,'独有参考正文');
+ assert.deepEqual((await app.request('/api/kaogong/recall?viewId='+other.view.id)).value.items,[]);
+ const confirm={action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'forgotten',confirmed:true};
+ const confirmations=await Promise.all([app.request(url,confirm),app.request(url,confirm)]);assert.ok(confirmations.every(r=>r.status===200));assert.deepEqual(confirmations[0].value,confirmations[1].value);row=confirmations[0].value;assert.equal(row.history.length,1);
+ await app.request(url,{...answer,cycleId:row.cycleId});await app.request(url,{action:'reveal',pointId:row.pointId,cycleId:row.cycleId});
+ root=await app.suspend();app=await fixture({root});await app.seedKnowledge(learner.profile.id,{reference:null});
+ resumed=(await app.request(url)).value.items[0];assert.equal(resumed.recall,'本人回忆');assert.deepEqual(resumed.references,[]);
+ assert.equal((await app.request(url,{...confirm,cycleId:row.cycleId})).status,409);
+ assert.equal((await app.request(url,undefined,false)).status,403);
+ }finally{await app.close()}
+})
+
+
+test('recall does not present blank lecture content as a reference',async()=>{
+ const app=await fixture();try{const learner=(await app.request('/api/kaogong/study',{action:'create',title:'空讲义',kind:'learner',confirmed:true})).value;
+ await app.seedKnowledge(learner.profile.id,{empty:{subject:'行测-言语理解与表达',knowledgePoint:'逻辑填空',title:'空讲义',content:'  ',kind:'讲义',source:'合成',tags:[],createdAt:'2026-01-01',updatedAt:'2026-01-01'}});
+ const url='/api/kaogong/recall?viewId='+learner.view.id,row=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value;
+ await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'尝试',earlyConfirmed:true});assert.equal((await app.request(url,{action:'reveal',pointId:row.pointId,cycleId:row.cycleId})).status,409);
+ }finally{await app.close()}
+})
+
+
+test('recall reveal and restored reads reauthorize a shared materials grant after revocation',async()=>{
+ const app=await fixture();try{
+ const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',title:kind,kind,confirmed:true})).value;
+ const library=await create('library'),learner=await create('learner');
+ await app.seedKnowledge(library.profile.id,{reference:{subject:'行测-言语理解与表达',knowledgePoint:'逻辑填空',title:'共享原创讲义',content:'获准共享原文',kind:'讲义',source:'原创夹具',tags:[],createdAt:'2026-01-01',updatedAt:'2026-01-01'}});
+ const grant=await app.request('/api/kaogong/study',{action:'source-share',viewId:learner.view.id,ownerViewId:library.view.id,resourceId:'materials'});assert.equal(grant.status,200);
+ const url='/api/kaogong/recall?viewId='+learner.view.id,row=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value;
+ await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'回忆内容',earlyConfirmed:true});
+ const reveal={action:'reveal',pointId:row.pointId,cycleId:row.cycleId};const shown=await app.request(url,reveal);assert.equal(shown.status,200,JSON.stringify(shown.value));assert.equal(shown.value.references[0].content,'获准共享原文');
+ assert.equal((await app.request('/api/kaogong/study',{action:'source-revoke',viewId:learner.view.id,id:grant.value.id,revision:grant.value.revision})).status,200);
+ const after=await app.request(url);assert.equal(after.status,403);assert.equal(JSON.stringify(after.value).includes('获准共享原文'),false);assert.equal((await app.request(url,reveal)).status,403);assert.equal((await app.request(url,{action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'remembered',confirmed:true})).status,403);
+ assert.equal((await app.request('/api/kaogong/study',{action:'source-share',viewId:learner.view.id,ownerViewId:library.view.id,resourceId:'materials'})).status,200);const restored=(await app.request(url)).value.items[0];assert.equal(restored.cycleId,row.cycleId);assert.equal(restored.recall,'回忆内容');assert.equal(restored.history.length,0);
+ }finally{await app.close()}
+})
+
+
+test('recall reference version change requires another deliberate reveal before confirmation',async()=>{
+ let app=await fixture();try{
+ const learner=(await app.request('/api/kaogong/study',{action:'create',title:'版本变更',kind:'learner',confirmed:true})).value;
+ const entry={subject:'行测-言语理解与表达',knowledgePoint:'逻辑填空',title:'讲义',content:'第一版参考原文',kind:'讲义',source:'合成',tags:[],createdAt:'2026-01-01',updatedAt:'2026-01-01'};
+ await app.seedKnowledge(learner.profile.id,{reference:entry});const url='/api/kaogong/recall?viewId='+learner.view.id,row=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value;
+ await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'本人回忆',earlyConfirmed:true});const reveal={action:'reveal',pointId:row.pointId,cycleId:row.cycleId};await app.request(url,reveal);
+ const root=await app.suspend();app=await fixture({root});await app.seedKnowledge(learner.profile.id,{reference:{...entry,content:'第二版已变更原文'}});
+ const confirm={action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'remembered',confirmed:true};assert.equal((await app.request(url,confirm)).status,409);
+ const changed=(await app.request(url)).value.items[0];assert.equal(changed.cycleId,row.cycleId);assert.equal(changed.history.length,0);assert.deepEqual(changed.references,[]);
+ const viewed=await app.request(url,reveal);assert.equal(viewed.status,200);assert.equal(viewed.value.references[0].content,'第二版已变更原文');
+ const completed=(await app.request(url,confirm)).value;assert.equal(completed.history.length,1);assert.equal(completed.history[0].referenceEvidence[0].id,'reference');assert.match(completed.history[0].referenceEvidence[0].fingerprint,/^[a-f0-9]{64}$/);assert.equal(JSON.stringify(completed).includes('第二版已变更原文'),false);
  }finally{await app.close()}
 })

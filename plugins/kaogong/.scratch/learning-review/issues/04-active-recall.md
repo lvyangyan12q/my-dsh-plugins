@@ -6,7 +6,7 @@
 
 **Blocked by:** 02：按知识点学习并形成可信覆盖
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-release-acceptance
 
 **Acceptance criteria:**
 
@@ -16,3 +16,5 @@
 - [ ] 无要点或授权失效明确反馈；返回、刷新和重启恢复草稿与本次周期。
 
 **验证约定：** 沿用已确认的 Host、Native、页面确认与准确发行包测试边界；只记录实际执行结果。保留档案隔离、资料授权、真实评分与历史快照。按批准原型实现本票对应交互，验收证据完成前不勾选。
+
+**Evidence:** [源码与公开边界验证](../../../docs/evidence/08-ticket04-recall.md)。准确包和真实视觉验收待 08，验收项暂不勾选。
