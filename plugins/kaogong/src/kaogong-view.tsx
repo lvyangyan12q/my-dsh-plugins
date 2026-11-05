@@ -31,6 +31,7 @@ export type DashboardData = {
 }
 
 export type KaogongViewProps = {
+  onReturnToday?: () => void
   /** Hide without unmounting to retain the current practice and reader state. */
   embedded?: boolean
   /** Focused classrooms exclude dashboard statistics; the explicit plan page keeps its metrics. */
@@ -158,7 +159,7 @@ function optionValue(option: string): string {
 }
 
 
-export function KaogongView({ embedded = false, focusedStudy = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher }: KaogongViewProps) {
+export function KaogongView({ embedded = false, focusedStudy = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher, onReturnToday }: KaogongViewProps) {
   const answerGroupId = useId()
   const http=useLearningHttp()
   const {practiceRequest,readPracticeDraft,savePracticeDraft,readAdmittedReviews,markAdmittedReview}=usePracticeClient()
@@ -424,7 +425,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
             </header>}
             {notice && <div style={{ ...sectionStyle, marginBottom: 14, color: colors.blue, borderColor: '#bfdbfe', background: '#f8fbff' }}>{notice}</div>}
             {error && <div style={{ ...sectionStyle, color: colors.red, borderColor: '#fecaca', background: '#fff1f2' }}>{error}</div>}
-            <div hidden={!shown('classroom')}><LessonPanel active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {
+            <div hidden={!shown('classroom')}><LessonPanel onReturnToday={onReturnToday} active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {
               await loadPractice(context, [], true)
               onSelectPage?.('practice')
             }} /></div>

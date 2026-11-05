@@ -6,7 +6,7 @@
 
 **Blocked by:** 01：从今日继续同一项真实任务、04：知识点主动回忆完整闭环
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-release-acceptance
 
 **Decision gate:** 2026-11-05 已定稿，见对应决策票 Resolution；实施仍须满足本票依赖。
 

@@ -455,6 +455,8 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
       },
     }), 'kaogong.lesson.' + action)
   }
+  lessonRoute('closeout-preview', input => state.closeouts.preview(state, lessonCommand.parse(input).lessonId))
+  lessonRoute('closeout', input => state.closeouts.execute(state, input))
   lessonRoute('create', input => lessons.create(lessonCreate.parse(input)))
   lessonRoute('list', input => { wire.object({}).strict().parse(input); return lessons.list() })
   lessonRoute('read', input => lessons.read(lessonCommand.parse(input).lessonId))

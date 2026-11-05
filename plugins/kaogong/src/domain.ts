@@ -1,3 +1,4 @@
+import {closeoutRecord, type CloseoutRecord} from './closeouts.ts'
 import {recallRecord,type RecallRecord} from './recalls.ts'
 /**
  * Durable domain specs for the kaogong plugin: the wrong-answer notebook, the
@@ -88,6 +89,7 @@ export function instanceDomainSpecs(instanceId: string) {
     || instanceId.length > 200 || instanceId === 'default') throw new Error('需要明确的新实例身份；旧 default 只能经预览接管')
   const prefix = 'kaogong_i_' + createHash('sha256').update(instanceId).digest('hex') + '_'
   return {
+    closeouts: defineDomain({name:prefix+'closeouts',version:1,tables:{operations:domainTable<string,CloseoutRecord>(closeoutRecord)}}),
     plan: defineDomain({...studyPlanDomain,name:prefix+'plan'}),
     recalls: defineDomain({name:prefix+'recalls',version:1,tables:{recalls:domainTable<string,RecallRecord>(recallRecord)}}),
     reviews: defineDomain({name:prefix+'reviews',version:1,tables:{reviews:domainTable<string,ReviewRecord>(reviewRecord)}}),
