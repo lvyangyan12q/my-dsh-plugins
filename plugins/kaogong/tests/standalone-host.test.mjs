@@ -765,6 +765,8 @@ test('completion preview is inert and a durable confirmation resumes without dup
   assert.equal(preview.status,200)
   assert.equal(preview.value.lesson.completion,null)
   const body={lessonId,operationId:crypto.randomUUID(),notes:'我的真实总结',confirmed:true,joinRecall:false}
+  assert.equal((await app.request('/api/kaogong/lesson/closeout?viewId='+view,{...body,joinRecall:true})).status,409)
+  assert.equal((await app.request('/api/kaogong/lesson/read?viewId='+view,{lessonId})).value.lesson.completion,null)
   const done=await app.request('/api/kaogong/lesson/closeout?viewId='+view,body)
   assert.equal(done.status,200)
   assert.equal(done.value.operation.status,'complete')
@@ -907,3 +909,35 @@ test('recall schedule is previewed and early forgotten confirmation completes th
  await app.request(url,body);assert.equal((await app.request(planUrl)).value.revision,plan.revision);assert.equal((await app.request(planUrl)).value.tasks.length,1);
  }finally{await app.close()}
 });
+
+test('closeout refuses missing practice before persisting consent and accepts later submitted evidence',async()=>{
+ const app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),view=learner.view.id
+  const empty=(await app.request('/api/kaogong/dashboard?viewId='+view)).value;assert.equal(empty.examDate,null);assert.equal(empty.daysToExam,null)
+  const p=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:p.id,fingerprint:p.fingerprint,confirmed:true})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId:view,ownerViewId:library.view.id,resourceId:'question-bank'})
+  const proposal=(await app.request('/api/kaogong/plan?viewId='+view,{action:'preview',baseRevision:0,operation:'append',task:{subject:'行测-资料分析',title:'学习后练习',kind:'learn',requirePractice:true}})).value
+  const saved=(await app.request('/api/kaogong/plan?viewId='+view,{action:'confirm',id:proposal.id,revision:0,confirmed:true})).value,task=saved.tasks[0]
+  const started=(await app.request('/api/kaogong/plan/start?viewId='+view,{id:task.id,revision:1})).value,lessonId=started.lesson.lesson.request.lessonId
+  const intent={lessonId,operationId:crypto.randomUUID(),notes:'已学习并练习',confirmed:true,joinRecall:false}
+  const missing=await app.request('/api/kaogong/lesson/closeout?viewId='+view,intent)
+  assert.equal(missing.status,409)
+  assert.equal((await app.request('/api/kaogong/lesson/closeout-preview?viewId='+view,{lessonId})).value.operation,null)
+  const round=(await app.request('/api/kaogong/practice/start?viewId='+view,{subject:task.subject,title:task.title,taskId:task.id,planRevision:1})).value
+  assert.equal(round.context.taskId,task.id)
+  await app.request('/api/kaogong/practice/submit?viewId='+view,{roundId:round.roundId,answers:[{id:'first',answer:'B'}]})
+  const preview=await app.request('/api/kaogong/lesson/closeout-preview?viewId='+view,{lessonId})
+  assert.equal(preview.value.candidates.length,1)
+  assert.equal(preview.value.candidates[0].roundId,round.roundId)
+  const body=intent
+  const done=await app.request('/api/kaogong/lesson/closeout?viewId='+view,body)
+  assert.equal(done.value.operation.status,'complete')
+  assert.deepEqual(done.value.lesson.roundIds,[round.roundId])
+  const repeated=await Promise.all([app.request('/api/kaogong/lesson/closeout?viewId='+view,body),app.request('/api/kaogong/lesson/closeout?viewId='+view,body)])
+  assert.ok(repeated.every(result=>result.value.operation.status==='complete'))
+  const dashboard=(await app.request('/api/kaogong/dashboard?viewId='+view)).value;assert.equal(dashboard.completedTaskCount,1);assert.equal(dashboard.taskCompletionRate,1)
+ }finally{await app.close()}
+})
