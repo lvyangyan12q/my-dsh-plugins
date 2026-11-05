@@ -122,10 +122,15 @@ export function loadClientPlugin() {
 /**
  * Mount PaperReaderPage against a digest fixture and wait for the reader.
  *
+ * `digest` answers every request with the same document (the pre-history
+ * harness). `routes` maps an exact request path to a payload, a
+ * `{ status, body }` response stub, or a function returning either; paths that
+ * are not listed fall back to `digest`.
+ *
  * `prefs` seeds localStorage before mount, which is how mode and the active
  * item are restored on first paint.
  */
-export async function mountPage({ digest, mode = 'both', prefs = {} } = {}) {
+export async function mountPage({ digest, routes, mode = 'both', prefs = {} } = {}) {
   ensureClientBundle()
   const dom = createBrowser()
   const { window } = dom
@@ -133,8 +138,23 @@ export async function mountPage({ digest, mode = 'both', prefs = {} } = {}) {
 
   const fetchCalls = []
   const fetchImpl = async (url) => {
-    fetchCalls.push(String(url))
-    return { ok: true, status: 200, json: async () => digest }
+    const path = String(url)
+    fetchCalls.push(path)
+    let value
+    if (routes && Object.prototype.hasOwnProperty.call(routes, path)) {
+      value = typeof routes[path] === 'function' ? await routes[path]() : routes[path]
+      if (value instanceof Error) throw value
+      if (value && typeof value === 'object' && 'status' in value && 'body' in value) {
+        return {
+          ok: value.status >= 200 && value.status < 300,
+          status: value.status,
+          json: async () => value.body,
+        }
+      }
+    } else {
+      value = digest
+    }
+    return { ok: true, status: 200, json: async () => value }
   }
   globalThis.fetch = fetchImpl
   window.fetch = fetchImpl
@@ -148,17 +168,32 @@ export async function mountPage({ digest, mode = 'both', prefs = {} } = {}) {
   const container = document.getElementById('root')
   const root = createRoot(container)
 
+  const settle = async () => {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0))
+      })
+    }
+  }
+
   await act(async () => {
     root.render(React.createElement(plugin.PaperReaderPage))
     await new Promise(resolve => setTimeout(resolve, 0))
   })
   for (let attempt = 0; attempt < 20 && !container.querySelector('.pr-reader'); attempt += 1) {
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0))
-    })
+    await settle()
   }
+  await settle()
 
   const bodyText = () => container.querySelector('.pr-body')?.textContent ?? ''
+
+  const click = async (element) => {
+    await act(async () => {
+      element.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    await settle()
+  }
 
   return {
     container,
@@ -167,6 +202,8 @@ export async function mountPage({ digest, mode = 'both', prefs = {} } = {}) {
     plugin,
     fetchCalls,
     bodyText,
+    click,
+    settle,
     unmount: async () => {
       await act(async () => { root.unmount() })
       window.close()

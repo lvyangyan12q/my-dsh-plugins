@@ -33,18 +33,24 @@ dsh plugin --profile web add "F:\ai-project\my-dsh-plugins\plugins\paper-reader"
 
 ## 数据：agent 每日写入
 
-插件只读取本地文件，不主动访问 X / Claude，也不保存任何凭据：
+插件只读取本地文件，不主动访问来源，也不保存任何凭据。数据按天存储：
 
 ```
-$DSH_HOME/paper-reader/digest.json      # 默认 C:\Users\<你>\.dsh\paper-reader\digest.json
+$DSH_HOME/paper-reader/
+├── index.json                 # 日期索引，最后写入（默认 C:\Users\<你>\.dsh\paper-reader\）
+└── digest/
+    ├── 2026-11-05.json        # 单日 digest（schema v2：date + items）
+    └── 2026-11-04.json
 ```
 
-- 文件不存在时，页面使用包内 `sample/digest.json` 并显示「示例数据」标记。
-- 文件存在但 JSON 损坏 / 结构不符时，页面明确报错，不会把旧示例冒充成你的列表。
-- 每次打开页面和点击「刷新」都会重新读取该文件；agent 写完文件后刷新即可看到新内容。
-- 读取是只读的：插件不会创建、迁移或改写该文件。
+- 页面启动先读 `index.json`，默认加载最近 7 天并按天分组；点「加载更早」最多回溯到 30 天。
+- 每天一个文件、原子写入（临时文件 + rename），单日上限 8 MiB；超限的当天失败并保留上一份文件。
+- 索引在当天文件之后写入；索引缺失、单日文件缺失 / 损坏 / 超限都有明确错误。
+- 保留 30 天：写入新一天后清理更早的日文件；清理失败不阻塞当天写入。
+- 还没有 `index.json` 时回退到旧的 `digest.json`；两者都没有时使用包内 `sample/digest.json` 并显示「示例数据」。
+- 宿主路由：`/api/paper-reader/index`、`/api/paper-reader/digest/YYYY-MM-DD`、`/api/paper-reader/digest`（旧单文件）、`/api/paper-reader/health`；沿用浏览器会话鉴权，只读、不创建用户数据。
 
-推荐由每日 agent 在 09:00 抓取后**原子写入**（先写 `digest.json.tmp` 再 rename），避免读到半个文件。数据契约见 [docs/DESIGN.md](docs/DESIGN.md#数据契约)。
+写入由每日 agent / CLI 负责（原子写 + 索引 + 保留清理见 `src/storage.js`），插件只读。数据契约见 [docs/DESIGN.md](docs/DESIGN.md#数据契约)。
 
 ### 每日抓取（插件之外）
 
