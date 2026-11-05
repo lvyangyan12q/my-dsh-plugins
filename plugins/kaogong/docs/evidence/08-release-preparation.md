@@ -10,3 +10,5 @@ SHA256: eb9b9796510575aa20371410ffdab0297d9cee8b07c307e9174d6c17a9245b6e。准�
 真实浏览器验收发现generate未传稳定知识点。新增公开Host测试先因undefined失败，再修schedule保留结构化knowledgePoint，StudyPlan只对新调度slot按精确科目/知识点绑定冻结ID；不从标题推断或补写旧任务。新计划→路线同任务→开始同point→本人确认覆盖+1通过。既有adjust只移动原任务的逻辑保持，进行中/完成项不改身份。
 
 新候选0.4.0-alpha.3.2完整build/Host66/client43/domain21/artifact1、官方独立安装identity通过，.1保留不覆盖。.2尚未切换本轮运行实例，真实原位升级/页面验证待协调执行。
+
+.2 原位升级验证：在用户流程暂停后核对本轮PID/3164监听身份，停止自建服务，仅官方CLI更新本轮独立profile。升级前10个业务、Session与Cordis配置文件逐项哈希；安装后及重启后均10/10原样，无新增。准确包109文件逐字节一致，SHA256 9758f1fb7e13b75b4fe0d396803ffcfcb72ba49edd970823b88bc5918342c3f9。同home/cwd/3164恢复运行，真实页面恢复留后续验收。
