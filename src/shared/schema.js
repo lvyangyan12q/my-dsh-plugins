@@ -167,22 +167,37 @@ export function normalizeItem(raw) {
 }
 
 /**
- * Normalize a whole digest. Returns null for a payload that cannot be a digest
- * at all, so the client can show an explicit error instead of an empty page.
+ * Normalize a whole digest. A document may be the multi-day reader payload
+ * (`days`) or one stored day file (`date` + `items`); both become `days`, so
+ * the reading page keeps a single code path whether the host served the legacy
+ * digest or one day out of the history. Returns null for a payload that cannot
+ * be a digest at all, so the client can show an explicit error instead of an
+ * empty page.
  */
 export function normalizeDigest(digest) {
-  if (!isObject(digest) || !Array.isArray(digest.days)) return null
-  const days = []
-  for (const day of digest.days) {
-    if (!isObject(day) || typeof day.date !== 'string') continue
-    const items = Array.isArray(day.items) ? day.items.map(normalizeItem).filter(Boolean) : []
-    days.push({ ...day, items })
+  if (!isObject(digest)) return null
+  if (Array.isArray(digest.days)) {
+    const days = []
+    for (const day of digest.days) {
+      if (!isObject(day) || typeof day.date !== 'string') continue
+      const items = Array.isArray(day.items) ? day.items.map(normalizeItem).filter(Boolean) : []
+      days.push({ ...day, items })
+    }
+    return {
+      ...digest,
+      schemaVersion: Number(digest.schemaVersion) || 1,
+      days,
+    }
   }
-  return {
-    ...digest,
-    schemaVersion: Number(digest.schemaVersion) || 1,
-    days,
+  if (typeof digest.date === 'string' && Array.isArray(digest.items)) {
+    const items = digest.items.map(normalizeItem).filter(Boolean)
+    return {
+      ...digest,
+      schemaVersion: Number(digest.schemaVersion) || 1,
+      days: [{ date: digest.date, generatedAt: digest.generatedAt, run: digest.run, items }],
+    }
   }
+  return null
 }
 
 /**
@@ -278,6 +293,26 @@ function validateItemV2(item, where, errors) {
   item.blocks.forEach((block, index) => validateBlock(block, `${where}.blocks[${index}]`, errors))
 }
 
+/** Validate the item array shared by multi-day and single-day digest files. */
+function validateItems(items, where, version, errors, seenIds) {
+  items.forEach((item, itemIndex) => {
+    const at = `${where}.items[${itemIndex}]`
+    if (!isObject(item)) {
+      errors.push(`${at} must be an object`)
+      return
+    }
+    if (typeof item.id !== 'string') {
+      errors.push(`${at}.id must be a string`)
+      return
+    }
+    if (seenIds.has(item.id)) errors.push(`${at}.id is duplicated (${item.id})`)
+    seenIds.add(item.id)
+    if (!Array.isArray(item.blocks)) errors.push(`${at}.blocks must be an array`)
+    const isV2 = version >= SCHEMA_VERSION || has(item, 'sourceLanguage')
+    if (isV2) validateItemV2(item, at, errors)
+  })
+}
+
 /**
  * Validate a digest document. Returns a list of problems; an empty list means
  * the file is acceptable. v1 digests keep the old, lenient requirements; v2
@@ -301,24 +336,29 @@ export function validateDigest(value) {
       errors.push(`${dayAt}.items must be an array`)
       return
     }
-    day.items.forEach((item, itemIndex) => {
-      const at = `${dayAt}.items[${itemIndex}]`
-      if (!isObject(item)) {
-        errors.push(`${at} must be an object`)
-        return
-      }
-      if (typeof item.id !== 'string') {
-        errors.push(`${at}.id must be a string`)
-        return
-      }
-      if (ids.has(item.id)) errors.push(`${at}.id is duplicated (${item.id})`)
-      ids.add(item.id)
-      if (!Array.isArray(item.blocks)) errors.push(`${at}.blocks must be an array`)
-      const isV2 = version >= SCHEMA_VERSION || has(item, 'sourceLanguage')
-      if (isV2) validateItemV2(item, at, errors)
-    })
+    validateItems(day.items, dayAt, version, errors, ids)
   })
 
+  return errors
+}
+
+/**
+ * Validate one stored day file: the v2 per-day shape the daily writer emits
+ * (`{ schemaVersion, date, generatedAt, run, items }`). The date must match the
+ * file name, which the storage layer checks before calling this.
+ */
+export function validateDayDigest(value) {
+  const errors = []
+  if (!isObject(value)) return ['day digest must be an object']
+  if (typeof value.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) {
+    errors.push('day digest.date must be YYYY-MM-DD')
+  }
+  if (!Array.isArray(value.items)) {
+    errors.push('day digest.items must be an array')
+    return errors
+  }
+  const version = Number(value.schemaVersion) || 1
+  validateItems(value.items, 'digest', version, errors, new Set())
   return errors
 }
 

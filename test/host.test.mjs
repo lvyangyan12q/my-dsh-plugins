@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
 import { apply } from '../lib/index.js'
+import { MAX_DAY_BYTES, storagePaths, writeDayDigest } from '../src/storage.js'
 
 const sample = JSON.parse(readFileSync(new URL('../sample/digest.json', import.meta.url), 'utf8'))
 const home = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-'))
@@ -35,7 +36,10 @@ after(() => {
 })
 
 function call(path, method = 'GET') {
-  const route = routes.get(path)
+  const route = routes.get(path) ?? [...routes.entries()]
+    .filter(([registered, entry]) => entry.kind === 'prefix' && path.startsWith(registered))
+    .sort((left, right) => right[0].length - left[0].length)
+    .map(([, entry]) => entry)[0]
   assert.ok(route, `route ${path} should be registered`)
   return new Promise((resolve, reject) => {
     const result = { status: 0, headers: undefined, body: '' }
@@ -45,6 +49,28 @@ function call(path, method = 'GET') {
     }
     Promise.resolve(route.handler({ method, url: path, headers: {} }, res)).catch(reject)
   })
+}
+
+const dataRoot = join(home, 'paper-reader')
+
+function dayDocument(date, count = 2) {
+  return {
+    schemaVersion: 2,
+    date,
+    generatedAt: `${date}T09:02:00+08:00`,
+    run: { status: 'ok', finishedAt: `${date}T09:03:00+08:00`, sources: [{ id: 'arxiv', status: 'ok', items: count }] },
+    items: Array.from({ length: count }, (_, index) => ({
+      id: `${date}-item-${index}`,
+      source: 'arxiv',
+      sourceId: 'arxiv',
+      sourceLanguage: 'en',
+      title: { original: `Title ${index}`, translation: `标题 ${index}` },
+      summary: { original: 'Summary', translation: '摘要' },
+      direction: 'agent',
+      excerpt: false,
+      blocks: [{ type: 'paragraph', original: 'Body.', translation: '正文。' }],
+    })),
+  }
 }
 
 test('registers both routes with GET handlers', () => {
@@ -234,4 +260,109 @@ test('sample digest satisfies the v2 item contract and includes a Chinese source
     }
   }
   assert.ok(languages.has('zh'), 'sample needs one Chinese-source item')
+})
+
+/* ------------------------------------------------------------------ */
+/* Day-file history                                                    */
+/* ------------------------------------------------------------------ */
+
+test('registers the index and by-date routes alongside the legacy digest route', () => {
+  assert.ok(routes.has('/api/paper-reader/index'))
+  assert.ok(routes.has('/api/paper-reader/digest'))
+  assert.ok([...routes.values()].some(route => route.kind === 'prefix' && route.path === '/api/paper-reader/digest/'))
+})
+
+test('a missing index answers an explicit empty index, not an error', async () => {
+  const response = await call('/api/paper-reader/index')
+  assert.equal(response.status, 200)
+  const body = JSON.parse(response.body)
+  assert.deepEqual(body.days, [])
+  assert.equal(body.missing, true)
+  assert.equal(body.demo, false)
+})
+
+test('the index route lists stored days newest first with their counts', async () => {
+  await writeDayDigest({ root: dataRoot, digest: dayDocument('2026-11-03', 2), now: new Date('2026-11-03T09:05:00Z') })
+  await writeDayDigest({ root: dataRoot, digest: dayDocument('2026-11-05', 3), now: new Date('2026-11-05T09:05:00Z') })
+
+  const response = await call('/api/paper-reader/index')
+  assert.equal(response.status, 200)
+  const body = JSON.parse(response.body)
+  assert.equal(body.missing, false)
+  assert.equal(body.demo, false)
+  assert.deepEqual(body.days.map(day => day.date), ['2026-11-05', '2026-11-03'])
+  assert.equal(body.days[0].items, 3)
+  assert.equal(body.retentionDays, 30)
+})
+
+test('the by-date route returns exactly that day and marks it non-demo', async () => {
+  const response = await call('/api/paper-reader/digest/2026-11-05')
+  assert.equal(response.status, 200)
+  const body = JSON.parse(response.body)
+  assert.equal(body.demo, false)
+  assert.equal(body.date, '2026-11-05')
+  assert.equal(body.items.length, 3)
+  assert.equal(body.items[0].sourceLanguage, 'en')
+})
+
+test('a date with no stored file is a 404 and a malformed date is a 400', async () => {
+  const missing = await call('/api/paper-reader/digest/2026-10-01')
+  assert.equal(missing.status, 404)
+  assert.equal(JSON.parse(missing.body).error, 'digest_missing')
+
+  const invalid = await call('/api/paper-reader/digest/2026-13-01')
+  assert.equal(invalid.status, 400)
+  assert.equal(JSON.parse(invalid.body).error, 'digest_invalid_date')
+
+  const noDate = await call('/api/paper-reader/digest/')
+  assert.equal(noDate.status, 400)
+})
+
+test('a corrupt day file is a 422 that names the file', async () => {
+  const paths = storagePaths(dataRoot)
+  writeFileSync(paths.dayPath('2026-10-30'), '{broken')
+  const response = await call('/api/paper-reader/digest/2026-10-30')
+  assert.equal(response.status, 422)
+  const body = JSON.parse(response.body)
+  assert.equal(body.error, 'digest_invalid')
+  assert.match(body.message, /2026-10-30/)
+})
+
+test('an oversized day file is a 413 rather than a broken page', async () => {
+  const paths = storagePaths(dataRoot)
+  writeFileSync(
+    paths.dayPath('2026-10-29'),
+    JSON.stringify({ date: '2026-10-29', schemaVersion: 2, items: [], filler: 'x'.repeat(MAX_DAY_BYTES) }),
+  )
+  const response = await call('/api/paper-reader/digest/2026-10-29')
+  assert.equal(response.status, 413)
+  assert.equal(JSON.parse(response.body).error, 'digest_too_large')
+})
+
+test('the by-date route rejects unsupported methods and passes admission through', async () => {
+  const post = await call('/api/paper-reader/digest/2026-11-05', 'POST')
+  assert.equal(post.status, 405)
+
+  connection = { admit: () => ({ rejection: 401 }) }
+  const unauthorized = await call('/api/paper-reader/digest/2026-11-05')
+  assert.equal(unauthorized.status, 401)
+  const unauthorizedIndex = await call('/api/paper-reader/index')
+  assert.equal(unauthorizedIndex.status, 401)
+  connection = undefined
+})
+
+test('HEAD on the by-date route answers headers without a body', async () => {
+  const head = await call('/api/paper-reader/digest/2026-11-05', 'HEAD')
+  assert.equal(head.status, 200)
+  assert.equal(head.body, '')
+})
+
+test('a corrupt index is a 422 while day files stay readable', async () => {
+  writeFileSync(storagePaths(dataRoot).indexPath, '{broken')
+  const response = await call('/api/paper-reader/index')
+  assert.equal(response.status, 422)
+  assert.equal(JSON.parse(response.body).error, 'index_unavailable')
+
+  const day = await call('/api/paper-reader/digest/2026-11-05')
+  assert.equal(day.status, 200)
 })

@@ -1,28 +1,34 @@
 /**
  * dsh-paper-reader host half.
  *
- * Serves the digest the daily agent writes:
- *   GET /api/paper-reader/digest  -> the latest digest JSON
- *   GET /api/paper-reader/health  -> liveness
+ * Serves the data the daily agent writes:
+ *   GET /api/paper-reader/index           -> which days exist (newest first)
+ *   GET /api/paper-reader/digest/<date>   -> one stored day
+ *   GET /api/paper-reader/digest          -> legacy single-file digest
+ *   GET /api/paper-reader/health          -> liveness
  *
- * The digest lives at `$DSH_HOME/paper-reader/digest.json`. When that file is
- * absent the bundled sample answers with `demo: true`, so a fresh install
- * renders immediately. Reading is side-effect free: the route never seeds,
- * mutates, or creates the user file.
+ * Day files live at `$DSH_HOME/paper-reader/digest/YYYY-MM-DD.json` with the
+ * index at `$DSH_HOME/paper-reader/index.json` (see src/storage.js). The legacy
+ * `digest.json` and the bundled sample stay readable: the page uses them when
+ * no index exists yet, so a fresh install still renders immediately.
+ *
+ * Reading is side-effect free: no route seeds, mutates, or creates user data.
  */
 import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { MAX_DAY_BYTES, readDayDigest, readIndex } from './storage.js'
 import { validateDigest } from './shared/schema.js'
 
 export const name = 'dsh-paper-reader'
 export const inject = ['webServer']
 
+const INDEX_ROUTE = '/api/paper-reader/index'
 const DIGEST_ROUTE = '/api/paper-reader/digest'
+const DIGEST_DATE_PREFIX = `${DIGEST_ROUTE}/`
 const HEALTH_ROUTE = '/api/paper-reader/health'
 const SAMPLE_PATH = fileURLToPath(new URL('../sample/digest.json', import.meta.url))
-const MAX_BYTES = 8 * 1024 * 1024
 
 /** Write one JSON response with no-store caching. */
 function json(res, status, value) {
@@ -48,15 +54,20 @@ function resolveDshHome(ctx) {
   return process.env.DSH_HOME || join(homedir(), '.dsh')
 }
 
-/** Absolute path of the digest the daily agent writes. */
+/** The reader data directory that holds `index.json` and `digest/`. */
+function resolveDataRoot(ctx) {
+  return join(resolveDshHome(ctx), 'paper-reader')
+}
+
+/** Absolute path of the legacy digest the daily agent wrote before day files. */
 function resolveDigestPath(ctx) {
-  return join(resolveDshHome(ctx), 'paper-reader', 'digest.json')
+  return join(resolveDataRoot(ctx), 'digest.json')
 }
 
 /**
  * Contract check: v1 digests stay readable, v2 items must declare their
  * `sourceLanguage` and pair every translatable field. The first problem is
- * reporter back to the caller so a broken file is debuggable.
+ * reported back to the caller so a broken file is debuggable.
  */
 function digestProblem(value) {
   const problems = validateDigest(value)
@@ -64,11 +75,11 @@ function digestProblem(value) {
 }
 
 /**
- * Read the user's digest, or fall back to the bundled sample.
+ * Read the legacy single-file digest, or fall back to the bundled sample.
  * A present but broken file answers an explicit error instead of silently
  * presenting stale sample content as the user's list.
  */
-async function readDigest(ctx) {
+async function readLegacyDigest(ctx) {
   const path = resolveDigestPath(ctx)
   let text
   try {
@@ -78,7 +89,7 @@ async function readDigest(ctx) {
     const sample = JSON.parse(await readFile(SAMPLE_PATH, 'utf8'))
     return { ...sample, demo: true, digestPath: path }
   }
-  if (Buffer.byteLength(text, 'utf8') > MAX_BYTES) {
+  if (Buffer.byteLength(text, 'utf8') > MAX_DAY_BYTES) {
     throw Object.assign(new Error('digest.json is larger than 8 MiB'), { status: 413 })
   }
   let parsed
@@ -108,8 +119,50 @@ function admissionStatus(ctx, req) {
   return null
 }
 
-/** Register the digest and health routes on the Web server. */
+/** GET/HEAD + admission guard shared by every data route. */
+async function guard(ctx, req, res, run) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: 'method_not_allowed' })
+    return
+  }
+  const rejected = admissionStatus(ctx, req)
+  if (rejected) {
+    json(res, rejected, { error: 'forbidden' })
+    return
+  }
+  try {
+    const body = await run()
+    if (req.method === 'HEAD') {
+      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
+      res.end()
+      return
+    }
+    json(res, 200, body)
+  } catch (error) {
+    json(res, error?.status ?? 500, {
+      error: error?.code ?? 'digest_unavailable',
+      message: String(error?.message ?? error),
+    })
+  }
+}
+
+/** The date part of a by-date request, or null when the shape is wrong. */
+function requestedDate(req) {
+  let pathname
+  try {
+    pathname = new URL(req.url ?? '', 'http://localhost').pathname
+  } catch {
+    return null
+  }
+  if (!pathname.startsWith(DIGEST_DATE_PREFIX)) return null
+  const rest = pathname.slice(DIGEST_DATE_PREFIX.length)
+  return rest.length > 0 && !rest.includes('/') ? decodeURIComponent(rest) : null
+}
+
+/** Register the index, by-date digest, legacy digest and health routes. */
 export function apply(ctx) {
+  const dataRoot = () => resolveDataRoot(ctx)
+
   ctx.effect(
     () => ctx.webServer.register({
       kind: 'exact',
@@ -122,33 +175,60 @@ export function apply(ctx) {
   ctx.effect(
     () => ctx.webServer.register({
       kind: 'exact',
-      path: DIGEST_ROUTE,
-      handler: async (req, res) => {
-        if (req.method !== 'GET' && req.method !== 'HEAD') {
-          json(res, 405, { error: 'method_not_allowed' })
-          return
-        }
-        const rejected = admissionStatus(ctx, req)
-        if (rejected) {
-          json(res, rejected, { error: 'forbidden' })
-          return
-        }
+      path: INDEX_ROUTE,
+      handler: (req, res) => guard(ctx, req, res, async () => {
+        let index
+        let missing
         try {
-          const digest = await readDigest(ctx)
-          if (req.method === 'HEAD') {
-            res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
-            res.end()
-            return
-          }
-          json(res, 200, digest)
+          ({ index, missing } = await readIndex({ root: dataRoot() }))
         } catch (error) {
-          json(res, error?.status ?? 500, {
-            error: 'digest_unavailable',
-            message: String(error?.message ?? error),
+          // Keep the public error code stable; the message carries the detail.
+          throw Object.assign(new Error(String(error?.message ?? error)), {
+            status: error?.status ?? 500,
+            code: 'index_unavailable',
           })
         }
-      },
+        return {
+          schemaVersion: index?.schemaVersion ?? 2,
+          retentionDays: index?.retentionDays ?? 30,
+          updatedAt: index?.updatedAt ?? null,
+          days: index?.days ?? [],
+          missing,
+          demo: false,
+          indexPath: join(dataRoot(), 'index.json'),
+        }
+      }),
     }),
-    'dsh-paper-reader: digest route',
+    'dsh-paper-reader: index route',
+  )
+
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: 'prefix',
+      path: DIGEST_DATE_PREFIX,
+      handler: (req, res) => guard(ctx, req, res, async () => {
+        const date = requestedDate(req)
+        // readDayDigest answers 400 for a malformed date; an empty or nested
+        // path never reaches it.
+        if (!date) {
+          throw Object.assign(new Error('a date is required: /api/paper-reader/digest/YYYY-MM-DD'), {
+            status: 400,
+            code: 'digest_invalid_date',
+          })
+        }
+        const { digest, path, bytes } = await readDayDigest({ root: dataRoot(), date })
+        return { ...digest, demo: false, digestPath: path, bytes }
+      }),
+    }),
+    'dsh-paper-reader: by-date digest route',
+  )
+
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: 'exact',
+      path: DIGEST_ROUTE,
+      handler: (req, res) => guard(ctx, req, res, () => readLegacyDigest(ctx)),
+    }),
+    'dsh-paper-reader: legacy digest route',
   )
 }

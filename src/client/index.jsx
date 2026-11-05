@@ -7,9 +7,13 @@
  *   left   daily groups of X / Claude Blog items, collapsible, search + direction filter
  *   right  one paper with 3 reading modes: 中英对照 / 仅中文 / English
  *
- * Data comes from GET /api/paper-reader/digest (see src/index.js). Reading
- * state (mode, read, bookmarks, collapsed days, active paper) is local to the
- * browser via localStorage.
+ * Data comes from the host's day-file history: GET /api/paper-reader/index
+ * names the stored days, then GET /api/paper-reader/digest/YYYY-MM-DD serves
+ * each one (see src/index.js). The page loads the newest seven days first and
+ * extends the window on demand, up to the 30-day retention limit. When no index
+ * exists yet it falls back to the legacy single-file digest. Reading state
+ * (mode, read, bookmarks, collapsed days, active paper) is local to the browser
+ * via localStorage.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { normalizeDigest, otherLanguage, pickText } from '../shared/schema.js'
@@ -17,6 +21,10 @@ import cssText from './styles.css'
 
 const STORAGE_KEY = 'dsh-paper-reader:v1'
 const PANEL_ID = 'paper-reader'
+const INDEX_URL = '/api/paper-reader/index'
+const DIGEST_URL = '/api/paper-reader/digest'
+const PAGE_DAYS = 7
+const MAX_HISTORY_DAYS = 30
 const MODES = [
   { id: 'both', label: '中英对照', short: '对照' },
   { id: 'zh', label: '仅中文' },
@@ -82,6 +90,19 @@ function flattenDigest(digest) {
     for (const item of day.items) if (item && typeof item.id === 'string') items.push({ ...item, dayDate: day.date })
   }
   return items
+}
+
+/** Merge day documents by date, newest first. A reloaded day replaces its copy. */
+function mergeDays(previous, incoming) {
+  const byDate = new Map(previous.map(day => [day.date, day]))
+  for (const day of incoming) {
+    if (day && typeof day.date === 'string') byDate.set(day.date, day)
+  }
+  return [...byDate.values()].sort((left, right) => (left.date < right.date ? 1 : left.date > right.date ? -1 : 0))
+}
+
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error)
 }
 
 function parseDate(value) {
@@ -276,10 +297,21 @@ function UnreadDot() {
 export function PaperReaderPage() {
   const stored = useRef(readStoredPrefs())
   const [prefs, setPrefs] = useState(stored.current.prefs)
-  const [digest, setDigest] = useState(null)
+  const [days, setDays] = useState([])
+  const [dayErrors, setDayErrors] = useState([])
+  const [indexInfo, setIndexInfo] = useState(null)
+  const [meta, setMeta] = useState({
+    ready: false,
+    demo: false,
+    legacy: false,
+    digestPath: null,
+    directions: null,
+    sources: null,
+  })
   const [loadState, setLoadState] = useState('loading')
   const [loadError, setLoadError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [query, setQuery] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [toast, setToast] = useState('')
@@ -307,51 +339,165 @@ export function PaperReaderPage() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
   }, [])
 
+  /** One JSON request, with the host's error message when it says no. */
+  const fetchJson = useCallback(async (url) => {
+    const response = await fetch(url, {
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!response.ok) {
+      let detail = ''
+      try {
+        const body = await response.json()
+        detail = body?.message ? `：${body.message}` : ''
+      } catch {
+        // Ignore a body that is not JSON.
+      }
+      throw new Error(`HTTP ${response.status}${detail}`)
+    }
+    return response.json()
+  }, [])
+
+  /** Fetch and normalize one stored day. */
+  const fetchDay = useCallback(async (date) => {
+    const data = await fetchJson(`${DIGEST_URL}/${date}`)
+    // v1 (en/zh) and v2 (sourceLanguage + original/translation) both land in
+    // one normalized shape, so the reading page never branches on version.
+    const normalized = normalizeDigest(data)
+    if (!normalized) throw new Error('数据格式无效')
+    return normalized
+  }, [fetchJson])
+
+  /** Merge fetched days into the window; failures stay visible per day. */
+  const applyResults = useCallback((results, { replace = false } = {}) => {
+    const loaded = []
+    const failures = []
+    for (const result of results) {
+      if (result.error) failures.push({ date: result.date, message: errorMessage(result.error) })
+      else loaded.push(...result.value.days)
+    }
+    setDays(previous => {
+      if (!replace) return mergeDays(previous, loaded)
+      // A refresh replaces the window, but keeps the previous copy of a day
+      // whose re-read failed, so a transient error never blanks the list.
+      const touched = new Set(results.map(result => result.date))
+      return mergeDays(previous.filter(day => touched.has(day.date)), loaded)
+    })
+    setDayErrors(previous => {
+      const byDate = new Map(previous.map(entry => [entry.date, entry]))
+      for (const failure of failures) byDate.set(failure.date, failure)
+      for (const day of loaded) byDate.delete(day.date)
+      return [...byDate.values()].sort((left, right) => (left.date < right.date ? 1 : left.date > right.date ? -1 : 0))
+    })
+    return loaded
+  }, [])
+
+  /**
+   * Boot: ask the index which days exist, load the newest seven, and fall back
+   * to the legacy digest when this user has no day files yet. A refresh keeps
+   * the current list on screen if it fails.
+   */
   const load = useCallback(async (isRefresh) => {
     if (isRefresh) setRefreshing(true)
-    else setLoadState('loading')
-    try {
-      const response = await fetch('/api/paper-reader/digest', {
-        headers: { accept: 'application/json' },
-        cache: 'no-store',
-      })
-      if (!response.ok) {
-        let detail = ''
-        try {
-          const body = await response.json()
-          detail = body?.message ? `：${body.message}` : ''
-        } catch {
-          // Ignore a body that is not JSON.
-        }
-        throw new Error(`HTTP ${response.status}${detail}`)
-      }
-      const data = await response.json()
-      // v1 (en/zh) and v2 (sourceLanguage + original/translation) both land in
-      // one normalized shape, so the reading page never branches on version.
-      const normalized = normalizeDigest(data)
-      if (!normalized) throw new Error('数据格式无效')
-      digestRef.current = normalized
-      setDigest(normalized)
-      setLoadState('ready')
+    else {
+      setLoadState('loading')
       setLoadError('')
+    }
+    try {
+      let indexData
+      try {
+        indexData = await fetchJson(INDEX_URL)
+      } catch (error) {
+        throw new Error(`索引读取失败：${errorMessage(error)}`)
+      }
+      const indexed = Array.isArray(indexData?.days)
+        ? indexData.days.filter(day => day && typeof day.date === 'string')
+        : []
+      if (indexed.length === 0) {
+        const normalized = normalizeDigest(await fetchJson(DIGEST_URL))
+        if (!normalized) throw new Error('数据格式无效')
+        setIndexInfo(null)
+        setMeta({
+          ready: true,
+          demo: normalized.demo === true,
+          legacy: true,
+          digestPath: normalized.digestPath ?? null,
+          directions: Array.isArray(normalized.directions) ? normalized.directions : null,
+          sources: Array.isArray(normalized.sources) ? normalized.sources : null,
+        })
+        setDays(normalized.days)
+        setDayErrors([])
+        setLoadState('ready')
+        return
+      }
+      const history = indexed.slice(0, MAX_HISTORY_DAYS)
+      setIndexInfo({ ...indexData, days: history })
+      setMeta({
+        ready: true,
+        demo: indexData.demo === true,
+        legacy: false,
+        digestPath: indexData.indexPath ?? null,
+        directions: null,
+        sources: null,
+      })
+      const wanted = history.slice(0, PAGE_DAYS).map(day => day.date)
+      const results = await Promise.all(wanted.map(date => fetchDay(date).then(
+        value => ({ date, value }),
+        error => ({ date, error }),
+      )))
+      applyResults(results, { replace: true })
+      setLoadState('ready')
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
       if (isRefresh && digestRef.current) {
         // Keep the readable list on screen; a refresh failure is a notice, not a page reset.
-        showToast(`刷新失败：${message}`)
+        showToast(`刷新失败：${errorMessage(error)}`)
       } else {
-        setLoadError(message)
+        setLoadError(errorMessage(error))
         setLoadState('error')
       }
     } finally {
       setRefreshing(false)
     }
-  }, [showToast])
+  }, [applyResults, fetchDay, fetchJson, showToast])
 
   useEffect(() => { void load(false) }, [load])
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)) } catch { /* storage may be unavailable */ }
   }, [prefs])
+
+  /**
+   * The page renders from loaded days plus the index metadata. Sources and
+   * directions are derived from items when a day file does not carry the
+   * document-level lists the sample does.
+   */
+  const digest = useMemo(() => {
+    if (!meta.ready) return null
+    const flat = flattenDigest({ days })
+    const sourceMap = new Map()
+    const directionIds = new Set()
+    for (const item of flat) {
+      if (typeof item.sourceId === 'string' && !sourceMap.has(item.sourceId)) {
+        sourceMap.set(item.sourceId, {
+          id: item.sourceId,
+          label: item.sourceId,
+          short: item.sourceId.slice(0, 1).toUpperCase(),
+        })
+      }
+      if (typeof item.direction === 'string') directionIds.add(item.direction)
+    }
+    return {
+      schemaVersion: 2,
+      demo: meta.demo,
+      legacy: meta.legacy,
+      updatedAt: indexInfo?.updatedAt ?? null,
+      digestPath: meta.digestPath,
+      days,
+      directions: meta.directions ?? [...directionIds].map(id => ({ id, label: id })),
+      sources: meta.sources ?? [...sourceMap.values()],
+    }
+  }, [days, indexInfo, meta])
+
+  useEffect(() => { digestRef.current = digest }, [digest])
 
   const items = useMemo(() => flattenDigest(digest), [digest])
   const sourceById = useMemo(() => {
@@ -364,6 +510,40 @@ export function PaperReaderPage() {
     return [{ id: 'all', label: '全部' }, ...declared.filter(direction => direction && typeof direction.id === 'string')]
   }, [digest])
   const directionById = useMemo(() => new Map(directions.map(direction => [direction.id, direction])), [directions])
+
+  /** Dates the page has already fetched, including the ones that failed. */
+  const attemptedDates = useMemo(() => new Set([
+    ...days.map(day => day.date),
+    ...dayErrors.map(entry => entry.date),
+  ]), [days, dayErrors])
+  const historyDays = useMemo(() => indexInfo?.days ?? [], [indexInfo])
+  const remainingDays = useMemo(
+    () => historyDays.filter(day => !attemptedDates.has(day.date)),
+    [historyDays, attemptedDates],
+  )
+
+  const loadOlder = useCallback(async () => {
+    if (loadingMore || remainingDays.length === 0) return
+    const wanted = remainingDays.slice(0, PAGE_DAYS).map(day => day.date)
+    setLoadingMore(true)
+    try {
+      const results = await Promise.all(wanted.map(date => fetchDay(date).then(
+        value => ({ date, value }),
+        error => ({ date, error }),
+      )))
+      applyResults(results)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [applyResults, fetchDay, loadingMore, remainingDays])
+
+  const retryDay = useCallback(async (date) => {
+    const result = await fetchDay(date).then(
+      value => ({ date, value }),
+      error => ({ date, error }),
+    )
+    applyResults([result])
+  }, [applyResults, fetchDay])
 
   // Seed first-open state and keep the active paper valid after a refresh.
   useEffect(() => {
@@ -596,7 +776,7 @@ export function PaperReaderPage() {
       <div className="pr-root">
         <div className="pr-loading">
           <span className="pr-spinner" />
-          <span>正在读取每日论文…</span>
+          <span>正在读取最近 7 天…</span>
         </div>
       </div>
     )
@@ -609,9 +789,25 @@ export function PaperReaderPage() {
           <div className="pr-error-title">无法读取论文列表</div>
           <p className="pr-error-text">{loadError}</p>
           <p className="pr-error-hint">
-            数据来自 <code>$DSH_HOME/paper-reader/digest.json</code>；文件缺失时使用内置示例。
+            数据来自 <code>$DSH_HOME/paper-reader/index.json</code> 与{' '}
+            <code>digest/YYYY-MM-DD.json</code>；没有索引时回退到 <code>digest.json</code> 或内置示例。
           </p>
           <button className="pr-primary-btn" onClick={() => void load(false)}>重试</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (items.length === 0 && !digest?.demo && dayErrors.length === 0) {
+    return (
+      <div className="pr-root">
+        <div className="pr-empty">
+          <span className="pr-empty-mark"><IconBook /></span>
+          <div className="pr-empty-title">还没有抓取数据</div>
+          <p className="pr-empty-text">
+            每日抓取运行后，按天 digest 会写入 <code>$DSH_HOME/paper-reader/digest/</code>，这里会自动出现最近 7 天。
+          </p>
+          <button className="pr-primary-btn" onClick={() => void load(false)}>重新读取</button>
         </div>
       </div>
     )
@@ -624,12 +820,16 @@ export function PaperReaderPage() {
         <div className="pr-brand">
           <span className="pr-brand-mark"><IconBook /></span>
           <span className="pr-brand-name">论文阅读</span>
-          {digest.demo && <span className="pr-demo" title="当前为内置示例数据；agent 写入 digest.json 后自动切换">示例数据</span>}
+          {digest.demo && <span className="pr-demo" title="当前为内置示例数据；agent 写入按天 digest 后自动切换">示例数据</span>}
         </div>
 
         <div className="pr-status">
           <span className="pr-status-dot" />
-          <span className="pr-status-text">每日 09:00 抓取 · X / Claude Blog · {items.length} 篇 · {unreadCount} 未读</span>
+          <span className="pr-status-text">
+            {historyDays.length > 0
+              ? `每日 09:00 抓取 · 已加载 ${days.length}/${historyDays.length} 天 · ${items.length} 篇 · ${unreadCount} 未读`
+              : `每日 09:00 抓取 · ${items.length} 篇 · ${unreadCount} 未读`}
+          </span>
         </div>
 
         <div className="pr-top-actions">
@@ -729,7 +929,7 @@ export function PaperReaderPage() {
           </div>
 
           <div className="pr-feed" role="listbox" aria-label="论文列表">
-            {groups.length === 0 && (
+            {groups.length === 0 && items.length > 0 && (
               <div className="pr-feed-empty">
                 <p>没有匹配的论文</p>
                 <button type="button" className="pr-link-btn" onClick={clearFilters}>清除搜索与筛选</button>
@@ -813,11 +1013,34 @@ export function PaperReaderPage() {
                 </section>
               )
             })}
+
+            {dayErrors.map(error => (
+              <div className="pr-day-error" key={`error-${error.date}`}>
+                <div className="pr-day-error-body">
+                  <span className="pr-day-error-date">{error.date}</span>
+                  <span className="pr-day-error-msg">{error.message}</span>
+                </div>
+                <button type="button" className="pr-link-btn pr-day-retry" onClick={() => void retryDay(error.date)}>
+                  重试
+                </button>
+              </div>
+            ))}
+
+            {remainingDays.length > 0 && (
+              <button
+                type="button"
+                className="pr-history-more"
+                onClick={() => void loadOlder()}
+                disabled={loadingMore}
+              >
+                {loadingMore ? '加载中…' : `加载更早（还有 ${remainingDays.length} 天）`}
+              </button>
+            )}
           </div>
 
           <div className="pr-sidebar-foot">
             <span>每日 09:00 由 agent 抓取 · 已去重</span>
-            <button type="button" className="pr-link-btn" onClick={() => showToast(digest.demo ? '当前是内置示例；agent 写入 digest.json 后自动切换。' : `数据文件：${digest.digestPath ?? 'digest.json'}`)}>
+            <button type="button" className="pr-link-btn" onClick={() => showToast(digest.demo ? '当前是内置示例；agent 写入按天 digest 后自动切换。' : `数据文件：${digest.digestPath ?? '$DSH_HOME/paper-reader/index.json'}`)}>
               数据来源
             </button>
           </div>
@@ -939,7 +1162,7 @@ export function PaperReaderPage() {
 
                   {digest.demo && (
                     <div className="pr-demo-note">
-                      当前显示内置示例。agent 写入 <code>$DSH_HOME/paper-reader/digest.json</code> 后，这里会自动换成真实抓取结果。
+                      当前显示内置示例。agent 写入 <code>$DSH_HOME/paper-reader/digest/YYYY-MM-DD.json</code> 后，这里会自动换成真实抓取结果。
                     </div>
                   )}
                 </header>
