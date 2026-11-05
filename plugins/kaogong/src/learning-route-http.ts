@@ -9,7 +9,7 @@ export function registerLearningRoute(registry:BusinessRegistry,state:KaogongIns
   if(req.method!=='GET'){send(405,{error:'GET required'});return}
   const points=learningOutline.map(point=>{
    const materials=[...state.knowledgeEntries.entries()].filter(([,row])=>row.subject===point.subject&&canonicalKnowledgePoint(row.subject,row.knowledgePoint)===point.knowledgePoint&&row.kind!=='笔记').map(([id,row])=>({id,title:row.title}))
-   const tasks=state.plan.read().tasks.filter(task=>task.knowledgePointId===point.id&&task.kind==='learn');const learned=tasks.some(task=>task.status==='completed')||[...state.lessonRecords.entries()].some(([,lesson])=>!!lesson.completion&&lesson.request.knowledgePointId===point.id&&lesson.request.subject===point.subject);return {...point,materials,status:learned?'learned':tasks.some(task=>task.status==='in-progress')?'learning':'unlearned',taskId:tasks.find(task=>task.status!=='completed')?.id}
+   const tasks=state.plan.read().tasks.filter(task=>task.knowledgePointId===point.id&&task.kind==='learn');const learned=tasks.some(task=>task.status==='completed')||[...state.lessonRecords.entries()].some(([,lesson])=>!!lesson.completion&&lesson.request.knowledgePointId===point.id&&lesson.request.subject===point.subject);return {...point,materials,status:learned?'learned':tasks.some(task=>task.status==='in-progress')?'learning':'unlearned',taskId:(tasks.find(task=>task.status==='in-progress')??tasks.find(task=>task.status==='pending'))?.id}
   })
   send(200,{points,coverage:{learned:points.filter(point=>point.status==='learned').length,total:points.length}})
  }})
