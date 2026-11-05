@@ -725,6 +725,19 @@
   line-height: 16px;
 }
 
+.pr-title-flag {
+  margin-left: 8px;
+  padding: 0 5px;
+  border: 1px dashed var(--pr-border-strong);
+  border-radius: 4px;
+  color: var(--pr-faint);
+  font-family: inherit;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
 .pr-title-zh {
   margin: 12px 0 6px;
   color: var(--pr-text);
@@ -955,11 +968,26 @@
   color: var(--pr-text-2);
 }
 
+.pr-missing h2,
+.pr-missing h3 {
+  margin: 0;
+  color: var(--pr-text);
+}
+
 .pr-missing span {
   display: inline-block;
   margin-top: 4px;
   color: var(--pr-faint);
   font-size: 10.5px;
+}
+
+/* The "untranslated, showing the original" marker, wherever it appears. */
+.pr-fallback {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--pr-faint);
+  font-size: 10.5px;
+  font-weight: 400;
 }
 
 /* Full-width blocks: equations, figures, code share one column in 对照 mode. */
@@ -1052,12 +1080,24 @@
   color: var(--pr-faint);
 }
 
+.pr-figure-image {
+  display: block;
+  max-width: 100%;
+  margin: 4px 0 10px;
+  border-radius: 6px;
+}
+
 .pr-figure-caption {
   display: grid;
   gap: 3px;
   color: var(--pr-muted);
   font-size: 11.5px;
   line-height: 1.65;
+}
+
+.pr-figure-caption-en {
+  color: var(--pr-faint);
+  font-family: var(--pr-serif-en);
 }
 
 .pr-code {

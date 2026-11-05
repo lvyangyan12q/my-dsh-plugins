@@ -12,6 +12,7 @@
  * browser via localStorage.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { normalizeDigest, otherLanguage, pickText } from '../shared/schema.js'
 import cssText from './styles.css'
 
 const STORAGE_KEY = 'dsh-paper-reader:v1'
@@ -21,6 +22,7 @@ const MODES = [
   { id: 'zh', label: '仅中文' },
   { id: 'en', label: 'English' },
 ]
+const LANGUAGE_LABELS = { en: 'English', zh: '中文' }
 const DIRECTION_COLORS = {
   agent: '#8b7cf6',
   reasoning: '#3f9fb0',
@@ -106,10 +108,26 @@ function clockTime(value) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
+/** The language the item was written in; v1 digests are English-first. */
+function sourceLanguageOf(item) {
+  return item?.sourceLanguage === 'zh' ? 'zh' : 'en'
+}
+
+/** 「仅中文」/「English」 are target-language views, not original/translation ones. */
+function targetLanguageOf(mode) {
+  return mode === 'en' ? 'en' : 'zh'
+}
+
+function languageLabel(language) {
+  return LANGUAGE_LABELS[language] ?? language
+}
+
 function matchesQuery(item, query) {
   if (!query) return true
   const haystack = [
-    item.titleZh, item.titleEn, item.summaryZh, item.org, item.venue,
+    item.title?.original, item.title?.translation,
+    item.summary?.original, item.summary?.translation,
+    item.org, item.venue,
     ...(Array.isArray(item.authors) ? item.authors : []),
     ...(Array.isArray(item.tags) ? item.tags : []),
   ].filter(value => typeof value === 'string').join(' ').toLowerCase()
@@ -211,13 +229,38 @@ function PendingParagraph() {
   )
 }
 
-function ZhParagraph({ block }) {
-  if (typeof block.zh === 'string' && block.zh.length > 0) return <p>{block.zh}</p>
-  if (block.zhState === 'pending') return <PendingParagraph />
+function UntranslatedNote() {
+  return <span className="pr-fallback">未翻译，显示原文</span>
+}
+
+/** Translation column of a paired block: text, pending skeleton, or fallback. */
+function TranslatedText({ block }) {
+  if (block.translation) return <p>{block.translation}</p>
+  if (block.translationState === 'pending') return <PendingParagraph />
   return (
     <div className="pr-missing">
-      <p>{block.en}</p>
-      <span>暂未翻译，显示原文</span>
+      <p>{block.original}</p>
+      <UntranslatedNote />
+    </div>
+  )
+}
+
+/**
+ * Single-language view of a pair. A missing translation falls back to the
+ * other language and says so, rather than showing an empty paragraph.
+ */
+function SingleLanguageText({ pair, sourceLanguage, targetLanguage, headingLevel = 0, anchor }) {
+  const picked = pickText(pair, sourceLanguage, targetLanguage)
+  if (!picked.text) return null
+  const Tag = headingLevel > 0 ? (headingLevel <= 2 ? 'h2' : 'h3') : 'p'
+  const className = headingLevel > 0 ? 'pr-single-heading' : 'pr-single-paragraph'
+  if (!picked.fallback) {
+    return <Tag className={className} {...anchor}>{picked.text}</Tag>
+  }
+  return (
+    <div className="pr-missing" {...anchor}>
+      <Tag className={className}>{picked.text}</Tag>
+      <UntranslatedNote />
     </div>
   )
 }
@@ -283,9 +326,12 @@ export function PaperReaderPage() {
         throw new Error(`HTTP ${response.status}${detail}`)
       }
       const data = await response.json()
-      if (!data || !Array.isArray(data.days)) throw new Error('数据格式无效')
-      digestRef.current = data
-      setDigest(data)
+      // v1 (en/zh) and v2 (sourceLanguage + original/translation) both land in
+      // one normalized shape, so the reading page never branches on version.
+      const normalized = normalizeDigest(data)
+      if (!normalized) throw new Error('数据格式无效')
+      digestRef.current = normalized
+      setDigest(normalized)
       setLoadState('ready')
       setLoadError('')
     } catch (error) {
@@ -344,6 +390,12 @@ export function PaperReaderPage() {
   }, [digest, items])
 
   const activeItem = useMemo(() => items.find(item => item.id === prefs.activeId) ?? null, [items, prefs.activeId])
+  const activeLanguage = sourceLanguageOf(activeItem)
+  const translationLanguage = otherLanguage(activeLanguage)
+  const targetLanguage = targetLanguageOf(prefs.mode)
+  const zhTitle = activeItem ? pickText(activeItem.title, activeLanguage, 'zh') : { text: null, fallback: false }
+  const enTitle = activeItem ? pickText(activeItem.title, activeLanguage, 'en') : { text: null, fallback: false }
+  const summaryPick = activeItem ? pickText(activeItem.summary, activeLanguage, targetLanguage) : { text: null, fallback: false }
   const normalizedQuery = query.trim().toLowerCase()
 
   const baseItems = useMemo(() => items.filter(item =>
@@ -380,10 +432,12 @@ export function PaperReaderPage() {
 
   const headings = useMemo(() => {
     if (!activeItem) return []
+    const language = sourceLanguageOf(activeItem)
+    const target = targetLanguageOf(prefs.mode)
     const out = []
     activeItem.blocks.forEach((block, index) => {
       if (block && block.type === 'heading') {
-        const label = prefs.mode === 'en' ? (block.en ?? block.zh) : (block.zh ?? block.en)
+        const label = pickText(block, language, target).text
         out.push({ index, level: Number(block.level) || 1, label: label || '未命名小节' })
       }
     })
@@ -705,6 +759,9 @@ export function PaperReaderPage() {
                       {group.items.map(item => {
                         const source = sourceById.get(item.sourceId) ?? { id: item.sourceId ?? 'x', label: item.sourceId ?? 'X', short: 'X' }
                         const direction = directionById.get(item.direction) ?? { label: item.direction ?? '未分类' }
+                        const itemLanguage = sourceLanguageOf(item)
+                        const itemTitleZh = pickText(item.title, itemLanguage, 'zh')
+                        const itemTitleEn = pickText(item.title, itemLanguage, 'en')
                         const read = prefs.read.includes(item.id)
                         const bookmarked = prefs.bookmarks.includes(item.id)
                         const active = prefs.activeId === item.id
@@ -730,12 +787,12 @@ export function PaperReaderPage() {
                             <div className="pr-item-head">
                               <SourceBadge source={source} />
                               <span className="pr-item-time">{clockTime(item.collectedAt)}</span>
-                              {item.translation?.status === 'partial' && <span className="pr-pill">翻译中</span>}
+                              {item.translationState !== 'complete' && <span className="pr-pill">翻译中</span>}
                               {bookmarked && <span className="pr-item-mark" title="已收藏">★</span>}
                               {!read && <UnreadDot />}
                             </div>
-                            <div className="pr-item-title-zh">{item.titleZh}</div>
-                            <div className="pr-item-title-en">{item.titleEn}</div>
+                            <div className="pr-item-title-zh">{itemTitleZh.text}</div>
+                            <div className="pr-item-title-en">{itemTitleEn.text}</div>
                             <div className="pr-item-meta">
                               <span
                                 className="pr-dir"
@@ -831,12 +888,21 @@ export function PaperReaderPage() {
                     <span className="pr-dot">·</span>
                     <span>收集于 {clockTime(activeItem.collectedAt)}</span>
                     {activeItem.excerpt && <span className="pr-chip-inline">节选</span>}
+                    <span className="pr-chip-inline" data-source-language={activeLanguage}>
+                      {activeLanguage === 'zh' ? '中文原文' : '英文原文'}
+                    </span>
                   </div>
 
-                  {prefs.mode !== 'en' && <h1 className="pr-title-zh">{activeItem.titleZh}</h1>}
-                  {prefs.mode !== 'zh' && (
+                  {prefs.mode !== 'en' && zhTitle.text && (
+                    <h1 className="pr-title-zh">
+                      {zhTitle.text}
+                      {zhTitle.fallback && <span className="pr-title-flag">未翻译</span>}
+                    </h1>
+                  )}
+                  {prefs.mode !== 'zh' && enTitle.text && enTitle.text !== zhTitle.text && (
                     <p className={prefs.mode === 'en' ? 'pr-title-en pr-title-en-hero' : 'pr-title-en'}>
-                      {activeItem.titleEn}
+                      {enTitle.text}
+                      {enTitle.fallback && <span className="pr-title-flag">未翻译</span>}
                     </p>
                   )}
 
@@ -854,16 +920,19 @@ export function PaperReaderPage() {
                     )}
                   </div>
 
-                  {prefs.mode !== 'en' && activeItem.summaryZh && (
+                  {summaryPick.text && (
                     <div className="pr-summary">
-                      <span className="pr-summary-label">导读</span>
-                      <p>{activeItem.summaryZh}</p>
+                      <span className="pr-summary-label">{prefs.mode === 'en' ? 'Summary' : '导读'}</span>
+                      <p>{summaryPick.text}</p>
+                      {summaryPick.fallback && <UntranslatedNote />}
                     </div>
                   )}
 
-                  {activeItem.translation?.status === 'partial' && (
+                  {activeItem.translationState !== 'complete' && (
                     <div className="pr-notice">
-                      <span>翻译进行中 · {activeItem.translation.done ?? '—'}/{activeItem.translation.total ?? '—'} 段</span>
+                      <span>
+                        翻译进行中 · {activeItem.translation.done ?? '—'}/{activeItem.translation.total ?? '—'} 段
+                      </span>
                       <button type="button" className="pr-link-btn" onClick={retryTranslation}>重试</button>
                     </div>
                   )}
@@ -875,18 +944,19 @@ export function PaperReaderPage() {
                   )}
                 </header>
 
-                <div className="pr-body" data-mode={prefs.mode}>
+                <div className="pr-body" data-mode={prefs.mode} data-source-language={activeLanguage}>
                   {prefs.mode === 'both' && (
                     <div className="pr-legend" aria-hidden="true">
-                      <span>原文</span>
-                      <span>中文</span>
+                      <span>原文 · {languageLabel(activeLanguage)}</span>
+                      <span>译文 · {languageLabel(translationLanguage)}</span>
                     </div>
                   )}
 
                   {activeItem.blocks.map((block, index) => {
                     if (!block || typeof block !== 'object') return null
-                    const blockId = `pr-b-${index}`
-                    const anchor = { 'data-block': index, id: blockId }
+                    const anchor = { 'data-block': index, 'data-block-type': block.type, id: `pr-b-${index}` }
+                    const originalColumn = `pr-col pr-col-${activeLanguage} pr-col-original`
+                    const translationColumn = `pr-col pr-col-${translationLanguage} pr-col-translation`
 
                     if (block.type === 'heading') {
                       const level = Number(block.level) || 1
@@ -894,15 +964,24 @@ export function PaperReaderPage() {
                       if (prefs.mode === 'both') {
                         return (
                           <div className="pr-pair pr-pair-heading" key={index} {...anchor}>
-                            <div className="pr-col pr-col-en"><HeadingTag>{block.en}</HeadingTag></div>
-                            <div className="pr-col pr-col-zh"><HeadingTag>{block.zh ?? block.en}</HeadingTag></div>
+                            <div className={originalColumn} data-column="original" data-lang={activeLanguage}>
+                              <HeadingTag>{block.original}</HeadingTag>
+                            </div>
+                            <div className={translationColumn} data-column="translation" data-lang={translationLanguage}>
+                              {block.translation ? <HeadingTag>{block.translation}</HeadingTag> : <PendingParagraph />}
+                            </div>
                           </div>
                         )
                       }
                       return (
-                        <HeadingTag className="pr-single-heading" key={index} {...anchor}>
-                          {prefs.mode === 'en' ? (block.en ?? block.zh) : (block.zh ?? block.en)}
-                        </HeadingTag>
+                        <SingleLanguageText
+                          key={index}
+                          pair={block}
+                          sourceLanguage={activeLanguage}
+                          targetLanguage={targetLanguage}
+                          headingLevel={level}
+                          anchor={anchor}
+                        />
                       )
                     }
 
@@ -910,18 +989,28 @@ export function PaperReaderPage() {
                       if (prefs.mode === 'both') {
                         return (
                           <div className="pr-pair" key={index} {...anchor}>
-                            <div className="pr-col pr-col-en"><p>{block.en}</p></div>
-                            <div className="pr-col pr-col-zh"><ZhParagraph block={block} /></div>
+                            <div className={originalColumn} data-column="original" data-lang={activeLanguage}>
+                              <p>{block.original}</p>
+                            </div>
+                            <div className={translationColumn} data-column="translation" data-lang={translationLanguage}>
+                              <TranslatedText block={block} />
+                            </div>
                           </div>
                         )
                       }
-                      if (prefs.mode === 'en') {
-                        return <p className="pr-single-paragraph" key={index} {...anchor}>{block.en}</p>
-                      }
-                      return <div className="pr-single-paragraph" key={index} {...anchor}><ZhParagraph block={block} /></div>
+                      return (
+                        <SingleLanguageText
+                          key={index}
+                          pair={block}
+                          sourceLanguage={activeLanguage}
+                          targetLanguage={targetLanguage}
+                          anchor={anchor}
+                        />
+                      )
                     }
 
                     if (block.type === 'equation') {
+                      const notePick = pickText(block.note, activeLanguage, targetLanguage)
                       return (
                         <figure className="pr-equation" key={index} {...anchor}>
                           <div className="pr-eq-line">
@@ -929,10 +1018,16 @@ export function PaperReaderPage() {
                             {block.label && <span className="pr-eq-label">{block.label}</span>}
                           </div>
                           {block.detail && <div className="pr-eq-detail">{renderMath(block.detail)}</div>}
-                          {(block.noteZh || block.noteEn) && (
+                          {block.note && prefs.mode === 'both' && (
                             <figcaption className="pr-eq-note">
-                              {prefs.mode !== 'en' && block.noteZh && <span>{block.noteZh}</span>}
-                              {prefs.mode !== 'zh' && block.noteEn && <span className="pr-eq-note-en">{block.noteEn}</span>}
+                              {block.note.original && <span>{block.note.original}</span>}
+                              {block.note.translation && <span className="pr-eq-note-en">{block.note.translation}</span>}
+                            </figcaption>
+                          )}
+                          {block.note && prefs.mode !== 'both' && notePick.text && (
+                            <figcaption className="pr-eq-note">
+                              <span>{notePick.text}</span>
+                              {notePick.fallback && <UntranslatedNote />}
                             </figcaption>
                           )}
                         </figure>
@@ -941,6 +1036,7 @@ export function PaperReaderPage() {
 
                     if (block.type === 'figure') {
                       const steps = Array.isArray(block.diagram?.steps) ? block.diagram.steps : []
+                      const captionPick = pickText(block.caption, activeLanguage, targetLanguage)
                       return (
                         <figure className="pr-figure" key={index} {...anchor}>
                           {steps.length > 0 && (
@@ -953,10 +1049,23 @@ export function PaperReaderPage() {
                               ))}
                             </div>
                           )}
-                          <figcaption className="pr-figure-caption">
-                            {prefs.mode !== 'zh' && block.captionEn && <span>{block.captionEn}</span>}
-                            {prefs.mode !== 'en' && block.captionZh && <span>{block.captionZh}</span>}
-                          </figcaption>
+                          {block.image && (
+                            <img className="pr-figure-image" src={block.image} alt={block.diagram?.title ?? ''} />
+                          )}
+                          {block.caption && prefs.mode === 'both' && (
+                            <figcaption className="pr-figure-caption">
+                              {block.caption.original && <span>{block.caption.original}</span>}
+                              {block.caption.translation && (
+                                <span className="pr-figure-caption-en">{block.caption.translation}</span>
+                              )}
+                            </figcaption>
+                          )}
+                          {block.caption && prefs.mode !== 'both' && captionPick.text && (
+                            <figcaption className="pr-figure-caption">
+                              <span>{captionPick.text}</span>
+                              {captionPick.fallback && <UntranslatedNote />}
+                            </figcaption>
+                          )}
                         </figure>
                       )
                     }

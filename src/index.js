@@ -14,6 +14,7 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { validateDigest } from './shared/schema.js'
 
 export const name = 'dsh-paper-reader'
 export const inject = ['webServer']
@@ -52,17 +53,14 @@ function resolveDigestPath(ctx) {
   return join(resolveDshHome(ctx), 'paper-reader', 'digest.json')
 }
 
-/** Minimal structural check: the client needs days -> items and each item id. */
-function isValidDigest(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
-  if (!Array.isArray(value.days)) return false
-  for (const day of value.days) {
-    if (!day || typeof day !== 'object' || typeof day.date !== 'string' || !Array.isArray(day.items)) return false
-    for (const item of day.items) {
-      if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !Array.isArray(item.blocks)) return false
-    }
-  }
-  return true
+/**
+ * Contract check: v1 digests stay readable, v2 items must declare their
+ * `sourceLanguage` and pair every translatable field. The first problem is
+ * reporter back to the caller so a broken file is debuggable.
+ */
+function digestProblem(value) {
+  const problems = validateDigest(value)
+  return problems.length > 0 ? problems[0] : null
 }
 
 /**
@@ -89,8 +87,9 @@ async function readDigest(ctx) {
   } catch {
     throw Object.assign(new Error('digest.json is not valid JSON'), { status: 422 })
   }
-  if (!isValidDigest(parsed)) {
-    throw Object.assign(new Error('digest.json does not match the paper-reader schema'), { status: 422 })
+  const problem = digestProblem(parsed)
+  if (problem) {
+    throw Object.assign(new Error(`digest.json does not match the paper-reader schema: ${problem}`), { status: 422 })
   }
   return { ...parsed, demo: false, digestPath: path }
 }

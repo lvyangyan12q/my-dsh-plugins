@@ -68,11 +68,12 @@ $DSH_HOME/paper-reader/digest.json      # 默认 C:\Users\<你>\.dsh\paper-reade
 
 ## 设计要点
 
-- **对照模式按段落行对齐**：每一行左原文、右译文，滚动天然同步，不会出现双栏独立滚动导致的错位。窄容器下自动堆叠为「原文在上、中文在下」。
-- **公式、图、代码整行跨栏**：不复制两份，避免对照模式里出现两个相同公式。
+- **对照固定「原文 | 译文」**：每一行左原文、右译文，滚动天然同步；列的先后由条目的 `sourceLanguage` 决定——英文来源左英文右中文，中文来源左中文右英文。
+- **「仅中文 / English」是目标语言视图**：不假定原文语言；中文来源的 English 模式读的是英文译文。
+- **公式、图、代码整行跨栏**：不复制两份，避免对照模式里出现两个相同公式；它们的说明与图注仍按原文/译文成对显示。
 - **切模式保持阅读位置**：从对照切到仅中文时，按当前段落锚点恢复滚动位置。
 - **跟随 DSH 主题**：颜色使用宿主 `--dsw-*` 变量，亮/暗主题自动适配，不额外提供主题开关。
-- **翻译缺失可见**：`zhState: "pending"` 渲染骨架屏，缺失段落显示「暂未翻译，显示原文」，不静默留白。
+- **翻译缺失可见**：`translation: null` + `translationState: "pending"` 渲染骨架屏；缺失译文在单语模式下回退原文并标注「未翻译，显示原文」，不静默留白。
 
 更多布局理由、状态矩阵与验收清单见 [docs/DESIGN.md](docs/DESIGN.md)。
 
@@ -82,7 +83,15 @@ $DSH_HOME/paper-reader/digest.json      # 默认 C:\Users\<你>\.dsh\paper-reade
 pnpm install          # 安装 esbuild
 pnpm build            # 生成 lib/index.js 与 lib/client.js
 pnpm check            # 语法检查
-pnpm test             # 宿主路由与 sample 契约测试
+pnpm test             # 宿主路由/契约测试 + jsdom 阅读页渲染测试
+```
+
+阅读页测试需要 jsdom 与 react（不在本包内）：
+
+```powershell
+$env:PAPER_READER_TEST_DEPS = 'C:\path\to\package-with-react-and-jsdom'
+$env:ESBUILD_BIN = 'C:\path\to\esbuild.exe'   # 仅当 lib/client.js 缺失或过期
+node test/client.test.mjs
 ```
 
 没有本地 esbuild 时，可把 `ESBUILD_MODULE` 指向已有安装：
