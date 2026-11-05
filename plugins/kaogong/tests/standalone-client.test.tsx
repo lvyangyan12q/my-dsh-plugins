@@ -26,7 +26,7 @@ test('first opening is read-only and a confirmed profile enters the four main le
     assert.deepEqual([...document.querySelectorAll('nav[aria-label="学习页面"] button')].map(b=>b.textContent),['今日','学习路线','复习中心','学习进度'])
     assert.match(document.body.textContent??'',/考试目标待设置/)
     await act(async()=>{[...document.querySelectorAll('nav[aria-label="学习页面"] button')].find(button=>button.textContent==='复习中心')!.click()})
-    assert.ok(document.querySelector('section[aria-label="知识点主动回忆"]'))
+    assert.ok(document.querySelector('section[aria-label="复习中心"]'))
     assert.equal(calls.filter(row=>row&&typeof row==='object'&&'action'in row&&row.action==='create').length,1)
   }finally{
     await act(async()=>root.unmount());globalThis.fetch=priorFetch;dom.window.close()
@@ -71,3 +71,4 @@ test('a cold-restored Native tab without ephemeral navigation params asks Host f
     assert.equal(requests.length,1,'supplied mismatched params never fall back to Session lookup')
   }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
+

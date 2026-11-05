@@ -1,3 +1,4 @@
+import {mkdirSync,writeFileSync} from 'node:fs'
 import assert from 'node:assert/strict'
 import {createRequire} from 'node:module'
 import {resolve,dirname} from 'node:path'
@@ -12,8 +13,11 @@ const domain=['lessons.test.mjs','practice-rounds.test.mjs']
 const domainPattern='lesson links|unsupported, foreign|additive migration|same subject role|score-only completion|one aggregate write|canonical cause|ten-question cycles|durable scoring|partial notebook failure|reflection retries|notebook commands|repair-style material|explicit knowledge point|verified display supplements|publisher solution annotations|unverified option adverts|bibliographic analysis titles|bibliographic metadata|only a bounded bibliography|reviewed one-question answer'
 const mode=process.argv.includes('--domain')?'domain':process.argv.includes('--host')?'host':process.argv.includes('--client')?'client':'all'
 const groups=mode==='all'?[['host',host],['client',client]]:[[mode,mode==='host'?host:mode==='client'?client:domain]]
+if(mode==='all'||mode==='client')groups.push(['integration',['review-center-page.test.tsx']])
+const integrationConfig=resolve(root,'.scratch','tsconfig.integration.json')
+mkdirSync(dirname(integrationConfig),{recursive:true});writeFileSync(integrationConfig,JSON.stringify({extends:resolve(native,'tsconfig.json'),compilerOptions:{jsx:'react-jsx'},include:[resolve(root,'src/**/*'),resolve(root,'tests/**/*')]}))
 for(const [kind,files]of groups){
  const filter=kind==='domain'?['--test-name-pattern='+domainPattern]:[]
- const result=spawnSync(process.execPath,['--import',loader,'--test',...filter,...files.map(file=>resolve(root,'tests',file))],{cwd:root,stdio:'inherit',windowsHide:true,env:{...process.env,DSH_SOURCE:native,KAOGONG_TEST_RUNTIME:native,TSX_TSCONFIG_PATH:kind==='client'?resolve(root,'tsconfig.test-client.json'):resolve(native,'tsconfig.json')}})
+ const result=spawnSync(process.execPath,['--import',loader,'--test',...filter,...files.map(file=>resolve(root,'tests',file))],{cwd:root,stdio:'inherit',windowsHide:true,env:{...process.env,DSH_SOURCE:native,KAOGONG_TEST_RUNTIME:native,TSX_TSCONFIG_PATH:kind==='integration'?integrationConfig:kind==='client'?resolve(root,'tsconfig.test-client.json'):resolve(native,'tsconfig.json')}})
  if(result.status!==0){process.exitCode=result.status??1;break}
 }

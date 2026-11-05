@@ -6,7 +6,7 @@
 
 **Blocked by:** 03：错题先重答，再揭示与确认复习、05：一次收尾确认与失败后恢复
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-release-acceptance
 
 **Acceptance criteria:**
 
@@ -17,3 +17,5 @@
 - [ ] 下一周期只回队列，不自动补容量或重排；重试、跨页、重启保持一致。
 
 **验证约定：** 沿用已确认的 Host、Native、页面确认与准确发行包测试边界；只记录实际执行结果。保留档案隔离、资料授权、真实评分与历史快照。按批准原型实现本票对应交互，验收证据完成前不勾选。
+
+2026-11-05：Host与统一中心联调完成；65 Host、38 client＋4页面/真实Host联调、21领域及构建/声明通过。见 docs/evidence/08-ticket06-host.md、08-ticket06-ui.md；勾选与最终关闭仍待08准确包证据。
