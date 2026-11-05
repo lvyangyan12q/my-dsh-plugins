@@ -15,6 +15,7 @@
  */
 import { ARXIV_SOURCE } from './arxiv.js'
 import { DEFAULT_DEEPSEEK_CONFIG, extractDeepSeekArticle, listDeepSeek } from './deepseek.js'
+import { DEFAULT_HF_CONFIG, listHf } from './hf.js'
 import { ANTHROPIC_SOURCE } from './anthropic.js'
 import { KIMI_SOURCE } from './kimi.js'
 
@@ -30,9 +31,26 @@ const DEEPSEEK_SOURCE = {
   extract: extractDeepSeekArticle,
 }
 
+/**
+ * HF is a heat-only source: its candidates point at the arXiv body
+ * (`extractVia: 'arxiv'`), so the registry describes its listing policy but has
+ * no extractor of its own.
+ */
+const HF_SOURCE = {
+  id: 'hf',
+  kind: 'paper',
+  label: 'Hugging Face',
+  short: 'H',
+  defaults: DEFAULT_HF_CONFIG,
+  tracksSeen: false,
+  onExtractFailure: 'excerpt',
+  list: listHf,
+}
+
 export const SOURCES = {
   arxiv: ARXIV_SOURCE,
   deepseek: DEEPSEEK_SOURCE,
+  hf: HF_SOURCE,
   anthropic: ANTHROPIC_SOURCE,
   kimi: KIMI_SOURCE,
 }

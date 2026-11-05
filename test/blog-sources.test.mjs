@@ -41,9 +41,9 @@ afterEach(() => {
 })
 
 /**
- * The fake fetch here knows arXiv and the two blog hosts only; DeepSeek has
- * its own suite, so its source is switched off rather than fed by the wrong
- * fake.
+ * The fake fetch here knows arXiv and the two blog hosts only. DeepSeek has its
+ * own suite, and HF is proxied with its own suite, so both are switched off
+ * rather than fed by the wrong fake.
  */
 function withoutDeepSeek(config) {
   return {
@@ -51,6 +51,7 @@ function withoutDeepSeek(config) {
     sources: {
       ...config.sources,
       deepseek: { ...config.sources.deepseek, enabled: false },
+      hf: { ...config.sources.hf, enabled: false },
     },
   }
 }

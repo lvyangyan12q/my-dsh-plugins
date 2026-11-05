@@ -31,9 +31,10 @@ const DATE = '2026-11-04'
 const NOW = () => new Date('2026-11-04T09:00:00+08:00')
 
 /**
- * These tests describe the arXiv leg of the run; the blog sources have their
- * own fixture suites, so they are switched off here rather than teaching the
- * arXiv fake about other hosts. The default config still enables them.
+ * These tests describe the arXiv leg of the run; DeepSeek, HF and the blog
+ * sources have their own fixture suites, so they are switched off here rather
+ * than teaching the arXiv fake about other hosts. The default config still
+ * enables all of them.
  */
 function arxivOnly(config) {
   return {
@@ -41,6 +42,7 @@ function arxivOnly(config) {
     sources: {
       ...config.sources,
       deepseek: { ...config.sources.deepseek, enabled: false },
+      hf: { ...config.sources.hf, enabled: false },
       anthropic: { ...config.sources.anthropic, enabled: false },
       kimi: { ...config.sources.kimi, enabled: false },
     },
@@ -296,7 +298,7 @@ test('an unsupported --source and a malformed date are usage errors', async () =
   const { impl } = fakeArxiv()
 
   await assert.rejects(
-    runDaily({ root, date: DATE, config, source: 'hf', fetch: impl, env: {}, now: NOW }),
+    runDaily({ root, date: DATE, config, source: 'openai', fetch: impl, env: {}, now: NOW }),
     error => error.code === 'unsupported_source' && error.exitCode === 2,
   )
   await assert.rejects(

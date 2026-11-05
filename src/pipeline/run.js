@@ -26,6 +26,7 @@ import {
 } from '../sources/deepseek.js'
 import { DEFAULT_ANTHROPIC_CONFIG, extractAnthropicArticle, listAnthropic } from '../sources/anthropic.js'
 import { DEFAULT_KIMI_CONFIG, extractKimiArticle, listKimi } from '../sources/kimi.js'
+import { DEFAULT_HF_CONFIG, listHf } from '../sources/hf.js'
 import { SOURCE_IDS, sourceDefinition } from '../sources/registry.js'
 import {
   isDigestDate,
@@ -65,6 +66,10 @@ const SOURCE_LABELS = new Map(SOURCE_META.map(source => [source.id, source.label
  * Built-in source adapters. Later source tickets add theirs here; the run also
  * accepts an `adapters` override so a two-source proxy scenario is testable
  * without inventing a production adapter.
+ *
+ * HF has no extractor of its own: its candidates declare `extractVia: 'arxiv'`,
+ * so the arXiv adapter reads the body from `arxiv.org/html/<id>`. A source that
+ * reuses another source's body simply declares where it lives.
  */
 const BUILTIN_ADAPTERS = {
   arxiv: {
@@ -116,6 +121,13 @@ const BUILTIN_ADAPTERS = {
       fetch,
     }),
   },
+  hf: {
+    list: ({ config, date, fetch }) => listHf({
+      config: config.sources?.hf ?? DEFAULT_HF_CONFIG,
+      date,
+      fetch,
+    }),
+  },
 }
 
 function adapterFor(id, adapters) {
@@ -143,11 +155,20 @@ async function listSource(id, ctx, adapters) {
   return adapter.list(ctx)
 }
 
+/**
+ * The source an adapter reads a candidate's body from. HF papers live on arXiv,
+ * so their candidates point at the arXiv adapter and the arXiv transport; this
+ * keeps the proxy policy per transport instead of per list.
+ */
+function bodySourceOf(candidate) {
+  return candidate.extractVia ?? candidate.sourceId
+}
+
 /** Extract one selected candidate into reader blocks. */
 export async function extractCandidate(candidate, { config, fetch: fetchImpl, adapters = null } = {}) {
-  const adapter = adapterFor(candidate.sourceId, adapters)
+  const adapter = adapterFor(bodySourceOf(candidate), adapters)
   if (!adapter?.extract) {
-    throw Object.assign(new Error(`no extractor for source "${candidate.sourceId}"`), { code: 'source_unimplemented' })
+    throw Object.assign(new Error(`no extractor for source "${bodySourceOf(candidate)}"`), { code: 'source_unimplemented' })
   }
   return adapter.extract({ candidate, config, fetch: fetchImpl })
 }
@@ -511,7 +532,7 @@ export async function runDaily({
     try {
       extraction = await extractCandidate(candidate, {
         config: resolved,
-        fetch: fetchFor(candidate.sourceId),
+        fetch: fetchFor(bodySourceOf(candidate)),
         adapters,
       })
     } catch (error) {

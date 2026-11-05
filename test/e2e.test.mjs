@@ -104,7 +104,13 @@ test('CLI → host → reading page renders arXiv pending items and DeepSeek off
     const indexBody = JSON.parse(index.body)
     assert.equal(indexBody.days[0].date, DATE)
     assert.equal(indexBody.days[0].items, 4)
-    assert.equal(indexBody.days[0].runStatus, 'ok')
+    // The HF board is proxied and this run has no proxy configured, so the day
+    // is complete for the direct sources but explicitly partial: HF is
+    // reported as skipped with its reason, never silently ignored.
+    assert.equal(indexBody.days[0].runStatus, 'partial')
+    const skipped = indexBody.days[0].sources.find(source => source.id === 'hf')
+    assert.equal(skipped.status, 'skipped')
+    assert.match(skipped.reason, /代理/)
 
     const day = await host.call(`/api/paper-reader/digest/${DATE}`)
     assert.equal(day.status, 200)

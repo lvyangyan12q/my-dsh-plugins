@@ -21,13 +21,14 @@ import { isDigestDate } from '../storage.js'
 
 const USAGE = `Usage: paper-reader [options]
 
-Fetch the day's papers and blog posts, select the digest and write it for the
+Fetch the day's papers, the Hugging Face daily board (through the configured
+proxy) and blog posts, select the digest and write it for the
 paper-reader host.
 
 Options:
   --date YYYY-MM-DD   digest date (default: today, local time)
   --dry-run           fetch and select without writing any file
-  --source ID         run only one source (available: arxiv, deepseek, anthropic, kimi)
+  --source ID         run only one source (available: arxiv, hf, deepseek, anthropic, kimi)
   -h, --help          show this help
 
 Data:    $DSH_HOME/paper-reader/digest/YYYY-MM-DD.json
