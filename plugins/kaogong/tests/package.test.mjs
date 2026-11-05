@@ -20,4 +20,3 @@ test('independent alpha.3 package ships native study entries and no Worktable or
  for(const file of ['lib/client.js','lib/index.js','lib/types/index.d.ts','lib/types/client.d.ts','roles/personas/老师.md','roles/personas/班主任.md','roles/personas/辅导员.md','roles/skills/kaogong-teach/SKILL.md','cordis.patch.yml'])assert.ok(files.includes(file),file)
  assert.equal(files.some(file=>/^(materials|archive|storage|题目_images|src|scripts|tests|releases|\.scratch)\//.test(file)||/lib\/(?:typecheck|npm-cache)\//.test(file)||file.endsWith('.map')),false)
 })
-
