@@ -2,13 +2,18 @@
  * Daily selection: filter → dedupe → rank → quota.
  *
  * Pure rules over candidate records, so the whole selection is testable
- * without network or disk. The output order is the reader's order: the most
- * relevant paper first, recency breaking ties.
+ * without network or disk. The output order is the reader's order: the papers
+ * the HF board voted first, then the most relevant, recency breaking ties.
  *
  * - **Dedupe** prefers the arXiv id, then the canonical URL, then a
- *   punctuation-insensitive title fingerprint. The first occurrence wins.
+ *   punctuation-insensitive title fingerprint. The first occurrence wins,
+ *   unless a later duplicate carries a heat signal (`upvotes`): the HF daily
+ *   board copy then replaces the plain arXiv one, because it is the copy that
+ *   carries the reason the paper is being considered at all.
  * - **Filter** uses the configured categories (when the candidate declares
  *   any) plus include/exclude keywords over title and summary.
+ * - **Rank** puts a voted paper above an unvoted one — the HF board is the heat
+ *   signal — then keyword relevance, then votes, then recency.
  * - **Quota** is a paper cap and a daily total cap; the list is never padded.
  */
 export const DEFAULT_QUOTA = { total: 10, papers: 6, blogs: 4 }
@@ -62,23 +67,48 @@ function keysOf(candidate) {
   }
 }
 
-/** Drop repeated papers, keeping the first occurrence. */
+/** Upvotes are the HF heat signal; anything else has none. */
+function votesOf(candidate) {
+  const votes = Number(candidate?.upvotes)
+  return Number.isFinite(votes) && votes > 0 ? votes : 0
+}
+
+/** 1 for a paper the HF board voted up, 0 for everything else. */
+function heatTier(candidate) {
+  return votesOf(candidate) > 0 ? 1 : 0
+}
+
+/** Drop repeated papers, keeping the heat-carrying copy when there is one. */
 export function dedupeCandidates(candidates) {
   const kept = []
   const duplicates = []
-  const seen = { arxivId: new Set(), url: new Set(), title: new Set() }
+  const seen = { arxivId: new Map(), url: new Map(), title: new Map() }
+  const keyMaps = [['arxivId', seen.arxivId], ['url', seen.url], ['title', seen.title]]
+
   for (const candidate of candidates) {
     const keys = keysOf(candidate)
-    const duplicateOf = (keys.arxivId && seen.arxivId.has(keys.arxivId) && 'arxivId')
-      || (keys.url && seen.url.has(keys.url) && 'url')
-      || (keys.title && seen.title.has(keys.title) && 'title')
-    if (duplicateOf) {
-      duplicates.push({ id: candidate.id, reason: duplicateOf })
+    let duplicate = null
+    for (const [name, map] of keyMaps) {
+      if (keys[name] && map.has(keys[name])) {
+        duplicate = { reason: name, index: map.get(keys[name]) }
+        break
+      }
+    }
+    if (duplicate) {
+      duplicates.push({ id: candidate.id, reason: duplicate.reason })
+      // A voted duplicate replaces the unvoted copy in place, so the result
+      // keeps the first-seen position but gains the HF heat signal.
+      if (votesOf(candidate) > votesOf(kept[duplicate.index])) {
+        kept[duplicate.index] = candidate
+        for (const [name, map] of keyMaps) {
+          if (keys[name]) map.set(keys[name], duplicate.index)
+        }
+      }
       continue
     }
-    if (keys.arxivId) seen.arxivId.add(keys.arxivId)
-    if (keys.url) seen.url.add(keys.url)
-    if (keys.title) seen.title.add(keys.title)
+    for (const [name, map] of keyMaps) {
+      if (keys[name]) map.set(keys[name], kept.length)
+    }
     kept.push(candidate)
   }
   return { kept, duplicates }
@@ -137,8 +167,12 @@ export function scoreCandidate(candidate, { includeKeywords = [] } = {}) {
 
 function compareByRank(options) {
   return (left, right) => {
+    const heatDelta = heatTier(right) - heatTier(left)
+    if (heatDelta !== 0) return heatDelta
     const scoreDelta = scoreCandidate(right, options) - scoreCandidate(left, options)
     if (scoreDelta !== 0) return scoreDelta
+    const votesDelta = votesOf(right) - votesOf(left)
+    if (votesDelta !== 0) return votesDelta
     const leftTime = Date.parse(left.publishedAt ?? '') || 0
     const rightTime = Date.parse(right.publishedAt ?? '') || 0
     if (leftTime !== rightTime) return rightTime - leftTime

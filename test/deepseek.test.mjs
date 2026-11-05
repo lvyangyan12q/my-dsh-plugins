@@ -400,6 +400,8 @@ test('a daily run writes the official pair, never calls translation and respects
       sources: {
         ...config.sources,
         deepseek: { ...config.sources.deepseek, lookbackDays: 3 },
+        // HF is proxied and this run has no proxy; its own tests cover that leg.
+        hf: { ...config.sources.hf, enabled: false },
       },
     },
     fetch: impl,

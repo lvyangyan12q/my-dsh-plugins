@@ -397,6 +397,9 @@ test('a source marked useProxy has every request answered by the proxy and never
   const root = tempRoot()
   const config = proxiedConfig()
   config.sources.arxiv.useProxy = true
+  // HF is proxied too; this test is about the arXiv routing, so keep the run to
+  // one proxied source and count its requests exactly.
+  config.sources.hf.enabled = false
   config.proxy.url = 'http://user:secret@proxy.local:8080'
   const directCalls = []
   const direct = async (url) => {
@@ -576,13 +579,15 @@ test('when the only source needs an unavailable proxy the run writes no digest a
 
 test('a run with no proxied source never checks or uses the proxy', async () => {
   const root = tempRoot()
+  const config = proxiedConfig()
+  config.sources.hf.enabled = false
   const direct = fakeArxiv({ articles: FULL_TEXT })
   const proxy = fakeProxy()
 
   const result = await runDaily({
     root,
     date: DATE,
-    config: proxiedConfig(),
+    config,
     fetch: direct.impl,
     proxyFetch: proxy.impl,
     env: HEALTHY_ENV,
