@@ -1,3 +1,4 @@
+import {learningOutline} from './learning-outline.ts'
 import type { KvTable, DomainGlobal } from '@deepseek-ai/dsh-storage-domain'
 import { lessonCreate } from './lesson-schema.ts'
 import type { Lesson, LessonCreate, LessonView, LessonEvidence } from './lesson-schema.ts'
@@ -34,6 +35,7 @@ export class Lessons {
   /** Learner-confirmed creation is idempotent by the supplied stable lesson ID. */
   create(input: LessonCreate): Promise<LessonView> { return this.run(async () => {
     const request = lessonCreate.parse(input)
+    if(request.knowledgePointId&&!learningOutline.some(point=>point.id===request.knowledgePointId&&point.subject===request.subject&&point.knowledgePoint===request.knowledgePoint))throw new PracticeError('知识点身份与课堂分类不匹配')
     if (!TAXONOMY.some(row => row.subject === request.subject)) throw new PracticeError('不支持的科目')
     if (new Set(request.materialIds).size !== request.materialIds.length) throw new PracticeError('重复材料')
     const old = this.table.get(request.lessonId)

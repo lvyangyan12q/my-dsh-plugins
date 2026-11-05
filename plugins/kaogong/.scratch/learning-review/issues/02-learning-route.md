@@ -6,7 +6,7 @@
 
 **Blocked by:** 01：从今日继续同一项真实任务
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-release-acceptance
 
 **Acceptance criteria:**
 
@@ -16,3 +16,5 @@
 - [ ] 无考试日期可自主学习；阶段、目标与周计划保持可达，预览取消不修改计划。
 
 **验证约定：** 沿用已确认的 Host、Native、页面确认与准确发行包测试边界；只记录实际执行结果。保留档案隔离、资料授权、真实评分与历史快照。按批准原型实现本票对应交互，验收证据完成前不勾选。
+
+**Evidence:** [源码与公开边界验证](../../../docs/evidence/08-ticket02-route.md)。准确包与真实视觉验收待08，不关闭父规格。

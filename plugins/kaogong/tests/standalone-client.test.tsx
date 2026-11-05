@@ -4,7 +4,7 @@ import React,{act} from 'react'
 import {createRoot} from 'react-dom/client'
 import {JSDOM} from 'jsdom'
 
-test('first opening is read-only and a confirmed profile enters the six-page overview',async()=>{
+test('first opening is read-only and a confirmed profile enters the four main learning pages',async()=>{
   const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'})
   const values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
   const saved=new Map(Object.keys(values).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))
@@ -22,7 +22,8 @@ test('first opening is read-only and a confirmed profile enters the six-page ove
     assert.match(document.body.textContent??'',/创建备考档案/)
     assert.equal(calls.filter(row=>row&&typeof row==='object'&&'action'in row&&row.action==='create').length,0)
     await act(async()=>{[...document.querySelectorAll('button')].find(button=>button.textContent==='确认创建备考档案')!.click()})
-    for(const label of ['学习总览','学习计划','练习训练','错题与复习','学习进度','资料库'])assert.ok([...document.querySelectorAll('nav[aria-label="学习页面"] button')].some(button=>button.textContent===label),label)
+    for(const label of ['今日','学习路线','复习中心','学习进度'])assert.ok([...document.querySelectorAll('nav[aria-label="学习页面"] button')].some(button=>button.textContent===label),label)
+    assert.deepEqual([...document.querySelectorAll('nav[aria-label="学习页面"] button')].map(b=>b.textContent),['今日','学习路线','复习中心','学习进度'])
     assert.match(document.body.textContent??'',/考试目标待设置/)
     assert.equal(calls.filter(row=>row&&typeof row==='object'&&'action'in row&&row.action==='create').length,1)
   }finally{

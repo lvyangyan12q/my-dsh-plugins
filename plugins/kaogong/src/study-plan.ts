@@ -1,3 +1,4 @@
+import {learningOutline} from './learning-outline.ts'
 import {randomUUID} from 'node:crypto'
 import {defineDomain} from '@deepseek-ai/dsh-storage-domain'
 import type {DomainGlobal} from '@deepseek-ai/dsh-storage-domain'
@@ -7,14 +8,14 @@ import {TAXONOMY} from './taxonomy.ts'
 const date=z.string().refine(isValidIsoDate,'日期无效')
 export const studyGoal=z.object({examDate:date.nullable(),dailyModules:z.number().int().min(1).max(20),subjects:z.array(z.object({name:z.string(),weight:z.number().int().min(1).max(100)})).min(1)}).strict()
 export const reviewOccurrence=z.object({roundId:z.string().uuid(),questionId:z.string().min(1).max(300)}).strict()
-const task=z.object({id:z.string().uuid(),revision:z.number().int().positive(),subject:z.string(),title:z.string(),kind:z.enum(['learn','practice','review']),phase:z.enum(['foundation','reinforce','sprint']),date:date.nullable(),status:z.enum(['pending','in-progress','completed']),requirePractice:z.boolean(),requireReflections:z.boolean(),summary:z.string(),evidence:z.unknown().nullable(),startedFromRevision:z.number().optional(),lessonId:z.string().uuid().optional(),reviewOccurrence:reviewOccurrence.optional(),reviewHistoryCount:z.number().int().nonnegative().optional()})
+const task=z.object({id:z.string().uuid(),revision:z.number().int().positive(),subject:z.string(),title:z.string(),kind:z.enum(['learn','practice','review']),phase:z.enum(['foundation','reinforce','sprint']),date:date.nullable(),status:z.enum(['pending','in-progress','completed']),requirePractice:z.boolean(),requireReflections:z.boolean(),summary:z.string(),evidence:z.unknown().nullable(),knowledgePointId:z.string().optional(),knowledgePoint:z.string().optional(),startedFromRevision:z.number().optional(),lessonId:z.string().uuid().optional(),reviewOccurrence:reviewOccurrence.optional(),reviewHistoryCount:z.number().int().nonnegative().optional()})
 const draft=z.object({id:z.string().uuid(),baseRevision:z.number().int().nonnegative(),action:z.string(),goal:studyGoal.nullable(),tasks:z.array(task),overflow:z.array(z.string()),diff:z.array(z.object({id:z.string(),before:task.nullable(),after:task.nullable()})),createdAt:z.string()})
 const completionProposal=z.object({id:z.string().uuid(),taskId:z.string().uuid(),baseRevision:z.number().int().nonnegative(),taskRevision:z.number().int().positive(),roundId:z.string().uuid().optional(),createdAt:z.string()})
 export const planState=z.object({revision:z.number().int().nonnegative(),goal:studyGoal.nullable(),tasks:z.array(task),drafts:z.array(draft),completionProposals:z.array(completionProposal).default([]),history:z.array(z.object({revision:z.number(),confirmedAt:z.string(),draftId:z.string(),action:z.string(),diff:draft.shape.diff})),externalMocks:z.array(z.object({id:z.string(),date,title:z.string(),score:z.number(),maximum:z.number(),source:z.literal('learner-self-report')}))})
 export type StudyTask=z.infer<typeof task>
 export type StudyPlanState=z.infer<typeof planState>
 export const studyPlanDomain=defineDomain({name:'kaogong_study_plan',version:1,tables:{},global:{schema:planState,initial:{revision:0,goal:null,tasks:[],drafts:[],completionProposals:[],history:[],externalMocks:[]}}})
-export type PlanPreview={baseRevision:number;action:'generate'|'adjust'|'defer'|'append';today:string;goal?:z.infer<typeof studyGoal>;taskId?:string;date?:string;task?:{subject:string;title:string;kind:StudyTask['kind'];requirePractice?:boolean;requireReflections?:boolean;reviewOccurrence?:z.infer<typeof reviewOccurrence>}}
+export type PlanPreview={baseRevision:number;action:'generate'|'adjust'|'defer'|'append';today:string;goal?:z.infer<typeof studyGoal>;taskId?:string;date?:string;task?:{subject:string;title:string;kind:StudyTask['kind'];knowledgePointId?:string;requirePractice?:boolean;requireReflections?:boolean;reviewOccurrence?:z.infer<typeof reviewOccurrence>}}
 /** One atomic aggregate owns plan revisions, stable tasks and explicit proposals.
  * Existing progress/round/lesson domains are neither inferred nor rewritten. */
 export class StudyPlan{
@@ -46,7 +47,8 @@ export class StudyPlan{
   }else if(input.action==='append'){
    const row=input.task;if(!row||!TAXONOMY.some(t=>t.subject===row.subject)||!row.title.trim()||!['learn','practice','review'].includes(row.kind))throw Error('追加任务无效')
    if(input.date&&(!isValidIsoDate(input.date)||input.date<input.today))throw Error('追加日期无效');if(row.reviewOccurrence&&row.kind!=='review')throw Error('错题关联仅用于复习任务')
-   tasks.push({id:randomUUID(),revision:1,subject:row.subject,title:row.title.trim().slice(0,500),kind:row.kind,phase:'foundation',date:input.date??null,status:'pending',requirePractice:row.requirePractice===true,requireReflections:row.requireReflections!==false,summary:'',evidence:null,...(row.reviewOccurrence?{reviewOccurrence:reviewOccurrence.parse(row.reviewOccurrence)}:{})})
+   const point=row.knowledgePointId?learningOutline.find(p=>p.id===row.knowledgePointId&&p.subject===row.subject):undefined;if(row.knowledgePointId&&!point)throw Error('知识点身份与科目不匹配');
+   tasks.push({...(point?{knowledgePointId:point.id,knowledgePoint:point.knowledgePoint}:{}),id:randomUUID(),revision:1,subject:row.subject,title:row.title.trim().slice(0,500),kind:row.kind,phase:'foundation',date:input.date??null,status:'pending',requirePractice:row.requirePractice===true,requireReflections:row.requireReflections!==false,summary:'',evidence:null,...(row.reviewOccurrence?{reviewOccurrence:reviewOccurrence.parse(row.reviewOccurrence)}:{})})
   }else throw Error('计划预览操作无效')
   const protectedIds=new Set(current.tasks.filter(t=>t.status!=='pending'||t.date!==null&&t.date<=input.today).map(t=>t.id))
   const counts=new Map<string,number>();for(const t of tasks.filter(t=>protectedIds.has(t.id)))if(t.date)counts.set(t.date,(counts.get(t.date)??0)+1)
