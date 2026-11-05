@@ -71,4 +71,3 @@ test('a cold-restored Native tab without ephemeral navigation params asks Host f
     assert.equal(requests.length,1,'supplied mismatched params never fall back to Session lookup')
   }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
-

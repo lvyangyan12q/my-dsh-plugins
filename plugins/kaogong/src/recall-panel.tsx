@@ -208,7 +208,3 @@ function RecallCard({ row, point, profile, command }: {
         </details>}
         </article>;
 }
-
-
-
-

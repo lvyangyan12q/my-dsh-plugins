@@ -45,6 +45,3 @@ export function ReviewQueue({onOpen}:{onOpen():void}){
  useEffect(()=>{let alive=true;http.fetch('/api/kaogong/errors').then(async response=>{if(!response.ok)return;const value=await response.json();if(alive)setQueue(value.queue)}).catch(()=>{});return()=>{alive=false}},[http])
  return <section aria-label="待复习队列"><h3>待复习队列</h3><p>{queue?`待复习 ${queue.total} 项，其中到期 ${queue.due} 项`:'尚无已确认复习记录，或资料尚未授权。'}</p><button onClick={onOpen}>进入历史错题与复习</button></section>
 }
-
-
-

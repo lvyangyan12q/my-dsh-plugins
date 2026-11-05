@@ -150,4 +150,3 @@ export function useRequestOwner() {
   const [local] = useState(() => shared?null:new KaogongViewState())
   return shared ?? local!
 }
-
