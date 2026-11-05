@@ -1,3 +1,4 @@
+import {canonicalKnowledgePoint} from './knowledge-point-identity.ts'
 import {studyDate} from './study-date.ts'
 import type {BusinessRegistry} from './business.ts'
 import type {KaogongInstanceState} from './instance-state.ts'
@@ -11,8 +12,8 @@ export function registerStudyPlanRoutes(registry:BusinessRegistry,state:KaogongI
   const send=(code:number,value:unknown)=>{res.writeHead(code,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value))}
   try{if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json'))throw Error('POST JSON required');let text='';for await(const part of req){text+=part;if(text.length>10000)throw Error('请求过大')}const args=z.object({id:z.string().uuid(),revision:z.number().int().nonnegative()}).strict().parse(JSON.parse(text));const current=await state.plan.start(args.id,args.revision),task=current.tasks.find(t=>t.id===args.id)!;
    if(task.reviewOccurrence){send(200,{state:current,reviewOccurrence:JSON.stringify([task.reviewOccurrence.roundId,task.reviewOccurrence.questionId])})}
-   else if(task.kind==='learn'){const lesson=await state.lessons.create({lessonId:task.lessonId!,subject:task.subject,objective:task.title,materialIds:[],requirePractice:task.requirePractice,requireReflections:task.requireReflections,taskId:task.id,planRevision:task.startedFromRevision});send(200,{state:current,lesson})}
-   else {const round=await state.practice.startForTask({subject:task.subject,title:task.title,limit:10,planRevision:task.startedFromRevision},task.id);send(200,{state:current,round})}
+   else if(task.kind==='learn'){const prior=state.lessonRecords.get(task.lessonId!);const materialIds=task.knowledgePointId?(prior?.request.materialIds??[...state.knowledgeEntries.entries()].filter(([,row])=>row.subject===task.subject&&canonicalKnowledgePoint(row.subject,row.knowledgePoint)===task.knowledgePoint&&row.kind!=='笔记').slice(0,8).map(([id])=>id)):[];if(materialIds.some(id=>!state.knowledgeEntries.get(id)))throw Error('课堂资料授权已变化，请重新核对资料');const lesson=await state.lessons.create({lessonId:task.lessonId!,subject:task.subject,objective:task.title,...(task.knowledgePointId?{knowledgePointId:task.knowledgePointId,knowledgePoint:task.knowledgePoint}:{}),materialIds,requirePractice:task.requirePractice,requireReflections:task.requireReflections,taskId:task.id,planRevision:task.startedFromRevision});send(200,{state:current,lesson})}
+   else {const round=await state.practice.startForTask({subject:task.subject,title:task.title,...(task.knowledgePointId?{knowledgePointId:task.knowledgePointId,knowledgePoint:task.knowledgePoint}:{}),limit:10,planRevision:task.startedFromRevision},task.id);send(200,{state:current,round})}
   }catch(error){send(409,{error:error instanceof Error?error.message:'任务开始失败'})}
  }})
  const stopPlan=registry.webServer.register({kind:'exact',path:'/api/kaogong/plan',handler:async(req,res)=>{

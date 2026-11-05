@@ -6,7 +6,7 @@ export const lessonSelection = z.object({ instanceId, activeLessonId: z.string()
 export type LessonSelection = z.infer<typeof lessonSelection>
 export const lessonCreate = z.object({
   lessonId: z.string().uuid(), subject: text, objective: text,
-  knowledgePoint: text.optional(), materialIds: z.array(text).max(8),
+  knowledgePointId: text.optional(), knowledgePoint: text.optional(), materialIds: z.array(text).max(8),
   requireReflections: z.boolean(), requirePractice:z.boolean().optional(), taskId:z.string().uuid().optional(), planRevision:z.number().int().nonnegative().optional(), legacyNoteId: text.optional(),
 }).strict()
 export const lessonCommand = z.object({ lessonId: z.string().uuid() }).strict()

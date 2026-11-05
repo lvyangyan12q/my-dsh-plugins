@@ -1,3 +1,4 @@
+import {registerLearningRoute} from './learning-route-http.ts'
 import {registerErrorReviews} from './error-reviews-http.ts'
 
 /** Instance-scoped learning command registrations.
@@ -262,6 +263,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
   const hasDocumentRoot = () => !!current().mineru?.outputDir && isAbsolute(current().mineru!.outputDir!)
   const topN = config.topN ?? DEFAULT_TOP_N
   ctx.effect(()=>registerStudyPlanRoutes(ctx,state),'kaogong.study-plan')
+  ctx.effect(()=>registerLearningRoute(ctx,state),'kaogong.learning-route')
   registerMineruTools(ctx, mineru, knowledgeEntries)
   ctx.effect(() => ctx.webServer.register({
     kind: 'exact', path: '/api/kaogong/knowledge',
@@ -421,7 +423,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
       previousRoundId: roundIdWire.optional(),taskId:wire.string().uuid().optional(),planRevision:wire.number().int().nonnegative().optional(),
     }).parse(body)
     if (!TAXONOMY.some(row => row.subject === input.subject)) throw new PracticeError('invalid practice subject')
-    if(input.taskId){const task=state.plan.read().tasks.find(t=>t.id===input.taskId);if(!task||task.status!=='in-progress'||task.subject!==input.subject||task.startedFromRevision!==input.planRevision)throw new PracticeError('任务练习上下文无效',409);return practice.startForTask({subject:task.subject,title:task.title,limit:10,planRevision:task.startedFromRevision},task.id)}
+    if(input.taskId){const task=state.plan.read().tasks.find(t=>t.id===input.taskId);if(!task||task.status!=='in-progress'||task.subject!==input.subject||task.startedFromRevision!==input.planRevision)throw new PracticeError('任务练习上下文无效',409);return practice.startForTask({subject:task.subject,title:task.title,...(task.knowledgePointId?{knowledgePointId:task.knowledgePointId,knowledgePoint:task.knowledgePoint}:{}),limit:10,planRevision:task.startedFromRevision},task.id)}
     return practice.start({ subject: input.subject, title: input.title ?? '模块练习', limit: 10,
       ...(input.knowledgePoint ? { knowledgePoint: input.knowledgePoint } : {}), ...(input.planIndex !== undefined ? { planIndex: input.planIndex } : {}) }, input.previousRoundId)
   })

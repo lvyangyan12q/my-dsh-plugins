@@ -549,3 +549,74 @@ test('a task accepts a partially answered submitted round only after every requi
   assert.deepEqual((await app.request('/api/kaogong/practice/read?viewId='+view,{roundId:round.roundId})).value.result,scored.value)
  }finally{await app.close()}
 })
+
+test('learning route shows the full outline without authorized material and never infers learned from titles',async()=>{
+ const app=await fixture()
+ try{
+  const made=await app.request('/api/kaogong/study',{action:'create',title:'路线档案',kind:'learner',confirmed:true}),view=made.value.view.id
+  const route=await app.request('/api/kaogong/route?viewId='+view)
+  assert.equal(route.status,200)
+  assert.equal(route.value.points.length,73)
+  for(const [subject,total]of [['行测-言语理解与表达',11],['行测-数量关系',15],['行测-判断推理',20],['行测-资料分析',15],['行测-常识判断',6],['申论',6]])assert.equal(route.value.points.filter(p=>p.subject===subject).length,total,subject)
+  for(const [subject,knowledgePoint]of [['行测-言语理解与表达','语句表达-病句辨析'],['行测-数量关系','数学运算-最值/统筹'],['行测-判断推理','逻辑判断-前提假设'],['行测-资料分析','平均数-平均数变化'],['行测-常识判断','管理公文'],['申论','材料理解']])assert.ok(route.value.points.some(p=>p.subject===subject&&p.knowledgePoint===knowledgePoint),knowledgePoint)
+  assert.equal(route.value.coverage.learned,0)
+  assert.equal(route.value.coverage.total,route.value.points.length)
+  assert.equal(new Set(route.value.points.map(p=>p.id)).size,route.value.points.length)
+  assert.ok(route.value.points.every(p=>p.materials.length===0&&p.status==='unlearned'))
+  assert.equal((await app.request('/api/kaogong/route?viewId=foreign')).status,403)
+ }finally{await app.close()}
+})
+
+test('route task identity survives creation and only confirmed learning contributes coverage',async()=>{
+ const app=await fixture()
+ try{
+  const made=await app.request('/api/kaogong/study',{action:'create',title:'路线确认',kind:'learner',confirmed:true}),view=made.value.view.id,url='/api/kaogong/plan?viewId='+view
+  const point=(await app.request('/api/kaogong/route?viewId='+view)).value.points[0]
+  const proposal=await app.request(url,{action:'preview',operation:'append',baseRevision:0,task:{subject:point.subject,title:point.knowledgePoint,kind:'learn',requirePractice:false,knowledgePointId:point.id}})
+  assert.equal(proposal.status,200)
+  const confirmed=await app.request(url,{action:'confirm',id:proposal.value.id,revision:0,confirmed:true}),task=confirmed.value.tasks[0]
+  assert.equal(task.knowledgePointId,point.id)
+  const started=await app.request('/api/kaogong/plan/start?viewId='+view,{id:task.id,revision:confirmed.value.revision})
+  assert.equal(started.value.lesson.lesson.request.knowledgePointId,point.id)
+  const lessonId=started.value.lesson.lesson.request.lessonId
+  await app.request('/api/kaogong/lesson/summary?viewId='+view,{lessonId,notes:'明确学习总结'})
+  assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.coverage.learned,0)
+  assert.equal((await app.request('/api/kaogong/lesson/confirm?viewId='+view,{lessonId,confirmed:true})).status,200)
+  assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.coverage.learned,1)
+ }finally{await app.close()}
+})
+
+test('confirmed standalone lessons contribute once to point coverage without planning a date',async()=>{
+ const app=await fixture()
+ try{
+  const made=await app.request('/api/kaogong/study',{action:'create',title:'自主覆盖',kind:'learner',confirmed:true}),view=made.value.view.id
+  const point=(await app.request('/api/kaogong/route?viewId='+view)).value.points[0]
+  for(let i=0;i<2;i++){
+   const lessonId=crypto.randomUUID(),created=await app.request('/api/kaogong/lesson/create?viewId='+view,{lessonId,subject:point.subject,objective:'自主学习',knowledgePoint:point.knowledgePoint,knowledgePointId:point.id,materialIds:[],requirePractice:false,requireReflections:false})
+   assert.equal(created.status,200)
+   await app.request('/api/kaogong/lesson/summary?viewId='+view,{lessonId,notes:'独立课堂总结'})
+   assert.equal((await app.request('/api/kaogong/lesson/confirm?viewId='+view,{lessonId,confirmed:true})).status,200)
+  }
+  assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.coverage.learned,1)
+  assert.equal((await app.request('/api/kaogong/plan?viewId='+view)).value.tasks.length,0)
+ }finally{await app.close()}
+})
+
+
+test('route continues the started point task ahead of an older pending task',async()=>{
+ const app=await fixture()
+ try{
+  const made=await app.request('/api/kaogong/study',{action:'create',title:'同点续学',kind:'learner',confirmed:true}),view=made.value.view.id,url='/api/kaogong/plan?viewId='+view
+  const point=(await app.request('/api/kaogong/route?viewId='+view)).value.points[0]
+  let revision=0,latest
+  for(let i=0;i<2;i++){
+   const preview=await app.request(url,{action:'preview',operation:'append',baseRevision:revision,task:{subject:point.subject,title:'学习 '+i,kind:'learn',requirePractice:false,knowledgePointId:point.id}})
+   const confirmed=await app.request(url,{action:'confirm',id:preview.value.id,revision,confirmed:true});assert.equal(confirmed.status,200);revision=confirmed.value.revision;latest=confirmed.value.tasks.at(-1)
+  }
+  const start=await app.request('/api/kaogong/plan/start?viewId='+view,{id:latest.id,revision});assert.equal(start.status,200)
+  const selected=(await app.request('/api/kaogong/route?viewId='+view)).value.points.find(p=>p.id===point.id)
+  assert.equal(selected.taskId,latest.id)
+  const resumed=await app.request('/api/kaogong/plan/start?viewId='+view,{id:selected.taskId,revision})
+  assert.equal(resumed.value.lesson.lesson.request.lessonId,start.value.lesson.lesson.request.lessonId)
+ }finally{await app.close()}
+})
