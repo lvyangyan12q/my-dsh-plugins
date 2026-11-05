@@ -907,6 +907,11 @@ test('recall schedule is previewed and early forgotten confirmation completes th
  const savedCycle=partial.value.cycleId,root=await app.suspend();app=await fixture({root});const restored=(await app.request(url)).value.items[0];assert.equal(restored.planPending,true);assert.equal(restored.cycleId,savedCycle);assert.equal((await app.request(url,body)).status,200);
  const plan=(await app.request(planUrl)).value;assert.equal(plan.tasks[0].status,'completed');assert.equal(plan.tasks[0].date,date);
  await app.request(url,body);assert.equal((await app.request(planUrl)).value.revision,plan.revision);assert.equal((await app.request(planUrl)).value.tasks.length,1);
+ const next=(await app.request(url)).value.items[0];
+ const stale=await app.request(planUrl,{action:'preview',baseRevision:plan.revision,operation:'append',date,task:{subject:'行测-言语理解与表达',title:'下一周期',kind:'review',recallReference:{pointId:next.pointId,cycleId:next.cycleId}}});assert.equal(stale.status,200);
+ await app.request(url,{action:'answer',pointId:next.pointId,cycleId:next.cycleId,recall:'独立下一次',earlyConfirmed:true});await app.request(url,{action:'reveal',pointId:next.pointId,cycleId:next.cycleId});await app.request(url,{action:'confirm',pointId:next.pointId,cycleId:next.cycleId,rating:'remembered',confirmed:true});
+ assert.equal((await app.request(planUrl,{action:'confirm',id:stale.value.id,revision:plan.revision,confirmed:true})).status,409);assert.equal((await app.request(planUrl)).value.tasks.length,1);
+
  }finally{await app.close()}
 });
 

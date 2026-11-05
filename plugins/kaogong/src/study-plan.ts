@@ -49,6 +49,7 @@ export class StudyPlan{
    if(input.date&&(!isValidIsoDate(input.date)||input.date<input.today))throw Error('追加日期无效');if(row.reviewOccurrence&&row.kind!=='review')throw Error('错题关联仅用于复习任务')
    const point=row.knowledgePointId?learningOutline.find(p=>p.id===row.knowledgePointId&&p.subject===row.subject):undefined;if(row.knowledgePointId&&!point)throw Error('知识点身份与科目不匹配');
    if(row.reviewOccurrence&&tasks.some(existing=>existing.reviewOccurrence?.roundId===row.reviewOccurrence!.roundId&&existing.reviewOccurrence?.questionId===row.reviewOccurrence!.questionId&&existing.reviewCycle===row.reviewCycle))throw Error('本周期已经排入计划，请继续原任务')
+   if(row.recallReference&&(row.reviewOccurrence||row.kind!=='review'))throw Error('复习任务只能关联一种对象')
    if(row.recallReference&&tasks.some(t=>t.recallReference?.pointId===row.recallReference!.pointId&&t.recallReference?.cycleId===row.recallReference!.cycleId))throw Error("本周期已经排入计划");
    tasks.push({...(row.recallReference?{recallReference:row.recallReference}:{}),...(row.reviewCycle?{reviewCycle:row.reviewCycle}:{}),...(point?{knowledgePointId:point.id,knowledgePoint:point.knowledgePoint}:{}),id:randomUUID(),revision:1,subject:row.subject,title:row.title.trim().slice(0,500),kind:row.kind,phase:'foundation',date:input.date??null,status:'pending',requirePractice:row.requirePractice===true,requireReflections:row.requireReflections!==false,summary:'',evidence:null,...(row.reviewOccurrence?{reviewOccurrence:reviewOccurrence.parse(row.reviewOccurrence)}:{})})
   }else throw Error('计划预览操作无效')
