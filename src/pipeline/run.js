@@ -385,7 +385,10 @@ function toDigestItem(candidate, extraction, { collectedAt }) {
     sourceId: candidate.sourceId,
     sourceLanguage: sourceLanguage === 'zh' ? 'zh' : 'en',
     title,
-    summary,
+    // The contract keeps `summary` optional: a source with no dek (Kimi, an
+    // arXiv excerpt) omits the key instead of writing `null`, which the digest
+    // validator rejects and which would cost the whole day's file.
+    ...(summary ? { summary } : {}),
     authors,
     venue,
     published: meta.published
