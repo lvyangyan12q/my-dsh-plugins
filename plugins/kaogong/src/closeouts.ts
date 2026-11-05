@@ -49,7 +49,14 @@ export class Closeouts {
         if (preview.operation) throw new PracticeError('已有收尾操作，请恢复原操作', 409)
         if (input.roundId && !preview.candidates.some(candidate => candidate.roundId === input.roundId)) throw new PracticeError('作答不属于本次任务', 409)
         if (!input.roundId && preview.candidates.length > 1 && !preview.lesson.roundIds.length) throw new PracticeError('请选择本次完成所依据的练习', 409)
-        row = { input, selectedRoundId: input.roundId ?? (preview.candidates.length === 1 ? preview.candidates[0].roundId : undefined), status: 'pending', lessonSaved: false, planSaved: false, recallSaved: false }
+        if (input.joinRecall && !preview.lesson.request.knowledgePointId) throw new PracticeError('课堂没有明确知识点，请取消回忆选择', 409)
+        const selectedRoundId = input.roundId ?? (preview.candidates.length === 1 ? preview.candidates[0].roundId : undefined)
+        if (!preview.lesson.completion) {
+          const selected = preview.candidates.find(candidate => candidate.roundId === selectedRoundId)
+          if (preview.lesson.request.requirePractice !== false && !preview.evidence.length && !selected) throw new PracticeError('尚缺本课已提交练习，请完成后重新确认', 409)
+          if (preview.evidence.some(proof => !proof.answered || preview.lesson.request.requireReflections && !proof.reflectionsComplete) || selected && (selected.unanswered > 0 || selected.missingReflections > 0)) throw new PracticeError('尚缺完整作答或错因反思，请补齐后重新确认', 409)
+        }
+        row = { input, selectedRoundId, status: 'pending', lessonSaved: false, planSaved: false, recallSaved: false }
         await this.table.put(input.operationId, row)
       }
       try {

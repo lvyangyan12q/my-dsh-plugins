@@ -8,7 +8,8 @@ import { useBusinessState, useRequestOwner } from './view-state.tsx'
 
 type Preview = LessonView & { operation: CloseoutRecord | null; candidates: {roundId:string;title:string;submittedAt:string;answered:number;unanswered:number;missingReflections:number}[] }
 export function LessonCloseout({ view, notes, accept, onReturnToday, onOpenTeacher }: {view:LessonView;notes:string;accept(value:LessonView):void;onReturnToday?:()=>void;onOpenTeacher:KaogongViewProps['onOpenTeacher']}) {
-  return <OwnedCloseout key={view.lesson.request.lessonId} view={view} notes={notes} accept={accept} onReturnToday={onReturnToday} onOpenTeacher={onOpenTeacher}/>
+  const owner=useRequestOwner()
+  return <OwnedCloseout key={JSON.stringify([owner.instanceId,owner.viewId,view.lesson.request.lessonId])} view={view} notes={notes} accept={accept} onReturnToday={onReturnToday} onOpenTeacher={onOpenTeacher}/>
 }
 function OwnedCloseout({ view, notes, accept, onReturnToday, onOpenTeacher }: {view:LessonView;notes:string;accept(value:LessonView):void;onReturnToday?:()=>void;onOpenTeacher:KaogongViewProps['onOpenTeacher']}) {
   const http = useLearningHttp(), owner = useRequestOwner()
