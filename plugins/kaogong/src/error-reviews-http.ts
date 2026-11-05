@@ -8,8 +8,8 @@ export function registerErrorReviews(ctx:BusinessRegistry,state:KaogongInstanceS
   const all=state.plan.read().tasks.filter(t=>t.reviewOccurrence&&JSON.stringify([t.reviewOccurrence.roundId,t.reviewOccurrence.questionId])===row.id);
   const cycle=row.review?row.review.enrolledAt+':'+row.review.history.filter(h=>h.confirmedAt).length:null;
   const planTask=all.find(t=>t.status==='in-progress')??all.find(t=>t.reviewCycle===cycle)??null;
-  const attempt=row.review?.history.find(h=>!!planTask&&h.planTaskId===planTask.id&&h.correct&&h.confirmedAt);
-  return {planTask,planPending:!!planTask&&planTask.status==='in-progress'&&!!attempt,...(attempt?{retryConfirmation:{action:'retry-plan',id:row.id,taskId:planTask!.id,confirmed:true}}:{})};
+  const attempt=row.review?.history.slice(planTask?.reviewHistoryCount??0).find(h=>!!planTask&&h.planTaskId===planTask.id&&h.correct&&h.confirmedAt);
+  return {planTask,...(planTask?.status==='in-progress'&&!attempt?{planIncompleteReason:'尚需本次正确订正与反思确认，任务保持未完成'}:{}),planPending:!!planTask&&planTask.status==='in-progress'&&!!attempt,...(attempt?{retryConfirmation:{action:'retry-plan',id:row.id,taskId:planTask!.id,confirmed:true}}:{})};
  };
  // All descriptors run behind KaogongHost admission, trusted view ownership and command gate.
  ctx.effect(()=>ctx.webServer.register({kind:'exact',path:'/api/kaogong/errors',handler:async(req:IncomingMessage,res:ServerResponse)=>{
@@ -28,10 +28,15 @@ export function registerErrorReviews(ctx:BusinessRegistry,state:KaogongInstanceS
    if(body.action==='retry-plan'){if(body.confirmed!==true||!linked)throw new PracticeError('需要确认恢复原计划',409);if(linked.status!=='completed')await state.plan.complete(linked.id,state.plan.read().revision,true,{});send(res,200,{planTask:state.plan.read().tasks.find(t=>t.id===linked!.id),planPending:false});return}
    delete body.planTaskId;if(body.action==='answer'&&linked)body.planTaskId=linked.id;
    const result=await state.errors.command(body);
-   let planError:string|undefined;
-   if(body.action==='confirm'&&linked&&linked.status!=='completed')try{await state.plan.complete(linked.id,state.plan.read().revision,true,{})}catch(error){planError=error instanceof Error?error.message:'复习已保存，计划待恢复'};
+   let planError:string|undefined,planIncompleteReason:string|undefined;
+   if(body.action==='confirm'&&linked&&linked.status!=='completed'){
+    const current=state.errors.list().occurrences.find(row=>row.id===id);
+    const proof=current?.review?.history.slice(linked.reviewHistoryCount??0).find(attempt=>attempt.id===body.attemptId&&attempt.planTaskId===linked!.id&&attempt.correct&&attempt.confirmedAt);
+    if(linked.status!=='in-progress'||!proof)planIncompleteReason='尚需本次正确订正与反思确认，任务保持未完成';
+    else try{await state.plan.complete(linked.id,state.plan.read().revision,true,{})}catch(error){if(state.plan.read().tasks.find(t=>t.id===linked!.id)?.status!=='completed')planError=error instanceof Error?error.message:'复习已保存，计划待恢复'}
+   }
    const planTask=linked?state.plan.read().tasks.find(t=>t.id===linked!.id):null;
-   const receipt={planTask,planPending:!!planError,planError};
+   const receipt={planTask,planPending:!!planError,planError,planIncompleteReason};
    const reviewMode=new URL(req.url??'','http://localhost').searchParams.get('mode')==='review'
    send(res,200,{...receipt,...(reviewMode&&'history' in result?{version:result.version,stage:result.stage,status:result.status,dueAt:result.dueAt,enrolledAt:result.enrolledAt}:result)})
   }catch(error){send(res,error instanceof PracticeError?error.status:400,{error:error instanceof Error?error.message:String(error)})}
