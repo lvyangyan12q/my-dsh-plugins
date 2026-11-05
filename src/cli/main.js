@@ -21,7 +21,7 @@ import { isDigestDate } from '../storage.js'
 
 const USAGE = `Usage: paper-reader [options]
 
-Fetch the day's arXiv submissions and OpenAI news, select the digest and write
+Fetch the day's sources (${SOURCE_IDS.join(', ')}), select the digest and write
 it for the paper-reader host.
 
 Options:

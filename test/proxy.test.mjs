@@ -346,8 +346,15 @@ function fakeSource(id, { listFetchUrl = null } = {}) {
   }
 }
 
+/**
+ * A run config for the proxy scenarios. DeepSeek is a direct source with its
+ * own fixtures and tests; these scenarios describe fetch routing, so it is off
+ * here to keep the expected source list focused on the sources under test.
+ */
 function proxiedConfig(overrides = {}) {
-  return { ...defaultConfig(), ...overrides }
+  const config = defaultConfig()
+  config.sources.deepseek = { ...config.sources.deepseek, enabled: false }
+  return { ...config, ...overrides }
 }
 
 test('a healthy proxy runs proxied sources through it while direct sources stay direct', async () => {

@@ -24,6 +24,9 @@ import {
   parseMarkup,
   textOf,
 } from '../shared/markup.js'
+import { classifyDirection, matchedWords } from '../shared/direction.js'
+
+export { classifyDirection }
 
 export const SOURCE_ID = 'arxiv'
 
@@ -41,30 +44,7 @@ export const DEFAULT_ARXIV_CONFIG = {
   userAgent: 'dsh-paper-reader/0.1 (+https://arxiv.org/help/api)',
 }
 
-/** Direction rules, most specific first; the first hit wins. */
-const DIRECTION_RULES = [
-  {
-    direction: 'agent',
-    words: ['agent', 'agentic', 'tool use', 'tool-use', 'multi-agent', 'multiagent', 'autonomous agent'],
-  },
-  {
-    direction: 'reasoning',
-    words: ['reasoning', 'chain-of-thought', 'chain of thought', 'theorem', 'logic', 'test-time', 'inference-time'],
-  },
-  {
-    direction: 'training',
-    words: ['pretrain', 'pre-train', 'training', 'fine-tun', 'fine tun', 'rlhf', 'distillation', 'distill', 'scaling law', 'data mixture'],
-  },
-  {
-    direction: 'alignment',
-    words: ['alignment', 'safety', 'preference optimization', 'jailbreak', 'reward model', 'rlaif', 'red team'],
-  },
-  {
-    direction: 'architecture',
-    words: ['architecture', 'mixture-of-experts', 'mixture of experts', 'moe', 'attention', 'transformer', 'kernel', 'quantization', 'efficient inference'],
-  },
-]
-
+/** Direction rules live in `shared/direction.js`; the adapter just uses them. */
 const SKIP_TAGS = new Set(['script', 'style', 'nav', 'header', 'footer', 'aside', 'form', 'button', 'svg'])
 const SKIP_CLASSES = [
   'ltx_page_header',
@@ -163,27 +143,6 @@ export function buildArxivQueryUrl({ baseUrl, categories = [], date, maxResults 
   url.searchParams.set('sortBy', 'submittedDate')
   url.searchParams.set('sortOrder', 'descending')
   return url.toString()
-}
-
-/** Classify a paper into one of the reader's directions. */
-export function classifyDirection({ title = '', summary = '' } = {}) {
-  const haystack = `${title}\n${summary}`.toLowerCase()
-  for (const rule of DIRECTION_RULES) {
-    if (rule.words.some(word => haystack.includes(word))) return rule.direction
-  }
-  return 'architecture'
-}
-
-/** Trigger words that actually matched, used as searchable tags. */
-function matchedWords(entry) {
-  const haystack = `${entry.title}\n${entry.summary}`.toLowerCase()
-  const words = []
-  for (const rule of DIRECTION_RULES) {
-    for (const word of rule.words) {
-      if (haystack.includes(word) && !words.includes(word)) words.push(word)
-    }
-  }
-  return words.slice(0, 4)
 }
 
 function toCandidate(entry) {

@@ -41,12 +41,13 @@ afterEach(() => {
   while (homes.length > 0) rmSync(homes.pop(), { recursive: true, force: true })
 })
 
-/** Defaults with every source on, so arxiv and openai are selected together. */
+/** Defaults with the arxiv and openai sources on and the other sources off. */
 function testConfig(overrides = {}) {
   const config = defaultConfig()
   config.sources = {
     ...config.sources,
     arxiv: { ...config.sources.arxiv, enabled: true },
+    deepseek: { ...config.sources.deepseek, enabled: false },
     openai: { ...config.sources.openai, enabled: true },
   }
   return { ...config, ...overrides, sources: { ...config.sources, ...(overrides.sources ?? {}) } }
