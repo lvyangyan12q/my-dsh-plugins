@@ -24,8 +24,7 @@ import {
   parseMarkup,
   textOf,
 } from '../shared/markup.js'
-import { classifyDirection, matchedWords } from './direction.js'
-import { assertPositive, assertStringList, assertUrl, configError, isPlainObject } from './validation.js'
+import { classifyDirection, matchedWords } from '../shared/direction.js'
 
 export { classifyDirection }
 
@@ -45,6 +44,7 @@ export const DEFAULT_ARXIV_CONFIG = {
   userAgent: 'dsh-paper-reader/0.1 (+https://arxiv.org/help/api)',
 }
 
+/** Direction rules live in `shared/direction.js`; the adapter just uses them. */
 const SKIP_TAGS = new Set(['script', 'style', 'nav', 'header', 'footer', 'aside', 'form', 'button', 'svg'])
 const SKIP_CLASSES = [
   'ltx_page_header',
@@ -387,29 +387,7 @@ export async function extractArxivPaper({ candidate, config, fetch: fetchImpl })
   return { blocks, excerpt: false, warnings: [] }
 }
 
-/** Validate the arXiv section of the user config. */
-export function validateArxivConfig(config, path) {
-  if (!isPlainObject(config)) throw configError(`${path}: sources.arxiv must be an object`)
-  if (typeof config.enabled !== 'boolean') {
-    throw configError(`${path}: sources.arxiv.enabled must be true or false`)
-  }
-  assertStringList(config.categories, 'sources.arxiv.categories', path)
-  assertStringList(config.keywords, 'sources.arxiv.keywords', path)
-  assertStringList(config.excludeKeywords, 'sources.arxiv.excludeKeywords', path)
-  if (!Number.isInteger(config.maxResults) || config.maxResults <= 0) {
-    throw configError(`${path}: sources.arxiv.maxResults must be a positive integer`)
-  }
-  if (typeof config.extractFullText !== 'boolean') {
-    throw configError(`${path}: sources.arxiv.extractFullText must be true or false`)
-  }
-  assertPositive(config.timeoutMs, 'sources.arxiv.timeoutMs', path)
-  if (!Number.isInteger(config.maxBlocks) || config.maxBlocks <= 0) {
-    throw configError(`${path}: sources.arxiv.maxBlocks must be a positive integer`)
-  }
-  assertUrl(config.baseUrl, 'sources.arxiv.baseUrl', path)
-  assertUrl(config.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
-}
-
+/** Registry entry: a paper source whose failed full text degrades to an excerpt. */
 export const ARXIV_SOURCE = {
   id: SOURCE_ID,
   kind: 'paper',
@@ -420,5 +398,4 @@ export const ARXIV_SOURCE = {
   onExtractFailure: 'excerpt',
   list: listArxiv,
   extract: extractArxivPaper,
-  validateConfig: validateArxivConfig,
 }

@@ -23,7 +23,7 @@ import {
   slugToTitle,
   timeDate,
 } from './blog.js'
-import { classifyDirection } from './direction.js'
+import { classifyDirection } from '../shared/direction.js'
 import {
   assertPositive,
   assertStringList,
@@ -255,7 +255,7 @@ export const ANTHROPIC_SOURCE = {
   id: SOURCE_ID,
   kind: 'blog',
   label: 'Anthropic',
-  short: 'A',
+  short: 'C',
   defaults: DEFAULT_ANTHROPIC_CONFIG,
   tracksSeen: true,
   onExtractFailure: 'skip',

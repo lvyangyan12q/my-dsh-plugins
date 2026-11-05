@@ -8,18 +8,25 @@
  * Failure rules:
  * - one source failing does not stop the others (`status: "partial"`);
  * - one paper's HTML failing does not drop that paper (it becomes `excerpt`);
- * - one blog post failing is skipped and counted on its source report;
  * - if every source fails nothing is written for the day, the run record says
  *   why, and the previous day files stay untouched.
- *
- * Sources are described by `src/sources/registry.js`; this file no longer
- * branches on source ids. Discovery memory (`state/sources.json`) records
- * which URLs were first offered on which day, so a sitemap source offers each
- * article once while a same-day rerun stays reproducible.
  */
 import { defaultConfig } from '../config.js'
-import { excerptBlocks } from '../sources/arxiv.js'
-import { SOURCE_IDS, SOURCE_META, sourceDefinition } from '../sources/registry.js'
+import { checkProxyHealth, proxySkipReason, redactProxyUrl, resolveProxyUrl } from '../proxy.js'
+import {
+  DEFAULT_ARXIV_CONFIG,
+  excerptBlocks,
+  extractArxivPaper,
+  listArxiv,
+} from '../sources/arxiv.js'
+import {
+  DEFAULT_DEEPSEEK_CONFIG,
+  extractDeepSeekArticle,
+  listDeepSeek,
+} from '../sources/deepseek.js'
+import { DEFAULT_ANTHROPIC_CONFIG, extractAnthropicArticle, listAnthropic } from '../sources/anthropic.js'
+import { DEFAULT_KIMI_CONFIG, extractKimiArticle, listKimi } from '../sources/kimi.js'
+import { SOURCE_IDS, sourceDefinition } from '../sources/registry.js'
 import {
   isDigestDate,
   mergeSourceSeen,
@@ -33,7 +40,7 @@ import {
 import { translateItems } from '../translate/service.js'
 import { selectDaily } from './select.js'
 
-export { SOURCE_IDS, SOURCE_META }
+export { SOURCE_IDS }
 
 export const DIRECTION_META = [
   { id: 'agent', label: 'Agent', labelEn: 'Agents' },
@@ -42,6 +49,78 @@ export const DIRECTION_META = [
   { id: 'alignment', label: '对齐', labelEn: 'Alignment' },
   { id: 'architecture', label: '架构', labelEn: 'Architecture' },
 ]
+
+export const SOURCE_META = [
+  { id: 'arxiv', label: 'arXiv', short: 'A' },
+  { id: 'deepseek', label: 'DeepSeek', short: 'D' },
+  { id: 'anthropic', label: 'Anthropic', short: 'C' },
+  { id: 'kimi', label: 'Kimi', short: 'K' },
+  { id: 'hf', label: 'Hugging Face', short: 'H' },
+  { id: 'openai', label: 'OpenAI', short: 'O' },
+]
+
+const SOURCE_LABELS = new Map(SOURCE_META.map(source => [source.id, source.label]))
+
+/**
+ * Built-in source adapters. Later source tickets add theirs here; the run also
+ * accepts an `adapters` override so a two-source proxy scenario is testable
+ * without inventing a production adapter.
+ */
+const BUILTIN_ADAPTERS = {
+  arxiv: {
+    list: ({ config, date, fetch }) => listArxiv({
+      config: config.sources?.arxiv ?? DEFAULT_ARXIV_CONFIG,
+      date,
+      fetch,
+    }),
+    extract: ({ candidate, config, fetch }) => extractArxivPaper({
+      candidate,
+      config: config.sources?.arxiv ?? DEFAULT_ARXIV_CONFIG,
+      fetch,
+    }),
+  },
+  deepseek: {
+    list: ({ config, date, fetch }) => listDeepSeek({
+      config: config.sources?.deepseek ?? DEFAULT_DEEPSEEK_CONFIG,
+      date,
+      fetch,
+    }),
+    extract: ({ candidate, config, fetch }) => extractDeepSeekArticle({
+      candidate,
+      config: config.sources?.deepseek ?? DEFAULT_DEEPSEEK_CONFIG,
+      fetch,
+    }),
+  },
+  anthropic: {
+    list: ({ config, date, fetch, knownUrls }) => listAnthropic({
+      config: config.sources?.anthropic ?? DEFAULT_ANTHROPIC_CONFIG,
+      date,
+      fetch,
+      knownUrls,
+    }),
+    extract: ({ candidate, config, fetch }) => extractAnthropicArticle({
+      candidate,
+      config: config.sources?.anthropic ?? DEFAULT_ANTHROPIC_CONFIG,
+      fetch,
+    }),
+  },
+  kimi: {
+    list: ({ config, date, fetch }) => listKimi({
+      config: config.sources?.kimi ?? DEFAULT_KIMI_CONFIG,
+      date,
+      fetch,
+    }),
+    extract: ({ candidate, config, fetch }) => extractKimiArticle({
+      candidate,
+      config: config.sources?.kimi ?? DEFAULT_KIMI_CONFIG,
+      fetch,
+    }),
+  },
+}
+
+function adapterFor(id, adapters) {
+  return adapters?.[id] ?? BUILTIN_ADAPTERS[id] ?? null
+}
 
 function usageError(code, message) {
   return Object.assign(new Error(message), { code, exitCode: 2, status: 400 })
@@ -56,30 +135,98 @@ function unique(values) {
 }
 
 /** List the candidates one source offers for the day. */
-async function listSource(id, { config, date, fetch: fetchImpl, knownUrls = [] }) {
-  const definition = sourceDefinition(id)
-  if (!definition) {
+async function listSource(id, ctx, adapters) {
+  const adapter = adapterFor(id, adapters)
+  if (!adapter?.list) {
     throw Object.assign(new Error(`source "${id}" is not implemented`), { code: 'source_unimplemented' })
   }
-  return definition.list({
-    config: config.sources?.[id] ?? definition.defaults,
-    date,
-    fetch: fetchImpl,
-    knownUrls,
-  })
+  return adapter.list(ctx)
 }
 
 /** Extract one selected candidate into reader blocks. */
-export async function extractCandidate(candidate, { config, fetch: fetchImpl }) {
-  const definition = sourceDefinition(candidate.sourceId)
-  if (!definition) {
+export async function extractCandidate(candidate, { config, fetch: fetchImpl, adapters = null } = {}) {
+  const adapter = adapterFor(candidate.sourceId, adapters)
+  if (!adapter?.extract) {
     throw Object.assign(new Error(`no extractor for source "${candidate.sourceId}"`), { code: 'source_unimplemented' })
   }
-  return definition.extract({
-    candidate,
-    config: config.sources?.[candidate.sourceId] ?? definition.defaults,
-    fetch: fetchImpl,
+  return adapter.extract({ candidate, config, fetch: fetchImpl })
+}
+
+/**
+ * Resolve the proxy policy for the sources that need it.
+ *
+ * The returned `state` is data (safe to store in the digest and run record);
+ * `transport` is the fetch the proxied sources must use, and is `null` whenever
+ * the state is not `ok`. A proxied source never receives the direct fetch.
+ */
+async function prepareProxy({ config, env, sourceIds, proxyFetch, fetchImpl, now }) {
+  const settings = config.proxy ?? {}
+  const state = {
+    status: 'not_needed',
+    origin: null,
+    url: null,
+    healthCheckUrl: settings.healthCheckUrl ?? null,
+    timeoutMs: settings.timeoutMs ?? null,
+    checkedAt: null,
+    latencyMs: null,
+    code: null,
+    error: null,
+    reason: null,
+    skipped: [],
+    probed: false,
+  }
+  if (sourceIds.length === 0) return { state, transport: null }
+
+  const resolved = resolveProxyUrl({ config, env })
+  state.origin = resolved.origin
+  state.url = redactProxyUrl(resolved.url)
+  state.skipped = [...sourceIds]
+
+  if (!resolved.url) {
+    state.status = resolved.code === 'proxy_invalid' ? 'failed' : 'unconfigured'
+    state.code = resolved.code
+    state.error = resolved.error
+    state.reason = proxySkipReason(state.code)
+    return { state, transport: null }
+  }
+
+  let transport = proxyFetch
+  if (!transport && resolved.origin === 'env') {
+    if (env?.NODE_USE_ENV_PROXY === '1') {
+      // Node routes its own fetch through the environment proxy under this flag.
+      transport = fetchImpl
+    } else {
+      state.status = 'failed'
+      state.code = 'proxy_env_disabled'
+      state.error = 'HTTP(S)_PROXY is set but NODE_USE_ENV_PROXY is not; start Node with NODE_USE_ENV_PROXY=1'
+      state.reason = proxySkipReason(state.code)
+      return { state, transport: null }
+    }
+  }
+  if (!transport) {
+    state.status = 'failed'
+    state.code = 'proxy_transport_missing'
+    state.error = 'proxy.url is configured but no proxy-capable fetch was provided'
+    state.reason = proxySkipReason(state.code)
+    return { state, transport: null }
+  }
+
+  const health = await checkProxyHealth({
+    url: resolved.url,
+    fetch: transport,
+    healthCheckUrl: settings.healthCheckUrl,
+    timeoutMs: settings.timeoutMs,
+    now,
   })
+  state.status = health.status
+  state.code = health.code
+  state.error = health.error
+  state.checkedAt = health.checkedAt
+  state.latencyMs = health.latencyMs
+  state.probed = true
+  state.reason = health.status === 'ok' ? null : proxySkipReason(health.code)
+  if (health.status === 'ok') state.skipped = []
+  return { state, transport: health.status === 'ok' ? transport : null }
 }
 
 /** Text blocks start pending: the translation ticket fills them later. */
@@ -95,12 +242,20 @@ function pendingBlocks(blocks) {
   })
 }
 
-function wordCount(blocks) {
-  return blocks
+const CJK = /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/g
+
+/**
+ * Reading time in minutes. CJK characters are read faster per character than
+ * an English word, so they are counted separately instead of collapsing a
+ * Chinese paragraph into "one word".
+ */
+function readingMinutesOf(blocks) {
+  const text = blocks
     .map(block => block.code ?? block.original ?? block.caption?.original ?? block.display ?? '')
     .join(' ')
-    .split(/\s+/)
-    .filter(Boolean).length
+  const cjk = (text.match(CJK) ?? []).length
+  const words = text.replace(CJK, ' ').split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(cjk / 350 + words / 180))
 }
 
 /**
@@ -119,40 +274,62 @@ async function translationTokensUsed({ root, date, dryRun }) {
   }
 }
 
+/**
+ * Build the digest item.
+ *
+ * Two extraction shapes meet here:
+ * - sources that already carry final original/translation pairs (DeepSeek's
+ *   official bilingual pages) set `finalized: true` and their text is kept as
+ *   written;
+ * - blog adapters return `meta` for the fields only the article page knows
+ *   (the sitemap candidate has just a slug), and the prose starts pending so
+ *   the translation service can fill it later.
+ */
 function toDigestItem(candidate, extraction, { collectedAt }) {
-  const blocks = pendingBlocks(extraction.blocks ?? [])
-  // An adapter may refine the list-level candidate once it has the page
-  // metadata (the sitemap only knows a slug; the article knows its real title,
-  // date and author).
+  const finalized = extraction.finalized === true
   const meta = extraction.meta ?? {}
-  const title = meta.title ?? candidate.title
-  const summaryText = meta.summary ?? candidate.summary
-  const summary = summaryText ? { original: summaryText, translation: null } : null
+  const blocks = finalized ? (extraction.blocks ?? []) : pendingBlocks(extraction.blocks ?? [])
+
+  const title = finalized && extraction.title
+    ? { original: extraction.title.original, translation: extraction.title.translation ?? null }
+    : { original: meta.title ?? candidate.title, translation: null }
+
+  let summary = null
+  if (finalized) {
+    summary = extraction.summary ?? null
+  } else {
+    const summaryText = meta.summary ?? candidate.summary
+    summary = summaryText ? { original: summaryText, translation: null } : null
+  }
+
+  const sourceLanguage = finalized ? extraction.sourceLanguage : (meta.sourceLanguage ?? candidate.sourceLanguage)
   const publishedAt = meta.publishedAt ?? candidate.publishedAt ?? null
-  const published = meta.published
-    ?? candidate.published
-    ?? (publishedAt ? String(publishedAt).slice(0, 10) : null)
   const authors = Array.isArray(meta.authors) && meta.authors.length > 0
     ? meta.authors
     : Array.isArray(candidate.authors) ? candidate.authors : []
+
   return {
     id: candidate.id,
     source: candidate.sourceId,
     sourceId: candidate.sourceId,
-    sourceLanguage: meta.sourceLanguage === 'zh' || candidate.sourceLanguage === 'zh' ? 'zh' : 'en',
-    title: { original: title, translation: null },
+    sourceLanguage: sourceLanguage === 'zh' ? 'zh' : 'en',
+    title,
     summary,
     authors,
     venue: meta.venue ?? (candidate.primaryCategory ? `arXiv ${candidate.primaryCategory}` : null),
-    published,
+    published: meta.published
+      ?? candidate.published
+      ?? (publishedAt ? String(publishedAt).slice(0, 10) : null),
     publishedAt,
     collectedAt,
-    direction: meta.direction ?? candidate.direction ?? 'architecture',
-    tags: Array.isArray(meta.tags) ? meta.tags : Array.isArray(candidate.tags) ? candidate.tags : [],
-    readingMinutes: Math.max(1, Math.round(wordCount(blocks) / 180)),
+    direction: extraction.direction ?? meta.direction ?? candidate.direction ?? 'architecture',
+    tags: Array.isArray(meta.tags)
+      ? meta.tags
+      : Array.isArray(candidate.tags) ? candidate.tags : [],
+    readingMinutes: readingMinutesOf(blocks),
     excerpt: extraction.excerpt === true,
     url: meta.url ?? candidate.url ?? null,
-    translationState: 'pending',
+    translationState: finalized ? (extraction.translationState ?? 'pending') : 'pending',
     blocks,
   }
 }
@@ -163,6 +340,11 @@ function toDigestItem(candidate, extraction, { collectedAt }) {
  * `root` is `$DSH_HOME/paper-reader`; `date` is the digest date; `config` is
  * the result of `loadConfig`. `dryRun` performs the same fetch, selection and
  * extraction but writes nothing.
+ *
+ * `proxyFetch` is the transport used for sources that declare `useProxy`; the
+ * host (or an environment-proxy-aware process) provides it. `env` is the
+ * proxy environment and `adapters` adds source adapters for tests and for
+ * later source tickets.
  */
 export async function runDaily({
   root,
@@ -171,29 +353,45 @@ export async function runDaily({
   source = null,
   dryRun = false,
   fetch: fetchImpl = globalThis.fetch,
+  proxyFetch = null,
   env = process.env,
+  adapters = null,
   now = () => new Date(),
 } = {}) {
   if (typeof root !== 'string' || root.length === 0) throw new TypeError('runDaily needs a data root')
   if (!isDigestDate(date)) throw usageError('invalid_date', `--date must be a real YYYY-MM-DD date, got ${date}`)
-  if (source !== null && !SOURCE_IDS.includes(source)) {
-    throw usageError('unsupported_source', `unsupported source "${source}"; available: ${SOURCE_IDS.join(', ')}`)
+  const availableSources = unique([...SOURCE_IDS, ...Object.keys(adapters ?? {})])
+  if (source !== null && !availableSources.includes(source)) {
+    throw usageError('unsupported_source', `unsupported source "${source}"; available: ${availableSources.join(', ')}`)
   }
 
   const resolved = config ?? defaultConfig()
   const startedAt = asDate(now())
   const startedMs = startedAt.getTime()
 
-  const activeSources = SOURCE_IDS.filter(id => (source ? id === source : resolved.sources?.[id]?.enabled !== false))
+  const activeSources = availableSources.filter(id => (source ? id === source : resolved.sources?.[id]?.enabled !== false))
   if (activeSources.length === 0) throw usageError('no_sources', 'no sources are enabled in config.json')
 
-  const counters = new Map(activeSources.map(id => [id, { requests: 0 }]))
+  const proxiedSources = activeSources.filter(id => resolved.sources?.[id]?.useProxy === true)
+  const proxy = await prepareProxy({
+    config: resolved,
+    env,
+    sourceIds: proxiedSources,
+    proxyFetch,
+    fetchImpl,
+    now,
+  })
+
+  const counters = new Map(activeSources.map(id => [id, {
+    requests: 0,
+    transport: proxiedSources.includes(id) ? proxy.transport : fetchImpl,
+  }]))
   const fetchFor = (id) => {
-    const counter = counters.get(id) ?? { requests: 0 }
+    const counter = counters.get(id) ?? { requests: 0, transport: fetchImpl }
     if (!counters.has(id)) counters.set(id, counter)
     return async (url, init) => {
       counter.requests += 1
-      return fetchImpl(url, init)
+      return counter.transport(url, init)
     }
   }
 
@@ -221,14 +419,30 @@ export async function runDaily({
   const reports = []
   for (const id of activeSources) {
     const definition = sourceDefinition(id)
+    if (proxiedSources.includes(id) && !proxy.transport) {
+      // A proxied source is skipped, never retried through a direct connection.
+      reports.push({
+        id,
+        kind: definition?.kind ?? 'paper',
+        status: 'skipped',
+        candidates: 0,
+        selected: 0,
+        skipped: 0,
+        requests: 0,
+        durationMs: 0,
+        error: proxy.state.reason,
+        code: proxy.state.code,
+        reason: proxy.state.reason,
+      })
+      continue
+    }
     const sourceStarted = Date.now()
     try {
-      const listed = await listSource(id, {
-        config: resolved,
-        date,
-        fetch: fetchFor(id),
-        knownUrls: knownUrlsFor(id),
-      })
+      const listed = await listSource(
+        id,
+        { config: resolved, date, fetch: fetchFor(id), proxy: proxy.state, knownUrls: knownUrlsFor(id) },
+        adapters,
+      )
       const discovered = Array.isArray(listed)
         ? listed.map(candidate => candidate.url)
         : Array.isArray(listed?.discovered) ? listed.discovered : []
@@ -279,20 +493,32 @@ export async function runDaily({
   const collectedAt = asDate(now()).toISOString()
   const items = []
   let extractionFailures = 0
+  let skipped = 0
+
+  /** A blog item with no readable page is dropped, not written as an empty shell. */
+  const skipItem = (candidate, report) => {
+    if (report) {
+      report.selected = Math.max(0, report.selected - 1)
+      report.skipped = (report.skipped ?? 0) + 1
+    }
+    skipped += 1
+  }
+
   for (const candidate of selection.selected) {
     const report = reports.find(entry => entry.id === candidate.sourceId)
     if (report) report.selected += 1
     let extraction
     try {
-      extraction = await extractCandidate(candidate, { config: resolved, fetch: fetchFor(candidate.sourceId) })
+      extraction = await extractCandidate(candidate, {
+        config: resolved,
+        fetch: fetchFor(candidate.sourceId),
+        adapters,
+      })
     } catch (error) {
       const definition = sourceDefinition(candidate.sourceId)
-      const message = `extraction failed: ${error?.message ?? error}`
-      warnings.push({ id: candidate.id, message })
-      // A blog post without its page is dropped; a paper without its HTML
-      // degrades to the abstract so the day is not lost.
       if (definition?.onExtractFailure === 'skip') {
-        if (report) report.skipped = (report.skipped ?? 0) + 1
+        warnings.push({ id: candidate.id, message: `extraction failed: ${error?.message ?? error}` })
+        skipItem(candidate, report)
         continue
       }
       extractionFailures += 1
@@ -301,8 +527,13 @@ export async function runDaily({
         excerpt: true,
         warnings: [],
       }
+      warnings.push({ id: candidate.id, message: `extraction failed: ${error?.message ?? error}` })
     }
     for (const warning of extraction.warnings ?? []) warnings.push({ id: candidate.id, message: warning })
+    if (extraction.skip === true) {
+      skipItem(candidate, report)
+      continue
+    }
     items.push(toDigestItem(candidate, extraction, { collectedAt }))
   }
 
@@ -361,6 +592,13 @@ export async function runDaily({
     }
     if (report.skipped > 0) entry.skipped = report.skipped
     if (report.error) entry.error = report.error
+    if (report.status === 'skipped') {
+      // A skipped source has no items to derive a label from, so it carries the
+      // reason and label the page needs to explain the gap.
+      entry.code = report.code
+      entry.reason = report.reason
+      entry.label = SOURCE_LABELS.get(report.id) ?? report.id
+    }
     return entry
   })
 
@@ -373,6 +611,7 @@ export async function runDaily({
       startedAt: startedAt.toISOString(),
       finishedAt: finishedIso,
       durationMs,
+      proxy: proxy.state,
       sources: sourceEntries,
       translation: {
         status: translation.status,
@@ -392,13 +631,15 @@ export async function runDaily({
 
   const counts = {
     sources: reports.length,
+    skipped: reports.filter(report => report.status === 'skipped').length,
     candidates: candidates.length,
     selected: selection.stats.selected,
     items: items.length,
     fullText: items.filter(item => item.excerpt === false).length,
     excerpt: items.filter(item => item.excerpt === true).length,
     extractionFailures,
-    skipped: reports.reduce((total, report) => total + (report.skipped ?? 0), 0),
+    itemsSkipped: skipped,
+    proxyHealthChecks: proxy.state.probed ? 1 : 0,
     translated: items.filter(item => item.translationState === 'complete').length,
     translationPending: items.filter(item => item.translationState !== 'complete').length,
   }
@@ -443,6 +684,7 @@ export async function runDaily({
       finishedAt: finishedIso,
       durationMs,
       args: { source },
+      proxy: proxy.state,
       sources: reports,
       counts,
       selection: selection.stats,
@@ -471,6 +713,7 @@ export async function runDaily({
   if (digestError) errors.push(String(digestError.message ?? digestError))
   for (const report of reports) {
     if (report.status === 'failed') errors.push(`${report.id}: ${report.error}`)
+    if (report.status === 'skipped') errors.push(`${report.id}: skipped because ${report.reason}`)
   }
   if (shouldWrite && digestError) errors.push('the day digest was not written')
 
@@ -486,6 +729,7 @@ export async function runDaily({
     finishedAt: finishedIso,
     durationMs,
     counts,
+    proxy: proxy.state,
     sources: reports,
     selection: selection.stats,
     translation,

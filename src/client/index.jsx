@@ -110,6 +110,13 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
+/** The browser's local calendar date, matching the digest's date convention. */
+function todayIso() {
+  const now = new Date()
+  const pad = value => String(value).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 /** Day label relative to the newest day in the digest (今天/昨天/前天). */
 function dayLabel(dateStr, refStr) {
   const date = parseDate(dateStr)
@@ -538,6 +545,20 @@ export function PaperReaderPage() {
     [historyDays, attemptedDates],
   )
 
+  /**
+   * Sources the newest run skipped because its proxy was unavailable. The day
+   * document carries the run summary, so no extra route is needed to explain a
+   * missing source.
+   */
+  const proxyNotice = useMemo(() => {
+    const newest = days[0]
+    const sources = Array.isArray(newest?.run?.sources) ? newest.run.sources : []
+    return {
+      date: newest?.date ?? null,
+      sources: sources.filter(source => source && source.status === 'skipped'),
+    }
+  }, [days])
+
   const loadOlder = useCallback(async () => {
     if (loadingMore || remainingDays.length === 0) return
     const wanted = remainingDays.slice(0, PAGE_DAYS).map(day => day.date)
@@ -884,6 +905,23 @@ export function PaperReaderPage() {
           </button>
         </div>
       </header>
+
+      {proxyNotice.sources.length > 0 && (
+        <div className="pr-proxy-notice" role="status">
+          <span className="pr-proxy-notice-dot" aria-hidden="true" />
+          <span className="pr-proxy-notice-text">
+            <strong>{proxyNotice.date === todayIso() ? '今日' : proxyNotice.date}</strong>
+            因代理不可用跳过：
+            {proxyNotice.sources.map((source, index) => (
+              <span key={source.id ?? index}>
+                {index > 0 ? '、' : ''}
+                {source.label ?? source.id}
+                {source.reason ? `（${source.reason}）` : ''}
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
 
       <div className="pr-workspace">
         {drawerOpen && <div className="pr-scrim" onClick={() => setDrawerOpen(false)} />}

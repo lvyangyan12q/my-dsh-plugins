@@ -340,12 +340,22 @@ test('exhausting the daily token budget leaves the rest of the items pending', a
 /* Pipeline integration                                                */
 /* ------------------------------------------------------------------ */
 
-/** The pipeline sees one fetch: arXiv requests and Chat Completions requests. */
+/** The pipeline sees one fetch: arXiv requests, DeepSeek's sitemap and Chat Completions requests. */
+const EMPTY_DEEPSEEK_SITEMAP = '<?xml version="1.0" encoding="UTF-8"?>'
+  + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>'
+
 function combinedFetch(llm, { articles = FULL_TEXT } = {}) {
   const arxiv = fakeArxiv({ articles })
-  const impl = async (url, init) => String(url).includes('/chat/completions')
-    ? llm.impl(url, init)
-    : arxiv.impl(url, init)
+  const impl = async (url, init) => {
+    const target = String(url)
+    if (target.includes('/chat/completions')) return llm.impl(target, init)
+    // The translation scenarios are about an English source; DeepSeek runs as
+    // an empty, healthy source so it neither fails the run nor adds items.
+    if (target.includes('api-docs.deepseek.com')) {
+      return { ok: true, status: 200, text: async () => EMPTY_DEEPSEEK_SITEMAP }
+    }
+    return arxiv.impl(target, init)
+  }
   return { impl, arxiv }
 }
 

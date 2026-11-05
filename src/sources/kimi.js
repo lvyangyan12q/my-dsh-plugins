@@ -20,7 +20,7 @@ import {
   shiftDate,
   slugToTitle,
 } from './blog.js'
-import { classifyDirection } from './direction.js'
+import { classifyDirection } from '../shared/direction.js'
 import {
   assertPositive,
   assertUrl,

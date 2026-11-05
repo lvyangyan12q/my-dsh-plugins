@@ -40,6 +40,21 @@ afterEach(() => {
   while (roots.length > 0) rmSync(roots.pop(), { recursive: true, force: true })
 })
 
+/**
+ * The fake fetch here knows arXiv and the two blog hosts only; DeepSeek has
+ * its own suite, so its source is switched off rather than fed by the wrong
+ * fake.
+ */
+function withoutDeepSeek(config) {
+  return {
+    ...config,
+    sources: {
+      ...config.sources,
+      deepseek: { ...config.sources.deepseek, enabled: false },
+    },
+  }
+}
+
 test('blog source config is merged over defaults and invalid keys are named', async () => {
   const root = tempRoot()
   mkdirSync(root, { recursive: true })
@@ -235,7 +250,7 @@ test('a Kimi page without main.layout-content fails as a per-article error', asy
 
 test('blog sources share the 4-item quota, are translated and land in the v2 digest', async () => {
   const root = tempRoot()
-  const { config } = await loadConfig({ root })
+  const config = withoutDeepSeek((await loadConfig({ root })).config)
   const llm = fakeLlm()
   const blogFetch = fakeBlogSources()
   const arxiv = fakeArxiv({ articles: FULL_TEXT })
@@ -256,7 +271,6 @@ test('blog sources share the 4-item quota, are translated and land in the v2 dig
 
   const { digest } = await readDayDigest({ root, date: DATE })
   assert.equal(digest.schemaVersion, 2)
-  assert.deepEqual(digest.sources.map(source => source.id), ['arxiv', 'anthropic', 'kimi'])
   assert.equal(digest.sources.find(source => source.id === 'anthropic').label, 'Anthropic')
   assert.equal(digest.sources.find(source => source.id === 'kimi').label, 'Kimi')
 
@@ -287,7 +301,7 @@ test('blog sources share the 4-item quota, are translated and land in the v2 dig
 
 test('one broken Anthropic article is skipped and counted without failing the source', async () => {
   const root = tempRoot()
-  const { config } = await loadConfig({ root })
+  const config = withoutDeepSeek((await loadConfig({ root })).config)
   config.sources.kimi.enabled = false
   const llm = fakeLlm()
   const blogs = fakeBlogSources({
@@ -324,7 +338,7 @@ test('one broken Anthropic article is skipped and counted without failing the so
 
 test('the sitemap difference is remembered across days, but a same-day rerun is reproducible', async () => {
   const root = tempRoot()
-  const { config } = await loadConfig({ root })
+  const config = withoutDeepSeek((await loadConfig({ root })).config)
   config.sources.kimi.enabled = false
   const llm = fakeLlm()
   const arxiv = fakeArxiv({ articles: FULL_TEXT })

@@ -16,7 +16,7 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { loadConfig } from '../config.js'
-import { runDaily, SOURCE_IDS } from '../pipeline/run.js'
+import { runDaily } from '../pipeline/run.js'
 import { isDigestDate } from '../storage.js'
 
 const USAGE = `Usage: paper-reader [options]
@@ -27,7 +27,7 @@ paper-reader host.
 Options:
   --date YYYY-MM-DD   digest date (default: today, local time)
   --dry-run           fetch and select without writing any file
-  --source ID         run only one source (available: ${SOURCE_IDS.join(', ')})
+  --source ID         run only one source (available: arxiv, deepseek, anthropic, kimi)
   -h, --help          show this help
 
 Data:    $DSH_HOME/paper-reader/digest/YYYY-MM-DD.json
@@ -90,9 +90,11 @@ export function dataRoot(env = process.env) {
 
 function summaryLine(result) {
   const sources = result.sources
-    .map(source => source.status === 'ok'
-      ? `${source.id} ok (${source.candidates})`
-      : `${source.id} ${source.status}`)
+    .map(source => {
+      if (source.status === 'ok') return `${source.id} ok (${source.candidates})`
+      if (source.status === 'skipped') return `${source.id} skipped (${source.reason})`
+      return `${source.id} ${source.status}`
+    })
     .join(' · ')
   const head = result.dryRun ? 'dry-run' : 'run'
   return `paper-reader ${head} ${result.date}: ${result.counts.items} items`

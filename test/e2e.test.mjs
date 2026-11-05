@@ -17,6 +17,7 @@ import { main } from '../src/cli/main.js'
 import { mountPage } from './helpers/client.mjs'
 import { fakeArxiv, FULL_TEXT } from './helpers/arxiv.mjs'
 import { fakeLlm, API_KEY, BASE_URL, MODEL } from './helpers/llm.mjs'
+import { fakeSources } from './helpers/sources.mjs'
 
 const DATE = '2026-11-05'
 const home = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-e2e-'))
@@ -24,19 +25,6 @@ const profileDir = join(home, 'profiles', 'web')
 mkdirSync(profileDir, { recursive: true })
 
 after(() => rmSync(home, { recursive: true, force: true }))
-
-/**
- * These scenarios exercise the arXiv path end to end with a fetch that only
- * knows arXiv; the blog adapters are covered by their own fixture suite.
- */
-function writeArxivOnlyConfig(homeDir) {
-  const root = join(homeDir, 'paper-reader')
-  mkdirSync(root, { recursive: true })
-  writeFileSync(
-    join(root, 'config.json'),
-    JSON.stringify({ sources: { anthropic: { enabled: false }, kimi: { enabled: false } } }),
-  )
-}
 
 function capture() {
   const chunks = []
@@ -75,14 +63,34 @@ function createHost(profile = profileDir) {
   return { call, dispose: () => { for (const dispose of disposers) dispose() } }
 }
 
-test('CLI → host → reading page renders the day with pending translations', async () => {
-  writeArxivOnlyConfig(home)
+/**
+ * The E2E fetch knows arXiv and DeepSeek; the blog adapters have their own
+ * fixture suite, so their sources are switched off instead of treating their
+ * 404s as a broken day.
+ */
+function writeNoBlogSourcesConfig(homeDir, extraSources = {}) {
+  const root = join(homeDir, 'paper-reader')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(
+    join(root, 'config.json'),
+    JSON.stringify({
+      sources: {
+        anthropic: { enabled: false },
+        kimi: { enabled: false },
+        ...extraSources,
+      },
+    }),
+  )
+}
+
+test('CLI → host → reading page renders arXiv pending items and DeepSeek official pairs', async () => {
+  writeNoBlogSourcesConfig(home)
   const stdout = capture()
   const stderr = capture()
   const code = await main(['--date', DATE], {
     env: { DSH_HOME: home },
     now: () => new Date('2026-11-05T09:00:00+08:00'),
-    fetch: fakeArxiv({ articles: FULL_TEXT }).impl,
+    fetch: fakeSources().impl,
     stdout,
     stderr,
   })
@@ -95,14 +103,23 @@ test('CLI → host → reading page renders the day with pending translations', 
     assert.equal(index.status, 200)
     const indexBody = JSON.parse(index.body)
     assert.equal(indexBody.days[0].date, DATE)
-    assert.equal(indexBody.days[0].items, 3)
+    assert.equal(indexBody.days[0].items, 4)
     assert.equal(indexBody.days[0].runStatus, 'ok')
 
     const day = await host.call(`/api/paper-reader/digest/${DATE}`)
     assert.equal(day.status, 200)
     const dayBody = JSON.parse(day.body)
-    assert.equal(dayBody.items.length, 3)
-    assert.ok(dayBody.items.every(item => item.translationState === 'pending'))
+    assert.equal(dayBody.items.length, 4)
+    const arxivItems = dayBody.items.filter(item => item.sourceId === 'arxiv')
+    const deepseekItem = dayBody.items.find(item => item.sourceId === 'deepseek')
+    assert.ok(arxivItems.every(item => item.translationState === 'pending'))
+    assert.ok(deepseekItem, 'the DeepSeek news is part of the day')
+    assert.equal(deepseekItem.sourceLanguage, 'zh')
+    assert.equal(deepseekItem.translationState, 'complete')
+    assert.deepEqual(deepseekItem.title, {
+      original: 'DeepSeek V4.1 Flash 新版本：许愿式编程一键成真',
+      translation: 'DeepSeek-V4.1-Flash-1017: Wish-Driven Programming Made Real',
+    })
 
     const page = await mountPage({
       routes: {
@@ -120,12 +137,13 @@ test('CLI → host → reading page renders the day with pending translations', 
       assert.match(text, /Scaling Laws for Efficient Pretraining/)
       assert.match(text, /Preference Optimization and Safety Alignment/)
       assert.match(text, /arXiv/)
+      assert.match(text, /DeepSeek V4.1 Flash 新版本：许愿式编程一键成真/)
       assert.match(text, /翻译进行中/)
       assert.ok(page.container.querySelector('.pr-pending'), 'pending blocks show a placeholder')
 
       // The middle paper had no LaTeXML HTML: it renders as an excerpt.
       const items = [...page.container.querySelectorAll('.pr-item')]
-      assert.equal(items.length, 3)
+      assert.equal(items.length, 4)
       await page.click(items[1])
       assert.match(page.container.textContent, /节选/)
     } finally {
@@ -140,9 +158,12 @@ test('a translated day renders the Chinese text without pending placeholders in 
   const translatedHome = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-e2e-zh-'))
   const translatedProfile = join(translatedHome, 'profiles', 'web')
   mkdirSync(translatedProfile, { recursive: true })
+  // This slice is about translating an English source day; DeepSeek has its own
+  // fixtures and would enter the same digest already complete, while the blog
+  // adapters have their own end-to-end fixtures.
+  writeNoBlogSourcesConfig(translatedHome, { deepseek: { enabled: false } })
 
   try {
-    writeArxivOnlyConfig(translatedHome)
     const stdout = capture()
     const stderr = capture()
     const llm = fakeLlm()

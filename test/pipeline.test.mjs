@@ -31,15 +31,16 @@ const DATE = '2026-11-04'
 const NOW = () => new Date('2026-11-04T09:00:00+08:00')
 
 /**
- * These tests exercise the arXiv path with a fetch that only knows arXiv. The
- * blog adapters have their own fixture suite, so keep them out of this run
- * instead of treating their 404s as source failures.
+ * These tests describe the arXiv leg of the run; the blog sources have their
+ * own fixture suites, so they are switched off here rather than teaching the
+ * arXiv fake about other hosts. The default config still enables them.
  */
 function arxivOnly(config) {
   return {
     ...config,
     sources: {
       ...config.sources,
+      deepseek: { ...config.sources.deepseek, enabled: false },
       anthropic: { ...config.sources.anthropic, enabled: false },
       kimi: { ...config.sources.kimi, enabled: false },
     },
@@ -67,6 +68,9 @@ test('a missing config file uses built-in defaults and creates nothing', async (
   assert.deepEqual(loaded.config.sources.arxiv.categories, ['cs.AI', 'cs.CL', 'cs.LG'])
   assert.equal(loaded.config.sources.arxiv.timeoutMs, 20_000)
   assert.equal(loaded.config.sources.arxiv.maxResults, 100)
+  assert.equal(loaded.config.sources.deepseek.enabled, true)
+  assert.equal(loaded.config.sources.deepseek.lookbackDays, 1)
+  assert.equal(loaded.config.sources.deepseek.sitemapUrl, 'https://api-docs.deepseek.com/sitemap.xml')
   assert.equal(loaded.config.sources.anthropic.enabled, true)
   assert.equal(loaded.config.sources.anthropic.sitemapUrl, 'https://www.anthropic.com/sitemap.xml')
   assert.equal(loaded.config.sources.kimi.listUrl, 'https://www.kimi.com/blog/')
@@ -108,10 +112,10 @@ test('invalid config is an explicit error naming the file', async () => {
 
 test('a run writes the day digest, the index and a run record', async () => {
   const root = tempRoot()
-  const config = arxivOnly((await loadConfig({ root })).config)
+  const { config } = await loadConfig({ root })
   const { impl, calls } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 0)
   assert.equal(result.status, 'ok')
@@ -179,10 +183,10 @@ test('a run writes the day digest, the index and a run record', async () => {
 
 test('dry-run reports the same selection without writing any file', async () => {
   const root = tempRoot()
-  const config = arxivOnly((await loadConfig({ root })).config)
+  const { config } = await loadConfig({ root })
   const { impl, calls } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW, dryRun: true })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW, dryRun: true })
 
   assert.equal(result.exitCode, 0)
   assert.equal(result.dryRun, true)
@@ -196,13 +200,13 @@ test('dry-run reports the same selection without writing any file', async () => 
 
 test('the configured paper quota limits both writes and article fetches', async () => {
   const root = tempRoot()
-  const config = arxivOnly({
+  const config = {
     ...(await loadConfig({ root })).config,
     quota: { total: 10, papers: 2, blogs: 4 },
-  })
+  }
   const { impl, calls } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.counts.items, 2)
   const { digest } = await readDayDigest({ root, date: DATE })
@@ -229,9 +233,9 @@ test('a network failure is explicit, writes a failed run record and keeps the pr
   }
   await writeDayDigest({ root, digest: previous, now: new Date('2026-11-03T09:00:00Z') })
 
-  const config = arxivOnly((await loadConfig({ root })).config)
+  const { config } = await loadConfig({ root })
   const offline = async () => { throw new Error('getaddrinfo ENOTFOUND export.arxiv.org') }
-  const result = await runDaily({ root, date: DATE, config, fetch: offline, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: offline, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 1)
   assert.equal(result.status, 'failed')
@@ -251,13 +255,13 @@ test('a network failure is explicit, writes a failed run record and keeps the pr
 
 test('one broken article degrades to an excerpt while the other papers stay full text', async () => {
   const root = tempRoot()
-  const config = arxivOnly((await loadConfig({ root })).config)
+  const { config } = await loadConfig({ root })
   const { impl } = fakeArxiv({
     articles: FULL_TEXT,
     failArticles: { '2611.05380': new Error('etimedout while reading article') },
   })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 0)
   const { digest } = await readDayDigest({ root, date: DATE })
@@ -274,10 +278,10 @@ test('one broken article degrades to an excerpt while the other papers stay full
 
 test('--source narrows the run to the requested source', async () => {
   const root = tempRoot()
-  const config = arxivOnly((await loadConfig({ root })).config)
+  const { config } = await loadConfig({ root })
   const { impl } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, source: 'arxiv', fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config, source: 'arxiv', fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 0)
   assert.deepEqual(result.sources.map(source => source.id), ['arxiv'])
@@ -288,15 +292,15 @@ test('--source narrows the run to the requested source', async () => {
 
 test('an unsupported --source and a malformed date are usage errors', async () => {
   const root = tempRoot()
-  const config = arxivOnly((await loadConfig({ root })).config)
+  const { config } = await loadConfig({ root })
   const { impl } = fakeArxiv()
 
   await assert.rejects(
-    runDaily({ root, date: DATE, config, source: 'hf', fetch: impl, now: NOW }),
+    runDaily({ root, date: DATE, config, source: 'hf', fetch: impl, env: {}, now: NOW }),
     error => error.code === 'unsupported_source' && error.exitCode === 2,
   )
   await assert.rejects(
-    runDaily({ root, date: '2026-13-40', config, fetch: impl, now: NOW }),
+    runDaily({ root, date: '2026-13-40', config, fetch: impl, env: {}, now: NOW }),
     error => error.code === 'invalid_date' && error.exitCode === 2,
   )
 })
