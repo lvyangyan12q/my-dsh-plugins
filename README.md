@@ -56,19 +56,21 @@ $DSH_HOME/paper-reader/
 
 采集链路方案已定：[实现规格](docs/wayfinder/daily-pipeline/spec.md) 与 [11 张纵向切片工单](docs/wayfinder/daily-pipeline/implementation/README.md) 是唯一实施入口。目标：每天 10 条、全文抽取、中英对照、按天 digest、DSH Schedule 每日运行；来源 arXiv、HF 每日榜、Anthropic、DeepSeek、Kimi、OpenAI；HF/OpenAI 需显式代理；X 预留，Claude Code 与 DSH `web_search` 不在范围内。
 
-当前已实现第一条链路（工单 03/04）：CLI → arXiv 列表/LaTeXML 抽取 → 选择/去重/配额 → 段落批量翻译 → 当日 digest + 索引 + run 记录。没有模型配置时条目保持 `translation: null` / `translationState: "pending"` 并明确跳过；页面显示「翻译进行中」。
+已实现链路（工单 03/04/05/08）：CLI → arXiv 列表/LaTeXML 抽取 + DeepSeek 官方双语新闻 → 选择/去重/配额 → 段落批量翻译（DeepSeek 已有官方译文，免翻译）→ 当日 digest + 索引 + run 记录。没有模型配置时英文条目保持 `translation: null` / `translationState: "pending"` 并明确跳过，页面显示「翻译进行中」。
 
 ```powershell
 node scripts/paper-reader.mjs --date 2026-11-05
-node scripts/paper-reader.mjs --dry-run        # 只抓取和统计，不写任何文件，也不调用翻译
-node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源
+node scripts/paper-reader.mjs --dry-run        # 只抓取和统计，不写文件，也不调用翻译
+node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源（arxiv / deepseek）
 ```
 
-- 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s）。工具只读该文件，不会覆盖。
-- 示例：`{"quota":{"papers":4},"sources":{"arxiv":{"categories":["cs.CL"],"keywords":["agent"]}}}`。
-- 代理（工单 05）：只对直连失败的来源生效，开关是 `sources.<id>.useProxy`（默认 HF 官方与 OpenAI 文章页为 `true`，arXiv 等直连来源为 `false`）。地址只来自 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`（Node 24 还需启动前设置 `NODE_USE_ENV_PROXY=1`）或配置 `proxy.url`；代码不内置代理地址，也不读取系统代理。
+- 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s、DeepSeek 回看 1 天）。工具只读该文件，不会覆盖。
+- 示例：`{"quota":{"papers":4},"sources":{"arxiv":{"categories":["cs.CL"],"keywords":["agent"]},"deepseek":{"lookbackDays":2}}}`。
+- 代理（工单 05）：只对直连失败的来源生效，开关是 `sources.<id>.useProxy`（默认 HF 官方与 OpenAI 文章页为 `true`，arXiv/DeepSeek 等直连来源为 `false`）。地址只来自 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`（Node 24 还需启动前设置 `NODE_USE_ENV_PROXY=1`）或配置 `proxy.url`；代码不内置代理地址，也不读取系统代理。
 - 每日运行先做一次代理健康检查（`proxy.healthCheckUrl`，默认 HF 每日榜接口）。代理未配置、认证失败、超时或不可达时，受影响来源记为 `skipped` 并写入原因，其他来源照常产出；页面顶部显示「因代理不可用跳过：…」。不会回退直连硬闯，代理凭据不写入 digest 或 run 记录。
 - arXiv 正文取 `arxiv.org/html/<id>`（LaTeXML），保留标题、段落、公式、图注与代码；HTML 缺失时回退摘要并标记「节选」。
+- DeepSeek（工单 08）：列表只取 `api-docs.deepseek.com/sitemap.xml`（`/news` 是软 404），按 slug 自带的日期进入当天窗口；正文读官方英文 `/news/<slug>.md` 与中文 `/zh-cn/news/<slug>.md`，直接写成「中文原文 + 英文译文」，**不调用翻译**，`sourceLanguage: "zh"`、`translationState: "complete"`。中文版缺失时保留英文并标 pending；两者都缺失的条目跳过并写入 run 记录告警。
+- DeepSeek 的博客条目按发布时间参与每日 4 条博客配额；窗口外的旧新闻不会每天重复占用配额。
 - 翻译使用 OpenAI 兼容 Chat Completions 端点，环境变量：`PAPER_READER_LLM_BASE_URL`、`PAPER_READER_LLM_API_KEY`、`PAPER_READER_LLM_MODEL`（也可在 `translation.baseUrl/apiKey/model` 固定）。三者缺一时整轮翻译明确跳过并写入 run 记录，不影响抓取。
 - 翻译按块批量（每批 6–12 块）、标题/图注/公式说明单独处理；公式主体与代码不翻译。单块失败重试 2 次后保持 pending，其余块照常。
 - 译文缓存在 `$DSH_HOME/paper-reader/cache/`，键为原文、目标语言、模型与术语表版本的 SHA-256；重复运行不再付费。术语表内置常用 AI 词汇，可用 `translation.glossary` 覆盖。

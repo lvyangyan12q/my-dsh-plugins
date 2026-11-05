@@ -19,11 +19,16 @@ import {
   extractArxivPaper,
   listArxiv,
 } from '../sources/arxiv.js'
+import {
+  DEFAULT_DEEPSEEK_CONFIG,
+  extractDeepSeekArticle,
+  listDeepSeek,
+} from '../sources/deepseek.js'
 import { isDigestDate, readRunRecord, storagePaths, writeDayDigest, writeRunRecord } from '../storage.js'
 import { translateItems } from '../translate/service.js'
 import { selectDaily } from './select.js'
 
-export const SOURCE_IDS = ['arxiv']
+export const SOURCE_IDS = ['arxiv', 'deepseek']
 
 export const DIRECTION_META = [
   { id: 'agent', label: 'Agent', labelEn: 'Agents' },
@@ -35,6 +40,7 @@ export const DIRECTION_META = [
 
 export const SOURCE_META = [
   { id: 'arxiv', label: 'arXiv', short: 'A' },
+  { id: 'deepseek', label: 'DeepSeek', short: 'D' },
   { id: 'hf', label: 'Hugging Face', short: 'H' },
   { id: 'openai', label: 'OpenAI', short: 'O' },
 ]
@@ -56,6 +62,18 @@ const BUILTIN_ADAPTERS = {
     extract: ({ candidate, config, fetch }) => extractArxivPaper({
       candidate,
       config: config.sources?.arxiv ?? DEFAULT_ARXIV_CONFIG,
+      fetch,
+    }),
+  },
+  deepseek: {
+    list: ({ config, date, fetch }) => listDeepSeek({
+      config: config.sources?.deepseek ?? DEFAULT_DEEPSEEK_CONFIG,
+      date,
+      fetch,
+    }),
+    extract: ({ candidate, config, fetch }) => extractDeepSeekArticle({
+      candidate,
+      config: config.sources?.deepseek ?? DEFAULT_DEEPSEEK_CONFIG,
       fetch,
     }),
   },
@@ -185,12 +203,20 @@ function pendingBlocks(blocks) {
   })
 }
 
-function wordCount(blocks) {
-  return blocks
+const CJK = /[\u3000-\u9fff\uac00-\ud7af\uff00-\uffef]/g
+
+/**
+ * Reading time in minutes. CJK characters are read faster per character than
+ * an English word, so they are counted separately instead of collapsing a
+ * Chinese paragraph into "one word".
+ */
+function readingMinutesOf(blocks) {
+  const text = blocks
     .map(block => block.code ?? block.original ?? block.caption?.original ?? block.display ?? '')
     .join(' ')
-    .split(/\s+/)
-    .filter(Boolean).length
+  const cjk = (text.match(CJK) ?? []).length
+  const words = text.replace(CJK, ' ').split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(cjk / 350 + words / 180))
 }
 
 /**
@@ -209,29 +235,44 @@ async function translationTokensUsed({ root, date, dryRun }) {
   }
 }
 
+/**
+ * Build the digest item.
+ *
+ * Sources that already carry final original/translation pairs (DeepSeek's
+ * official bilingual pages) set `finalized: true` and their text is kept as
+ * written; every other source starts pending so the translation service can
+ * fill it later.
+ */
 function toDigestItem(candidate, extraction, { collectedAt }) {
-  const blocks = pendingBlocks(extraction.blocks ?? [])
-  const summary = candidate.summary
-    ? { original: candidate.summary, translation: null }
-    : null
+  const finalized = extraction.finalized === true
+  const blocks = finalized ? (extraction.blocks ?? []) : pendingBlocks(extraction.blocks ?? [])
+  const title = finalized && extraction.title
+    ? { original: extraction.title.original, translation: extraction.title.translation ?? null }
+    : { original: candidate.title, translation: null }
+  let summary = null
+  if (finalized) {
+    summary = extraction.summary ?? null
+  } else if (candidate.summary) {
+    summary = { original: candidate.summary, translation: null }
+  }
   return {
     id: candidate.id,
     source: candidate.sourceId,
     sourceId: candidate.sourceId,
-    sourceLanguage: candidate.sourceLanguage === 'zh' ? 'zh' : 'en',
-    title: { original: candidate.title, translation: null },
+    sourceLanguage: (finalized ? extraction.sourceLanguage : candidate.sourceLanguage) === 'zh' ? 'zh' : 'en',
+    title,
     summary,
     authors: Array.isArray(candidate.authors) ? candidate.authors : [],
     venue: candidate.primaryCategory ? `arXiv ${candidate.primaryCategory}` : null,
     published: candidate.published ?? (candidate.publishedAt ? String(candidate.publishedAt).slice(0, 10) : null),
     publishedAt: candidate.publishedAt ?? null,
     collectedAt,
-    direction: candidate.direction ?? 'architecture',
+    direction: extraction.direction ?? candidate.direction ?? 'architecture',
     tags: Array.isArray(candidate.tags) ? candidate.tags : [],
-    readingMinutes: Math.max(1, Math.round(wordCount(blocks) / 180)),
+    readingMinutes: readingMinutesOf(blocks),
     excerpt: extraction.excerpt === true,
     url: candidate.url ?? null,
-    translationState: 'pending',
+    translationState: finalized ? (extraction.translationState ?? 'pending') : 'pending',
     blocks,
   }
 }
@@ -357,6 +398,7 @@ export async function runDaily({
   const items = []
   const warnings = []
   let extractionFailures = 0
+  let skipped = 0
   for (const candidate of selection.selected) {
     const report = reports.find(entry => entry.id === candidate.sourceId)
     if (report) report.selected += 1
@@ -376,6 +418,13 @@ export async function runDaily({
       }
     }
     for (const warning of extraction.warnings ?? []) warnings.push({ id: candidate.id, message: warning })
+    if (extraction.skip === true) {
+      // A blog item with no readable page is not a digest item: an empty shell
+      // would be worse than an explicit warning in the run record.
+      if (report) report.selected = Math.max(0, report.selected - 1)
+      skipped += 1
+      continue
+    }
     items.push(toDigestItem(candidate, extraction, { collectedAt }))
   }
 
@@ -479,6 +528,7 @@ export async function runDaily({
     fullText: items.filter(item => item.excerpt === false).length,
     excerpt: items.filter(item => item.excerpt === true).length,
     extractionFailures,
+    itemsSkipped: skipped,
     proxyHealthChecks: proxy.state.probed ? 1 : 0,
     translated: items.filter(item => item.translationState === 'complete').length,
     translationPending: items.filter(item => item.translationState !== 'complete').length,

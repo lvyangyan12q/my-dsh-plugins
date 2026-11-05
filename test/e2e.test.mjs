@@ -8,7 +8,7 @@
  * about paths, the v2 contract or the pending-translation shape.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, test } from 'node:test'
@@ -17,6 +17,7 @@ import { main } from '../src/cli/main.js'
 import { mountPage } from './helpers/client.mjs'
 import { fakeArxiv, FULL_TEXT } from './helpers/arxiv.mjs'
 import { fakeLlm, API_KEY, BASE_URL, MODEL } from './helpers/llm.mjs'
+import { fakeSources } from './helpers/sources.mjs'
 
 const DATE = '2026-11-05'
 const home = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-e2e-'))
@@ -62,13 +63,13 @@ function createHost(profile = profileDir) {
   return { call, dispose: () => { for (const dispose of disposers) dispose() } }
 }
 
-test('CLI → host → reading page renders the day with pending translations', async () => {
+test('CLI → host → reading page renders arXiv pending items and DeepSeek official pairs', async () => {
   const stdout = capture()
   const stderr = capture()
   const code = await main(['--date', DATE], {
     env: { DSH_HOME: home },
     now: () => new Date('2026-11-05T09:00:00+08:00'),
-    fetch: fakeArxiv({ articles: FULL_TEXT }).impl,
+    fetch: fakeSources().impl,
     stdout,
     stderr,
   })
@@ -81,14 +82,23 @@ test('CLI → host → reading page renders the day with pending translations', 
     assert.equal(index.status, 200)
     const indexBody = JSON.parse(index.body)
     assert.equal(indexBody.days[0].date, DATE)
-    assert.equal(indexBody.days[0].items, 3)
+    assert.equal(indexBody.days[0].items, 4)
     assert.equal(indexBody.days[0].runStatus, 'ok')
 
     const day = await host.call(`/api/paper-reader/digest/${DATE}`)
     assert.equal(day.status, 200)
     const dayBody = JSON.parse(day.body)
-    assert.equal(dayBody.items.length, 3)
-    assert.ok(dayBody.items.every(item => item.translationState === 'pending'))
+    assert.equal(dayBody.items.length, 4)
+    const arxivItems = dayBody.items.filter(item => item.sourceId === 'arxiv')
+    const deepseekItem = dayBody.items.find(item => item.sourceId === 'deepseek')
+    assert.ok(arxivItems.every(item => item.translationState === 'pending'))
+    assert.ok(deepseekItem, 'the DeepSeek news is part of the day')
+    assert.equal(deepseekItem.sourceLanguage, 'zh')
+    assert.equal(deepseekItem.translationState, 'complete')
+    assert.deepEqual(deepseekItem.title, {
+      original: 'DeepSeek V4.1 Flash 新版本：许愿式编程一键成真',
+      translation: 'DeepSeek-V4.1-Flash-1017: Wish-Driven Programming Made Real',
+    })
 
     const page = await mountPage({
       routes: {
@@ -106,12 +116,13 @@ test('CLI → host → reading page renders the day with pending translations', 
       assert.match(text, /Scaling Laws for Efficient Pretraining/)
       assert.match(text, /Preference Optimization and Safety Alignment/)
       assert.match(text, /arXiv/)
+      assert.match(text, /DeepSeek V4.1 Flash 新版本：许愿式编程一键成真/)
       assert.match(text, /翻译进行中/)
       assert.ok(page.container.querySelector('.pr-pending'), 'pending blocks show a placeholder')
 
       // The middle paper had no LaTeXML HTML: it renders as an excerpt.
       const items = [...page.container.querySelectorAll('.pr-item')]
-      assert.equal(items.length, 3)
+      assert.equal(items.length, 4)
       await page.click(items[1])
       assert.match(page.container.textContent, /节选/)
     } finally {
@@ -126,6 +137,13 @@ test('a translated day renders the Chinese text without pending placeholders in 
   const translatedHome = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-e2e-zh-'))
   const translatedProfile = join(translatedHome, 'profiles', 'web')
   mkdirSync(translatedProfile, { recursive: true })
+  // This slice is about translating an English source day; DeepSeek has its own
+  // fixtures and would enter the same digest already complete.
+  mkdirSync(join(translatedHome, 'paper-reader'), { recursive: true })
+  writeFileSync(
+    join(translatedHome, 'paper-reader', 'config.json'),
+    JSON.stringify({ sources: { deepseek: { enabled: false } } }),
+  )
 
   try {
     const stdout = capture()
