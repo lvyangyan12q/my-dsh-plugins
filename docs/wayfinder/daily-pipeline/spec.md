@@ -15,7 +15,7 @@ status: open
 
 提供一个本地可运行的完整工具：
 
-- 每日定时抓取上述来源的最新内容，按重要度选出约 10 条；
+- 每日定时抓取上述来源的最新内容，按重要度选出**最多** 10 条（不足不凑数）；
 - 抽取全文（标题、段落、公式、图注、代码），保留原文；
 - 生成原文/译文成对内容；中文来源也能以中文原文 + 英文译文阅读；
 - 写入按天组织的 digest 与索引；
@@ -70,21 +70,24 @@ status: open
 - arXiv：官方 Atom API 按分类与 `submittedDate` 查询；正文取 LaTeXML HTML（标题、段落、公式、图注、代码）；HTML 缺失回退 `/abs` 摘要级并标 `excerpt`；PDF 只作最后手段。
 - Hugging Face：官方 API 按 `?date=YYYY-MM-DD` 拿当日榜，`upvotes` 排序；`paper.id` 作为 arXiv id，正文回 arXiv；代理不可用时整源跳过并记录。
 - Anthropic：`sitemap.xml` 发现新文章，正文取服务端渲染主体与结构化元数据；单篇失败跳过并告警。
-- DeepSeek：sitemap 发现新闻，官方英文/中文 Markdown 成对写入，**免翻译**。
+- DeepSeek：sitemap 发现新闻，官方英文/中文 Markdown 成对写入，**免翻译**；官方缺一侧时保持 `pending`，绝不调用翻译模型。
 - Kimi：博客列表按发布日期发现，正文取英文页；生成中文译文。
-- OpenAI：RSS 做列表；代理可用时抓文章页 SSR 全文；不可用时只保留标题 + 官方 dek 的节选条目。
+- OpenAI：RSS 做列表；代理可用时抓文章页 SSR 全文；不可用时只保留标题 + 官方 dek 的节选条目。**条款复核前默认关闭（opt-in）**：用户显式设置 `sources.openai.enabled=true` 才纳入每日运行；复核通过后再改默认值。
 - X：声明占位，不实现抓取。
 
 ### 选择与配额
 
-- 默认每日 10 条：论文 6（HF 票数优先，arXiv 去重补足），博客/公告 4（各来源按发布时间取最新）。
+- 默认每日**最多** 10 条（上限，不是目标值；候选不足时按实际条数写入，不补足）：论文最多 6（HF 先按 `upvotes`，再看关键词/来源权重；arXiv 去重补足），博客/公告最多 4（各来源按发布时间取最新、轮转分配）。
 - 去重：arXiv id 优先，其次 canonical URL，最后标题指纹。
-- 配额、来源权重、每源上限、关键词/机构白名单都在配置中，可改而不改代码。
+- 配额、来源权重、每源上限、关键词/机构白名单都在配置中，可改而不改代码：
+  - `selection.sourceWeights` 是 `{ sourceId: number }` 的加性相关度权重，在票数与关键词之后参与排序；
+  - `selection.institutions` 是机构白名单：候选声明了机构且全部不匹配时被过滤；未声明机构的候选保留（与分类过滤同一条「不拿无法满足的规则过滤」原则）。
 - 全文翻译只针对入选条目；未入选不进入当日 digest。
 
 ### 代理
 
 - 代理必须显式配置：环境变量 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`，或插件配置中的代理 URL；不硬编码、不默认读系统代理。
+- 配置里的 `proxy.url` 在 CLI 中可用：Node 24 只有在进程启动前设置 `HTTP(S)_PROXY` 且 `NODE_USE_ENV_PROXY=1` 时才让 `fetch` 走代理，因此 CLI 入口检测到配置 URL 时用同一命令**自重启一次**并导出这些环境变量；不新增代理依赖，测试只覆盖重启决策与参数，不连接真实代理。
 - 只对直连失败的来源启用（HF 官方、OpenAI 文章页）；arXiv/Anthropic/DeepSeek/Kimi 直连优先。
 - 每日运行先做代理健康检查；失败时跳过受影响来源并写入状态，不回退直连硬闯、不静默失败；代理凭据不落盘到 digest 或日志明文。
 
@@ -95,6 +98,7 @@ status: open
 - 术语表（模型名、方法名、缩写）参与 system prompt，版本进入缓存键。
 - 缓存键：`sha256(原文 + 目标语言 + 模型 + 术语表版本)`；跨天复用。
 - 单块失败重试 2 次，仍失败写 `translation: null` 与 `translationState: "pending"`；不阻塞其他块。
+- DeepSeek 官方双语条目是**最终文本**，整条跳过翻译服务（不进 batch、不计 token）；官方缺一侧时保持 `pending`。
 - 每日 token 预算可配置（默认 300k）；超限后剩余条目 pending，并在 run 记录与页面标注。
 - 中文来源：DeepSeek 直接用官方双语；其他中文来源生成英文译文。
 
@@ -109,15 +113,20 @@ status: open
   "items": [
     {
       "id": "arxiv:2611.05377",
-      "source": "arxiv",
+      "sourceId": "arxiv",
       "sourceLanguage": "en",
       "title": { "original": "…", "translation": "…" },
       "summary": { "original": "…", "translation": "…" },
+      "authors": ["…"],
+      "venue": "arXiv cs.CL",
       "url": "https://arxiv.org/abs/2611.05377",
       "publishedAt": "2026-11-04T18:59:56Z",
+      "collectedAt": "2026-11-05T09:02:00+08:00",
       "direction": "agent",
       "tags": ["…"],
+      "readingMinutes": 12,
       "excerpt": false,
+      "excerptReason": { "code": "proxy_unavailable", "message": "…" },
       "translationState": "complete",
       "blocks": [
         { "type": "heading", "level": 1, "original": "Abstract", "translation": "摘要" },
@@ -130,20 +139,22 @@ status: open
 }
 ```
 
-- 旧字段（`en`/`zh`、`titleEn`/`titleZh`）在迁移期可作为读取别名，但写入统一用 v2；示例与测试同步更新。
+- **契约字段（v2 的一部分，非扩展）**：`sourceId`（唯一来源键，不再写 `source`）、`publishedAt`（ISO 8601；日期型来源写成当天 00:00:00Z）、`authors`、`venue`、`readingMinutes`、`excerptReason`（`{ code, message?, detail? }`）。`published` 只作为旧文件的读取别名，写入不再产生。
+- 旧字段（`en`/`zh`、`titleEn`/`titleZh`、`source`、`published`）在迁移期可作为读取别名，但写入统一用 v2；示例与测试同步更新。
 - 索引文件记录日期列表、条数、各来源状态与最新运行；页面用它加载最近 7 天。
 
 ### 存储与路由
 
-- 每天一个文件：`paper-reader/digest/YYYY-MM-DD.json`；索引：`paper-reader/index.json`；保留 30 天，过期清理不阻塞当天写入。
-- 原子写入：临时文件 + rename；索引最后更新；单日文件上限 8 MiB，超限则该日失败并保留上一份。
-- 宿主路由：索引、按日期取 digest、健康检查；沿用浏览器会话鉴权；只读，不创建或迁移用户数据。
+- 每天一个文件：`paper-reader/digest/YYYY-MM-DD.json`；索引：`paper-reader/index.json`；运行记录：`paper-reader/runs/YYYY-MM-DD.json`；保留 30 天，过期清理不阻塞当天写入。
+- 跨天发现状态：`paper-reader/state/sources.json` 记录每个来源已提供的 URL 及其首次出现日期（Anthropic sitemap 等），使「新文章」按 URL 差集判定，而不是每天重复整个归档；状态写入失败只告警，不失败当天。
+- 原子写入：临时文件 + rename；索引最后更新；单日文件上限 8 MiB，运行记录上限 1 MiB，超限则该文件失败并保留上一份。
+- 宿主路由：索引、按日期取 digest、运行状态、健康检查；沿用浏览器会话鉴权；只读，不创建或迁移用户数据。
 
 ### 阅读页
 
 - 对照模式固定「原文 | 译文」，列顺序由 `sourceLanguage` 决定；「仅中文 / English」按目标语言取文本。
 - 语言中性块（公式、图、代码）只渲染一份；缺失译文显示占位或原文回退并标注。
-- 左栏新增来源筛选，与方向、搜索、收藏叠加；条目显示来源、节选/代理降级标记。
+- 左栏新增来源筛选，与方向、搜索、收藏叠加；来源/方向标签显示在当前其他筛选下的计数，叠加后为空时显示空状态与「清除搜索与筛选」；选择持久化。条目显示来源、节选/代理降级标记。
 - 历史导航：默认加载最近 7 天，可继续加载更早；阅读状态按条目 id 保存在浏览器。
 - 最近运行状态与失败来源在页面可见；不在页面内直接触发抓取。
 
@@ -160,7 +171,7 @@ status: open
 - **适配器 fixture**：每个来源保存真实响应的最小样本（Atom、HF JSON、Anthropic HTML、DeepSeek 双语、Kimi/OpenAI HTML），断言列表字段、正文块、语言与降级。
 - **纯逻辑**：选择/配额/去重、代理解析与健康判断、翻译缓存键、digest 校验与原子写、索引合并。
 - **宿主路由**：索引/按日 digest/健康检查/鉴权拒绝/文件缺失/损坏/超限，沿用现有 `node:test` 风格。
-- **阅读页**：jsdom + React 渲染，覆盖英文源与中文源的对照顺序、三种模式、来源/方向筛选、历史加载、pending 与代理降级提示。
+- **阅读页**：jsdom + React 渲染，覆盖英文源与中文源的对照顺序、三种模式、来源/方向筛选（叠加、计数、空结果、持久化）、历史加载、pending 与代理降级提示。
 - **端到端**：本地 fixture 源 + 假 LLM，跑 CLI → 写文件 → 宿主读取 → 页面渲染；断言条数、去重、配额、pending、索引与清理。
 - **人工冒烟**：真实网络与代理、真实模型调用作为发布前可选验收，不进入默认 CI；结果记录在实施票。
 - 参考现有 `test/host.test.mjs` 与客户端 jsdom 冒烟。
@@ -179,7 +190,7 @@ status: open
 
 - 代理是本机环境能力：当前验证为 `127.0.0.1:7897`（Node 24 需 `NODE_USE_ENV_PROXY=1`）；换机器需重新配置，不能写死。
 - 翻译模型与 token 预算依据首轮演练调整；默认 300k/日只是起点。
-- 每日 10 条是默认值，配置可改；实际阅读量可能要求更低。
+- 每日 10 条是**上限**（默认值，配置可改）：候选不足时不补足，实际阅读量可能更低。
 - 各站条款只核对了 arXiv 与 HF 镜像 robots，正式运行前应复核 OpenAI/Anthropic/Kimi/DeepSeek 的抓取条款。
 - 研究依据：[来源接入研究](research/01-source-access.md) 与 [代理复测](research/proxy-retest-2026-11-04.md)。
 - 规格不承诺实现完成；完成以实施工单的验收勾选与真实安装运行为准。

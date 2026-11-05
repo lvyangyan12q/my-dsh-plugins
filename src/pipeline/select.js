@@ -16,6 +16,8 @@
  *   signal — then keyword relevance, then votes, then recency.
  * - **Quota** is a paper cap and a daily total cap; the list is never padded.
  */
+import { canonicalUrl } from '../shared/url.js'
+
 export const DEFAULT_QUOTA = { total: 10, papers: 6, blogs: 4 }
 
 function count(value, fallback) {
@@ -35,18 +37,6 @@ function normalizeKeywords(value) {
   return Array.isArray(value)
     ? value.map(keyword => String(keyword).trim().toLowerCase()).filter(Boolean)
     : []
-}
-
-function canonicalUrl(value) {
-  const text = String(value ?? '').trim()
-  if (!text) return ''
-  try {
-    const url = new URL(text)
-    const path = url.pathname.replace(/\/+$/, '').replace(/\/v\d+$/, '')
-    return `${url.hostname.replace(/^www\./i, '')}${path}${url.search}`.toLowerCase()
-  } catch {
-    return text.toLowerCase()
-  }
 }
 
 function titleFingerprint(value) {
@@ -73,9 +63,10 @@ function votesOf(candidate) {
   return Number.isFinite(votes) && votes > 0 ? votes : 0
 }
 
-/** 1 for a paper the HF board voted up, 0 for everything else. */
-function heatTier(candidate) {
-  return votesOf(candidate) > 0 ? 1 : 0
+/** The configured relevance bonus for a source, 0 when unset. */
+function weightOf(candidate, sourceWeights) {
+  const weight = Number(sourceWeights?.[candidate?.sourceId])
+  return Number.isFinite(weight) ? weight : 0
 }
 
 /** Drop repeated papers, keeping the heat-carrying copy when there is one. */
@@ -132,19 +123,48 @@ function searchableText(candidate) {
   return `${candidate.title ?? ''}\n${candidate.summary ?? ''}\n${(candidate.tags ?? []).join(' ')}`.toLowerCase()
 }
 
-/** Apply category and keyword filters before ranking. */
+/** Normalized institution names declared by a candidate. */
+function institutionsOf(candidate) {
+  const declared = candidate.institutions ?? candidate.affiliations
+  if (!Array.isArray(declared)) return []
+  return declared
+    .filter(value => typeof value === 'string')
+    .map(value => value.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+/**
+ * The institution allowlist. A paper that declares affiliations and matches
+ * none is dropped; a paper that declares none is kept, because arXiv does not
+ * publish an affiliation for every submission and a missing declaration must
+ * not silently erase a whole day.
+ */
+function matchesInstitution(candidate, institutions) {
+  if (institutions.length === 0) return true
+  const declared = institutionsOf(candidate)
+  if (declared.length === 0) return true
+  const wanted = institutions.map(value => value.trim().toLowerCase())
+  return declared.some(institution => wanted.some(rule => institution.includes(rule)))
+}
+
+/** Apply institution, category and keyword filters before ranking. */
 export function filterCandidates(candidates, {
   categories = [],
   categoriesBySource = null,
   includeKeywords = [],
   excludeKeywords = [],
+  institutions = [],
 } = {}) {
   const include = normalizeKeywords(includeKeywords)
   const exclude = normalizeKeywords(excludeKeywords)
   const kept = []
-  const reasons = { category: 0, include: 0, exclude: 0 }
+  const reasons = { institution: 0, category: 0, include: 0, exclude: 0 }
 
   for (const candidate of candidates) {
+    if (!matchesInstitution(candidate, institutions)) {
+      reasons.institution += 1
+      continue
+    }
     if (!matchesCategory(candidate, categories, categoriesBySource)) {
       reasons.category += 1
       continue
@@ -160,7 +180,11 @@ export function filterCandidates(candidates, {
     }
     kept.push(candidate)
   }
-  return { kept, filtered: reasons.category + reasons.exclude + reasons.include, reasons }
+  return {
+    kept,
+    filtered: reasons.institution + reasons.category + reasons.exclude + reasons.include,
+    reasons,
+  }
 }
 
 /** Relevance score: keyword hits weigh more in the title than in the summary. */
@@ -175,19 +199,34 @@ export function scoreCandidate(candidate, { includeKeywords = [] } = {}) {
   return score
 }
 
+/**
+ * Rank papers.
+ *
+ * The HF daily board is a heat signal, not a tie-breaker: a paper with votes
+ * always ranks above one without, and among voted papers the vote count comes
+ * before keywords and source weights. A high-vote paper must never be pushed
+ * below a low-vote paper that happens to match a keyword. Without votes, the
+ * configured per-source weight plus the keyword score decide, then recency.
+ */
 function compareByRank(options) {
   return (left, right) => {
-    const heatDelta = heatTier(right) - heatTier(left)
-    if (heatDelta !== 0) return heatDelta
-    const scoreDelta = scoreCandidate(right, options) - scoreCandidate(left, options)
-    if (scoreDelta !== 0) return scoreDelta
-    const votesDelta = votesOf(right) - votesOf(left)
-    if (votesDelta !== 0) return votesDelta
+    const leftVotes = votesOf(left)
+    const rightVotes = votesOf(right)
+    if ((leftVotes > 0) !== (rightVotes > 0)) return leftVotes > 0 ? -1 : 1
+    if (leftVotes > 0 && leftVotes !== rightVotes) return rightVotes - leftVotes
+    const leftScore = scoreCandidate(left, options) + weightOf(left, options.sourceWeights)
+    const rightScore = scoreCandidate(right, options) + weightOf(right, options.sourceWeights)
+    if (leftScore !== rightScore) return rightScore - leftScore
+    if (leftVotes !== rightVotes) return rightVotes - leftVotes
     const leftTime = Date.parse(left.publishedAt ?? '') || 0
     const rightTime = Date.parse(right.publishedAt ?? '') || 0
     if (leftTime !== rightTime) return rightTime - leftTime
     return String(left.id) < String(right.id) ? -1 : String(left.id) > String(right.id) ? 1 : 0
   }
+}
+
+function isObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 function kindOf(candidate) {
@@ -253,9 +292,11 @@ export function selectDaily(candidates, options = {}) {
       : null,
     includeKeywords: options.includeKeywords ?? options.keywords ?? [],
     excludeKeywords: options.excludeKeywords ?? [],
+    institutions: Array.isArray(options.institutions) ? options.institutions : [],
   }
   const rankOptions = {
     includeKeywords: filterOptions.includeKeywords,
+    sourceWeights: isObject(options.sourceWeights) ? options.sourceWeights : {},
   }
 
   const { kept: deduped, duplicates } = dedupeCandidates(list)
@@ -277,6 +318,8 @@ export function selectDaily(candidates, options = {}) {
       duplicates: duplicates.length,
       filtered: filteredCount,
       filterReasons: reasons,
+      sourceWeights: rankOptions.sourceWeights,
+      institutions: filterOptions.institutions,
       ranked: ranked.length,
       selected: selected.length,
       droppedByQuota: ranked.length - selected.length,

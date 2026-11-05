@@ -101,7 +101,6 @@ test('the RSS list yields blog candidates newest first, with title, dek, categor
   assert.equal(newest.title, 'Introducing agent mode in ChatGPT')
   assert.equal(newest.url, 'https://openai.com/index/introducing-agent-mode/')
   assert.equal(newest.publishedAt, '2026-11-04T18:00:00.000Z')
-  assert.equal(newest.published, '2026-11-04')
   assert.deepEqual(newest.categories, ['Product'])
   assert.ok(newest.tags.includes('Product'))
   assert.equal(

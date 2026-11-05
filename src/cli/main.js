@@ -13,11 +13,16 @@
  * `main` takes injected streams, clock and fetch so tests can drive the real
  * entry point in-process.
  */
+import { spawn } from 'node:child_process'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { loadConfig } from '../config.js'
 import { runDaily, SOURCE_IDS } from '../pipeline/run.js'
-import { isDigestDate } from '../storage.js'
+import { PROXY_ENV_VARS } from '../proxy.js'
+import { isDigestDate, localDate } from '../shared/date.js'
+
+export { localDate }
 
 const USAGE = `Usage: paper-reader [options]
 
@@ -75,12 +80,6 @@ export function parseArgs(argv = []) {
   return options
 }
 
-/** Local calendar date, not UTC: the digest belongs to the user's day. */
-export function localDate(date = new Date()) {
-  const pad = value => String(value).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-}
-
 /** `$DSH_HOME/paper-reader`, the directory the host reads. */
 export function dataRoot(env = process.env) {
   const home = typeof env.DSH_HOME === 'string' && env.DSH_HOME.trim().length > 0
@@ -127,6 +126,100 @@ function translationLine(result) {
   return `\n${parts.join(' · ')}`
 }
 
+/**
+ * Environment a child process needs so Node routes `fetch` through the
+ * `proxy.url` from config.json.
+ *
+ * Node 24 only honours `HTTP(S)_PROXY` when `NODE_USE_ENV_PROXY=1` was set
+ * before the process started. Rather than adding an HTTP proxy dependency, the
+ * CLI re-executes itself once with the configured URL exported; the child then
+ * takes the environment-proxy path the proxy policy already supports.
+ *
+ * Returns `null` when no restart is needed (no configured URL, an environment
+ * proxy already wins, Node is already proxy-aware, or this *is* the restarted
+ * child).
+ */
+export function proxyReexecPlan({ config, env = {} } = {}) {
+  if (env?.PAPER_READER_PROXY_REEXEC === '1') return null
+  if (env?.NODE_USE_ENV_PROXY === '1') return null
+  // An environment proxy wins over the config file, exactly as
+  // `resolveProxyUrl` decides; the child simply exports whichever one applies.
+  const fromEnv = PROXY_ENV_VARS
+    .map(name => env?.[name])
+    .find(value => typeof value === 'string' && value.trim().length > 0) ?? null
+  const configured = typeof config?.proxy?.url === 'string' && config.proxy.url.trim().length > 0
+    ? config.proxy.url
+    : null
+  const proxyUrl = fromEnv ?? configured
+  if (!proxyUrl) return null
+  return {
+    proxyUrl,
+    env: {
+      ...env,
+      HTTPS_PROXY: proxyUrl,
+      HTTP_PROXY: proxyUrl,
+      ALL_PROXY: proxyUrl,
+      NODE_USE_ENV_PROXY: '1',
+      PAPER_READER_PROXY_REEXEC: '1',
+    },
+  }
+}
+
+const ENTRY_PATH = fileURLToPath(new URL('../../scripts/paper-reader.mjs', import.meta.url))
+
+function waitForChild(child) {
+  return new Promise((resolve, reject) => {
+    child.on('error', reject)
+    child.on('exit', (code, signal) => resolve(Number.isInteger(code) ? code : signal ? 1 : 0))
+  })
+}
+
+/**
+ * Process entry: apply the configured-proxy bootstrap, then run the CLI.
+ *
+ * `spawn` and `entry` are injectable so a test can assert the re-exec env
+ * without starting a process or touching a real proxy.
+ */
+export async function mainWithProxyBootstrap(argv = process.argv.slice(2), deps = {}) {
+  // `--help` and malformed arguments must behave exactly as before: they are
+  // decided before any config file is read, so a broken config cannot swallow
+  // the usage message.
+  try {
+    const options = parseArgs(argv)
+    if (options.help) return main(argv, deps)
+  } catch {
+    return main(argv, deps)
+  }
+
+  const env = deps.env ?? process.env
+  const root = deps.root ?? dataRoot(env)
+  let config = deps.config ?? null
+  if (!config) {
+    try {
+      ({ config } = await loadConfig({ root }))
+    } catch (error) {
+      const stderr = deps.stderr ?? process.stderr
+      stderr.write(`paper-reader: ${error?.message ?? error}\n`)
+      return Number.isInteger(error?.exitCode) ? error.exitCode : 2
+    }
+  }
+
+  const plan = proxyReexecPlan({ config, env })
+  if (plan) {
+    const spawnImpl = deps.spawn ?? spawn
+    const entry = deps.entry ?? ENTRY_PATH
+    try {
+      const child = spawnImpl(process.execPath, [entry, ...argv], { env: plan.env, stdio: 'inherit' })
+      return await waitForChild(child)
+    } catch (error) {
+      const stderr = deps.stderr ?? process.stderr
+      stderr.write(`paper-reader: proxy bootstrap failed: ${error?.message ?? error}\n`)
+      return 1
+    }
+  }
+  return main(argv, { ...deps, env, config })
+}
+
 /** Run the CLI and resolve the process exit code. */
 export async function main(argv = process.argv.slice(2), deps = {}) {
   const env = deps.env ?? process.env
@@ -152,7 +245,7 @@ export async function main(argv = process.argv.slice(2), deps = {}) {
 
   try {
     if (!isDigestDate(date)) throw usageError(`--date must be a real YYYY-MM-DD date, got ${date}`)
-    const { config } = await loadConfig({ root })
+    const config = deps.config ?? (await loadConfig({ root })).config
     const result = await runDaily({
       root,
       date,

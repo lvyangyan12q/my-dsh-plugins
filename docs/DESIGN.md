@@ -37,8 +37,9 @@ pr-root
 | 折叠 | 点击日期标题折叠/展开；状态持久化；搜索或筛选时临时强制展开，不破坏已保存的折叠状态 |
 | 条目 | 中文标题为主、英文标题为辅；来源徽标、收集时间、方向、阅读时长、会议/来源、未读点、收藏星、翻译中标记 |
 | 搜索 | 输入即过滤；匹配标题（中/英）、摘要、作者、机构、标签；`/` 聚焦，`Esc` 清空 |
-| 方向筛选 | 单选标签，显示当前查询下的计数；与搜索、收藏叠加；「全部」恢复 |
-| 收藏筛选 | 与方向独立叠加，只显示已收藏条目 |
+| 方向筛选 | 单选标签，显示当前查询与来源下的计数；与搜索、来源、收藏叠加；「全部」恢复 |
+| 来源筛选 | 单选标签（全部来源 / arXiv / Hugging Face / Anthropic / DeepSeek / Kimi / OpenAI），只列当天有条目的来源；与搜索、方向、收藏叠加；计数随其他筛选变化；选择持久化 |
+| 收藏筛选 | 与方向、来源独立叠加，只显示已收藏条目 |
 | 空结果 | 显示「没有匹配的论文」与「清除搜索与筛选」 |
 | 顺序 | 组内按 `collectedAt` 倒序（agent 写入时排好序） |
 
@@ -133,7 +134,7 @@ pr-root
           "authors": ["DeepSeek-AI"],
           "org": "DeepSeek",
           "venue": "DeepSeek Technical Report",
-          "published": "2024-12-27",
+          "publishedAt": "2024-12-27T00:00:00.000Z",
           "collectedAt": "2026-11-03T08:48:00+08:00",
           "direction": "architecture",
           "tags": ["混合专家", "MoE"],
@@ -174,10 +175,13 @@ pr-root
 | `days[].items[].sourceLanguage` | 是（v2） | `en` 或 `zh`：条目原文语言 |
 | `title` | 是（v2） | `{ original, translation }`；标题区与列表双语言展示 |
 | `summary` | 建议 | `{ original, translation }`；`original` 可为 `null`（agent 生成的导读） |
-| `sourceId` | 建议 | 对应 `sources[].id` |
-| `direction` | 建议 | 对应 `directions[].id`；列表方向筛选依赖它 |
+| `sourceId` | 建议 | 对应 `sources[].id`；唯一来源键，写入不再产生 `source` |
+| `direction` | 建议 | 对应 `directions[].id`；列表方向与来源筛选依赖它 |
+| `publishedAt` | 建议 | ISO 8601 发布时间；日期型来源写作当天 `T00:00:00.000Z`。`published` 仅为旧文件读取别名 |
 | `collectedAt` | 建议 | 列表时间与排序依据 |
 | `readingMinutes` | 建议 | 预计阅读时长 |
+| `authors` / `venue` | 建议 | 作者与会议/栏目，列表与标题区展示 |
+| `excerptReason` | 条件 | 节选原因 `{ code, message?, detail? }`，页面据此解释代理降级 |
 | `translationState` | 建议 | `complete` / `partial` / `pending`；非 `complete` 时显示进度与提示 |
 | `blocks[]` | 是 | 段落级内容，见下表 |
 
@@ -209,6 +213,7 @@ pr-root
 - 一天最多保留最近 N 天（建议 14 天），避免文件无限增长。
 - 翻译失败保留 `"translation": null`（必要时 `"translationState": "pending"`），不要删除段落；下次抓取补齐。
 - 中文来源条目同样要写英文译文；`sourceLanguage: "zh"` 时 `original` 是中文。
+- 字段只写 v2 拼写：`sourceId`（不写 `source`）、`publishedAt`（不写 `published`）；旧文件里的别名在读取时归一化。
 - 去重键：canonical URL 或 `arxiv id`；标题指纹兜底。
 - 条目 `id` 一经发布不要变化，否则已读/收藏状态会丢失。
 ## 5. DSH 接入

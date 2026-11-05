@@ -42,7 +42,7 @@
     "build": "node build.mjs",
     "check": "node --check lib/index.js && node --check lib/client.js && node --check scripts/paper-reader.mjs",
     "digest": "node scripts/paper-reader.mjs",
-    "test": "node test/host.test.mjs && node test/storage.test.mjs && node test/client.test.mjs && node test/history.test.mjs && node test/arxiv.test.mjs && node test/deepseek.test.mjs && node test/hf.test.mjs && node test/selection.test.mjs && node test/blog-sources.test.mjs && node test/translation.test.mjs && node test/proxy.test.mjs && node test/pipeline.test.mjs && node test/cli.test.mjs && node test/proxy-page.test.mjs && node test/openai.test.mjs && node test/openai-page.test.mjs && node test/e2e.test.mjs && node test/schedule-status.test.mjs",
+    "test": "node test/host.test.mjs && node test/storage.test.mjs && node test/shared.test.mjs && node test/client.test.mjs && node test/history.test.mjs && node test/arxiv.test.mjs && node test/deepseek.test.mjs && node test/hf.test.mjs && node test/selection.test.mjs && node test/blog-sources.test.mjs && node test/translation.test.mjs && node test/proxy.test.mjs && node test/pipeline.test.mjs && node test/cli.test.mjs && node test/proxy-page.test.mjs && node test/openai.test.mjs && node test/openai-page.test.mjs && node test/e2e.test.mjs && node test/schedule-status.test.mjs",
     "test:host": "node test/host.test.mjs",
     "test:status": "node test/schedule-status.test.mjs",
     "test:storage": "node test/storage.test.mjs",

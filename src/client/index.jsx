@@ -17,6 +17,15 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { normalizeDigest, otherLanguage, pickText } from '../shared/schema.js'
+import { localDate } from '../shared/date.js'
+import {
+  applyBaseFilters,
+  countBy,
+  dayLabel,
+  flattenDigest,
+  mergeDays,
+  readStoredPrefs,
+} from './data.js'
 import cssText from './styles.css'
 
 const STORAGE_KEY = 'dsh-paper-reader:v1'
@@ -39,95 +48,12 @@ const DIRECTION_COLORS = {
   alignment: '#3f8f63',
   architecture: '#b56b6b',
 }
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-
-/* ------------------------------------------------------------------ */
-/* Storage                                                             */
-/* ------------------------------------------------------------------ */
-
-const DEFAULT_PREFS = {
-  mode: 'both',
-  direction: 'all',
-  bookmarksOnly: false,
-  activeId: null,
-  read: [],
-  bookmarks: [],
-  collapsed: [],
-  sidebarCollapsed: false,
-  outlineOpen: false,
-}
-
-/** Read persisted preferences, reporting whether a stored value existed. */
-function readStoredPrefs() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { prefs: { ...DEFAULT_PREFS }, stored: false }
-    const value = JSON.parse(raw)
-    const prefs = { ...DEFAULT_PREFS, ...(value && typeof value === 'object' ? value : {}) }
-    prefs.mode = MODES.some(mode => mode.id === prefs.mode) ? prefs.mode : 'both'
-    prefs.direction = typeof prefs.direction === 'string' ? prefs.direction : 'all'
-    prefs.activeId = typeof prefs.activeId === 'string' ? prefs.activeId : null
-    for (const key of ['read', 'bookmarks', 'collapsed']) {
-      prefs[key] = Array.isArray(prefs[key]) ? prefs[key].filter(entry => typeof entry === 'string') : []
-    }
-    prefs.bookmarksOnly = prefs.bookmarksOnly === true
-    prefs.sidebarCollapsed = prefs.sidebarCollapsed === true
-    prefs.outlineOpen = prefs.outlineOpen === true
-    return { prefs, stored: true }
-  } catch {
-    return { prefs: { ...DEFAULT_PREFS }, stored: false }
-  }
-}
-
 /* ------------------------------------------------------------------ */
 /* Data helpers                                                        */
 /* ------------------------------------------------------------------ */
 
-function flattenDigest(digest) {
-  if (!digest || !Array.isArray(digest.days)) return []
-  const items = []
-  for (const day of digest.days) {
-    if (!day || typeof day.date !== 'string' || !Array.isArray(day.items)) continue
-    for (const item of day.items) if (item && typeof item.id === 'string') items.push({ ...item, dayDate: day.date })
-  }
-  return items
-}
-
-/** Merge day documents by date, newest first. A reloaded day replaces its copy. */
-function mergeDays(previous, incoming) {
-  const byDate = new Map(previous.map(day => [day.date, day]))
-  for (const day of incoming) {
-    if (day && typeof day.date === 'string') byDate.set(day.date, day)
-  }
-  return [...byDate.values()].sort((left, right) => (left.date < right.date ? 1 : left.date > right.date ? -1 : 0))
-}
-
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error)
-}
-
-function parseDate(value) {
-  const date = new Date(`${value}T00:00:00`)
-  return Number.isNaN(date.getTime()) ? null : date
-}
-
-/** The browser's local calendar date, matching the digest's date convention. */
-function todayIso() {
-  const now = new Date()
-  const pad = value => String(value).padStart(2, '0')
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-}
-
-/** Day label relative to the newest day in the digest (今天/昨天/前天). */
-function dayLabel(dateStr, refStr) {
-  const date = parseDate(dateStr)
-  const ref = parseDate(refStr)
-  if (!date) return { name: dateStr, sub: '' }
-  const diff = ref ? Math.round((ref.getTime() - date.getTime()) / 86_400_000) : 99
-  const dateLabel = `${date.getMonth() + 1} 月 ${date.getDate()} 日`
-  const weekday = WEEKDAYS[date.getDay()]
-  if (diff >= 0 && diff < 3) return { name: ['今天', '昨天', '前天'][diff], sub: `${dateLabel} · ${weekday}` }
-  return { name: dateLabel, sub: weekday }
 }
 
 /** HH:MM in the browser's local time, from an ISO timestamp. */
@@ -211,18 +137,6 @@ function targetLanguageOf(mode) {
 
 function languageLabel(language) {
   return LANGUAGE_LABELS[language] ?? language
-}
-
-function matchesQuery(item, query) {
-  if (!query) return true
-  const haystack = [
-    item.title?.original, item.title?.translation,
-    item.summary?.original, item.summary?.translation,
-    item.org, item.venue,
-    ...(Array.isArray(item.authors) ? item.authors : []),
-    ...(Array.isArray(item.tags) ? item.tags : []),
-  ].filter(value => typeof value === 'string').join(' ').toLowerCase()
-  return haystack.includes(query)
 }
 
 function authorLine(authors) {
@@ -702,20 +616,37 @@ export function PaperReaderPage() {
   const summaryPick = activeItem ? pickText(activeItem.summary, activeLanguage, targetLanguage) : { text: null, fallback: false }
   const normalizedQuery = query.trim().toLowerCase()
 
-  const baseItems = useMemo(() => items.filter(item =>
-    matchesQuery(item, normalizedQuery) && (!prefs.bookmarksOnly || prefs.bookmarks.includes(item.id)),
-  ), [items, normalizedQuery, prefs.bookmarksOnly, prefs.bookmarks])
-
-  const counts = useMemo(() => {
-    const map = new Map([['all', baseItems.length]])
-    for (const item of baseItems) map.set(item.direction, (map.get(item.direction) ?? 0) + 1)
-    return map
-  }, [baseItems])
+  /**
+   * Source is a third facet beside search/favorites and direction. The pool
+   * after search/favorites feeds the source chip counts; the pool after the
+   * source choice feeds the direction counts, so neither chip row claims items
+   * the other facet already hid.
+   */
+  const base = useMemo(() => applyBaseFilters(items, {
+    query: normalizedQuery,
+    bookmarksOnly: prefs.bookmarksOnly,
+    bookmarks: prefs.bookmarks,
+    source: prefs.source,
+  }), [items, normalizedQuery, prefs.bookmarksOnly, prefs.bookmarks, prefs.source])
+  const sourceCounts = useMemo(() => countBy(base.searched, 'sourceId'), [base.searched])
+  const counts = useMemo(() => countBy(base.visible, 'direction'), [base.visible])
 
   const visibleItems = useMemo(
-    () => baseItems.filter(item => prefs.direction === 'all' || item.direction === prefs.direction),
-    [baseItems, prefs.direction],
+    () => base.visible.filter(item => prefs.direction === 'all' || item.direction === prefs.direction),
+    [base.visible, prefs.direction],
   )
+
+  /** Source chips: declared order, only sources that contribute items today. */
+  const sourceChoices = useMemo(() => {
+    const present = new Set(items.map(item => item.sourceId).filter(Boolean))
+    const declared = (Array.isArray(digest?.sources) ? digest.sources : [])
+      .filter(source => source && typeof source.id === 'string' && present.has(source.id))
+    const known = new Set(declared.map(source => source.id))
+    const extra = [...present]
+      .filter(id => !known.has(id))
+      .map(id => ({ id, label: id, short: id.slice(0, 1).toUpperCase() }))
+    return [{ id: 'all', label: '全部来源' }, ...declared, ...extra]
+  }, [digest, items])
 
   const groups = useMemo(() => {
     const byDate = new Map(visibleItems.map(item => [item.dayDate, []]))
@@ -813,7 +744,7 @@ export function PaperReaderPage() {
 
   const clearFilters = () => {
     setQuery('')
-    update({ direction: 'all', bookmarksOnly: false })
+    update({ direction: 'all', source: 'all', bookmarksOnly: false })
   }
 
   const retryTranslation = () => {
@@ -1068,7 +999,7 @@ export function PaperReaderPage() {
         <div className="pr-proxy-notice" role="status">
           <span className="pr-proxy-notice-dot" aria-hidden="true" />
           <span className="pr-proxy-notice-text">
-            <strong>{proxyNotice.date === todayIso() ? '今日' : proxyNotice.date}</strong>
+            <strong>{proxyNotice.date === localDate() ? '今日' : proxyNotice.date}</strong>
             因代理不可用跳过：
             {proxyNotice.sources.map((source, index) => (
               <span key={source.id ?? index}>
@@ -1132,7 +1063,24 @@ export function PaperReaderPage() {
               </button>
             </div>
 
-            {(normalizedQuery || prefs.direction !== 'all' || prefs.bookmarksOnly) && (
+            <div className="pr-filters pr-source-filters" role="toolbar" aria-label="按来源筛选">
+              {sourceChoices.map(source => (
+                <button
+                  type="button"
+                  key={source.id}
+                  data-source-filter={source.id}
+                  className={prefs.source === source.id ? 'pr-chip is-active' : 'pr-chip'}
+                  onClick={() => update({ source: source.id })}
+                  aria-pressed={prefs.source === source.id}
+                  title={source.label}
+                >
+                  {source.label}
+                  <span className="pr-chip-count">{sourceCounts.get(source.id) ?? 0}</span>
+                </button>
+              ))}
+            </div>
+
+            {(normalizedQuery || prefs.direction !== 'all' || prefs.source !== 'all' || prefs.bookmarksOnly) && (
               <div className="pr-result-line">
                 <span>{visibleItems.length} 篇匹配</span>
                 <button type="button" className="pr-link-btn" onClick={clearFilters}>清除筛选</button>
@@ -1149,7 +1097,7 @@ export function PaperReaderPage() {
             )}
 
             {groups.map(group => {
-              const expanded = normalizedQuery || prefs.direction !== 'all' || prefs.bookmarksOnly
+              const expanded = normalizedQuery || prefs.direction !== 'all' || prefs.source !== 'all' || prefs.bookmarksOnly
                 ? true
                 : !prefs.collapsed.includes(group.date)
               return (

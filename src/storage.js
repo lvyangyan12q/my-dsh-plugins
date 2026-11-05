@@ -22,10 +22,13 @@
  * The CLI and the host share this module, so a scheduled run and the reader
  * agree on paths, limits and the index shape.
  */
-import { randomUUID } from 'node:crypto'
-import { mkdir, readFile, readdir, rename, unlink, writeFile } from 'node:fs/promises'
-import { basename, dirname, join } from 'node:path'
+import { mkdir, readFile, readdir, unlink } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import { addDays, isDigestDate } from './shared/date.js'
+import { writeFileAtomic } from './shared/fs.js'
 import { validateDayDigest } from './shared/schema.js'
+
+export { addDays, isDigestDate }
 
 export const MAX_DAY_BYTES = 8 * 1024 * 1024
 export const MAX_RUN_BYTES = 1024 * 1024
@@ -39,18 +42,6 @@ function storageError(code, message, status, extra = {}) {
   return Object.assign(new Error(message), { code, status }, extra)
 }
 
-/** Is the value a real calendar date in the `YYYY-MM-DD` shape? */
-export function isDigestDate(value) {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const date = new Date(`${value}T00:00:00Z`)
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
-}
-
-/** Move a `YYYY-MM-DD` date by whole days. */
-export function addDays(date, days) {
-  return new Date(new Date(`${date}T00:00:00Z`).getTime() + days * 86_400_000).toISOString().slice(0, 10)
-}
-
 /** Resolve every path this module reads or writes. */
 export function storagePaths(root) {
   const digestDir = join(root, 'digest')
@@ -62,18 +53,6 @@ export function storagePaths(root) {
     indexPath: join(root, 'index.json'),
     dayPath: date => join(digestDir, `${date}.json`),
     runPath: date => join(runsDir, `${date}.json`),
-  }
-}
-
-/** Write a file through a temporary sibling so readers never see a half file. */
-async function writeFileAtomic(path, text) {
-  const temp = join(dirname(path), `.${basename(path)}.${process.pid}.${randomUUID()}.tmp`)
-  try {
-    await writeFile(temp, text, 'utf8')
-    await rename(temp, path)
-  } catch (error) {
-    await unlink(temp).catch(() => {})
-    throw error
   }
 }
 
@@ -254,14 +233,20 @@ export async function readDayDigest({ root, date, maxBytes = MAX_DAY_BYTES }) {
  * Delete day files older than the retention window. Errors are collected, not
  * thrown: retention is housekeeping, and a stale day must not block today.
  */
-export async function pruneExpired({ root, today, retentionDays = RETENTION_DAYS }) {
+/**
+ * Delete dated files older than the retention window in one directory.
+ *
+ * Only `YYYY-MM-DD.json` names are touched, so a user's notes beside the data
+ * stay safe. Errors are collected, not thrown: retention is housekeeping, and a
+ * stale file must not block today's write.
+ */
+async function pruneDatedFiles({ dir, today, retentionDays }) {
   const result = { deleted: [], failed: [] }
   const anchor = isDigestDate(today) ? today : new Date().toISOString().slice(0, 10)
   const cutoff = addDays(anchor, -(retentionDays - 1))
-  const { digestDir } = storagePaths(root)
   let names
   try {
-    names = await readdir(digestDir)
+    names = await readdir(dir)
   } catch (error) {
     if (error?.code === 'ENOENT') return result
     result.failed.push({ date: null, message: String(error?.message ?? error) })
@@ -271,7 +256,7 @@ export async function pruneExpired({ root, today, retentionDays = RETENTION_DAYS
     const match = DAY_FILE.exec(name)
     if (!match || match[1] >= cutoff) continue
     try {
-      await unlink(join(digestDir, name))
+      await unlink(join(dir, name))
       result.deleted.push(match[1])
     } catch (error) {
       result.failed.push({ date: match[1], message: String(error?.message ?? error) })
@@ -282,39 +267,14 @@ export async function pruneExpired({ root, today, retentionDays = RETENTION_DAYS
   return result
 }
 
-/**
- * Delete run records older than the retention window.
- *
- * Run records are diagnostics, so this mirrors `pruneExpired`: a failure is
- * collected and reported, never thrown. Only `YYYY-MM-DD.json` names are
- * touched, which keeps a user's notes in the same directory safe.
- */
+/** Delete day files older than the retention window. */
+export async function pruneExpired({ root, today, retentionDays = RETENTION_DAYS }) {
+  return pruneDatedFiles({ dir: storagePaths(root).digestDir, today, retentionDays })
+}
+
+/** Delete run records older than the retention window. */
 export async function pruneRuns({ root, today, retentionDays = RETENTION_DAYS }) {
-  const result = { deleted: [], failed: [] }
-  const anchor = isDigestDate(today) ? today : new Date().toISOString().slice(0, 10)
-  const cutoff = addDays(anchor, -(retentionDays - 1))
-  const { runsDir } = storagePaths(root)
-  let names
-  try {
-    names = await readdir(runsDir)
-  } catch (error) {
-    if (error?.code === 'ENOENT') return result
-    result.failed.push({ date: null, message: String(error?.message ?? error) })
-    return result
-  }
-  for (const name of names) {
-    const match = DAY_FILE.exec(name)
-    if (!match || match[1] >= cutoff) continue
-    try {
-      await unlink(join(runsDir, name))
-      result.deleted.push(match[1])
-    } catch (error) {
-      result.failed.push({ date: match[1], message: String(error?.message ?? error) })
-    }
-  }
-  result.deleted.sort()
-  result.failed.sort((left, right) => String(left.date).localeCompare(String(right.date)))
-  return result
+  return pruneDatedFiles({ dir: storagePaths(root).runsDir, today, retentionDays })
 }
 
 /**

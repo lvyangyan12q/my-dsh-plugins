@@ -24,6 +24,13 @@ import {
   parseMarkup,
   textOf,
 } from '../shared/markup.js'
+import { dateOnly, shiftDate } from '../shared/date.js'
+import { fetchText } from '../shared/http.js'
+import { normalizeUrl } from '../shared/url.js'
+
+// Re-exported: the adapters import the shared helpers through this module so a
+// blog extraction has one obvious home for its transport and date rules.
+export { dateOnly, fetchText, normalizeUrl, shiftDate }
 
 const SKIP_TAGS = new Set([
   'script', 'style', 'nav', 'header', 'footer', 'aside', 'form', 'button',
@@ -33,39 +40,6 @@ const SKIP_TAGS = new Set([
 const SKIP_CLASSES = ['sr-only', 'visually-hidden', 'screen-reader-text']
 
 const ARTICLE_TYPES = new Set(['article', 'newsarticle', 'blogposting', 'techarticle', 'report', 'scholarlyarticle'])
-
-/** Fetch text with a timeout that never keeps the process alive. */
-export async function fetchText(fetchImpl, url, { timeoutMs = 20_000, userAgent, accept = 'text/html' } = {}) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  if (typeof timer.unref === 'function') timer.unref()
-  try {
-    const response = await fetchImpl(url, {
-      signal: controller.signal,
-      headers: {
-        accept,
-        ...(userAgent ? { 'user-agent': userAgent } : {}),
-      },
-    })
-    const text = typeof response.text === 'function' ? await response.text() : ''
-    return { response, text }
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
-/** `YYYY-MM-DD` from an ISO timestamp, else null. */
-export function dateOnly(value) {
-  const match = /^(\d{4}-\d{2}-\d{2})/.exec(String(value ?? '').trim())
-  return match ? match[1] : null
-}
-
-/** Move a `YYYY-MM-DD` date by whole days (UTC). */
-export function shiftDate(date, days) {
-  const base = Date.parse(`${date}T00:00:00Z`)
-  if (!Number.isFinite(base)) return date
-  return new Date(base + days * 86_400_000).toISOString().slice(0, 10)
-}
 
 /** A human title from a URL slug: `claude-code-best-practices` → `Claude Code Best Practices`. */
 export function slugToTitle(value) {
@@ -80,17 +54,6 @@ export function slugToTitle(value) {
     .filter(Boolean)
     .map(word => (word.length <= 2 ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1)))
     .join(' ')
-}
-
-/** A URL key that ignores a trailing slash and the fragment. */
-export function normalizeUrl(value) {
-  try {
-    const url = new URL(String(value))
-    url.hash = ''
-    return url.toString().replace(/\/+$/, '')
-  } catch {
-    return String(value ?? '').trim().replace(/\/+$/, '')
-  }
 }
 
 /** Flatten every `ld+json` payload on the page into a list of objects. */
@@ -237,16 +200,23 @@ export function extractBlogBlocks(root, {
   title = '',
   dedupeImages = false,
   baseUrl = null,
+  // OpenAI's page is the same shape but keeps its own rules: the h1 is item
+  // metadata (never a body block), headings go to h6 and only `<p>` is prose.
+  skipH1 = false,
+  headingLevels = 4,
+  paragraphTags = ['p', 'blockquote', 'li'],
+  codeBlockClass = true,
 } = {}) {
   const blocks = []
   const seenImages = new Set()
   const titleKey = collapse(title).toLowerCase()
+  const headingPattern = new RegExp(`^h[1-${headingLevels}]$`)
 
   const pushHeading = (node) => {
     const text = collapse(inlineText(node))
     if (!text) return
     const level = Number(localName(node.name).slice(1)) || 2
-    if (level === 1 && text.toLowerCase() === titleKey) return
+    if (level === 1 && (skipH1 || text.toLowerCase() === titleKey)) return
     blocks.push({ type: 'heading', level, original: text })
   }
 
@@ -280,7 +250,7 @@ export function extractBlogBlocks(root, {
     const tag = localName(node.name)
     if (SKIP_TAGS.has(tag) || hasAnyClass(node, SKIP_CLASSES)) return
 
-    if (tag === 'pre' || hasClass(node, 'code-block')) {
+    if (tag === 'pre' || (codeBlockClass && hasClass(node, 'code-block'))) {
       pushCode(node, blocks)
       return
     }
@@ -288,11 +258,11 @@ export function extractBlogBlocks(root, {
       pushFigure(node, blocks)
       return
     }
-    if (/^h[1-4]$/.test(tag)) {
+    if (headingPattern.test(tag)) {
       pushHeading(node)
       return
     }
-    if (tag === 'p' || tag === 'blockquote' || tag === 'li') {
+    if (paragraphTags.includes(tag)) {
       pushParagraph(node)
       return
     }

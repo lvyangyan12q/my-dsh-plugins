@@ -97,7 +97,7 @@ test('Anthropic sitemap lists only /news and /research, newest first, and diffs 
   assert.equal(candidates[0].kind, 'blog')
   assert.equal(candidates[0].sourceId, 'anthropic')
   assert.equal(candidates[0].sourceLanguage, 'en')
-  assert.equal(candidates[0].published, '2026-11-03')
+  assert.equal(candidates[0].publishedAt, '2026-11-03')
   assert.equal(candidates[0].title, 'Claude Opus 4 5')
   assert.equal(
     candidates.some(candidate => candidate.url.includes('/features/')),
@@ -134,7 +134,7 @@ test('Anthropic article extraction takes ld+json metadata and main#main-content 
   assert.equal(result.excerpt, false)
   assert.equal(result.meta.title, 'Claude Opus 4.5 arrives')
   assert.equal(result.meta.summary, 'A faster Claude for coding agents.')
-  assert.equal(result.meta.published, '2026-11-03')
+  assert.equal(result.meta.publishedAt, '2026-11-03T00:00:00.000Z')
   assert.deepEqual(result.meta.authors, ['Anthropic'])
   assert.deepEqual(result.meta.tags, [])
 
@@ -186,7 +186,7 @@ test('Kimi list parses card title, date and the English article link', async () 
   const { candidates } = await listKimi({ config: {}, date: DATE, fetch: impl })
 
   assert.deepEqual(candidates.map(candidate => candidate.title), ['Kimi K3.1 Pro', 'Kimi K3', 'Kimi K2.5'])
-  assert.deepEqual(candidates.map(candidate => candidate.published), ['2026-10-24', '2026-10-20', '2026-10-12'])
+  assert.deepEqual(candidates.map(candidate => candidate.publishedAt), ['2026-10-24', '2026-10-20', '2026-10-12'])
   assert.deepEqual(candidates.map(candidate => candidate.url), [
     'https://www.kimi.com/en/blog/kimi-k3-1-pro',
     'https://www.kimi.com/en/blog/kimi-k3',
@@ -218,7 +218,7 @@ test('Kimi article extraction uses main.layout-content and collapses light/dark 
   assert.equal(result.meta.title, 'Kimi K3.1 Pro')
   assert.equal(result.meta.summary, 'Kimi K3.1 Pro is our newest model.')
   assert.deepEqual(result.meta.authors, ['Kimi'])
-  assert.equal(result.meta.published, '2026-10-24', 'the list date fills in the missing datePublished')
+  assert.equal(result.meta.publishedAt, '2026-10-24T00:00:00.000Z', 'the list date fills in the missing datePublished')
 
   const paragraphs = result.blocks.filter(block => block.type === 'paragraph').map(block => block.original)
   assert.ok(paragraphs.includes('Kimi K3.1 Pro is our newest model for long-horizon coding work.'))

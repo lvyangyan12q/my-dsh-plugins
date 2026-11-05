@@ -77,8 +77,7 @@ test('listDeepSeek returns the news inside the digest window as blog candidates'
   assert.equal(newest.sourceLanguage, 'zh')
   assert.equal(newest.slug, 'news261104')
   assert.equal(newest.url, 'https://api-docs.deepseek.com/news/news261104')
-  assert.equal(newest.published, '2026-11-04')
-  assert.equal(newest.publishedAt, '2026-11-04T00:00:00+08:00')
+  assert.equal(newest.publishedAt, '2026-11-04', 'a slug date stays a calendar day, not a shifted instant')
   assert.ok(newest.tags.includes('deepseek'))
   assert.equal(calls.length, 1, 'listing never fetches a page')
   assert.ok(calls[0].endsWith('/sitemap.xml'))
@@ -424,7 +423,7 @@ test('a daily run writes the official pair, never calls translation and respects
   ])
 
   const item = digest.items.find(entry => entry.id === 'deepseek:news261104')
-  assert.equal(item.source, 'deepseek')
+  assert.equal(item.sourceId, 'deepseek')
   assert.equal(item.sourceLanguage, 'zh')
   assert.equal(item.translationState, 'complete')
   assert.equal(item.excerpt, false)
@@ -440,7 +439,7 @@ test('a daily run writes the official pair, never calls translation and respects
   assert.equal(heading.translation, '🚀 DeepSeek-V4.1-Flash-1017 is here!')
   const figure = item.blocks.find(block => block.type === 'figure')
   assert.ok(figure.image.includes('/zh-cn/img/'))
-  assert.equal(item.published, '2026-11-04')
+  assert.equal(item.publishedAt, '2026-11-04T00:00:00.000Z')
   assert.ok(item.readingMinutes >= 1)
 
   const deepseekReport = digest.run.sources.find(source => source.id === 'deepseek')
@@ -495,6 +494,55 @@ test('the official pair never triggers a model translation request', async () =>
   const textBlocks = digest.items[0].blocks.filter(block => block.type === 'heading' || block.type === 'paragraph')
   assert.ok(textBlocks.length > 0)
   assert.ok(textBlocks.every(block => Boolean(block.translation)))
+})
+
+test('an officially incomplete DeepSeek item stays pending with zero LLM calls and zero tokens', async () => {
+  const root = tempRoot()
+  const { config } = await loadConfig({ root })
+  const llm = fakeLlm()
+  const { impl } = fakeSources()
+  const fetchImpl = async (url, init) => (String(url).includes('/chat/completions')
+    ? llm.impl(url, init)
+    : impl(url, init))
+
+  const result = await runDaily({
+    root,
+    date: DATE,
+    config: {
+      ...config,
+      quota: { total: 10, papers: 6, blogs: 4 },
+      sources: {
+        ...config.sources,
+        deepseek: { ...config.sources.deepseek, lookbackDays: 3 },
+      },
+    },
+    source: 'deepseek',
+    fetch: fetchImpl,
+    env: {
+      PAPER_READER_LLM_BASE_URL: BASE_URL,
+      PAPER_READER_LLM_API_KEY: API_KEY,
+      PAPER_READER_LLM_MODEL: MODEL,
+    },
+    now: NOW,
+  })
+
+  assert.equal(result.exitCode, 0)
+  assert.equal(llm.calls.length, 0, 'official DeepSeek text is never sent to a translation model')
+  assert.equal(result.translation.requests, 0)
+  assert.equal(result.translation.tokensUsed, 0)
+  assert.equal(result.translation.cacheHits, 0)
+
+  const { digest } = await readDayDigest({ root, date: DATE })
+  const missing = digest.items.find(item => item.id === 'deepseek:news261102')
+  assert.equal(missing.translationState, 'pending', 'the missing official side is not machine-translated')
+  assert.equal(missing.title.translation, null)
+  for (const block of missing.blocks) {
+    if (block.type === 'heading' || block.type === 'paragraph') {
+      assert.equal(block.translation, null)
+    }
+  }
+  const partial = digest.items.find(item => item.id === 'deepseek:news261103')
+  assert.equal(partial.translationState, 'partial', 'an official partial pair also stays as written')
 })
 
 test('a DeepSeek item without Chinese stays visible as an English pending item', async () => {

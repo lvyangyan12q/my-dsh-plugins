@@ -53,3 +53,13 @@
 3. 重复聚合：fetchText、原子写、prune、config 合并、blog/openai walker、重试、block 类型、日期/URL 工具。
 4. 命名与数据团：`extractVia`/`bodySourceOf`、source/sourceId、published/publishedAt。
 5. 单函数/单组件拆分：至少拆 run.js 的阶段；client 拆分按剩余时间评估，行为不变。
+
+## 修复记录（fix/code-review）
+
+已修：Spec 轴 (a)1–4、(c)1–3；Standards HARD 1–2；Judgement calls 中 fetchText、原子写、prune、config 合并/校验、blog/openai walker、翻译重试循环、block 类型判定、URL/日期工具、`extractVia`/`bodySourceOf`、`source/sourceId`、`published/publishedAt`。spec/DESIGN 已同步契约（10 条为上限、`state/sources.json`、run 1 MiB、digest 契约字段、OpenAI opt-in、DeepSeek 免翻译、机构白名单语义）。
+
+剩余债务（judgement call，行为未变）：
+- `runDaily` 已按 list/extract/translate/persist 拆出阶段函数，但仍在同一文件；`src/client/index.jsx` 仍是一个页面组件，只把偏好/筛选/日期等纯逻辑拆到 `src/client/data.js`。进一步拆组件收益低于回归风险，留待界面功能变更时一起做。
+- 翻译服务的四个早退分支仍各自调用 `finishStats`；抽一个 `skippedStats(reason)` 可少 4 处重复，但会让失败语义的阅读路径变绕。
+- `selection.institutions` 采用「声明了机构才过滤、未声明保留」；arXiv Atom 只在有 `arxiv:affiliation` 时提供机构，因此白名单是偏好而非硬门槛。
+- 代理通过 CLI 自重启使用 `proxy.url`；直接以编程方式调用 `runDaily` 且要求配置 URL 走代理时，仍需调用方提供 `proxyFetch`（或自行设置 `NODE_USE_ENV_PROXY=1` + env）。

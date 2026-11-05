@@ -17,8 +17,10 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, test } from 'node:test'
-import { loadConfig } from '../src/config.js'
-import { runDaily } from '../src/pipeline/run.js'
+import { defaultConfig, loadConfig, validateConfig } from '../src/config.js'
+import { runDaily, SOURCE_IDS, SOURCE_META } from '../src/pipeline/run.js'
+import { SOURCES } from '../src/sources/registry.js'
+import * as realStorage from '../src/storage.js'
 import {
   readDayDigest,
   readIndex,
@@ -76,6 +78,47 @@ test('a missing config file uses built-in defaults and creates nothing', async (
   assert.equal(loaded.config.sources.anthropic.enabled, true)
   assert.equal(loaded.config.sources.anthropic.sitemapUrl, 'https://www.anthropic.com/sitemap.xml')
   assert.equal(loaded.config.sources.kimi.listUrl, 'https://www.kimi.com/blog/')
+})
+
+test('the registry is the only source metadata/default table the run and config use', async () => {
+  const config = defaultConfig()
+  assert.deepEqual(Object.keys(config.sources).sort(), [...SOURCE_IDS].sort())
+  assert.deepEqual(SOURCE_META.map(source => source.id).sort(), [...SOURCE_IDS].sort())
+  for (const id of SOURCE_IDS) {
+    assert.equal(SOURCE_META.find(source => source.id === id).label, SOURCES[id].label)
+    assert.equal(config.sources[id].useProxy, SOURCES[id].defaults.useProxy)
+    assert.equal(typeof SOURCES[id].validateConfig, 'function', `${id} validates its own config keys`)
+  }
+  assert.deepEqual(config.selection, { sourceWeights: {}, institutions: [] })
+  assert.equal(config.sources.openai.enabled, false, 'OpenAI stays opt-in until its terms review closes')
+
+  // Validation comes from the registry entry, not a duplicate table here.
+  const broken = { ...config, sources: { ...config.sources, arxiv: { ...config.sources.arxiv, baseUrl: 'nope' } } }
+  assert.throws(
+    () => validateConfig(broken),
+    error => error.code === 'config_invalid' && /sources\.arxiv\.baseUrl/.test(error.message),
+  )
+})
+
+test('selection.sourceWeights and selection.institutions are validated and reach the selector', async () => {
+  const root = tempRoot()
+  mkdirSync(root, { recursive: true })
+  writeFileSync(join(root, 'config.json'), JSON.stringify({
+    selection: { sourceWeights: { arxiv: 3 }, institutions: ['MIT'] },
+  }))
+  const { config } = await loadConfig({ root })
+  assert.deepEqual(config.selection, { sourceWeights: { arxiv: 3 }, institutions: ['MIT'] })
+
+  writeFileSync(join(root, 'config.json'), JSON.stringify({ selection: { sourceWeights: { arxiv: 'high' } } }))
+  await assert.rejects(
+    loadConfig({ root }),
+    error => error.code === 'config_invalid' && /selection\.sourceWeights\.arxiv/.test(error.message),
+  )
+  writeFileSync(join(root, 'config.json'), JSON.stringify({ selection: { institutions: 'MIT' } }))
+  await assert.rejects(
+    loadConfig({ root }),
+    error => error.code === 'config_invalid' && /selection\.institutions/.test(error.message),
+  )
 })
 
 test('a user config is merged with defaults and never rewritten', async () => {
@@ -336,6 +379,66 @@ test('--source narrows the run to the requested source', async () => {
   const { digest } = await readDayDigest({ root, date: DATE })
   assert.equal(digest.items.length, 3)
   assert.deepEqual(digest.run.sources.map(source => source.id), ['arxiv'])
+})
+
+test('runDaily persists only through the injected storage port', async () => {
+  const root = tempRoot()
+  const { config } = await loadConfig({ root })
+  const { impl } = fakeArxiv({ articles: FULL_TEXT })
+  const calls = []
+  const port = {
+    ...realStorage,
+    readRunRecord: async (args) => {
+      calls.push('readRunRecord')
+      return realStorage.readRunRecord(args)
+    },
+    readSourceState: async (args) => {
+      calls.push('readSourceState')
+      return realStorage.readSourceState(args)
+    },
+    writeDayDigest: async (args) => {
+      calls.push('writeDayDigest')
+      return realStorage.writeDayDigest(args)
+    },
+    writeRunRecord: async (args) => {
+      calls.push('writeRunRecord')
+      return realStorage.writeRunRecord(args)
+    },
+    storagePaths: (args) => {
+      calls.push('storagePaths')
+      return realStorage.storagePaths(args)
+    },
+  }
+
+  const result = await runDaily({
+    root,
+    date: DATE,
+    config: arxivOnly(config),
+    fetch: impl,
+    env: {},
+    now: NOW,
+    storage: port,
+  })
+
+  assert.equal(result.exitCode, 0)
+  assert.ok(calls.includes('readSourceState'))
+  assert.ok(calls.includes('writeDayDigest'))
+  assert.ok(calls.includes('writeRunRecord'))
+
+  const failing = await runDaily({
+    root,
+    date: DATE,
+    config: arxivOnly(config),
+    fetch: impl,
+    env: {},
+    now: NOW,
+    storage: {
+      ...port,
+      writeDayDigest: async () => { throw Object.assign(new Error('disk full'), { code: 'ENOSPC' }) },
+    },
+  })
+  assert.equal(failing.exitCode, 1, 'a storage-port failure is reported, not thrown')
+  assert.match(failing.errors.join(' '), /disk full/)
 })
 
 test('an unsupported --source and a malformed date are usage errors', async () => {

@@ -200,6 +200,74 @@ test('per-source category filters leave other sources and their own tags untouch
   assert.deepEqual(selected.map(item => item.id), [inCategory.id, blog.id])
 })
 
+test('HF votes lead: a high-vote paper is never pushed below a low-vote keyword hit', () => {
+  const highVotes = candidate({
+    id: 'hf:2611.33333',
+    sourceId: 'hf',
+    arxivId: '2611.33333',
+    title: 'An agent for efficient kernels',
+    summary: 'One keyword hit.',
+    upvotes: 88,
+    publishedAt: '2026-11-01T00:00:00Z',
+  })
+  const lowVotesKeyword = candidate({
+    id: 'hf:2611.44444',
+    sourceId: 'hf',
+    arxivId: '2611.44444',
+    title: 'Agent agent agent survey',
+    summary: 'agent agent agent agent',
+    upvotes: 2,
+    publishedAt: '2026-11-04T23:00:00Z',
+  })
+
+  const { selected } = selectDaily([lowVotesKeyword, highVotes], {
+    quota: { total: 10, papers: 6 },
+    includeKeywords: ['agent'],
+  })
+
+  assert.deepEqual(selected.map(item => item.id), ['hf:2611.33333', 'hf:2611.44444'])
+})
+
+test('configured source weights participate in paper ranking', () => {
+  const arxiv = candidate({ id: 'arxiv:2611.55555', title: 'An agentic planner', publishedAt: '2026-11-01T00:00:00Z' })
+  const hf = candidate({
+    id: 'hf:2611.55556',
+    sourceId: 'hf',
+    arxivId: '2611.55556',
+    title: 'An agentic planner, newer',
+    upvotes: 0,
+    publishedAt: '2026-11-04T00:00:00Z',
+  })
+
+  const weighted = selectDaily([hf, arxiv], {
+    quota: { total: 10, papers: 6 },
+    includeKeywords: ['agent'],
+    sourceWeights: { arxiv: 5 },
+  })
+  assert.equal(weighted.selected[0].id, 'arxiv:2611.55555', 'the weighted source wins the keyword tie')
+
+  const plain = selectDaily([arxiv, hf], {
+    quota: { total: 10, papers: 6 },
+    includeKeywords: ['agent'],
+  })
+  assert.equal(plain.selected[0].id, 'hf:2611.55556', 'without weights the newer paper wins the tie')
+})
+
+test('the institution allowlist filters declared non-matches and keeps undeclared papers', () => {
+  const mit = candidate({ id: 'arxiv:2611.66666', institutions: ['MIT CSAIL'] })
+  const stanford = candidate({ id: 'arxiv:2611.77777', institutions: ['Stanford University'] })
+  const undeclared = candidate({ id: 'arxiv:2611.88888', institutions: [] })
+
+  const { selected, stats } = selectDaily([mit, stanford, undeclared], {
+    quota: { total: 10, papers: 6 },
+    institutions: ['MIT'],
+  })
+
+  assert.deepEqual(selected.map(item => item.id), ['arxiv:2611.66666', 'arxiv:2611.88888'])
+  assert.equal(stats.filterReasons.institution, 1)
+  assert.deepEqual(stats.institutions, ['MIT'])
+})
+
 test('keyword hits in the title outrank summary-only hits, then recency breaks ties', () => {
   const summaryOld = candidate({ title: 'A study of planning', summary: 'We use an agent.', publishedAt: '2026-11-04T09:00:00Z' })
   const summaryNew = candidate({ title: 'Another planning study', summary: 'We also use an agent.', publishedAt: '2026-11-04T20:00:00Z' })

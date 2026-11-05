@@ -25,6 +25,14 @@ import {
   textOf,
 } from '../shared/markup.js'
 import { classifyDirection, matchedWords } from '../shared/direction.js'
+import { fetchText } from '../shared/http.js'
+import {
+  assertPositive,
+  assertStringList,
+  assertUrl,
+  configError,
+  isPlainObject,
+} from './validation.js'
 
 export { classifyDirection }
 
@@ -32,6 +40,7 @@ export const SOURCE_ID = 'arxiv'
 
 export const DEFAULT_ARXIV_CONFIG = {
   enabled: true,
+  useProxy: false,
   categories: ['cs.AI', 'cs.CL', 'cs.LG'],
   keywords: [],
   excludeKeywords: [],
@@ -61,29 +70,6 @@ function sourceError(code, message, extra = {}) {
 
 function withDefaults(config) {
   return { ...DEFAULT_ARXIV_CONFIG, ...(config ?? {}) }
-}
-
-/** Fetch text with a timeout, without letting the timer keep the process alive. */
-async function fetchText(fetchImpl, url, { timeoutMs = 20_000, userAgent } = {}) {
-  if (typeof fetchImpl !== 'function') {
-    throw sourceError('arxiv_fetch_missing', 'no fetch implementation was provided')
-  }
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  if (typeof timer.unref === 'function') timer.unref()
-  try {
-    const response = await fetchImpl(url, {
-      signal: controller.signal,
-      headers: {
-        accept: 'application/atom+xml, text/html;q=0.9, */*;q=0.1',
-        ...(userAgent ? { 'user-agent': userAgent } : {}),
-      },
-    })
-    const text = typeof response.text === 'function' ? await response.text() : ''
-    return { response, text }
-  } finally {
-    clearTimeout(timer)
-  }
 }
 
 /** The versionless arXiv id (`2611.05377v2` → `2611.05377`). */
@@ -122,6 +108,12 @@ export function parseAtomFeed(xml) {
       published,
       updated: firstText(entry, 'updated'),
       authors: childrenOf(entry, 'author').map(author => collapse(textOf(childrenOf(author, 'name')[0] ?? null))).filter(Boolean),
+      // `arxiv:affiliation` is optional in the Atom feed; when present it is the
+      // institution signal the `selection.institutions` allowlist reads.
+      institutions: [...new Set(childrenOf(entry, 'author')
+        .flatMap(author => childrenOf(author, 'affiliation'))
+        .map(affiliation => collapse(textOf(affiliation)))
+        .filter(Boolean))],
       categories: childrenOf(entry, 'category').map(category => attr(category, 'term')).filter(Boolean),
       primaryCategory: attr(childrenOf(entry, 'primary_category')[0] ?? null, 'term'),
       comment: firstText(entry, 'comment'),
@@ -158,6 +150,7 @@ function toCandidate(entry) {
     publishedAt: entry.published || null,
     published: entry.published ? entry.published.slice(0, 10) : null,
     authors: entry.authors,
+    institutions: entry.institutions ?? [],
     categories: entry.categories,
     primaryCategory: entry.primaryCategory,
     direction,
@@ -188,6 +181,7 @@ export async function listArxiv({ config, date, fetch: fetchImpl }) {
     ({ response, text } = await fetchText(fetchImpl, url, {
       timeoutMs: settings.timeoutMs,
       userAgent: settings.userAgent,
+      accept: 'application/atom+xml, text/html;q=0.9, */*;q=0.1',
     }))
   } catch (error) {
     throw sourceError('arxiv_network', `arXiv API request failed: ${error?.message ?? error}`, { cause: error })
@@ -387,15 +381,23 @@ export async function extractArxivPaper({ candidate, config, fetch: fetchImpl })
   return { blocks, excerpt: false, warnings: [] }
 }
 
-/** Registry entry: a paper source whose failed full text degrades to an excerpt. */
-export const ARXIV_SOURCE = {
-  id: SOURCE_ID,
-  kind: 'paper',
-  label: 'arXiv',
-  short: 'A',
-  defaults: DEFAULT_ARXIV_CONFIG,
-  tracksSeen: false,
-  onExtractFailure: 'excerpt',
-  list: listArxiv,
-  extract: extractArxivPaper,
+/** Validate the arXiv section of the user config. */
+export function validateArxivConfig(config, path) {
+  if (!isPlainObject(config)) throw configError(`${path}: sources.arxiv must be an object`)
+  if (typeof config.enabled !== 'boolean') throw configError(`${path}: sources.arxiv.enabled must be true or false`)
+  assertStringList(config.categories, 'sources.arxiv.categories', path)
+  assertStringList(config.keywords, 'sources.arxiv.keywords', path)
+  assertStringList(config.excludeKeywords, 'sources.arxiv.excludeKeywords', path)
+  if (!Number.isInteger(config.maxResults) || config.maxResults <= 0) {
+    throw configError(`${path}: sources.arxiv.maxResults must be a positive integer`)
+  }
+  if (typeof config.extractFullText !== 'boolean') {
+    throw configError(`${path}: sources.arxiv.extractFullText must be true or false`)
+  }
+  assertPositive(config.timeoutMs, 'sources.arxiv.timeoutMs', path)
+  if (!Number.isInteger(config.maxBlocks) || config.maxBlocks <= 0) {
+    throw configError(`${path}: sources.arxiv.maxBlocks must be a positive integer`)
+  }
+  assertUrl(config.baseUrl, 'sources.arxiv.baseUrl', path)
+  assertUrl(config.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
 }

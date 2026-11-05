@@ -9,9 +9,10 @@
  * The cache is derived data and never load-bearing: an unreadable or
  * unwritable entry only costs a request, never a failed run.
  */
-import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises'
-import { basename, dirname, join } from 'node:path'
+import { createHash } from 'node:crypto'
+import { mkdir, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { writeFileAtomic } from '../shared/fs.js'
 
 export const CACHE_DIR_NAME = 'cache'
 
@@ -30,18 +31,6 @@ export function translationCacheKey({ text, targetLanguage, model, glossaryVersi
 
 export function translationCachePath({ root, key }) {
   return join(root, CACHE_DIR_NAME, `${key}.json`)
-}
-
-/** Write a cache entry through a temporary sibling; errors are reported, not thrown. */
-async function writeAtomic(path, text) {
-  const temp = join(dirname(path), `.${basename(path)}.${process.pid}.${randomUUID()}.tmp`)
-  try {
-    await writeFile(temp, text, 'utf8')
-    await rename(temp, path)
-  } catch (error) {
-    await unlink(temp).catch(() => {})
-    throw error
-  }
 }
 
 /**
@@ -72,7 +61,7 @@ export function createTranslationCache({ root }) {
     async put(key, text, meta = {}) {
       try {
         await ensureDir()
-        await writeAtomic(
+        await writeFileAtomic(
           translationCachePath({ root, key }),
           JSON.stringify({ key, text, ...meta, cachedAt: new Date().toISOString() }),
         )

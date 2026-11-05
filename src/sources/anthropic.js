@@ -37,6 +37,7 @@ export const SOURCE_ID = 'anthropic'
 
 export const DEFAULT_ANTHROPIC_CONFIG = {
   enabled: true,
+  useProxy: false,
   sitemapUrl: 'https://www.anthropic.com/sitemap.xml',
   prefixes: ['/news/', '/research/'],
   excludePaths: ['/page/'],
@@ -99,7 +100,6 @@ function toCandidate(entry) {
     summary: '',
     url: entry.loc,
     publishedAt: entry.lastmod ?? null,
-    published: entry.lastmod ?? null,
     authors: [],
     direction: classifyDirection({ title }),
     tags: [],
@@ -208,7 +208,7 @@ export async function extractAnthropicArticle({ candidate, config, fetch: fetchI
   }
 
   const summary = meta.description ?? candidate.summary ?? ''
-  const published = meta.datePublished ?? timeDate(tree) ?? dateOnly(candidate.publishedAt) ?? candidate.published ?? null
+  const published = meta.datePublished ?? timeDate(tree) ?? dateOnly(candidate.publishedAt) ?? null
   return {
     blocks,
     excerpt: false,
@@ -217,7 +217,6 @@ export async function extractAnthropicArticle({ candidate, config, fetch: fetchI
       title,
       summary,
       authors: meta.authors.length > 0 ? meta.authors : (candidate.authors ?? []),
-      published,
       publishedAt: published ? `${published}T00:00:00.000Z` : (candidate.publishedAt ?? null),
       direction: classifyDirection({ title, summary }),
       tags: [],
@@ -251,15 +250,3 @@ export function validateAnthropicConfig(config, path) {
   }
 }
 
-export const ANTHROPIC_SOURCE = {
-  id: SOURCE_ID,
-  kind: 'blog',
-  label: 'Anthropic',
-  short: 'C',
-  defaults: DEFAULT_ANTHROPIC_CONFIG,
-  tracksSeen: true,
-  onExtractFailure: 'skip',
-  list: listAnthropic,
-  extract: extractAnthropicArticle,
-  validateConfig: validateAnthropicConfig,
-}

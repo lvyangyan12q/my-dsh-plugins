@@ -19,8 +19,11 @@ const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))))
 const bundlePath = join(root, 'lib', 'client.js')
 const SOURCE_FILES = [
   'src/client/index.jsx',
+  'src/client/data.js',
   'src/client/styles.css',
   'src/shared/schema.js',
+  'src/shared/date.js',
+  'src/shared/blocks.js',
   'src/index.js',
 ]
 
@@ -195,6 +198,17 @@ export async function mountPage({ digest, routes, mode = 'both', prefs = {} } = 
     await settle()
   }
 
+  /** Type into a controlled input the way the browser does (native setter + input event). */
+  const type = async (element, value) => {
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+      setter.call(element, value)
+      element.dispatchEvent(new window.Event('input', { bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    await settle()
+  }
+
   return {
     container,
     document,
@@ -203,6 +217,7 @@ export async function mountPage({ digest, routes, mode = 'both', prefs = {} } = 
     fetchCalls,
     bodyText,
     click,
+    type,
     settle,
     unmount: async () => {
       await act(async () => { root.unmount() })
