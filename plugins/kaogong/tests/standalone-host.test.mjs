@@ -600,6 +600,7 @@ test('recall enrollment is confirmed, isolated and idempotent without changing c
  assert.equal(Date.parse(first.value.dueAt)-Date.parse(first.value.enrolledAt),86400000);
  assert.equal((await app.request(url,{action:'enroll',pointId:point.id,confirmed:true})).value.cycleId,first.value.cycleId);
  assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.coverage.learned,0);
+ const overlay=(await app.request('/api/kaogong/route?viewId='+view)).value.points.find(row=>row.id===point.id);assert.equal(overlay.recallPointId,point.id);assert.equal(overlay.reviewDueAt,first.value.dueAt);assert.equal(overlay.status,'unlearned');
  assert.equal((await app.request('/api/kaogong/recall?viewId=foreign')).status,403);
  }finally{await app.close()}
 });
