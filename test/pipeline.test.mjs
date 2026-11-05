@@ -90,6 +90,9 @@ test('invalid config is an explicit error naming the file', async () => {
 test('a run writes the day digest, the index and a run record', async () => {
   const root = tempRoot()
   const { config } = await loadConfig({ root })
+  // This test describes the directly reachable arXiv path; HF has its own
+  // coverage (test/hf.test.mjs) including the proxied and skipped cases.
+  config.sources.hf.enabled = false
   const { impl, calls } = fakeArxiv({ articles: FULL_TEXT })
 
   const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW })
@@ -273,7 +276,7 @@ test('an unsupported --source and a malformed date are usage errors', async () =
   const { impl } = fakeArxiv()
 
   await assert.rejects(
-    runDaily({ root, date: DATE, config, source: 'hf', fetch: impl, now: NOW }),
+    runDaily({ root, date: DATE, config, source: 'openai', fetch: impl, now: NOW }),
     error => error.code === 'unsupported_source' && error.exitCode === 2,
   )
   await assert.rejects(

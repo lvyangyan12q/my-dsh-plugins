@@ -82,7 +82,12 @@ test('CLI → host → reading page renders the day with pending translations', 
     const indexBody = JSON.parse(index.body)
     assert.equal(indexBody.days[0].date, DATE)
     assert.equal(indexBody.days[0].items, 3)
-    assert.equal(indexBody.days[0].runStatus, 'ok')
+    // The HF board is proxied and this run has no proxy configured, so the day
+    // is complete for arXiv but explicitly partial: HF is reported, not ignored.
+    assert.equal(indexBody.days[0].runStatus, 'partial')
+    const skipped = indexBody.days[0].sources.find(source => source.id === 'hf')
+    assert.equal(skipped.status, 'skipped')
+    assert.match(skipped.reason, /代理/)
 
     const day = await host.call(`/api/paper-reader/digest/${DATE}`)
     assert.equal(day.status, 200)

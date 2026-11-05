@@ -89,6 +89,56 @@ test('category filters drop off-category papers but keep sources without categor
   assert.deepEqual(selected.map(item => item.id), [inCategory.id, noCategories.id])
 })
 
+test('a duplicate with an upvote signal wins over the plain arXiv copy', () => {
+  const fromArxiv = candidate({
+    arxivId: '2611.11111',
+    title: 'Shared Agentic Paper',
+    url: 'https://arxiv.org/abs/2611.11111',
+  })
+  const fromHf = candidate({
+    id: 'hf:2611.11111',
+    sourceId: 'hf',
+    arxivId: '2611.11111',
+    title: 'Shared Agentic Paper',
+    url: 'https://arxiv.org/abs/2611.11111',
+    upvotes: 12,
+    publishedAt: '2026-11-04T18:00:00Z',
+  })
+
+  const { selected, stats } = selectDaily([fromArxiv, fromHf], { quota: { total: 10, papers: 6 } })
+
+  assert.equal(selected.length, 1)
+  assert.equal(selected[0], fromHf, 'the HF copy carries the heat the ranking needs')
+  assert.equal(stats.duplicates, 1)
+})
+
+test('a paper with votes outranks keyword hits and recency; an unvoted one does not', () => {
+  const voted = candidate({ title: 'A popular kernel result', summary: 'An agent community favourite.', upvotes: 40, publishedAt: '2026-11-03T00:00:00Z' })
+  const unvotedHf = candidate({
+    id: 'hf:2611.22222',
+    sourceId: 'hf',
+    arxivId: '2611.22222',
+    title: 'A fresh unvoted paper',
+    summary: 'An agent, unvoted.',
+    upvotes: 0,
+    publishedAt: '2026-11-02T00:00:00Z',
+  })
+  const keywordHit = candidate({ title: 'An agent that browses', summary: 'An agent.', publishedAt: '2026-11-04T10:00:00Z' })
+  const newest = candidate({ title: 'Brand new attention paper', summary: 'An agent benchmark.', publishedAt: '2026-11-04T23:00:00Z' })
+
+  const { selected } = selectDaily([unvotedHf, keywordHit, newest, voted], {
+    quota: { total: 10, papers: 4 },
+    includeKeywords: ['agent'],
+  })
+
+  assert.deepEqual(selected.map(item => item.title), [
+    'A popular kernel result',
+    'An agent that browses',
+    'Brand new attention paper',
+    'A fresh unvoted paper',
+  ])
+})
+
 test('keyword hits in the title outrank summary-only hits, then recency breaks ties', () => {
   const summaryOld = candidate({ title: 'A study of planning', summary: 'We use an agent.', publishedAt: '2026-11-04T09:00:00Z' })
   const summaryNew = candidate({ title: 'Another planning study', summary: 'We also use an agent.', publishedAt: '2026-11-04T20:00:00Z' })

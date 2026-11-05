@@ -71,8 +71,8 @@ test('an invalid date or an unknown source is a usage error with exit code 2', a
   assert.match(invalidDate.stderr.text(), /2026-13-40/)
 
   const unknownSource = deps({ stderr: sink() })
-  assert.equal(await main(['--date', '2026-11-04', '--source', 'hf'], unknownSource), 2)
-  assert.match(unknownSource.stderr.text(), /hf/)
+  assert.equal(await main(['--date', '2026-11-04', '--source', 'openai'], unknownSource), 2)
+  assert.match(unknownSource.stderr.text(), /openai/)
 })
 
 test('--dry-run writes nothing', async () => {

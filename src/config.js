@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { DEFAULT_PROXY_HEALTH_URL, DEFAULT_PROXY_TIMEOUT_MS } from './proxy.js'
 import { DEFAULT_QUOTA } from './pipeline/select.js'
 import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
+import { DEFAULT_HF_CONFIG } from './sources/hf.js'
 
 export const CONFIG_FILE = 'config.json'
 export const DEFAULT_RETENTION_DAYS = 30
@@ -65,9 +66,10 @@ export function defaultConfig() {
         keywords: [...DEFAULT_ARXIV_CONFIG.keywords],
         excludeKeywords: [...DEFAULT_ARXIV_CONFIG.excludeKeywords],
       },
-      // The adapters arrive in later tickets; declaring the switch here keeps
-      // "which source needs the proxy" out of the pipeline code.
-      hf: { useProxy: true },
+      // The HF daily board is the heat signal for the papers quota. It is
+      // proxied by default because the official API is not directly reachable;
+      // an unavailable proxy skips the source instead of going direct.
+      hf: { ...DEFAULT_HF_CONFIG },
       openai: { useProxy: true },
     },
     quota: { ...DEFAULT_QUOTA },
@@ -182,6 +184,17 @@ export function validateConfig(config, path = CONFIG_FILE) {
     if ('useProxy' in settings && typeof settings.useProxy !== 'boolean') {
       throw configError(`${path}: sources.${id}.useProxy must be true or false`)
     }
+  }
+
+  // HF settings are checked only when present, so a partial user object still
+  // fails on the switch above rather than on a default it never supplied.
+  const hf = config.sources?.hf
+  if (isPlainObject(hf)) {
+    if ('baseUrl' in hf) assertUrl(hf.baseUrl, 'sources.hf.baseUrl', path)
+    if ('maxItems' in hf && (!Number.isInteger(hf.maxItems) || hf.maxItems <= 0)) {
+      throw configError(`${path}: sources.hf.maxItems must be a positive integer`)
+    }
+    if ('timeoutMs' in hf) assertPositive(hf.timeoutMs, 'sources.hf.timeoutMs', path)
   }
 
   const translation = config.translation
