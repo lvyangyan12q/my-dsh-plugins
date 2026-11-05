@@ -19,7 +19,8 @@ import {
   extractArxivPaper,
   listArxiv,
 } from '../sources/arxiv.js'
-import { isDigestDate, storagePaths, writeDayDigest, writeRunRecord } from '../storage.js'
+import { isDigestDate, readRunRecord, storagePaths, writeDayDigest, writeRunRecord } from '../storage.js'
+import { translateItems } from '../translate/service.js'
 import { selectDaily } from './select.js'
 
 export const SOURCE_IDS = ['arxiv']
@@ -192,6 +193,22 @@ function wordCount(blocks) {
     .filter(Boolean).length
 }
 
+/**
+ * Tokens already spent on this date. The daily budget is a day cap, not a
+ * per-invocation cap, so a manual rerun continues where the scheduled run
+ * stopped instead of doubling the spend.
+ */
+async function translationTokensUsed({ root, date, dryRun }) {
+  if (dryRun) return 0
+  try {
+    const record = await readRunRecord({ root, date })
+    const used = Number(record?.translation?.tokensUsed)
+    return Number.isFinite(used) && used > 0 ? used : 0
+  } catch {
+    return 0
+  }
+}
+
 function toDigestItem(candidate, extraction, { collectedAt }) {
   const blocks = pendingBlocks(extraction.blocks ?? [])
   const summary = candidate.summary
@@ -362,6 +379,40 @@ export async function runDaily({
     items.push(toDigestItem(candidate, extraction, { collectedAt }))
   }
 
+  // Translate the selected items before anything is written. A missing model
+  // configuration is an explicit skip (everything stays pending), never a
+  // silent no-op; a failed block or an exhausted budget only leaves the
+  // affected items pending and never fails the day.
+  const translationResult = await translateItems({
+    items,
+    root,
+    config: resolved,
+    env,
+    fetch: fetchImpl,
+    dryRun,
+    budgetUsed: await translationTokensUsed({ root, date, dryRun }),
+  })
+  const translation = translationResult.stats
+  if (translation.status === 'skipped' && translation.reason === 'missing_llm_config') {
+    warnings.push({
+      id: null,
+      message: `translation skipped: set ${translation.missing.join(', ')}`,
+    })
+  } else if (translation.status === 'skipped' && translation.reason === 'disabled') {
+    warnings.push({ id: null, message: 'translation is disabled in config.json (translation.enabled=false)' })
+  } else if (translation.budgetExceeded) {
+    warnings.push({
+      id: null,
+      message: `translation stopped at the daily token budget (${translation.tokensUsed}/${translation.tokenBudget});`
+        + ` ${translation.pendingItems} item(s) left pending`,
+    })
+  } else if (translation.failedUnits > 0) {
+    warnings.push({
+      id: null,
+      message: `${translation.failedUnits} translation block(s) failed; the affected items stay partial or pending`,
+    })
+  }
+
   // Extraction adds requests after the listing report was created.
   for (const report of reports) {
     const counter = counters.get(report.id)
@@ -403,6 +454,16 @@ export async function runDaily({
       durationMs,
       proxy: proxy.state,
       sources: sourceEntries,
+      translation: {
+        status: translation.status,
+        reason: translation.reason,
+        model: translation.model,
+        targetLanguage: translation.targetLanguage,
+        tokensUsed: translation.tokensUsed,
+        tokenBudget: translation.tokenBudget,
+        budgetExceeded: translation.budgetExceeded,
+        pendingItems: translation.pendingItems,
+      },
     },
     directions: DIRECTION_META,
     sources: SOURCE_META,
@@ -419,6 +480,8 @@ export async function runDaily({
     excerpt: items.filter(item => item.excerpt === true).length,
     extractionFailures,
     proxyHealthChecks: proxy.state.probed ? 1 : 0,
+    translated: items.filter(item => item.translationState === 'complete').length,
+    translationPending: items.filter(item => item.translationState !== 'complete').length,
   }
 
   const written = { digest: null, index: null, run: null, bytes: 0 }
@@ -454,6 +517,7 @@ export async function runDaily({
       sources: reports,
       counts,
       selection: selection.stats,
+      translation,
       warnings,
       digest: {
         written: Boolean(written.digest),
@@ -493,6 +557,7 @@ export async function runDaily({
     proxy: proxy.state,
     sources: reports,
     selection: selection.stats,
+    translation,
     warnings,
     digest,
     written,
