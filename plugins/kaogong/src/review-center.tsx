@@ -25,7 +25,7 @@ type Entry = {
     roundId?: string;
     questionId?: string;
     planTask?: PlanTask;
-    planPending?: boolean;
+    planPending?: boolean; planIncompleteReason?:string;
     retry?: unknown;
     reason: string;
 };
@@ -64,8 +64,8 @@ function OwnedCenter({ initialPointId, initialOccurrenceId, onClearTarget }: Pro
         void Promise.all(['/api/kaogong/recall', '/api/kaogong/errors?mode=review', '/api/kaogong/route'].map(path => request(path))).then(([recall, errors, route]) => {
             if (!current)
                 return;
-            const recalls: Entry[] = (recall.items ?? []).map((row: any) => { const point = route.points?.find((p: any) => p.id === row.pointId), previous = row.history?.find((h: any) => h.cycleId === row.planTask?.recallReference?.cycleId); return { id: row.pointId, kind: 'recall', pointId: row.pointId, cycleId: row.cycleId, point: point?.knowledgePoint ?? '知识点', subject: point?.subject ?? '', dueAt: row.dueAt, planTask: row.planTask, planPending: row.planPending, retry: previous ? { action: 'confirm', pointId: row.pointId, cycleId: previous.cycleId, rating: previous.rating, confirmed: true } : undefined, reason: row.history?.length ? '按上次自评的间隔安排' : '首次知识点回忆' }; });
-            const wrongs: Entry[] = (errors.occurrences ?? []).filter((row: any) => row.review && (row.review.status !== 'consolidated' || row.planPending)).map((row: any) => ({ id: row.id, kind: 'error', point: row.knowledgePoint, subject: row.subject, dueAt: row.review.dueAt, roundId: row.roundId, questionId: row.questionId, planTask: row.planTask, planPending: row.planPending, retry: row.retryConfirmation, reason: row.review.status === 'pending-correction' ? '上次作答仍需订正' : '历史错题按阶段再次检验' }));
+            const recalls: Entry[] = (recall.items ?? []).map((row: any) => { const point = route.points?.find((p: any) => p.id === row.pointId), previous = row.history?.find((h: any) => h.cycleId === row.planTask?.recallReference?.cycleId); return { id: row.pointId, kind: 'recall', pointId: row.pointId, cycleId: row.cycleId, point: point?.knowledgePoint ?? '知识点', subject: point?.subject ?? '', dueAt: row.dueAt, planTask: row.planTask, planPending: row.planPending, planIncompleteReason:row.planIncompleteReason, retry: previous ? { action: 'confirm', pointId: row.pointId, cycleId: previous.cycleId, rating: previous.rating, confirmed: true } : undefined, reason: row.history?.length ? '按上次自评的间隔安排' : '首次知识点回忆' }; });
+            const wrongs: Entry[] = (errors.occurrences ?? []).filter((row: any) => row.review && (row.review.status !== 'consolidated' || row.planPending)).map((row: any) => ({ id: row.id, kind: 'error', point: row.knowledgePoint, subject: row.subject, dueAt: row.review.dueAt, roundId: row.roundId, questionId: row.questionId, planTask: row.planTask, planPending: row.planPending, planIncompleteReason:row.planIncompleteReason, retry: row.retryConfirmation, reason: row.review.status === 'pending-correction' ? '上次作答仍需订正' : '历史错题按阶段再次检验' }));
             setEntries([...recalls, ...wrongs]);
         }).catch(e => { if (current)
             setError(String(e)); });
@@ -92,7 +92,7 @@ function OwnedCenter({ initialPointId, initialOccurrenceId, onClearTarget }: Pro
     if (history)
         return <><button onClick={back}>返回复习队列</button><ErrorReviewPanel /></>;
     if (active)
-        return <section>{active.planPending && <div role='status'><p>复习已保存，计划尚待恢复。</p>{!!active.retry && <button disabled={busy} onClick={() => void run(async () => { await request(active.kind === 'recall' ? '/api/kaogong/recall' : '/api/kaogong/errors?mode=review', active.retry); if (alive.current)
+        return <section>{active.planIncompleteReason&&<p role='status'>计划仍未完成：{active.planIncompleteReason}</p>}{active.planPending && <div role='status'><p>复习已保存，计划尚待恢复。</p>{!!active.retry && <button disabled={busy} onClick={() => void run(async () => { await request(active.kind === 'recall' ? '/api/kaogong/recall' : '/api/kaogong/errors?mode=review', active.retry); if (alive.current)
             setRevision(v => v + 1); })}>仅重试计划回写</button>}</div>}{error && <p role='alert'>{error}</p>}<button onClick={back}>返回复习队列</button><p>{active.planTask ? `本次符合完成条件后同步完成「${active.planTask.title}」，计划日期 ${active.planTask.date ?? '待安排'}。` : '本次只更新复习队列，不占正式日程容量。'}</p>{active.kind === 'error' && active.planTask?.status === 'in-progress' && <label><input type='checkbox' checked={resumeTaskId === active.planTask.id} onChange={e => setResumeTaskId(e.target.checked ? active.planTask!.id : undefined)}/>本次订正继续原计划任务</label>}{active.kind === 'recall' ? <RecallPanel pointId={active.id} onChanged={() => setRevision(v => v + 1)}/> : <ErrorReviewPanel occurrenceId={active.id} resumeTaskId={resumeTaskId} onChanged={() => setRevision(v => v + 1)}/>}<button onClick={() => { const next = entries.find(row => row.kind + ':' + row.id !== activeId); if (next)
             setActiveId(next.kind + ':' + next.id);
         else
@@ -103,6 +103,7 @@ function OwnedCenter({ initialPointId, initialOccurrenceId, onClearTarget }: Pro
         setPreview(null);
         setRevision(v => v + 1);
     } })}>确认排入正式计划</button><button disabled={busy} onClick={() => setPreview(null)}>取消预览</button></section>}
- {groups.map(([title, include]) => <section key={title}><h2>{title}</h2>{entries.filter(row => (!subject || subject === row.subject) && (!point || point === row.point) && include(studyDate(new Date(row.dueAt)))).map(row => <article key={row.kind + row.id} style={{ borderBottom: '1px solid #d5d9d0', padding: '16px 0' }}><span>{row.kind === 'recall' ? '回忆' : '错题'}</span><h3>{row.subject} · {row.point}</h3><p>{row.reason} · {studyDate(new Date(row.dueAt))}</p>{row.planTask && <p>关联计划：{row.planTask.title} · {row.planTask.date ?? '待安排'} · {row.planTask.status === 'completed' ? '已完成' : '符合条件后同步完成'}</p>}{row.planPending && <p role="status">复习已保存，计划尚待恢复。</p>}{row.planPending && row.retry ? <button disabled={busy} onClick={() => void run(async () => { await request(row.kind === 'recall' ? '/api/kaogong/recall' : '/api/kaogong/errors?mode=review', row.retry); if (alive.current)
+ {groups.map(([title, include]) => <section key={title}><h2>{title}</h2>{entries.filter(row => (!subject || subject === row.subject) && (!point || point === row.point) && include(studyDate(new Date(row.dueAt)))).map(row => <article key={row.kind + row.id} style={{ borderBottom: '1px solid #d5d9d0', padding: '16px 0' }}><span>{row.kind === 'recall' ? '回忆' : '错题'}</span><h3>{row.subject} · {row.point}</h3><p>{row.reason} · {studyDate(new Date(row.dueAt))}</p>{row.planTask && <p>关联计划：{row.planTask.title} · {row.planTask.date ?? '待安排'} · {row.planTask.status === 'completed' ? '已完成' : '符合条件后同步完成'}</p>}{row.planIncompleteReason&&<p>计划仍未完成：{row.planIncompleteReason}</p>}{row.planPending && <p role="status">复习已保存，计划尚待恢复。</p>}{row.planPending && row.retry ? <button disabled={busy} onClick={() => void run(async () => { await request(row.kind === 'recall' ? '/api/kaogong/recall' : '/api/kaogong/errors?mode=review', row.retry); if (alive.current)
         setRevision(v => v + 1); })}>仅重试计划回写</button> : <button onClick={() => setActiveId(row.kind + ':' + row.id)}>{row.kind === 'recall' ? '开始回忆' : '重做错题'}</button>}{!row.planTask && <button disabled={busy} onClick={() => void run(() => propose(row))}>预览排入计划</button>}</article>)}</section>)}{!entries.length && <p>暂无待复习项，可自主选择知识点加入。</p>}<button onClick={() => setEnrolling(value => !value)}>自主选择知识点</button>{enrolling && <RecallPanel />}</section>;
 }
+

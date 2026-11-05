@@ -32,3 +32,33 @@ test('pending recall only retries the original cycle plan effect',async()=>{
  try{const {ReviewCenter}=await import('../src/review-center.tsx');await act(async()=>root.render(<ReviewCenter/>));assert.match(document.body.textContent??'',/复习已保存，计划尚待恢复/);await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='仅重试计划回写')!.click());assert.deepEqual(commands,[{action:'confirm',pointId:'p1',cycleId:'old',rating:'forgotten',confirmed:true}])}
  finally{await act(async()=>root.unmount());globalThis.fetch=old;dom.window.close();for(const[k,v]of saved)v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k)}
 })
+
+test('real Host review page schedules then recovers only the failed plan write',async()=>{
+ const {fixture}=await import('./standalone-host-fixture.mjs')
+ let fail=false
+ const app=await fixture({globalFault:(_name:string,value:any)=>{if(fail&&value.tasks?.some((t:any)=>t.status==='completed')){fail=false;throw Error('受控计划写入故障')}}})
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map()
+ for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true})){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,writable:true,configurable:true})}
+ const old=globalThis.fetch,root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
+ try{
+  const learner=(await app.request('/api/kaogong/study',{action:'create',kind:'learner',title:'页面联调',confirmed:true})).value
+  await app.seedKnowledge(learner.profile.id,{reference:{subject:'行测-言语理解与表达',knowledgePoint:'逻辑填空',title:'参考讲义',content:'结合语境判断词义',kind:'讲义',source:'合成联调',tags:[],createdAt:'2026-01-01',updatedAt:'2026-01-01'}})
+  const view=learner.view.id,url='/api/kaogong/recall?viewId='+view,plan='/api/kaogong/plan?viewId='+view
+  const enrolled=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value
+  globalThis.fetch=async(input,init)=>{const path=String(input),result=await app.request(path+(path.includes('?')?'&':'?')+'viewId='+view,init?.body?JSON.parse(String(init.body)):undefined);return new Response(JSON.stringify(result.value),{status:result.status})}
+  const {ReviewCenter}=await import('../src/review-center.tsx');await act(async()=>root.render(<ReviewCenter/>))
+  const click=async(text:string)=>{for(let i=0;i<100&&!([...document.querySelectorAll('button')].some(b=>b.textContent===text));i++)await act(async()=>new Promise(resolve=>setTimeout(resolve,10)));return act(async()=>{const button=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(button,text+document.body.textContent);button.click();await new Promise(resolve=>setTimeout(resolve,30))})}
+  await click('预览排入计划');assert.equal((await app.request(plan)).value.tasks.length,0);await click('确认排入正式计划');assert.equal((await app.request(plan)).value.tasks.length,1)
+  await click('开始回忆');assert.match(document.body.textContent??'',/同步完成/)
+  for(let i=0;i<100&&!document.querySelector('textarea');i++)await act(async()=>new Promise(resolve=>setTimeout(resolve,10)));const textarea=document.querySelector('textarea')!;await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value')!.set!.call(textarea,'主动检索语境');textarea.dispatchEvent(new dom.window.Event('input',{bubbles:true}));textarea.dispatchEvent(new dom.window.Event('change',{bubbles:true}));(document.querySelector('input[type=checkbox]') as HTMLInputElement).click()})
+  await click('提交本次回忆');await click('查看参考原文')
+  await act(async()=>{const select=document.querySelector('select[aria-label="本次自评"]')!;Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype,'value')!.set!.call(select,'forgotten');select.dispatchEvent(new dom.window.Event('change',{bubbles:true}))})
+  fail=true;await click('确认本次回忆完成');for(let i=0;i<100&&!document.body.textContent?.includes('计划尚待恢复');i++)await act(async()=>new Promise(resolve=>setTimeout(resolve,10)));assert.match(document.body.textContent??'',/复习已保存，计划尚待恢复/)
+  const partial=(await app.request(url)).value.items[0];assert.equal(partial.history.length,1);assert.notEqual(partial.cycleId,enrolled.cycleId)
+  await click('仅重试计划回写');assert.equal((await app.request(plan)).value.tasks[0].status,'completed');assert.equal((await app.request(url)).value.items[0].history.length,1)
+ }finally{await act(async()=>root.unmount());globalThis.fetch=old;dom.window.close();for(const[k,v]of saved)v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k);await app.close()}
+})
+
+
+
+
