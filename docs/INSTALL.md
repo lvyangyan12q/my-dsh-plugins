@@ -116,6 +116,31 @@ node scripts/paper-reader.mjs --help                   # 完整参数
 - 退出码：`0` 已写入（或 dry-run 完成）、`1` 抓取失败且未写入、`2` 参数或配置错误。
 - 历史日期补跑不会自动重放其他日期；需要哪一天就明确传哪一天。
 
+## 用 DSH 本地凭据运行（推荐）
+
+如果 DSH 里已经配置了模型密钥，不必再复制一份到环境变量：
+
+```powershell
+node scripts/run-daily.mjs --date 2026-11-05
+```
+
+`run-daily.mjs` 只做三件事：从 `$DSH_HOME/.credentials.yaml` 的 `refs` 读出指定凭据、在**子进程环境**里设置 `PAPER_READER_LLM_*`、启动普通 CLI。它不打印、不写入、不把密钥落到 digest/日志。默认凭据是 `COMMANDCODE_API_KEY`，可用 `PAPER_READER_DSH_CREDENTIAL_REF` 换一个 ref；显式设置的环境变量优先。
+
+`$DSH_HOME/paper-reader/config.json` 可以固定端点、模型、代理与预算（不含密钥）：
+
+```json
+{
+  "proxy": { "url": "http://127.0.0.1:7897" },
+  "translation": {
+    "baseUrl": "https://api.commandcode.ai/provider/v1",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "dailyTokenBudget": 1200000
+  }
+}
+```
+
+代理只从显式配置或环境变量读取，不会自动探测系统代理；HF/OpenAI 在代理不可用时按来源跳过或降级。
+
 ## 运行状态与数据
 
 页面顶部显示最近一次运行的状态、日期与耗时、条数、翻译 token/预算，以及失败和被跳过的来源。
