@@ -17,13 +17,13 @@ test('continuing the same task preserves unsaved answers and notes while another
  try{
   const {StudyPlanPanel}=await import('../src/study-plan-panel.tsx'),{KaogongView}=await import('../src/kaogong-view.tsx'),{LessonPanel}=await import('../src/lesson-panel.tsx'),{KaogongStateContext,KaogongViewState}=await import('../src/view-state.tsx')
   let owner=new KaogongViewState('draft-profile');owner.cell('practice',null).set(rounds[0] as any);owner.cell('practiceItem',null).set(rounds[0].context);owner.cell('practiceRestored',false).set(true)
-  function Surface(){const[page,setPage]=useState('practice');return <KaogongStateContext.Provider value={owner}><button onClick={()=>setPage('plan')}>返回计划</button><button onClick={()=>setPage('classroom')}>显示课堂</button>{page==='plan'?<StudyPlanPanel onPage={setPage} onOpenTeacher={async()=>{setPage('classroom')}}/>:page==='practice'?<KaogongView active embedded focusedStudy pageId="practice" onOpenTeacher={async()=>{}}/>:<LessonPanel active={false} onPractice={async()=>{}} onOpenTeacher={async()=>{}}/>}</KaogongStateContext.Provider>}
+  function Surface(){const[page,setPage]=useState('practice');return <KaogongStateContext.Provider value={owner}><button onClick={()=>setPage('plan')}>返回计划</button><button onClick={()=>setPage('classroom')}>显示课堂</button>{page==='plan'?<StudyPlanPanel todayOnly onPage={setPage} onOpenTeacher={async()=>{setPage('classroom')}}/>:page==='practice'?<KaogongView active embedded focusedStudy pageId="practice" onOpenTeacher={async()=>{}}/>:<LessonPanel active={false} onPractice={async()=>{}} onOpenTeacher={async()=>{}}/>}</KaogongStateContext.Provider>}
   await act(async()=>root.render(<Surface/>))
   await act(async()=>document.querySelectorAll<HTMLInputElement>('input[type=radio]')[1].click())
   const click=async(text:string,index=0)=>act(async()=>[...document.querySelectorAll('button')].filter(button=>button.textContent===text)[index]!.click())
-  await click('返回计划');await click('继续同一任务')
+  await click('返回计划');assert.equal((document.body.textContent??'').includes('今日任务'),true);assert.equal([...document.querySelectorAll('button')].some(b=>b.textContent==='继续最近任务：任务0'),true);await click('继续同一任务')
   assert.equal(document.querySelectorAll<HTMLInputElement>('input[type=radio]')[1].checked,true)
-  await click('返回计划');await click('继续同一任务',1)
+  await click('返回计划');assert.equal((document.body.textContent??'').includes('继续最近任务'),true);await click('继续同一任务',1)
   assert.equal(document.querySelectorAll<HTMLInputElement>('input[type=radio]')[1].checked,false)
   await click('返回计划');await click('继续同一任务')
   assert.equal(document.querySelectorAll<HTMLInputElement>('input[type=radio]')[1].checked,true)

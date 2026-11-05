@@ -22,7 +22,7 @@ type ViewValues = {
   integration: { service: unknown } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: RoleFacade | null; tasks: TaskFacade | null
-  'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
+  'plan.display': {scope:string;date:string}; 'study.scroll': Record<string,number>; 'review.target': string | null; 'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
   'roles.teacherSubject': string
   'roles.selected': LearningRoleKey
   'roles.opened': LearningRoleKey[]
@@ -41,6 +41,7 @@ export class KaogongViewState {
   private practiceCommand = false
   private changingLesson = false
   constructor(readonly instanceId='default',readonly viewId?:string) {
+    try{const saved=JSON.parse(window.localStorage.getItem('kaogong/display/'+JSON.stringify([instanceId,viewId??'main']))??'null');if(saved?.plan&&['all','day','week'].includes(saved.plan.scope)&&/^\d{4}-\d{2}-\d{2}$/.test(saved.plan.date))this.cell('plan.display',saved.plan);if(saved?.scroll&&typeof saved.scroll==='object')this.cell('study.scroll',Object.fromEntries(Object.entries(saved.scroll).filter(([k,v])=>['overview','plan','progress','materials','practice','errors','classroom'].includes(k)&&typeof v==='number'&&Number.isFinite(v)&&v>=0)) as Record<string,number>)}catch{}
     const draft=readLearnerDraft(instanceId)
     if(draft){if(draft.goal)this.cell('lesson.draft',draft.goal);this.cell('lesson.form',draft.form);this.cell('lesson.resumeId',draft.lessonId);this.cell('lesson.notes',draft.notes);this.cell('lesson.notesDirty',draft.notesDirty)}
     if(!viewId){const subject=readTeacherSubject(instanceId);if(subject!==null)this.cell('roles.teacherSubject',subject)}
@@ -65,7 +66,7 @@ export class KaogongViewState {
     const selected = this.cell('roles.selected', { appId: 'kaogong', instanceId: this.instanceId, roleId: 'teacher' }).value
     if (!selected || selected.appId !== 'kaogong' || selected.instanceId !== this.instanceId) return
     const page = this.cell('study.page', null).value
-    if (page !== 'classroom' && page !== 'materials' && page !== 'practice' && page !== 'errors') return
+    if (page !== 'classroom' && page !== 'materials' && page !== 'practice' && page !== 'errors' && page !== 'overview' && page !== 'plan' && page !== 'progress') return
     const roleId = selected.roleId
     if (roleId !== 'teacher' && roleId !== 'class-advisor' && roleId !== 'counselor') return
     writeLearningPreferences({ version: 1, studyOpen: this.cell('study.open', false).value, page,
@@ -92,7 +93,9 @@ export class KaogongViewState {
       const cell: Cell<ViewValues[K]> = { value: initial, listeners: new Set<() => void>(), set: action => {
         cell.value = typeof action === 'function' ? action(cell.value) : action
         if(key==='roles.teacherSubject'&&!this.viewId)writeTeacherSubject(this.instanceId,cell.value as string)
+        if(key==='plan.display'||key==='study.scroll'){try{window.localStorage.setItem('kaogong/display/'+JSON.stringify([this.instanceId,this.viewId??'main']),JSON.stringify({plan:this.cell('plan.display',{scope:'all',date:''}).value,scroll:this.cell('study.scroll',{}).value}))}catch{}}
         if (key === 'study.open' || key === 'study.page' || key === 'study.pane' || key === 'roles.selected') this.saveDisplayChoices()
+        if(['answers','errorReasons','reflectionNotes','lesson.notes'].includes(key)){const taskId=key==='lesson.notes'?this.cell('lesson.view',null).value?.lesson.request.taskId:this.cell('practice',null).value?.context.taskId;if(taskId){try{const storageKey='kaogong/recent-task/'+encodeURIComponent(this.instanceId),raw=JSON.parse(window.localStorage.getItem(storageKey)??'[]');window.localStorage.setItem(storageKey,JSON.stringify([taskId,...(Array.isArray(raw)?raw:[]).filter(id=>typeof id==='string'&&id!==taskId)].slice(0,100)))}catch{}}}
         if(['lesson.draft','lesson.form','lesson.view','lesson.notes','lesson.notesDirty'].includes(key))this.saveLearnerDraft()
         for (const listener of cell.listeners) listener()
       } }
@@ -125,7 +128,7 @@ export class KaogongViewStatePool {
 
 export const KaogongStateContext = createContext<KaogongViewState | null>(null)
 export const KaogongPresentationContext=createContext<KaogongViewState|null>(null)
-const displayKeys=new Set<string>(['roles','tasks','teacherHandoff','study.open','study.page','study.pane','roles.selected','roles.opened'])
+const displayKeys=new Set<string>(['plan.display','study.scroll','review.target','roles','tasks','teacherHandoff','study.open','study.page','study.pane','roles.selected','roles.opened'])
 
 /** Retain a business value in the plugin owner, or locally for standalone consumers. */
 export function useBusinessState<K extends keyof ViewValues>(key: K, initial: ViewValues[K]): [ViewValues[K], Dispatch<SetStateAction<ViewValues[K]>>] {

@@ -3,7 +3,7 @@ import { TAXONOMY } from './taxonomy.ts'
 const storageKey = (instanceId:string,viewId?:string)=>instanceId==='default'?'kaogong/default/learning-view/v1':`kaogong/instances/${encodeURIComponent(instanceId)}/${viewId?'views/'+encodeURIComponent(viewId)+'/':''}learning-view/v1`
 export type LearningPreferences = {
   version: 1; studyOpen: boolean
-  page: 'classroom' | 'materials' | 'practice' | 'errors'
+  page: 'overview' | 'plan' | 'progress' | 'classroom' | 'materials' | 'practice' | 'errors'
   pane: 'content' | 'conversation'
   role: { roleId: 'class-advisor' | 'teacher' | 'counselor'; subject?: string }
 }
@@ -16,7 +16,7 @@ function validate(value: unknown): LearningPreferences | null {
     !Object.keys(value).every(key => ['version', 'studyOpen', 'page', 'pane', 'role'].includes(key))) return null
   const { version, studyOpen, page, pane, role } = value
   if (version !== 1 || typeof studyOpen !== 'boolean' ||
-    (page !== 'classroom' && page !== 'materials' && page !== 'practice' && page !== 'errors') ||
+    (page !== 'classroom' && page !== 'materials' && page !== 'practice' && page !== 'errors' && page !== 'overview' && page !== 'plan' && page !== 'progress') ||
     (pane !== 'content' && pane !== 'conversation') || !record(role) ||
     !Object.keys(role).every(key => key === 'roleId' || key === 'subject')) return null
   const { roleId, subject } = role

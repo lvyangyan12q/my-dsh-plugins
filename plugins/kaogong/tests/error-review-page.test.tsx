@@ -124,3 +124,9 @@ test('review drafts and late commands stay with their profile across fresh mount
   assert.match(document.body.textContent??'',/题目B/)
  }finally{await act(async()=>root.unmount());dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
 })
+
+ test('a task review target opens only its own occurrence in review mode',async()=>{
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map();for(const[k,v]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true})){saved.set(k,Object.getOwnPropertyDescriptor(globalThis,k));Object.defineProperty(globalThis,k,{value:v,writable:true,configurable:true})}
+ const old=globalThis.fetch;globalThis.fetch=async()=>new Response(JSON.stringify({occurrences:['chosen','other'].map(id=>({id,subject:'科目',knowledgePoint:id,stem:id,explanation:'说明',options:['A. 一'],submittedAt:'2026-01-01',review:null}))}));
+ const root=(await import('react-dom/client')).createRoot(document.getElementById('root')!);try{const{ErrorReviewPanel}=await import('../src/error-review-panel.tsx');await act(async()=>root.render(<ErrorReviewPanel occurrenceId="chosen"/>));assert.equal(document.body.textContent?.includes('other'),false);assert.equal(document.body.textContent?.includes('chosen'),true);assert.equal([...document.querySelectorAll('button')].some(b=>b.textContent==='查看错题历史'),true)}finally{await act(async()=>root.unmount());globalThis.fetch=old;dom.window.close();for(const[k,v]of saved)v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k)}
+ })
