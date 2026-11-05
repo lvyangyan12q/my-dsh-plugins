@@ -51,10 +51,10 @@ pr-root
 | 模式 | 内容 | 用途 |
 |---|---|---|
 | 中英对照 | 左右两列按段落行对齐；公式/图/代码整行跨栏 | 精读、核对译法 |
-| 仅中文 | 单列 760px，中文优先；标题区隐藏英文副标题 | 快速理解 |
-| English | 单列 760px，英文衬线排版；标题区隐藏中文标题与导读 | 读原文、引用 |
+| 仅中文 | 单列 760px，中文文本；标题区隐藏英文副标题 | 快速理解 |
+| English | 单列 760px，英文衬线排版；标题区隐藏中文标题 | 读原文、引用 |
 
-> 目标语义（2026-11-04 已决定，待实现）：对照固定「原文 | 译文」，中文来源左中文、右英文；「仅中文 / English」是目标语言视图；数据以 `sourceLanguage` + `blocks[].original/translation` 表达。当前实现仍按 `en/zh` 字段与英文优先顺序，迁移见[语义票](wayfinder/daily-pipeline/issues/06-language-semantics.md)与[适配票](wayfinder/daily-pipeline/issues/10-schema-adaptation.md)。
+> 语义（2026-11-04 决定，已实现）：对照固定「原文 \| 译文」，列的先后由条目的 `sourceLanguage` 决定——英文来源左英文右中文，中文来源左中文右英文；「仅中文 / English」是**目标语言**视图，中文来源的 English 模式读的是英文译文。数据以 `sourceLanguage` + `original`/`translation` 表达（见第 4 节）；v1 的 `en`/`zh` 在加载时归一化，旧文件无需迁移。
 
 **对照模式为什么按行对齐，而不是双栏独立滚动**：
 
@@ -62,7 +62,7 @@ pr-root
 - 读者能直接看出「这段对应哪段」，长段落也不会错位；
 - 页面容器变窄时同一行自动堆叠为「原文在上、中文在下」，语义不变。
 
-**全宽块**：公式、图、代码不复制两份，在对照模式中占满整行。公式的说明文字按语言显示，图注按模式显示单语或双语。
+**全宽块**：公式、图、代码是语言中性内容，任何模式下都只渲染一份，在对照模式中占满整行；它们的说明文字与图注仍按 `original`/`translation` 成对，对照模式两行、单语模式取目标语言并标注回退。
 
 **模式切换保持位置**：切换前记录当前可见段落序号，重渲染后把该段落滚回视口顶部附近，避免「一切换就回到顶部」。
 
@@ -96,67 +96,64 @@ pr-root
 | 文件损坏 | 422 错误页（不静默回退示例） |
 | 搜索无结果 | 列表空状态 + 清除筛选 |
 | 翻译中 | 条目「翻译中」标记；对照模式缺失段显示骨架屏；文首显示 `done/total` 与重试提示 |
-| 翻译缺失 | 显示原文并标注「暂未翻译，显示原文」 |
+| 翻译缺失 | 单语模式回退原文并标注「未翻译，显示原文」；对照模式译文列显示骨架屏或回退 |
+| 标题缺译文 | 标题回退另一语言并标注「未翻译」 |
+| 中文原文 | 条目与阅读区显示「中文原文」标记；对照列顺序为中文 \| English |
 | 无标题 | 模式切换、大纲、收藏等按钮禁用或显示「未选择论文」 |
 | 窄容器（≤820px） | 对照行堆叠，单语正文自适应宽度 |
 | 窄窗口（≤900px） | 左栏变为抽屉 + 遮罩，阅读区占满 |
 | 打印 | 隐藏列表、顶栏、大纲，正文完整输出 |
 
-## 4. 数据契约
+## 4. 数据契约（v2）
 
-> 下面是**当前实现**的契约（`en`/`zh` 字段、英文优先）。原文/译文语义已由[语义票](wayfinder/daily-pipeline/issues/06-language-semantics.md)确定，目标契约的落地见[适配票](wayfinder/daily-pipeline/issues/10-schema-adaptation.md)；迁移前以本节为准。
+> 原文语言由 `sourceLanguage` 声明，文本用 `original` / `translation` 成对表达，阅读页不再假定英文在前。宿主校验 v2：条目缺 `sourceLanguage` 或可翻译字段缺成对成员即 422。v1（`en`/`zh`、`titleZh`/`titleEn`）仍可读，页面加载时归一化，用户无需先迁移文件。
 
 宿主路由 `GET /api/paper-reader/digest` 返回：
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "generatedAt": "2026-11-03T09:00:00+08:00",
-  "window": "过去 24 小时",
   "demo": false,
   "directions": [{ "id": "agent", "label": "Agent", "labelEn": "Agents" }],
-  "sources": [{ "id": "x", "label": "X", "short": "X" }],
+  "sources": [{ "id": "deepseek", "label": "DeepSeek", "short": "D" }],
   "days": [
     {
       "date": "2026-11-03",
       "items": [
         {
-          "id": "cot-2022",
-          "sourceId": "x",
-          "titleZh": "思维链提示：让大模型涌现推理能力",
-          "titleEn": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
-          "authors": ["Jason Wei", "Xuezhi Wang"],
-          "org": "Google Research",
-          "venue": "NeurIPS 2022",
-          "published": "2022-01-28",
-          "collectedAt": "2026-11-03T08:42:00+08:00",
-          "direction": "reasoning",
-          "tags": ["思维链", "少样本"],
-          "readingMinutes": 14,
+          "id": "deepseek-v3-2024",
+          "sourceId": "deepseek",
+          "sourceLanguage": "zh",
+          "title": {
+            "original": "DeepSeek-V3 技术报告：更高效的混合专家模型",
+            "translation": "DeepSeek-V3 Technical Report: A More Efficient Mixture-of-Experts Model"
+          },
+          "summary": { "original": "…", "translation": "…" },
+          "authors": ["DeepSeek-AI"],
+          "org": "DeepSeek",
+          "venue": "DeepSeek Technical Report",
+          "published": "2024-12-27",
+          "collectedAt": "2026-11-03T08:48:00+08:00",
+          "direction": "architecture",
+          "tags": ["混合专家", "MoE"],
+          "readingMinutes": 16,
           "excerpt": true,
-          "url": "https://arxiv.org/abs/2201.11903",
-          "summaryZh": "导读：把中间推理步骤写出来再给答案……",
-          "translation": { "status": "complete", "done": 2, "total": 2 },
+          "url": "https://github.com/deepseek-ai/DeepSeek-V3",
+          "translationState": "partial",
           "blocks": [
-            { "type": "heading", "level": 1, "en": "Abstract", "zh": "摘要" },
-            {
-              "type": "paragraph",
-              "en": "We explore how generating a chain of thought …",
-              "zh": "我们研究“思维链”……"
-            },
+            { "type": "heading", "level": 1, "original": "摘要", "translation": "Abstract" },
+            { "type": "paragraph", "original": "…", "translation": null, "translationState": "pending" },
             {
               "type": "equation",
-              "display": "ΔW = B A",
-              "detail": "A ∈ ℝ^{r×d}, B ∈ ℝ^{d×r}, r ≪ d",
+              "display": "h_t = o_t + sum_{i=1}^{N_s} g_{i,t} FFN_i(u_t)",
               "label": "(1)",
-              "noteEn": "LoRA keeps W frozen and learns a low-rank update.",
-              "noteZh": "LoRA 保持预训练权重 W 冻结，只学习低秩更新。"
+              "note": { "original": "…", "translation": "…" }
             },
             {
               "type": "figure",
-              "diagram": { "title": "流程示意", "steps": ["生成候选 API 调用", "执行 API", "按损失筛选", "微调"] },
-              "captionEn": "Illustrative pipeline.",
-              "captionZh": "流程示意。"
+              "diagram": { "title": "训练流程", "steps": ["预训练", "微调"] },
+              "caption": { "original": "…", "translation": "…" }
             }
           ]
         }
@@ -170,40 +167,50 @@ pr-root
 
 | 字段 | 必填 | 说明 |
 |---|---|---|
-| `schemaVersion` | 建议 | 当前为 `1`；升级时按版本兼容处理 |
+| `schemaVersion` | 是（v2） | 当前为 `2`；缺失或 `< 2` 按 v1 宽松校验 |
 | `generatedAt` | 建议 | agent 完成时间，ISO 8601 |
 | `days[].date` | 是 | `YYYY-MM-DD`，用于分组与「今天/昨天」 |
 | `days[].items[].id` | 是 | 全局唯一，用于阅读状态、收藏与滚动锚点 |
-| `titleZh` / `titleEn` | 至少一个 | 列表与标题区展示 |
-| `sourceId` | 建议 | 对应 `sources[].id`（`x` / `claude`） |
+| `days[].items[].sourceLanguage` | 是（v2） | `en` 或 `zh`：条目原文语言 |
+| `title` | 是（v2） | `{ original, translation }`；标题区与列表双语言展示 |
+| `summary` | 建议 | `{ original, translation }`；`original` 可为 `null`（agent 生成的导读） |
+| `sourceId` | 建议 | 对应 `sources[].id` |
 | `direction` | 建议 | 对应 `directions[].id`；列表方向筛选依赖它 |
 | `collectedAt` | 建议 | 列表时间与排序依据 |
-| `summaryZh` | 建议 | agent 生成的一句导读 |
 | `readingMinutes` | 建议 | 预计阅读时长 |
-| `translation.status` | 建议 | `complete` / `partial`；`partial` 时显示进度与提示 |
+| `translationState` | 建议 | `complete` / `partial` / `pending`；非 `complete` 时显示进度与提示 |
 | `blocks[]` | 是 | 段落级内容，见下表 |
 
 ### 内容块
 
 | `type` | 字段 | 渲染 |
 |---|---|---|
-| `heading` | `level`、`en`、`zh` | 对照模式左右各一个标题；单语模式只显示对应语言 |
-| `paragraph` | `en`、`zh`；可选 `zhState: "pending"` | 对照模式一行两列；缺译文显示骨架屏或原文回退 |
-| `equation` | `display`、`detail`、`label`、`noteEn`、`noteZh` | 跨栏；`^{...}` / `_{...}` 渲染为上/下标 |
-| `figure` | `diagram.steps[]` 或 `captionEn` / `captionZh` | 跨栏；步骤图用于示意图，也可扩展为图片 URL |
-| `code` | `code` | 跨栏等宽块（预留给含代码的论文） |
+| `heading` | `level`、`original`、`translation` | 对照模式按原文→译文各一列；单语模式只显示目标语言 |
+| `paragraph` | `original`、`translation`；可选 `translationState` | 对照模式一行两列；缺译文显示骨架屏或原文回退 |
+| `equation` | `display`、`detail`、`label`、`note: { original, translation }` | 语言中性，任何模式只渲染一份；`^{...}` / `_{...}` 渲染为上/下标；说明文字成对 |
+| `figure` | `diagram.steps[]` / `image`，`caption: { original, translation }` | 语言中性，只渲染一份；图注成对 |
+| `code` | `code`、可选 `language` | 语言中性，只渲染一份 |
 
-段落必须成对提供 `en` 与 `zh`（或 `zhState: "pending"`）。**不要**把多段合并成一个 `paragraph`，否则对照行会错位。公式与代码保持原文，不要翻译内部标识符。
+段落必须成对提供 `original` 与 `translation` 两个键；未翻译时写 `"translation": null`（可加 `"translationState": "pending"`），不要省略键。**不要**把多段合并成一个 `paragraph`，否则对照行会错位。公式与代码保持原文，不要翻译内部标识符。
+
+### 校验
+
+宿主在返回用户文件前运行 `src/shared/schema.js` 的 `validateDigest`：
+
+- v2 条目必须有合法的 `sourceLanguage`；`title` 必须有非空 `original` 与 `translation` 键。
+- `heading` / `paragraph` 必须有非空 `original`，且 `translation` 键存在（字符串或 `null`）。
+- `equation.note`、`figure.caption` 出现时必须是成对对象；`figure` 至少要有一个 `diagram` / `image` / `caption`。
+- 缺字段返回 422 与第一条具体原因；`translation: null` 是合法状态，不是错误。
 
 ### agent 写入约定
 
 - 写到 `$DSH_HOME/paper-reader/digest.json`；先写临时文件再原子替换。
 - 单文件上限 8 MiB（宿主路由校验）。
 - 一天最多保留最近 N 天（建议 14 天），避免文件无限增长。
-- 翻译失败保留 `zh: null, zhState: "pending"`，不要删除段落；下次抓取补齐。
+- 翻译失败保留 `"translation": null`（必要时 `"translationState": "pending"`），不要删除段落；下次抓取补齐。
+- 中文来源条目同样要写英文译文；`sourceLanguage: "zh"` 时 `original` 是中文。
 - 去重键：canonical URL 或 `arxiv id`；标题指纹兜底。
 - 条目 `id` 一经发布不要变化，否则已读/收藏状态会丢失。
-
 ## 5. DSH 接入
 
 ### 5.1 包与组合
@@ -265,6 +272,11 @@ export function apply(ctx) {
 - [x] 示例数据、文件损坏、读取失败、空结果均有明确状态
 - [x] 侧栏入口 + 主面板 slot 注册（单元测试断言）
 - [x] 宿主路由：示例回退、用户文件、损坏、405、鉴权拒绝、HEAD、health
+- [x] 数据契约 v2：示例含中文源样本；宿主接受 v2、拒绝缺 `sourceLanguage` 或成对字段的条目
+- [x] 阅读页按 `sourceLanguage` 决定对照列顺序；中文源三种模式正确
+- [x] 语言中性块只渲染一份；缺译文显示骨架屏/原文回退并标「未翻译」
+- [x] v1 `en`/`zh` 数据仍可读（加载时归一化）
+- [x] 测试覆盖英文源、中文源、三种模式（`test/host.test.mjs` + `test/client.test.mjs`）
 - [ ] 安装进运行中的 DSH 后的视觉与交互验收（需要安装 + 重启 GUI）
 - [ ] 真实 agent digest 文件与真实翻译质量的验收
 

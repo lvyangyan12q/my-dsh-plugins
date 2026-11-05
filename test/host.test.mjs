@@ -117,22 +117,121 @@ test('reading never creates or mutates the user digest file', async () => {
   assert.equal(JSON.parse(readFileSync(digestPath, 'utf8')).marker, 'unchanged')
 })
 
-test('sample digest satisfies the documented item contract', () => {
+/* ------------------------------------------------------------------ */
+/* Contract v2                                                         */
+/* ------------------------------------------------------------------ */
+
+test('serves a v2 digest whose items carry sourceLanguage and paired text', async () => {
+  writeFileSync(digestPath, JSON.stringify(sample), 'utf8')
+  const response = await call('/api/paper-reader/digest')
+  assert.equal(response.status, 200)
+  const body = JSON.parse(response.body)
+  assert.equal(body.demo, false)
+  assert.equal(body.schemaVersion, 2)
+  const items = body.days.flatMap(day => day.items)
+  const english = items.find(item => item.sourceLanguage === 'en')
+  const chinese = items.find(item => item.sourceLanguage === 'zh')
+  assert.ok(english, 'sample keeps an English-source item')
+  assert.ok(chinese, 'sample keeps a Chinese-source item')
+  assert.equal(typeof english.title.translation, 'string')
+  assert.equal(typeof chinese.title.original, 'string')
+})
+
+test('rejects a v2 item that omits sourceLanguage', async () => {
+  const broken = structuredClone(sample)
+  delete broken.days[0].items[0].sourceLanguage
+  writeFileSync(digestPath, JSON.stringify(broken), 'utf8')
+  const response = await call('/api/paper-reader/digest')
+  assert.equal(response.status, 422)
+  assert.equal(JSON.parse(response.body).error, 'digest_unavailable')
+  assert.match(JSON.parse(response.body).message, /sourceLanguage/)
+})
+
+test('rejects a v2 paragraph that is missing the paired translation field', async () => {
+  const broken = structuredClone(sample)
+  const block = broken.days[0].items[0].blocks.find(entry => entry.type === 'paragraph')
+  delete block.translation
+  writeFileSync(digestPath, JSON.stringify(broken), 'utf8')
+  const response = await call('/api/paper-reader/digest')
+  assert.equal(response.status, 422)
+  assert.match(JSON.parse(response.body).message, /translation/)
+})
+
+test('rejects a v2 figure caption that is not a pair', async () => {
+  const broken = structuredClone(sample)
+  const block = broken.days[0].items[0].blocks.find(entry => entry.type === 'figure')
+  block.caption = 'a bare string is not a pair'
+  writeFileSync(digestPath, JSON.stringify(broken), 'utf8')
+  const response = await call('/api/paper-reader/digest')
+  assert.equal(response.status, 422)
+  assert.match(JSON.parse(response.body).message, /caption/)
+})
+
+test('accepts explicit null translations: an untranslated block is valid, not broken', async () => {
+  const pending = {
+    schemaVersion: 2,
+    days: [{
+      date: '2026-11-04',
+      items: [{
+        id: 'pending-one',
+        sourceLanguage: 'en',
+        title: { original: 'A title', translation: null },
+        translationState: 'pending',
+        blocks: [{ type: 'paragraph', original: 'Body.', translation: null, translationState: 'pending' }],
+      }],
+    }],
+  }
+  writeFileSync(digestPath, JSON.stringify(pending), 'utf8')
+  const response = await call('/api/paper-reader/digest')
+  assert.equal(response.status, 200)
+  assert.equal(JSON.parse(response.body).days[0].items[0].translationState, 'pending')
+})
+
+test('still accepts a legacy v1 digest with en/zh fields', async () => {
+  const legacy = {
+    schemaVersion: 1,
+    days: [{
+      date: '2026-11-04',
+      items: [{
+        id: 'legacy-one',
+        titleZh: '旧标题',
+        titleEn: 'Legacy title',
+        blocks: [{ type: 'heading', en: 'Abstract', zh: '摘要' }],
+      }],
+    }],
+  }
+  writeFileSync(digestPath, JSON.stringify(legacy), 'utf8')
+  const response = await call('/api/paper-reader/digest')
+  assert.equal(response.status, 200)
+  assert.equal(JSON.parse(response.body).days[0].items[0].id, 'legacy-one')
+})
+
+test('sample digest satisfies the v2 item contract and includes a Chinese source', () => {
+  assert.equal(sample.schemaVersion, 2)
   assert.ok(Array.isArray(sample.directions) && sample.directions.length > 0)
   assert.ok(Array.isArray(sample.sources) && sample.sources.length > 0)
   const ids = new Set()
+  const languages = new Set()
   for (const day of sample.days) {
     assert.match(day.date, /^\d{4}-\d{2}-\d{2}$/)
     for (const item of day.items) {
       assert.equal(typeof item.id, 'string')
       assert.ok(!ids.has(item.id), `duplicate item id ${item.id}`)
       ids.add(item.id)
-      assert.ok(item.titleZh || item.titleEn)
+      assert.ok(['en', 'zh'].includes(item.sourceLanguage), `unknown sourceLanguage on ${item.id}`)
+      languages.add(item.sourceLanguage)
+      assert.equal(typeof item.title.original, 'string')
+      assert.ok('translation' in item.title)
       assert.ok(Array.isArray(item.blocks))
       for (const block of item.blocks) {
-        if (block.type === 'paragraph') assert.equal(typeof block.en, 'string')
-        if (block.type === 'heading') assert.ok(block.en || block.zh)
+        if (block.type === 'paragraph' || block.type === 'heading') {
+          assert.equal(typeof block.original, 'string')
+          assert.ok('translation' in block, `${item.id} ${block.type} lacks a translation field`)
+        }
+        if (block.type === 'equation' && block.note) assert.ok('translation' in block.note)
+        if (block.type === 'figure' && block.caption) assert.ok('translation' in block.caption)
       }
     }
   }
+  assert.ok(languages.has('zh'), 'sample needs one Chinese-source item')
 })
