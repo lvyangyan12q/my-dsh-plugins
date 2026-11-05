@@ -386,3 +386,16 @@ export async function extractArxivPaper({ candidate, config, fetch: fetchImpl })
   }
   return { blocks, excerpt: false, warnings: [] }
 }
+
+/** Registry entry: a paper source whose failed full text degrades to an excerpt. */
+export const ARXIV_SOURCE = {
+  id: SOURCE_ID,
+  kind: 'paper',
+  label: 'arXiv',
+  short: 'A',
+  defaults: DEFAULT_ARXIV_CONFIG,
+  tracksSeen: false,
+  onExtractFailure: 'excerpt',
+  list: listArxiv,
+  extract: extractArxivPaper,
+}

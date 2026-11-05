@@ -36,9 +36,9 @@ afterEach(() => {
 })
 
 /**
- * These tests describe the HF leg of the run. DeepSeek has its own tests, so it
- * is switched off here instead of teaching the transports about its host; the
- * default config still enables every source.
+ * These tests describe the HF leg of the run. The other sources have their own
+ * fixtures, so they are switched off instead of teaching the transports about
+ * their hosts; the default config still enables every source.
  */
 function hfRunConfig() {
   const config = defaultConfig()
@@ -47,6 +47,8 @@ function hfRunConfig() {
     sources: {
       ...config.sources,
       deepseek: { ...config.sources.deepseek, enabled: false },
+      anthropic: { ...config.sources.anthropic, enabled: false },
+      kimi: { ...config.sources.kimi, enabled: false },
     },
   }
 }

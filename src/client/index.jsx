@@ -396,6 +396,22 @@ export function PaperReaderPage() {
       for (const day of loaded) byDate.delete(day.date)
       return [...byDate.values()].sort((left, right) => (left.date < right.date ? 1 : left.date > right.date ? -1 : 0))
     })
+
+    // Each stored day carries the run's source metadata (label and short
+    // name). Keep it beside the items so Anthropic/Kimi are labelled by name
+    // rather than by their id, whichever day introduced them.
+    const declared = results.flatMap(result => (
+      !result.error && Array.isArray(result.value?.sources) ? result.value.sources : []
+    ))
+    if (declared.length > 0) {
+      setMeta((previous) => {
+        const byId = new Map((previous.sources ?? []).map(source => [source.id, source]))
+        for (const source of declared) {
+          if (source && typeof source.id === 'string') byId.set(source.id, source)
+        }
+        return { ...previous, sources: [...byId.values()] }
+      })
+    }
     return loaded
   }, [])
 

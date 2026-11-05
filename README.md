@@ -56,12 +56,12 @@ $DSH_HOME/paper-reader/
 
 采集链路方案已定：[实现规格](docs/wayfinder/daily-pipeline/spec.md) 与 [11 张纵向切片工单](docs/wayfinder/daily-pipeline/implementation/README.md) 是唯一实施入口。目标：每天 10 条、全文抽取、中英对照、按天 digest、DSH Schedule 每日运行；来源 arXiv、HF 每日榜、Anthropic、DeepSeek、Kimi、OpenAI；HF/OpenAI 需显式代理；X 预留，Claude Code 与 DSH `web_search` 不在范围内。
 
-已实现链路（工单 03/04/05/07/08/09）：CLI → arXiv 列表/LaTeXML 抽取 + Hugging Face 每日榜（经代理） + DeepSeek 官方双语新闻 + OpenAI RSS/文章页 → 选择/去重/配额 → 段落批量翻译（DeepSeek 已有官方译文，免翻译）→ 当日 digest + 索引 + run 记录。没有模型配置时英文条目保持 `translation: null` / `translationState: "pending"` 并明确跳过，页面显示「翻译进行中」。OpenAI 的 RSS 列表直连，文章页经代理抽取；代理不可用时保留 RSS 节选。
+已实现链路（工单 03/04/05/06/07/08/09）：CLI → arXiv 列表/LaTeXML 抽取 + Hugging Face 每日榜（经代理） + DeepSeek 官方双语新闻 + Anthropic/Kimi 英文博客 + OpenAI RSS/文章页 → 选择/去重/配额 → 正文抽取 → 段落批量翻译（DeepSeek 已有官方译文，免翻译）→ 当日 digest + 索引 + run 记录。没有模型配置时英文条目保持 `translation: null` / `translationState: "pending"` 并明确跳过，页面显示「翻译进行中」。OpenAI 的 RSS 列表直连，文章页经代理抽取；代理不可用时保留 RSS 节选。
 
 ```powershell
 node scripts/paper-reader.mjs --date 2026-11-05
 node scripts/paper-reader.mjs --dry-run        # 只抓取和统计，不写文件，也不调用翻译
-node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源（arxiv / deepseek / hf / openai）
+node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源（arxiv / deepseek / hf / anthropic / kimi / openai）
 ```
 
 - 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s、DeepSeek 回看 1 天）。工具只读该文件，不会覆盖。
@@ -74,6 +74,8 @@ node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源（arxiv / de
 - Hugging Face 每日榜（工单 07）：只取官方 `api/daily_papers?date=YYYY-MM-DD` 当日榜（不带日期的跨天结果不使用），按 `upvotes` 排序参与 6 条论文配额；`paper.id` 就是 arXiv id，正文一律回 arXiv 抽取，与 arXiv 结果按 id 去重（HF 副本保留票数）。HF 走 `sources.hf.useProxy`（默认 `true`）；代理缺失或健康检查失败时整源 `skipped`、arXiv 自排序补位，run 记录与页面写明原因；不使用镜像，也不回退直连。
 - DeepSeek（工单 08）：列表只取 `api-docs.deepseek.com/sitemap.xml`（`/news` 是软 404），按 slug 自带的日期进入当天窗口；正文读官方英文 `/news/<slug>.md` 与中文 `/zh-cn/news/<slug>.md`，直接写成「中文原文 + 英文译文」，**不调用翻译**，`sourceLanguage: "zh"`、`translationState: "complete"`。中文版缺失时保留英文并标 pending；两者都缺失的条目跳过并写入 run 记录告警。
 - DeepSeek 的博客条目按发布时间参与每日 4 条博客配额；窗口外的旧新闻不会每天重复占用配额。
+- Anthropic（工单 06）：从 `anthropic.com/sitemap.xml` 过滤 `/news/`、`/research/`，与 `state/sources.json` 里已见 URL 做差集（同一天重跑仍可复现），正文取 `main#main-content`，标题/日期/作者取 `ld+json`；单篇失败跳过并在 run 记录计数，不影响其他来源。
+- Kimi（工单 06）：从 `www.kimi.com/blog/` 卡片解析标题与发布日期，正文取 `main.layout-content`，明/暗重复图按图片 URL 去重；英文正文进入翻译。Anthropic 与 Kimi 共同参与每日 4 条博客配额（按来源轮转、各取最新）。
 - 翻译使用 OpenAI 兼容 Chat Completions 端点，环境变量：`PAPER_READER_LLM_BASE_URL`、`PAPER_READER_LLM_API_KEY`、`PAPER_READER_LLM_MODEL`（也可在 `translation.baseUrl/apiKey/model` 固定）。三者缺一时整轮翻译明确跳过并写入 run 记录，不影响抓取。
 - 翻译按块批量（每批 6–12 块）、标题/图注/公式说明单独处理；公式主体与代码不翻译。单块失败重试 2 次后保持 pending，其余块照常。
 - 译文缓存在 `$DSH_HOME/paper-reader/cache/`，键为原文、目标语言、模型与术语表版本的 SHA-256；重复运行不再付费。术语表内置常用 AI 词汇，可用 `translation.glossary` 覆盖。

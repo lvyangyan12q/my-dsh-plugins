@@ -253,6 +253,37 @@ test('the bundled sample renders: Chinese-source item keeps its language order a
   })
 })
 
+test('blog items carry their Anthropic and Kimi source names into the list and the reader', async () => {
+  const BLOG_SOURCES = [
+    ...SOURCES,
+    { id: 'anthropic', label: 'Anthropic', short: 'A' },
+    { id: 'kimi', label: 'Kimi', short: 'K' },
+  ]
+  const anthropic = {
+    ...EN_ITEM,
+    id: 'anthropic:news/claude-opus-4-5',
+    sourceId: 'anthropic',
+    title: { original: 'Claude Opus 4.5 arrives', translation: 'Claude Opus 4.5 发布' },
+  }
+  const kimi = {
+    ...EN_ITEM,
+    id: 'kimi:kimi-k3-1-pro',
+    sourceId: 'kimi',
+    title: { original: 'Kimi K3.1 Pro', translation: 'Kimi K3.1 Pro 发布' },
+  }
+  const digest = { ...digestOf([anthropic, kimi]), sources: BLOG_SOURCES }
+
+  await withPage({ digest, mode: 'both', prefs: { activeId: kimi.id } }, async ({ container, click }) => {
+    const badges = [...container.querySelectorAll('.pr-source')]
+    assert.ok(badges.some(badge => badge.getAttribute('title') === 'Anthropic'))
+    assert.ok(badges.some(badge => badge.getAttribute('title') === 'Kimi'))
+    assert.match(container.textContent, /Kimi/, 'the active Kimi item names its source')
+
+    await click(container.querySelectorAll('.pr-item')[0])
+    assert.match(container.textContent, /Anthropic/, 'the active Anthropic item names its source')
+  })
+})
+
 test('the list shows each item in Chinese primary and English secondary, whichever is the original', async () => {
   await withPage({ digest: digestOf([EN_ITEM, ZH_ITEM]), mode: 'both' }, ({ container }) => {
     const zhItem = container.querySelector('.pr-item')

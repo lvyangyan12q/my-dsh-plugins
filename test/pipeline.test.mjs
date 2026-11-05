@@ -31,9 +31,10 @@ const DATE = '2026-11-04'
 const NOW = () => new Date('2026-11-04T09:00:00+08:00')
 
 /**
- * These tests describe the arXiv leg of the run; DeepSeek and HF have their own
- * tests, so those sources are switched off here rather than teaching the arXiv
- * fake about other hosts. The default config still enables all of them.
+ * These tests describe the arXiv leg of the run; DeepSeek, HF and the blog
+ * sources have their own fixture suites, so they are switched off here rather
+ * than teaching the arXiv fake about other hosts. The default config still
+ * enables all of them.
  */
 function arxivOnly(config) {
   return {
@@ -42,6 +43,8 @@ function arxivOnly(config) {
       ...config.sources,
       deepseek: { ...config.sources.deepseek, enabled: false },
       hf: { ...config.sources.hf, enabled: false },
+      anthropic: { ...config.sources.anthropic, enabled: false },
+      kimi: { ...config.sources.kimi, enabled: false },
     },
   }
 }
@@ -70,6 +73,9 @@ test('a missing config file uses built-in defaults and creates nothing', async (
   assert.equal(loaded.config.sources.deepseek.enabled, true)
   assert.equal(loaded.config.sources.deepseek.lookbackDays, 1)
   assert.equal(loaded.config.sources.deepseek.sitemapUrl, 'https://api-docs.deepseek.com/sitemap.xml')
+  assert.equal(loaded.config.sources.anthropic.enabled, true)
+  assert.equal(loaded.config.sources.anthropic.sitemapUrl, 'https://www.anthropic.com/sitemap.xml')
+  assert.equal(loaded.config.sources.kimi.listUrl, 'https://www.kimi.com/blog/')
 })
 
 test('a user config is merged with defaults and never rewritten', async () => {

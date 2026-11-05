@@ -63,7 +63,28 @@ function createHost(profile = profileDir) {
   return { call, dispose: () => { for (const dispose of disposers) dispose() } }
 }
 
+/**
+ * The E2E fetch knows arXiv and DeepSeek; the blog adapters have their own
+ * fixture suite, so their sources are switched off instead of treating their
+ * 404s as a broken day.
+ */
+function writeNoBlogSourcesConfig(homeDir, extraSources = {}) {
+  const root = join(homeDir, 'paper-reader')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(
+    join(root, 'config.json'),
+    JSON.stringify({
+      sources: {
+        anthropic: { enabled: false },
+        kimi: { enabled: false },
+        ...extraSources,
+      },
+    }),
+  )
+}
+
 test('CLI → host → reading page renders arXiv pending items and DeepSeek official pairs', async () => {
+  writeNoBlogSourcesConfig(home)
   const stdout = capture()
   const stderr = capture()
   const code = await main(['--date', DATE], {
@@ -144,12 +165,9 @@ test('a translated day renders the Chinese text without pending placeholders in 
   const translatedProfile = join(translatedHome, 'profiles', 'web')
   mkdirSync(translatedProfile, { recursive: true })
   // This slice is about translating an English source day; DeepSeek has its own
-  // fixtures and would enter the same digest already complete.
-  mkdirSync(join(translatedHome, 'paper-reader'), { recursive: true })
-  writeFileSync(
-    join(translatedHome, 'paper-reader', 'config.json'),
-    JSON.stringify({ sources: { deepseek: { enabled: false } } }),
-  )
+  // fixtures and would enter the same digest already complete, while the blog
+  // adapters have their own end-to-end fixtures.
+  writeNoBlogSourcesConfig(translatedHome, { deepseek: { enabled: false } })
 
   try {
     const stdout = capture()

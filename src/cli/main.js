@@ -22,8 +22,8 @@ import { isDigestDate } from '../storage.js'
 const USAGE = `Usage: paper-reader [options]
 
 Fetch the day's arXiv submissions, the Hugging Face daily board (through the
-configured proxy), DeepSeek news and OpenAI articles, select the digest and
-write it for the paper-reader host.
+configured proxy), DeepSeek news, Anthropic/Kimi blog posts and OpenAI
+articles, select the digest and write it for the paper-reader host.
 
 Options:
   --date YYYY-MM-DD   digest date (default: today, local time)

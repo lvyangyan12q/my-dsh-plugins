@@ -51,6 +51,10 @@ function testConfig(overrides = {}) {
     // HF is proxied by default (ticket 07), so leaving it on would make the
     // default run `partial` in tests that only fake the OpenAI transport.
     hf: { ...config.sources.hf, enabled: false },
+    // Anthropic/Kimi (ticket 06) are on by default too; this suite only fakes
+    // arXiv and OpenAI, so both are switched off here as in the HF suite.
+    anthropic: { ...config.sources.anthropic, enabled: false },
+    kimi: { ...config.sources.kimi, enabled: false },
     openai: { ...config.sources.openai, enabled: true },
   }
   return { ...config, ...overrides, sources: { ...config.sources, ...(overrides.sources ?? {}) } }

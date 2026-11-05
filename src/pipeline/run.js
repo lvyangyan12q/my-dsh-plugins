@@ -29,12 +29,24 @@ import {
   extractDeepSeekArticle,
   listDeepSeek,
 } from '../sources/deepseek.js'
+import { DEFAULT_ANTHROPIC_CONFIG, extractAnthropicArticle, listAnthropic } from '../sources/anthropic.js'
+import { DEFAULT_KIMI_CONFIG, extractKimiArticle, listKimi } from '../sources/kimi.js'
 import { DEFAULT_HF_CONFIG, listHf } from '../sources/hf.js'
-import { isDigestDate, readRunRecord, storagePaths, writeDayDigest, writeRunRecord } from '../storage.js'
+import { SOURCE_IDS, sourceDefinition } from '../sources/registry.js'
+import {
+  isDigestDate,
+  mergeSourceSeen,
+  readRunRecord,
+  readSourceState,
+  storagePaths,
+  writeDayDigest,
+  writeRunRecord,
+  writeSourceState,
+} from '../storage.js'
 import { translateItems } from '../translate/service.js'
 import { selectDaily } from './select.js'
 
-export const SOURCE_IDS = ['arxiv', 'deepseek', 'hf', 'openai']
+export { SOURCE_IDS }
 
 export const DIRECTION_META = [
   { id: 'agent', label: 'Agent', labelEn: 'Agents' },
@@ -47,6 +59,8 @@ export const DIRECTION_META = [
 export const SOURCE_META = [
   { id: 'arxiv', label: 'arXiv', short: 'A' },
   { id: 'deepseek', label: 'DeepSeek', short: 'D' },
+  { id: 'anthropic', label: 'Anthropic', short: 'C' },
+  { id: 'kimi', label: 'Kimi', short: 'K' },
   { id: 'hf', label: 'Hugging Face', short: 'H' },
   { id: 'openai', label: 'OpenAI', short: 'O' },
 ]
@@ -84,6 +98,31 @@ const BUILTIN_ADAPTERS = {
     extract: ({ candidate, config, fetch }) => extractDeepSeekArticle({
       candidate,
       config: config.sources?.deepseek ?? DEFAULT_DEEPSEEK_CONFIG,
+      fetch,
+    }),
+  },
+  anthropic: {
+    list: ({ config, date, fetch, knownUrls }) => listAnthropic({
+      config: config.sources?.anthropic ?? DEFAULT_ANTHROPIC_CONFIG,
+      date,
+      fetch,
+      knownUrls,
+    }),
+    extract: ({ candidate, config, fetch }) => extractAnthropicArticle({
+      candidate,
+      config: config.sources?.anthropic ?? DEFAULT_ANTHROPIC_CONFIG,
+      fetch,
+    }),
+  },
+  kimi: {
+    list: ({ config, date, fetch }) => listKimi({
+      config: config.sources?.kimi ?? DEFAULT_KIMI_CONFIG,
+      date,
+      fetch,
+    }),
+    extract: ({ candidate, config, fetch }) => extractKimiArticle({
+      candidate,
+      config: config.sources?.kimi ?? DEFAULT_KIMI_CONFIG,
       fetch,
     }),
   },
@@ -304,48 +343,64 @@ async function translationTokensUsed({ root, date, dryRun }) {
 /**
  * Build the digest item.
  *
- * Sources that already carry final original/translation pairs (DeepSeek's
- * official bilingual pages) set `finalized: true` and their text is kept as
- * written; every other source starts pending so the translation service can
- * fill it later.
+ * Two extraction shapes meet here:
+ * - sources that already carry final original/translation pairs (DeepSeek's
+ *   official bilingual pages) set `finalized: true` and their text is kept as
+ *   written;
+ * - blog adapters return `meta` for the fields only the article page knows
+ *   (the sitemap candidate has just a slug), and the prose starts pending so
+ *   the translation service can fill it later.
  */
 function toDigestItem(candidate, extraction, { collectedAt }) {
   const finalized = extraction.finalized === true
+  const meta = extraction.meta ?? {}
   const blocks = finalized ? (extraction.blocks ?? []) : pendingBlocks(extraction.blocks ?? [])
   // An extractor may refine what the list declared: the article page knows the
-  // canonical title, date and author list, the RSS only the headline.
-  const publishedAt = extraction.publishedAt ?? candidate.publishedAt ?? null
+  // canonical title, date and author list, the RSS only the headline. Blog
+  // adapters report those through `meta`; arXiv/OpenAI on the extraction itself.
+  const publishedAt = extraction.publishedAt ?? meta.publishedAt ?? candidate.publishedAt ?? null
   const authors = Array.isArray(extraction.authors) && extraction.authors.length > 0
     ? extraction.authors
-    : Array.isArray(candidate.authors) ? candidate.authors : []
-  const venue = candidate.venue ?? (candidate.primaryCategory ? `arXiv ${candidate.primaryCategory}` : null)
+    : Array.isArray(meta.authors) && meta.authors.length > 0
+      ? meta.authors
+      : Array.isArray(candidate.authors) ? candidate.authors : []
+  const venue = meta.venue ?? candidate.venue
+    ?? (candidate.primaryCategory ? `arXiv ${candidate.primaryCategory}` : null)
   const title = finalized && extraction.title
     ? { original: extraction.title.original, translation: extraction.title.translation ?? null }
-    : { original: extraction.title || candidate.title, translation: null }
+    : { original: extraction.title || meta.title || candidate.title, translation: null }
   let summary = null
   if (finalized) {
     summary = extraction.summary ?? null
-  } else if (candidate.summary) {
-    summary = { original: candidate.summary, translation: null }
+  } else {
+    const summaryText = meta.summary ?? candidate.summary
+    summary = summaryText ? { original: summaryText, translation: null } : null
   }
+
+  const sourceLanguage = finalized ? extraction.sourceLanguage : (meta.sourceLanguage ?? candidate.sourceLanguage)
+
   return {
     id: candidate.id,
     source: candidate.sourceId,
     sourceId: candidate.sourceId,
-    sourceLanguage: (finalized ? extraction.sourceLanguage : candidate.sourceLanguage) === 'zh' ? 'zh' : 'en',
+    sourceLanguage: sourceLanguage === 'zh' ? 'zh' : 'en',
     title,
     summary,
     authors,
     venue,
-    published: publishedAt ? String(publishedAt).slice(0, 10) : null,
+    published: meta.published
+      ?? candidate.published
+      ?? (publishedAt ? String(publishedAt).slice(0, 10) : null),
     publishedAt,
     collectedAt,
-    direction: extraction.direction ?? candidate.direction ?? 'architecture',
-    tags: Array.isArray(candidate.tags) ? candidate.tags : [],
+    direction: extraction.direction ?? meta.direction ?? candidate.direction ?? 'architecture',
+    tags: Array.isArray(meta.tags)
+      ? meta.tags
+      : Array.isArray(candidate.tags) ? candidate.tags : [],
     readingMinutes: readingMinutesOf(blocks),
     excerpt: extraction.excerpt === true,
     ...(extraction.excerptReason ? { excerptReason: extraction.excerptReason } : {}),
-    url: candidate.url ?? null,
+    url: meta.url ?? candidate.url ?? null,
     translationState: finalized ? (extraction.translationState ?? 'pending') : 'pending',
     blocks,
   }
@@ -436,16 +491,39 @@ export async function runDaily({
     }
   }
 
+  const warnings = []
+  let sourceState = { schemaVersion: 1, updatedAt: null, sources: {} }
+  try {
+    sourceState = (await readSourceState({ root })).state
+  } catch (error) {
+    // Discovery memory is an optimization: losing it re-offers the archive,
+    // which is recoverable, so it must never abort the day.
+    warnings.push({ id: null, message: `source discovery state could not be read: ${error?.message ?? error}` })
+  }
+  let stateChanged = false
+
+  /** URLs an earlier day already offered; a same-day URL stays new. */
+  const knownUrlsFor = (id) => {
+    const seen = sourceState.sources?.[id]?.seen
+    if (!seen || typeof seen !== 'object') return []
+    return Object.entries(seen)
+      .filter(([, firstSeen]) => typeof firstSeen === 'string' && firstSeen < date)
+      .map(([url]) => url)
+  }
+
   const candidates = []
   const reports = []
   for (const id of activeSources) {
+    const definition = sourceDefinition(id)
     if (proxiedSources.includes(id) && !proxy.transport) {
       // A proxied source is skipped, never retried through a direct connection.
       reports.push({
         id,
+        kind: definition?.kind ?? 'paper',
         status: 'skipped',
         candidates: 0,
         selected: 0,
+        skipped: 0,
         requests: 0,
         durationMs: 0,
         error: proxy.state.reason,
@@ -458,15 +536,29 @@ export async function runDaily({
     try {
       const listed = await listSource(
         id,
-        { config: resolved, date, fetch: fetchFor(id), proxy: proxyState },
+        { config: resolved, date, fetch: fetchFor(id), proxy: proxyState, knownUrls: knownUrlsFor(id) },
         adapters,
       )
-      candidates.push(...listed)
+      const discovered = Array.isArray(listed)
+        ? listed.map(candidate => candidate.url)
+        : Array.isArray(listed?.discovered) ? listed.discovered : []
+      const list = Array.isArray(listed) ? listed : (listed?.candidates ?? [])
+      candidates.push(...list)
+      if (definition?.tracksSeen && discovered.length > 0) {
+        sourceState = mergeSourceSeen(sourceState, id, discovered, {
+          date,
+          updatedAt: startedAt.toISOString(),
+          maxUrls: resolved.sources?.[id]?.maxSeenUrls,
+        })
+        stateChanged = true
+      }
       reports.push({
         id,
+        kind: definition?.kind ?? 'paper',
         status: 'ok',
-        candidates: listed.length,
+        candidates: list.length,
         selected: 0,
+        skipped: 0,
         requests: counters.get(id).requests,
         durationMs: Date.now() - sourceStarted,
         error: null,
@@ -474,9 +566,11 @@ export async function runDaily({
     } catch (error) {
       reports.push({
         id,
+        kind: definition?.kind ?? 'paper',
         status: 'failed',
         candidates: 0,
         selected: 0,
+        skipped: 0,
         requests: counters.get(id)?.requests ?? 0,
         durationMs: Date.now() - sourceStarted,
         error: String(error?.message ?? error),
@@ -501,9 +595,18 @@ export async function runDaily({
 
   const collectedAt = asDate(now()).toISOString()
   const items = []
-  const warnings = []
   let extractionFailures = 0
   let skipped = 0
+
+  /** A blog item with no readable page is dropped, not written as an empty shell. */
+  const skipItem = (candidate, report) => {
+    if (report) {
+      report.selected = Math.max(0, report.selected - 1)
+      report.skipped = (report.skipped ?? 0) + 1
+    }
+    skipped += 1
+  }
+
   for (const candidate of selection.selected) {
     const report = reports.find(entry => entry.id === candidate.sourceId)
     if (report) report.selected += 1
@@ -518,19 +621,23 @@ export async function runDaily({
         proxy: extractProxiedSources.includes(candidate.sourceId) ? proxyState : null,
       })
     } catch (error) {
+      const definition = sourceDefinition(candidate.sourceId)
+      if (definition?.onExtractFailure === 'skip') {
+        warnings.push({ id: candidate.id, message: `extraction failed: ${error?.message ?? error}` })
+        skipItem(candidate, report)
+        continue
+      }
       extractionFailures += 1
       extraction = {
         blocks: excerptBlocks(candidate),
         excerpt: true,
-        warnings: [`extraction failed: ${error?.message ?? error}`],
+        warnings: [],
       }
+      warnings.push({ id: candidate.id, message: `extraction failed: ${error?.message ?? error}` })
     }
     for (const warning of extraction.warnings ?? []) warnings.push({ id: candidate.id, message: warning })
     if (extraction.skip === true) {
-      // A blog item with no readable page is not a digest item: an empty shell
-      // would be worse than an explicit warning in the run record.
-      if (report) report.selected = Math.max(0, report.selected - 1)
-      skipped += 1
+      skipItem(candidate, report)
       continue
     }
     items.push(toDigestItem(candidate, extraction, { collectedAt }))
@@ -589,6 +696,7 @@ export async function runDaily({
       status: report.status,
       items: items.filter(item => item.sourceId === report.id).length,
     }
+    if (report.skipped > 0) entry.skipped = report.skipped
     if (report.error) entry.error = report.error
     if (report.status === 'skipped') {
       // A skipped source has no items to derive a label from, so it carries the
@@ -645,7 +753,7 @@ export async function runDaily({
     translationPending: items.filter(item => item.translationState !== 'complete').length,
   }
 
-  const written = { digest: null, index: null, run: null, bytes: 0 }
+  const written = { digest: null, index: null, run: null, state: null, bytes: 0 }
   let digestError = null
 
   if (!dryRun) {
@@ -662,6 +770,17 @@ export async function runDaily({
         written.bytes = result.bytes
       } catch (error) {
         digestError = error
+      }
+    }
+
+    // Only remember the discovery difference once the day is safely written:
+    // if the digest failed, tomorrow's run must be able to retry these URLs.
+    if (shouldWrite && !digestError && stateChanged) {
+      try {
+        const result = await writeSourceState({ root, state: sourceState, now: finishedAt })
+        written.state = result.path
+      } catch (error) {
+        warnings.push({ id: null, message: `source discovery state not written: ${error?.message ?? error}` })
       }
     }
 
@@ -685,6 +804,10 @@ export async function runDaily({
         path: written.digest,
         bytes: written.bytes,
         error: digestError ? String(digestError.message ?? digestError) : null,
+      },
+      sourceState: {
+        written: Boolean(written.state),
+        path: written.state,
       },
     }
     try {

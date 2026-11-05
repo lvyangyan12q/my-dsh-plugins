@@ -14,6 +14,8 @@ import { DEFAULT_QUOTA } from './pipeline/select.js'
 import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
 import { DEFAULT_OPENAI_CONFIG } from './sources/openai.js'
 import { DEFAULT_DEEPSEEK_CONFIG } from './sources/deepseek.js'
+import { DEFAULT_ANTHROPIC_CONFIG, validateAnthropicConfig } from './sources/anthropic.js'
+import { DEFAULT_KIMI_CONFIG, validateKimiConfig } from './sources/kimi.js'
 import { DEFAULT_HF_CONFIG } from './sources/hf.js'
 
 export const CONFIG_FILE = 'config.json'
@@ -69,6 +71,13 @@ export function defaultConfig() {
         excludeKeywords: [...DEFAULT_ARXIV_CONFIG.excludeKeywords],
       },
       deepseek: { ...DEFAULT_DEEPSEEK_CONFIG, useProxy: false },
+      anthropic: {
+        ...DEFAULT_ANTHROPIC_CONFIG,
+        useProxy: false,
+        prefixes: [...DEFAULT_ANTHROPIC_CONFIG.prefixes],
+        excludePaths: [...DEFAULT_ANTHROPIC_CONFIG.excludePaths],
+      },
+      kimi: { ...DEFAULT_KIMI_CONFIG, useProxy: false },
       // The HF daily board is the heat signal for the papers quota. It is
       // proxied by default because the official API is not directly reachable;
       // an unavailable proxy skips the source instead of going direct.
@@ -215,6 +224,8 @@ export function validateConfig(config, path = CONFIG_FILE) {
   }
 
   validateDeepSeek(config.sources?.deepseek, path)
+  validateAnthropicConfig(config.sources?.anthropic, path)
+  validateKimiConfig(config.sources?.kimi, path)
 
   for (const key of ['total', 'papers', 'blogs']) assertCount(config.quota?.[key], `quota.${key}`, path)
 

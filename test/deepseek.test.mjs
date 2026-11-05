@@ -400,8 +400,12 @@ test('a daily run writes the official pair, never calls translation and respects
       sources: {
         ...config.sources,
         deepseek: { ...config.sources.deepseek, lookbackDays: 3 },
-        // HF is proxied and this run has no proxy; its own tests cover that leg.
+        // The composed fake knows arXiv and DeepSeek; HF is proxied and this
+        // run has no proxy, and the blog adapters have their own suite. Their
+        // own tests cover those legs.
         hf: { ...config.sources.hf, enabled: false },
+        anthropic: { ...config.sources.anthropic, enabled: false },
+        kimi: { ...config.sources.kimi, enabled: false },
       },
     },
     fetch: impl,

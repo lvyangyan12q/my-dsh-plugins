@@ -307,6 +307,116 @@ export async function writeRunRecord({ root, date, record, maxBytes = MAX_RUN_BY
   return { date, path, bytes }
 }
 
+/* ------------------------------------------------------------------ */
+/* Source discovery state                                              */
+/* ------------------------------------------------------------------ */
+
+export const SOURCE_STATE_SCHEMA_VERSION = 1
+
+/** `$DSH_HOME/paper-reader/state/sources.json`. */
+export function sourceStatePath(root) {
+  return join(root, 'state', 'sources.json')
+}
+
+function isRecord(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+/**
+ * Read the per-source discovery memory.
+ *
+ * The file records, for every URL an adapter has already offered, the digest
+ * date on which it was first seen. A URL first seen on the current date is
+ * still "new" for that date, so re-running the same day reproduces the day
+ * instead of silently dropping yesterday's difference. A missing file is an
+ * empty memory, not an error.
+ */
+export async function readSourceState({ root }) {
+  const path = sourceStatePath(root)
+  let text
+  try {
+    text = await readFile(path, 'utf8')
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return {
+        state: { schemaVersion: SOURCE_STATE_SCHEMA_VERSION, updatedAt: null, sources: {} },
+        missing: true,
+      }
+    }
+    throw error
+  }
+
+  let parsed
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw storageError('source_state_invalid', 'state/sources.json is not valid JSON', 422)
+  }
+  if (!isRecord(parsed) || (parsed.sources !== undefined && !isRecord(parsed.sources))) {
+    throw storageError('source_state_invalid', 'state/sources.json must be an object with a sources object', 422)
+  }
+
+  const sources = {}
+  for (const [id, entry] of Object.entries(parsed.sources ?? {})) {
+    if (!isRecord(entry)) continue
+    const seen = isRecord(entry.seen) ? entry.seen : {}
+    sources[id] = {
+      seen,
+      updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : null,
+    }
+  }
+  return {
+    state: {
+      schemaVersion: SOURCE_STATE_SCHEMA_VERSION,
+      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : null,
+      sources,
+    },
+    missing: false,
+  }
+}
+
+/**
+ * Remember the URLs discovered for one source.
+ *
+ * Existing first-seen dates win, so the same-day rerun still sees the URL as
+ * new. The oldest entries are dropped past `maxUrls` to keep the file bounded.
+ */
+export function mergeSourceSeen(previous, sourceId, urls, {
+  date,
+  updatedAt,
+  maxUrls = 1000,
+} = {}) {
+  const existing = previous?.sources?.[sourceId]?.seen ?? {}
+  const seen = { ...existing }
+  for (const url of urls ?? []) {
+    if (typeof url !== 'string' || url.length === 0) continue
+    if (!Object.prototype.hasOwnProperty.call(seen, url)) seen[url] = date
+  }
+  const limit = Number.isInteger(maxUrls) && maxUrls > 0 ? maxUrls : 1000
+  const kept = Object.entries(seen).slice(-limit)
+  return {
+    schemaVersion: SOURCE_STATE_SCHEMA_VERSION,
+    updatedAt: updatedAt ?? previous?.updatedAt ?? null,
+    sources: {
+      ...(previous?.sources ?? {}),
+      [sourceId]: { seen: Object.fromEntries(kept), updatedAt: updatedAt ?? null },
+    },
+  }
+}
+
+/** Write the source discovery memory atomically. */
+export async function writeSourceState({ root, state, now = new Date() }) {
+  const path = sourceStatePath(root)
+  const text = JSON.stringify({
+    ...state,
+    schemaVersion: SOURCE_STATE_SCHEMA_VERSION,
+    updatedAt: state?.updatedAt ?? (now instanceof Date ? now.toISOString() : new Date(now).toISOString()),
+  })
+  await mkdir(dirname(path), { recursive: true })
+  await writeFileAtomic(path, text)
+  return { path, bytes: Buffer.byteLength(text, 'utf8') }
+}
+
 /** Read one run record; a missing record is `null`, not an error. */
 export async function readRunRecord({ root, date }) {
   if (!isDigestDate(date)) {

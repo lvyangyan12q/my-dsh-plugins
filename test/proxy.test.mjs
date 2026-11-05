@@ -347,13 +347,15 @@ function fakeSource(id, { listFetchUrl = null } = {}) {
 }
 
 /**
- * A run config for the proxy scenarios. DeepSeek is a direct source with its
- * own fixtures and tests; these scenarios describe fetch routing, so it is off
+ * A run config for the proxy scenarios. The blog sources have their own
+ * fixtures and tests; these scenarios describe fetch routing, so they are off
  * here to keep the expected source list focused on the sources under test.
  */
 function proxiedConfig(overrides = {}) {
   const config = defaultConfig()
-  config.sources.deepseek = { ...config.sources.deepseek, enabled: false }
+  for (const id of ['deepseek', 'anthropic', 'kimi']) {
+    config.sources[id] = { ...config.sources[id], enabled: false }
+  }
   return { ...config, ...overrides }
 }
 
