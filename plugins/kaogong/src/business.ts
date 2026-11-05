@@ -383,6 +383,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
         accuracyRate: statistics.accuracyRate,
         practiceStatistics: statistics,
         reviewQueue: state.errors.queue(),
+        unavailableSources: state.unavailableSources??[],
         bankTotal: bankQuestions.size,
         knowledgeTotal: knowledgeEntries.size,
         todayPlan: {

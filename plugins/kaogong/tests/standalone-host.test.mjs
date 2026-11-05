@@ -140,11 +140,30 @@ test('a confirmed local library import can be granted and revoked without Workta
     const scored = await app.request('/api/kaogong/practice/submit?viewId=' + learner.view.id, { roundId: issued.value.roundId, answers: [{ id: 'first', answer: 'B' }] })
     assert.equal(scored.status, 200)
     assert.equal(scored.value.correctCount, 1)
+    const wrongRound=(await app.request('/api/kaogong/practice/start?viewId='+learner.view.id,{subject:'行测-资料分析'})).value
+    await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:wrongRound.roundId,answers:[{id:'first',answer:'A'}]})
+    const unfinished = await app.request('/api/kaogong/practice/start?viewId=' + learner.view.id, {subject:'行测-资料分析'})
     const revoked = await app.request('/api/kaogong/study', { action: 'source-revoke', viewId: learner.view.id, id: shared.value.id, revision: shared.value.revision })
     assert.equal(revoked.status, 200)
     const empty = await app.request('/api/kaogong/practice/start?viewId=' + learner.view.id, { subject: '行测-资料分析', limit: 1 })
     assert.equal(empty.status, 403)
-    assert.equal((await app.request('/api/kaogong/practice/read?viewId=' + learner.view.id, { roundId: issued.value.roundId })).status, 403)
+    assert.equal((await app.request('/api/kaogong/practice/read?viewId=' + learner.view.id, { roundId: issued.value.roundId })).status, 200)
+    const dashboard=await app.request('/api/kaogong/dashboard?viewId='+learner.view.id)
+    assert.equal(dashboard.status,200);assert.equal(dashboard.value.totalCorrect,1);assert.deepEqual(dashboard.value.unavailableSources,['question-bank'])
+    assert.equal((await app.request('/api/kaogong/errors?viewId='+learner.view.id)).status,200)
+    assert.equal((await app.request('/api/kaogong/practice/history?viewId='+learner.view.id,{})).status,200)
+    const retry=await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:issued.value.roundId,answers:[{id:'first',answer:'B'}]})
+    assert.equal(retry.status,200);assert.equal(retry.value.correctCount,1)
+    assert.equal((await app.request('/api/kaogong/practice/read?viewId='+learner.view.id,{roundId:unfinished.value.roundId})).status,403)
+    assert.equal((await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:unfinished.value.roundId,answers:[{id:'first',answer:'B'}]})).status,403)
+    assert.equal((await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:issued.value.roundId,answers:[{id:'first',answer:'A'}]})).status,409)
+    const errorUrl='/api/kaogong/errors?viewId='+learner.view.id
+    const occurrence=(await app.request(errorUrl)).value.occurrences[0]
+    assert.equal((await app.request(errorUrl,{action:'enroll',id:occurrence.id,confirmed:true})).status,200)
+    const attempt=(await app.request(errorUrl,{action:'answer',id:occurrence.id,answer:'B',requestId:'revoked-review',earlyConfirmed:true})).value
+    assert.equal((await app.request(errorUrl,{action:'confirm',id:occurrence.id,attemptId:attempt.id,reflection:'使用自己的已交原题订正',confirmed:true})).status,200)
+    const other=await create('learner')
+    assert.notEqual((await app.request('/api/kaogong/practice/read?viewId='+other.view.id,{roundId:issued.value.roundId})).status,200)
     assert.equal((await app.request('/api/kaogong/study', { action: 'source-share', viewId: learner.view.id, ownerViewId: library.view.id, resourceId: 'question-bank' })).status, 200)
     const preserved = await app.request('/api/kaogong/practice/read?viewId=' + learner.view.id, { roundId: issued.value.roundId })
     assert.equal(preserved.value.result.correctCount, 1)
@@ -393,7 +412,7 @@ test('error occurrences survive a later correct round and require explicit enrol
   const restored=(await app.request(url)).value.occurrences[0]
   assert.equal(restored.review.stage,3);assert.equal(restored.review.history.length,5);assert.equal(restored.userAnswer,'A')
   await app.request('/api/kaogong/study',{action:'source-revoke',viewId,id:grant.id,revision:grant.revision})
-  assert.equal((await app.request(url)).status,403)
+  const retained=(await app.request(url));assert.equal(retained.status,200);assert.equal(retained.value.occurrences[0].review.history.length,5);assert.equal(retained.value.occurrences[0].userAnswer,'A')
  }finally{await app.close()}
 })
 
@@ -681,7 +700,11 @@ test('recall reveal and restored reads reauthorize a shared materials grant afte
  await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'回忆内容',earlyConfirmed:true});
  const reveal={action:'reveal',pointId:row.pointId,cycleId:row.cycleId};const shown=await app.request(url,reveal);assert.equal(shown.status,200,JSON.stringify(shown.value));assert.equal(shown.value.references[0].content,'获准共享原文');
  assert.equal((await app.request('/api/kaogong/study',{action:'source-revoke',viewId:learner.view.id,id:grant.value.id,revision:grant.value.revision})).status,200);
- const after=await app.request(url);assert.equal(after.status,403);assert.equal(JSON.stringify(after.value).includes('获准共享原文'),false);assert.equal((await app.request(url,reveal)).status,403);assert.equal((await app.request(url,{action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'remembered',confirmed:true})).status,403);
+ const after=await app.request(url);assert.equal(after.status,200);assert.equal(JSON.stringify(after.value).includes('获准共享原文'),false);assert.deepEqual(after.value.items[0].references,[]);assert.equal(after.value.items[0].recall,'回忆内容');assert.equal(after.value.items[0].cycleId,row.cycleId);assert.equal(after.value.items[0].referenceChanged,true);
+ const dashboard=await app.request('/api/kaogong/dashboard?viewId='+learner.view.id);assert.equal(dashboard.status,200);assert.deepEqual(dashboard.value.unavailableSources,['materials']);assert.equal(JSON.stringify(dashboard.value).includes('获准共享原文'),false);
+ const route=await app.request('/api/kaogong/route?viewId='+learner.view.id);assert.equal(route.status,200);assert.equal(route.value.coverage.total,73);assert.deepEqual(route.value.points.find(p=>p.id===row.pointId).materials,[]);
+ assert.equal((await app.request('/api/kaogong/knowledge?viewId='+learner.view.id)).status,403);
+ assert.equal((await app.request(url,reveal)).status,409);assert.equal((await app.request(url,{action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'remembered',confirmed:true})).status,409);
  assert.equal((await app.request('/api/kaogong/study',{action:'source-share',viewId:learner.view.id,ownerViewId:library.view.id,resourceId:'materials'})).status,200);const restored=(await app.request(url)).value.items[0];assert.equal(restored.cycleId,row.cycleId);assert.equal(restored.recall,'回忆内容');assert.equal(restored.history.length,0);
  }finally{await app.close()}
 })

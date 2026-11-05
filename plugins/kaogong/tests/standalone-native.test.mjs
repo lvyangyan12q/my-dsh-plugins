@@ -144,7 +144,7 @@ test('independent role HTTP creates a standard Native Session with private teach
     const library=(await post({action:'create',title:'合成资料库',kind:'library',confirmed:true})).value
     const material=(await post({action:'prepare',viewId:library.view.id},'/api/kaogong/material-import')).value
     assert.equal((await post({action:'apply',viewId:library.view.id,id:material.id,fingerprint:material.fingerprint,confirmed:true},'/api/kaogong/material-import')).status,200)
-    await post({action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
+    const bankGrant=(await post({action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})).value
     const practiceDraft=(await post({action:'preview',baseRevision:finished.value.revision,operation:'append',task:{subject:'行测-资料分析',title:'必须反思的建议',kind:'practice',requireReflections:true}},planPath)).value
     const practicePlan=(await post({action:'confirm',id:practiceDraft.id,revision:finished.value.revision,confirmed:true},planPath)).value
     const practiceTask=practicePlan.tasks.at(-1),begun=(await post({id:practiceTask.id,revision:practicePlan.revision},'/api/kaogong/plan/start?viewId='+viewId)).value
@@ -161,6 +161,14 @@ test('independent role HTTP creates a standard Native Session with private teach
     await assert.rejects(completionTool.execute({taskId:practiceTask.id,revision:begun.state.revision,confirmed:true},{agent}))
     await ctx.tools.get('kaogong_plan_view',agent).execute({}, {agent})
     await ctx.tools.get('kaogong_practice_read',agent).execute({}, {agent})
+    await post({action:'source-revoke',viewId,id:bankGrant.id,revision:bankGrant.revision})
+    const archivedScore=await ctx.tools.get('kaogong_practice_read',agent).execute({roundId:begun.round.roundId,instanceId:'foreign-profile'},{agent})
+    assert.ok(archivedScore.summary)
+    await assert.rejects(ctx.tools.get('kaogong_practice_read',agent).execute({roundId:begun.round.roundId},{agent:handles.get(ordinaryId).agent}))
+    const isolated=(await post({action:'create',title:'读取隔离',kind:'learner',confirmed:true})).value
+    const isolatedRole=(await post({action:'role-ensure',viewId:isolated.view.id,roleId:'class-advisor'})).value
+    await assert.rejects(ctx.tools.get('kaogong_practice_read',handles.get(isolatedRole.sessionId).agent).execute({roundId:begun.round.roundId},{agent:handles.get(isolatedRole.sessionId).agent}))
+    await post({action:'source-share',viewId,ownerViewId:library.view.id,resourceId:'question-bank'})
     await ctx.tools.get('kaogong_lesson_read',agent).execute({}, {agent})
     assert.deepEqual((await post(undefined,planPath)).value,practiceFinished.value)
     await assert.rejects(ctx.tools.get('kaogong_plan_set',agent).execute({examDate},{agent:handles.get(ordinaryId).agent}))

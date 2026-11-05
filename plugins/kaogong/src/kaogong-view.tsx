@@ -17,6 +17,7 @@ export type DashboardData = {
   pastDays: number
   pastDone: number
   pastDonePct: number
+  unavailableSources?: string[]
   practiceStatistics?: PracticeCounts & {errorReasons:{reason:string;count:number}[]}
   totalQuestions: number
   totalCorrect: number
