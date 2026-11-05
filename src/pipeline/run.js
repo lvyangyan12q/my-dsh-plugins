@@ -12,6 +12,7 @@
  *   why, and the previous day files stay untouched.
  */
 import { defaultConfig } from '../config.js'
+import { checkProxyHealth, proxySkipReason, redactProxyUrl, resolveProxyUrl } from '../proxy.js'
 import {
   DEFAULT_ARXIV_CONFIG,
   excerptBlocks,
@@ -32,7 +33,37 @@ export const DIRECTION_META = [
   { id: 'architecture', label: '架构', labelEn: 'Architecture' },
 ]
 
-export const SOURCE_META = [{ id: 'arxiv', label: 'arXiv', short: 'A' }]
+export const SOURCE_META = [
+  { id: 'arxiv', label: 'arXiv', short: 'A' },
+  { id: 'hf', label: 'Hugging Face', short: 'H' },
+  { id: 'openai', label: 'OpenAI', short: 'O' },
+]
+
+const SOURCE_LABELS = new Map(SOURCE_META.map(source => [source.id, source.label]))
+
+/**
+ * Built-in source adapters. Later source tickets add theirs here; the run also
+ * accepts an `adapters` override so a two-source proxy scenario is testable
+ * without inventing a production adapter.
+ */
+const BUILTIN_ADAPTERS = {
+  arxiv: {
+    list: ({ config, date, fetch }) => listArxiv({
+      config: config.sources?.arxiv ?? DEFAULT_ARXIV_CONFIG,
+      date,
+      fetch,
+    }),
+    extract: ({ candidate, config, fetch }) => extractArxivPaper({
+      candidate,
+      config: config.sources?.arxiv ?? DEFAULT_ARXIV_CONFIG,
+      fetch,
+    }),
+  },
+}
+
+function adapterFor(id, adapters) {
+  return adapters?.[id] ?? BUILTIN_ADAPTERS[id] ?? null
+}
 
 function usageError(code, message) {
   return Object.assign(new Error(message), { code, exitCode: 2, status: 400 })
@@ -47,23 +78,98 @@ function unique(values) {
 }
 
 /** List the candidates one source offers for the day. */
-async function listSource(id, { config, date, fetch: fetchImpl }) {
-  if (id === 'arxiv') {
-    return listArxiv({ config: config.sources?.arxiv ?? DEFAULT_ARXIV_CONFIG, date, fetch: fetchImpl })
+async function listSource(id, ctx, adapters) {
+  const adapter = adapterFor(id, adapters)
+  if (!adapter?.list) {
+    throw Object.assign(new Error(`source "${id}" is not implemented`), { code: 'source_unimplemented' })
   }
-  throw Object.assign(new Error(`source "${id}" is not implemented`), { code: 'source_unimplemented' })
+  return adapter.list(ctx)
 }
 
 /** Extract one selected candidate into reader blocks. */
-export async function extractCandidate(candidate, { config, fetch: fetchImpl }) {
-  if (candidate.sourceId === 'arxiv') {
-    return extractArxivPaper({
-      candidate,
-      config: config.sources?.arxiv ?? DEFAULT_ARXIV_CONFIG,
-      fetch: fetchImpl,
-    })
+export async function extractCandidate(candidate, { config, fetch: fetchImpl, adapters = null } = {}) {
+  const adapter = adapterFor(candidate.sourceId, adapters)
+  if (!adapter?.extract) {
+    throw Object.assign(new Error(`no extractor for source "${candidate.sourceId}"`), { code: 'source_unimplemented' })
   }
-  throw Object.assign(new Error(`no extractor for source "${candidate.sourceId}"`), { code: 'source_unimplemented' })
+  return adapter.extract({ candidate, config, fetch: fetchImpl })
+}
+
+/**
+ * Resolve the proxy policy for the sources that need it.
+ *
+ * The returned `state` is data (safe to store in the digest and run record);
+ * `transport` is the fetch the proxied sources must use, and is `null` whenever
+ * the state is not `ok`. A proxied source never receives the direct fetch.
+ */
+async function prepareProxy({ config, env, sourceIds, proxyFetch, fetchImpl, now }) {
+  const settings = config.proxy ?? {}
+  const state = {
+    status: 'not_needed',
+    origin: null,
+    url: null,
+    healthCheckUrl: settings.healthCheckUrl ?? null,
+    timeoutMs: settings.timeoutMs ?? null,
+    checkedAt: null,
+    latencyMs: null,
+    code: null,
+    error: null,
+    reason: null,
+    skipped: [],
+    probed: false,
+  }
+  if (sourceIds.length === 0) return { state, transport: null }
+
+  const resolved = resolveProxyUrl({ config, env })
+  state.origin = resolved.origin
+  state.url = redactProxyUrl(resolved.url)
+  state.skipped = [...sourceIds]
+
+  if (!resolved.url) {
+    state.status = resolved.code === 'proxy_invalid' ? 'failed' : 'unconfigured'
+    state.code = resolved.code
+    state.error = resolved.error
+    state.reason = proxySkipReason(state.code)
+    return { state, transport: null }
+  }
+
+  let transport = proxyFetch
+  if (!transport && resolved.origin === 'env') {
+    if (env?.NODE_USE_ENV_PROXY === '1') {
+      // Node routes its own fetch through the environment proxy under this flag.
+      transport = fetchImpl
+    } else {
+      state.status = 'failed'
+      state.code = 'proxy_env_disabled'
+      state.error = 'HTTP(S)_PROXY is set but NODE_USE_ENV_PROXY is not; start Node with NODE_USE_ENV_PROXY=1'
+      state.reason = proxySkipReason(state.code)
+      return { state, transport: null }
+    }
+  }
+  if (!transport) {
+    state.status = 'failed'
+    state.code = 'proxy_transport_missing'
+    state.error = 'proxy.url is configured but no proxy-capable fetch was provided'
+    state.reason = proxySkipReason(state.code)
+    return { state, transport: null }
+  }
+
+  const health = await checkProxyHealth({
+    url: resolved.url,
+    fetch: transport,
+    healthCheckUrl: settings.healthCheckUrl,
+    timeoutMs: settings.timeoutMs,
+    now,
+  })
+  state.status = health.status
+  state.code = health.code
+  state.error = health.error
+  state.checkedAt = health.checkedAt
+  state.latencyMs = health.latencyMs
+  state.probed = true
+  state.reason = health.status === 'ok' ? null : proxySkipReason(health.code)
+  if (health.status === 'ok') state.skipped = []
+  return { state, transport: health.status === 'ok' ? transport : null }
 }
 
 /** Text blocks start pending: the translation ticket fills them later. */
@@ -136,6 +242,11 @@ function toDigestItem(candidate, extraction, { collectedAt }) {
  * `root` is `$DSH_HOME/paper-reader`; `date` is the digest date; `config` is
  * the result of `loadConfig`. `dryRun` performs the same fetch, selection and
  * extraction but writes nothing.
+ *
+ * `proxyFetch` is the transport used for sources that declare `useProxy`; the
+ * host (or an environment-proxy-aware process) provides it. `env` is the
+ * proxy environment and `adapters` adds source adapters for tests and for
+ * later source tickets.
  */
 export async function runDaily({
   root,
@@ -144,38 +255,73 @@ export async function runDaily({
   source = null,
   dryRun = false,
   fetch: fetchImpl = globalThis.fetch,
+  proxyFetch = null,
   env = process.env,
+  adapters = null,
   now = () => new Date(),
 } = {}) {
   if (typeof root !== 'string' || root.length === 0) throw new TypeError('runDaily needs a data root')
   if (!isDigestDate(date)) throw usageError('invalid_date', `--date must be a real YYYY-MM-DD date, got ${date}`)
-  if (source !== null && !SOURCE_IDS.includes(source)) {
-    throw usageError('unsupported_source', `unsupported source "${source}"; available: ${SOURCE_IDS.join(', ')}`)
+  const availableSources = unique([...SOURCE_IDS, ...Object.keys(adapters ?? {})])
+  if (source !== null && !availableSources.includes(source)) {
+    throw usageError('unsupported_source', `unsupported source "${source}"; available: ${availableSources.join(', ')}`)
   }
 
   const resolved = config ?? defaultConfig()
   const startedAt = asDate(now())
   const startedMs = startedAt.getTime()
 
-  const activeSources = SOURCE_IDS.filter(id => (source ? id === source : resolved.sources?.[id]?.enabled !== false))
+  const activeSources = availableSources.filter(id => (source ? id === source : resolved.sources?.[id]?.enabled !== false))
   if (activeSources.length === 0) throw usageError('no_sources', 'no sources are enabled in config.json')
 
-  const counters = new Map(activeSources.map(id => [id, { requests: 0 }]))
+  const proxiedSources = activeSources.filter(id => resolved.sources?.[id]?.useProxy === true)
+  const proxy = await prepareProxy({
+    config: resolved,
+    env,
+    sourceIds: proxiedSources,
+    proxyFetch,
+    fetchImpl,
+    now,
+  })
+
+  const counters = new Map(activeSources.map(id => [id, {
+    requests: 0,
+    transport: proxiedSources.includes(id) ? proxy.transport : fetchImpl,
+  }]))
   const fetchFor = (id) => {
-    const counter = counters.get(id) ?? { requests: 0 }
+    const counter = counters.get(id) ?? { requests: 0, transport: fetchImpl }
     if (!counters.has(id)) counters.set(id, counter)
     return async (url, init) => {
       counter.requests += 1
-      return fetchImpl(url, init)
+      return counter.transport(url, init)
     }
   }
 
   const candidates = []
   const reports = []
   for (const id of activeSources) {
+    if (proxiedSources.includes(id) && !proxy.transport) {
+      // A proxied source is skipped, never retried through a direct connection.
+      reports.push({
+        id,
+        status: 'skipped',
+        candidates: 0,
+        selected: 0,
+        requests: 0,
+        durationMs: 0,
+        error: proxy.state.reason,
+        code: proxy.state.code,
+        reason: proxy.state.reason,
+      })
+      continue
+    }
     const sourceStarted = Date.now()
     try {
-      const listed = await listSource(id, { config: resolved, date, fetch: fetchFor(id) })
+      const listed = await listSource(
+        id,
+        { config: resolved, date, fetch: fetchFor(id), proxy: proxy.state },
+        adapters,
+      )
       candidates.push(...listed)
       reports.push({
         id,
@@ -216,7 +362,11 @@ export async function runDaily({
     if (report) report.selected += 1
     let extraction
     try {
-      extraction = await extractCandidate(candidate, { config: resolved, fetch: fetchFor(candidate.sourceId) })
+      extraction = await extractCandidate(candidate, {
+        config: resolved,
+        fetch: fetchFor(candidate.sourceId),
+        adapters,
+      })
     } catch (error) {
       extractionFailures += 1
       extraction = {
@@ -283,6 +433,13 @@ export async function runDaily({
       items: items.filter(item => item.sourceId === report.id).length,
     }
     if (report.error) entry.error = report.error
+    if (report.status === 'skipped') {
+      // A skipped source has no items to derive a label from, so it carries the
+      // reason and label the page needs to explain the gap.
+      entry.code = report.code
+      entry.reason = report.reason
+      entry.label = SOURCE_LABELS.get(report.id) ?? report.id
+    }
     return entry
   })
 
@@ -295,6 +452,7 @@ export async function runDaily({
       startedAt: startedAt.toISOString(),
       finishedAt: finishedIso,
       durationMs,
+      proxy: proxy.state,
       sources: sourceEntries,
       translation: {
         status: translation.status,
@@ -314,12 +472,14 @@ export async function runDaily({
 
   const counts = {
     sources: reports.length,
+    skipped: reports.filter(report => report.status === 'skipped').length,
     candidates: candidates.length,
     selected: selection.stats.selected,
     items: items.length,
     fullText: items.filter(item => item.excerpt === false).length,
     excerpt: items.filter(item => item.excerpt === true).length,
     extractionFailures,
+    proxyHealthChecks: proxy.state.probed ? 1 : 0,
     translated: items.filter(item => item.translationState === 'complete').length,
     translationPending: items.filter(item => item.translationState !== 'complete').length,
   }
@@ -353,6 +513,7 @@ export async function runDaily({
       finishedAt: finishedIso,
       durationMs,
       args: { source },
+      proxy: proxy.state,
       sources: reports,
       counts,
       selection: selection.stats,
@@ -377,6 +538,7 @@ export async function runDaily({
   if (digestError) errors.push(String(digestError.message ?? digestError))
   for (const report of reports) {
     if (report.status === 'failed') errors.push(`${report.id}: ${report.error}`)
+    if (report.status === 'skipped') errors.push(`${report.id}: skipped because ${report.reason}`)
   }
   if (shouldWrite && digestError) errors.push('the day digest was not written')
 
@@ -392,6 +554,7 @@ export async function runDaily({
     finishedAt: finishedIso,
     durationMs,
     counts,
+    proxy: proxy.state,
     sources: reports,
     selection: selection.stats,
     translation,

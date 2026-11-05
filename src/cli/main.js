@@ -90,9 +90,11 @@ export function dataRoot(env = process.env) {
 
 function summaryLine(result) {
   const sources = result.sources
-    .map(source => source.status === 'ok'
-      ? `${source.id} ok (${source.candidates})`
-      : `${source.id} ${source.status}`)
+    .map(source => {
+      if (source.status === 'ok') return `${source.id} ok (${source.candidates})`
+      if (source.status === 'skipped') return `${source.id} skipped (${source.reason})`
+      return `${source.id} ${source.status}`
+    })
     .join(' · ')
   const head = result.dryRun ? 'dry-run' : 'run'
   return `paper-reader ${head} ${result.date}: ${result.counts.items} items`
