@@ -58,3 +58,14 @@ test('real Host review page schedules then recovers only the failed plan write',
   await click('仅重试计划回写');assert.equal((await app.request(plan)).value.tasks[0].status,'completed');assert.equal((await app.request(url)).value.items[0].history.length,1)
  }finally{await act(async()=>root.unmount());globalThis.fetch=old;dom.window.close();for(const[k,v]of saved)v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k);await app.close()}
 })
+
+test('review center keeps same-day future reminders in future group',async(t)=>{
+ t.mock.timers.enable({apis:['Date'],now:new Date('2026-11-05T00:00:00Z')}); const oldZone=process.env.TZ;process.env.TZ='Asia/Shanghai';
+ const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map()
+ for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true})){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,writable:true,configurable:true})}
+ const old=globalThis.fetch
+ globalThis.fetch=async(input)=>new Response(JSON.stringify(String(input).includes('/route')?{points:[{id:'p1',subject:'资料分析',knowledgePoint:'增长率'}]}:String(input).includes('/recall')?{items:[{pointId:'p1',cycleId:'c1',dueAt:'2026-11-05T15:00:00Z',history:[]}]}:{occurrences:[{id:'o1',subject:'判断推理',knowledgePoint:'图形',review:{status:'scheduled',dueAt:'2099-01-01',history:[]}}]}))
+ let root=(await import('react-dom/client')).createRoot(document.getElementById('root')!)
+ try{const {ReviewCenter}=await import('../src/review-center.tsx');await act(async()=>root.render(<ReviewCenter/>));const later=[...document.querySelectorAll('h2')].find(h=>h.textContent==='后续')!.parentElement!;assert.match(later.textContent??'',/增长率/);const due=[...document.querySelectorAll('h2')].find(h=>h.textContent==='今日到期')!.parentElement!;assert.doesNotMatch(due.textContent??'',/增长率/)}
+ finally{await act(async()=>root.unmount());globalThis.fetch=old;if(oldZone===undefined)delete process.env.TZ;else process.env.TZ=oldZone;dom.window.close();for(const[k,v]of saved)v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k)}
+})
