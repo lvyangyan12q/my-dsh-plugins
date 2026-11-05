@@ -69,4 +69,3 @@ test('review center keeps same-day future reminders in future group',async(t)=>{
  try{const {ReviewCenter}=await import('../src/review-center.tsx');await act(async()=>root.render(<ReviewCenter/>));const later=[...document.querySelectorAll('h2')].find(h=>h.textContent==='后续')!.parentElement!;assert.match(later.textContent??'',/增长率/);const due=[...document.querySelectorAll('h2')].find(h=>h.textContent==='今日到期')!.parentElement!;assert.doesNotMatch(due.textContent??'',/增长率/)}
  finally{await act(async()=>root.unmount());globalThis.fetch=old;if(oldZone===undefined)delete process.env.TZ;else process.env.TZ=oldZone;dom.window.close();for(const[k,v]of saved)v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k)}
 })
-
