@@ -1,3 +1,4 @@
+import {Closeouts} from './closeouts.ts'
 import {Recalls} from './recalls.ts'
 import {ErrorReviews} from './error-reviews.ts'
 import type { DomainFacility, DomainSpec, Domain, KvTable, DomainGlobal } from '@deepseek-ai/dsh-storage-domain'
@@ -22,6 +23,7 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
     const rounds = await open(specs.practice), lessons = await open(specs.lessons), reviews = await open(specs.reviews)
     const recallDomain=await open(specs.recalls),recalls=new Recalls(recallDomain.table('recalls'))
     const planDomain=await open(specs.plan)
+    const closeoutDomain=await open(specs.closeouts), closeouts=new Closeouts(closeoutDomain.table('operations'))
     // Native KvTable/DomainGlobal validate on open, not put/set. Refuse a foreign
     // lesson or navigation pointer before writing it into this owner's namespace.
     const lessonRecords = checkedTable(lessons.table('lessons'), value => {
@@ -49,11 +51,12 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
     const state = Object.freeze({
       instanceId, questions: notebook.table('questions'), planConfig: progress.global, days: progress.table('days'),
       bankQuestions: bank.table('questions'), knowledgeEntries: knowledge.table('entries'), rounds: rounds.table('rounds'),
-      lessonRecords, lessonSelection, practice, lessons: teaching, plan, errors, recalls,
+      lessonRecords, lessonSelection, practice, lessons: teaching, plan, errors, recalls, closeouts,
     })
     return { state, close() {
       return closing ??= (async () => {
         const errors: unknown[] = []
+        try { await closeouts.close() } catch(error){errors.push(error)}
         try { await recalls.close() } catch(error){errors.push(error)}
         try { await plan.close() } catch(error){errors.push(error)}
         try { await teaching.close() } catch (error) { errors.push(error) }

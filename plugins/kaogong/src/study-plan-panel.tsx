@@ -10,7 +10,7 @@ import type {LessonView} from './lesson-schema.ts'
 import {TAXONOMY} from './taxonomy.ts'
 type Draft=StudyPlanState['drafts'][number]
 const today=studyDate
-export function StudyPlanPanel({onPage,onOpenTeacher,todayOnly=false}:{todayOnly?:boolean;onPage:(page:string)=>void;onOpenTeacher:KaogongViewProps['onOpenTeacher']}){
+export function StudyPlanPanel({onPage,onOpenTeacher,todayOnly=false,nextOnly=false}:{nextOnly?:boolean;todayOnly?:boolean;onPage:(page:string)=>void;onOpenTeacher:KaogongViewProps['onOpenTeacher']}){
  const drafts=usePracticeClient(),http=useLearningHttp(),owner=useRequestOwner(),[data,setData]=useState<StudyPlanState|null>(null),[preview,setPreview]=useState<Draft|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false)
  const [,setReviewTarget]=useBusinessState('review.target',null)
  const [routePoint,setRoutePoint]=useState<string|null>(null)
@@ -33,6 +33,7 @@ export function StudyPlanPanel({onPage,onOpenTeacher,todayOnly=false}:{todayOnly
  try{window.localStorage.setItem(recentKey,JSON.stringify([task.id,...recentIds().filter(id=>id!==task.id)].slice(0,100)))}catch{}
  })
  if(!data)return <p role="status">{error||'正在读取学习计划…'}</p>
+ if(nextOnly){const next=data.tasks.find(task=>task.status==='in-progress')??data.tasks.find(task=>task.status==='pending');return <section aria-label="下一项学习">{error&&<p role="alert">{error}</p>}{next?<button disabled={busy} onClick={()=>void start(next)}>继续下一项：{next.title}</button>:<p>当前计划没有未完成任务，可返回今日自主选择学习。</p>}</section>}
  if(todayOnly){const recent=recentIds().map(id=>data.tasks.find(t=>t.id===id&&t.status==='in-progress')).find(Boolean);const tasks=data.tasks.filter(t=>t.status!=='completed'&&(t.date===today()||t.status==='in-progress'));return <section aria-label="今日任务" style={{padding:20}}><h2>今日任务</h2>{recent&&<button disabled={busy} onClick={()=>void start(recent)}>继续最近任务：{recent.title}</button>}{error&&<p role="alert">{error}</p>}{!tasks.length&&<p>今天暂无可继续的任务，可查看计划、阅读资料或自由练习。</p>}{tasks.map(t=><article key={t.id}><h3>{t.title}</h3><p>{t.subject} · {{foundation:"基础",reinforce:"强化",sprint:"冲刺"}[t.phase]} · {t.date??'自主学习'}</p><button disabled={busy} onClick={()=>void start(t)}>{t.status==='in-progress'?'继续同一任务':'开始任务'}</button></article>)}<button onClick={()=>onPage('plan')}>查看学习计划</button><button onClick={()=>onPage('materials')}>阅读资料</button><button onClick={()=>onPage('practice')}>自由练习</button></section>}
 
  const end=new Date((/^\d{4}-\d{2}-\d{2}$/.test(date)?date:today())+'T00:00:00Z');end.setUTCDate(end.getUTCDate()+6);const weekEnd=end.toISOString().slice(0,10)

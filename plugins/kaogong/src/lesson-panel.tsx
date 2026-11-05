@@ -1,3 +1,4 @@
+import {LessonCloseout} from './lesson-closeout.tsx'
 import { useEffect } from 'react'
 import { BookOpen, Plus, Save, Check, Link, RefreshCw, Play } from 'lucide-react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
@@ -18,7 +19,7 @@ export async function lessonRequest<T>(action: string, body: unknown,send:(input
 }
 
 /** Shared instance-owned lesson UI; practice starts through the existing request/draft owner. */
-export function LessonPanel({ active, onPractice, onOpenTeacher }: { active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher'] }) {
+export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher'] }) {
   const http=useLearningHttp()
   const requestLesson=lessonRequest
   const request=<T,>(action:string,body:unknown)=>requestLesson<T>(action,body,http.fetch)
@@ -135,11 +136,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher }: { active: boo
         if (owner.cell('lesson.notes', '').value === notes) setNotesDirty(false)
         accept(value)
       })}><Save size={14} />保存总结</button>
-      {!view.lesson.completion && <label><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} />我确认本课任务已完成</label>}
-      <button data-pwb-button disabled={busy || !confirmed || !view.canConfirm || !!view.lesson.completion} style={{ justifySelf: 'start' }} onClick={() => void run(async () => {
-        accept(await request<LessonView>('confirm', { lessonId: view.lesson.request.lessonId, confirmed: true }))
-        setList(await request<typeof list>('list', {}))
-      })}><Check size={14} />确认完成课后任务</button>
+      <LessonCloseout onOpenTeacher={onOpenTeacher} onReturnToday={onReturnToday} view={view} notes={notes} accept={accept}/>
       <details><summary>共享证据摘要</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{view.summary}</pre></details>
     </div>}
   </section>
