@@ -26,13 +26,10 @@ import {
 import { mountPage } from './helpers/client.mjs'
 import {
   fakeDeepSeek,
-  MONO_EN,
   NEWS_EN,
-  NEWS_ZH,
-  PARTIAL_EN,
-  PARTIAL_ZH,
   SITEMAP,
 } from './helpers/deepseek.mjs'
+import { API_KEY, BASE_URL, fakeLlm, MODEL } from './helpers/llm.mjs'
 import { fakeSources } from './helpers/sources.mjs'
 
 const DATE = '2026-11-05'
@@ -449,6 +446,49 @@ test('a daily run writes the official pair, never calls translation and respects
   assert.equal(report.candidates, 3)
   assert.equal(report.selected, 1)
   assert.equal(report.requests, 3, 'one sitemap request plus the en/zh pair of the selected item')
+})
+
+test('the official pair never triggers a model translation request', async () => {
+  const root = tempRoot()
+  const { config } = await loadConfig({ root })
+  const llm = fakeLlm()
+  const { impl } = fakeSources()
+  const fetchImpl = async (url, init) => (String(url).includes('/chat/completions')
+    ? llm.impl(url, init)
+    : impl(url, init))
+
+  const result = await runDaily({
+    root,
+    date: '2026-11-04',
+    config: {
+      ...config,
+      sources: {
+        ...config.sources,
+        deepseek: { ...config.sources.deepseek, lookbackDays: 0 },
+      },
+    },
+    source: 'deepseek',
+    fetch: fetchImpl,
+    env: {
+      PAPER_READER_LLM_BASE_URL: BASE_URL,
+      PAPER_READER_LLM_API_KEY: API_KEY,
+      PAPER_READER_LLM_MODEL: MODEL,
+    },
+    now: NOW,
+  })
+
+  assert.equal(result.exitCode, 0)
+  assert.equal(llm.calls.length, 0, 'no Chat Completions request is made')
+  assert.equal(result.translation.requests, 0)
+  assert.equal(result.translation.status, 'complete')
+  assert.equal(result.translation.tokensUsed, 0)
+
+  const { digest } = await readDayDigest({ root, date: '2026-11-04' })
+  assert.equal(digest.items.length, 1)
+  assert.equal(digest.items[0].translationState, 'complete')
+  const textBlocks = digest.items[0].blocks.filter(block => block.type === 'heading' || block.type === 'paragraph')
+  assert.ok(textBlocks.length > 0)
+  assert.ok(textBlocks.every(block => Boolean(block.translation)))
 })
 
 test('a DeepSeek item without Chinese stays visible as an English pending item', async () => {
