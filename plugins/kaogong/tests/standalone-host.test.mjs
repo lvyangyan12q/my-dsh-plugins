@@ -483,7 +483,9 @@ test('review plan proposals stay inert and completion requires a new confirmed o
   await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:pendingBefore.id,reflection:'开始前已有的尝试',confirmed:true});
   assert.equal((await app.request(planUrl)).value.tasks[0].status,'in-progress');
   const incorrect=await answer('incorrect-after-task',task.id,'A');
-  await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:incorrect.id,reflection:'错误尝试仍保留',confirmed:true});
+  const wrongReceipt=await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:incorrect.id,reflection:'错误尝试仍保留',confirmed:true});
+  assert.equal(wrongReceipt.value.planPending,false);assert.match(wrongReceipt.value.planIncompleteReason,/订正/);
+  const wrongRead=(await app.request(errorUrl+'&mode=review')).value.occurrences.find(row=>row.id===item.id);assert.equal(wrongRead.planPending,false);assert.equal(wrongRead.retryConfirmation,undefined);assert.match(wrongRead.planIncompleteReason,/订正/);
   assert.equal((await app.request(planUrl)).value.tasks[0].status,'in-progress');
   const fresh=await answer('after-task',task.id)
   assert.equal((await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).status,409)

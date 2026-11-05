@@ -39,9 +39,13 @@ export function registerRecalls(registry: BusinessRegistry, state: KaogongInstan
                 let planTask: (typeof matches)[number] | undefined=matches[0];
                 if(body.action==='answer'&&planTask?.status==='pending'){await state.plan.start(planTask.id,state.plan.read().revision);planTask=state.plan.read().tasks.find(t=>t.id===planTask!.id)}
                 const result=await state.recalls.command(body,()=>references(body.pointId));
-                let planError:string|undefined;
-                if(body.action==='confirm'&&planTask&&planTask.status!=='completed')try{await state.plan.complete(planTask.id,state.plan.read().revision,true,{})}catch(error){planError=error instanceof Error?error.message:'计划待恢复'}
-                send(200,{...present(result),planTask:planTask?state.plan.read().tasks.find(t=>t.id===planTask!.id):null,planPending:!!planError,planError});
+                let planError:string|undefined,planIncompleteReason:string|undefined;
+                if(body.action==='confirm'&&planTask&&planTask.status!=='completed'){
+                  const proof=result.history.slice(planTask.reviewHistoryCount??0).find(h=>h.cycleId===body.cycleId);
+                  if(planTask.status!=='in-progress'||!proof)planIncompleteReason='尚无任务开始后的本次回忆确认，任务保持未完成';
+                  else try{await state.plan.complete(planTask.id,state.plan.read().revision,true,{})}catch(error){if(state.plan.read().tasks.find(t=>t.id===planTask!.id)?.status!=='completed')planError=error instanceof Error?error.message:'计划待恢复'}
+                }
+                send(200,{...present(result),planTask:planTask?state.plan.read().tasks.find(t=>t.id===planTask!.id):null,planPending:!!planError,planError,planIncompleteReason});
             }
             catch (error) {
                 send(error instanceof PracticeError ? error.status : 400, { error: error instanceof Error ? error.message : '回忆操作失败' });

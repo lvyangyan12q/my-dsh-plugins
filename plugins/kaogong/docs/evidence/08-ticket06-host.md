@@ -8,3 +8,5 @@
 - 回忆计划写失败返回planPending；刷新/Host重启可从真实历史与原任务恢复，相同confirm不重复推进周期。错题恢复指令为不含正文的retry-plan，不将旧反思泄露给新周期。
 - 公开Host红→绿：重复周期预览200改409；回忆任务缺关联字段改真实排程/提前完成；错题确认后原in-progress改completed。
 - 最新完整Host65/65、现有client38/38、domain21/21及build/双声明通过；之后补充过期周期预览拒绝用例单独通过。最终UI集成后须重跑相关门禁。
+
+审查补丁：错答/非开始后凭据属于业务未完成，POST与GET一致返回planPending=false和planIncompleteReason，不提供技术恢复按钮；只有正确确认的真实凭据写计划失败才标待恢复。新增公开错答确认回执及刷新投影断言先红后绿，两类关键Host2/2、Host声明通过。
