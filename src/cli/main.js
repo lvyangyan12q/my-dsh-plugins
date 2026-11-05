@@ -33,7 +33,9 @@ Options:
 Data:    $DSH_HOME/paper-reader/digest/YYYY-MM-DD.json
 Index:   $DSH_HOME/paper-reader/index.json
 Run log: $DSH_HOME/paper-reader/runs/YYYY-MM-DD.json
+Cache:   $DSH_HOME/paper-reader/cache/
 Config:  $DSH_HOME/paper-reader/config.json (optional)
+Model:   PAPER_READER_LLM_BASE_URL, PAPER_READER_LLM_API_KEY, PAPER_READER_LLM_MODEL
 `
 
 function usageError(message) {
@@ -102,6 +104,26 @@ function writtenLines(result) {
   return `\ndigest: ${result.written.digest}\nindex: ${result.written.index}\nrun: ${result.written.run}`
 }
 
+/**
+ * One extra line about translation, so a skip or a spent budget is visible on
+ * the terminal and not only in the run record. The key is never printed.
+ */
+function translationLine(result) {
+  const translation = result.translation
+  if (!translation) return ''
+  if (translation.status === 'skipped') {
+    return `\ntranslation: skipped (${translation.reason})`
+  }
+  const parts = [
+    `translation: ${translation.status}`,
+    `${translation.tokensUsed}/${translation.tokenBudget} tokens`,
+  ]
+  if (translation.cacheHits > 0) parts.push(`cache ${translation.cacheHits}`)
+  if (translation.budgetExceeded) parts.push('daily budget reached')
+  if (translation.pendingItems > 0) parts.push(`${translation.pendingItems} item(s) pending`)
+  return `\n${parts.join(' · ')}`
+}
+
 /** Run the CLI and resolve the process exit code. */
 export async function main(argv = process.argv.slice(2), deps = {}) {
   const env = deps.env ?? process.env
@@ -135,10 +157,11 @@ export async function main(argv = process.argv.slice(2), deps = {}) {
       source: options.source,
       dryRun: options.dryRun === true,
       fetch: fetchImpl,
+      env,
       now,
     })
 
-    stdout.write(`${summaryLine(result)}${writtenLines(result)}\n`)
+    stdout.write(`${summaryLine(result)}${translationLine(result)}${writtenLines(result)}\n`)
     if (result.errors.length > 0) {
       for (const message of result.errors) stderr.write(`paper-reader: ${message}\n`)
     }
