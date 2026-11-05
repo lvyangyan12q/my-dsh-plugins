@@ -6,11 +6,19 @@
  * never written back: a scheduled run must not rewrite what the user tuned.
  * Invalid values are explicit errors naming the key, because silently ignoring
  * them would run with a different quota than the user asked for.
+ *
+ * The per-source defaults and validation live next to each adapter and are
+ * collected by the registry, so adding a source does not grow this file.
  */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { DEFAULT_QUOTA } from './pipeline/select.js'
-import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
+import { SOURCES } from './sources/registry.js'
+import {
+  assertPositive,
+  configError,
+  isPlainObject,
+} from './sources/validation.js'
 
 export const CONFIG_FILE = 'config.json'
 export const DEFAULT_RETENTION_DAYS = 30
@@ -34,25 +42,26 @@ export const DEFAULT_TRANSLATION_CONFIG = {
   model: null,
 }
 
-function isPlainObject(value) {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+function cloneDefaults(defaults) {
+  const copy = { ...defaults }
+  for (const [key, value] of Object.entries(copy)) {
+    if (Array.isArray(value)) copy[key] = [...value]
+  }
+  return copy
 }
 
-function configError(message) {
-  return Object.assign(new Error(message), { code: 'config_invalid', exitCode: 2, status: 400 })
+function defaultSources() {
+  const sources = {}
+  for (const [id, definition] of Object.entries(SOURCES)) {
+    sources[id] = cloneDefaults(definition.defaults)
+  }
+  return sources
 }
 
 /** Built-in configuration, deep-cloned so callers cannot mutate the defaults. */
 export function defaultConfig() {
   return {
-    sources: {
-      arxiv: {
-        ...DEFAULT_ARXIV_CONFIG,
-        categories: [...DEFAULT_ARXIV_CONFIG.categories],
-        keywords: [...DEFAULT_ARXIV_CONFIG.keywords],
-        excludeKeywords: [...DEFAULT_ARXIV_CONFIG.excludeKeywords],
-      },
-    },
+    sources: defaultSources(),
     quota: { ...DEFAULT_QUOTA },
     translation: { ...DEFAULT_TRANSLATION_CONFIG, glossary: [] },
     retentionDays: DEFAULT_RETENTION_DAYS,
@@ -65,22 +74,24 @@ export function mergeConfig(user, path = CONFIG_FILE) {
   for (const key of ['sources', 'quota', 'translation']) {
     if (key in user && !isPlainObject(user[key])) throw configError(`${path}: ${key} must be an object`)
   }
-  if (isPlainObject(user.sources) && 'arxiv' in user.sources && !isPlainObject(user.sources.arxiv)) {
-    throw configError(`${path}: sources.arxiv must be an object`)
-  }
 
   const defaults = defaultConfig()
+  const sources = {}
+  for (const id of Object.keys(SOURCES)) {
+    const userSource = user.sources?.[id]
+    if (userSource !== undefined && !isPlainObject(userSource)) {
+      throw configError(`${path}: sources.${id} must be an object`)
+    }
+    sources[id] = {
+      ...defaults.sources[id],
+      ...(isPlainObject(userSource) ? userSource : {}),
+    }
+  }
+
   return {
     ...defaults,
     ...user,
-    sources: {
-      ...defaults.sources,
-      ...(isPlainObject(user.sources) ? user.sources : {}),
-      arxiv: {
-        ...defaults.sources.arxiv,
-        ...(isPlainObject(user.sources?.arxiv) ? user.sources.arxiv : {}),
-      },
-    },
+    sources,
     quota: { ...defaults.quota, ...(isPlainObject(user.quota) ? user.quota : {}) },
     translation: {
       ...defaults.translation,
@@ -93,48 +104,21 @@ export function mergeConfig(user, path = CONFIG_FILE) {
   }
 }
 
-function assertStringList(value, key, path, { allowEmpty = true } = {}) {
-  if (!Array.isArray(value)) throw configError(`${path}: ${key} must be an array of strings`)
-  if (value.some(entry => typeof entry !== 'string' || entry.trim().length === 0)) {
-    throw configError(`${path}: ${key} must only contain non-empty strings`)
-  }
-  if (!allowEmpty && value.length === 0) throw configError(`${path}: ${key} must not be empty`)
-}
-
 function assertCount(value, key, path) {
   if (!Number.isInteger(value) || value < 0) throw configError(`${path}: ${key} must be a non-negative integer`)
 }
 
-function assertPositive(value, key, path) {
-  if (!Number.isFinite(value) || value <= 0) throw configError(`${path}: ${key} must be a positive number`)
-}
-
-function assertUrl(value, key, path) {
-  if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) {
-    throw configError(`${path}: ${key} must be an http(s) URL`)
-  }
-}
-
 /** Validate the merged config, naming the offending key. */
 export function validateConfig(config, path = CONFIG_FILE) {
-  const arxiv = config.sources?.arxiv
-  if (!isPlainObject(arxiv)) throw configError(`${path}: sources.arxiv must be an object`)
-  if (typeof arxiv.enabled !== 'boolean') throw configError(`${path}: sources.arxiv.enabled must be true or false`)
-  assertStringList(arxiv.categories, 'sources.arxiv.categories', path)
-  assertStringList(arxiv.keywords, 'sources.arxiv.keywords', path)
-  assertStringList(arxiv.excludeKeywords, 'sources.arxiv.excludeKeywords', path)
-  if (!Number.isInteger(arxiv.maxResults) || arxiv.maxResults <= 0) {
-    throw configError(`${path}: sources.arxiv.maxResults must be a positive integer`)
+  if (!isPlainObject(config.sources)) throw configError(`${path}: sources must be an object`)
+  for (const [id, definition] of Object.entries(SOURCES)) {
+    const source = config.sources[id]
+    if (!isPlainObject(source)) throw configError(`${path}: sources.${id} must be an object`)
+    if (typeof source.enabled !== 'boolean') {
+      throw configError(`${path}: sources.${id}.enabled must be true or false`)
+    }
+    definition.validateConfig(source, path)
   }
-  if (typeof arxiv.extractFullText !== 'boolean') {
-    throw configError(`${path}: sources.arxiv.extractFullText must be true or false`)
-  }
-  assertPositive(arxiv.timeoutMs, 'sources.arxiv.timeoutMs', path)
-  if (!Number.isInteger(arxiv.maxBlocks) || arxiv.maxBlocks <= 0) {
-    throw configError(`${path}: sources.arxiv.maxBlocks must be a positive integer`)
-  }
-  assertUrl(arxiv.baseUrl, 'sources.arxiv.baseUrl', path)
-  assertUrl(arxiv.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
 
   for (const key of ['total', 'papers', 'blogs']) assertCount(config.quota?.[key], `quota.${key}`, path)
 
@@ -171,7 +155,11 @@ export function validateConfig(config, path = CONFIG_FILE) {
       throw configError(`${path}: translation.${key} must be a string or null`)
     }
   }
-  if (translation.baseUrl) assertUrl(translation.baseUrl, 'translation.baseUrl', path)
+  if (translation.baseUrl) {
+    if (!/^https?:\/\//i.test(translation.baseUrl)) {
+      throw configError(`${path}: translation.baseUrl must be an http(s) URL`)
+    }
+  }
   if (translation.glossaryVersion !== null && translation.glossaryVersion !== undefined
     && typeof translation.glossaryVersion !== 'string' && typeof translation.glossaryVersion !== 'number') {
     throw configError(`${path}: translation.glossaryVersion must be a string, a number or null`)

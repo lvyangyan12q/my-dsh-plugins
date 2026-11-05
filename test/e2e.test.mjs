@@ -8,7 +8,7 @@
  * about paths, the v2 contract or the pending-translation shape.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, test } from 'node:test'
@@ -24,6 +24,19 @@ const profileDir = join(home, 'profiles', 'web')
 mkdirSync(profileDir, { recursive: true })
 
 after(() => rmSync(home, { recursive: true, force: true }))
+
+/**
+ * These scenarios exercise the arXiv path end to end with a fetch that only
+ * knows arXiv; the blog adapters are covered by their own fixture suite.
+ */
+function writeArxivOnlyConfig(homeDir) {
+  const root = join(homeDir, 'paper-reader')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(
+    join(root, 'config.json'),
+    JSON.stringify({ sources: { anthropic: { enabled: false }, kimi: { enabled: false } } }),
+  )
+}
 
 function capture() {
   const chunks = []
@@ -63,6 +76,7 @@ function createHost(profile = profileDir) {
 }
 
 test('CLI → host → reading page renders the day with pending translations', async () => {
+  writeArxivOnlyConfig(home)
   const stdout = capture()
   const stderr = capture()
   const code = await main(['--date', DATE], {
@@ -128,6 +142,7 @@ test('a translated day renders the Chinese text without pending placeholders in 
   mkdirSync(translatedProfile, { recursive: true })
 
   try {
+    writeArxivOnlyConfig(translatedHome)
     const stdout = capture()
     const stderr = capture()
     const llm = fakeLlm()

@@ -56,17 +56,19 @@ $DSH_HOME/paper-reader/
 
 采集链路方案已定：[实现规格](docs/wayfinder/daily-pipeline/spec.md) 与 [11 张纵向切片工单](docs/wayfinder/daily-pipeline/implementation/README.md) 是唯一实施入口。目标：每天 10 条、全文抽取、中英对照、按天 digest、DSH Schedule 每日运行；来源 arXiv、HF 每日榜、Anthropic、DeepSeek、Kimi、OpenAI；HF/OpenAI 需显式代理；X 预留，Claude Code 与 DSH `web_search` 不在范围内。
 
-当前已实现第一条链路（工单 03/04）：CLI → arXiv 列表/LaTeXML 抽取 → 选择/去重/配额 → 段落批量翻译 → 当日 digest + 索引 + run 记录。没有模型配置时条目保持 `translation: null` / `translationState: "pending"` 并明确跳过；页面显示「翻译进行中」。
+当前已实现论文与英文博客链路（工单 03/04/06）：CLI → arXiv 列表/LaTeXML 抽取、Anthropic sitemap、Kimi 博客列表 → 选择/去重/配额 → 正文抽取 → 段落批量翻译 → 当日 digest + 索引 + run 记录。没有模型配置时条目保持 `translation: null` / `translationState: "pending"` 并明确跳过；页面显示「翻译进行中」。
 
 ```powershell
 node scripts/paper-reader.mjs --date 2026-11-05
-node scripts/paper-reader.mjs --dry-run        # 只抓取和统计，不写任何文件，也不调用翻译
-node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源
+node scripts/paper-reader.mjs --dry-run                # 只抓取和统计，不写任何文件，也不调用翻译
+node scripts/paper-reader.mjs --source anthropic       # 只跑一个来源：arxiv / anthropic / kimi
 ```
 
 - 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s）。工具只读该文件，不会覆盖。
 - 示例：`{"quota":{"papers":4},"sources":{"arxiv":{"categories":["cs.CL"],"keywords":["agent"]}}}`。
 - arXiv 正文取 `arxiv.org/html/<id>`（LaTeXML），保留标题、段落、公式、图注与代码；HTML 缺失时回退摘要并标记「节选」。
+- Anthropic 从 `sitemap.xml` 的 `/news/`、`/research/` 取新 URL（与已见 URL 差集），正文取 `main#main-content`，标题/日期/作者取 `ld+json`；单篇失败跳过并记录，不影响其他来源。
+- Kimi 从 `www.kimi.com/blog/` 卡片取标题与发布日期，正文取 `main.layout-content`，明/暗重复图按图片 URL 去重；英文正文进入翻译，与其他来源共享每日 4 条博客配额。
 - 翻译使用 OpenAI 兼容 Chat Completions 端点，环境变量：`PAPER_READER_LLM_BASE_URL`、`PAPER_READER_LLM_API_KEY`、`PAPER_READER_LLM_MODEL`（也可在 `translation.baseUrl/apiKey/model` 固定）。三者缺一时整轮翻译明确跳过并写入 run 记录，不影响抓取。
 - 翻译按块批量（每批 6–12 块）、标题/图注/公式说明单独处理；公式主体与代码不翻译。单块失败重试 2 次后保持 pending，其余块照常。
 - 译文缓存在 `$DSH_HOME/paper-reader/cache/`，键为原文、目标语言、模型与术语表版本的 SHA-256；重复运行不再付费。术语表内置常用 AI 词汇，可用 `translation.glossary` 覆盖。

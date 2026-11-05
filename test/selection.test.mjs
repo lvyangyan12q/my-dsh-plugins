@@ -89,6 +89,46 @@ test('category filters drop off-category papers but keep sources without categor
   assert.deepEqual(selected.map(item => item.id), [inCategory.id, noCategories.id])
 })
 
+test('blog posts fill the shared blog quota newest first, sharing it between sources', () => {
+  const blog = (sourceId, slug, publishedAt) => candidate({
+    id: `${sourceId}:${slug}`,
+    sourceId,
+    arxivId: null,
+    kind: 'blog',
+    title: `${sourceId} ${slug}`,
+    url: `https://example.test/${sourceId}/${slug}`,
+    categories: [],
+    publishedAt,
+  })
+
+  const anthropic = [
+    blog('anthropic', 'a-new', '2026-11-04T12:00:00Z'),
+    blog('anthropic', 'a-mid', '2026-11-03T12:00:00Z'),
+    blog('anthropic', 'a-old', '2026-10-01T12:00:00Z'),
+  ]
+  const kimi = [
+    blog('kimi', 'k-new', '2026-11-04T10:00:00Z'),
+    blog('kimi', 'k-mid', '2026-11-02T10:00:00Z'),
+  ]
+  const papers = Array.from({ length: 3 }, () => candidate())
+
+  const { selected, stats } = selectDaily([...papers, ...anthropic, ...kimi], {
+    quota: { total: 10, papers: 6, blogs: 4 },
+  })
+
+  assert.equal(selected.length, 7)
+  assert.equal(stats.paperLimit, 3)
+  assert.equal(stats.blogLimit, 4)
+  const blogs = selected.filter(item => item.kind === 'blog')
+  assert.equal(blogs.length, 4)
+  assert.deepEqual(blogs.map(item => item.id).sort(), [
+    'anthropic:a-mid',
+    'anthropic:a-new',
+    'kimi:k-mid',
+    'kimi:k-new',
+  ])
+})
+
 test('keyword hits in the title outrank summary-only hits, then recency breaks ties', () => {
   const summaryOld = candidate({ title: 'A study of planning', summary: 'We use an agent.', publishedAt: '2026-11-04T09:00:00Z' })
   const summaryNew = candidate({ title: 'Another planning study', summary: 'We also use an agent.', publishedAt: '2026-11-04T20:00:00Z' })

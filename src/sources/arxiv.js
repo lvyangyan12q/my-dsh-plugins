@@ -24,6 +24,10 @@ import {
   parseMarkup,
   textOf,
 } from '../shared/markup.js'
+import { classifyDirection, matchedWords } from './direction.js'
+import { assertPositive, assertStringList, assertUrl, configError, isPlainObject } from './validation.js'
+
+export { classifyDirection }
 
 export const SOURCE_ID = 'arxiv'
 
@@ -40,30 +44,6 @@ export const DEFAULT_ARXIV_CONFIG = {
   maxBlocks: 400,
   userAgent: 'dsh-paper-reader/0.1 (+https://arxiv.org/help/api)',
 }
-
-/** Direction rules, most specific first; the first hit wins. */
-const DIRECTION_RULES = [
-  {
-    direction: 'agent',
-    words: ['agent', 'agentic', 'tool use', 'tool-use', 'multi-agent', 'multiagent', 'autonomous agent'],
-  },
-  {
-    direction: 'reasoning',
-    words: ['reasoning', 'chain-of-thought', 'chain of thought', 'theorem', 'logic', 'test-time', 'inference-time'],
-  },
-  {
-    direction: 'training',
-    words: ['pretrain', 'pre-train', 'training', 'fine-tun', 'fine tun', 'rlhf', 'distillation', 'distill', 'scaling law', 'data mixture'],
-  },
-  {
-    direction: 'alignment',
-    words: ['alignment', 'safety', 'preference optimization', 'jailbreak', 'reward model', 'rlaif', 'red team'],
-  },
-  {
-    direction: 'architecture',
-    words: ['architecture', 'mixture-of-experts', 'mixture of experts', 'moe', 'attention', 'transformer', 'kernel', 'quantization', 'efficient inference'],
-  },
-]
 
 const SKIP_TAGS = new Set(['script', 'style', 'nav', 'header', 'footer', 'aside', 'form', 'button', 'svg'])
 const SKIP_CLASSES = [
@@ -163,27 +143,6 @@ export function buildArxivQueryUrl({ baseUrl, categories = [], date, maxResults 
   url.searchParams.set('sortBy', 'submittedDate')
   url.searchParams.set('sortOrder', 'descending')
   return url.toString()
-}
-
-/** Classify a paper into one of the reader's directions. */
-export function classifyDirection({ title = '', summary = '' } = {}) {
-  const haystack = `${title}\n${summary}`.toLowerCase()
-  for (const rule of DIRECTION_RULES) {
-    if (rule.words.some(word => haystack.includes(word))) return rule.direction
-  }
-  return 'architecture'
-}
-
-/** Trigger words that actually matched, used as searchable tags. */
-function matchedWords(entry) {
-  const haystack = `${entry.title}\n${entry.summary}`.toLowerCase()
-  const words = []
-  for (const rule of DIRECTION_RULES) {
-    for (const word of rule.words) {
-      if (haystack.includes(word) && !words.includes(word)) words.push(word)
-    }
-  }
-  return words.slice(0, 4)
 }
 
 function toCandidate(entry) {
@@ -426,4 +385,40 @@ export async function extractArxivPaper({ candidate, config, fetch: fetchImpl })
     return fallback('arXiv HTML did not contain readable sections')
   }
   return { blocks, excerpt: false, warnings: [] }
+}
+
+/** Validate the arXiv section of the user config. */
+export function validateArxivConfig(config, path) {
+  if (!isPlainObject(config)) throw configError(`${path}: sources.arxiv must be an object`)
+  if (typeof config.enabled !== 'boolean') {
+    throw configError(`${path}: sources.arxiv.enabled must be true or false`)
+  }
+  assertStringList(config.categories, 'sources.arxiv.categories', path)
+  assertStringList(config.keywords, 'sources.arxiv.keywords', path)
+  assertStringList(config.excludeKeywords, 'sources.arxiv.excludeKeywords', path)
+  if (!Number.isInteger(config.maxResults) || config.maxResults <= 0) {
+    throw configError(`${path}: sources.arxiv.maxResults must be a positive integer`)
+  }
+  if (typeof config.extractFullText !== 'boolean') {
+    throw configError(`${path}: sources.arxiv.extractFullText must be true or false`)
+  }
+  assertPositive(config.timeoutMs, 'sources.arxiv.timeoutMs', path)
+  if (!Number.isInteger(config.maxBlocks) || config.maxBlocks <= 0) {
+    throw configError(`${path}: sources.arxiv.maxBlocks must be a positive integer`)
+  }
+  assertUrl(config.baseUrl, 'sources.arxiv.baseUrl', path)
+  assertUrl(config.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
+}
+
+export const ARXIV_SOURCE = {
+  id: SOURCE_ID,
+  kind: 'paper',
+  label: 'arXiv',
+  short: 'A',
+  defaults: DEFAULT_ARXIV_CONFIG,
+  tracksSeen: false,
+  onExtractFailure: 'excerpt',
+  list: listArxiv,
+  extract: extractArxivPaper,
+  validateConfig: validateArxivConfig,
 }

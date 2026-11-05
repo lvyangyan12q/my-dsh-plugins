@@ -150,6 +150,49 @@ function kindOf(candidate) {
   return candidate.kind === 'blog' ? 'blog' : 'paper'
 }
 
+function compareBlogRecency(left, right) {
+  const leftTime = Date.parse(left.publishedAt ?? '') || 0
+  const rightTime = Date.parse(right.publishedAt ?? '') || 0
+  if (leftTime !== rightTime) return rightTime - leftTime
+  return String(left.id) < String(right.id) ? -1 : String(left.id) > String(right.id) ? 1 : 0
+}
+
+/**
+ * Fill the blog quota newest-first while giving every source a turn.
+ *
+ * Blog posts are picked by publication date, not by keyword score: the spec
+ * asks for the latest post of each source. Round-robin over the sources keeps
+ * one prolific feed from taking all four slots, which is what "share the daily
+ * quota" means for Anthropic + Kimi + DeepSeek + OpenAI.
+ */
+export function selectBlogs(blogs, limit) {
+  if (!Number.isInteger(limit) || limit <= 0) return []
+  const groups = new Map()
+  for (const blog of blogs) {
+    const sourceId = String(blog.sourceId ?? blog.source ?? '')
+    if (!groups.has(sourceId)) groups.set(sourceId, [])
+    groups.get(sourceId).push(blog)
+  }
+  const queues = [...groups.values()]
+    .map(group => [...group].sort(compareBlogRecency))
+    .sort((left, right) => compareBlogRecency(left[0], right[0]))
+
+  const picked = []
+  while (picked.length < limit) {
+    let added = false
+    for (const queue of queues) {
+      if (picked.length >= limit) break
+      const next = queue.shift()
+      if (next) {
+        picked.push(next)
+        added = true
+      }
+    }
+    if (!added) break
+  }
+  return picked.sort(compareBlogRecency)
+}
+
 /**
  * Select the day's items from all sources' candidates.
  *
@@ -177,7 +220,8 @@ export function selectDaily(candidates, options = {}) {
   const paperLimit = Math.min(quota.papers, quota.total)
   const selectedPapers = papers.slice(0, paperLimit)
   const blogLimit = Math.min(quota.blogs, Math.max(0, quota.total - selectedPapers.length))
-  const selected = [...selectedPapers, ...blogs.slice(0, blogLimit)]
+  const selectedBlogs = selectBlogs(blogs, blogLimit)
+  const selected = [...selectedPapers, ...selectedBlogs]
 
   return {
     selected,

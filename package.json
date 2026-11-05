@@ -41,7 +41,7 @@
     "build": "node build.mjs",
     "check": "node --check lib/index.js && node --check lib/client.js && node --check scripts/paper-reader.mjs",
     "digest": "node scripts/paper-reader.mjs",
-    "test": "node test/host.test.mjs && node test/storage.test.mjs && node test/client.test.mjs && node test/history.test.mjs && node test/arxiv.test.mjs && node test/selection.test.mjs && node test/pipeline.test.mjs && node test/cli.test.mjs && node test/translation.test.mjs && node test/e2e.test.mjs",
+    "test": "node test/host.test.mjs && node test/storage.test.mjs && node test/client.test.mjs && node test/history.test.mjs && node test/arxiv.test.mjs && node test/selection.test.mjs && node test/pipeline.test.mjs && node test/blog-sources.test.mjs && node test/cli.test.mjs && node test/translation.test.mjs && node test/e2e.test.mjs",
     "test:host": "node test/host.test.mjs",
     "test:storage": "node test/storage.test.mjs",
     "test:client": "node test/client.test.mjs",
@@ -49,6 +49,7 @@
     "test:arxiv": "node test/arxiv.test.mjs",
     "test:selection": "node test/selection.test.mjs",
     "test:pipeline": "node test/pipeline.test.mjs",
+    "test:blogs": "node test/blog-sources.test.mjs",
     "test:cli": "node test/cli.test.mjs",
     "test:translation": "node test/translation.test.mjs",
     "test:e2e": "node test/e2e.test.mjs"
