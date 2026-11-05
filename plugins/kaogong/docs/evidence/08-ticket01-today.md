@@ -5,3 +5,5 @@
 公开页面TDD：今日和最近入口分别red→green；同任务/切任务/卸载重建答案与总结恢复；具体错题目标red→green。client全套27/27通过。实际筛选/滚动持久化还需专项页面断言；准确包、Native模型和真实桌面窄屏视觉验收尚未执行，不能以源码代替。
 
 专项补齐：通过真实Sdk双owner Provider、卸载并重建root/pool验证计划筛选、滚动和导航同视图恢复、另一视图隔离。任务编辑最近活动测试先red，改为实际practice.context.taskId/lesson.request.taskId后green，不依赖残留activeId。完整client28/28通过；源码合同待集成审查，准确包与实际视觉留08。
+
+集成审查窄修复：具体复习目标可通过“返回全部错题”清除本视图目标；普通导航和概览队列入口清目标返回完整列表。真实Sdk双owner测试先复现缺返回按钮red，修复后验证指定项→全部及普通导航完整队列green。client28/28。
