@@ -41,12 +41,13 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
       key => options.readBinding?.(instanceId, key) ?? Promise.resolve(null), lessonSelection)
     const errors=new ErrorReviews(rounds.table('rounds'),reviews.table('reviews'))
     const plan=new StudyPlan(planDomain.global,async(task,input)=>{
-      if(task.reviewOccurrence){if(task.status!=='in-progress'||task.reviewHistoryCount===undefined)throw Error('请先开始本次复习任务');const proof=errors.readConfirmed(JSON.stringify([task.reviewOccurrence.roundId,task.reviewOccurrence.questionId]),undefined,task.reviewHistoryCount);if(proof.subject!==task.subject)throw Error('复习科目与任务不一致');return proof}
+      if(task.recallReference){const ref=task.recallReference,row=recalls.list().find(r=>r.pointId===ref.pointId);const proof=row?.history.slice(task.reviewHistoryCount??0).find(h=>h.cycleId===ref.cycleId);if(task.status!=='in-progress'||!proof)throw Error('尚无本次回忆确认');return proof}
+      if(task.reviewOccurrence){if(task.status!=='in-progress'||task.reviewHistoryCount===undefined)throw Error('请先开始本次复习任务');const proof=errors.readConfirmed(JSON.stringify([task.reviewOccurrence.roundId,task.reviewOccurrence.questionId]),undefined,task.reviewHistoryCount);if(task.reviewCycle&&proof.planTaskId!==task.id)throw Error('复习尝试未绑定此计划');if(proof.subject!==task.subject)throw Error('复习科目与任务不一致');return proof}
       if(!input.roundId)throw Error('需要匹配的已提交练习轮次及错因反思证据')
       const round=(await practice.readCompleted(input.roundId))?.round,result=round?.result
       if(!round||!result||round.context.taskId!==task.id||round.context.planRevision!==task.startedFromRevision||round.context.subject!==task.subject||task.requireReflections&&result.results.some(q=>!q.correct&&!round.reflections.some(r=>r.id===q.id&&r.errorReason)))throw Error('练习轮次、任务关联或错因反思证据不完整')
       return {roundId:round.roundId,total:result.totalCount,correct:result.correctCount,reflectedIds:round.reflections.map(r=>r.id)}
-    },async task=>{const {row,review}=errors.readForPlan(JSON.stringify([task.reviewOccurrence!.roundId,task.reviewOccurrence!.questionId]));if(row.subject!==task.subject)throw Error('复习科目与任务不一致');return review.history.length})
+    },async task=>{if(task.recallReference){const row=recalls.list().find(r=>r.pointId===task.recallReference!.pointId&&r.cycleId===task.recallReference!.cycleId);if(!row||row.recall)throw Error('先完成已有回忆，再安排新的周期');return row.history.length}const {row,review}=errors.readForPlan(JSON.stringify([task.reviewOccurrence!.roundId,task.reviewOccurrence!.questionId]));if(row.subject!==task.subject)throw Error('复习科目与任务不一致');return review.history.length})
     let closing: Promise<void> | undefined
     const state = Object.freeze({
       instanceId, questions: notebook.table('questions'), planConfig: progress.global, days: progress.table('days'),
@@ -57,6 +58,7 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
       return closing ??= (async () => {
         const errors: unknown[] = []
         try { await closeouts.close() } catch(error){errors.push(error)}
+        try { await state.errors.close() } catch(error){errors.push(error)}
         try { await recalls.close() } catch(error){errors.push(error)}
         try { await plan.close() } catch(error){errors.push(error)}
         try { await teaching.close() } catch (error) { errors.push(error) }

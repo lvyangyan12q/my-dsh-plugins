@@ -5,7 +5,7 @@ import type {KvTable} from '@deepseek-ai/dsh-storage-domain'
 import type {PracticeRound} from './schemas.ts'
 import {PracticeError} from './practice-rounds.ts'
 
-const attempt=z.object({id:z.string(),requestId:z.string(),answer:z.string(),correct:z.boolean(),answeredAt:z.string(),reflection:z.string().optional(),confirmedAt:z.string().optional()})
+const attempt=z.object({id:z.string(),requestId:z.string(),answer:z.string(),correct:z.boolean(),answeredAt:z.string(),reflection:z.string().optional(),confirmedAt:z.string().optional(),planTaskId:z.string().optional()})
 export const reviewRecord=z.object({version:z.literal(1),stage:z.number().int().min(0).max(3),status:z.enum(['scheduled','pending-correction','consolidated']),dueAt:z.string(),enrolledAt:z.string(),history:z.array(attempt)})
 export type ReviewRecord=z.infer<typeof reviewRecord>
 export const occurrenceId=(roundId:string,questionId:string)=>JSON.stringify([roundId,questionId])
@@ -13,6 +13,10 @@ const dayAfter=(now:Date,days:number)=>new Date(now.getTime()+days*86400000).toI
 function optionKey(option:string){return /^\s*([A-Za-z])(?:[.、)\s]|$)/.exec(option)?.[1]?.toUpperCase()??option}
 /** Historical errors come from immutable scored round snapshots, never the latest notebook row. */
 export class ErrorReviews{
+ private tail:Promise<unknown>=Promise.resolve()
+ command(body:Record<string,unknown>){const work=this.tail.then(()=>this.apply(body));this.tail=work.catch(()=>{});return work}
+ async close(){await this.tail}
+
  constructor(private rounds:KvTable<string,PracticeRound>,private reviews:KvTable<string,ReviewRecord>){}
  list(filters:Record<string,string>={}){
   const occurrences=[...this.rounds.entries()].flatMap(([roundId,round])=>!round.score?[]:round.questions.flatMap((question,index)=>{
@@ -28,11 +32,11 @@ export class ErrorReviews{
   const row=this.occurrence(id),review=this.reviews.get(id)
   const attempt=review?.history.slice(minimumIndex).filter(entry=>entry.correct&&entry.confirmedAt&&(!after||entry.confirmedAt>=after)).at(-1)
   if(!attempt)throw new PracticeError('尚无匹配的重新作答、反思及学习者确认',409)
-  return {occurrenceId:id,roundId:row.roundId,questionId:row.questionId,subject:row.subject,knowledgePoint:row.knowledgePoint,attemptId:attempt.id,confirmedAt:attempt.confirmedAt!,reflection:attempt.reflection!}
+  return {occurrenceId:id,roundId:row.roundId,questionId:row.questionId,subject:row.subject,knowledgePoint:row.knowledgePoint,planTaskId:attempt.planTaskId,attemptId:attempt.id,confirmedAt:attempt.confirmedAt!,reflection:attempt.reflection!}
  }
  queue(){const rows=this.list().occurrences.filter(row=>row.review&&row.review.status!=='consolidated');return {total:rows.length,due:rows.filter(row=>row.review!.dueAt<=new Date().toISOString()).length}}
  private occurrence(id:string){const row=this.list().occurrences.find(row=>row.id===id);if(!row)throw new PracticeError('错题记录不存在于当前档案',404);return row}
- async command(body:Record<string,unknown>){
+ private async apply(body:Record<string,unknown>){
   const id=z.string().max(500).parse(body.id),row=this.occurrence(id),now=new Date()
   if(body.action==='enroll'){
    if(body.confirmed!==true)throw new PracticeError('请确认加入1/3/7天复习队列',409)
@@ -48,7 +52,7 @@ export class ErrorReviews{
    if(current.status==='consolidated')throw new PracticeError('该记录已巩固',409)
    if(current.history.some(item=>!item.confirmedAt))throw new PracticeError('请先反思并确认上次作答',409)
    if(!row.options.some(option=>optionKey(option)===answer))throw new PracticeError('请选择原题选项')
-   const result={id:randomUUID(),requestId,answer,correct:answer===row.correctAnswer.trim(),answeredAt:now.toISOString()}
+   const result={...(typeof body.planTaskId==='string'?{planTaskId:body.planTaskId}:{}),id:randomUUID(),requestId,answer,correct:answer===row.correctAnswer.trim(),answeredAt:now.toISOString()}
    await this.reviews.put(id,{...current,history:[...current.history,result]});return result
   }
   if(body.action==='confirm'){
