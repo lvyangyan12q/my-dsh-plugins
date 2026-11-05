@@ -1,3 +1,4 @@
+import {matchesMaterialPoint} from './material-points.ts'
 import {canonicalKnowledgePoint} from './knowledge-point-identity.ts'
 import {learningOutline} from './learning-outline.ts'
 import type {BusinessRegistry} from './business.ts'
@@ -14,7 +15,7 @@ export function registerLearningRoute(registry:BusinessRegistry,state:KaogongIns
    const wrongs=errors.filter(row=>row.subject===point.subject&&canonicalKnowledgePoint(row.subject,row.knowledgePoint)===point.knowledgePoint&&row.review&&row.review.status!=='consolidated')
    const dueDates=[...(recall?[recall.dueAt]:[]),...wrongs.map(row=>row.review!.dueAt)].sort()
    const review={reviewDueAt:dueDates[0]??null,recallPointId:recall?point.id:null,reviewOccurrenceIds:wrongs.map(row=>row.id)}
-   const materials=[...state.knowledgeEntries.entries()].filter(([,row])=>row.subject===point.subject&&canonicalKnowledgePoint(row.subject,row.knowledgePoint)===point.knowledgePoint&&row.kind!=='笔记').map(([id,row])=>({id,title:row.title}))
+   const materials=[...state.knowledgeEntries.entries()].filter(([id,row])=>matchesMaterialPoint(state,id,row,point)).map(([id,row])=>({id,title:row.title}))
    const tasks=state.plan.read().tasks.filter(task=>task.knowledgePointId===point.id&&task.kind==='learn');const learned=tasks.some(task=>task.status==='completed')||[...state.lessonRecords.entries()].some(([,lesson])=>!!lesson.completion&&lesson.request.knowledgePointId===point.id&&lesson.request.subject===point.subject);return {...point,...review,materials,status:learned?'learned':tasks.some(task=>task.status==='in-progress')?'learning':'unlearned',taskId:(tasks.find(task=>task.status==='in-progress')??tasks.find(task=>task.status==='pending'))?.id}
   })
   send(200,{points,coverage:{learned:points.filter(point=>point.status==='learned').length,total:points.length}})

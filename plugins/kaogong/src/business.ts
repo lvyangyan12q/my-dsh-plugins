@@ -1,3 +1,4 @@
+import {registerMaterialPoints} from './material-points.ts'
 import {registerRecalls} from './recall-http.ts'
 import {registerLearningRoute} from './learning-route-http.ts'
 import {registerErrorReviews} from './error-reviews-http.ts'
@@ -265,6 +266,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
   const topN = config.topN ?? DEFAULT_TOP_N
   ctx.effect(()=>registerStudyPlanRoutes(ctx,state),'kaogong.study-plan')
   ctx.effect(()=>registerLearningRoute(ctx,state),'kaogong.learning-route')
+  ctx.effect(()=>registerMaterialPoints(ctx,state),'kaogong.material-points')
   ctx.effect(()=>registerRecalls(ctx,state),'kaogong.recalls')
   registerMineruTools(ctx, mineru, knowledgeEntries)
   ctx.effect(() => ctx.webServer.register({

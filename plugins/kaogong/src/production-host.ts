@@ -75,7 +75,7 @@ export async function mountKaogong(ctx:Context,config:Config){
    const combined=command==='exact:/api/kaogong/dashboard'||command==='exact:/api/kaogong/lesson/create'
    const practiceCommand=command==='exact:/api/kaogong/errors'||command==='kaogong_practice'||command==='kaogong_practice_read'||command==='kaogong_practice_submit'||command.startsWith('exact:/api/kaogong/practice/')||command==='exact:/api/kaogong/plan/start'
    const needsBank=!legacyAsset&&(combined||practiceCommand||command.startsWith('kaogong_bank_'))
-   const needsMaterials=!legacyAsset&&(combined||['exact:/api/kaogong/recall','exact:/api/kaogong/plan/start','exact:/api/kaogong/route','exact:/api/kaogong/knowledge','exact:/api/kaogong/document-image','kaogong_knowledge_read','kaogong_knowledge_search','kaogong_knowledge_list'].includes(command))
+   const needsMaterials=!legacyAsset&&(combined||['exact:/api/kaogong/material-points','exact:/api/kaogong/recall','exact:/api/kaogong/plan/start','exact:/api/kaogong/route','exact:/api/kaogong/knowledge','exact:/api/kaogong/document-image','kaogong_knowledge_read','kaogong_knowledge_search','kaogong_knowledge_list'].includes(command))
    const unavailableSources:string[]=[]
    const dashboard=command==='exact:/api/kaogong/dashboard'
    const retainedRound=['exact:/api/kaogong/practice/read','exact:/api/kaogong/practice/submit','exact:/api/kaogong/practice/reflection','kaogong_practice_read','kaogong_practice_submit'].includes(command)
@@ -86,8 +86,16 @@ export async function mountKaogong(ctx:Context,config:Config){
    const historicalOnly=command==='exact:/api/kaogong/errors'||command==='exact:/api/kaogong/practice/history'
    const bankSource=needsBank&&!historicalOnly?await readSource<Rows<BankQuestionRecord>>('question-bank',dashboard||retainedRound):null
    const bankRows=bankSource?.value.rows??[]
-   const materialSource=needsMaterials?(await readSource<Rows<KnowledgeEntryRecord>>('materials',dashboard||command==='exact:/api/kaogong/route'||command==='exact:/api/kaogong/recall'))?.value:null
+   const materialSource=needsMaterials?(await readSource<Rows<KnowledgeEntryRecord>>('materials',dashboard||command==='exact:/api/kaogong/material-points'||command==='exact:/api/kaogong/route'||command==='exact:/api/kaogong/recall'))?.value:null
    const materialRows=materialSource?.rows??[]
+   const withMaterialMappingLease=<T,>(operation:()=>Promise<T>)=>sources.withGrantLease(async()=>{
+    let fresh
+    try{fresh=await sources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})}
+    catch(error){if(error instanceof StudySourceRevoked&&unavailableSources.includes('materials')&&!materialSource)return operation();throw error}
+    if(fingerprint(fresh.value)!==fingerprint(materialSource))throw Error('资料授权或内容已变化，请重新预览')
+    return operation()
+   })
+   const materialOwners=new Map(materialRows.filter(([id])=>!state.knowledgeEntries.get(id)).map(([id])=>[id,materialSource!.ownerInstanceId!]))
    const bankQuestions=instance.appId==='kaogong-library'?readonlyRows(bankRows):overlay(state.bankQuestions,bankRows)
    // The library's own view can inspect private lectures; sharing still passes through registerResources.
    const knowledgeEntries=instance.appId==='kaogong-library'?readonlyRows([...state.knowledgeEntries.entries()].filter(([,row])=>row.kind!=='笔记')):overlay(state.knowledgeEntries,materialRows)
@@ -100,7 +108,7 @@ export async function mountKaogong(ctx:Context,config:Config){
     image:async(id:string,asset:string)=>{const owner=meta.table('jobs').get(id)?.instanceId;if(owner!==state.instanceId&&(!owner||materialSource?.ownerInstanceId!==owner||!materialRows.some(([key])=>key==='mineru_'+id)))throw Error('Document source is not authorized');return mineru.image(id,asset)},
    }
    // Legacy absolute image roots remain unread until an explicit migration establishes ownership.
-   const registry=businessRegistry({...config,questionImageRoot:{get:()=>undefined}},{...state,unavailableSources,bankQuestions,knowledgeEntries,practice,lessons},scopedMineru)
+   const registry=businessRegistry({...config,questionImageRoot:{get:()=>undefined}},{...state,withMaterialMappingLease,materialOwners,unavailableSources,bankQuestions,knowledgeEntries,practice,lessons},scopedMineru)
       for(const route of legacyAssetRoutes({instanceId:state.instanceId,viewId,state,resources:sources,plans:assetPlans,newImage:async(id,reference)=>{
     const record=state.knowledgeEntries.get(id);if(!record||![...record.content.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].some(row=>row[1]===reference))return undefined
     const url=new URL(reference,'http://localhost'),job=url.searchParams.get('id'),asset=url.searchParams.get('asset')
