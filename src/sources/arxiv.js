@@ -315,7 +315,9 @@ function pushFigure(node, blocks) {
 }
 
 function pushCode(node, blocks) {
-  const raw = textOf(node).replace(/^\s*\n/, '').replace(/\s+$/, '')
+  // Git checkouts on Windows may hand CRLF to the parser; keep code blocks LF so
+  // the reader and fixture assertions share one line-ending form.
+  const raw = textOf(node).replace(/\r\n?/g, '\n').replace(/^\s*\n/, '').replace(/\s+$/, '')
   if (!raw.trim()) return
   let language = null
   for (const candidate of [node, ...findAll(node, child => Boolean(attr(child, 'class')))]) {
