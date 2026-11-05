@@ -124,6 +124,23 @@ function normalizeReadingMinutes(value) {
 }
 
 /**
+ * The reason an item is an excerpt (`proxy_unavailable`, `http_403`, …). The
+ * page renders `message`; `code` and `detail` stay available for the console
+ * and later UI work.
+ */
+function normalizeExcerptReason(value) {
+  if (!isObject(value)) return null
+  const code = text(value.code)
+  const message = text(value.message)
+  if (!code && !message) return null
+  return {
+    code: code ?? 'excerpt',
+    message: message ?? '仅显示节选',
+    detail: text(value.detail),
+  }
+}
+
+/**
  * Normalize one item into the v2 shape. Returns null when the item cannot be
  * rendered at all (no id, no title in either language).
  */
@@ -157,6 +174,7 @@ export function normalizeItem(raw) {
     tags: Array.isArray(raw.tags) ? raw.tags.filter(tag => typeof tag === 'string') : [],
     readingMinutes: normalizeReadingMinutes(raw.readingMinutes),
     excerpt: raw.excerpt === true,
+    excerptReason: normalizeExcerptReason(raw.excerptReason),
     url: text(raw.url),
     bookmarked: raw.bookmarked === true,
     read: raw.read === true,

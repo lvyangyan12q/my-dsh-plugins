@@ -292,7 +292,7 @@ test('an unsupported --source and a malformed date are usage errors', async () =
   const { impl } = fakeArxiv()
 
   await assert.rejects(
-    runDaily({ root, date: DATE, config, source: 'openai', fetch: impl, env: {}, now: NOW }),
+    runDaily({ root, date: DATE, config, source: 'x', fetch: impl, env: {}, now: NOW }),
     error => error.code === 'unsupported_source' && error.exitCode === 2,
   )
   await assert.rejects(

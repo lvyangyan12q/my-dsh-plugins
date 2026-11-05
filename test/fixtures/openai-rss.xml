@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>OpenAI News</title>
+    <link>https://openai.com/news/</link>
+    <description>Updates from OpenAI</description>
+    <atom:link href="https://openai.com/news/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Introducing agent mode in ChatGPT</title>
+      <description>Agent mode lets ChatGPT plan and carry out multi-step tasks with the tools you already use &amp; keeps you in control.</description>
+      <link>https://openai.com/index/introducing-agent-mode/</link>
+      <guid isPermaLink="false">openai-news-agent-mode</guid>
+      <category>Product</category>
+      <pubDate>Wed, 04 Nov 2026 18:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>GPT-5 system card</title>
+      <description>Our system card describes the evaluations, safeguards and residual risks for GPT-5.</description>
+      <link>https://openai.com/index/gpt-5-system-card/</link>
+      <guid isPermaLink="false">openai-news-gpt-5-system-card</guid>
+      <category>Research</category>
+      <pubDate>Tue, 03 Nov 2026 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Scaling laws for reasoning models</title>
+      <description>New measurements show how test-time compute trades off against training compute.</description>
+      <link>https://openai.com/index/scaling-laws-for-reasoning/</link>
+      <guid isPermaLink="false">openai-news-scaling-laws</guid>
+      <category>Research</category>
+      <pubDate>Mon, 02 Nov 2026 09:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Codex in the enterprise</title>
+      <description>How engineering teams use Codex to review, migrate and test production code.</description>
+      <link>https://openai.com/index/codex-in-the-enterprise/</link>
+      <guid isPermaLink="false">openai-news-codex-enterprise</guid>
+      <category>Product</category>
+      <pubDate>Sun, 01 Nov 2026 15:45:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>A note on safety practices</title>
+      <description>An older post that should lose to the four newer items.</description>
+      <link>https://openai.com/index/a-note-on-safety-practices/</link>
+      <guid isPermaLink="false">openai-news-safety-note</guid>
+      <category>Company</category>
+      <pubDate>Sat, 31 Oct 2026 10:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

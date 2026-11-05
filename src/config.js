@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { DEFAULT_PROXY_HEALTH_URL, DEFAULT_PROXY_TIMEOUT_MS } from './proxy.js'
 import { DEFAULT_QUOTA } from './pipeline/select.js'
 import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
+import { DEFAULT_OPENAI_CONFIG } from './sources/openai.js'
 import { DEFAULT_DEEPSEEK_CONFIG } from './sources/deepseek.js'
 import { DEFAULT_HF_CONFIG } from './sources/hf.js'
 
@@ -72,7 +73,11 @@ export function defaultConfig() {
       // proxied by default because the official API is not directly reachable;
       // an unavailable proxy skips the source instead of going direct.
       hf: { ...DEFAULT_HF_CONFIG },
-      openai: { useProxy: true },
+      // OpenAI ships opt-in: the RSS list is direct, but the article page is
+      // only reachable through the user's proxy, and the site terms for the
+      // article-page fetch are still being reviewed. Set
+      // `sources.openai.enabled` to true to include it in the daily run.
+      openai: { ...DEFAULT_OPENAI_CONFIG },
     },
     quota: { ...DEFAULT_QUOTA },
     proxy: { ...DEFAULT_PROXY_CONFIG },
@@ -190,6 +195,24 @@ export function validateConfig(config, path = CONFIG_FILE) {
   }
   assertUrl(arxiv.baseUrl, 'sources.arxiv.baseUrl', path)
   assertUrl(arxiv.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
+
+  const openai = config.sources?.openai
+  if (!isPlainObject(openai)) throw configError(`${path}: sources.openai must be an object`)
+  if (typeof openai.enabled !== 'boolean') throw configError(`${path}: sources.openai.enabled must be true or false`)
+  if (typeof openai.extractViaProxy !== 'boolean') {
+    throw configError(`${path}: sources.openai.extractViaProxy must be true or false`)
+  }
+  if (typeof openai.extractFullText !== 'boolean') {
+    throw configError(`${path}: sources.openai.extractFullText must be true or false`)
+  }
+  assertUrl(openai.rssUrl, 'sources.openai.rssUrl', path)
+  assertPositive(openai.timeoutMs, 'sources.openai.timeoutMs', path)
+  if (!Number.isInteger(openai.maxItems) || openai.maxItems <= 0) {
+    throw configError(`${path}: sources.openai.maxItems must be a positive integer`)
+  }
+  if (!Number.isInteger(openai.maxBlocks) || openai.maxBlocks <= 0) {
+    throw configError(`${path}: sources.openai.maxBlocks must be a positive integer`)
+  }
 
   validateDeepSeek(config.sources?.deepseek, path)
 

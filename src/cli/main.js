@@ -16,19 +16,19 @@
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { loadConfig } from '../config.js'
-import { runDaily } from '../pipeline/run.js'
+import { runDaily, SOURCE_IDS } from '../pipeline/run.js'
 import { isDigestDate } from '../storage.js'
 
 const USAGE = `Usage: paper-reader [options]
 
 Fetch the day's arXiv submissions, the Hugging Face daily board (through the
-configured proxy) and DeepSeek news, select the digest and write it for the
-paper-reader host.
+configured proxy), DeepSeek news and OpenAI articles, select the digest and
+write it for the paper-reader host.
 
 Options:
   --date YYYY-MM-DD   digest date (default: today, local time)
   --dry-run           fetch and select without writing any file
-  --source ID         run only one source (available: arxiv, hf, deepseek)
+  --source ID         run only one source (available: ${SOURCE_IDS.join(', ')})
   -h, --help          show this help
 
 Data:    $DSH_HOME/paper-reader/digest/YYYY-MM-DD.json

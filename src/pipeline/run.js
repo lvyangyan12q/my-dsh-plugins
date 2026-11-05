@@ -20,6 +20,11 @@ import {
   listArxiv,
 } from '../sources/arxiv.js'
 import {
+  DEFAULT_OPENAI_CONFIG,
+  extractOpenAiArticle,
+  listOpenAi,
+} from '../sources/openai.js'
+import {
   DEFAULT_DEEPSEEK_CONFIG,
   extractDeepSeekArticle,
   listDeepSeek,
@@ -29,7 +34,7 @@ import { isDigestDate, readRunRecord, storagePaths, writeDayDigest, writeRunReco
 import { translateItems } from '../translate/service.js'
 import { selectDaily } from './select.js'
 
-export const SOURCE_IDS = ['arxiv', 'deepseek', 'hf']
+export const SOURCE_IDS = ['arxiv', 'deepseek', 'hf', 'openai']
 
 export const DIRECTION_META = [
   { id: 'agent', label: 'Agent', labelEn: 'Agents' },
@@ -89,6 +94,18 @@ const BUILTIN_ADAPTERS = {
       fetch,
     }),
   },
+  openai: {
+    list: ({ config, fetch }) => listOpenAi({
+      config: config.sources?.openai ?? DEFAULT_OPENAI_CONFIG,
+      fetch,
+    }),
+    extract: ({ candidate, config, fetch, proxy }) => extractOpenAiArticle({
+      candidate,
+      config: config.sources?.openai ?? DEFAULT_OPENAI_CONFIG,
+      fetch,
+      proxy,
+    }),
+  },
 }
 
 function adapterFor(id, adapters) {
@@ -126,23 +143,39 @@ function bodySourceOf(candidate) {
 }
 
 /** Extract one selected candidate into reader blocks. */
-export async function extractCandidate(candidate, { config, fetch: fetchImpl, adapters = null } = {}) {
+export async function extractCandidate(candidate, { config, fetch: fetchImpl, adapters = null, proxy = null } = {}) {
   const adapter = adapterFor(bodySourceOf(candidate), adapters)
   if (!adapter?.extract) {
     throw Object.assign(new Error(`no extractor for source "${bodySourceOf(candidate)}"`), { code: 'source_unimplemented' })
   }
-  return adapter.extract({ candidate, config, fetch: fetchImpl })
+  return adapter.extract({ candidate, config, fetch: fetchImpl, proxy })
 }
 
 /**
  * Resolve the proxy policy for the sources that need it.
  *
+ * Two kinds of need are supported:
+ * - `fullProxyIds`: the source cannot even be listed without the proxy (HF). A
+ *   proxy failure marks the source `skipped`; the run never retries it direct.
+ * - `extractProxyIds`: the list is direct, but the article page needs the proxy
+ *   (OpenAI). A proxy failure keeps the source in the run and only its
+ *   extraction degrades to an excerpt.
+ *
  * The returned `state` is data (safe to store in the digest and run record);
- * `transport` is the fetch the proxied sources must use, and is `null` whenever
+ * `transport` is the fetch the proxied requests must use, and is `null` whenever
  * the state is not `ok`. A proxied source never receives the direct fetch.
  */
-async function prepareProxy({ config, env, sourceIds, proxyFetch, fetchImpl, now }) {
+async function prepareProxy({
+  config,
+  env,
+  fullProxyIds = [],
+  extractProxyIds = [],
+  proxyFetch,
+  fetchImpl,
+  now,
+}) {
   const settings = config.proxy ?? {}
+  const needsProxy = [...new Set([...fullProxyIds, ...extractProxyIds])]
   const state = {
     status: 'not_needed',
     origin: null,
@@ -154,22 +187,28 @@ async function prepareProxy({ config, env, sourceIds, proxyFetch, fetchImpl, now
     code: null,
     error: null,
     reason: null,
-    skipped: [],
+    skipped: [...fullProxyIds],
+    extractSkipped: [],
     probed: false,
   }
-  if (sourceIds.length === 0) return { state, transport: null }
+  if (needsProxy.length === 0) return { state, transport: null }
 
   const resolved = resolveProxyUrl({ config, env })
   state.origin = resolved.origin
   state.url = redactProxyUrl(resolved.url)
-  state.skipped = [...sourceIds]
+
+  const unavailable = (status, code, error) => {
+    state.status = status
+    state.code = code
+    state.error = error
+    state.reason = proxySkipReason(code)
+    state.skipped = [...fullProxyIds]
+    state.extractSkipped = [...extractProxyIds]
+    return { state, transport: null }
+  }
 
   if (!resolved.url) {
-    state.status = resolved.code === 'proxy_invalid' ? 'failed' : 'unconfigured'
-    state.code = resolved.code
-    state.error = resolved.error
-    state.reason = proxySkipReason(state.code)
-    return { state, transport: null }
+    return unavailable(resolved.code === 'proxy_invalid' ? 'failed' : 'unconfigured', resolved.code, resolved.error)
   }
 
   let transport = proxyFetch
@@ -178,19 +217,19 @@ async function prepareProxy({ config, env, sourceIds, proxyFetch, fetchImpl, now
       // Node routes its own fetch through the environment proxy under this flag.
       transport = fetchImpl
     } else {
-      state.status = 'failed'
-      state.code = 'proxy_env_disabled'
-      state.error = 'HTTP(S)_PROXY is set but NODE_USE_ENV_PROXY is not; start Node with NODE_USE_ENV_PROXY=1'
-      state.reason = proxySkipReason(state.code)
-      return { state, transport: null }
+      return unavailable(
+        'failed',
+        'proxy_env_disabled',
+        'HTTP(S)_PROXY is set but NODE_USE_ENV_PROXY is not; start Node with NODE_USE_ENV_PROXY=1',
+      )
     }
   }
   if (!transport) {
-    state.status = 'failed'
-    state.code = 'proxy_transport_missing'
-    state.error = 'proxy.url is configured but no proxy-capable fetch was provided'
-    state.reason = proxySkipReason(state.code)
-    return { state, transport: null }
+    return unavailable(
+      'failed',
+      'proxy_transport_missing',
+      'proxy.url is configured but no proxy-capable fetch was provided',
+    )
   }
 
   const health = await checkProxyHealth({
@@ -207,7 +246,13 @@ async function prepareProxy({ config, env, sourceIds, proxyFetch, fetchImpl, now
   state.latencyMs = health.latencyMs
   state.probed = true
   state.reason = health.status === 'ok' ? null : proxySkipReason(health.code)
-  if (health.status === 'ok') state.skipped = []
+  if (health.status === 'ok') {
+    state.skipped = []
+    state.extractSkipped = []
+  } else {
+    state.skipped = [...fullProxyIds]
+    state.extractSkipped = [...extractProxyIds]
+  }
   return { state, transport: health.status === 'ok' ? transport : null }
 }
 
@@ -267,9 +312,16 @@ async function translationTokensUsed({ root, date, dryRun }) {
 function toDigestItem(candidate, extraction, { collectedAt }) {
   const finalized = extraction.finalized === true
   const blocks = finalized ? (extraction.blocks ?? []) : pendingBlocks(extraction.blocks ?? [])
+  // An extractor may refine what the list declared: the article page knows the
+  // canonical title, date and author list, the RSS only the headline.
+  const publishedAt = extraction.publishedAt ?? candidate.publishedAt ?? null
+  const authors = Array.isArray(extraction.authors) && extraction.authors.length > 0
+    ? extraction.authors
+    : Array.isArray(candidate.authors) ? candidate.authors : []
+  const venue = candidate.venue ?? (candidate.primaryCategory ? `arXiv ${candidate.primaryCategory}` : null)
   const title = finalized && extraction.title
     ? { original: extraction.title.original, translation: extraction.title.translation ?? null }
-    : { original: candidate.title, translation: null }
+    : { original: extraction.title || candidate.title, translation: null }
   let summary = null
   if (finalized) {
     summary = extraction.summary ?? null
@@ -283,15 +335,16 @@ function toDigestItem(candidate, extraction, { collectedAt }) {
     sourceLanguage: (finalized ? extraction.sourceLanguage : candidate.sourceLanguage) === 'zh' ? 'zh' : 'en',
     title,
     summary,
-    authors: Array.isArray(candidate.authors) ? candidate.authors : [],
-    venue: candidate.primaryCategory ? `arXiv ${candidate.primaryCategory}` : null,
-    published: candidate.published ?? (candidate.publishedAt ? String(candidate.publishedAt).slice(0, 10) : null),
-    publishedAt: candidate.publishedAt ?? null,
+    authors,
+    venue,
+    published: publishedAt ? String(publishedAt).slice(0, 10) : null,
+    publishedAt,
     collectedAt,
     direction: extraction.direction ?? candidate.direction ?? 'architecture',
     tags: Array.isArray(candidate.tags) ? candidate.tags : [],
     readingMinutes: readingMinutesOf(blocks),
     excerpt: extraction.excerpt === true,
+    ...(extraction.excerptReason ? { excerptReason: extraction.excerptReason } : {}),
     url: candidate.url ?? null,
     translationState: finalized ? (extraction.translationState ?? 'pending') : 'pending',
     blocks,
@@ -336,26 +389,50 @@ export async function runDaily({
   const activeSources = availableSources.filter(id => (source ? id === source : resolved.sources?.[id]?.enabled !== false))
   if (activeSources.length === 0) throw usageError('no_sources', 'no sources are enabled in config.json')
 
-  const proxiedSources = activeSources.filter(id => resolved.sources?.[id]?.useProxy === true)
+  // A proxied source normally needs the proxy to even list (HF). A source that
+  // sets `extractViaProxy` lists directly and only its article pages go through
+  // the proxy (OpenAI): a missing proxy degrades extraction instead of skipping
+  // the whole source.
+  const proxiedSources = activeSources.filter(id => resolved.sources?.[id]?.useProxy === true
+    && resolved.sources?.[id]?.extractViaProxy !== true)
+  const extractProxiedSources = activeSources.filter(id => resolved.sources?.[id]?.useProxy === true
+    && resolved.sources?.[id]?.extractViaProxy === true)
   const proxy = await prepareProxy({
     config: resolved,
     env,
-    sourceIds: proxiedSources,
+    fullProxyIds: proxiedSources,
+    extractProxyIds: extractProxiedSources,
     proxyFetch,
     fetchImpl,
     now,
   })
+  /** The proxy state adapters read; `available` is what decides full text vs excerpt. */
+  const proxyState = { ...proxy.state, available: Boolean(proxy.transport) }
+  const needsProxy = (id) => proxiedSources.includes(id) || extractProxiedSources.includes(id)
 
   const counters = new Map(activeSources.map(id => [id, {
     requests: 0,
-    transport: proxiedSources.includes(id) ? proxy.transport : fetchImpl,
+    listTransport: proxiedSources.includes(id) ? proxy.transport : fetchImpl,
+    extractTransport: needsProxy(id) ? proxy.transport : fetchImpl,
   }]))
-  const fetchFor = (id) => {
-    const counter = counters.get(id) ?? { requests: 0, transport: fetchImpl }
-    if (!counters.has(id)) counters.set(id, counter)
+  /**
+   * Per-source fetch that counts requests. A proxied phase never falls back to
+   * the direct fetch: without a transport it fails, and the adapter degrades.
+   */
+  const fetchFor = (id, phase = 'list') => {
+    let counter = counters.get(id)
+    if (!counter) {
+      counter = { requests: 0, listTransport: fetchImpl, extractTransport: fetchImpl }
+      counters.set(id, counter)
+    }
+    const target = counter
     return async (url, init) => {
-      counter.requests += 1
-      return counter.transport(url, init)
+      target.requests += 1
+      const transport = phase === 'extract' ? target.extractTransport : target.listTransport
+      if (typeof transport !== 'function') {
+        throw Object.assign(new Error(`proxy unavailable for ${id} ${phase}`), { code: 'proxy_unavailable' })
+      }
+      return transport(url, init)
     }
   }
 
@@ -381,7 +458,7 @@ export async function runDaily({
     try {
       const listed = await listSource(
         id,
-        { config: resolved, date, fetch: fetchFor(id), proxy: proxy.state },
+        { config: resolved, date, fetch: fetchFor(id), proxy: proxyState },
         adapters,
       )
       candidates.push(...listed)
@@ -408,9 +485,16 @@ export async function runDaily({
   }
 
   const sourceSettings = activeSources.map(id => resolved.sources?.[id] ?? {})
+  // Category rules belong to the source that declared them: arXiv categories
+  // must not filter an OpenAI post that categorises itself as "Product".
+  const categoriesBySource = Object.fromEntries(
+    activeSources
+      .map(id => [id, resolved.sources?.[id]?.categories])
+      .filter(([, categories]) => Array.isArray(categories) && categories.length > 0),
+  )
   const selection = selectDaily(candidates, {
     quota: resolved.quota,
-    categories: unique(sourceSettings.flatMap(settings => settings.categories ?? [])),
+    categoriesBySource,
     includeKeywords: unique(sourceSettings.flatMap(settings => settings.keywords ?? [])),
     excludeKeywords: unique(sourceSettings.flatMap(settings => settings.excludeKeywords ?? [])),
   })
@@ -427,8 +511,11 @@ export async function runDaily({
     try {
       extraction = await extractCandidate(candidate, {
         config: resolved,
-        fetch: fetchFor(bodySourceOf(candidate)),
+        fetch: fetchFor(bodySourceOf(candidate), 'extract'),
         adapters,
+        // Only a source whose extraction is proxy-routed reads the proxy state;
+        // with the switch off its fetch is the direct one.
+        proxy: extractProxiedSources.includes(candidate.sourceId) ? proxyState : null,
       })
     } catch (error) {
       extractionFailures += 1
@@ -552,6 +639,9 @@ export async function runDaily({
     itemsSkipped: skipped,
     proxyHealthChecks: proxy.state.probed ? 1 : 0,
     translated: items.filter(item => item.translationState === 'complete').length,
+    // An excerpt is translated too (title + dek), but it is not full text: the
+    // "translated full text" figure the reader sees must not count it.
+    fullTextTranslated: items.filter(item => item.excerpt === false && item.translationState === 'complete').length,
     translationPending: items.filter(item => item.translationState !== 'complete').length,
   }
 

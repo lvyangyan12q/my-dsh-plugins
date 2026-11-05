@@ -1025,6 +1025,7 @@ export function PaperReaderPage() {
                             <div className="pr-item-head">
                               <SourceBadge source={source} />
                               <span className="pr-item-time">{clockTime(item.collectedAt)}</span>
+                              {item.excerpt && <span className="pr-pill pr-pill-excerpt">节选</span>}
                               {item.translationState !== 'complete' && <span className="pr-pill">翻译中</span>}
                               {bookmarked && <span className="pr-item-mark" title="已收藏">★</span>}
                               {!read && <UnreadDot />}
@@ -1153,6 +1154,18 @@ export function PaperReaderPage() {
                       {activeLanguage === 'zh' ? '中文原文' : '英文原文'}
                     </span>
                   </div>
+
+                  {activeItem.excerpt && activeItem.excerptReason && (
+                    <div className="pr-excerpt-notice" role="note">
+                      <span className="pr-excerpt-mark">节选</span>
+                      <span className="pr-excerpt-text">
+                        {activeItem.excerptReason.message}
+                        {activeItem.excerptReason.detail && (
+                          <span className="pr-excerpt-detail">（{activeItem.excerptReason.detail}）</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
 
                   {prefs.mode !== 'en' && zhTitle.text && (
                     <h1 className="pr-title-zh">
