@@ -26,13 +26,14 @@ async function fixture(options = {}) {
   const backend = new JsonStorageBackend(join(root, 'storage'))
   context.storage.backend.register('json', backend)
   const facility = new DomainFacility(context, { backend: 'json' })
-  if (options.storageFault) {
+  if (options.storageFault || options.globalFault) {
     const open = facility.open.bind(facility)
     facility.open = async spec => {
       const domain = await open(spec), table = domain.table.bind(domain)
+      if(options.globalFault&&spec.global){const set=domain.global.set.bind(domain.global);domain.global.set=async value=>{options.globalFault(spec.name,value);await set(value)}}
       domain.table = name => {
         const value = table(name), put = value.put.bind(value)
-        return new Proxy(value,{get(target,key){if(key==='put')return async(id,row)=>{await put(id,row);options.storageFault(spec.name,name,row)};const v=Reflect.get(target,key,target);return typeof v==='function'?v.bind(target):v}})
+        return new Proxy(value,{get(target,key){if(key==='put')return async(id,row)=>{await put(id,row);options.storageFault?.(spec.name,name,row)};const v=Reflect.get(target,key,target);return typeof v==='function'?v.bind(target):v}})
       }
       return domain
     }
@@ -465,22 +466,29 @@ test('review plan proposals stay inert and completion requires a new confirmed o
   await app.request('/api/kaogong/practice/submit?viewId='+viewId,{roundId:round.roundId,answers:[{id:'first',answer:'A'}]})
   const item=(await app.request(errorUrl)).value.occurrences[0]
   await app.request(errorUrl,{action:'enroll',id:item.id,confirmed:true})
-  const answer=async requestId=>(await app.request(errorUrl,{action:'answer',id:item.id,answer:'B',requestId,earlyConfirmed:true})).value
+  const answer=async (requestId,taskId,answerValue='B')=>(await app.request(errorUrl,{action:'answer',id:item.id,answer:answerValue,requestId,earlyConfirmed:true,...(taskId?{taskId}:{})})).value
   const old=await answer('before-task');await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:old.id,reflection:'先前复习',confirmed:true})
   assert.equal((await app.request(planUrl,{action:'preview',baseRevision:0,operation:'append',task:{subject:item.subject,title:'外来错题',kind:'review',reviewOccurrence:{roundId:'00000000-0000-4000-8000-000000000001',questionId:'first'}}})).status,409)
+  const pendingBefore=await answer('pending-before-task');
   const draft=(await app.request(planUrl,{action:'preview',baseRevision:0,operation:'append',task:{subject:item.subject,title:'复习原错题',kind:'review',reviewOccurrence:{roundId:item.roundId,questionId:item.questionId}}})).value
   assert.deepEqual(draft.tasks[0].reviewOccurrence,{roundId:item.roundId,questionId:item.questionId})
   assert.equal((await app.request(planUrl)).value.tasks.length,0)
   let plan=(await app.request(planUrl,{action:'confirm',id:draft.id,revision:0,confirmed:true})).value
   const task=plan.tasks[0]
+  assert.equal((await app.request(planUrl,{action:'preview',baseRevision:plan.revision,operation:'append',task:{subject:item.subject,title:'重复本周期',kind:'review',reviewOccurrence:{roundId:item.roundId,questionId:item.questionId}}})).status,409)
   assert.equal((await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).status,409)
   const started=(await app.request('/api/kaogong/plan/start?viewId='+viewId,{id:task.id,revision:plan.revision})).value
   assert.equal(started.round,undefined);assert.equal(started.reviewOccurrence,item.id);plan=started.state
   assert.equal((await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).status,409)
-  const fresh=await answer('after-task')
+  await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:pendingBefore.id,reflection:'开始前已有的尝试',confirmed:true});
+  assert.equal((await app.request(planUrl)).value.tasks[0].status,'in-progress');
+  const incorrect=await answer('incorrect-after-task',task.id,'A');
+  await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:incorrect.id,reflection:'错误尝试仍保留',confirmed:true});
+  assert.equal((await app.request(planUrl)).value.tasks[0].status,'in-progress');
+  const fresh=await answer('after-task',task.id)
   assert.equal((await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).status,409)
   await app.request(errorUrl,{action:'confirm',id:item.id,attemptId:fresh.id,reflection:'本次重新答题核对',confirmed:true})
-  const complete=(await app.request(planUrl,{action:'complete',id:task.id,revision:plan.revision,confirmed:true})).value
+  const complete=(await app.request(planUrl)).value
   assert.equal(complete.tasks[0].status,'completed');assert.equal(complete.tasks[0].evidence.proof.attemptId,fresh.id)
   assert.equal((await app.request('/api/kaogong/dashboard?viewId='+viewId)).value.practiceStatistics.submittedCount,1)
  }finally{await app.close()}
@@ -878,6 +886,34 @@ for(const target of ['lesson','journal']) test('closeout recovers '+target+' eff
   assert.equal((await app.request('/api/kaogong/lesson/closeout?viewId='+view,{...body,operationId:crypto.randomUUID()})).status,409)
  } finally {await app.close()}
 })
+test('recall schedule is previewed and early forgotten confirmation completes the original task only',async()=>{
+ let failPlan=false;let app=await fixture({globalFault:(_name,value)=>{if(failPlan&&value.tasks?.some(t=>t.status==='completed')){failPlan=false;throw Error('计划写入失败')}}});try{
+ const learner=(await app.request('/api/kaogong/study',{action:'create',title:'回忆日程',kind:'learner',confirmed:true})).value;
+ await app.seedKnowledge(learner.profile.id,{reference:{subject:'行测-言语理解与表达',knowledgePoint:'逻辑填空',title:'参考',content:'语境',kind:'讲义',source:'合成',tags:[],createdAt:'2026-01-01',updatedAt:'2026-01-01'}});
+ const url='/api/kaogong/recall?viewId='+learner.view.id,planUrl='/api/kaogong/plan?viewId='+learner.view.id;
+ const row=(await app.request(url,{action:'enroll',pointId:'kg-point-001',confirmed:true})).value;
+ const date=new Date(Date.now()+86400000).toISOString().slice(0,10);
+ const draft=await app.request(planUrl,{action:'preview',baseRevision:0,operation:'append',date,task:{subject:'行测-言语理解与表达',title:'回忆逻辑填空',kind:'review',recallReference:{pointId:row.pointId,cycleId:row.cycleId}}});
+ assert.equal(draft.status,200,JSON.stringify(draft.value));assert.deepEqual(draft.value.tasks[0].recallReference,{pointId:row.pointId,cycleId:row.cycleId});
+ assert.equal((await app.request(planUrl)).value.tasks.length,0);
+ const parallel=await app.request(planUrl,{action:'preview',baseRevision:0,operation:'append',date,task:{subject:'行测-言语理解与表达',title:'并发回忆',kind:'review',recallReference:{pointId:row.pointId,cycleId:row.cycleId}}});
+ await app.request(planUrl,{action:'confirm',id:draft.value.id,revision:0,confirmed:true});
+ assert.equal((await app.request(planUrl,{action:'confirm',id:parallel.value.id,revision:0,confirmed:true})).status,409);
+ await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'回忆',earlyConfirmed:true});
+ assert.equal((await app.request(planUrl)).value.tasks[0].status,'in-progress');
+ await app.request(url,{action:'reveal',pointId:row.pointId,cycleId:row.cycleId});
+ const body={action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'forgotten',confirmed:true};
+ failPlan=true;const partial=await app.request(url,body);assert.equal(partial.status,200);assert.equal(partial.value.planPending,true);assert.equal((await app.request(planUrl)).value.tasks[0].status,'in-progress');
+ const savedCycle=partial.value.cycleId,root=await app.suspend();app=await fixture({root});const restored=(await app.request(url)).value.items[0];assert.equal(restored.planPending,true);assert.equal(restored.cycleId,savedCycle);assert.equal((await app.request(url,body)).status,200);
+ const plan=(await app.request(planUrl)).value;assert.equal(plan.tasks[0].status,'completed');assert.equal(plan.tasks[0].date,date);
+ await app.request(url,body);assert.equal((await app.request(planUrl)).value.revision,plan.revision);assert.equal((await app.request(planUrl)).value.tasks.length,1);
+ const next=(await app.request(url)).value.items[0];
+ const stale=await app.request(planUrl,{action:'preview',baseRevision:plan.revision,operation:'append',date,task:{subject:'行测-言语理解与表达',title:'下一周期',kind:'review',recallReference:{pointId:next.pointId,cycleId:next.cycleId}}});assert.equal(stale.status,200);
+ await app.request(url,{action:'answer',pointId:next.pointId,cycleId:next.cycleId,recall:'独立下一次',earlyConfirmed:true});await app.request(url,{action:'reveal',pointId:next.pointId,cycleId:next.cycleId});await app.request(url,{action:'confirm',pointId:next.pointId,cycleId:next.cycleId,rating:'remembered',confirmed:true});
+ assert.equal((await app.request(planUrl,{action:'confirm',id:stale.value.id,revision:plan.revision,confirmed:true})).status,409);assert.equal((await app.request(planUrl)).value.tasks.length,1);
+
+ }finally{await app.close()}
+});
 
 test('closeout refuses missing practice before persisting consent and accepts later submitted evidence',async()=>{
  const app=await fixture({source:true})

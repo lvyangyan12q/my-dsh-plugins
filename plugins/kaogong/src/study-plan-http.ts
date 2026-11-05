@@ -1,3 +1,4 @@
+import {learningOutline} from './learning-outline.ts'
 import {canonicalKnowledgePoint} from './knowledge-point-identity.ts'
 import {studyDate} from './study-date.ts'
 import type {BusinessRegistry} from './business.ts'
@@ -11,7 +12,8 @@ export function registerStudyPlanRoutes(registry:BusinessRegistry,state:KaogongI
  const stopStart=registry.webServer.register({kind:'exact',path:'/api/kaogong/plan/start',handler:async(req,res)=>{
   const send=(code:number,value:unknown)=>{res.writeHead(code,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value))}
   try{if(req.method!=='POST'||!req.headers['content-type']?.startsWith('application/json'))throw Error('POST JSON required');let text='';for await(const part of req){text+=part;if(text.length>10000)throw Error('请求过大')}const args=z.object({id:z.string().uuid(),revision:z.number().int().nonnegative()}).strict().parse(JSON.parse(text));const current=await state.plan.start(args.id,args.revision),task=current.tasks.find(t=>t.id===args.id)!;
-   if(task.reviewOccurrence){send(200,{state:current,reviewOccurrence:JSON.stringify([task.reviewOccurrence.roundId,task.reviewOccurrence.questionId])})}
+   if(task.recallReference){send(200,{state:current,recallReference:task.recallReference})}
+   else if(task.reviewOccurrence){send(200,{state:current,reviewOccurrence:JSON.stringify([task.reviewOccurrence.roundId,task.reviewOccurrence.questionId])})}
    else if(task.kind==='learn'){const prior=state.lessonRecords.get(task.lessonId!);const materialIds=task.knowledgePointId?(prior?.request.materialIds??[...state.knowledgeEntries.entries()].filter(([,row])=>row.subject===task.subject&&canonicalKnowledgePoint(row.subject,row.knowledgePoint)===task.knowledgePoint&&row.kind!=='笔记').slice(0,8).map(([id])=>id)):[];if(materialIds.some(id=>!state.knowledgeEntries.get(id)))throw Error('课堂资料授权已变化，请重新核对资料');const lesson=await state.lessons.create({lessonId:task.lessonId!,subject:task.subject,objective:task.title,...(task.knowledgePointId?{knowledgePointId:task.knowledgePointId,knowledgePoint:task.knowledgePoint}:{}),materialIds,requirePractice:task.requirePractice,requireReflections:task.requireReflections,taskId:task.id,planRevision:task.startedFromRevision});send(200,{state:current,lesson})}
    else {const round=await state.practice.startForTask({subject:task.subject,title:task.title,...(task.knowledgePointId?{knowledgePointId:task.knowledgePointId,knowledgePoint:task.knowledgePoint}:{}),limit:10,planRevision:task.startedFromRevision},task.id);send(200,{state:current,round})}
   }catch(error){send(409,{error:error instanceof Error?error.message:'任务开始失败'})}
@@ -26,8 +28,15 @@ export function registerStudyPlanRoutes(registry:BusinessRegistry,state:KaogongI
    const allowed:Record<string,string[]>={preview:['baseRevision','operation','goal','taskId','date','task'],confirm:['id','revision','confirmed'],summary:['id','revision','summary'],complete:['id','revision','confirmed','roundId'],'completion-preview':['id','revision'],'completion-confirm':['id','revision','confirmed'],external:['revision','confirmed','date','title','score','maximum']}
    if(!allowed[body.action]||Object.keys(body).some(key=>key!=='action'&&!allowed[body.action]!.includes(key)))throw Error('计划请求无效')
    let value:unknown
-   if(body.action==='preview'){if(body.task?.reviewOccurrence){const ref=reviewOccurrence.parse(body.task.reviewOccurrence),{row}=state.errors.readForPlan(JSON.stringify([ref.roundId,ref.questionId]));if(row.subject!==body.task.subject)throw Error('复习科目与任务不一致')}const today=studyDate();value=await state.plan.preview({baseRevision:revision,action:body.operation,today,...(body.goal?{goal:body.goal}:{}),taskId:body.taskId,date:body.date,task:body.task} as PlanPreview)}
-   else if(body.action==='confirm')value=await state.plan.confirm(body.id,revision,body.confirmed)
+   if(body.action==='preview'){if(body.task?.recallReference){const ref=z.object({pointId:z.string(),cycleId:z.string().uuid()}).strict().parse(body.task.recallReference),recall=state.recalls.list().find(r=>r.pointId===ref.pointId&&r.cycleId===ref.cycleId);if(!recall||recall.recall||body.task.kind!=='review')throw Error('回忆周期不可排程，请先完成当前尝试');const point=learningOutline.find(p=>p.id===ref.pointId);if(point?.subject!==body.task.subject)throw Error('知识点与科目不一致')}if(body.task?.reviewOccurrence){const ref=reviewOccurrence.parse(body.task.reviewOccurrence),{row,review}=state.errors.readForPlan(JSON.stringify([ref.roundId,ref.questionId]));body.task.reviewCycle=review.enrolledAt+':'+review.history.filter(attempt=>attempt.confirmedAt).length;if(row.subject!==body.task.subject)throw Error('复习科目与任务不一致')}const today=studyDate();value=await state.plan.preview({baseRevision:revision,action:body.operation,today,...(body.goal?{goal:body.goal}:{}),taskId:body.taskId,date:body.date,task:body.task} as PlanPreview)}
+   else if(body.action==='confirm'){
+    const proposal=state.plan.read().drafts.find(d=>d.id===body.id);
+    for(const change of proposal?.diff??[]){const t=change.after;if(!t||change.before)continue;
+     if(t.recallReference){const current=state.recalls.list().find(r=>r.pointId===t.recallReference!.pointId);if(current?.cycleId!==t.recallReference.cycleId||current.recall)throw Error('回忆周期已变化，请重新预览')}
+     if(t.reviewOccurrence&&t.reviewCycle){const {review}=state.errors.readForPlan(JSON.stringify([t.reviewOccurrence.roundId,t.reviewOccurrence.questionId]));if(t.reviewCycle!==review.enrolledAt+':'+review.history.filter(h=>h.confirmedAt).length)throw Error('错题周期已变化，请重新预览')}
+    }
+    value=await state.plan.confirm(body.id,revision,body.confirmed)
+   }
    else if(body.action==='summary')value=await state.plan.saveSummary(body.id,revision,body.summary)
    else if(body.action==='completion-preview')value=await state.plan.previewCompletion(body.id,revision)
    else if(body.action==='completion-confirm'){const proposal=state.plan.read().completionProposals.find(p=>p.id===body.id);if(!proposal)throw Error('完成建议不存在');value=await state.plan.complete(proposal.taskId,revision,body.confirmed,{roundId:proposal.roundId},proposal.id)}
