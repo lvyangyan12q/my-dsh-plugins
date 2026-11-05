@@ -5,6 +5,7 @@
  *
  *   digest/YYYY-MM-DD.json   one digest per day (schema v2 day document)
  *   index.json               the list of stored days, written last
+ *   runs/YYYY-MM-DD.json     one run record per CLI run (diagnostics only)
  *
  * Guarantees this module owns:
  *
@@ -26,6 +27,7 @@ import { basename, dirname, join } from 'node:path'
 import { validateDayDigest } from './shared/schema.js'
 
 export const MAX_DAY_BYTES = 8 * 1024 * 1024
+export const MAX_RUN_BYTES = 1024 * 1024
 export const RETENTION_DAYS = 30
 export const INDEX_SCHEMA_VERSION = 2
 
@@ -51,11 +53,14 @@ export function addDays(date, days) {
 /** Resolve every path this module reads or writes. */
 export function storagePaths(root) {
   const digestDir = join(root, 'digest')
+  const runsDir = join(root, 'runs')
   return {
     root,
     digestDir,
+    runsDir,
     indexPath: join(root, 'index.json'),
     dayPath: date => join(digestDir, `${date}.json`),
+    runPath: date => join(runsDir, `${date}.json`),
   }
 }
 
@@ -274,4 +279,50 @@ export async function pruneExpired({ root, today, retentionDays = RETENTION_DAYS
   result.deleted.sort()
   result.failed.sort((left, right) => String(left.date).localeCompare(String(right.date)))
   return result
+}
+
+/**
+ * Write the run record for one date. Diagnostics only: it is never read by the
+ * page, so a failed write must not take the digest down, and a chatty record is
+ * capped so one bad run cannot fill the disk.
+ */
+export async function writeRunRecord({ root, date, record, maxBytes = MAX_RUN_BYTES }) {
+  if (!isDigestDate(date)) {
+    throw storageError('run_invalid_date', 'run date must be a real YYYY-MM-DD date', 400)
+  }
+  if (!record || typeof record !== 'object' || Array.isArray(record)) {
+    throw storageError('run_invalid', 'run record must be an object', 422)
+  }
+  const text = JSON.stringify(record)
+  const bytes = Buffer.byteLength(text, 'utf8')
+  if (bytes > maxBytes) {
+    throw storageError('run_too_large', `run record for ${date} is ${bytes} bytes; the limit is ${maxBytes}`, 413, {
+      bytes,
+      maxBytes,
+    })
+  }
+  const path = storagePaths(root).runPath(date)
+  await mkdir(storagePaths(root).runsDir, { recursive: true })
+  await writeFileAtomic(path, text)
+  return { date, path, bytes }
+}
+
+/** Read one run record; a missing record is `null`, not an error. */
+export async function readRunRecord({ root, date }) {
+  if (!isDigestDate(date)) {
+    throw storageError('run_invalid_date', 'run date must be a real YYYY-MM-DD date', 400)
+  }
+  const path = storagePaths(root).runPath(date)
+  let text
+  try {
+    text = await readFile(path, 'utf8')
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    throw error
+  }
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw storageError('run_invalid', `run record for ${date} is not valid JSON`, 422)
+  }
 }

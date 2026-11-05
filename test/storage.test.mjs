@@ -17,8 +17,10 @@ import {
   pruneExpired,
   readDayDigest,
   readIndex,
+  readRunRecord,
   storagePaths,
   writeDayDigest,
+  writeRunRecord,
 } from '../src/storage.js'
 
 const homes = []
@@ -242,4 +244,38 @@ test('pruneExpired on its own only touches day-shaped files', async () => {
   assert.deepEqual(result.deleted, ['2026-01-01'])
   assert.deepEqual(readdirSync(paths.digestDir).sort(), ['notes.txt'])
   assert.ok(statSync(join(paths.digestDir, 'notes.txt')).size > 0)
+})
+
+test('a run record is stored under runs/YYYY-MM-DD.json and read back', async () => {
+  const root = tempRoot()
+  const record = {
+    schemaVersion: 1,
+    date: '2026-11-04',
+    status: 'ok',
+    sources: [{ id: 'arxiv', status: 'ok', items: 2 }],
+    counts: { candidates: 4, selected: 2 },
+  }
+  const result = await writeRunRecord({ root, date: '2026-11-04', record })
+
+  assert.deepEqual(readdirSync(storagePaths(root).runsDir), ['2026-11-04.json'])
+  assert.equal(result.bytes, Buffer.byteLength(JSON.stringify(record)))
+  assert.deepEqual(await readRunRecord({ root, date: '2026-11-04' }), record)
+  assert.equal(await readRunRecord({ root, date: '2026-11-05' }), null)
+
+  await assert.rejects(
+    writeRunRecord({ root, date: '2026-13-40', record }),
+    error => error.code === 'run_invalid_date' && error.status === 400,
+  )
+})
+
+test('a corrupt run record is an explicit 422', async () => {
+  const root = tempRoot()
+  const paths = storagePaths(root)
+  mkdirSync(paths.runsDir, { recursive: true })
+  writeFileSync(paths.runPath('2026-11-04'), '{broken')
+
+  await assert.rejects(
+    readRunRecord({ root, date: '2026-11-04' }),
+    error => error.code === 'run_invalid' && error.status === 422,
+  )
 })
