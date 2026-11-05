@@ -6,7 +6,7 @@
 
 **Blocked by:** 06：复习预览排程与跨入口提前完成
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-release-acceptance
 
 **Acceptance criteria:**
 
@@ -16,3 +16,5 @@
 - [ ] 四个主入口往返保持同一任务上下文，筛选与返回状态遵循定稿导航合同。
 
 **验证约定：** 沿用已确认的 Host、Native、页面确认与准确发行包测试边界；只记录实际执行结果。保留档案隔离、资料授权、真实评分与历史快照。按批准原型实现本票对应交互，验收证据完成前不勾选。
+
+源码证据：[真实进度](../../../docs/evidence/08-ticket07-progress.md)、[四页整合](../../../docs/evidence/08-ticket07-visual.md)。准确包与浏览器验收由08完成，验收框暂不勾选。

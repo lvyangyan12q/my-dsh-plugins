@@ -8,7 +8,7 @@ test('overview and progress label scored slots, answered blanks unique counts an
  const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true},saved=new Map(Object.keys(values).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))
  for(const[key,value]of Object.entries(values))Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})
  const prior=globalThis.fetch,stats={submittedRoundCount:2,submittedCount:20,answeredCount:10,unansweredCount:10,uniqueQuestionCount:10,correctCount:6,incorrectCount:4,accuracyRate:.3,errorReasons:[{reason:'审题不清',count:2,knowledgePoints:['直接读取']}]}
- globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?{today:'2026-10-27',modules:[],todayPlan:{items:[]},weakPoints:[],totalQuestions:20,totalCorrect:6,totalWrong:4,accuracyRate:.3,bankTotal:10,knowledgeTotal:0,practiceStatistics:stats}:[]))
+ globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?{today:'2026-10-27',modules:[],todayPlan:{items:[]},weakPoints:[],totalQuestions:20,totalCorrect:6,totalWrong:4,accuracyRate:.3,bankTotal:10,knowledgeTotal:0,practiceStatistics:stats}:String(input).includes('/route')?{coverage:{learned:0,total:73},points:[]}:String(input).includes('/plan')?{goal:null,tasks:[],externalMocks:[]}:{}))
  const root=createRoot(document.getElementById('root')!)
  try{
   const {ScopedStudyView}=await import('../src/client.tsx')
