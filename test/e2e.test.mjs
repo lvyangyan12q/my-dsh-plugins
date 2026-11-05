@@ -8,14 +8,15 @@
  * about paths, the v2 contract or the pending-translation shape.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, test } from 'node:test'
 import { apply } from '../src/index.js'
 import { main } from '../src/cli/main.js'
 import { mountPage } from './helpers/client.mjs'
-import { FULL_TEXT } from './helpers/arxiv.mjs'
+import { fakeArxiv, FULL_TEXT } from './helpers/arxiv.mjs'
+import { fakeLlm, API_KEY, BASE_URL, MODEL } from './helpers/llm.mjs'
 import { fakeSources } from './helpers/sources.mjs'
 
 const DATE = '2026-11-05'
@@ -31,14 +32,14 @@ function capture() {
 }
 
 /** Register the real host routes and call one the way the HTTP layer does. */
-function createHost() {
+function createHost(profile = profileDir) {
   const routes = new Map()
   const disposers = []
   const ctx = {
     effect(fn) { disposers.push(fn()) },
     webServer: { register(route) { routes.set(route.path, route); return () => {} } },
     get(name) {
-      if (name === 'profileContext') return { dir: profileDir }
+      if (name === 'profileContext') return { dir: profile }
       return undefined
     },
   }
@@ -129,5 +130,74 @@ test('CLI → host → reading page renders arXiv pending items and DeepSeek off
     }
   } finally {
     host.dispose()
+  }
+})
+
+test('a translated day renders the Chinese text without pending placeholders in 仅中文 mode', async () => {
+  const translatedHome = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-e2e-zh-'))
+  const translatedProfile = join(translatedHome, 'profiles', 'web')
+  mkdirSync(translatedProfile, { recursive: true })
+  // This slice is about translating an English source day; DeepSeek has its own
+  // fixtures and would enter the same digest already complete.
+  mkdirSync(join(translatedHome, 'paper-reader'), { recursive: true })
+  writeFileSync(
+    join(translatedHome, 'paper-reader', 'config.json'),
+    JSON.stringify({ sources: { deepseek: { enabled: false } } }),
+  )
+
+  try {
+    const stdout = capture()
+    const stderr = capture()
+    const llm = fakeLlm()
+    const arxiv = fakeArxiv({ articles: FULL_TEXT })
+    const fetchImpl = async (url, init) => String(url).includes('/chat/completions')
+      ? llm.impl(url, init)
+      : arxiv.impl(url, init)
+
+    const code = await main(['--date', DATE], {
+      env: {
+        DSH_HOME: translatedHome,
+        PAPER_READER_LLM_BASE_URL: BASE_URL,
+        PAPER_READER_LLM_API_KEY: API_KEY,
+        PAPER_READER_LLM_MODEL: MODEL,
+      },
+      now: () => new Date('2026-11-05T09:00:00+08:00'),
+      fetch: fetchImpl,
+      stdout,
+      stderr,
+    })
+    assert.equal(code, 0, stderr.text())
+    assert.ok(llm.calls.length > 0, 'the run translated through the fake endpoint')
+
+    const host = createHost(translatedProfile)
+    try {
+      const index = await host.call('/api/paper-reader/index')
+      const day = await host.call(`/api/paper-reader/digest/${DATE}`)
+      assert.equal(day.status, 200)
+      const body = JSON.parse(day.body)
+      assert.ok(body.items.every(item => item.translationState === 'complete'))
+
+      const page = await mountPage({
+        routes: {
+          '/api/paper-reader/index': JSON.parse(index.body),
+          [`/api/paper-reader/digest/${DATE}`]: body,
+        },
+        mode: 'zh',
+      })
+      try {
+        const items = [...page.container.querySelectorAll('.pr-item')]
+        assert.equal(items.length, 3)
+        await page.click(items[0])
+        assert.match(page.bodyText(), /译:/, '仅中文 mode shows the generated translation')
+        assert.equal(page.container.querySelector('.pr-pending'), null)
+        assert.doesNotMatch(page.container.textContent, /未翻译/)
+      } finally {
+        await page.unmount()
+      }
+    } finally {
+      host.dispose()
+    }
+  } finally {
+    rmSync(translatedHome, { recursive: true, force: true })
   }
 })

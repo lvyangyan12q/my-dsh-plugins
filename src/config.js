@@ -9,12 +9,43 @@
  */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { DEFAULT_PROXY_HEALTH_URL, DEFAULT_PROXY_TIMEOUT_MS } from './proxy.js'
 import { DEFAULT_QUOTA } from './pipeline/select.js'
 import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
 import { DEFAULT_DEEPSEEK_CONFIG } from './sources/deepseek.js'
 
 export const CONFIG_FILE = 'config.json'
 export const DEFAULT_RETENTION_DAYS = 30
+
+/**
+ * Proxy defaults: no address (a machine without one simply has no proxy), a
+ * probe target, and a timeout. The switch that matters per source is
+ * `sources.<id>.useProxy`, so the policy is configuration rather than code.
+ */
+export const DEFAULT_PROXY_CONFIG = {
+  url: null,
+  healthCheckUrl: DEFAULT_PROXY_HEALTH_URL,
+  timeoutMs: DEFAULT_PROXY_TIMEOUT_MS,
+}
+
+/**
+ * Translation defaults. The endpoint/key/model are environment variables by
+ * contract, so they stay `null` here; a config file may pin them for a
+ * scheduled run.
+ */
+export const DEFAULT_TRANSLATION_CONFIG = {
+  enabled: true,
+  targetLanguage: 'zh',
+  batchSize: 8,
+  retries: 2,
+  dailyTokenBudget: 300_000,
+  timeoutMs: 60_000,
+  glossary: [],
+  glossaryVersion: null,
+  baseUrl: null,
+  apiKey: null,
+  model: null,
+}
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -30,47 +61,64 @@ export function defaultConfig() {
     sources: {
       arxiv: {
         ...DEFAULT_ARXIV_CONFIG,
+        useProxy: false,
         categories: [...DEFAULT_ARXIV_CONFIG.categories],
         keywords: [...DEFAULT_ARXIV_CONFIG.keywords],
         excludeKeywords: [...DEFAULT_ARXIV_CONFIG.excludeKeywords],
       },
-      deepseek: { ...DEFAULT_DEEPSEEK_CONFIG },
+      deepseek: { ...DEFAULT_DEEPSEEK_CONFIG, useProxy: false },
+      // The adapters arrive in later tickets; declaring the switch here keeps
+      // "which source needs the proxy" out of the pipeline code.
+      hf: { useProxy: true },
+      openai: { useProxy: true },
     },
     quota: { ...DEFAULT_QUOTA },
+    proxy: { ...DEFAULT_PROXY_CONFIG },
+    translation: { ...DEFAULT_TRANSLATION_CONFIG, glossary: [] },
     retentionDays: DEFAULT_RETENTION_DAYS,
   }
+}
+
+/** Merge user source settings over the per-source defaults, key by key. */
+function mergeSources(defaults, user) {
+  const merged = {}
+  for (const [id, value] of Object.entries(defaults)) {
+    merged[id] = isPlainObject(value) ? { ...value } : value
+  }
+  if (!isPlainObject(user)) return merged
+  for (const [id, value] of Object.entries(user)) {
+    if (!isPlainObject(value)) continue
+    merged[id] = { ...(isPlainObject(merged[id]) ? merged[id] : {}), ...value }
+  }
+  return merged
 }
 
 /** Merge a user object over the defaults, rejecting non-object sections. */
 export function mergeConfig(user, path = CONFIG_FILE) {
   if (!isPlainObject(user)) throw configError(`${path} must contain a JSON object`)
-  for (const key of ['sources', 'quota']) {
+  for (const key of ['sources', 'quota', 'proxy', 'translation']) {
     if (key in user && !isPlainObject(user[key])) throw configError(`${path}: ${key} must be an object`)
   }
-  if (isPlainObject(user.sources) && 'arxiv' in user.sources && !isPlainObject(user.sources.arxiv)) {
-    throw configError(`${path}: sources.arxiv must be an object`)
-  }
-  if (isPlainObject(user.sources) && 'deepseek' in user.sources && !isPlainObject(user.sources.deepseek)) {
-    throw configError(`${path}: sources.deepseek must be an object`)
+  if (isPlainObject(user.sources)) {
+    for (const [id, value] of Object.entries(user.sources)) {
+      if (!isPlainObject(value)) throw configError(`${path}: sources.${id} must be an object`)
+    }
   }
 
   const defaults = defaultConfig()
   return {
     ...defaults,
     ...user,
-    sources: {
-      ...defaults.sources,
-      ...(isPlainObject(user.sources) ? user.sources : {}),
-      arxiv: {
-        ...defaults.sources.arxiv,
-        ...(isPlainObject(user.sources?.arxiv) ? user.sources.arxiv : {}),
-      },
-      deepseek: {
-        ...defaults.sources.deepseek,
-        ...(isPlainObject(user.sources?.deepseek) ? user.sources.deepseek : {}),
-      },
-    },
+    sources: mergeSources(defaults.sources, user.sources),
     quota: { ...defaults.quota, ...(isPlainObject(user.quota) ? user.quota : {}) },
+    proxy: { ...defaults.proxy, ...(isPlainObject(user.proxy) ? user.proxy : {}) },
+    translation: {
+      ...defaults.translation,
+      ...(isPlainObject(user.translation) ? user.translation : {}),
+      glossary: Array.isArray(user.translation?.glossary)
+        ? user.translation.glossary
+        : defaults.translation.glossary,
+    },
     retentionDays: user.retentionDays ?? defaults.retentionDays,
   }
 }
@@ -144,6 +192,64 @@ export function validateConfig(config, path = CONFIG_FILE) {
   validateDeepSeek(config.sources?.deepseek, path)
 
   for (const key of ['total', 'papers', 'blogs']) assertCount(config.quota?.[key], `quota.${key}`, path)
+
+  const proxy = config.proxy
+  if (!isPlainObject(proxy)) throw configError(`${path}: proxy must be an object`)
+  if (proxy.url !== null && proxy.url !== undefined) assertUrl(proxy.url, 'proxy.url', path)
+  assertUrl(proxy.healthCheckUrl, 'proxy.healthCheckUrl', path)
+  assertPositive(proxy.timeoutMs, 'proxy.timeoutMs', path)
+
+  // Source settings are validated generically: `enabled` and `useProxy` are the
+  // two switches every adapter shares, and this keeps future sources data-only.
+  for (const [id, settings] of Object.entries(config.sources ?? {})) {
+    if (!isPlainObject(settings)) throw configError(`${path}: sources.${id} must be an object`)
+    if ('enabled' in settings && typeof settings.enabled !== 'boolean') {
+      throw configError(`${path}: sources.${id}.enabled must be true or false`)
+    }
+    if ('useProxy' in settings && typeof settings.useProxy !== 'boolean') {
+      throw configError(`${path}: sources.${id}.useProxy must be true or false`)
+    }
+  }
+
+  const translation = config.translation
+  if (!isPlainObject(translation)) throw configError(`${path}: translation must be an object`)
+  if (typeof translation.enabled !== 'boolean') {
+    throw configError(`${path}: translation.enabled must be true or false`)
+  }
+  if (translation.targetLanguage !== 'zh' && translation.targetLanguage !== 'en') {
+    throw configError(`${path}: translation.targetLanguage must be "zh" or "en"`)
+  }
+  if (!Number.isInteger(translation.batchSize) || translation.batchSize < 6 || translation.batchSize > 12) {
+    throw configError(`${path}: translation.batchSize must be an integer between 6 and 12`)
+  }
+  if (!Number.isInteger(translation.retries) || translation.retries < 0 || translation.retries > 5) {
+    throw configError(`${path}: translation.retries must be an integer between 0 and 5`)
+  }
+  if (!Number.isInteger(translation.dailyTokenBudget) || translation.dailyTokenBudget <= 0) {
+    throw configError(`${path}: translation.dailyTokenBudget must be a positive integer`)
+  }
+  assertPositive(translation.timeoutMs, 'translation.timeoutMs', path)
+  if (!Array.isArray(translation.glossary)) {
+    throw configError(`${path}: translation.glossary must be an array of { source, target }`)
+  }
+  translation.glossary.forEach((term, index) => {
+    if (!isPlainObject(term) || typeof term.source !== 'string' || term.source.trim().length === 0
+      || typeof term.target !== 'string' || term.target.trim().length === 0) {
+      throw configError(`${path}: translation.glossary[${index}] must have non-empty source and target strings`)
+    }
+  })
+  for (const key of ['baseUrl', 'apiKey', 'model']) {
+    const value = translation[key]
+    if (value !== null && value !== undefined && typeof value !== 'string') {
+      throw configError(`${path}: translation.${key} must be a string or null`)
+    }
+  }
+  if (translation.baseUrl) assertUrl(translation.baseUrl, 'translation.baseUrl', path)
+  if (translation.glossaryVersion !== null && translation.glossaryVersion !== undefined
+    && typeof translation.glossaryVersion !== 'string' && typeof translation.glossaryVersion !== 'number') {
+    throw configError(`${path}: translation.glossaryVersion must be a string, a number or null`)
+  }
+
   if (!Number.isInteger(config.retentionDays) || config.retentionDays <= 0) {
     throw configError(`${path}: retentionDays must be a positive integer`)
   }

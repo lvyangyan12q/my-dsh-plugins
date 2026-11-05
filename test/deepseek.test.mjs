@@ -406,6 +406,7 @@ test('a daily run writes the official pair, never calls translation and respects
       },
     },
     fetch: impl,
+    env: {},
     now: NOW,
   })
 
@@ -467,6 +468,7 @@ test('a DeepSeek item without Chinese stays visible as an English pending item',
     config: deepened,
     source: 'deepseek',
     fetch: impl,
+    env: {},
     now: NOW,
   })
 
@@ -511,7 +513,7 @@ test('the reading page renders a DeepSeek digest in Chinese-source order and eve
     },
   }
   const { impl } = fakeSources()
-  await runDaily({ root, date: DATE, config: deepened, source: 'deepseek', fetch: impl, now: NOW })
+  await runDaily({ root, date: DATE, config: deepened, source: 'deepseek', fetch: impl, env: {}, now: NOW })
   const { digest } = await readDayDigest({ root, date: DATE })
   const index = { schemaVersion: 2, retentionDays: 30, days: [{ date: DATE, items: digest.items.length }] }
   const routes = {
