@@ -137,6 +137,9 @@ function RecallCard({ row, point, profile, command }: {
     catch {
         return null;
     } };
+    const active=useRef(true),storage=useRef<Storage|null>(null);
+    useEffect(()=>{active.current=true;return()=>{active.current=false}},[]);
+    try{storage.current=window.localStorage}catch{}
     const draft = useRef(read()).current;
     const [recall, setRecall] = useState(row.recall ?? draft?.recall ?? ''), [rating, setRating] = useState(draft?.rating ?? ''), [early, setEarly] = useState(draft?.early === true), [busy, setBusy] = useState(false), [error, setError] = useState('');
     useEffect(() => { try {
@@ -148,13 +151,13 @@ function RecallCard({ row, point, profile, command }: {
         return; setBusy(true); setError(''); try {
         const result = await command({ action, pointId: row.pointId, cycleId: row.cycleId, ...(action === 'answer' ? { recall, earlyConfirmed: early } : action === 'confirm' ? { rating, confirmed: true } : {}) });
         if (result === 'success' && action === 'confirm' && key)
-            window.localStorage.removeItem(key);
+            storage.current?.removeItem(key);
     }
     catch (e) {
-        setError(String(e));
+        if(active.current)setError(String(e));
     }
     finally {
-        setBusy(false);
+        if(active.current)setBusy(false);
     } };
     return <article style={{ border: '1px solid #cdd8cd', padding: 16, margin: '12px 0' }}>
         <h3>
