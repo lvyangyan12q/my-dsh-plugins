@@ -8,7 +8,7 @@ import {npmCli} from '../scripts/npm-cli.mjs'
 
 test('independent alpha.3 package ships native study entries and no Worktable or private material dependency',()=>{
  const root=fileURLToPath(new URL('..',import.meta.url)),pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'))
- assert.equal(pkg.version,'0.3.1-alpha.2.1');assert.equal(pkg.engines.dsh,'0.2.2-alpha.3')
+ assert.equal(pkg.version,'0.4.0-alpha.3.1');assert.equal(pkg.engines.dsh,'0.2.2-alpha.3')
  assert.equal(pkg.peerDependencies['@deepseek-ai/cordis'],'4.0.6-alpha.2');assert.equal(pkg.peerDependencies['@deepseek-ai/schemastery'],'3.18.6-alpha.2')
  for(const group of ['optionalDependencies','devDependencies','peerDependencies'])for(const [name,version]of Object.entries(pkg[group]??{}))if(name.startsWith('@deepseek-ai/dsh-'))assert.equal(version,'0.2.2-alpha.3',name)
  assert.equal(pkg.peerDependencies['dsh-worktable'],undefined);assert.equal(pkg.devDependencies['dsh-worktable'],undefined)
@@ -20,3 +20,4 @@ test('independent alpha.3 package ships native study entries and no Worktable or
  for(const file of ['lib/client.js','lib/index.js','lib/types/index.d.ts','lib/types/client.d.ts','roles/personas/老师.md','roles/personas/班主任.md','roles/personas/辅导员.md','roles/skills/kaogong-teach/SKILL.md','cordis.patch.yml'])assert.ok(files.includes(file),file)
  assert.equal(files.some(file=>/^(materials|archive|storage|题目_images|src|scripts|tests|releases|\.scratch)\//.test(file)||/lib\/(?:typecheck|npm-cache)\//.test(file)||file.endsWith('.map')),false)
 })
+
