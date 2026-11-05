@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process'
 import {cleanBuildOutput} from './build-output.mjs'
 import {npmCli} from './npm-cli.mjs'
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'))
-assert(pkg.version==='0.4.0-alpha.3.4'&&pkg.engines.dsh==='0.2.2-alpha.3'&&!pkg.peerDependencies['dsh-worktable'],'Candidate must target the reviewed alpha.3 platform')
+assert(pkg.version==='0.4.0-alpha.3.5'&&pkg.engines.dsh==='0.2.2-alpha.3'&&!pkg.peerDependencies['dsh-worktable'],'Candidate must target the reviewed alpha.3 platform')
 assert(!JSON.stringify(pkg).includes('dsh-personal-workbench'),'Legacy runtime dependency is forbidden')
 assert(process.env.DSH_SOURCE,'Set DSH_SOURCE to the built official acceptance checkout')
 process.env.KAOGONG_TEST_RUNTIME=process.env.DSH_SOURCE
