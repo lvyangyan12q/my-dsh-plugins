@@ -1,3 +1,4 @@
+import {recallRecord,type RecallRecord} from './recalls.ts'
 /**
  * Durable domain specs for the kaogong plugin: the wrong-answer notebook, the
  * study plan/progress, and the question bank. The zod record schemas live in
@@ -88,6 +89,7 @@ export function instanceDomainSpecs(instanceId: string) {
   const prefix = 'kaogong_i_' + createHash('sha256').update(instanceId).digest('hex') + '_'
   return {
     plan: defineDomain({...studyPlanDomain,name:prefix+'plan'}),
+    recalls: defineDomain({name:prefix+'recalls',version:1,tables:{recalls:domainTable<string,RecallRecord>(recallRecord)}}),
     reviews: defineDomain({name:prefix+'reviews',version:1,tables:{reviews:domainTable<string,ReviewRecord>(reviewRecord)}}),
     notebook: defineDomain({ ...notebookDomainSpec, name: prefix + 'notebook' }),
     progress: defineDomain({ ...progressDomainSpec, name: prefix + 'progress' }),
