@@ -1,3 +1,4 @@
+import {matchesMaterialPoint} from './material-points.ts'
 import { recallReferenceEvidence } from './recalls.ts';
 import { learningOutline } from './learning-outline.ts';
 import { canonicalKnowledgePoint } from './knowledge-point-identity.ts';
@@ -8,7 +9,7 @@ import { z } from 'zod';
 export function registerRecalls(registry: BusinessRegistry, state: KaogongInstanceState) {
     return registry.webServer.register({ kind: 'exact', path: '/api/kaogong/recall', handler: async (req, res) => {
             const send = (status: number, value: unknown) => { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(value)); };
-            const references = (pointId: string) => { const point = learningOutline.find(p => p.id === pointId); return point ? [...state.knowledgeEntries.entries()].filter(([, row]) => row.kind !== '笔记' && row.content.trim().length > 0 && row.subject === point.subject && canonicalKnowledgePoint(row.subject, row.knowledgePoint) === point.knowledgePoint).map(([id, row]) => ({ id, title: row.title, source: row.source, content: row.content.slice(0, 12000) })) : []; };
+            const references = (pointId: string) => { const point = learningOutline.find(p => p.id === pointId); return point ? [...state.knowledgeEntries.entries()].filter(([id, row]) => row.content.trim().length > 0 && matchesMaterialPoint(state,id,row,point)).map(([id, row]) => ({ id, title: row.title, source: row.source, content: row.content.slice(0, 12000) })) : []; };
             const associated=(pointId:string,cycleId:string)=>{const tasks=state.plan.read().tasks.filter(t=>t.recallReference?.pointId===pointId);return tasks.find(t=>t.status==='in-progress')??tasks.find(t=>t.recallReference?.cycleId===cycleId)??null};
             const present = (record: ReturnType<typeof state.recalls.list>[number]) => { const planTask=associated(record.pointId,record.cycleId);const row={...record,planTask,planPending:!!planTask&&planTask.status==='in-progress'&&record.history.some(h=>h.cycleId===planTask.recallReference?.cycleId)};if (!row.revealedAt)
                 return row; const current = references(row.pointId), changed = JSON.stringify(row.referenceEvidence) !== JSON.stringify(recallReferenceEvidence(current)); return { ...row, references: changed ? [] : current, referenceChanged: changed }; };

@@ -21,6 +21,7 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
     const notebook = await open(specs.notebook), progress = await open(specs.progress)
     const bank = await open(specs.bank), knowledge = await open(specs.knowledge)
     const rounds = await open(specs.practice), lessons = await open(specs.lessons), reviews = await open(specs.reviews)
+    const materialPoints=await open(specs.materialPoints)
     const recallDomain=await open(specs.recalls),recalls=new Recalls(recallDomain.table('recalls'))
     const planDomain=await open(specs.plan)
     const closeoutDomain=await open(specs.closeouts), closeouts=new Closeouts(closeoutDomain.table('operations'))
@@ -52,7 +53,7 @@ async function openState(facility: Pick<DomainFacility, 'open'>, instanceId: str
     const state = Object.freeze({
       instanceId, questions: notebook.table('questions'), planConfig: progress.global, days: progress.table('days'),
       bankQuestions: bank.table('questions'), knowledgeEntries: knowledge.table('entries'), rounds: rounds.table('rounds'),
-      lessonRecords, lessonSelection, practice, lessons: teaching, plan, errors, recalls, closeouts,
+      materialPoints:materialPoints.table('mappings'),lessonRecords, lessonSelection, practice, lessons: teaching, plan, errors, recalls, closeouts,
     })
     return { state, close() {
       return closing ??= (async () => {
@@ -88,7 +89,7 @@ function checkedTable<V>(table: KvTable<string, V>, check: (value: V) => void): 
   }
 }
 
-export type KaogongInstanceState = Awaited<ReturnType<typeof openState>>['state'] & {unavailableSources?:string[]}
+export type KaogongInstanceState = Awaited<ReturnType<typeof openState>>['state'] & {unavailableSources?:string[];materialOwners?:Map<string,string>;withMaterialMappingLease?<T>(operation:()=>Promise<T>):Promise<T>}
 export interface InstanceStateLease { readonly state: KaogongInstanceState; release(): Promise<void> }
 type Entry = Awaited<ReturnType<typeof openState>> & { references: number; closing?: Promise<void>; idle: (() => void)[] }
 
