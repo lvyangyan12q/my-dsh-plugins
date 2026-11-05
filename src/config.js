@@ -15,6 +15,25 @@ import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
 export const CONFIG_FILE = 'config.json'
 export const DEFAULT_RETENTION_DAYS = 30
 
+/**
+ * Translation defaults. The endpoint/key/model are environment variables by
+ * contract, so they stay `null` here; a config file may pin them for a
+ * scheduled run.
+ */
+export const DEFAULT_TRANSLATION_CONFIG = {
+  enabled: true,
+  targetLanguage: 'zh',
+  batchSize: 8,
+  retries: 2,
+  dailyTokenBudget: 300_000,
+  timeoutMs: 60_000,
+  glossary: [],
+  glossaryVersion: null,
+  baseUrl: null,
+  apiKey: null,
+  model: null,
+}
+
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
@@ -35,6 +54,7 @@ export function defaultConfig() {
       },
     },
     quota: { ...DEFAULT_QUOTA },
+    translation: { ...DEFAULT_TRANSLATION_CONFIG, glossary: [] },
     retentionDays: DEFAULT_RETENTION_DAYS,
   }
 }
@@ -42,7 +62,7 @@ export function defaultConfig() {
 /** Merge a user object over the defaults, rejecting non-object sections. */
 export function mergeConfig(user, path = CONFIG_FILE) {
   if (!isPlainObject(user)) throw configError(`${path} must contain a JSON object`)
-  for (const key of ['sources', 'quota']) {
+  for (const key of ['sources', 'quota', 'translation']) {
     if (key in user && !isPlainObject(user[key])) throw configError(`${path}: ${key} must be an object`)
   }
   if (isPlainObject(user.sources) && 'arxiv' in user.sources && !isPlainObject(user.sources.arxiv)) {
@@ -62,6 +82,13 @@ export function mergeConfig(user, path = CONFIG_FILE) {
       },
     },
     quota: { ...defaults.quota, ...(isPlainObject(user.quota) ? user.quota : {}) },
+    translation: {
+      ...defaults.translation,
+      ...(isPlainObject(user.translation) ? user.translation : {}),
+      glossary: Array.isArray(user.translation?.glossary)
+        ? user.translation.glossary
+        : defaults.translation.glossary,
+    },
     retentionDays: user.retentionDays ?? defaults.retentionDays,
   }
 }
@@ -110,6 +137,46 @@ export function validateConfig(config, path = CONFIG_FILE) {
   assertUrl(arxiv.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
 
   for (const key of ['total', 'papers', 'blogs']) assertCount(config.quota?.[key], `quota.${key}`, path)
+
+  const translation = config.translation
+  if (!isPlainObject(translation)) throw configError(`${path}: translation must be an object`)
+  if (typeof translation.enabled !== 'boolean') {
+    throw configError(`${path}: translation.enabled must be true or false`)
+  }
+  if (translation.targetLanguage !== 'zh' && translation.targetLanguage !== 'en') {
+    throw configError(`${path}: translation.targetLanguage must be "zh" or "en"`)
+  }
+  if (!Number.isInteger(translation.batchSize) || translation.batchSize < 6 || translation.batchSize > 12) {
+    throw configError(`${path}: translation.batchSize must be an integer between 6 and 12`)
+  }
+  if (!Number.isInteger(translation.retries) || translation.retries < 0 || translation.retries > 5) {
+    throw configError(`${path}: translation.retries must be an integer between 0 and 5`)
+  }
+  if (!Number.isInteger(translation.dailyTokenBudget) || translation.dailyTokenBudget <= 0) {
+    throw configError(`${path}: translation.dailyTokenBudget must be a positive integer`)
+  }
+  assertPositive(translation.timeoutMs, 'translation.timeoutMs', path)
+  if (!Array.isArray(translation.glossary)) {
+    throw configError(`${path}: translation.glossary must be an array of { source, target }`)
+  }
+  translation.glossary.forEach((term, index) => {
+    if (!isPlainObject(term) || typeof term.source !== 'string' || term.source.trim().length === 0
+      || typeof term.target !== 'string' || term.target.trim().length === 0) {
+      throw configError(`${path}: translation.glossary[${index}] must have non-empty source and target strings`)
+    }
+  })
+  for (const key of ['baseUrl', 'apiKey', 'model']) {
+    const value = translation[key]
+    if (value !== null && value !== undefined && typeof value !== 'string') {
+      throw configError(`${path}: translation.${key} must be a string or null`)
+    }
+  }
+  if (translation.baseUrl) assertUrl(translation.baseUrl, 'translation.baseUrl', path)
+  if (translation.glossaryVersion !== null && translation.glossaryVersion !== undefined
+    && typeof translation.glossaryVersion !== 'string' && typeof translation.glossaryVersion !== 'number') {
+    throw configError(`${path}: translation.glossaryVersion must be a string, a number or null`)
+  }
+
   if (!Number.isInteger(config.retentionDays) || config.retentionDays <= 0) {
     throw configError(`${path}: retentionDays must be a positive integer`)
   }
