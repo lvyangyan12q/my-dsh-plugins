@@ -18,7 +18,7 @@ for(const key of ['NODE_PATH','NODE_OPTIONS','TSX_TSCONFIG_PATH','KAOGONG_TEST_R
 const run=async(args,name)=>{const result=spawnSync(process.execPath,args,{cwd:root,env,encoding:'utf8',timeout:180000,maxBuffer:8*1024*1024,windowsHide:true});await writeFile(join(root,name+'.private.log'),String(result.stdout??'')+'\n'+String(result.stderr??''));assert.equal(result.status,0,'Official installed identity '+name+' failed; see '+join(root,name+'.private.log'));return result.stdout}
 await run([join(native,'apps/cli/lib/bin.js'),'plugin','--profile','web','add',archive,'--offline','--ignore-scripts'],'official-cli-install')
 const installed=JSON.parse(await readFile(join(profile,'node_modules/@deepseek-ai/dsh-tool-kaogong/package.json'),'utf8'))
-assert.equal(installed.version,'0.4.0-alpha.3.3');assert.equal(installed.engines.dsh,'0.2.2-alpha.3');assert.equal(installed.peerDependencies['dsh-worktable'],undefined);assert.equal(installed.dependencies['get-tsconfig'],'5.0.0-beta.5');
+assert.equal(installed.version,'0.4.0-alpha.3.4');assert.equal(installed.engines.dsh,'0.2.2-alpha.3');assert.equal(installed.peerDependencies['dsh-worktable'],undefined);assert.equal(installed.dependencies['get-tsconfig'],'5.0.0-beta.5');
 const lock=await readFile(join(profile,'pnpm-lock.yaml'),'utf8');assert.ok(lock.includes('get-tsconfig@5.0.0-beta.5:'),'Official clean installation must lock the exact runtime dependency');assert.doesNotMatch(lock,/dsh-worktable/)
 const verify=join(root,'verify-installed.mjs')
 await writeFile(verify,`

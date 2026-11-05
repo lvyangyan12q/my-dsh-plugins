@@ -8,7 +8,7 @@ import {npmCli} from '../scripts/npm-cli.mjs'
 
 test('independent alpha.3 package ships native study entries and no Worktable or private material dependency',()=>{
  const root=fileURLToPath(new URL('..',import.meta.url)),pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'))
- assert.equal(pkg.version,'0.4.0-alpha.3.3');assert.equal(pkg.engines.dsh,'0.2.2-alpha.3')
+ assert.equal(pkg.version,'0.4.0-alpha.3.4');assert.equal(pkg.engines.dsh,'0.2.2-alpha.3')
  assert.equal(pkg.peerDependencies['@deepseek-ai/cordis'],'4.0.6-alpha.2');assert.equal(pkg.peerDependencies['@deepseek-ai/schemastery'],'3.18.6-alpha.2')
  for(const group of ['optionalDependencies','devDependencies','peerDependencies'])for(const [name,version]of Object.entries(pkg[group]??{}))if(name.startsWith('@deepseek-ai/dsh-'))assert.equal(version,'0.2.2-alpha.3',name)
  assert.equal(pkg.peerDependencies['dsh-worktable'],undefined);assert.equal(pkg.devDependencies['dsh-worktable'],undefined)
