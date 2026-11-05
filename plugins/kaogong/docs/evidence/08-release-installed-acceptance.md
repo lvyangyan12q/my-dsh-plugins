@@ -43,3 +43,26 @@ GLM-5.3-Flash 真实调用返回 HTTP429/code1310，周/月额度耗尽，提示
 截图实际通过工具原生image查看，因DevTools文件root限制未保存图片文件，不捏造截图路径。未测的部分成功重试/多轮候选完整实装、重复并发提交、资料撤销全链、全部键盘与主题、IME和其他平台仍是剩余验收；源码回归不能代替。
 
 保留独立home所有新增学习记录、Native Session、候选包和回退材料。不公开发布或推送。本轮正式安装未授权实施，仍未安装日常3080。最终清理只停止核对身份的自建3164和DevTools桥，保留home与证据；工作树交主agent归档清理。
+
+## 隔离实例启动与回退
+
+实例已停止。以下命令仅手动恢复本轮隔离验收，不启动日常3080；运行前检查3164空闲。配置原位引用凭据，命令不含密钥或launch token。
+
+```powershell
+$env:DSH_HOME = 'C:/Users/pc-zzy/.codex/visualizations/2026/10/25/01a173b6-40b6-7fe0-b2c6-3235401e2e8f/release08-acceptance/home'
+$env:DSH_TELEMETRY_DISABLED = '1'
+Set-Location -LiteralPath 'C:/Users/pc-zzy/.codex/visualizations/2026/10/25/01a173b6-40b6-7fe0-b2c6-3235401e2e8f/release08-acceptance/workspace'
+node D:/programming/workspace/deepseek-harness/apps/cli/lib/bin.js --profile web --host 127.0.0.1 --port 3164 --no-open
+```
+
+回退前停止上面启动的实例，保存当前插件清单、配置及业务文件哈希。保留的 .2 包SHA256为 `9758f1fb7e13b75b4fe0d396803ffcfcb72ba49edd970823b88bc5918342c3f9`，包已复制到原仓库releases以免工作树清理影响回退。保持同一DSH_HOME与cwd，使用官方CLI：
+
+```powershell
+node D:/programming/workspace/deepseek-harness/apps/cli/lib/bin.js plugin --profile web add D:/programming/workspace/my-dsh/plugins/kaogong/releases/deepseek-ai-dsh-tool-kaogong-0.4.0-alpha.3.2.tgz --offline --ignore-scripts
+```
+
+然后按上面的启动命令运行，并重新验证安装身份、原会话和学习记录。仅恢复本轮插件包及确有需要的单项插件配置；不整库恢复、不覆盖本轮新增学习或Session。此次实测的是 .2→.3 升级与 .3 同包重装，未执行 .3→.2 降级；未知跨版本行为不保证兼容，不能把回退说明视作降级验收通过。
+
+双轴最终审查：Standards 0项；Spec发现2项P2日期问题，已修复并通过新增回归。另实装发现的折叠设置隐藏错误一并修复，.3现场检查顶层alert可见。README同步新版四页及alpha.3，未声称工作台共存通过。
+
+清理实际状态：已核对PID/命令/监听后停止本轮3164实例及DevTools桥；复查3164监听为0、两PID均退出，最终20个保护文件仍全部哈希一致。独立home、准确包、证据与回退材料保留。发行工作树的归档清理由主agent/merger随后执行，本记录不预报已清理。
