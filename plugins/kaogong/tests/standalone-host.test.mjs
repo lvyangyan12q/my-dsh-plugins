@@ -892,3 +892,15 @@ test('closeout refuses missing practice before persisting consent and accepts la
   const dashboard=(await app.request('/api/kaogong/dashboard?viewId='+view)).value;assert.equal(dashboard.completedTaskCount,1);assert.equal(dashboard.taskCompletionRate,1)
  }finally{await app.close()}
 })
+
+test('generated structured learning tasks join the route and confirmed coverage',async()=>{
+ const app=await fixture();try{
+ const made=await app.request('/api/kaogong/study',{action:'create',title:'生成路线',kind:'learner',confirmed:true}),view=made.value.view.id,url='/api/kaogong/plan?viewId='+view;
+ const examDate=new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+ const draft=await app.request(url,{action:'preview',operation:'generate',baseRevision:0,goal:{examDate,dailyModules:1,subjects:[{name:'行测-资料分析',weight:1}]}});
+ assert.equal(draft.status,200);const saved=await app.request(url,{action:'confirm',id:draft.value.id,revision:0,confirmed:true});const task=saved.value.tasks.find(t=>t.kind==='learn');assert.equal(task.knowledgePointId,'kg-point-047');
+ const route=await app.request('/api/kaogong/route?viewId='+view);assert.equal(route.value.points.find(p=>p.id==='kg-point-047').taskId,task.id);
+ const start=await app.request('/api/kaogong/plan/start?viewId='+view,{id:task.id,revision:saved.value.revision});assert.equal(start.value.lesson.lesson.request.knowledgePointId,'kg-point-047');const lessonId=start.value.lesson.lesson.request.lessonId;
+ await app.request('/api/kaogong/lesson/summary?viewId='+view,{lessonId,notes:'增长率以基期作分母'});assert.equal((await app.request('/api/kaogong/lesson/confirm?viewId='+view,{lessonId,confirmed:true})).status,200);assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.coverage.learned,1);
+ }finally{await app.close()}
+});
