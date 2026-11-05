@@ -520,6 +520,11 @@
   line-height: 1.4;
 }
 
+.pr-pill-excerpt {
+  color: #7a6a52;
+  background: color-mix(in srgb, #7a6a52 12%, transparent);
+}
+
 .pr-item-mark {
   margin-left: auto;
   color: #c9a227;
@@ -948,6 +953,40 @@
   border-radius: 8px;
   color: var(--pr-muted);
   font-size: 11.5px;
+}
+
+/* Why an item is only an excerpt: the reader must not mistake the RSS dek for
+   the article body (OpenAI without a proxy, per-source extraction failure). */
+.pr-excerpt-notice {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px dashed color-mix(in srgb, #d9a441 52%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, #d9a441 8%, transparent);
+  color: var(--pr-text-2);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.pr-excerpt-mark {
+  flex: none;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #d9a441 22%, transparent);
+  color: color-mix(in srgb, #d9a441 72%, var(--pr-text));
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.pr-excerpt-text {
+  min-width: 0;
+}
+
+.pr-excerpt-detail {
+  color: var(--pr-faint);
 }
 
 .pr-demo-note {

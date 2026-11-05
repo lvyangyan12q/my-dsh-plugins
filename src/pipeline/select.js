@@ -84,13 +84,18 @@ export function dedupeCandidates(candidates) {
   return { kept, duplicates }
 }
 
-function matchesCategory(candidate, categories) {
-  if (categories.length === 0) return true
+function matchesCategory(candidate, categories, categoriesBySource) {
+  // A per-source map is authoritative: an arXiv category list must not filter
+  // an OpenAI post whose own RSS categories are "Product" or "Research".
+  const rules = categoriesBySource
+    ? (categoriesBySource[candidate.sourceId] ?? [])
+    : categories
+  if (rules.length === 0) return true
   const declared = Array.isArray(candidate.categories) ? candidate.categories : []
-  // A source that does not describe categories (future blog adapters) is not
-  // filtered by a category rule it can never satisfy.
+  // A source that does not describe categories is not filtered by a rule it can
+  // never satisfy.
   if (declared.length === 0) return true
-  return declared.some(category => categories.includes(category))
+  return declared.some(category => rules.includes(category))
 }
 
 function searchableText(candidate) {
@@ -98,14 +103,19 @@ function searchableText(candidate) {
 }
 
 /** Apply category and keyword filters before ranking. */
-export function filterCandidates(candidates, { categories = [], includeKeywords = [], excludeKeywords = [] } = {}) {
+export function filterCandidates(candidates, {
+  categories = [],
+  categoriesBySource = null,
+  includeKeywords = [],
+  excludeKeywords = [],
+} = {}) {
   const include = normalizeKeywords(includeKeywords)
   const exclude = normalizeKeywords(excludeKeywords)
   const kept = []
   const reasons = { category: 0, include: 0, exclude: 0 }
 
   for (const candidate of candidates) {
-    if (!matchesCategory(candidate, categories)) {
+    if (!matchesCategory(candidate, categories, categoriesBySource)) {
       reasons.category += 1
       continue
     }
@@ -161,6 +171,9 @@ export function selectDaily(candidates, options = {}) {
   const quota = normalizeQuota(options.quota)
   const filterOptions = {
     categories: Array.isArray(options.categories) ? options.categories : [],
+    categoriesBySource: options.categoriesBySource && typeof options.categoriesBySource === 'object'
+      ? options.categoriesBySource
+      : null,
     includeKeywords: options.includeKeywords ?? options.keywords ?? [],
     excludeKeywords: options.excludeKeywords ?? [],
   }

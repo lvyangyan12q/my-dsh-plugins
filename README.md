@@ -56,7 +56,7 @@ $DSH_HOME/paper-reader/
 
 采集链路方案已定：[实现规格](docs/wayfinder/daily-pipeline/spec.md) 与 [11 张纵向切片工单](docs/wayfinder/daily-pipeline/implementation/README.md) 是唯一实施入口。目标：每天 10 条、全文抽取、中英对照、按天 digest、DSH Schedule 每日运行；来源 arXiv、HF 每日榜、Anthropic、DeepSeek、Kimi、OpenAI；HF/OpenAI 需显式代理；X 预留，Claude Code 与 DSH `web_search` 不在范围内。
 
-当前已实现第一条链路（工单 03/04）：CLI → arXiv 列表/LaTeXML 抽取 → 选择/去重/配额 → 段落批量翻译 → 当日 digest + 索引 + run 记录。没有模型配置时条目保持 `translation: null` / `translationState: "pending"` 并明确跳过；页面显示「翻译进行中」。
+当前已实现第一条链路（工单 03/04）：CLI → arXiv 列表/LaTeXML 抽取 → 选择/去重/配额 → 段落批量翻译 → 当日 digest + 索引 + run 记录。没有模型配置时条目保持 `translation: null` / `translationState: "pending"` 并明确跳过；页面显示「翻译进行中」。工单 09 增加了 OpenAI：RSS 列表直连、文章页经代理抽取，代理不可用时保留 RSS 节选。
 
 ```powershell
 node scripts/paper-reader.mjs --date 2026-11-05
@@ -66,7 +66,9 @@ node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源
 
 - 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s）。工具只读该文件，不会覆盖。
 - 示例：`{"quota":{"papers":4},"sources":{"arxiv":{"categories":["cs.CL"],"keywords":["agent"]}}}`。
-- 代理（工单 05）：只对直连失败的来源生效，开关是 `sources.<id>.useProxy`（默认 HF 官方与 OpenAI 文章页为 `true`，arXiv 等直连来源为 `false`）。地址只来自 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`（Node 24 还需启动前设置 `NODE_USE_ENV_PROXY=1`）或配置 `proxy.url`；代码不内置代理地址，也不读取系统代理。
+- 代理（工单 05）：只对直连失败的来源生效，开关是 `sources.<id>.useProxy`（默认 HF 官方与 OpenAI 为 `true`，arXiv 等直连来源为 `false`）。`sources.openai.extractViaProxy`（默认 `true`）把它收窄到文章页：RSS 列表仍直连。
+- OpenAI（工单 09）：默认 `sources.openai.enabled` 为 `false`，需显式开启。开启后从 `openai.com/news/rss.xml` 取标题、官方 dek、`pubDate`、分类与链接；代理可用时抓文章页 SSR 正文（标题、日期、作者、段落）并翻译。代理不可用、单篇 403 或抽取失败时保留 RSS 节选条目（`excerpt: true` + `excerptReason`），页面显示「节选 / 代理不可用」，不伪装成全文、不循环重试。全文与节选都占博客配额（默认 4），节选不计入「全文已翻译」统计（run 记录 `counts.fullTextTranslated`）。
+- 地址只来自 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`（Node 24 还需启动前设置 `NODE_USE_ENV_PROXY=1`）或配置 `proxy.url`；代码不内置代理地址，也不读取系统代理。
 - 每日运行先做一次代理健康检查（`proxy.healthCheckUrl`，默认 HF 每日榜接口）。代理未配置、认证失败、超时或不可达时，受影响来源记为 `skipped` 并写入原因，其他来源照常产出；页面顶部显示「因代理不可用跳过：…」。不会回退直连硬闯，代理凭据不写入 digest 或 run 记录。
 - arXiv 正文取 `arxiv.org/html/<id>`（LaTeXML），保留标题、段落、公式、图注与代码；HTML 缺失时回退摘要并标记「节选」。
 - 翻译使用 OpenAI 兼容 Chat Completions 端点，环境变量：`PAPER_READER_LLM_BASE_URL`、`PAPER_READER_LLM_API_KEY`、`PAPER_READER_LLM_MODEL`（也可在 `translation.baseUrl/apiKey/model` 固定）。三者缺一时整轮翻译明确跳过并写入 run 记录，不影响抓取。

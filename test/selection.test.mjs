@@ -89,6 +89,27 @@ test('category filters drop off-category papers but keep sources without categor
   assert.deepEqual(selected.map(item => item.id), [inCategory.id, noCategories.id])
 })
 
+test('per-source category filters leave other sources and their own tags untouched', () => {
+  const inCategory = candidate({ id: 'arxiv:2611.00101', categories: ['cs.CL'] })
+  const offCategory = candidate({ id: 'arxiv:2611.00102', categories: ['cs.LG'] })
+  const blog = candidate({
+    id: 'openai:introducing-agent-mode',
+    sourceId: 'openai',
+    arxivId: null,
+    kind: 'blog',
+    title: 'Introducing agent mode',
+    url: 'https://openai.com/index/introducing-agent-mode/',
+    categories: ['Product'],
+  })
+
+  const { selected } = selectDaily([inCategory, offCategory, blog], {
+    quota: { total: 10, papers: 6, blogs: 4 },
+    categoriesBySource: { arxiv: ['cs.CL'] },
+  })
+
+  assert.deepEqual(selected.map(item => item.id), [inCategory.id, blog.id])
+})
+
 test('keyword hits in the title outrank summary-only hits, then recency breaks ties', () => {
   const summaryOld = candidate({ title: 'A study of planning', summary: 'We use an agent.', publishedAt: '2026-11-04T09:00:00Z' })
   const summaryNew = candidate({ title: 'Another planning study', summary: 'We also use an agent.', publishedAt: '2026-11-04T20:00:00Z' })
