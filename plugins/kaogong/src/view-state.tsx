@@ -22,7 +22,7 @@ type ViewValues = {
   integration: { service: unknown } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: RoleFacade | null; tasks: TaskFacade | null
-  'plan.display': {scope:string;date:string}; 'study.scroll': Record<string,number>; 'review.target': string | null; 'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
+  'plan.display': {scope:string;date:string}; 'study.scroll': Record<string,number>; 'review.target': string | null; 'review.recallTarget': string | null; 'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
   'roles.teacherSubject': string
   'roles.selected': LearningRoleKey
   'roles.opened': LearningRoleKey[]
@@ -128,7 +128,7 @@ export class KaogongViewStatePool {
 
 export const KaogongStateContext = createContext<KaogongViewState | null>(null)
 export const KaogongPresentationContext=createContext<KaogongViewState|null>(null)
-const displayKeys=new Set<string>(['plan.display','study.scroll','review.target','roles','tasks','teacherHandoff','study.open','study.page','study.pane','roles.selected','roles.opened'])
+const displayKeys=new Set<string>(['plan.display','study.scroll','review.target','review.recallTarget','roles','tasks','teacherHandoff','study.open','study.page','study.pane','roles.selected','roles.opened'])
 
 /** Retain a business value in the plugin owner, or locally for standalone consumers. */
 export function useBusinessState<K extends keyof ViewValues>(key: K, initial: ViewValues[K]): [ViewValues[K], Dispatch<SetStateAction<ViewValues[K]>>] {
@@ -150,3 +150,4 @@ export function useRequestOwner() {
   const [local] = useState(() => shared?null:new KaogongViewState())
   return shared ?? local!
 }
+

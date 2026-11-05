@@ -17,9 +17,9 @@ type Point = {
     subject: string;
     knowledgePoint: string;
 };
-export function RecallPanel() { const transport = useContext(KaogongTransportContext); return <OwnedRecallPanel key={JSON.stringify([transport?.instanceId, transport?.viewId])} profile={transport?.instanceId} view={transport?.viewId}/>; }
-function OwnedRecallPanel({ profile, view }: {
-    profile?: string;
+export function RecallPanel({pointId,onChanged}:{pointId?:string;onChanged?():void}={}) { const transport = useContext(KaogongTransportContext); return <OwnedRecallPanel key={JSON.stringify([transport?.instanceId, transport?.viewId])} profile={transport?.instanceId} view={transport?.viewId} pointId={pointId} onChanged={onChanged}/>; }
+function OwnedRecallPanel({ profile, view, pointId, onChanged }: {
+    pointId?: string; onChanged?():void; profile?: string;
     view?: string;
 }) {
     const presentationKey = profile && view ? 'kaogong/recall-view/' + JSON.stringify([profile, view]) : null;
@@ -58,7 +58,7 @@ function OwnedRecallPanel({ profile, view }: {
         if (response.status === 403 || response.status === 409)
             setItems(rows => rows.map(({ references, ...row }) => row));
         throw Error(value.error ?? '回忆操作失败');
-    } await load(); return isCurrent() ? 'success' : 'cancelled'; };
+    } await load(); onChanged?.(); if(value.planPending)throw Error(value.planError??'复习已保存，计划待恢复；返回复习队列重试计划回写。'); return isCurrent() ? 'success' : 'cancelled'; };
     const enroll = async () => { if (busy)
         return; setBusy(true); setError(''); try {
         await command({ action: 'enroll', pointId: selected, confirmed: true });
@@ -72,12 +72,12 @@ function OwnedRecallPanel({ profile, view }: {
             setBusy(false);
     } };
     const now = new Date().toISOString(), today = studyDate();
-    const visible = items.filter(row => { const point = points.find(p => p.id === row.pointId); return (!subject || point?.subject === subject) && (!pointFilter || row.pointId === pointFilter) && (filter === 'all' || filter === 'due' && row.dueAt <= now || filter === 'overdue' && studyDate(new Date(row.dueAt)) < today || filter === 'future' && row.dueAt > now); });
+    const visible = items.filter(row => { const point = points.find(p => p.id === row.pointId); if(pointId)return row.pointId===pointId; return (!subject || point?.subject === subject) && (!pointFilter || row.pointId === pointFilter) && (filter === 'all' || filter === 'due' && row.dueAt <= now || filter === 'overdue' && studyDate(new Date(row.dueAt)) < today || filter === 'future' && row.dueAt > now); });
     return <section aria-label="知识点主动回忆" style={{ padding: 24 }}>
         <h2>知识点主动回忆</h2>
         <p>先回忆，再对照获准资料并自评。自评不计入练习正确率，也不改变已学状态。</p>
 
-        <label>选择知识点<select value={selected} onChange={e => setSelected(e.target.value)}>
+        {!pointId&&<><label>选择知识点<select value={selected} onChange={e => setSelected(e.target.value)}>
         {points.map(p => <option key={p.id} value={p.id}>
         {p.subject} · {p.knowledgePoint}
         </option>)}
@@ -112,7 +112,7 @@ function OwnedRecallPanel({ profile, view }: {
         </select>
         </label>
 
-        <button disabled={busy} onClick={() => void load().catch(e => { if (isCurrent())
+        </>}<button disabled={busy} onClick={() => void load().catch(e => { if (isCurrent())
         setError(String(e)); })}>刷新回忆及资料</button>
 
         {error && <p role="alert">
@@ -126,7 +126,7 @@ function OwnedRecallPanel({ profile, view }: {
 function RecallCard({ row, point, profile, command }: {
     row: Item;
     point?: Point;
-    profile?: string;
+    pointId?: string; onChanged?():void; profile?: string;
     command(body: unknown): Promise<'success' | 'cancelled'>;
 }) {
     const key = profile ? 'kaogong/recall-draft/' + JSON.stringify([profile, row.pointId, row.cycleId]) : null;
@@ -208,3 +208,7 @@ function RecallCard({ row, point, profile, command }: {
         </details>}
         </article>;
 }
+
+
+
+
