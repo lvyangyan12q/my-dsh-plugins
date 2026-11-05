@@ -5,11 +5,13 @@
  * spawning a child process or reaching the network.
  */
 import assert from 'node:assert/strict'
+import { EventEmitter } from 'node:events'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, test } from 'node:test'
-import { localDate, main, parseArgs } from '../src/cli/main.js'
+import { localDate, main, mainWithProxyBootstrap, parseArgs, proxyReexecPlan } from '../src/cli/main.js'
+import { defaultConfig } from '../src/config.js'
 import { readDayDigest, readRunRecord, storagePaths } from '../src/storage.js'
 import { FULL_TEXT } from './helpers/arxiv.mjs'
 import { fakeSources } from './helpers/sources.mjs'
@@ -102,6 +104,73 @@ test('a real run writes the day digest and leaves the user config untouched', as
   const { digest } = await readDayDigest({ root: dataRoot, date: '2026-11-04' })
   assert.equal(digest.items.length, 2)
   assert.ok(stdout.text().includes(storagePaths(dataRoot).dayPath('2026-11-04')))
+})
+
+/* ------------------------------------------------------------------ */
+/* Configured proxy / self re-exec                                     */
+/* ------------------------------------------------------------------ */
+
+const CONFIG_WITH_PROXY = () => {
+  const config = defaultConfig()
+  config.proxy.url = 'http://proxy.local:3128'
+  return config
+}
+
+test('--help is decided before the config file, so a broken config cannot hide usage', async () => {
+  const home = tempHome()
+  const root = join(home, 'paper-reader')
+  mkdirSync(root, { recursive: true })
+  writeFileSync(join(root, 'config.json'), '{broken')
+  const stdout = sink()
+  const code = await mainWithProxyBootstrap(['--help'], { env: { DSH_HOME: home }, stdout, stderr: sink() })
+  assert.equal(code, 0)
+  assert.match(stdout.text(), /Usage: paper-reader/)
+})
+
+test('a configured proxy.url makes the CLI re-exec once with NODE_USE_ENV_PROXY=1', async () => {
+  const config = CONFIG_WITH_PROXY()
+  const plan = proxyReexecPlan({ config, env: {} })
+  assert.ok(plan, 'the configured URL needs the environment-proxy bridge')
+  assert.equal(plan.env.HTTPS_PROXY, 'http://proxy.local:3128')
+  assert.equal(plan.env.HTTP_PROXY, 'http://proxy.local:3128')
+  assert.equal(plan.env.ALL_PROXY, 'http://proxy.local:3128')
+  assert.equal(plan.env.NODE_USE_ENV_PROXY, '1')
+  assert.equal(plan.env.PAPER_READER_PROXY_REEXEC, '1')
+
+  const calls = []
+  const spawn = (command, args, options) => {
+    calls.push({ command, args, options })
+    const child = new EventEmitter()
+    queueMicrotask(() => child.emit('exit', 0, null))
+    return child
+  }
+  const stdout = sink()
+  const code = await mainWithProxyBootstrap(['--date', '2026-11-04'], {
+    config,
+    env: {},
+    entry: '/tmp/paper-reader.mjs',
+    spawn,
+    stdout,
+    stderr: sink(),
+    fetch: async () => { throw new Error('the parent must not run the pipeline') },
+  })
+
+  assert.equal(code, 0)
+  assert.equal(calls.length, 1, 'exactly one restart, never a loop')
+  assert.deepEqual(calls[0].args, ['/tmp/paper-reader.mjs', '--date', '2026-11-04'])
+  assert.equal(calls[0].options.env.NODE_USE_ENV_PROXY, '1')
+  assert.equal(calls[0].options.stdio, 'inherit')
+  assert.equal(stdout.text(), '', 'the parent writes no digest output')
+})
+
+test('no restart loop: an enabled or already-bootstrapped environment keeps running in-process', () => {
+  const config = CONFIG_WITH_PROXY()
+  assert.equal(proxyReexecPlan({ config, env: { NODE_USE_ENV_PROXY: '1' } }), null)
+  assert.equal(proxyReexecPlan({ config, env: { PAPER_READER_PROXY_REEXEC: '1' } }), null)
+  assert.equal(proxyReexecPlan({ config: defaultConfig(), env: {} }), null, 'no configured URL, no restart')
+
+  const fromEnv = proxyReexecPlan({ config: defaultConfig(), env: { HTTPS_PROXY: 'http://env-proxy.local:8080' } })
+  assert.equal(fromEnv.env.HTTPS_PROXY, 'http://env-proxy.local:8080', 'an env proxy is exported for the child too')
 })
 
 test('the default date is the local day of the injected clock', async () => {

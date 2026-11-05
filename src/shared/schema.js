@@ -14,11 +14,13 @@
  * `validateDigest`, the client renders the result of `normalizeDigest`.
  */
 
+import { dateOnly } from './date.js'
+import { NEUTRAL_BLOCK_TYPES, TEXT_BLOCK_TYPES } from './blocks.js'
+
 export const SCHEMA_VERSION = 2
 export const SOURCE_LANGUAGES = ['en', 'zh']
 
-const TEXT_BLOCK_TYPES = new Set(['heading', 'paragraph'])
-const NEUTRAL_TYPES = new Set(['equation', 'figure', 'code'])
+const TEXT_TYPES = new Set(TEXT_BLOCK_TYPES)
 
 function isObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -152,23 +154,27 @@ export function normalizeItem(raw) {
   const summary = toPair(raw.summary, { original: raw.summaryEn, translation: raw.summaryZh })
   const blocks = Array.isArray(raw.blocks) ? raw.blocks.map(normalizeBlock).filter(Boolean) : []
 
-  const pairs = blocks.filter(block => TEXT_BLOCK_TYPES.has(block.type))
+  const pairs = blocks.filter(block => TEXT_TYPES.has(block.type))
   const total = pairs.length
   const done = pairs.filter(block => Boolean(block.translation)).length
   const explicit = raw.translationState ?? raw.translation?.status
   const derived = total === 0 || done === total ? 'complete' : done === 0 ? 'pending' : 'partial'
   const translationState = isTranslationState(explicit) ? explicit : derived
 
+  const publishedAt = text(raw.publishedAt)
   return {
     id: raw.id,
-    sourceId: text(raw.sourceId),
+    // `source`/`published` are read as v1 aliases; only `sourceId` and
+    // `publishedAt` are written by the pipeline.
+    sourceId: text(raw.sourceId) ?? text(raw.source),
     sourceLanguage,
     title,
     summary,
     authors: Array.isArray(raw.authors) ? raw.authors.filter(author => typeof author === 'string') : [],
     org: text(raw.org),
     venue: text(raw.venue),
-    published: text(raw.published),
+    publishedAt,
+    published: dateOnly(publishedAt) ?? text(raw.published),
     collectedAt: text(raw.collectedAt),
     direction: text(raw.direction),
     tags: Array.isArray(raw.tags) ? raw.tags.filter(tag => typeof tag === 'string') : [],
@@ -270,7 +276,7 @@ function validateBlock(block, where, errors) {
     errors.push(`${where} must be an object`)
     return
   }
-  if (TEXT_BLOCK_TYPES.has(block.type)) {
+  if (TEXT_TYPES.has(block.type)) {
     validatePair(block, where, errors)
     return
   }
@@ -383,5 +389,5 @@ export function validateDayDigest(value) {
 /** Types the reader renders itself; exposed for tests and future adapters. */
 export const BLOCK_TYPES = {
   text: [...TEXT_BLOCK_TYPES],
-  neutral: [...NEUTRAL_TYPES],
+  neutral: [...NEUTRAL_BLOCK_TYPES],
 }

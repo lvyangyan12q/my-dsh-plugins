@@ -17,6 +17,7 @@
  * retried in a loop; one request per article is the budget.
  */
 import { classifyDirection } from './arxiv.js'
+import { extractBlogBlocks } from './blog.js'
 import {
   attr,
   childrenOf,
@@ -30,6 +31,14 @@ import {
   parseMarkup,
   textOf,
 } from '../shared/markup.js'
+import { fetchText } from '../shared/http.js'
+import { slugFromUrl } from '../shared/url.js'
+import {
+  assertPositive,
+  assertUrl,
+  configError,
+  isPlainObject,
+} from './validation.js'
 
 export const SOURCE_ID = 'openai'
 
@@ -62,37 +71,12 @@ export const EXCERPT_REASONS = {
   extract_failed: '正文抽取失败，仅显示 RSS 节选',
 }
 
-const SKIP_TAGS = new Set(['script', 'style', 'nav', 'footer', 'aside', 'form', 'button', 'svg', 'noscript', 'template'])
-
 function sourceError(code, message, extra = {}) {
   return Object.assign(new Error(message), { code, sourceId: SOURCE_ID }, extra)
 }
 
 function withDefaults(config) {
   return { ...DEFAULT_OPENAI_CONFIG, ...(config ?? {}) }
-}
-
-/** Fetch text with a timeout, without letting the timer keep the process alive. */
-async function fetchText(fetchImpl, url, { timeoutMs = 20_000, userAgent, accept } = {}) {
-  if (typeof fetchImpl !== 'function') {
-    throw sourceError('openai_fetch_missing', 'no fetch implementation was provided')
-  }
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  if (typeof timer.unref === 'function') timer.unref()
-  try {
-    const response = await fetchImpl(url, {
-      signal: controller.signal,
-      headers: {
-        accept: accept ?? 'application/rss+xml, application/xml;q=0.9, text/html;q=0.8, */*;q=0.1',
-        ...(userAgent ? { 'user-agent': userAgent } : {}),
-      },
-    })
-    const text = typeof response.text === 'function' ? await response.text() : ''
-    return { response, text }
-  } finally {
-    clearTimeout(timer)
-  }
 }
 
 /** Plain text from an RSS field that may carry escaped HTML. */
@@ -105,19 +89,6 @@ function plainText(value) {
 
 function firstText(node, name) {
   return collapse(textOf(childrenOf(node, name)[0] ?? null))
-}
-
-/** The last path segment of an article URL, used as the stable item slug. */
-export function slugFromUrl(value) {
-  const text = String(value ?? '').trim()
-  if (!text) return ''
-  try {
-    const url = new URL(text)
-    const segments = url.pathname.split('/').filter(Boolean)
-    return segments.length > 0 ? segments[segments.length - 1] : ''
-  } catch {
-    return ''
-  }
 }
 
 /** Parse the news RSS feed into raw item records. */
@@ -188,6 +159,7 @@ export async function listOpenAi({ config, fetch: fetchImpl } = {}) {
     ({ response, text } = await fetchText(fetchImpl, url, {
       timeoutMs: settings.timeoutMs,
       userAgent: settings.userAgent,
+      accept: 'application/rss+xml, application/xml;q=0.9, text/html;q=0.8, */*;q=0.1',
     }))
   } catch (error) {
     throw sourceError('openai_network', `OpenAI RSS request failed: ${error?.message ?? error}`, { cause: error })
@@ -212,59 +184,8 @@ export async function listOpenAi({ config, fetch: fetchImpl } = {}) {
 /* Article page (server-rendered HTML)                                 */
 /* ------------------------------------------------------------------ */
 
-function inlineText(node) {
-  if (typeof node === 'string') return node
-  if (!isElement(node)) return ''
-  if (SKIP_TAGS.has(localName(node.name))) return ''
-  if (localName(node.name) === 'br') return ' '
-  return node.children.map(inlineText).join('')
-}
-
 function textBlocksOf(blocks) {
   return blocks.filter(block => block.type === 'heading' || block.type === 'paragraph')
-}
-
-function pushHeading(node, blocks) {
-  const tag = localName(node.name)
-  if (tag === 'h1') return // the page title is item metadata, not a body block
-  const text = collapse(inlineText(node))
-  if (!text) return
-  blocks.push({ type: 'heading', level: Number(tag.slice(1)) || 2, original: text })
-}
-
-function pushParagraph(node, blocks) {
-  const text = collapse(inlineText(node))
-  if (!text) return
-  blocks.push({ type: 'paragraph', original: text })
-}
-
-function pushFigure(node, blocks) {
-  const captionNode = findFirst(node, child => localName(child.name) === 'figcaption')
-  const caption = captionNode
-    ? collapse(textOf(captionNode)).replace(/^(?:Figure|Fig\.|Table)\s*\d+[:.]\s*/i, '')
-    : ''
-  const imageNode = findFirst(node, child => localName(child.name) === 'img' && Boolean(attr(child, 'src')))
-  const image = imageNode ? attr(imageNode, 'src') : ''
-  if (!caption && !image) return
-  blocks.push({
-    type: 'figure',
-    image: image && !image.startsWith('data:') ? image : null,
-    ...(caption ? { caption: { original: caption } } : {}),
-  })
-}
-
-function pushCode(node, blocks) {
-  const raw = textOf(node).replace(/\r\n?/g, '\n').replace(/^\s*\n/, '').replace(/\s+$/, '')
-  if (!raw.trim()) return
-  let language = null
-  for (const candidate of [node, ...findAll(node, child => Boolean(attr(child, 'class')))]) {
-    const match = /(?:^|\s)language-([A-Za-z0-9_+#.-]+)/.exec(attr(candidate, 'class') || '')
-    if (match) {
-      language = match[1].toLowerCase()
-      break
-    }
-  }
-  blocks.push({ type: 'code', code: raw, ...(language ? { language } : {}) })
 }
 
 /** The article container: `<main>` first, then `<article>`, then `<body>`. */
@@ -321,36 +242,15 @@ export function extractOpenAiPage(html, { maxBlocks = DEFAULT_OPENAI_CONFIG.maxB
   const tree = parseMarkup(html, { html: true })
   const main = articleRoot(tree)
   const titleNode = findFirst(main, node => localName(node.name) === 'h1')
-  const blocks = []
-
-  const walk = (node) => {
-    if (blocks.length >= maxBlocks) return
-    if (typeof node === 'string') return
-    if (!isElement(node)) return
-    const tag = localName(node.name)
-    if (SKIP_TAGS.has(tag)) return
-
-    if (tag === 'pre') {
-      pushCode(node, blocks)
-      return
-    }
-    if (tag === 'figure') {
-      pushFigure(node, blocks)
-      return
-    }
-    if (/^h[1-6]$/.test(tag)) {
-      pushHeading(node, blocks)
-      return
-    }
-    if (tag === 'p') {
-      pushParagraph(node, blocks)
-      return
-    }
-
-    for (const child of node.children) walk(child)
-  }
-
-  walk(main)
+  // The shared blog walker with OpenAI's rules: h1 is metadata, headings reach
+  // h6 and only `<p>` is prose (no lists/blockquotes on the news pages).
+  const blocks = extractBlogBlocks(main, {
+    maxBlocks,
+    skipH1: true,
+    headingLevels: 6,
+    paragraphTags: ['p'],
+    codeBlockClass: false,
+  })
 
   return {
     title: titleNode ? collapse(textOf(titleNode)) : null,
@@ -430,5 +330,25 @@ export async function extractOpenAiArticle({ candidate, config, fetch: fetchImpl
     title: page.title || candidate.title,
     publishedAt: page.publishedAt || candidate.publishedAt || null,
     authors: page.authors,
+  }
+}
+
+/** Validate the OpenAI section of the user config. */
+export function validateOpenAiConfig(config, path) {
+  if (!isPlainObject(config)) throw configError(`${path}: sources.openai must be an object`)
+  if (typeof config.enabled !== 'boolean') throw configError(`${path}: sources.openai.enabled must be true or false`)
+  if (typeof config.extractViaProxy !== 'boolean') {
+    throw configError(`${path}: sources.openai.extractViaProxy must be true or false`)
+  }
+  if (typeof config.extractFullText !== 'boolean') {
+    throw configError(`${path}: sources.openai.extractFullText must be true or false`)
+  }
+  assertUrl(config.rssUrl, 'sources.openai.rssUrl', path)
+  assertPositive(config.timeoutMs, 'sources.openai.timeoutMs', path)
+  if (!Number.isInteger(config.maxItems) || config.maxItems <= 0) {
+    throw configError(`${path}: sources.openai.maxItems must be a positive integer`)
+  }
+  if (!Number.isInteger(config.maxBlocks) || config.maxBlocks <= 0) {
+    throw configError(`${path}: sources.openai.maxBlocks must be a positive integer`)
   }
 }

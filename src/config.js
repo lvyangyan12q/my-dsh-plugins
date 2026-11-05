@@ -6,17 +6,25 @@
  * never written back: a scheduled run must not rewrite what the user tuned.
  * Invalid values are explicit errors naming the key, because silently ignoring
  * them would run with a different quota than the user asked for.
+ *
+ * Per-source defaults and validation belong to the source modules and are
+ * reached through `sources/registry.js`: adding a source does not mean editing
+ * a second table here. This module only owns the cross-source sections (quota,
+ * selection, proxy, translation, retention).
  */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { DEFAULT_PROXY_HEALTH_URL, DEFAULT_PROXY_TIMEOUT_MS } from './proxy.js'
 import { DEFAULT_QUOTA } from './pipeline/select.js'
-import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
-import { DEFAULT_OPENAI_CONFIG } from './sources/openai.js'
-import { DEFAULT_DEEPSEEK_CONFIG } from './sources/deepseek.js'
-import { DEFAULT_ANTHROPIC_CONFIG, validateAnthropicConfig } from './sources/anthropic.js'
-import { DEFAULT_KIMI_CONFIG, validateKimiConfig } from './sources/kimi.js'
-import { DEFAULT_HF_CONFIG } from './sources/hf.js'
+import { SOURCES, sourceDefinition } from './sources/registry.js'
+import {
+  assertCount,
+  assertPositive,
+  assertStringList,
+  assertUrl,
+  configError,
+  isPlainObject,
+} from './sources/validation.js'
 
 export const CONFIG_FILE = 'config.json'
 export const DEFAULT_RETENTION_DAYS = 30
@@ -30,6 +38,18 @@ export const DEFAULT_PROXY_CONFIG = {
   url: null,
   healthCheckUrl: DEFAULT_PROXY_HEALTH_URL,
   timeoutMs: DEFAULT_PROXY_TIMEOUT_MS,
+}
+
+/**
+ * Selection defaults. `sourceWeights` is an additive relevance bonus per
+ * source (a tie-breaker after votes and keyword hits), and `institutions` is an
+ * allowlist for papers that declare their affiliations: a paper that declares
+ * one and matches none is dropped, while a paper that declares none is kept
+ * (the same rule the category filter uses).
+ */
+export const DEFAULT_SELECTION_CONFIG = {
+  sourceWeights: {},
+  institutions: [],
 }
 
 /**
@@ -51,44 +71,28 @@ export const DEFAULT_TRANSLATION_CONFIG = {
   model: null,
 }
 
-function isPlainObject(value) {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-function configError(message) {
-  return Object.assign(new Error(message), { code: 'config_invalid', exitCode: 2, status: 400 })
+/** Deep-clone a registry default so callers cannot mutate the shared object. */
+function cloneDefault(value) {
+  if (Array.isArray(value)) return value.map(cloneDefault)
+  if (!isPlainObject(value)) return value
+  const copy = {}
+  for (const [key, entry] of Object.entries(value)) copy[key] = cloneDefault(entry)
+  return copy
 }
 
 /** Built-in configuration, deep-cloned so callers cannot mutate the defaults. */
 export function defaultConfig() {
+  const sources = {}
+  for (const [id, definition] of Object.entries(SOURCES)) {
+    sources[id] = cloneDefault(definition.defaults)
+  }
   return {
-    sources: {
-      arxiv: {
-        ...DEFAULT_ARXIV_CONFIG,
-        useProxy: false,
-        categories: [...DEFAULT_ARXIV_CONFIG.categories],
-        keywords: [...DEFAULT_ARXIV_CONFIG.keywords],
-        excludeKeywords: [...DEFAULT_ARXIV_CONFIG.excludeKeywords],
-      },
-      deepseek: { ...DEFAULT_DEEPSEEK_CONFIG, useProxy: false },
-      anthropic: {
-        ...DEFAULT_ANTHROPIC_CONFIG,
-        useProxy: false,
-        prefixes: [...DEFAULT_ANTHROPIC_CONFIG.prefixes],
-        excludePaths: [...DEFAULT_ANTHROPIC_CONFIG.excludePaths],
-      },
-      kimi: { ...DEFAULT_KIMI_CONFIG, useProxy: false },
-      // The HF daily board is the heat signal for the papers quota. It is
-      // proxied by default because the official API is not directly reachable;
-      // an unavailable proxy skips the source instead of going direct.
-      hf: { ...DEFAULT_HF_CONFIG },
-      // OpenAI ships opt-in: the RSS list is direct, but the article page is
-      // only reachable through the user's proxy, and the site terms for the
-      // article-page fetch are still being reviewed. Set
-      // `sources.openai.enabled` to true to include it in the daily run.
-      openai: { ...DEFAULT_OPENAI_CONFIG },
-    },
+    sources,
     quota: { ...DEFAULT_QUOTA },
+    selection: {
+      sourceWeights: { ...DEFAULT_SELECTION_CONFIG.sourceWeights },
+      institutions: [...DEFAULT_SELECTION_CONFIG.institutions],
+    },
     proxy: { ...DEFAULT_PROXY_CONFIG },
     translation: { ...DEFAULT_TRANSLATION_CONFIG, glossary: [] },
     retentionDays: DEFAULT_RETENTION_DAYS,
@@ -112,7 +116,7 @@ function mergeSources(defaults, user) {
 /** Merge a user object over the defaults, rejecting non-object sections. */
 export function mergeConfig(user, path = CONFIG_FILE) {
   if (!isPlainObject(user)) throw configError(`${path} must contain a JSON object`)
-  for (const key of ['sources', 'quota', 'proxy', 'translation']) {
+  for (const key of ['sources', 'quota', 'selection', 'proxy', 'translation']) {
     if (key in user && !isPlainObject(user[key])) throw configError(`${path}: ${key} must be an object`)
   }
   if (isPlainObject(user.sources)) {
@@ -122,11 +126,26 @@ export function mergeConfig(user, path = CONFIG_FILE) {
   }
 
   const defaults = defaultConfig()
+  const userSelection = isPlainObject(user.selection) ? user.selection : {}
   return {
     ...defaults,
     ...user,
     sources: mergeSources(defaults.sources, user.sources),
     quota: { ...defaults.quota, ...(isPlainObject(user.quota) ? user.quota : {}) },
+    selection: {
+      ...defaults.selection,
+      ...userSelection,
+      // Invalid shapes are passed through so `validateSelection` can name the
+      // exact key instead of the merge silently replacing them with defaults.
+      sourceWeights: userSelection.sourceWeights === undefined
+        ? { ...defaults.selection.sourceWeights }
+        : isPlainObject(userSelection.sourceWeights)
+          ? { ...defaults.selection.sourceWeights, ...userSelection.sourceWeights }
+          : userSelection.sourceWeights,
+      institutions: userSelection.institutions === undefined
+        ? defaults.selection.institutions
+        : userSelection.institutions,
+    },
     proxy: { ...defaults.proxy, ...(isPlainObject(user.proxy) ? user.proxy : {}) },
     translation: {
       ...defaults.translation,
@@ -139,95 +158,25 @@ export function mergeConfig(user, path = CONFIG_FILE) {
   }
 }
 
-function assertStringList(value, key, path, { allowEmpty = true } = {}) {
-  if (!Array.isArray(value)) throw configError(`${path}: ${key} must be an array of strings`)
-  if (value.some(entry => typeof entry !== 'string' || entry.trim().length === 0)) {
-    throw configError(`${path}: ${key} must only contain non-empty strings`)
+/** Validate the cross-source `selection` section. */
+function validateSelection(selection, path) {
+  if (!isPlainObject(selection)) throw configError(`${path}: selection must be an object`)
+  const weights = selection.sourceWeights
+  if (!isPlainObject(weights)) throw configError(`${path}: selection.sourceWeights must be an object`)
+  for (const [id, weight] of Object.entries(weights)) {
+    if (id.trim().length === 0) throw configError(`${path}: selection.sourceWeights keys must be source ids`)
+    if (typeof weight !== 'number' || !Number.isFinite(weight)) {
+      throw configError(`${path}: selection.sourceWeights.${id} must be a finite number`)
+    }
   }
-  if (!allowEmpty && value.length === 0) throw configError(`${path}: ${key} must not be empty`)
-}
-
-function assertCount(value, key, path) {
-  if (!Number.isInteger(value) || value < 0) throw configError(`${path}: ${key} must be a non-negative integer`)
-}
-
-function assertPositive(value, key, path) {
-  if (!Number.isFinite(value) || value <= 0) throw configError(`${path}: ${key} must be a positive number`)
-}
-
-function assertUrl(value, key, path) {
-  if (typeof value !== 'string' || !/^https?:\/\//i.test(value)) {
-    throw configError(`${path}: ${key} must be an http(s) URL`)
-  }
-}
-
-/** Validate the DeepSeek section; the defaults let it run with no user config. */
-function validateDeepSeek(deepseek, path) {
-  if (!isPlainObject(deepseek)) throw configError(`${path}: sources.deepseek must be an object`)
-  if (typeof deepseek.enabled !== 'boolean') {
-    throw configError(`${path}: sources.deepseek.enabled must be true or false`)
-  }
-  assertUrl(deepseek.sitemapUrl, 'sources.deepseek.sitemapUrl', path)
-  assertUrl(deepseek.baseUrl, 'sources.deepseek.baseUrl', path)
-  assertPositive(deepseek.timeoutMs, 'sources.deepseek.timeoutMs', path)
-  if (!Number.isInteger(deepseek.lookbackDays) || deepseek.lookbackDays < 0) {
-    throw configError(`${path}: sources.deepseek.lookbackDays must be a non-negative integer`)
-  }
-  if (!Number.isInteger(deepseek.maxItems) || deepseek.maxItems <= 0) {
-    throw configError(`${path}: sources.deepseek.maxItems must be a positive integer`)
-  }
-  if (!Number.isInteger(deepseek.maxBlocks) || deepseek.maxBlocks <= 0) {
-    throw configError(`${path}: sources.deepseek.maxBlocks must be a positive integer`)
-  }
-  if (!Number.isInteger(deepseek.legacyYear) || deepseek.legacyYear < 1990 || deepseek.legacyYear > 2100) {
-    throw configError(`${path}: sources.deepseek.legacyYear must be a four-digit year`)
-  }
+  assertStringList(selection.institutions, 'selection.institutions', path)
 }
 
 /** Validate the merged config, naming the offending key. */
 export function validateConfig(config, path = CONFIG_FILE) {
-  const arxiv = config.sources?.arxiv
-  if (!isPlainObject(arxiv)) throw configError(`${path}: sources.arxiv must be an object`)
-  if (typeof arxiv.enabled !== 'boolean') throw configError(`${path}: sources.arxiv.enabled must be true or false`)
-  assertStringList(arxiv.categories, 'sources.arxiv.categories', path)
-  assertStringList(arxiv.keywords, 'sources.arxiv.keywords', path)
-  assertStringList(arxiv.excludeKeywords, 'sources.arxiv.excludeKeywords', path)
-  if (!Number.isInteger(arxiv.maxResults) || arxiv.maxResults <= 0) {
-    throw configError(`${path}: sources.arxiv.maxResults must be a positive integer`)
-  }
-  if (typeof arxiv.extractFullText !== 'boolean') {
-    throw configError(`${path}: sources.arxiv.extractFullText must be true or false`)
-  }
-  assertPositive(arxiv.timeoutMs, 'sources.arxiv.timeoutMs', path)
-  if (!Number.isInteger(arxiv.maxBlocks) || arxiv.maxBlocks <= 0) {
-    throw configError(`${path}: sources.arxiv.maxBlocks must be a positive integer`)
-  }
-  assertUrl(arxiv.baseUrl, 'sources.arxiv.baseUrl', path)
-  assertUrl(arxiv.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
-
-  const openai = config.sources?.openai
-  if (!isPlainObject(openai)) throw configError(`${path}: sources.openai must be an object`)
-  if (typeof openai.enabled !== 'boolean') throw configError(`${path}: sources.openai.enabled must be true or false`)
-  if (typeof openai.extractViaProxy !== 'boolean') {
-    throw configError(`${path}: sources.openai.extractViaProxy must be true or false`)
-  }
-  if (typeof openai.extractFullText !== 'boolean') {
-    throw configError(`${path}: sources.openai.extractFullText must be true or false`)
-  }
-  assertUrl(openai.rssUrl, 'sources.openai.rssUrl', path)
-  assertPositive(openai.timeoutMs, 'sources.openai.timeoutMs', path)
-  if (!Number.isInteger(openai.maxItems) || openai.maxItems <= 0) {
-    throw configError(`${path}: sources.openai.maxItems must be a positive integer`)
-  }
-  if (!Number.isInteger(openai.maxBlocks) || openai.maxBlocks <= 0) {
-    throw configError(`${path}: sources.openai.maxBlocks must be a positive integer`)
-  }
-
-  validateDeepSeek(config.sources?.deepseek, path)
-  validateAnthropicConfig(config.sources?.anthropic, path)
-  validateKimiConfig(config.sources?.kimi, path)
-
   for (const key of ['total', 'papers', 'blogs']) assertCount(config.quota?.[key], `quota.${key}`, path)
+
+  validateSelection(config.selection, path)
 
   const proxy = config.proxy
   if (!isPlainObject(proxy)) throw configError(`${path}: proxy must be an object`)
@@ -235,8 +184,8 @@ export function validateConfig(config, path = CONFIG_FILE) {
   assertUrl(proxy.healthCheckUrl, 'proxy.healthCheckUrl', path)
   assertPositive(proxy.timeoutMs, 'proxy.timeoutMs', path)
 
-  // Source settings are validated generically: `enabled` and `useProxy` are the
-  // two switches every adapter shares, and this keeps future sources data-only.
+  // Every source owns its keys: built-in sources validate through the registry,
+  // and an adapter-only source still gets the two shared switches checked.
   for (const [id, settings] of Object.entries(config.sources ?? {})) {
     if (!isPlainObject(settings)) throw configError(`${path}: sources.${id} must be an object`)
     if ('enabled' in settings && typeof settings.enabled !== 'boolean') {
@@ -245,17 +194,7 @@ export function validateConfig(config, path = CONFIG_FILE) {
     if ('useProxy' in settings && typeof settings.useProxy !== 'boolean') {
       throw configError(`${path}: sources.${id}.useProxy must be true or false`)
     }
-  }
-
-  // HF settings are checked only when present, so a partial user object still
-  // fails on the switch above rather than on a default it never supplied.
-  const hf = config.sources?.hf
-  if (isPlainObject(hf)) {
-    if ('baseUrl' in hf) assertUrl(hf.baseUrl, 'sources.hf.baseUrl', path)
-    if ('maxItems' in hf && (!Number.isInteger(hf.maxItems) || hf.maxItems <= 0)) {
-      throw configError(`${path}: sources.hf.maxItems must be a positive integer`)
-    }
-    if ('timeoutMs' in hf) assertPositive(hf.timeoutMs, 'sources.hf.timeoutMs', path)
+    sourceDefinition(id)?.validateConfig(settings, path)
   }
 
   const translation = config.translation

@@ -22,6 +22,7 @@
  */
 import { createTranslationCache, translationCacheKey } from './cache.js'
 import { resolveGlossary } from './glossary.js'
+import { isEquationBlock, isFigureBlock, isTextBlock } from '../shared/blocks.js'
 import {
   buildTranslationMessages,
   chatCompletionsUrl,
@@ -85,11 +86,11 @@ export function collectUnits(item) {
   }
 
   for (const block of item.blocks ?? []) {
-    if ((block.type === 'heading' || block.type === 'paragraph') && !hasText(block.translation)) {
+    if (isTextBlock(block) && !hasText(block.translation)) {
       push('body', block.original, value => { block.translation = value })
-    } else if (block.type === 'figure' && block.caption && !hasText(block.caption.translation)) {
+    } else if (isFigureBlock(block) && block.caption && !hasText(block.caption.translation)) {
       push('caption', block.caption.original, value => { block.caption.translation = value })
-    } else if (block.type === 'equation' && block.note && !hasText(block.note.translation)) {
+    } else if (isEquationBlock(block) && block.note && !hasText(block.note.translation)) {
       push('note', block.note.original, value => { block.note.translation = value })
     }
   }
@@ -102,9 +103,9 @@ export function translationProgress(item) {
   if (item.title && hasText(item.title.original)) pairs.push(item.title)
   if (item.summary && hasText(item.summary.original)) pairs.push(item.summary)
   for (const block of item.blocks ?? []) {
-    if ((block.type === 'heading' || block.type === 'paragraph') && hasText(block.original)) pairs.push(block)
-    else if (block.type === 'figure' && block.caption && hasText(block.caption.original)) pairs.push(block.caption)
-    else if (block.type === 'equation' && block.note && hasText(block.note.original)) pairs.push(block.note)
+    if (isTextBlock(block) && hasText(block.original)) pairs.push(block)
+    else if (isFigureBlock(block) && block.caption && hasText(block.caption.original)) pairs.push(block.caption)
+    else if (isEquationBlock(block) && block.note && hasText(block.note.original)) pairs.push(block.note)
   }
   const total = pairs.length
   const done = pairs.filter(pair => hasText(pair.translation)).length
@@ -176,6 +177,11 @@ function finishStats(stats, items, { anyTranslated, budgetUsed, budgetExceeded, 
  *
  * Returns `{ items, stats }`; `items` are the same objects. A missing endpoint
  * configuration is a `skipped` result naming what to set, not a silent no-op.
+ *
+ * `skipIds` names items whose text is already final (DeepSeek's official
+ * bilingual pairs). They stay in `stats` — a complete official item is still a
+ * complete item — but no block of theirs is ever sent to the model, so a
+ * missing official side stays `pending` instead of being machine-translated.
  */
 export async function translateItems({
   items = [],
@@ -185,6 +191,7 @@ export async function translateItems({
   fetch: fetchImpl = globalThis.fetch,
   dryRun = false,
   budgetUsed = 0,
+  skipIds = null,
 } = {}) {
   if (typeof root !== 'string' || root.length === 0) throw new TypeError('translateItems needs a data root')
   const settings = resolveLlmSettings(env, config)
@@ -297,24 +304,38 @@ export async function translateItems({
     }
   }
 
-  /** Try the batch, then isolate failures block by block. */
-  const translateBatch = async (item, batch) => {
+  /**
+   * One batch with the configured retries.
+   *
+   * Returns the translations, `null` for "stop now" (budget spent or the
+   * endpoint rejected the credentials) and `undefined` when the retries are
+   * exhausted. The caller decides whether to isolate blocks after that.
+   */
+  const requestWithRetries = async (item, batch) => {
     for (let attempt = 0; attempt <= settings.retries; attempt += 1) {
       if (attempt > 0) stats.retries += 1
       try {
-        const translations = await requestOnce(item, batch)
-        if (translations === null) return
-        for (let index = 0; index < batch.length; index += 1) {
-          await applyAndCache(batch[index], translations[index])
-        }
-        return
+        return await requestOnce(item, batch)
       } catch (error) {
         if (error?.stop) {
           stopped = error
-          return
+          return null
         }
-        if (budgetExceeded) return
+        if (budgetExceeded) return null
       }
+    }
+    return undefined
+  }
+
+  /** Try the batch, then isolate failures block by block. */
+  const translateBatch = async (item, batch) => {
+    const translations = await requestWithRetries(item, batch)
+    if (translations === null) return
+    if (translations !== undefined) {
+      for (let index = 0; index < batch.length; index += 1) {
+        await applyAndCache(batch[index], translations[index])
+      }
+      return
     }
 
     // A single-block batch has already used its retries.
@@ -324,30 +345,20 @@ export async function translateItems({
     }
 
     for (const unit of batch) {
-      if (budgetExceeded) return
-      let applied = false
-      for (let attempt = 0; attempt <= settings.retries; attempt += 1) {
-        if (attempt > 0) stats.retries += 1
-        try {
-          const translations = await requestOnce(item, [unit])
-          if (translations === null) return
-          await applyAndCache(unit, translations[0])
-          applied = true
-          break
-        } catch (error) {
-          if (error?.stop) {
-            stopped = error
-            return
-          }
-          if (budgetExceeded) return
-        }
+      if (budgetExceeded || stopped) return
+      const single = await requestWithRetries(item, [unit])
+      if (single === null) return
+      if (single !== undefined) {
+        await applyAndCache(unit, single[0])
+        continue
       }
-      if (!applied) stats.failedUnits += 1
+      stats.failedUnits += 1
     }
   }
 
   for (const item of items) {
     if (budgetExceeded || stopped) break
+    if (skipIds?.has(item.id)) continue
     const targetLanguage = targetLanguageFor(item, settings)
     const units = collectUnits(item)
     if (units.length === 0) continue

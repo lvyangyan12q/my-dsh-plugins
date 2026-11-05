@@ -16,18 +16,14 @@
  * the resulting shape.
  */
 import { readLatestRun } from './storage.js'
+import { SOURCES } from './sources/registry.js'
 
 export const RUN_STATUS_SCHEMA_VERSION = 1
 
 /** Display labels for sources that may have no items in the current digest. */
-export const SOURCE_LABELS = Object.freeze({
-  arxiv: 'arXiv',
-  deepseek: 'DeepSeek',
-  anthropic: 'Anthropic',
-  kimi: 'Kimi',
-  hf: 'Hugging Face',
-  openai: 'OpenAI',
-})
+export const SOURCE_LABELS = Object.freeze(Object.fromEntries(
+  Object.entries(SOURCES).map(([id, definition]) => [id, definition.label]),
+))
 
 export const SOURCE_FAILED_CODE = 'source_failed'
 export const SOURCE_SKIPPED_CODE = 'source_skipped'

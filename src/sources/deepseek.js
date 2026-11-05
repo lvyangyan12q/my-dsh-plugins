@@ -25,11 +25,19 @@ import {
   textOf,
 } from '../shared/markup.js'
 import { classifyDirection } from '../shared/direction.js'
+import { fetchText } from '../shared/http.js'
+import {
+  assertPositive,
+  assertUrl,
+  configError,
+  isPlainObject,
+} from './validation.js'
 
 export const SOURCE_ID = 'deepseek'
 
 export const DEFAULT_DEEPSEEK_CONFIG = {
   enabled: true,
+  useProxy: false,
   sitemapUrl: 'https://api-docs.deepseek.com/sitemap.xml',
   baseUrl: 'https://api-docs.deepseek.com',
   timeoutMs: 20_000,
@@ -127,29 +135,6 @@ export function parseDeepSeekSitemap(xml, { baseUrl, legacyYear } = {}) {
   return entries
 }
 
-/** Fetch text with a timeout, without letting the timer keep the process alive. */
-async function fetchText(fetchImpl, url, { timeoutMs = 20_000, userAgent, accept } = {}) {
-  if (typeof fetchImpl !== 'function') {
-    throw sourceError('deepseek_fetch_missing', 'no fetch implementation was provided')
-  }
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  if (typeof timer.unref === 'function') timer.unref()
-  try {
-    const response = await fetchImpl(url, {
-      signal: controller.signal,
-      headers: {
-        accept: accept ?? 'application/xml, text/xml;q=0.9, */*;q=0.1',
-        ...(userAgent ? { 'user-agent': userAgent } : {}),
-      },
-    })
-    const text = typeof response.text === 'function' ? await response.text() : ''
-    return { response, text }
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 /** One discovered article as a selection candidate (`kind: 'blog'`). */
 function toCandidate(entry) {
   return {
@@ -163,8 +148,9 @@ function toCandidate(entry) {
     title: `DeepSeek ${entry.published}`,
     summary: '',
     url: entry.url,
-    published: entry.published,
-    publishedAt: `${entry.published}T00:00:00+08:00`,
+    // The slug carries a calendar day, not an instant: keep the date-only form
+    // so the digest writes that day at midnight UTC instead of shifting it.
+    publishedAt: entry.published,
     direction: 'architecture',
     tags: [SOURCE_ID, 'news'],
   }
@@ -180,6 +166,9 @@ function toCandidate(entry) {
 export async function listDeepSeek({ config, date, fetch: fetchImpl }) {
   const settings = withDefaults(config)
   const url = settings.sitemapUrl
+  if (typeof fetchImpl !== 'function') {
+    throw sourceError('deepseek_fetch_missing', 'no fetch implementation was provided')
+  }
 
   let response
   let text
@@ -187,6 +176,7 @@ export async function listDeepSeek({ config, date, fetch: fetchImpl }) {
     ({ response, text } = await fetchText(fetchImpl, url, {
       timeoutMs: settings.timeoutMs,
       userAgent: settings.userAgent,
+      accept: 'application/xml, text/xml;q=0.9, */*;q=0.1',
     }))
   } catch (error) {
     throw sourceError('deepseek_network', `DeepSeek sitemap request failed: ${error?.message ?? error}`, { cause: error })
@@ -654,4 +644,27 @@ function describeFailure(page) {
 
 function classifyDirectionFor(title, summary) {
   return classifyDirection({ title: title ?? '', summary: summary ?? '' })
+}
+
+/** Validate the DeepSeek section of the user config. */
+export function validateDeepSeekConfig(config, path) {
+  if (!isPlainObject(config)) throw configError(`${path}: sources.deepseek must be an object`)
+  if (typeof config.enabled !== 'boolean') {
+    throw configError(`${path}: sources.deepseek.enabled must be true or false`)
+  }
+  assertUrl(config.sitemapUrl, 'sources.deepseek.sitemapUrl', path)
+  assertUrl(config.baseUrl, 'sources.deepseek.baseUrl', path)
+  assertPositive(config.timeoutMs, 'sources.deepseek.timeoutMs', path)
+  if (!Number.isInteger(config.lookbackDays) || config.lookbackDays < 0) {
+    throw configError(`${path}: sources.deepseek.lookbackDays must be a non-negative integer`)
+  }
+  if (!Number.isInteger(config.maxItems) || config.maxItems <= 0) {
+    throw configError(`${path}: sources.deepseek.maxItems must be a positive integer`)
+  }
+  if (!Number.isInteger(config.maxBlocks) || config.maxBlocks <= 0) {
+    throw configError(`${path}: sources.deepseek.maxBlocks must be a positive integer`)
+  }
+  if (!Number.isInteger(config.legacyYear) || config.legacyYear < 1990 || config.legacyYear > 2100) {
+    throw configError(`${path}: sources.deepseek.legacyYear must be a four-digit year`)
+  }
 }

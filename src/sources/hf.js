@@ -15,7 +15,14 @@
  * (`extractVia: 'arxiv'`); HF contributes the heat signal (`upvotes`), the
  * authors, the model-written TLDR and keywords.
  */
-import { classifyDirection, DEFAULT_ARXIV_CONFIG, normalizeArxivId } from './arxiv.js'
+import { classifyDirection, normalizeArxivId } from './arxiv.js'
+import { fetchText } from '../shared/http.js'
+import {
+  assertPositive,
+  assertUrl,
+  configError,
+  isPlainObject,
+} from './validation.js'
 
 export const SOURCE_ID = 'hf'
 
@@ -143,28 +150,6 @@ export function parseDailyPapers(payload) {
     .sort(byUpvotesDesc)
 }
 
-async function fetchText(fetchImpl, url, { timeoutMs = 20_000, userAgent } = {}) {
-  if (typeof fetchImpl !== 'function') {
-    throw sourceError('hf_fetch_missing', 'no fetch implementation was provided')
-  }
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  if (typeof timer.unref === 'function') timer.unref()
-  try {
-    const response = await fetchImpl(url, {
-      signal: controller.signal,
-      headers: {
-        accept: 'application/json, text/plain;q=0.9, */*;q=0.1',
-        ...(userAgent ? { 'user-agent': userAgent } : {}),
-      },
-    })
-    const text = typeof response.text === 'function' ? await response.text() : ''
-    return { response, text }
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 /**
  * List the official daily board for one date.
  *
@@ -175,6 +160,9 @@ async function fetchText(fetchImpl, url, { timeoutMs = 20_000, userAgent } = {})
 export async function listHf({ config, date, fetch: fetchImpl } = {}) {
   const settings = withDefaults(config)
   const url = buildDailyPapersUrl({ baseUrl: settings.baseUrl, date, limit: settings.maxItems })
+  if (typeof fetchImpl !== 'function') {
+    throw sourceError('hf_fetch_missing', 'no fetch implementation was provided')
+  }
 
   let response
   let text
@@ -182,6 +170,7 @@ export async function listHf({ config, date, fetch: fetchImpl } = {}) {
     ({ response, text } = await fetchText(fetchImpl, url, {
       timeoutMs: settings.timeoutMs,
       userAgent: settings.userAgent,
+      accept: 'application/json, text/plain;q=0.9, */*;q=0.1',
     }))
   } catch (error) {
     if (error?.code === 'hf_date_required') throw error
@@ -192,4 +181,14 @@ export async function listHf({ config, date, fetch: fetchImpl } = {}) {
   }
 
   return parseDailyPapers(text)
+}
+
+/** Validate the Hugging Face section of the user config. */
+export function validateHfConfig(config, path) {
+  if (!isPlainObject(config)) throw configError(`${path}: sources.hf must be an object`)
+  assertUrl(config.baseUrl, 'sources.hf.baseUrl', path)
+  if (!Number.isInteger(config.maxItems) || config.maxItems <= 0) {
+    throw configError(`${path}: sources.hf.maxItems must be a positive integer`)
+  }
+  assertPositive(config.timeoutMs, 'sources.hf.timeoutMs', path)
 }

@@ -397,6 +397,73 @@ test('a status route failure is a notice, not an error page over the readable di
   })
 })
 
+/* ------------------------------------------------------------------ */
+/* Source facet                                                        */
+/* ------------------------------------------------------------------ */
+
+const KIMI_ITEM = {
+  ...EN_ITEM,
+  id: 'kimi:source-facet',
+  sourceId: 'kimi',
+  title: { original: 'Kimi reasoning release', translation: 'Kimi 推理版本发布' },
+  direction: 'reasoning',
+}
+
+const FACET_SOURCES = [
+  ...SOURCES,
+  { id: 'kimi', label: 'Kimi', short: 'K' },
+]
+
+test('the source facet filters the list, stacks with direction/search and persists', async () => {
+  const digest = {
+    ...digestOf([EN_ITEM, KIMI_ITEM]),
+    directions: [...DIRECTIONS, { id: 'reasoning', label: '推理' }],
+    sources: FACET_SOURCES,
+  }
+  await withPage({ digest }, async ({ container, click, type, window }) => {
+    const chips = [...container.querySelectorAll('[data-source-filter]')]
+    assert.deepEqual(chips.map(chip => chip.getAttribute('data-source-filter')), ['all', 'arxiv', 'kimi'])
+    assert.equal(chips.find(chip => chip.dataset.sourceFilter === 'arxiv').textContent, 'arXiv1')
+    assert.equal(container.querySelectorAll('.pr-item').length, 2)
+
+    await click(chips.find(chip => chip.dataset.sourceFilter === 'arxiv'))
+    assert.equal(container.querySelectorAll('.pr-item').length, 1)
+    assert.match(container.querySelector('.pr-item').textContent, /English original title/)
+    assert.equal(
+      JSON.parse(window.localStorage.getItem('dsh-paper-reader:v1')).source,
+      'arxiv',
+      'the source choice is persisted with the other preferences',
+    )
+
+    const directionChips = [...container.querySelectorAll('.pr-filters:not(.pr-source-filters) .pr-chip')]
+    const reasoning = directionChips.find(chip => chip.textContent.startsWith('reasoning'))
+    await click(reasoning)
+    assert.equal(container.querySelectorAll('.pr-item').length, 0, 'source + direction stacking can be empty')
+    assert.match(container.querySelector('.pr-feed-empty').textContent, /没有匹配的论文/)
+
+    const search = container.querySelector('input[type="search"]')
+    await type(search, 'Definitely not present')
+    assert.equal(container.querySelectorAll('.pr-item').length, 0)
+    assert.match(container.querySelector('.pr-result-line').textContent, /0 篇匹配/)
+
+    await click(container.querySelector('.pr-feed-empty .pr-link-btn'))
+    assert.equal(container.querySelectorAll('.pr-item').length, 2, 'clear filters resets source, direction and query')
+    assert.equal(JSON.parse(window.localStorage.getItem('dsh-paper-reader:v1')).source, 'all')
+  })
+})
+
+test('a stored source preference is restored on mount and empty results keep the counts honest', async () => {
+  const digest = { ...digestOf([EN_ITEM, KIMI_ITEM]), sources: FACET_SOURCES }
+  await withPage({ digest, prefs: { source: 'kimi' } }, ({ container }) => {
+    assert.equal(container.querySelectorAll('.pr-item').length, 1)
+    assert.match(container.querySelector('.pr-item').textContent, /Kimi reasoning release/)
+    const chips = [...container.querySelectorAll('[data-source-filter]')]
+    assert.equal(chips.find(chip => chip.dataset.sourceFilter === 'kimi').getAttribute('aria-pressed'), 'true')
+    assert.equal(chips.find(chip => chip.dataset.sourceFilter === 'arxiv').textContent, 'arXiv1')
+    assert.equal(chips.find(chip => chip.dataset.sourceFilter === 'kimi').textContent, 'Kimi1')
+  })
+})
+
 test('the list shows each item in Chinese primary and English secondary, whichever is the original', async () => {
   await withPage({ digest: digestOf([EN_ITEM, ZH_ITEM]), mode: 'both' }, ({ container }) => {
     const zhItem = container.querySelector('.pr-item')

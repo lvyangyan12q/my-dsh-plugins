@@ -33,6 +33,7 @@ export const SOURCE_ID = 'kimi'
 
 export const DEFAULT_KIMI_CONFIG = {
   enabled: true,
+  useProxy: false,
   listUrl: 'https://www.kimi.com/blog/',
   baseUrl: 'https://www.kimi.com',
   recentDays: 30,
@@ -123,7 +124,6 @@ function toCandidate(card, settings) {
     summary: '',
     url: `${String(settings.baseUrl).replace(/\/+$/, '')}/en/blog/${card.slug}`,
     publishedAt: card.date,
-    published: card.date,
     authors: [],
     direction: classifyDirection({ title: card.title }),
     tags: [],
@@ -209,7 +209,7 @@ export async function extractKimiArticle({ candidate, config, fetch: fetchImpl }
   }
 
   const summary = meta.description ?? candidate.summary ?? ''
-  const published = meta.datePublished ?? dateOnly(candidate.publishedAt) ?? candidate.published ?? null
+  const published = meta.datePublished ?? dateOnly(candidate.publishedAt) ?? null
   return {
     blocks,
     excerpt: false,
@@ -218,7 +218,6 @@ export async function extractKimiArticle({ candidate, config, fetch: fetchImpl }
       title,
       summary,
       authors: meta.authors.length > 0 ? meta.authors : (candidate.authors ?? []),
-      published,
       publishedAt: published ? `${published}T00:00:00.000Z` : (candidate.publishedAt ?? null),
       direction: classifyDirection({ title, summary }),
       tags: [],
@@ -248,15 +247,3 @@ export function validateKimiConfig(config, path) {
   }
 }
 
-export const KIMI_SOURCE = {
-  id: SOURCE_ID,
-  kind: 'blog',
-  label: 'Kimi',
-  short: 'K',
-  defaults: DEFAULT_KIMI_CONFIG,
-  tracksSeen: false,
-  onExtractFailure: 'skip',
-  list: listKimi,
-  extract: extractKimiArticle,
-  validateConfig: validateKimiConfig,
-}
