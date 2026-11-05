@@ -63,3 +63,5 @@
 - 翻译服务的四个早退分支仍各自调用 `finishStats`；抽一个 `skippedStats(reason)` 可少 4 处重复，但会让失败语义的阅读路径变绕。
 - `selection.institutions` 采用「声明了机构才过滤、未声明保留」；arXiv Atom 只在有 `arxiv:affiliation` 时提供机构，因此白名单是偏好而非硬门槛。
 - 代理通过 CLI 自重启使用 `proxy.url`；直接以编程方式调用 `runDaily` 且要求配置 URL 走代理时，仍需调用方提供 `proxyFetch`（或自行设置 `NODE_USE_ENV_PROXY=1` + env）。
+
+**合并结果：** 修复提交 847896d 合并为 895394f；18 个测试文件 224 项通过；剩余债务见上。
