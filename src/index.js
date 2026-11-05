@@ -29,7 +29,9 @@ export const inject = ['webServer']
 const INDEX_ROUTE = '/api/paper-reader/index'
 const STATUS_ROUTE = '/api/paper-reader/status'
 const DIGEST_ROUTE = '/api/paper-reader/digest'
-const DIGEST_DATE_PREFIX = `${DIGEST_ROUTE}/`
+// The web server matches a prefix as `p` or `p/<anything>`; a trailing slash
+// would become `p//<anything>` and miss every real date URL.
+const DIGEST_DATE_PREFIX = DIGEST_ROUTE
 const HEALTH_ROUTE = '/api/paper-reader/health'
 const SAMPLE_PATH = fileURLToPath(new URL('../sample/digest.json', import.meta.url))
 
@@ -157,8 +159,9 @@ function requestedDate(req) {
   } catch {
     return null
   }
-  if (!pathname.startsWith(DIGEST_DATE_PREFIX)) return null
-  const rest = pathname.slice(DIGEST_DATE_PREFIX.length)
+  const base = `${DIGEST_ROUTE}/`
+  if (!pathname.startsWith(base)) return null
+  const rest = pathname.slice(base.length)
   return rest.length > 0 && !rest.includes('/') ? decodeURIComponent(rest) : null
 }
 

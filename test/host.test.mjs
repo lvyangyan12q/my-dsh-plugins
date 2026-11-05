@@ -14,11 +14,18 @@ const digestPath = join(home, 'paper-reader', 'digest.json')
 
 let connection
 const routes = new Map()
+const prefixes = []
 const disposers = []
 
 const ctx = {
   effect(fn) { disposers.push(fn()) },
-  webServer: { register(route) { routes.set(route.path, route); return () => {} } },
+  webServer: {
+    register(route) {
+      if (route.kind === 'prefix') prefixes.push(route)
+      else routes.set(route.path, route)
+      return () => {}
+    },
+  },
   get(name) {
     if (name === 'profileContext') return { dir: profileDir }
     if (name === 'connection') return connection
@@ -36,10 +43,9 @@ after(() => {
 })
 
 function call(path, method = 'GET') {
-  const route = routes.get(path) ?? [...routes.entries()]
-    .filter(([registered, entry]) => entry.kind === 'prefix' && path.startsWith(registered))
-    .sort((left, right) => right[0].length - left[0].length)
-    .map(([, entry]) => entry)[0]
+  const route = routes.get(path) ?? prefixes
+    .filter(entry => path === entry.path || path.startsWith(`${entry.path}/`))
+    .sort((left, right) => right.path.length - left.path.length)[0]
   assert.ok(route, `route ${path} should be registered`)
   return new Promise((resolve, reject) => {
     const result = { status: 0, headers: undefined, body: '' }
@@ -270,7 +276,10 @@ test('sample digest satisfies the v2 item contract and includes a Chinese source
 test('registers the index and by-date routes alongside the legacy digest route', () => {
   assert.ok(routes.has('/api/paper-reader/index'))
   assert.ok(routes.has('/api/paper-reader/digest'))
-  assert.ok([...routes.values()].some(route => route.kind === 'prefix' && route.path === '/api/paper-reader/digest/'))
+  const prefix = prefixes.find(route => route.path === '/api/paper-reader/digest')
+  assert.ok(prefix, 'by-date prefix should be registered')
+  assert.equal(prefix.path, '/api/paper-reader/digest', 'prefix must not end with a slash')
+  assert.ok('/api/paper-reader/digest/2026-11-05'.startsWith(`${prefix.path}/`))
 })
 
 test('a missing index answers an explicit empty index, not an error', async () => {

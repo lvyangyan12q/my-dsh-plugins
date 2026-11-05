@@ -34,10 +34,17 @@ function capture() {
 /** Register the real host routes and call one the way the HTTP layer does. */
 function createHost(profile = profileDir) {
   const routes = new Map()
+  const prefixes = []
   const disposers = []
   const ctx = {
     effect(fn) { disposers.push(fn()) },
-    webServer: { register(route) { routes.set(route.path, route); return () => {} } },
+    webServer: {
+      register(route) {
+        if (route.kind === 'prefix') prefixes.push(route)
+        else routes.set(route.path, route)
+        return () => {}
+      },
+    },
     get(name) {
       if (name === 'profileContext') return { dir: profile }
       return undefined
@@ -46,10 +53,9 @@ function createHost(profile = profileDir) {
   apply(ctx)
 
   const call = (path) => {
-    const route = routes.get(path) ?? [...routes.entries()]
-      .filter(([registered, entry]) => entry.kind === 'prefix' && path.startsWith(registered))
-      .sort((left, right) => right[0].length - left[0].length)
-      .map(([, entry]) => entry)[0]
+    const route = routes.get(path) ?? prefixes
+      .filter(entry => path === entry.path || path.startsWith(`${entry.path}/`))
+      .sort((left, right) => right.path.length - left.path.length)[0]
     assert.ok(route, `route ${path} should be registered`)
     return new Promise((resolve, reject) => {
       const result = { status: 0, body: '' }
