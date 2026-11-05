@@ -123,6 +123,35 @@
   white-space: nowrap;
 }
 
+/* One-line degradation notice: which sources a proxy failure skipped. */
+.pr-proxy-notice {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 20px;
+  border-bottom: 1px solid color-mix(in srgb, #d9a441 32%, transparent);
+  background: color-mix(in srgb, #d9a441 11%, transparent);
+  color: color-mix(in srgb, #d9a441 62%, var(--pr-text));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pr-proxy-notice-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #d9a441;
+}
+
+.pr-proxy-notice-text strong {
+  margin-right: 2px;
+  font-weight: 600;
+  color: var(--pr-text);
+}
+
 .pr-top-actions {
   display: flex;
   align-items: center;

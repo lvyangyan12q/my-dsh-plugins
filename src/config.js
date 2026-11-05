@@ -9,11 +9,23 @@
  */
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { DEFAULT_PROXY_HEALTH_URL, DEFAULT_PROXY_TIMEOUT_MS } from './proxy.js'
 import { DEFAULT_QUOTA } from './pipeline/select.js'
 import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
 
 export const CONFIG_FILE = 'config.json'
 export const DEFAULT_RETENTION_DAYS = 30
+
+/**
+ * Proxy defaults: no address (a machine without one simply has no proxy), a
+ * probe target, and a timeout. The switch that matters per source is
+ * `sources.<id>.useProxy`, so the policy is configuration rather than code.
+ */
+export const DEFAULT_PROXY_CONFIG = {
+  url: null,
+  healthCheckUrl: DEFAULT_PROXY_HEALTH_URL,
+  timeoutMs: DEFAULT_PROXY_TIMEOUT_MS,
+}
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -29,39 +41,55 @@ export function defaultConfig() {
     sources: {
       arxiv: {
         ...DEFAULT_ARXIV_CONFIG,
+        useProxy: false,
         categories: [...DEFAULT_ARXIV_CONFIG.categories],
         keywords: [...DEFAULT_ARXIV_CONFIG.keywords],
         excludeKeywords: [...DEFAULT_ARXIV_CONFIG.excludeKeywords],
       },
+      // The adapters arrive in later tickets; declaring the switch here keeps
+      // "which source needs the proxy" out of the pipeline code.
+      hf: { useProxy: true },
+      openai: { useProxy: true },
     },
     quota: { ...DEFAULT_QUOTA },
+    proxy: { ...DEFAULT_PROXY_CONFIG },
     retentionDays: DEFAULT_RETENTION_DAYS,
   }
+}
+
+/** Merge user source settings over the per-source defaults, key by key. */
+function mergeSources(defaults, user) {
+  const merged = {}
+  for (const [id, value] of Object.entries(defaults)) {
+    merged[id] = isPlainObject(value) ? { ...value } : value
+  }
+  if (!isPlainObject(user)) return merged
+  for (const [id, value] of Object.entries(user)) {
+    if (!isPlainObject(value)) continue
+    merged[id] = { ...(isPlainObject(merged[id]) ? merged[id] : {}), ...value }
+  }
+  return merged
 }
 
 /** Merge a user object over the defaults, rejecting non-object sections. */
 export function mergeConfig(user, path = CONFIG_FILE) {
   if (!isPlainObject(user)) throw configError(`${path} must contain a JSON object`)
-  for (const key of ['sources', 'quota']) {
+  for (const key of ['sources', 'quota', 'proxy']) {
     if (key in user && !isPlainObject(user[key])) throw configError(`${path}: ${key} must be an object`)
   }
-  if (isPlainObject(user.sources) && 'arxiv' in user.sources && !isPlainObject(user.sources.arxiv)) {
-    throw configError(`${path}: sources.arxiv must be an object`)
+  if (isPlainObject(user.sources)) {
+    for (const [id, value] of Object.entries(user.sources)) {
+      if (!isPlainObject(value)) throw configError(`${path}: sources.${id} must be an object`)
+    }
   }
 
   const defaults = defaultConfig()
   return {
     ...defaults,
     ...user,
-    sources: {
-      ...defaults.sources,
-      ...(isPlainObject(user.sources) ? user.sources : {}),
-      arxiv: {
-        ...defaults.sources.arxiv,
-        ...(isPlainObject(user.sources?.arxiv) ? user.sources.arxiv : {}),
-      },
-    },
+    sources: mergeSources(defaults.sources, user.sources),
     quota: { ...defaults.quota, ...(isPlainObject(user.quota) ? user.quota : {}) },
+    proxy: { ...defaults.proxy, ...(isPlainObject(user.proxy) ? user.proxy : {}) },
     retentionDays: user.retentionDays ?? defaults.retentionDays,
   }
 }
@@ -110,6 +138,25 @@ export function validateConfig(config, path = CONFIG_FILE) {
   assertUrl(arxiv.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
 
   for (const key of ['total', 'papers', 'blogs']) assertCount(config.quota?.[key], `quota.${key}`, path)
+
+  const proxy = config.proxy
+  if (!isPlainObject(proxy)) throw configError(`${path}: proxy must be an object`)
+  if (proxy.url !== null && proxy.url !== undefined) assertUrl(proxy.url, 'proxy.url', path)
+  assertUrl(proxy.healthCheckUrl, 'proxy.healthCheckUrl', path)
+  assertPositive(proxy.timeoutMs, 'proxy.timeoutMs', path)
+
+  // Source settings are validated generically: `enabled` and `useProxy` are the
+  // two switches every adapter shares, and this keeps future sources data-only.
+  for (const [id, settings] of Object.entries(config.sources ?? {})) {
+    if (!isPlainObject(settings)) throw configError(`${path}: sources.${id} must be an object`)
+    if ('enabled' in settings && typeof settings.enabled !== 'boolean') {
+      throw configError(`${path}: sources.${id}.enabled must be true or false`)
+    }
+    if ('useProxy' in settings && typeof settings.useProxy !== 'boolean') {
+      throw configError(`${path}: sources.${id}.useProxy must be true or false`)
+    }
+  }
+
   if (!Number.isInteger(config.retentionDays) || config.retentionDays <= 0) {
     throw configError(`${path}: retentionDays must be a positive integer`)
   }

@@ -66,6 +66,8 @@ node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源
 
 - 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s）。工具只读该文件，不会覆盖。
 - 示例：`{"quota":{"papers":4},"sources":{"arxiv":{"categories":["cs.CL"],"keywords":["agent"]}}}`。
+- 代理（工单 05）：只对直连失败的来源生效，开关是 `sources.<id>.useProxy`（默认 HF 官方与 OpenAI 文章页为 `true`，arXiv 等直连来源为 `false`）。地址只来自 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`（Node 24 还需启动前设置 `NODE_USE_ENV_PROXY=1`）或配置 `proxy.url`；代码不内置代理地址，也不读取系统代理。
+- 每日运行先做一次代理健康检查（`proxy.healthCheckUrl`，默认 HF 每日榜接口）。代理未配置、认证失败、超时或不可达时，受影响来源记为 `skipped` 并写入原因，其他来源照常产出；页面顶部显示「因代理不可用跳过：…」。不会回退直连硬闯，代理凭据不写入 digest 或 run 记录。
 - arXiv 正文取 `arxiv.org/html/<id>`（LaTeXML），保留标题、段落、公式、图注与代码；HTML 缺失时回退摘要并标记「节选」。
 - 每个日期写 `digest/YYYY-MM-DD.json` 与 `runs/YYYY-MM-DD.json`；索引最后更新。全部来源失败时不写当日 digest，上一份保持可读，退出码为 1。
 - 退出码：`0` 已写入（或 dry-run 完成），`1` 抓取失败且未写入，`2` 参数或配置错误。
