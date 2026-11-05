@@ -700,7 +700,11 @@ test('recall reveal and restored reads reauthorize a shared materials grant afte
  await app.request(url,{action:'answer',pointId:row.pointId,cycleId:row.cycleId,recall:'回忆内容',earlyConfirmed:true});
  const reveal={action:'reveal',pointId:row.pointId,cycleId:row.cycleId};const shown=await app.request(url,reveal);assert.equal(shown.status,200,JSON.stringify(shown.value));assert.equal(shown.value.references[0].content,'获准共享原文');
  assert.equal((await app.request('/api/kaogong/study',{action:'source-revoke',viewId:learner.view.id,id:grant.value.id,revision:grant.value.revision})).status,200);
- const after=await app.request(url);assert.equal(after.status,403);assert.equal(JSON.stringify(after.value).includes('获准共享原文'),false);assert.equal((await app.request(url,reveal)).status,403);assert.equal((await app.request(url,{action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'remembered',confirmed:true})).status,403);
+ const after=await app.request(url);assert.equal(after.status,200);assert.equal(JSON.stringify(after.value).includes('获准共享原文'),false);assert.deepEqual(after.value.items[0].references,[]);assert.equal(after.value.items[0].recall,'回忆内容');assert.equal(after.value.items[0].cycleId,row.cycleId);assert.equal(after.value.items[0].referenceChanged,true);
+ const dashboard=await app.request('/api/kaogong/dashboard?viewId='+learner.view.id);assert.equal(dashboard.status,200);assert.deepEqual(dashboard.value.unavailableSources,['materials']);assert.equal(JSON.stringify(dashboard.value).includes('获准共享原文'),false);
+ const route=await app.request('/api/kaogong/route?viewId='+learner.view.id);assert.equal(route.status,200);assert.equal(route.value.coverage.total,73);assert.deepEqual(route.value.points.find(p=>p.id===row.pointId).materials,[]);
+ assert.equal((await app.request('/api/kaogong/knowledge?viewId='+learner.view.id)).status,403);
+ assert.equal((await app.request(url,reveal)).status,409);assert.equal((await app.request(url,{action:'confirm',pointId:row.pointId,cycleId:row.cycleId,rating:'remembered',confirmed:true})).status,409);
  assert.equal((await app.request('/api/kaogong/study',{action:'source-share',viewId:learner.view.id,ownerViewId:library.view.id,resourceId:'materials'})).status,200);const restored=(await app.request(url)).value.items[0];assert.equal(restored.cycleId,row.cycleId);assert.equal(restored.recall,'回忆内容');assert.equal(restored.history.length,0);
  }finally{await app.close()}
 })

@@ -86,7 +86,7 @@ export async function mountKaogong(ctx:Context,config:Config){
    const historicalOnly=command==='exact:/api/kaogong/errors'||command==='exact:/api/kaogong/practice/history'
    const bankSource=needsBank&&!historicalOnly?await readSource<Rows<BankQuestionRecord>>('question-bank',dashboard||retainedRound):null
    const bankRows=bankSource?.value.rows??[]
-   const materialSource=needsMaterials?(await readSource<Rows<KnowledgeEntryRecord>>('materials',dashboard))?.value:null
+   const materialSource=needsMaterials?(await readSource<Rows<KnowledgeEntryRecord>>('materials',dashboard||command==='exact:/api/kaogong/route'||command==='exact:/api/kaogong/recall'))?.value:null
    const materialRows=materialSource?.rows??[]
    const bankQuestions=instance.appId==='kaogong-library'?readonlyRows(bankRows):overlay(state.bankQuestions,bankRows)
    // The library's own view can inspect private lectures; sharing still passes through registerResources.
