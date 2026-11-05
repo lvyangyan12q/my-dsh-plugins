@@ -15,8 +15,11 @@
   --pr-faint: var(--dsw-alias-label-caption, #6b7484);
   --pr-accent: var(--dsw-static-deepseek-500, #4176e6);
   --pr-accent-soft: color-mix(in srgb, var(--pr-accent) 14%, transparent);
+  /* A slightly warm reading surface: pure host background at this size reads
+     as a wall of blue-black, especially with long Chinese paragraphs. */
+  --pr-read-bg: color-mix(in srgb, var(--pr-bg) 95%, #d8b98a 5%);
   --pr-serif-en: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
-  --pr-serif-zh: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', SimSun, serif;
+  --pr-sans-zh: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB', sans-serif;
   --pr-mono: var(--ds-font-family-code, ui-monospace, SFMono-Regular, Consolas, monospace);
   --pr-ui: var(--dsw-font-family, system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif);
 
@@ -32,6 +35,8 @@
   font-size: 13px;
   line-height: 1.5;
   box-sizing: border-box;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 .pr-root *,
@@ -835,7 +840,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--pr-bg);
+  background: var(--pr-read-bg);
 }
 
 .pr-reader-bar {
@@ -846,6 +851,7 @@
   gap: 10px;
   padding: 0 12px;
   border-bottom: 1px solid var(--pr-border);
+  background: var(--pr-read-bg);
 }
 
 .pr-reader-context {
@@ -925,6 +931,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  background: var(--pr-read-bg);
 }
 
 /* ------------------------------------------------------------------ */
@@ -932,9 +939,9 @@
 /* ------------------------------------------------------------------ */
 
 .pr-paper {
-  max-width: 1120px;
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 34px clamp(20px, 3.4vw, 48px) 110px;
+  padding: 42px clamp(24px, 4cqw, 64px) 120px;
 }
 
 .pr-paper-head {
@@ -1124,9 +1131,9 @@
 .pr-pair {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(24px, 4cqw, 48px);
-  padding: 13px 0;
-  border-top: 1px solid color-mix(in srgb, var(--pr-border) 55%, transparent);
+  gap: clamp(28px, 4.5cqw, 56px);
+  padding: 17px 0;
+  border-top: 1px solid color-mix(in srgb, var(--pr-border) 45%, transparent);
 }
 
 .pr-pair:first-of-type {
@@ -1160,36 +1167,40 @@
 .pr-col-en p {
   color: var(--pr-text-2);
   font-family: var(--pr-serif-en);
-  font-size: 16px;
-  line-height: 1.82;
+  font-size: 17px;
+  line-height: 1.9;
+  letter-spacing: .002em;
 }
 
 .pr-col-zh p {
   color: var(--pr-text);
-  font-family: var(--pr-serif-zh);
-  font-size: 16.5px;
+  font-family: var(--pr-sans-zh);
+  font-size: 17px;
   line-height: 1.95;
+  letter-spacing: .012em;
 }
 
 .pr-body[data-mode='zh'],
 .pr-body[data-mode='en'] {
-  max-width: 760px;
+  max-width: 780px;
   margin: 0 auto;
 }
 
 .pr-single-paragraph {
-  margin: 0 0 18px;
+  margin: 0 0 20px;
   color: var(--pr-text);
-  font-family: var(--pr-serif-zh);
-  font-size: 16.5px;
+  font-family: var(--pr-sans-zh);
+  font-size: 17px;
   line-height: 1.95;
+  letter-spacing: .012em;
 }
 
 .pr-body[data-mode='en'] .pr-single-paragraph {
   color: var(--pr-text-2);
   font-family: var(--pr-serif-en);
-  font-size: 16px;
-  line-height: 1.85;
+  font-size: 16.5px;
+  line-height: 1.9;
+  letter-spacing: .002em;
 }
 
 .pr-single-heading {
@@ -1201,7 +1212,7 @@
 }
 
 .pr-body[data-mode='zh'] .pr-single-heading {
-  font-family: var(--pr-serif-zh);
+  font-family: var(--pr-sans-zh);
 }
 
 .pr-body[data-mode='en'] .pr-single-heading {
