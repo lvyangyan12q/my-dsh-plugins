@@ -42,18 +42,21 @@ function OwnedCenter({ initialPointId, initialOccurrenceId, onClearTarget }: Pro
     const http = useLearningHttp(), context = useContext(KaogongTransportContext), alive = useRef(true);
     const key = 'kaogong/review-center-view/' + JSON.stringify([context?.instanceId, context?.viewId]);
     const saved = () => { try {
-        return JSON.parse(localStorage.getItem(key) ?? '{}');
+        return JSON.parse(window.localStorage.getItem(key) ?? '{}');
     }
     catch {
         return {};
     } };
-    const [entries, setEntries] = useState<Entry[]>([]), [error, setError] = useState(''), [activeId, setActiveId] = useState(initialPointId ? 'recall:' + initialPointId : initialOccurrenceId ? 'error:' + initialOccurrenceId : null), [history, setHistory] = useState(false);
+    const activityKey='kaogong/review-active/'+JSON.stringify([context?.instanceId]);
+    const readActive=()=>{try{const value=JSON.parse(window.localStorage.getItem(activityKey)??'null');return typeof value==='string'&&(value.startsWith('recall:')||value.startsWith('error:'))?value:null}catch{return null}};
+    const [entries, setEntries] = useState<Entry[]>([]), [error, setError] = useState(''), [activeId, setActiveId] = useState(initialPointId ? 'recall:' + initialPointId : initialOccurrenceId ? 'error:' + initialOccurrenceId : readActive()), [history, setHistory] = useState(false);
     const [subject, setSubject] = useState(saved().subject ?? ''), [point, setPoint] = useState(saved().point ?? ''), [enrolling, setEnrolling] = useState(false), [revision, setRevision] = useState(0), [busy, setBusy] = useState(false), [resumeTaskId, setResumeTaskId] = useState<string | undefined>();
     const target = useRef(activeId);
     target.current = activeId;
+    useEffect(()=>{try{window.localStorage.setItem(activityKey,JSON.stringify(activeId))}catch{}},[activityKey,activeId]);
     const [preview, setPreview] = useState<StudyPlanState['drafts'][number] | null>(null);
     useEffect(() => { try {
-        localStorage.setItem(key, JSON.stringify({ subject, point }));
+        window.localStorage.setItem(key, JSON.stringify({ subject, point }));
     }
     catch { } }, [key, subject, point]);
     useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
@@ -85,7 +88,7 @@ function OwnedCenter({ initialPointId, initialOccurrenceId, onClearTarget }: Pro
     } }
     async function propose(row: Entry) { const requestedTarget = target.current; const plan = await request('/api/kaogong/plan'); const today = studyDate(), due = studyDate(new Date(row.dueAt)); const draft = await request('/api/kaogong/plan', { action: 'preview', baseRevision: plan.revision, operation: 'append', date: due < today ? today : due, task: { subject: row.subject, title: (row.kind === 'recall' ? '知识点回忆：' : '错题复习：') + row.point, kind: 'review', ...(row.kind === 'recall' ? { recallReference: { pointId: row.pointId, cycleId: row.cycleId } } : { requireReflections: true, reviewOccurrence: { roundId: row.roundId, questionId: row.questionId } }) } }); if (alive.current && target.current === requestedTarget)
         setPreview(draft); }
-    const back = () => { setPreview(null); setActiveId(null); setHistory(false); setResumeTaskId(undefined); onClearTarget?.(); setRevision(v => v + 1); };
+    const back = () => { try{window.localStorage.removeItem(activityKey)}catch{}; setPreview(null); setActiveId(null); setHistory(false); setResumeTaskId(undefined); onClearTarget?.(); setRevision(v => v + 1); };
     const active = entries.find(row => row.kind + ':' + row.id === activeId);
     if (activeId?.startsWith('error:') && !active)
         return <><button onClick={back}>返回复习队列</button><ErrorReviewPanel occurrenceId={activeId.slice(6)}/></>;
