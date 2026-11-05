@@ -36,6 +36,22 @@ afterEach(() => {
 })
 
 /**
+ * These tests describe the HF leg of the run. DeepSeek has its own tests, so it
+ * is switched off here instead of teaching the transports about its host; the
+ * default config still enables every source.
+ */
+function hfRunConfig() {
+  const config = defaultConfig()
+  return {
+    ...config,
+    sources: {
+      ...config.sources,
+      deepseek: { ...config.sources.deepseek, enabled: false },
+    },
+  }
+}
+
+/**
  * The two transports a run uses: a direct one for arXiv (list + article HTML)
  * and a proxied one that answers the health check and the HF daily list.
  */
@@ -112,7 +128,7 @@ test('a run merges the HF board with arXiv without duplicates and takes bodies f
   const result = await runDaily({
     root,
     date: DATE,
-    config: defaultConfig(),
+    config: hfRunConfig(),
     fetch: direct.impl,
     proxyFetch,
     env: PROXY_ENV,
@@ -171,7 +187,7 @@ test('an unconfigured proxy skips the HF board, leaves arXiv direct and records 
   const result = await runDaily({
     root,
     date: DATE,
-    config: defaultConfig(),
+    config: hfRunConfig(),
     fetch: direct.impl,
     proxyFetch,
     env: {},
@@ -208,7 +224,7 @@ test('a proxy that fails its health check skips HF without a direct retry', asyn
   const result = await runDaily({
     root,
     date: DATE,
-    config: defaultConfig(),
+    config: hfRunConfig(),
     fetch: direct.impl,
     proxyFetch,
     env: PROXY_ENV,
@@ -231,7 +247,7 @@ test('a failing HF list is one failed source, not a failed day', async () => {
   const result = await runDaily({
     root,
     date: DATE,
-    config: defaultConfig(),
+    config: hfRunConfig(),
     fetch: direct.impl,
     proxyFetch,
     env: PROXY_ENV,
@@ -257,7 +273,7 @@ test('--source hf lists only the board and still reads bodies from arXiv', async
   const result = await runDaily({
     root,
     date: DATE,
-    config: defaultConfig(),
+    config: hfRunConfig(),
     source: 'hf',
     fetch: direct.impl,
     proxyFetch,

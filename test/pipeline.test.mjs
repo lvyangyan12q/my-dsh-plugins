@@ -30,6 +30,22 @@ import { fakeArxiv, FULL_TEXT } from './helpers/arxiv.mjs'
 const DATE = '2026-11-04'
 const NOW = () => new Date('2026-11-04T09:00:00+08:00')
 
+/**
+ * These tests describe the arXiv leg of the run; DeepSeek and HF have their own
+ * tests, so those sources are switched off here rather than teaching the arXiv
+ * fake about other hosts. The default config still enables all of them.
+ */
+function arxivOnly(config) {
+  return {
+    ...config,
+    sources: {
+      ...config.sources,
+      deepseek: { ...config.sources.deepseek, enabled: false },
+      hf: { ...config.sources.hf, enabled: false },
+    },
+  }
+}
+
 const homes = []
 function tempRoot() {
   const home = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-pipeline-'))
@@ -51,6 +67,9 @@ test('a missing config file uses built-in defaults and creates nothing', async (
   assert.deepEqual(loaded.config.sources.arxiv.categories, ['cs.AI', 'cs.CL', 'cs.LG'])
   assert.equal(loaded.config.sources.arxiv.timeoutMs, 20_000)
   assert.equal(loaded.config.sources.arxiv.maxResults, 100)
+  assert.equal(loaded.config.sources.deepseek.enabled, true)
+  assert.equal(loaded.config.sources.deepseek.lookbackDays, 1)
+  assert.equal(loaded.config.sources.deepseek.sitemapUrl, 'https://api-docs.deepseek.com/sitemap.xml')
 })
 
 test('a user config is merged with defaults and never rewritten', async () => {
@@ -90,12 +109,9 @@ test('invalid config is an explicit error naming the file', async () => {
 test('a run writes the day digest, the index and a run record', async () => {
   const root = tempRoot()
   const { config } = await loadConfig({ root })
-  // This test describes the directly reachable arXiv path; HF has its own
-  // coverage (test/hf.test.mjs) including the proxied and skipped cases.
-  config.sources.hf.enabled = false
   const { impl, calls } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 0)
   assert.equal(result.status, 'ok')
@@ -166,7 +182,7 @@ test('dry-run reports the same selection without writing any file', async () => 
   const { config } = await loadConfig({ root })
   const { impl, calls } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW, dryRun: true })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW, dryRun: true })
 
   assert.equal(result.exitCode, 0)
   assert.equal(result.dryRun, true)
@@ -186,7 +202,7 @@ test('the configured paper quota limits both writes and article fetches', async 
   }
   const { impl, calls } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.counts.items, 2)
   const { digest } = await readDayDigest({ root, date: DATE })
@@ -215,7 +231,7 @@ test('a network failure is explicit, writes a failed run record and keeps the pr
 
   const { config } = await loadConfig({ root })
   const offline = async () => { throw new Error('getaddrinfo ENOTFOUND export.arxiv.org') }
-  const result = await runDaily({ root, date: DATE, config, fetch: offline, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: offline, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 1)
   assert.equal(result.status, 'failed')
@@ -241,7 +257,7 @@ test('one broken article degrades to an excerpt while the other papers stay full
     failArticles: { '2611.05380': new Error('etimedout while reading article') },
   })
 
-  const result = await runDaily({ root, date: DATE, config, fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config: arxivOnly(config), fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 0)
   const { digest } = await readDayDigest({ root, date: DATE })
@@ -261,7 +277,7 @@ test('--source narrows the run to the requested source', async () => {
   const { config } = await loadConfig({ root })
   const { impl } = fakeArxiv({ articles: FULL_TEXT })
 
-  const result = await runDaily({ root, date: DATE, config, source: 'arxiv', fetch: impl, now: NOW })
+  const result = await runDaily({ root, date: DATE, config, source: 'arxiv', fetch: impl, env: {}, now: NOW })
 
   assert.equal(result.exitCode, 0)
   assert.deepEqual(result.sources.map(source => source.id), ['arxiv'])
@@ -276,11 +292,11 @@ test('an unsupported --source and a malformed date are usage errors', async () =
   const { impl } = fakeArxiv()
 
   await assert.rejects(
-    runDaily({ root, date: DATE, config, source: 'openai', fetch: impl, now: NOW }),
+    runDaily({ root, date: DATE, config, source: 'openai', fetch: impl, env: {}, now: NOW }),
     error => error.code === 'unsupported_source' && error.exitCode === 2,
   )
   await assert.rejects(
-    runDaily({ root, date: '2026-13-40', config, fetch: impl, now: NOW }),
+    runDaily({ root, date: '2026-13-40', config, fetch: impl, env: {}, now: NOW }),
     error => error.code === 'invalid_date' && error.exitCode === 2,
   )
 })

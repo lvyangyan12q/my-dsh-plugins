@@ -11,7 +11,8 @@ import { join } from 'node:path'
 import { afterEach, test } from 'node:test'
 import { localDate, main, parseArgs } from '../src/cli/main.js'
 import { readDayDigest, readRunRecord, storagePaths } from '../src/storage.js'
-import { fakeArxiv, FULL_TEXT } from './helpers/arxiv.mjs'
+import { FULL_TEXT } from './helpers/arxiv.mjs'
+import { fakeSources } from './helpers/sources.mjs'
 
 const homes = []
 
@@ -33,7 +34,7 @@ function deps(overrides = {}) {
   return {
     env: { DSH_HOME: '' },
     now: () => new Date('2026-11-04T09:00:00+08:00'),
-    fetch: fakeArxiv({ articles: FULL_TEXT }).impl,
+    fetch: fakeSources().impl,
     stdout: sink(),
     stderr: sink(),
     ...overrides,
@@ -91,7 +92,7 @@ test('a real run writes the day digest and leaves the user config untouched', as
   const dataRoot = join(home, 'paper-reader')
   mkdirSync(dataRoot, { recursive: true })
   const configPath = join(dataRoot, 'config.json')
-  const raw = JSON.stringify({ quota: { total: 10, papers: 2 } })
+  const raw = JSON.stringify({ quota: { total: 10, papers: 2 }, sources: { deepseek: { enabled: false } } })
   writeFileSync(configPath, raw)
 
   const stdout = sink()
