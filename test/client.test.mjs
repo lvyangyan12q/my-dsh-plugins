@@ -284,6 +284,119 @@ test('blog items carry their Anthropic and Kimi source names into the list and t
   })
 })
 
+/* ------------------------------------------------------------------ */
+/* Latest run status (ticket 10)                                       */
+/* ------------------------------------------------------------------ */
+
+const RUN_STATUS = {
+  schemaVersion: 1,
+  source: 'run',
+  date: '2026-11-05',
+  latest: {
+    schemaVersion: 1,
+    date: '2026-11-05',
+    status: 'partial',
+    dryRun: false,
+    startedAt: '2026-11-05T09:00:00+08:00',
+    finishedAt: '2026-11-05T09:01:05+08:00',
+    durationMs: 65_000,
+    items: 8,
+    counts: { items: 8, fullText: 6, excerpt: 2, translationPending: 2 },
+    sources: [
+      { id: 'arxiv', label: 'arXiv', status: 'ok', items: 6, code: null, reason: null, error: null },
+    ],
+    failedSources: [
+      {
+        id: 'kimi',
+        label: 'Kimi',
+        status: 'failed',
+        items: 0,
+        code: 'source_failed',
+        reason: 'source_failed',
+        error: 'HTTP 500',
+      },
+    ],
+    skippedSources: [
+      {
+        id: 'hf',
+        label: 'Hugging Face',
+        status: 'skipped',
+        items: 0,
+        code: 'proxy_auth',
+        reason: 'proxy rejected the configured credentials',
+        error: 'proxy rejected the configured credentials',
+      },
+    ],
+    translation: {
+      status: 'ok',
+      tokensUsed: 1200,
+      tokenBudget: 300_000,
+      budgetExceeded: false,
+      pendingItems: 2,
+    },
+    runPath: 'runs/2026-11-05.json',
+  },
+}
+
+const STATUS_URL = '/api/paper-reader/status'
+
+test('the page shows the latest run time, count, duration, token budget and failed/skipped sources', async () => {
+  await withPage({
+    digest: digestOf([EN_ITEM, ZH_ITEM]),
+    routes: { [STATUS_URL]: RUN_STATUS },
+  }, ({ container, bodyText }) => {
+    const banner = container.querySelector('.pr-run-status')
+    assert.ok(banner, 'the run-status banner is visible')
+    assert.match(banner.textContent, /最近一次运行/)
+    assert.match(banner.textContent, /2026-11-05/)
+    assert.match(banner.textContent, /8 篇/)
+    assert.match(banner.textContent, /1 分 5 秒/)
+    assert.match(banner.textContent, /1200 \/ 300000/)
+    assert.match(banner.textContent, /Hugging Face/)
+    assert.match(banner.textContent, /代理认证失败/)
+    assert.match(banner.textContent, /Kimi/)
+    assert.match(banner.textContent, /抓取失败/)
+    assert.match(banner.textContent, /2 篇待翻译/)
+    assert.match(bodyText(), /English body paragraph/)
+  })
+})
+
+test('a failed latest run explains the failure without hiding the previous readable digest', async () => {
+  const failed = {
+    ...RUN_STATUS,
+    latest: {
+      ...RUN_STATUS.latest,
+      status: 'failed',
+      items: 0,
+      failedSources: [
+        { id: 'arxiv', label: 'arXiv', status: 'failed', items: 0, code: 'source_failed', reason: 'source_failed', error: 'ENOTFOUND' },
+      ],
+      skippedSources: [],
+    },
+  }
+  await withPage({
+    digest: digestOf([EN_ITEM]),
+    routes: { [STATUS_URL]: failed },
+  }, ({ container }) => {
+    assert.equal(container.querySelector('.pr-error'), null, 'no error page replaces the digest')
+    assert.ok(container.querySelector('.pr-run-status.is-failed'))
+    assert.match(container.querySelector('.pr-run-status').textContent, /没有写入 digest/)
+    assert.match(container.querySelector('.pr-body').textContent, /English body paragraph/)
+  })
+})
+
+test('a status route failure is a notice, not an error page over the readable digest', async () => {
+  await withPage({
+    digest: digestOf([EN_ITEM]),
+    routes: { [STATUS_URL]: { status: 500, body: { error: 'status_unavailable', message: 'run record is corrupt' } } },
+  }, ({ container }) => {
+    assert.equal(container.querySelector('.pr-error'), null)
+    assert.ok(container.querySelector('.pr-run-status-error'))
+    assert.match(container.querySelector('.pr-run-status-error').textContent, /运行状态读取失败/)
+    assert.match(container.querySelector('.pr-body').textContent, /English body paragraph/)
+  })
+})
+
 test('the list shows each item in Chinese primary and English secondary, whichever is the original', async () => {
   await withPage({ digest: digestOf([EN_ITEM, ZH_ITEM]), mode: 'both' }, ({ container }) => {
     const zhItem = container.querySelector('.pr-item')

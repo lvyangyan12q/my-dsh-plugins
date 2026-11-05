@@ -22,6 +22,7 @@ import cssText from './styles.css'
 const STORAGE_KEY = 'dsh-paper-reader:v1'
 const PANEL_ID = 'paper-reader'
 const INDEX_URL = '/api/paper-reader/index'
+const STATUS_URL = '/api/paper-reader/status'
 const DIGEST_URL = '/api/paper-reader/digest'
 const PAGE_DAYS = 7
 const MAX_HISTORY_DAYS = 30
@@ -134,6 +135,68 @@ function clockTime(value) {
   const date = value ? new Date(value) : null
   if (!date || Number.isNaN(date.getTime())) return ''
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+/* ------------------------------------------------------------------ */
+/* Latest run status                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Stable reason codes from the run record. The host owns the codes; the page
+ * only maps them to short Chinese labels, so wording changes stay in one place.
+ */
+const SOURCE_REASON_LABELS = {
+  source_failed: '抓取失败',
+  source_skipped: '已跳过',
+  proxy_unconfigured: '未配置代理',
+  proxy_invalid: '代理地址无效',
+  proxy_env_disabled: '代理环境变量未启用',
+  proxy_transport_missing: '缺少代理传输层',
+  proxy_auth: '代理认证失败',
+  proxy_timeout: '代理连接超时',
+  proxy_unreachable: '代理不可达',
+  proxy_http: '代理健康检查失败',
+}
+const RUN_STATUS_LABELS = { ok: '成功', partial: '部分失败', failed: '失败', unknown: '未知' }
+
+/** Human duration for the status line; 65 s reads as `1 分 5 秒`. */
+function formatDuration(value) {
+  const ms = Number(value)
+  if (!Number.isFinite(ms) || ms < 0) return '—'
+  const totalSeconds = Math.round(ms / 1000)
+  if (totalSeconds < 60) return `${totalSeconds} 秒`
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return seconds > 0 ? `${minutes} 分 ${seconds} 秒` : `${minutes} 分`
+}
+
+function sourceLabel(source) {
+  return source?.label ?? source?.id ?? '未知来源'
+}
+
+/** Prefer the stable code label; fall back to the recorded explanation. */
+function sourceReason(source) {
+  const code = typeof source?.code === 'string' ? source.code : ''
+  if (code && SOURCE_REASON_LABELS[code]) return SOURCE_REASON_LABELS[code]
+  if (typeof source?.reason === 'string' && source.reason && source.reason !== code) return source.reason
+  if (typeof source?.error === 'string' && source.error) return source.error
+  return '原因未知'
+}
+
+function issuesOf(status, name) {
+  if (Array.isArray(status?.[name])) return status[name]
+  const want = name === 'failedSources' ? 'failed' : 'skipped'
+  return (Array.isArray(status?.sources) ? status.sources : []).filter(source => source?.status === want)
+}
+
+function RunSourceIssue({ source }) {
+  const detail = source?.error && source.error !== sourceReason(source) ? source.error : ''
+  return (
+    <span className="pr-run-status-source" title={detail || sourceReason(source)}>
+      {sourceLabel(source)}
+      <span className="pr-run-status-reason">（{sourceReason(source)}）</span>
+    </span>
+  )
 }
 
 /** The language the item was written in; v1 digests are English-first. */
@@ -317,6 +380,8 @@ export function PaperReaderPage() {
   })
   const [loadState, setLoadState] = useState('loading')
   const [loadError, setLoadError] = useState('')
+  const [runStatus, setRunStatus] = useState(null)
+  const [runStatusError, setRunStatusError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [query, setQuery] = useState('')
@@ -416,6 +481,21 @@ export function PaperReaderPage() {
   }, [])
 
   /**
+   * Latest run status is advisory: a failure keeps the last readable digest on
+   * screen and only adds a notice. It is never part of the page's error state.
+   */
+  const loadRunStatus = useCallback(async () => {
+    try {
+      const data = await fetchJson(STATUS_URL)
+      const latest = data && typeof data === 'object' ? data.latest : null
+      setRunStatus(latest && typeof latest === 'object' ? latest : null)
+      setRunStatusError('')
+    } catch (error) {
+      setRunStatusError(errorMessage(error))
+    }
+  }, [fetchJson])
+
+  /**
    * Boot: ask the index which days exist, load the newest seven, and fall back
    * to the legacy digest when this user has no day files yet. A refresh keeps
    * the current list on screen if it fails.
@@ -433,6 +513,9 @@ export function PaperReaderPage() {
       } catch (error) {
         throw new Error(`索引读取失败：${errorMessage(error)}`)
       }
+      // Start the advisory status request after the index request: it must not
+      // delay or replace the readable digest, and the page checks it separately.
+      void loadRunStatus()
       const indexed = Array.isArray(indexData?.days)
         ? indexData.days.filter(day => day && typeof day.date === 'string')
         : []
@@ -481,7 +564,7 @@ export function PaperReaderPage() {
     } finally {
       setRefreshing(false)
     }
-  }, [applyResults, fetchDay, fetchJson, showToast])
+  }, [applyResults, fetchDay, fetchJson, loadRunStatus, showToast])
 
   useEffect(() => { void load(false) }, [load])
   useEffect(() => {
@@ -558,6 +641,10 @@ export function PaperReaderPage() {
       sources: sources.filter(source => source && source.status === 'skipped'),
     }
   }, [days])
+
+  const runFailedSources = useMemo(() => issuesOf(runStatus, 'failedSources'), [runStatus])
+  const runSkippedSources = useMemo(() => issuesOf(runStatus, 'skippedSources'), [runStatus])
+  const runTranslation = runStatus?.translation ?? null
 
   const loadOlder = useCallback(async () => {
     if (loadingMore || remainingDays.length === 0) return
@@ -835,7 +922,7 @@ export function PaperReaderPage() {
     )
   }
 
-  if (items.length === 0 && !digest?.demo && dayErrors.length === 0) {
+  if (items.length === 0 && !digest?.demo && dayErrors.length === 0 && !runStatus && !runStatusError) {
     return (
       <div className="pr-root">
         <div className="pr-empty">
@@ -905,6 +992,77 @@ export function PaperReaderPage() {
           </button>
         </div>
       </header>
+
+      {runStatus && (
+        <div
+          className={runStatus.status === 'failed' ? 'pr-run-status is-failed' : 'pr-run-status'}
+          role="status"
+        >
+          <div className="pr-run-status-main">
+            <span className="pr-run-status-title">最近一次运行</span>
+            <span className={`pr-run-status-badge pr-run-status-${runStatus.status ?? 'unknown'}`}>
+              {RUN_STATUS_LABELS[runStatus.status] ?? runStatus.status ?? '未知'}
+            </span>
+            <span className="pr-run-status-meta">
+              {runStatus.date ?? ''} {clockTime(runStatus.finishedAt ?? runStatus.startedAt)}
+            </span>
+            <span className="pr-dot">·</span>
+            <span>{runStatus.items ?? 0} 篇</span>
+            <span className="pr-dot">·</span>
+            <span>耗时 {formatDuration(runStatus.durationMs)}</span>
+            {runTranslation && (
+              <>
+                <span className="pr-dot">·</span>
+                <span className="pr-run-status-token">
+                  翻译 {runTranslation.tokensUsed ?? '—'} / {runTranslation.tokenBudget ?? '—'} tokens
+                </span>
+                {runTranslation.pendingItems > 0 && (
+                  <span className="pr-run-status-token">{runTranslation.pendingItems} 篇待翻译</span>
+                )}
+                {runTranslation.budgetExceeded && (
+                  <span className="pr-run-status-token is-warn">已达每日预算</span>
+                )}
+              </>
+            )}
+          </div>
+
+          {runFailedSources.length > 0 && (
+            <div className="pr-run-status-line pr-run-status-failed">
+              <span className="pr-run-status-label">失败</span>
+              {runFailedSources.map((source, index) => (
+                <span key={`failed-${source.id ?? index}`}>
+                  {index > 0 ? '、' : ''}
+                  <RunSourceIssue source={source} />
+                </span>
+              ))}
+            </div>
+          )}
+
+          {runSkippedSources.length > 0 && (
+            <div className="pr-run-status-line pr-run-status-skipped">
+              <span className="pr-run-status-label">跳过</span>
+              {runSkippedSources.map((source, index) => (
+                <span key={`skipped-${source.id ?? index}`}>
+                  {index > 0 ? '、' : ''}
+                  <RunSourceIssue source={source} />
+                </span>
+              ))}
+            </div>
+          )}
+
+          {runStatus.status === 'failed' && (
+            <div className="pr-run-status-line pr-run-status-fallback">
+              这次运行没有写入 digest，继续显示上一份可读内容。
+            </div>
+          )}
+        </div>
+      )}
+
+      {runStatusError && (
+        <div className="pr-run-status-error" role="status">
+          运行状态读取失败：{runStatusError}（仍显示已加载的 digest）
+        </div>
+      )}
 
       {proxyNotice.sources.length > 0 && (
         <div className="pr-proxy-notice" role="status">

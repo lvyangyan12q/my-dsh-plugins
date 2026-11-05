@@ -3,6 +3,7 @@
  *
  * Serves the data the daily agent writes:
  *   GET /api/paper-reader/index           -> which days exist (newest first)
+ *   GET /api/paper-reader/status          -> the latest run record, sanitized
  *   GET /api/paper-reader/digest/<date>   -> one stored day
  *   GET /api/paper-reader/digest          -> legacy single-file digest
  *   GET /api/paper-reader/health          -> liveness
@@ -20,11 +21,13 @@ import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { MAX_DAY_BYTES, readDayDigest, readIndex } from './storage.js'
 import { validateDigest } from './shared/schema.js'
+import { readRunStatus } from './status.js'
 
 export const name = 'dsh-paper-reader'
 export const inject = ['webServer']
 
 const INDEX_ROUTE = '/api/paper-reader/index'
+const STATUS_ROUTE = '/api/paper-reader/status'
 const DIGEST_ROUTE = '/api/paper-reader/digest'
 const DIGEST_DATE_PREFIX = `${DIGEST_ROUTE}/`
 const HEALTH_ROUTE = '/api/paper-reader/health'
@@ -159,7 +162,7 @@ function requestedDate(req) {
   return rest.length > 0 && !rest.includes('/') ? decodeURIComponent(rest) : null
 }
 
-/** Register the index, by-date digest, legacy digest and health routes. */
+/** Register the index, run status, by-date digest, legacy digest and health routes. */
 export function apply(ctx) {
   const dataRoot = () => resolveDataRoot(ctx)
 
@@ -200,6 +203,26 @@ export function apply(ctx) {
       }),
     }),
     'dsh-paper-reader: index route',
+  )
+
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: 'exact',
+      path: STATUS_ROUTE,
+      handler: (req, res) => guard(ctx, req, res, async () => {
+        try {
+          return await readRunStatus({ root: dataRoot() })
+        } catch (error) {
+          // Status is advisory: the client shows a notice and keeps the last
+          // readable digest. Name the failure without leaking a path or cause.
+          throw Object.assign(new Error(String(error?.message ?? error)), {
+            status: error?.status ?? 500,
+            code: 'status_unavailable',
+          })
+        }
+      }),
+    }),
+    'dsh-paper-reader: run status route',
   )
 
   ctx.effect(

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
 import { apply } from '../lib/index.js'
-import { MAX_DAY_BYTES, storagePaths, writeDayDigest } from '../src/storage.js'
+import { MAX_DAY_BYTES, storagePaths, writeDayDigest, writeRunRecord } from '../src/storage.js'
 
 const sample = JSON.parse(readFileSync(new URL('../sample/digest.json', import.meta.url), 'utf8'))
 const home = mkdtempSync(join(tmpdir(), 'dsh-paper-reader-'))
@@ -76,6 +76,7 @@ function dayDocument(date, count = 2) {
 test('registers both routes with GET handlers', () => {
   assert.ok(routes.has('/api/paper-reader/digest'))
   assert.ok(routes.has('/api/paper-reader/health'))
+  assert.ok(routes.has('/api/paper-reader/status'))
 })
 
 test('missing user digest falls back to the bundled sample marked demo', async () => {
@@ -365,4 +366,71 @@ test('a corrupt index is a 422 while day files stay readable', async () => {
 
   const day = await call('/api/paper-reader/digest/2026-11-05')
   assert.equal(day.status, 200)
+})
+
+/* ------------------------------------------------------------------ */
+/* Run status (ticket 10)                                              */
+/* ------------------------------------------------------------------ */
+
+test('a fresh install has no run status, and that is not an error', async () => {
+  const response = await call('/api/paper-reader/status')
+  assert.equal(response.status, 200)
+  const body = JSON.parse(response.body)
+  assert.equal(body.latest, null)
+  assert.equal(body.source, null)
+})
+
+test('the status route serves the latest run with counts, duration, sources and token budget', async () => {
+  const record = {
+    schemaVersion: 1,
+    date: '2026-11-06',
+    status: 'partial',
+    dryRun: false,
+    startedAt: '2026-11-06T09:00:00+08:00',
+    finishedAt: '2026-11-06T09:01:05+08:00',
+    durationMs: 65_000,
+    counts: { items: 7, fullText: 6, excerpt: 1, translationPending: 2 },
+    sources: [
+      { id: 'arxiv', status: 'ok', items: 5 },
+      { id: 'hf', status: 'skipped', code: 'proxy_auth', reason: 'proxy rejected the configured credentials', items: 0 },
+      { id: 'kimi', status: 'failed', code: 'source_failed', reason: 'source_failed', error: 'HTTP 500', items: 0 },
+    ],
+    translation: {
+      status: 'ok',
+      tokensUsed: 1200,
+      tokenBudget: 300_000,
+      budgetExceeded: false,
+      pendingItems: 2,
+    },
+    apiKey: 'sk-test-secret-key-do-not-leak',
+    proxy: { url: 'http://user:secret@proxy.local:8080' },
+  }
+  await writeRunRecord({ root: dataRoot, date: '2026-11-06', record })
+
+  const response = await call('/api/paper-reader/status')
+  assert.equal(response.status, 200)
+  const body = JSON.parse(response.body)
+  assert.equal(body.source, 'run')
+  assert.equal(body.date, '2026-11-06')
+  assert.equal(body.latest.status, 'partial')
+  assert.equal(body.latest.items, 7)
+  assert.equal(body.latest.durationMs, 65_000)
+  assert.equal(body.latest.translation.tokensUsed, 1200)
+  assert.equal(body.latest.translation.tokenBudget, 300_000)
+  assert.deepEqual(body.latest.failedSources.map(source => source.code), ['source_failed'])
+  assert.equal(body.latest.failedSources[0].label, 'Kimi')
+  assert.deepEqual(body.latest.skippedSources.map(source => source.code), ['proxy_auth'])
+  assert.equal(body.latest.skippedSources[0].label, 'Hugging Face')
+  assert.equal(response.body.includes('sk-test-secret-key-do-not-leak'), false)
+  assert.equal(response.body.includes('user:secret'), false)
+})
+
+test('the status route rejects unsupported methods and passes admission through', async () => {
+  const post = await call('/api/paper-reader/status', 'POST')
+  assert.equal(post.status, 405)
+
+  connection = { admit: () => ({ rejection: 403 }) }
+  const denied = await call('/api/paper-reader/status')
+  assert.equal(denied.status, 403)
+  connection = undefined
 })
