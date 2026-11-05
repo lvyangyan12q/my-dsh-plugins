@@ -89,7 +89,9 @@ export async function mountKaogong(ctx:Context,config:Config){
    const materialSource=needsMaterials?(await readSource<Rows<KnowledgeEntryRecord>>('materials',dashboard||command==='exact:/api/kaogong/material-points'||command==='exact:/api/kaogong/route'||command==='exact:/api/kaogong/recall'))?.value:null
    const materialRows=materialSource?.rows??[]
    const withMaterialMappingLease=<T,>(operation:()=>Promise<T>)=>sources.withGrantLease(async()=>{
-    const fresh=await sources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})
+    let fresh
+    try{fresh=await sources.call<Rows<KnowledgeEntryRecord>>({viewId,resourceId:'materials',action:'read'})}
+    catch(error){if(error instanceof StudySourceRevoked&&unavailableSources.includes('materials')&&!materialSource)return operation();throw error}
     if(fingerprint(fresh.value)!==fingerprint(materialSource))throw Error('资料授权或内容已变化，请重新预览')
     return operation()
    })

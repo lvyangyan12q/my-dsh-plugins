@@ -24,7 +24,7 @@ export function registerMaterialPoints(registry:BusinessRegistry,state:KaogongIn
    if(!learningOutline.some(point=>point.id===body.pointId))throw Error('知识点不可用')
    const key=materialPointKey(body.materialId,body.pointId)
    if(body.action==='remove')await state.materialPoints.delete(key)
-   else{const persist=async()=>{const material=candidates().find(row=>row.id===body.materialId);if(!material||material.fingerprint!==body.fingerprint)throw Error('资料授权或内容已变化，请重新预览');await state.materialPoints.put(key,{materialId:body.materialId,pointId:body.pointId,sourceOwnerId:owner(state,body.materialId)})};if(state.withMaterialMappingLease)await state.withMaterialMappingLease(persist);else await persist()}
+   else{const persist=async()=>{const material=candidates().find(row=>row.id===body.materialId);if(material&&material.subject!==learningOutline.find(point=>point.id===body.pointId)!.subject)throw Error('请选择与原讲义科目一致的知识点');if(!material||material.fingerprint!==body.fingerprint)throw Error('资料授权或内容已变化，请重新预览');await state.materialPoints.put(key,{materialId:body.materialId,pointId:body.pointId,sourceOwnerId:owner(state,body.materialId)})};if(state.withMaterialMappingLease)await state.withMaterialMappingLease(persist);else await persist()}
    send(200,{saved:true})
   }catch(error){send(409,{error:error instanceof Error?error.message:'关联未保存'})}
  }})

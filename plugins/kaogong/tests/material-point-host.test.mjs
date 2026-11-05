@@ -11,6 +11,7 @@ test('learner explicitly maps authorized raw lecture without changing original c
  const candidate=preview.value.materials[0],body={action:'confirm',materialId:'raw',pointId:'kg-point-047',fingerprint:candidate.fingerprint,confirmed:true}
  assert.equal((await app.request(path,{...body,confirmed:false})).status,409)
  assert.equal((await app.request(path,{...body,fingerprint:'changed'})).status,409)
+ assert.equal((await app.request(path,{...body,pointId:'kg-point-001'})).status,409)
  assert.equal((await app.request(path,body)).status,200);assert.equal((await app.request(path,body)).status,200)
  assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.points.find(p=>p.id==='kg-point-047').materials.length,1)
  assert.equal((await app.request('/api/kaogong/route?viewId='+other.view.id)).value.points.find(p=>p.id==='kg-point-047').materials.length,0)
@@ -43,6 +44,10 @@ test('shared raw mapping survives restart but rechecks grant, owner, and referen
  const revoked=(await app.request(url)).value;assert.equal(revoked.materials.length,0);assert.equal(revoked.mappings[0].available,false)
  assert.equal(JSON.stringify((await app.request(recall)).value).includes('变更后的增长率说明'),false)
  assert.equal((await app.request(recall,confirm)).status,409)
+ await app.seedKnowledge(learner.profile.id,{mine:{...raw,title:'本人讲义'}})
+ const ownCandidate=(await app.request(url)).value.materials.find(m=>m.id==='mine')
+ assert.ok(ownCandidate)
+ assert.equal((await app.request(url,{action:'confirm',materialId:'mine',pointId:'kg-point-048',fingerprint:ownCandidate.fingerprint,confirmed:true})).status,200)
  await share(otherLibrary.view.id)
  assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.points.find(p=>p.id===row.pointId).materials.length,0)
  }finally{await app.close()}
