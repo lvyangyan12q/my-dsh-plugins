@@ -8,10 +8,11 @@
  * points the daily run uses, with fetch injected.
  */
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, test } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import { defaultConfig, loadConfig, validateConfig } from '../src/config.js'
 import { runDaily } from '../src/pipeline/run.js'
 import { readDayDigest, readRunRecord } from '../src/storage.js'
@@ -258,6 +259,27 @@ test('config.json may supply the proxy, and the merged result is validated on lo
     )
   } finally {
     rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('no source file hardcodes a proxy address or reads the system proxy', () => {
+  const sourceRoot = fileURLToPath(new URL('../src', import.meta.url))
+  const files = readdirSync(sourceRoot, { recursive: true })
+    .map(entry => String(entry))
+    .filter(name => /\.(?:js|jsx|mjs)$/.test(name))
+  assert.ok(files.length > 0)
+  for (const file of files) {
+    const text = readFileSync(join(sourceRoot, file), 'utf8')
+    assert.doesNotMatch(
+      text,
+      /127\.0\.0\.1:\d{2,5}|localhost:\d{2,5}/,
+      `${file} must not contain a fixed proxy address`,
+    )
+    assert.doesNotMatch(
+      text,
+      /winreg|reg query|Windows Registry/i,
+      `${file} must not look up the operating system proxy`,
+    )
   }
 })
 
