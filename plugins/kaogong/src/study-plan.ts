@@ -30,7 +30,16 @@ export class StudyPlan{
   let tasks=structuredClone(current.tasks)
   if(input.action==='generate'||input.action==='adjust'){
    if(goal?.examDate){if(daysToExam(input.today,goal.examDate)<1||daysToExam(input.today,goal.examDate)>1095)throw Error('考试日期须在未来三年内')
-    const slots=generatePlan({...goal,examDate:goal.examDate},input.today).days.flatMap(day=>day.items.filter(row=>row.kind!=='mock').map(row=>({id:randomUUID(),revision:1,subject:row.subject,title:row.title,kind:row.kind as StudyTask['kind'],phase:day.phase,date:day.date,status:'pending' as const,requirePractice:false,requireReflections:true,summary:'',evidence:null})))
+    const slots=generatePlan({...goal,examDate:goal.examDate},input.today).days.flatMap(day=>
+     day.items.filter(row=>row.kind!=='mock').map(row=>{
+      // Only fresh structured scheduler output can establish identity; never parse a task title.
+      const point=row.knowledgePoint===undefined?undefined:learningOutline.find(point=>
+       point.subject===row.subject&&point.knowledgePoint===row.knowledgePoint)
+      return {...(point?{knowledgePointId:point.id,knowledgePoint:point.knowledgePoint}:{}),
+       id:randomUUID(),revision:1,subject:row.subject,title:row.title,kind:row.kind as StudyTask['kind'],
+       phase:day.phase,date:day.date,status:'pending' as const,requirePractice:false,
+       requireReflections:true,summary:'',evidence:null}
+     }))
     if(!tasks.length)tasks=slots
     else{
      const protectedTasks=tasks.filter(t=>t.status!=='pending'||t.date!==null&&t.date<=input.today)

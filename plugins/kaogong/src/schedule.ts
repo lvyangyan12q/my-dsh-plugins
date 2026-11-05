@@ -29,6 +29,7 @@ export interface PlanConfig {
 
 /** One scheduled item on a day. */
 export interface DayItem {
+  knowledgePoint?: string
   subject: string
   kind: ItemKind
   title: string
@@ -157,7 +158,7 @@ export function generatePlan(config: PlanConfig, today: string): GeneratedPlan {
     for (let m = 0; m < dailyModules; m++) {
       const kp = queue[qi % queue.length]
       if (kp !== undefined) {
-        items.push({ subject: kp.subject, kind: 'learn', title: '学习 ' + kp.subject + '：' + kp.knowledgePoint, done: false })
+        items.push({ subject: kp.subject, knowledgePoint: kp.knowledgePoint, kind: 'learn', title: '学习 ' + kp.subject + '：' + kp.knowledgePoint, done: false })
         qi++
       } else {
         items.push({ subject: subjectNames[m % subjectNames.length] ?? '全部', kind: 'learn', title: '自由学习/查漏补缺', done: false })
