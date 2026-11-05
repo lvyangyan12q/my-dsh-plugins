@@ -25,6 +25,8 @@ test('first opening is read-only and a confirmed profile enters the four main le
     for(const label of ['今日','学习路线','复习中心','学习进度'])assert.ok([...document.querySelectorAll('nav[aria-label="学习页面"] button')].some(button=>button.textContent===label),label)
     assert.deepEqual([...document.querySelectorAll('nav[aria-label="学习页面"] button')].map(b=>b.textContent),['今日','学习路线','复习中心','学习进度'])
     assert.match(document.body.textContent??'',/考试目标待设置/)
+    assert.equal(document.querySelectorAll('h1').length,1)
+    assert.equal(document.querySelector('h1')?.textContent,'今日学习')
     await act(async()=>{[...document.querySelectorAll('nav[aria-label="学习页面"] button')].find(button=>button.textContent==='复习中心')!.click()})
     assert.ok(document.querySelector('section[aria-label="复习中心"]'))
     assert.equal(calls.filter(row=>row&&typeof row==='object'&&'action'in row&&row.action==='create').length,1)

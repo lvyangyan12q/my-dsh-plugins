@@ -1,0 +1,56 @@
+export const learningVisualStyles = `
+.kg-sdk-classroom{--kg-paper:#f8f5ef;--kg-ink:#183b2d;--kg-muted:#66756b;--kg-line:#dcded3;--kg-surface:#fffdf8;background:var(--kg-paper);color:var(--kg-ink);font-size:14px;line-height:1.7;container-type:inline-size}
+body[data-ds-dark-theme] .kg-sdk-classroom{--kg-paper:#19231e;--kg-ink:#e3ece4;--kg-muted:#adbdb0;--kg-line:#425247;--kg-surface:#253229}
+.kg-sdk-classroom>header{padding:16px 24px;justify-content:space-between}
+.kg-sdk-classroom>nav{padding:10px 24px;border-color:var(--kg-line);gap:10px}
+.kg-sdk-classroom>details{padding:6px 24px}
+.kg-sdk-content{padding:28px clamp(16px,5cqw,64px) 48px;scroll-behavior:auto}
+.kg-sdk-content>h1,.kg-sdk-content section>h1{font-family:Georgia,'Noto Serif SC',serif;font-size:clamp(28px,4cqw,44px);font-weight:500;line-height:1.3;margin:0 0 16px}
+.kg-sdk-content h2{font-size:23px;font-weight:500;margin:28px 0 14px}
+.kg-sdk-content h3{font-size:17px;margin:10px 0}
+.kg-sdk-content p{overflow-wrap:anywhere}
+.kg-sdk-content section[aria-label='今日任务']{padding:0!important}
+.kg-sdk-content section[aria-label='今日任务']>article{border-bottom:1px solid var(--kg-line);padding:18px 0;display:grid;grid-template-columns:1fr auto;gap:4px 18px;align-items:center}
+.kg-sdk-content section[aria-label='今日任务']>article p{grid-column:1;margin:0;color:var(--kg-muted)}
+.kg-sdk-content section[aria-label='今日任务']>article button{grid-column:2;grid-row:1/3}
+.kg-continue{background:#153f2b;color:#fff8e9;padding:28px;border-radius:8px;margin:24px 0;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.kg-continue h2{margin:4px 0}
+.kg-continue small{color:#d4e5d5}
+.kg-sdk-classroom button{background:var(--kg-surface);color:var(--kg-ink);border-color:var(--kg-line);padding:8px 14px;border-radius:5px;min-height:38px}
+.kg-sdk-classroom button:hover:not(:disabled){border-color:#55976f}
+.kg-sdk-classroom button[aria-pressed=true]{background:#2f6248;color:#fff}
+.kg-sdk-classroom :is(input:not([type=checkbox]):not([type=radio]),select,textarea){background:var(--kg-surface);color:var(--kg-ink);border-color:var(--kg-line)}
+.kg-sdk-classroom :is(button,input,select,textarea,summary):focus-visible{outline:3px solid #6ca880;outline-offset:3px}
+.kg-sdk-classroom summary{cursor:pointer;padding:10px 0}
+.kg-sdk-classroom details{border-color:var(--kg-line)}
+.kg-sdk-classroom fieldset{min-width:0;border:1px solid var(--kg-line);padding:16px;margin:18px 0}
+.kg-sdk-classroom label{margin:6px 8px 6px 0}
+.kg-sdk-classroom textarea{width:100%;min-height:100px}
+.kg-sdk-classroom [role=alert]{color:#bd562d;white-space:pre-wrap}
+.kg-sdk-classroom small{color:var(--kg-muted)}
+.kg-sdk-classroom .kg-metrics p{background:var(--kg-surface);border-color:var(--kg-line)}
+.kg-route-head{padding-bottom:16px;border-bottom:1px solid var(--kg-line)}
+.kg-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kg-stages article{border:1px solid var(--kg-line);padding:16px;background:var(--kg-surface)}
+.kg-week{margin:28px 0}
+.kg-week article{border-bottom:1px solid var(--kg-line);padding:12px 0}
+.kg-sdk-content>section[aria-label='复习中心']{padding:0!important}
+.kg-sdk-classroom[data-panel=true] .kg-sdk-content{padding:16px}
+.kg-sdk-classroom[data-panel=true] .kg-sdk-content h1{font-size:26px}
+.kg-sdk-classroom[data-panel=true] .kg-continue{display:block;padding:16px}
+.kg-progress>section{padding:20px 0;border-bottom:1px solid var(--kg-line)}
+.kg-progress>section>h2{margin-top:0}
+.kg-progress>section[aria-label='学习覆盖'] strong{font-size:30px}
+.kg-progress>section>article{padding:12px 16px;margin:12px 0;background:var(--kg-surface);border:1px solid var(--kg-line);border-radius:6px}
+.kg-progress>section[aria-label='复习活动统计']{background:var(--kg-surface);padding:20px;border:1px solid var(--kg-line)}
+@container(max-width:600px){.kg-sdk-content{padding:20px 16px}
+.kg-stages{grid-template-columns:1fr}
+.kg-continue{display:block;padding:20px}
+.kg-continue button{margin-top:16px}
+.kg-sdk-content section[aria-label='今日任务']>article{display:block}
+.kg-sdk-content section[aria-label='今日任务']>article button{margin-top:10px}
+.kg-sdk-classroom label{display:flex}
+.kg-sdk-classroom nav{gap:4px}
+.kg-sdk-classroom nav button{padding:7px 9px}
+.kg-sdk-classroom select{width:100%}}
+`;
