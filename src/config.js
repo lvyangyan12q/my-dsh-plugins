@@ -11,6 +11,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { DEFAULT_QUOTA } from './pipeline/select.js'
 import { DEFAULT_ARXIV_CONFIG } from './sources/arxiv.js'
+import { DEFAULT_DEEPSEEK_CONFIG } from './sources/deepseek.js'
 
 export const CONFIG_FILE = 'config.json'
 export const DEFAULT_RETENTION_DAYS = 30
@@ -33,6 +34,7 @@ export function defaultConfig() {
         keywords: [...DEFAULT_ARXIV_CONFIG.keywords],
         excludeKeywords: [...DEFAULT_ARXIV_CONFIG.excludeKeywords],
       },
+      deepseek: { ...DEFAULT_DEEPSEEK_CONFIG },
     },
     quota: { ...DEFAULT_QUOTA },
     retentionDays: DEFAULT_RETENTION_DAYS,
@@ -48,6 +50,9 @@ export function mergeConfig(user, path = CONFIG_FILE) {
   if (isPlainObject(user.sources) && 'arxiv' in user.sources && !isPlainObject(user.sources.arxiv)) {
     throw configError(`${path}: sources.arxiv must be an object`)
   }
+  if (isPlainObject(user.sources) && 'deepseek' in user.sources && !isPlainObject(user.sources.deepseek)) {
+    throw configError(`${path}: sources.deepseek must be an object`)
+  }
 
   const defaults = defaultConfig()
   return {
@@ -59,6 +64,10 @@ export function mergeConfig(user, path = CONFIG_FILE) {
       arxiv: {
         ...defaults.sources.arxiv,
         ...(isPlainObject(user.sources?.arxiv) ? user.sources.arxiv : {}),
+      },
+      deepseek: {
+        ...defaults.sources.deepseek,
+        ...(isPlainObject(user.sources?.deepseek) ? user.sources.deepseek : {}),
       },
     },
     quota: { ...defaults.quota, ...(isPlainObject(user.quota) ? user.quota : {}) },
@@ -88,6 +97,29 @@ function assertUrl(value, key, path) {
   }
 }
 
+/** Validate the DeepSeek section; the defaults let it run with no user config. */
+function validateDeepSeek(deepseek, path) {
+  if (!isPlainObject(deepseek)) throw configError(`${path}: sources.deepseek must be an object`)
+  if (typeof deepseek.enabled !== 'boolean') {
+    throw configError(`${path}: sources.deepseek.enabled must be true or false`)
+  }
+  assertUrl(deepseek.sitemapUrl, 'sources.deepseek.sitemapUrl', path)
+  assertUrl(deepseek.baseUrl, 'sources.deepseek.baseUrl', path)
+  assertPositive(deepseek.timeoutMs, 'sources.deepseek.timeoutMs', path)
+  if (!Number.isInteger(deepseek.lookbackDays) || deepseek.lookbackDays < 0) {
+    throw configError(`${path}: sources.deepseek.lookbackDays must be a non-negative integer`)
+  }
+  if (!Number.isInteger(deepseek.maxItems) || deepseek.maxItems <= 0) {
+    throw configError(`${path}: sources.deepseek.maxItems must be a positive integer`)
+  }
+  if (!Number.isInteger(deepseek.maxBlocks) || deepseek.maxBlocks <= 0) {
+    throw configError(`${path}: sources.deepseek.maxBlocks must be a positive integer`)
+  }
+  if (!Number.isInteger(deepseek.legacyYear) || deepseek.legacyYear < 1990 || deepseek.legacyYear > 2100) {
+    throw configError(`${path}: sources.deepseek.legacyYear must be a four-digit year`)
+  }
+}
+
 /** Validate the merged config, naming the offending key. */
 export function validateConfig(config, path = CONFIG_FILE) {
   const arxiv = config.sources?.arxiv
@@ -108,6 +140,8 @@ export function validateConfig(config, path = CONFIG_FILE) {
   }
   assertUrl(arxiv.baseUrl, 'sources.arxiv.baseUrl', path)
   assertUrl(arxiv.htmlBaseUrl, 'sources.arxiv.htmlBaseUrl', path)
+
+  validateDeepSeek(config.sources?.deepseek, path)
 
   for (const key of ['total', 'papers', 'blogs']) assertCount(config.quota?.[key], `quota.${key}`, path)
   if (!Number.isInteger(config.retentionDays) || config.retentionDays <= 0) {

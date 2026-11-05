@@ -56,17 +56,21 @@ $DSH_HOME/paper-reader/
 
 采集链路方案已定：[实现规格](docs/wayfinder/daily-pipeline/spec.md) 与 [11 张纵向切片工单](docs/wayfinder/daily-pipeline/implementation/README.md) 是唯一实施入口。目标：每天 10 条、全文抽取、中英对照、按天 digest、DSH Schedule 每日运行；来源 arXiv、HF 每日榜、Anthropic、DeepSeek、Kimi、OpenAI；HF/OpenAI 需显式代理；X 预留，Claude Code 与 DSH `web_search` 不在范围内。
 
-当前已实现第一条链路（工单 03）：CLI → arXiv 列表/LaTeXML 抽取 → 选择/去重/配额 → 当日 digest + 索引 + run 记录。翻译尚未接入，条目写入 `translation: null` / `translationState: "pending"`，页面显示「翻译进行中」。
+当前已实现两条来源链路：
+
+- 工单 03：CLI → arXiv 列表/LaTeXML 抽取 → 选择/去重/配额 → 当日 digest + 索引 + run 记录。翻译尚未接入，英文条目写入 `translation: null` / `translationState: "pending"`，页面显示「翻译进行中」。
+- 工单 08：DeepSeek 官方新闻。列表只取 `api-docs.deepseek.com/sitemap.xml`（`/news` 是软 404），按 slug 自带的日期进入当天窗口；正文读官方英文 `/news/<slug>.md` 与中文 `/zh-cn/news/<slug>.md`，直接写成「中文原文 + 英文译文」，**不调用翻译**，`sourceLanguage: "zh"`、`translationState: "complete"`。中文版缺失时保留英文并标 pending；两者都缺失的条目跳过并写入 run 记录告警。
 
 ```powershell
 node scripts/paper-reader.mjs --date 2026-11-05
 node scripts/paper-reader.mjs --dry-run        # 只抓取和统计，不写任何文件
-node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源
+node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源（arxiv / deepseek）
 ```
 
-- 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s）。工具只读该文件，不会覆盖。
-- 示例：`{"quota":{"papers":4},"sources":{"arxiv":{"categories":["cs.CL"],"keywords":["agent"]}}}`。
+- 配置在 `$DSH_HOME/paper-reader/config.json`，可选；缺失时使用内置默认（论文 6、每日 10、分类 `cs.AI`/`cs.CL`/`cs.LG`、超时 20s、DeepSeek 回看 1 天）。工具只读该文件，不会覆盖。
+- 示例：`{"quota":{"papers":4},"sources":{"arxiv":{"categories":["cs.CL"],"keywords":["agent"]},"deepseek":{"lookbackDays":2}}}`。
 - arXiv 正文取 `arxiv.org/html/<id>`（LaTeXML），保留标题、段落、公式、图注与代码；HTML 缺失时回退摘要并标记「节选」。
+- DeepSeek 的博客条目按发布时间参与每日 4 条博客配额；窗口外的旧新闻不会每天重复占用配额。
 - 每个日期写 `digest/YYYY-MM-DD.json` 与 `runs/YYYY-MM-DD.json`；索引最后更新。全部来源失败时不写当日 digest，上一份保持可读，退出码为 1。
 - 退出码：`0` 已写入（或 dry-run 完成），`1` 抓取失败且未写入，`2` 参数或配置错误。
 
