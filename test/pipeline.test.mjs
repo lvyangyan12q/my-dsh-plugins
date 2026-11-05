@@ -217,6 +217,52 @@ test('the configured paper quota limits both writes and article fetches', async 
   assert.equal(calls.includes('https://arxiv.org/html/2611.05382'), false)
 })
 
+test('an item with no summary omits the key instead of writing null', async () => {
+  const root = tempRoot()
+  const { config } = await loadConfig({ root })
+  // A Kimi article can have no dek at all. Writing `summary: null` is rejected
+  // by the digest contract, which used to cost the whole day's file.
+  const adapters = {
+    kimi: {
+      list: () => [{
+        id: 'kimi:no-summary',
+        sourceId: 'kimi',
+        title: 'Kimi post without a dek',
+        url: 'https://www.kimi.com/blog/no-summary',
+        sourceLanguage: 'en',
+        publishedAt: '2026-11-04T01:00:00Z',
+        summary: '',
+      }],
+      extract: () => ({
+        blocks: [{ type: 'paragraph', original: 'Body text.' }],
+        meta: {
+          title: 'Kimi post without a dek',
+          publishedAt: '2026-11-04T01:00:00Z',
+          sourceLanguage: 'en',
+          summary: '',
+        },
+      }),
+    },
+  }
+
+  const result = await runDaily({
+    root,
+    date: DATE,
+    config,
+    source: 'kimi',
+    fetch: async () => { throw new Error('unused in this test') },
+    adapters,
+    env: {},
+    now: NOW,
+  })
+
+  assert.equal(result.exitCode, 0)
+  const { digest } = await readDayDigest({ root, date: DATE })
+  assert.equal(digest.items.length, 1)
+  assert.equal('summary' in digest.items[0], false, 'the optional key is absent, not null')
+  assert.equal(digest.items[0].summary, undefined)
+})
+
 test('a network failure is explicit, writes a failed run record and keeps the previous day', async () => {
   const root = tempRoot()
   const previous = {
