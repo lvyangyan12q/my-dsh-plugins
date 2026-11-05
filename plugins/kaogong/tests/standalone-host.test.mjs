@@ -891,4 +891,3 @@ test('closeout refuses missing practice before persisting consent and accepts la
   const dashboard=(await app.request('/api/kaogong/dashboard?viewId='+view)).value;assert.equal(dashboard.completedTaskCount,1);assert.equal(dashboard.taskCompletionRate,1)
  }finally{await app.close()}
 })
-

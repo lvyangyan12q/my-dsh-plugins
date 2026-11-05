@@ -78,4 +78,3 @@ export async function fixture(options = {}) {
     await rm(actual, { recursive: true })
   } }
 }
-

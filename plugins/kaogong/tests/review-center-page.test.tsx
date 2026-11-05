@@ -58,7 +58,3 @@ test('real Host review page schedules then recovers only the failed plan write',
   await click('仅重试计划回写');assert.equal((await app.request(plan)).value.tasks[0].status,'completed');assert.equal((await app.request(url)).value.items[0].history.length,1)
  }finally{await act(async()=>root.unmount());globalThis.fetch=old;dom.window.close();for(const[k,v]of saved)v?Object.defineProperty(globalThis,k,v):Reflect.deleteProperty(globalThis,k);await app.close()}
 })
-
-
-
-
