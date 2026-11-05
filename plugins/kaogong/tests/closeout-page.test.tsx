@@ -27,6 +27,8 @@ test('classroom closeout choices survive a fresh owner and pending completion st
   await act(async()=>check()[0].click());assert.equal(writes,0)
   await act(async()=>root.unmount());root=createRoot(document.getElementById('root')!);await mount()
   assert.equal(check()[0].checked,true)
+  await mount('profile-b');assert.equal(check()[0].checked,false)
+  await mount('profile-a');assert.equal(check()[0].checked,true)
   await act(async()=>check()[1].click())
   await act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent==='确认完成并保存选择')!.click())
   assert.match(document.body.textContent??'',/入队暂时失败/)
