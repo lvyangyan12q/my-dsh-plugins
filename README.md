@@ -29,6 +29,8 @@ dsh plugin --profile web add "F:\ai-project\my-dsh-plugins\plugins\paper-reader"
 
 安装后重启 `dsh web`（或桌面端）使 Host 组合生效；若插件管理页显示未启用，先启用该 bundle。重启后左侧栏出现「论文阅读」入口，点击即打开本页。
 
+完整的安装、启用、每日 09:00 DSH Schedule 配置、手动补跑、升级、卸载、回退与版本锁定说明见 **[docs/INSTALL.md](docs/INSTALL.md)**。
+
 > 当前包按 DSH `0.2.2-alpha.2` 的客户端契约开发；其他宿主版本可能在安装时被 `engines.dsh` 拒绝。
 
 ## 数据：agent 每日写入
@@ -48,7 +50,8 @@ $DSH_HOME/paper-reader/
 - 索引在当天文件之后写入；索引缺失、单日文件缺失 / 损坏 / 超限都有明确错误。
 - 保留 30 天：写入新一天后清理更早的日文件；清理失败不阻塞当天写入。
 - 还没有 `index.json` 时回退到旧的 `digest.json`；两者都没有时使用包内 `sample/digest.json` 并显示「示例数据」。
-- 宿主路由：`/api/paper-reader/index`、`/api/paper-reader/digest/YYYY-MM-DD`、`/api/paper-reader/digest`（旧单文件）、`/api/paper-reader/health`；沿用浏览器会话鉴权，只读、不创建用户数据。
+- 宿主路由：`/api/paper-reader/index`、`/api/paper-reader/status`（最近一次 run 的只读摘要）、`/api/paper-reader/digest/YYYY-MM-DD`、`/api/paper-reader/digest`（旧单文件）、`/api/paper-reader/health`；沿用浏览器会话鉴权，只读、不创建用户数据。
+- 页面顶部显示最近一次运行的状态、日期、耗时、条数、翻译 token/预算，以及失败与被跳过来源；状态读取失败只显示提示，不覆盖上一份可读 digest。
 
 写入由每日 agent / CLI 负责（原子写 + 索引 + 保留清理见 `src/storage.js`），插件只读。数据契约见 [docs/DESIGN.md](docs/DESIGN.md#数据契约)。
 
@@ -81,6 +84,8 @@ node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源（arxiv / de
 - 译文缓存在 `$DSH_HOME/paper-reader/cache/`，键为原文、目标语言、模型与术语表版本的 SHA-256；重复运行不再付费。术语表内置常用 AI 词汇，可用 `translation.glossary` 覆盖。
 - 每日 token 预算默认 300k（`translation.dailyTokenBudget`）；超限后剩余条目 pending，run 记录与页面可见。密钥只出现在 Authorization 头，不写入 digest、run 记录或日志。
 - 每个日期写 `digest/YYYY-MM-DD.json` 与 `runs/YYYY-MM-DD.json`；索引最后更新。全部来源失败时不写当日 digest，上一份保持可读，退出码为 1。
+- run 记录保留最近 30 天，写入后清理更早的同名日期文件；记录来源状态、条数、耗时、翻译 token、警告与失败/跳过原因，密钥不落盘。
+- 手动补跑：`node scripts/paper-reader.mjs --date YYYY-MM-DD`（同一天重跑会覆盖当天文件，token 预算接着已用额度计算）；不自动重放历史。调度配置见 [docs/INSTALL.md](docs/INSTALL.md#每日-0900-调度dsh-schedule)。
 - 退出码：`0` 已写入（或 dry-run 完成），`1` 抓取失败且未写入，`2` 参数或配置错误。
 
 ## 阅读与交互

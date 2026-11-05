@@ -152,6 +152,110 @@
   color: var(--pr-text);
 }
 
+/* Latest run: time, counts, duration, token budget, failed/skipped sources. */
+.pr-run-status {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--pr-border);
+  background: var(--pr-panel-2);
+  color: var(--pr-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.pr-run-status.is-failed {
+  border-bottom-color: color-mix(in srgb, #c95b5b 38%, transparent);
+  background: color-mix(in srgb, #c95b5b 9%, var(--pr-panel-2));
+}
+
+.pr-run-status-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pr-run-status-title {
+  font-weight: 600;
+  color: var(--pr-text);
+}
+
+.pr-run-status-badge {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  border: 1px solid var(--pr-border-strong);
+}
+
+.pr-run-status-ok {
+  color: #3f8f63;
+  border-color: color-mix(in srgb, #3f8f63 45%, transparent);
+}
+
+.pr-run-status-partial {
+  color: #b07d2a;
+  border-color: color-mix(in srgb, #b07d2a 45%, transparent);
+}
+
+.pr-run-status-failed {
+  color: #c95b5b;
+  border-color: color-mix(in srgb, #c95b5b 45%, transparent);
+}
+
+.pr-run-status-meta {
+  color: var(--pr-muted);
+}
+
+.pr-run-status-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.pr-run-status-failed {
+  color: color-mix(in srgb, #c95b5b 72%, var(--pr-text));
+}
+
+.pr-run-status-skipped {
+  color: color-mix(in srgb, #d9a441 72%, var(--pr-text));
+}
+
+.pr-run-status-label {
+  flex: none;
+  font-weight: 600;
+}
+
+.pr-run-status-source {
+  white-space: normal;
+}
+
+.pr-run-status-reason {
+  opacity: .86;
+}
+
+.pr-run-status-fallback {
+  color: var(--pr-muted);
+}
+
+.pr-run-status-token.is-warn {
+  color: #b07d2a;
+}
+
+.pr-run-status-error {
+  flex: none;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--pr-border);
+  background: color-mix(in srgb, #d9a441 9%, transparent);
+  color: color-mix(in srgb, #d9a441 68%, var(--pr-text));
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .pr-top-actions {
   display: flex;
   align-items: center;

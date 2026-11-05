@@ -15,8 +15,9 @@
  *   sees complete days.
  * - **8 MiB ceiling per day**: an oversized day is rejected before anything is
  *   written, so yesterday's good file stays.
- * - **30-day retention**: old day files are pruned best-effort after a write;
- *   a prune failure is reported but never blocks the new day or its index.
+ * - **30-day retention**: old day files and run records are pruned best-effort
+ *   after a write; a prune failure is reported but never blocks the new day,
+ *   its index, or the run record.
  *
  * The CLI and the host share this module, so a scheduled run and the reader
  * agree on paths, limits and the index shape.
@@ -282,11 +283,53 @@ export async function pruneExpired({ root, today, retentionDays = RETENTION_DAYS
 }
 
 /**
- * Write the run record for one date. Diagnostics only: it is never read by the
- * page, so a failed write must not take the digest down, and a chatty record is
- * capped so one bad run cannot fill the disk.
+ * Delete run records older than the retention window.
+ *
+ * Run records are diagnostics, so this mirrors `pruneExpired`: a failure is
+ * collected and reported, never thrown. Only `YYYY-MM-DD.json` names are
+ * touched, which keeps a user's notes in the same directory safe.
  */
-export async function writeRunRecord({ root, date, record, maxBytes = MAX_RUN_BYTES }) {
+export async function pruneRuns({ root, today, retentionDays = RETENTION_DAYS }) {
+  const result = { deleted: [], failed: [] }
+  const anchor = isDigestDate(today) ? today : new Date().toISOString().slice(0, 10)
+  const cutoff = addDays(anchor, -(retentionDays - 1))
+  const { runsDir } = storagePaths(root)
+  let names
+  try {
+    names = await readdir(runsDir)
+  } catch (error) {
+    if (error?.code === 'ENOENT') return result
+    result.failed.push({ date: null, message: String(error?.message ?? error) })
+    return result
+  }
+  for (const name of names) {
+    const match = DAY_FILE.exec(name)
+    if (!match || match[1] >= cutoff) continue
+    try {
+      await unlink(join(runsDir, name))
+      result.deleted.push(match[1])
+    } catch (error) {
+      result.failed.push({ date: match[1], message: String(error?.message ?? error) })
+    }
+  }
+  result.deleted.sort()
+  result.failed.sort((left, right) => String(left.date).localeCompare(String(right.date)))
+  return result
+}
+
+/**
+ * Write the run record for one date. Diagnostics only: a failed write must not
+ * take the digest down, and a chatty record is capped so one bad run cannot
+ * fill the disk. Old records are pruned after the write, anchored to the run
+ * date so a manual backfill does not delete newer diagnostics.
+ */
+export async function writeRunRecord({
+  root,
+  date,
+  record,
+  maxBytes = MAX_RUN_BYTES,
+  retentionDays = RETENTION_DAYS,
+}) {
   if (!isDigestDate(date)) {
     throw storageError('run_invalid_date', 'run date must be a real YYYY-MM-DD date', 400)
   }
@@ -301,10 +344,12 @@ export async function writeRunRecord({ root, date, record, maxBytes = MAX_RUN_BY
       maxBytes,
     })
   }
-  const path = storagePaths(root).runPath(date)
-  await mkdir(storagePaths(root).runsDir, { recursive: true })
+  const paths = storagePaths(root)
+  const path = paths.runPath(date)
+  await mkdir(paths.runsDir, { recursive: true })
   await writeFileAtomic(path, text)
-  return { date, path, bytes }
+  const pruned = await pruneRuns({ root, today: date, retentionDays })
+  return { date, path, bytes, pruned }
 }
 
 /* ------------------------------------------------------------------ */
@@ -435,4 +480,46 @@ export async function readRunRecord({ root, date }) {
   } catch {
     throw storageError('run_invalid', `run record for ${date} is not valid JSON`, 422)
   }
+}
+
+/**
+ * Read the newest stored run record.
+ *
+ * The date is parsed from the file name, not taken from directory order: a
+ * `2026-09-30` record sorts after `2026-10-02` lexicographically on some
+ * filesystems, and the page must show the real latest run. Missing directories
+ * and a file removed between listing and reading answer `null`; a corrupt
+ * record is an explicit 422 so the status route can report it.
+ */
+export async function readLatestRun({ root }) {
+  const { runsDir } = storagePaths(root)
+  let names
+  try {
+    names = await readdir(runsDir)
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    throw error
+  }
+  let latest = null
+  for (const name of names) {
+    const match = DAY_FILE.exec(name)
+    if (!match) continue
+    if (latest === null || match[1] > latest) latest = match[1]
+  }
+  if (latest === null) return null
+  const path = storagePaths(root).runPath(latest)
+  let text
+  try {
+    text = await readFile(path, 'utf8')
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null
+    throw error
+  }
+  let record
+  try {
+    record = JSON.parse(text)
+  } catch {
+    throw storageError('run_invalid', `run record for ${latest} is not valid JSON`, 422)
+  }
+  return { date: latest, record, path }
 }

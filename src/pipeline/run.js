@@ -574,6 +574,10 @@ export async function runDaily({
         requests: counters.get(id)?.requests ?? 0,
         durationMs: Date.now() - sourceStarted,
         error: String(error?.message ?? error),
+        // A stable code is what the status page shows; the error text stays
+        // diagnostic detail. Unknown transport errors get the generic code.
+        code: error?.code ?? 'source_failed',
+        reason: error?.code ?? 'source_failed',
       })
     }
   }
@@ -698,6 +702,11 @@ export async function runDaily({
     }
     if (report.skipped > 0) entry.skipped = report.skipped
     if (report.error) entry.error = report.error
+    if (report.status === 'failed') {
+      entry.code = report.code ?? 'source_failed'
+      entry.reason = report.reason ?? 'source_failed'
+      entry.label = SOURCE_LABELS.get(report.id) ?? report.id
+    }
     if (report.status === 'skipped') {
       // A skipped source has no items to derive a label from, so it carries the
       // reason and label the page needs to explain the gap.
@@ -811,7 +820,12 @@ export async function runDaily({
       },
     }
     try {
-      const result = await writeRunRecord({ root, date, record })
+      const result = await writeRunRecord({
+        root,
+        date,
+        record,
+        retentionDays: resolved.retentionDays,
+      })
       written.run = result.path
     } catch (error) {
       warnings.push({ id: null, message: `run record not written: ${error?.message ?? error}` })
