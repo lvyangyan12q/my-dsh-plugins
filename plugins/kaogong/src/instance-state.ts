@@ -88,7 +88,7 @@ function checkedTable<V>(table: KvTable<string, V>, check: (value: V) => void): 
   }
 }
 
-export type KaogongInstanceState = Awaited<ReturnType<typeof openState>>['state']
+export type KaogongInstanceState = Awaited<ReturnType<typeof openState>>['state'] & {unavailableSources?:string[]}
 export interface InstanceStateLease { readonly state: KaogongInstanceState; release(): Promise<void> }
 type Entry = Awaited<ReturnType<typeof openState>> & { references: number; closing?: Promise<void>; idle: (() => void)[] }
 

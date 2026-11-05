@@ -6,6 +6,7 @@ const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringi
 const resourceIds = new Set(['question-bank', 'materials', 'teaching'])
 /** A fixed study source boundary: libraries can grant only bank/material reads.
  * Private teaching context is never catalogued or shared. */
+export class StudySourceRevoked extends Error {}
 export class StudySources implements StudySourceReader {
   private owners = new Map<string, StudySourceOwner>()
   private pending: Promise<unknown> = Promise.resolve()
@@ -23,7 +24,7 @@ export class StudySources implements StudySourceReader {
     const context = await this.workspace.resolveView(input.viewId)
     const connections = [...this.workspace.domain.table('grants').entries()].map(([, row]) => row).filter(row => row.consumerInstanceId === context.instance.id && row.resourceId === input.resourceId)
     const grant = connections.find(row => row.status === 'active')
-    if (!grant && connections.length) throw Error('资料授权已撤销，请明确重新授权')
+    if (!grant && connections.length) throw new StudySourceRevoked('资料授权已撤销，请明确重新授权')
     if (input.resourceId === 'teaching' && grant) throw Error('私有课堂不可共享')
     const ownerId = grant?.ownerInstanceId ?? context.instance.id
     const profile = await this.workspace.assertProfile(ownerId)

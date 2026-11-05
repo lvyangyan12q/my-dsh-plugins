@@ -140,11 +140,30 @@ test('a confirmed local library import can be granted and revoked without Workta
     const scored = await app.request('/api/kaogong/practice/submit?viewId=' + learner.view.id, { roundId: issued.value.roundId, answers: [{ id: 'first', answer: 'B' }] })
     assert.equal(scored.status, 200)
     assert.equal(scored.value.correctCount, 1)
+    const wrongRound=(await app.request('/api/kaogong/practice/start?viewId='+learner.view.id,{subject:'行测-资料分析'})).value
+    await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:wrongRound.roundId,answers:[{id:'first',answer:'A'}]})
+    const unfinished = await app.request('/api/kaogong/practice/start?viewId=' + learner.view.id, {subject:'行测-资料分析'})
     const revoked = await app.request('/api/kaogong/study', { action: 'source-revoke', viewId: learner.view.id, id: shared.value.id, revision: shared.value.revision })
     assert.equal(revoked.status, 200)
     const empty = await app.request('/api/kaogong/practice/start?viewId=' + learner.view.id, { subject: '行测-资料分析', limit: 1 })
     assert.equal(empty.status, 403)
-    assert.equal((await app.request('/api/kaogong/practice/read?viewId=' + learner.view.id, { roundId: issued.value.roundId })).status, 403)
+    assert.equal((await app.request('/api/kaogong/practice/read?viewId=' + learner.view.id, { roundId: issued.value.roundId })).status, 200)
+    const dashboard=await app.request('/api/kaogong/dashboard?viewId='+learner.view.id)
+    assert.equal(dashboard.status,200);assert.equal(dashboard.value.totalCorrect,1);assert.deepEqual(dashboard.value.unavailableSources,['question-bank'])
+    assert.equal((await app.request('/api/kaogong/errors?viewId='+learner.view.id)).status,200)
+    assert.equal((await app.request('/api/kaogong/practice/history?viewId='+learner.view.id,{})).status,200)
+    const retry=await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:issued.value.roundId,answers:[{id:'first',answer:'B'}]})
+    assert.equal(retry.status,200);assert.equal(retry.value.correctCount,1)
+    assert.equal((await app.request('/api/kaogong/practice/read?viewId='+learner.view.id,{roundId:unfinished.value.roundId})).status,403)
+    assert.equal((await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:unfinished.value.roundId,answers:[{id:'first',answer:'B'}]})).status,403)
+    assert.equal((await app.request('/api/kaogong/practice/submit?viewId='+learner.view.id,{roundId:issued.value.roundId,answers:[{id:'first',answer:'A'}]})).status,409)
+    const errorUrl='/api/kaogong/errors?viewId='+learner.view.id
+    const occurrence=(await app.request(errorUrl)).value.occurrences[0]
+    assert.equal((await app.request(errorUrl,{action:'enroll',id:occurrence.id,confirmed:true})).status,200)
+    const attempt=(await app.request(errorUrl,{action:'answer',id:occurrence.id,answer:'B',requestId:'revoked-review',earlyConfirmed:true})).value
+    assert.equal((await app.request(errorUrl,{action:'confirm',id:occurrence.id,attemptId:attempt.id,reflection:'使用自己的已交原题订正',confirmed:true})).status,200)
+    const other=await create('learner')
+    assert.notEqual((await app.request('/api/kaogong/practice/read?viewId='+other.view.id,{roundId:issued.value.roundId})).status,200)
     assert.equal((await app.request('/api/kaogong/study', { action: 'source-share', viewId: learner.view.id, ownerViewId: library.view.id, resourceId: 'question-bank' })).status, 200)
     const preserved = await app.request('/api/kaogong/practice/read?viewId=' + learner.view.id, { roundId: issued.value.roundId })
     assert.equal(preserved.value.result.correctCount, 1)
@@ -393,7 +412,7 @@ test('error occurrences survive a later correct round and require explicit enrol
   const restored=(await app.request(url)).value.occurrences[0]
   assert.equal(restored.review.stage,3);assert.equal(restored.review.history.length,5);assert.equal(restored.userAnswer,'A')
   await app.request('/api/kaogong/study',{action:'source-revoke',viewId,id:grant.id,revision:grant.revision})
-  assert.equal((await app.request(url)).status,403)
+  const retained=(await app.request(url));assert.equal(retained.status,200);assert.equal(retained.value.occurrences[0].review.history.length,5);assert.equal(retained.value.occurrences[0].userAnswer,'A')
  }finally{await app.close()}
 })
 

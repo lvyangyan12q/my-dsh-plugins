@@ -32,7 +32,7 @@ function optionKey(option: string) { return /^\s*([A-Za-z])(?:[.、)\s]|$)/.exec
 export class PracticeRounds {
   private tail: Promise<unknown> = Promise.resolve()
   private closing = false
-  constructor(private rounds: KvTable<string, PracticeRound>, private bank: KvTable<string, BankQuestionRecord>, private notebook: KvTable<string, QuestionRecord>, private materialStem: (id: string, stem: string) => string = (_id, stem) => stem, private materialOptions: (id: string, stem: string, options: string[]) => string[] = (_id, _stem, options) => options) {}
+  constructor(private rounds: KvTable<string, PracticeRound>, private bank: KvTable<string, BankQuestionRecord>, private notebook: KvTable<string, QuestionRecord>, private materialStem: (id: string, stem: string) => string = (_id, stem) => stem, private materialOptions: (id: string, stem: string, options: string[]) => string[] = (_id, _stem, options) => options, private assertRoundAccess: (id:string)=>void = ()=>{}) {}
   private displayQuestion(question: BankQuestion) {
     const stem = this.materialStem(question.id, question.stem)
     return { question: { ...question, stem, options: this.materialOptions(question.id, question.stem, question.options) }, verifiedFigure: stem !== question.stem && /!\[[^\]]*\]\(题目_images\/verified\//u.test(stem) }
@@ -123,6 +123,7 @@ export class PracticeRounds {
   /** Only the stored snapshot is scored; all membership checks precede the first write. */
   submit(id: string, answers: { id: string; answer: string }[]) {
     return this.run(async () => {
+      this.assertRoundAccess(id)
       let round = this.round(id)
       if (!round.questions.length || answers.length !== round.questions.length || new Set(answers.map(row => row.id)).size !== answers.length) throw new PracticeError('answers must contain every issued question exactly once')
       const byId = new Map(answers.map(row => [row.id, row.answer.trim()]))
@@ -172,7 +173,7 @@ export class PracticeRounds {
     }
   }
   read(id: string) {
-    return this.run(async () => { const round = this.round(id); await this.project(id, round); return this.view(id, this.round(id)) })
+    return this.run(async () => { this.assertRoundAccess(id); const round = this.round(id); await this.project(id, round); return this.view(id, this.round(id)) })
   }
   /** Read completed score snapshots without projecting notebook writes or mutating any domain. */
   readCompleted(id?: string, subject?: string) {
@@ -200,6 +201,7 @@ export class PracticeRounds {
   }
   reflect(id: string, entries: { id: string; errorReason: string; notes?: string }[]) {
     return this.run(async () => {
+      this.assertRoundAccess(id)
       let round = this.round(id)
       const result = this.result(id, round)
       if (new Set(entries.map(row => row.id)).size !== entries.length || entries.some(entry => !result.results.some(row => row.id === entry.id && !row.correct) || !ERROR_REASONS.some(reason => reason === entry.errorReason))) throw new PracticeError('invalid round reflection')
