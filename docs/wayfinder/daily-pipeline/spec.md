@@ -193,4 +193,6 @@ status: open
 - 每日 10 条是**上限**（默认值，配置可改）：候选不足时不补足，实际阅读量可能更低。
 - 各站条款只核对了 arXiv 与 HF 镜像 robots，正式运行前应复核 OpenAI/Anthropic/Kimi/DeepSeek 的抓取条款。
 - 研究依据：[来源接入研究](research/01-source-access.md) 与 [代理复测](research/proxy-retest-2026-11-04.md)。
+- 凭据复用：核心翻译服务只读 `PAPER_READER_LLM_*`；`scripts/run-daily.mjs` 是显式包装器，从 `$DSH_HOME/.credentials.yaml` 的 `refs` 读取一个命名的 DSH 凭据（默认 `COMMANDCODE_API_KEY`）注入子进程，不打印、不落盘。环境变量优先于包装器。
+- 本机真实全文翻译实测：10 条全文约 1,100 个块，536k tokens，预算 1.2M 足够；默认 300k 只是保守起点。
 - 规格不承诺实现完成；完成以实施工单的验收勾选与真实安装运行为准。
