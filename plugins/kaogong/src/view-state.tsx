@@ -22,7 +22,7 @@ type ViewValues = {
   integration: { service: unknown } | null; open: boolean
   teacherHandoff: { prompt: string; copied: boolean } | null
   roles: RoleFacade | null; tasks: TaskFacade | null
-  'plan.display': {scope:string;date:string}; 'study.scroll': Record<string,number>; 'task.activeId': string | null; 'review.target': string | null; 'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
+  'plan.display': {scope:string;date:string}; 'study.scroll': Record<string,number>; 'review.target': string | null; 'study.open': boolean; 'study.page': string | null; 'study.pane': 'content' | 'conversation'
   'roles.teacherSubject': string
   'roles.selected': LearningRoleKey
   'roles.opened': LearningRoleKey[]
@@ -95,7 +95,7 @@ export class KaogongViewState {
         if(key==='roles.teacherSubject'&&!this.viewId)writeTeacherSubject(this.instanceId,cell.value as string)
         if(key==='plan.display'||key==='study.scroll'){try{window.localStorage.setItem('kaogong/display/'+JSON.stringify([this.instanceId,this.viewId??'main']),JSON.stringify({plan:this.cell('plan.display',{scope:'all',date:''}).value,scroll:this.cell('study.scroll',{}).value}))}catch{}}
         if (key === 'study.open' || key === 'study.page' || key === 'study.pane' || key === 'roles.selected') this.saveDisplayChoices()
-        if(['answers','errorReasons','reflectionNotes','lesson.notes'].includes(key)){const taskId=this.cell('task.activeId',null).value;if(taskId){try{const storageKey='kaogong/recent-task/'+encodeURIComponent(this.instanceId),raw=JSON.parse(window.localStorage.getItem(storageKey)??'[]');window.localStorage.setItem(storageKey,JSON.stringify([taskId,...(Array.isArray(raw)?raw:[]).filter(id=>typeof id==='string'&&id!==taskId)].slice(0,100)))}catch{}}}
+        if(['answers','errorReasons','reflectionNotes','lesson.notes'].includes(key)){const taskId=key==='lesson.notes'?this.cell('lesson.view',null).value?.lesson.request.taskId:this.cell('practice',null).value?.context.taskId;if(taskId){try{const storageKey='kaogong/recent-task/'+encodeURIComponent(this.instanceId),raw=JSON.parse(window.localStorage.getItem(storageKey)??'[]');window.localStorage.setItem(storageKey,JSON.stringify([taskId,...(Array.isArray(raw)?raw:[]).filter(id=>typeof id==='string'&&id!==taskId)].slice(0,100)))}catch{}}}
         if(['lesson.draft','lesson.form','lesson.view','lesson.notes','lesson.notesDirty'].includes(key))this.saveLearnerDraft()
         for (const listener of cell.listeners) listener()
       } }

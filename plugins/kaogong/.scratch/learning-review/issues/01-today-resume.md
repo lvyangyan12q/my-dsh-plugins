@@ -6,7 +6,7 @@
 
 **Blocked by:** None (无实施票依赖)
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-release-acceptance
 
 **Decision gate:** 2026-11-05 已定稿，见对应决策票 Resolution；实施仍须满足本票依赖。
 
@@ -18,3 +18,5 @@
 - [ ] 通过 Host/页面验证恢复、档案隔离和既有草稿；实施前后公共行为保持一致。
 
 **验证约定：** 沿用已确认的 Host、Native、页面确认与准确发行包测试边界；只记录实际执行结果。保留档案隔离、资料授权、真实评分与历史快照。按批准原型实现本票对应交互，验收证据完成前不勾选。
+
+**Evidence:** [01源码与公开页面证据](../../../docs/evidence/08-ticket01-today.md)。待集成审查与08准确包实装，不提前关闭父规格。

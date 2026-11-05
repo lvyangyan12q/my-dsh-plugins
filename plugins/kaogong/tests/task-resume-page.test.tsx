@@ -21,7 +21,7 @@ test('continuing the same task preserves unsaved answers and notes while another
   await act(async()=>root.render(<Surface/>))
   await act(async()=>document.querySelectorAll<HTMLInputElement>('input[type=radio]')[1].click())
   const click=async(text:string,index=0)=>act(async()=>[...document.querySelectorAll('button')].filter(button=>button.textContent===text)[index]!.click())
-  await click('返回计划');assert.equal((document.body.textContent??'').includes('今日任务'),true);await click('继续同一任务')
+  await click('返回计划');assert.equal((document.body.textContent??'').includes('今日任务'),true);assert.equal([...document.querySelectorAll('button')].some(b=>b.textContent==='继续最近任务：任务0'),true);await click('继续同一任务')
   assert.equal(document.querySelectorAll<HTMLInputElement>('input[type=radio]')[1].checked,true)
   await click('返回计划');assert.equal((document.body.textContent??'').includes('继续最近任务'),true);await click('继续同一任务',1)
   assert.equal(document.querySelectorAll<HTMLInputElement>('input[type=radio]')[1].checked,false)
