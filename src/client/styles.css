@@ -1390,6 +1390,60 @@
   line-height: 1.65;
 }
 
+.pr-figure-svg {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px 0 10px;
+}
+
+.pr-figure-svg svg {
+  width: 100%;
+  height: auto;
+}
+
+.pr-table {
+  margin: 24px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--pr-border);
+  border-radius: 10px;
+  background: var(--pr-panel);
+}
+
+.pr-table-scroll {
+  overflow-x: auto;
+}
+
+.pr-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--pr-text-2);
+}
+
+.pr-table th,
+.pr-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--pr-border);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+}
+
+.pr-table th {
+  color: var(--pr-text);
+  font-weight: 600;
+  background: var(--pr-panel-2);
+}
+
+.pr-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.pr-inline-math math {
+  font-size: 1.05em;
+}
+
 .pr-figure-caption-en {
   color: var(--pr-faint);
   font-family: var(--pr-serif-en);

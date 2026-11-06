@@ -326,3 +326,70 @@ export function serializeMathml(node) {
   return walk(node)
 }
 
+/** Inline text with MathML kept and every other inline tag flattened away. */
+export function serializeInline(node) {
+  if (typeof node === 'string') return escapeHtml(node)
+  if (!isElement(node)) return ''
+  if (localName(node.name) === 'math') return serializeMathml(node)
+  return node.children.map(serializeInline).join('')
+}
+
+/* ------------------------------------------------------------------ */
+/* SVG                                                                 */
+/* ------------------------------------------------------------------ */
+
+const SVG_TAGS = new Set([
+  'svg', 'g', 'path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon',
+  'text', 'tspan', 'defs', 'clipPath', 'use', 'symbol', 'marker', 'linearGradient',
+  'radialGradient', 'stop', 'pattern', 'title', 'desc',
+])
+
+const SVG_ATTRS = new Set([
+  'viewBox', 'width', 'height', 'x', 'y', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy',
+  'r', 'rx', 'ry', 'd', 'points', 'transform', 'fill', 'fill-opacity', 'fill-rule',
+  'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap', 'stroke-linejoin',
+  'stroke-dasharray', 'opacity', 'clip-path', 'clip-rule', 'id', 'class',
+  'preserveAspectRatio', 'markerWidth', 'markerHeight', 'refX', 'refY', 'orient',
+  'offset', 'stop-color', 'stop-opacity', 'href', 'role', 'aria-label',
+])
+
+const SVG_TAG_CASE = {
+  svg: 'svg', g: 'g', path: 'path', rect: 'rect', circle: 'circle', ellipse: 'ellipse',
+  line: 'line', polyline: 'polyline', polygon: 'polygon', text: 'text', tspan: 'tspan',
+  defs: 'defs', clippath: 'clipPath', use: 'use', symbol: 'symbol', marker: 'marker',
+  lineargradient: 'linearGradient', radialgradient: 'radialGradient', stop: 'stop',
+  pattern: 'pattern', title: 'title', desc: 'desc',
+}
+
+const SVG_ATTR_CASE = {
+  viewbox: 'viewBox', preserveaspectratio: 'preserveAspectRatio',
+  markerwidth: 'markerWidth', markerheight: 'markerHeight', refx: 'refX', refy: 'refY',
+  gradientunits: 'gradientUnits', patternunits: 'patternUnits', patterncontentunits: 'patternContentUnits',
+  clippathunits: 'clipPathUnits',
+}
+
+const SVG_ATTR_NAMES = new Set([...SVG_ATTRS].map(name => name.toLowerCase()))
+
+/** Serialize a parsed inline `<svg>` to a safe, script-free subset. */
+export function serializeSvg(node) {
+  if (!isElement(node) || localName(node.name) !== 'svg') return ''
+  const walk = (current) => {
+    if (typeof current === 'string') return escapeHtml(current)
+    if (!isElement(current)) return ''
+    const rawTag = localName(current.name)
+    if (!SVG_TAGS.has(rawTag)) return ''
+    const tag = SVG_TAG_CASE[rawTag] ?? rawTag
+    const body = current.children.map(walk).join('')
+    const attributes = Object.entries(current.attributes)
+      .filter(([name]) => SVG_ATTR_NAMES.has(localName(name)))
+      .filter(([name, value]) => name !== 'href' || String(value).startsWith('#'))
+      .map(([name, value]) => {
+        const canonical = SVG_ATTR_CASE[name] ?? name
+        return ` ${canonical}="${escapeAttribute(value)}"`
+      })
+      .join('')
+    return `<${tag}${attributes}>${body}</${tag}>`
+  }
+  return walk(node)
+}
+

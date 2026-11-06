@@ -8,7 +8,7 @@
  */
 
 export const TEXT_BLOCK_TYPES = Object.freeze(['heading', 'paragraph'])
-export const NEUTRAL_BLOCK_TYPES = Object.freeze(['equation', 'figure', 'code'])
+export const NEUTRAL_BLOCK_TYPES = Object.freeze(['equation', 'figure', 'code', 'table'])
 
 const TEXT = new Set(TEXT_BLOCK_TYPES)
 const NEUTRAL = new Set(NEUTRAL_BLOCK_TYPES)
@@ -35,6 +35,10 @@ export function isFigureBlock(block) {
   return Boolean(block) && block.type === 'figure'
 }
 
+export function isTableBlock(block) {
+  return Boolean(block) && block.type === 'table'
+}
+
 export function isCodeBlock(block) {
   return Boolean(block) && block.type === 'code'
 }
@@ -50,6 +54,7 @@ export function readableTextOf(block) {
   if (typeof block.code === 'string') return block.code
   if (typeof block.original === 'string') return block.original
   if (typeof block.caption?.original === 'string') return block.caption.original
+  if (Array.isArray(block.rows)) return block.rows.map(row => row.join(' ')).join(' ')
   if (typeof block.display === 'string') return block.display
   return ''
 }

@@ -250,6 +250,14 @@ function TranslatedText({ block }) {
   )
 }
 
+/** Original column; inline MathML is rendered when the extractor kept it. */
+function OriginalText({ block }) {
+  if (block.originalHtml) {
+    return <p className="pr-inline-math" dangerouslySetInnerHTML={{ __html: block.originalHtml }} />
+  }
+  return <p>{block.original}</p>
+}
+
 /**
  * Single-language view of a pair. A missing translation falls back to the
  * other language and says so, rather than showing an empty paragraph.
@@ -259,6 +267,10 @@ function SingleLanguageText({ pair, sourceLanguage, targetLanguage, headingLevel
   if (!picked.text) return null
   const Tag = headingLevel > 0 ? (headingLevel <= 2 ? 'h2' : 'h3') : 'p'
   const className = headingLevel > 0 ? 'pr-single-heading' : 'pr-single-paragraph'
+  const isOriginal = targetLanguage === sourceLanguage && !headingLevel && pair.originalHtml
+  if (!picked.fallback && isOriginal) {
+    return <Tag className={`${className} pr-inline-math`} {...anchor} dangerouslySetInnerHTML={{ __html: pair.originalHtml }} />
+  }
   if (!picked.fallback) {
     return <Tag className={className} {...anchor}>{picked.text}</Tag>
   }
@@ -1386,7 +1398,7 @@ export function PaperReaderPage() {
                         return (
                           <div className="pr-pair" key={index} {...anchor}>
                             <div className={originalColumn} data-column="original" data-lang={activeLanguage}>
-                              <p>{block.original}</p>
+                              <OriginalText block={block} />
                             </div>
                             <div className={translationColumn} data-column="translation" data-lang={translationLanguage}>
                               <TranslatedText block={block} />
@@ -1450,6 +1462,9 @@ export function PaperReaderPage() {
                           {block.image && (
                             <img className="pr-figure-image" src={block.image} alt={block.diagram?.title ?? ''} />
                           )}
+                          {block.svg && (
+                            <div className="pr-figure-svg" dangerouslySetInnerHTML={{ __html: block.svg }} />
+                          )}
                           {block.caption && prefs.mode === 'both' && (
                             <figcaption className="pr-figure-caption">
                               {block.caption.original && <span>{block.caption.original}</span>}
@@ -1462,6 +1477,39 @@ export function PaperReaderPage() {
                             <figcaption className="pr-figure-caption">
                               <span>{captionPick.text}</span>
                               {captionPick.fallback && <UntranslatedNote />}
+                            </figcaption>
+                          )}
+                        </figure>
+                      )
+                    }
+
+                    if (block.type === 'table') {
+                      const tableCaption = block.caption
+                        ? (prefs.mode === 'both'
+                            ? block.caption
+                            : pickText(block.caption, activeLanguage, targetLanguage))
+                        : null
+                      return (
+                        <figure className="pr-table" key={index} {...anchor}>
+                          <div className="pr-table-scroll">
+                            <table>
+                              {block.header.length > 0 && (
+                                <thead>
+                                  <tr>{block.header.map((cell, cellIndex) => <th key={cellIndex}>{cell}</th>)}</tr>
+                                </thead>
+                              )}
+                              <tbody>
+                                {block.rows.map((row, rowIndex) => (
+                                  <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {tableCaption && (tableCaption.original || tableCaption.text) && (
+                            <figcaption className="pr-figure-caption">
+                              {prefs.mode === 'both'
+                                ? <><span>{tableCaption.original}</span>{tableCaption.translation && <span className="pr-figure-caption-en">{tableCaption.translation}</span>}</>
+                                : <><span>{tableCaption.text}</span>{tableCaption.fallback && <UntranslatedNote />}</>}
                             </figcaption>
                           )}
                         </figure>

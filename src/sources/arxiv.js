@@ -22,7 +22,9 @@ import {
   isElement,
   localName,
   parseMarkup,
+  serializeInline,
   serializeMathml,
+  serializeSvg,
   textOf,
 } from '../shared/markup.js'
 import { classifyDirection, matchedWords } from '../shared/direction.js'
@@ -235,7 +237,12 @@ function pushHeading(node, blocks) {
 function pushParagraph(node, blocks) {
   const text = collapse(inlineText(node))
   if (!text) return
-  blocks.push({ type: 'paragraph', original: text })
+  const inline = serializeInline(node)
+  blocks.push({
+    type: 'paragraph',
+    original: text,
+    ...(/<math[\s>]/.test(inline) ? { originalHtml: inline } : {}),
+  })
 }
 
 function pushEquation(node, blocks) {
@@ -272,11 +279,38 @@ function pushFigure(node, blocks, baseUrl) {
     : ''
   const imageNode = findFirst(node, child => localName(child.name) === 'img' && Boolean(attr(child, 'src')))
     ?? findFirst(node, child => localName(child.name) === 'img' && Boolean(attr(child, 'data-src')))
-  const image = imageNode ? resolveImage(attr(imageNode, 'src') || attr(imageNode, 'data-src'), baseUrl) : null
-  if (!caption && !image) return
+    ?? findFirst(node, child => localName(child.name) === 'object' && Boolean(attr(child, 'data')))
+  const rawImage = imageNode ? (attr(imageNode, 'src') || attr(imageNode, 'data-src') || attr(imageNode, 'data')) : ''
+  const image = rawImage ? resolveImage(rawImage, baseUrl) : null
+  const svgNode = findFirst(node, child => localName(child.name) === 'svg')
+  const svg = svgNode ? serializeSvg(svgNode) : ''
+  if (!caption && !image && !svg) return
   blocks.push({
     type: 'figure',
     image,
+    ...(svg ? { svg } : {}),
+    ...(caption ? { caption: { original: caption } } : {}),
+  })
+}
+
+/** A LaTeXML table: header row, body rows, and its caption. */
+function pushTable(node, blocks) {
+  const captionNode = findFirst(node, child => localName(child.name) === 'figcaption' || hasClass(child, 'ltx_caption'))
+  const caption = captionNode
+    ? collapse(textOf(captionNode)).replace(/^(?:Table|Figure)\s*\d+[:.]\s*/i, '')
+    : ''
+  const tableNode = localName(node.name) === 'table' ? node : findFirst(node, child => localName(child.name) === 'table')
+  if (!tableNode) return
+  const rows = findAll(tableNode, child => localName(child.name) === 'tr').map(row => {
+    const cells = findAll(row, child => ['td', 'th'].includes(localName(child.name)))
+    return { header: cells.length > 0 && cells.every(cell => localName(cell.name) === 'th'), cells: cells.map(cell => collapse(textOf(cell))) }
+  }).filter(row => row.cells.length > 0)
+  if (rows.length === 0) return
+  const header = rows[0].header ? rows.shift().cells : []
+  blocks.push({
+    type: 'table',
+    header,
+    rows: rows.map(row => row.cells),
     ...(caption ? { caption: { original: caption } } : {}),
   })
 }
@@ -316,12 +350,16 @@ export function extractArticleBlocks(html, { maxBlocks = DEFAULT_ARXIV_CONFIG.ma
       pushCode(node, blocks)
       return
     }
-    if (tag === 'figure' || hasClass(node, 'ltx_figure')) {
-      pushFigure(node, blocks, baseUrl)
+    if (hasClass(node, 'ltx_equation') || hasClass(node, 'ltx_eqn_table') || (tag === 'math' && attr(node, 'display') === 'block')) {
+      pushEquation(node, blocks)
       return
     }
-    if (hasClass(node, 'ltx_equation') || (tag === 'math' && attr(node, 'display') === 'block')) {
-      pushEquation(node, blocks)
+    if (hasClass(node, 'ltx_table') || tag === 'table') {
+      pushTable(node, blocks)
+      return
+    }
+    if (tag === 'figure' || hasClass(node, 'ltx_figure')) {
+      pushFigure(node, blocks, baseUrl)
       return
     }
     if (/^h[1-6]$/.test(tag)) {

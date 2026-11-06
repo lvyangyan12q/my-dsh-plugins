@@ -183,3 +183,22 @@ test('extractFullText false keeps the run offline and marks the excerpt', async 
   assert.equal(result.excerpt, true)
   assert.deepEqual(result.blocks.map(block => block.type), ['heading', 'paragraph'])
 })
+
+test('extracts tables, object figures, inline SVG charts and inline MathML', () => {
+  const html = `<article>
+    <p class="ltx_p">A value <math alttext="\\alpha" display="inline">α</math> appears inline.</p>
+    <figure class="ltx_table"><figcaption>Table 1: Results</figcaption>
+      <table><tr><th>Model</th><th>Score</th></tr><tr><td>A</td><td>1</td></tr></table>
+    </figure>
+    <figure class="ltx_figure"><object data="2611.0001v1/chart.svg"></object><figcaption>Figure 1: Chart</figcaption></figure>
+    <figure class="ltx_figure"><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="red"/></svg><figcaption>Figure 2: Inline</figcaption></figure>
+  </article>`
+  const blocks = extractArticleBlocks(html, { baseUrl: 'https://arxiv.org/html/2611.0001v1' })
+  assert.deepEqual(blocks.map(block => block.type), ['paragraph', 'table', 'figure', 'figure'])
+  assert.match(blocks[0].originalHtml, /<math[\s>]/, 'inline math keeps MathML for the reader')
+  assert.deepEqual(blocks[1].header, ['Model', 'Score'])
+  assert.deepEqual(blocks[1].rows, [['A', '1']])
+  assert.equal(blocks[2].image, 'https://arxiv.org/html/2611.0001v1/chart.svg')
+  assert.match(blocks[3].svg, /^<svg[\s>]/)
+  assert.match(blocks[3].svg, /viewBox="0 0 10 10"/)
+})

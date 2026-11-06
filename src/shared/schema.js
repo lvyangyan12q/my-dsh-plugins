@@ -88,7 +88,8 @@ export function normalizeBlock(raw) {
     case 'paragraph': {
       const pair = toPair(raw, { original: raw.en, translation: raw.zh, state: raw.zhState })
       if (!pair.original && !pair.translation) return null
-      return { type: 'paragraph', ...pair }
+      const originalHtml = typeof raw.originalHtml === 'string' && raw.originalHtml.includes('<math') ? raw.originalHtml : undefined
+      return { type: 'paragraph', ...pair, ...(originalHtml ? { originalHtml } : {}) }
     }
     case 'equation': {
       const mathml = typeof raw.mathml === 'string' && raw.mathml.startsWith('<math') ? raw.mathml : undefined
@@ -109,8 +110,18 @@ export function normalizeBlock(raw) {
             steps: Array.isArray(raw.diagram.steps) ? raw.diagram.steps.filter(step => typeof step === 'string') : [],
           }
         : null
-      if (!caption && !diagram && !text(raw.image)) return null
-      return { type: 'figure', diagram, image: text(raw.image), caption }
+      const svg = typeof raw.svg === 'string' && raw.svg.startsWith('<svg') ? raw.svg : undefined
+      if (!caption && !diagram && !text(raw.image) && !svg) return null
+      return { type: 'figure', diagram, image: text(raw.image), ...(svg ? { svg } : {}), caption }
+    }
+    case 'table': {
+      const header = Array.isArray(raw.header) ? raw.header.filter(cell => typeof cell === 'string') : []
+      const rows = Array.isArray(raw.rows)
+        ? raw.rows.filter(row => Array.isArray(row)).map(row => row.filter(cell => typeof cell === 'string'))
+        : []
+      if (rows.length === 0) return null
+      const caption = toOptionalPair(raw.caption, { original: raw.captionEn, translation: raw.captionZh })
+      return { type: 'table', header, rows, caption }
     }
     case 'code': {
       if (typeof raw.code !== 'string') return null
@@ -292,10 +303,19 @@ function validateBlock(block, where, errors) {
   }
   if (block.type === 'figure') {
     if (has(block, 'caption')) validatePair(block.caption, `${where}.caption`, errors)
-    const hasBody = isObject(block.diagram) || text(block.image) !== null
-    if (!hasBody && !has(block, 'caption')) {
-      errors.push(`${where} needs a diagram, an image or a caption`)
+    if (has(block, 'svg') && (typeof block.svg !== 'string' || !block.svg.startsWith('<svg'))) {
+      errors.push(`${where}.svg must be a serialized SVG string`)
     }
+    const hasBody = isObject(block.diagram) || text(block.image) !== null || text(block.svg) !== null
+    if (!hasBody && !has(block, 'caption')) {
+      errors.push(`${where} needs a diagram, an image, svg or a caption`)
+    }
+    return
+  }
+  if (block.type === 'table') {
+    if (has(block, 'caption')) validatePair(block.caption, `${where}.caption`, errors)
+    const rowsOk = Array.isArray(block.rows) && block.rows.every(row => Array.isArray(row) && row.every(cell => typeof cell === 'string'))
+    if (!rowsOk) errors.push(`${where}.rows must be an array of string arrays`)
     return
   }
   if (block.type === 'code') {
