@@ -1297,6 +1297,20 @@
   min-width: 0;
 }
 
+.pr-eq-math {
+  font-family: 'Cambria Math', 'STIX Two Math', Cambria, serif;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.pr-eq-math math {
+  font-size: 1.12em;
+}
+
+.pr-eq-math mtext {
+  font-family: var(--pr-ui);
+}
+
 .pr-eq-label {
   color: var(--pr-faint);
   font-size: 12px;

@@ -91,10 +91,12 @@ export function normalizeBlock(raw) {
       return { type: 'paragraph', ...pair }
     }
     case 'equation': {
+      const mathml = typeof raw.mathml === 'string' && raw.mathml.startsWith('<math') ? raw.mathml : undefined
       return {
         type: 'equation',
         display: typeof raw.display === 'string' ? raw.display : '',
         detail: typeof raw.detail === 'string' ? raw.detail : '',
+        ...(mathml ? { mathml } : {}),
         label: text(raw.label),
         note: toOptionalPair(raw.note, { original: raw.noteEn, translation: raw.noteZh }),
       }
@@ -282,6 +284,9 @@ function validateBlock(block, where, errors) {
   }
   if (block.type === 'equation') {
     if (typeof block.display !== 'string') errors.push(`${where}.display must be a string`)
+    if (has(block, 'mathml') && (typeof block.mathml !== 'string' || !block.mathml.startsWith('<math'))) {
+      errors.push(`${where}.mathml must be a serialized MathML string`)
+    }
     if (has(block, 'note')) validatePair(block.note, `${where}.note`, errors)
     return
   }

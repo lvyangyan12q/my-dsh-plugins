@@ -22,6 +22,7 @@ import {
   isElement,
   localName,
   parseMarkup,
+  serializeMathml,
   textOf,
 } from '../shared/markup.js'
 import { classifyDirection, matchedWords } from '../shared/direction.js'
@@ -244,25 +245,38 @@ function pushEquation(node, blocks) {
   if (!display) return
   const labelNode = findFirst(node, child => hasClass(child, 'ltx_tag_equation') || hasClass(child, 'ltx_tag'))
   const label = labelNode ? collapse(textOf(labelNode)) : ''
+  const mathml = math ? serializeMathml(math) : ''
   blocks.push({
     type: 'equation',
     display,
     detail: '',
+    ...(mathml ? { mathml } : {}),
     ...(label ? { label } : {}),
   })
 }
 
-function pushFigure(node, blocks) {
+/** Resolve a LaTeXML image reference against the article HTML URL. */
+function resolveImage(src, baseUrl) {
+  if (!src || src.startsWith('data:')) return null
+  try {
+    return new URL(src, baseUrl).href
+  } catch {
+    return src
+  }
+}
+
+function pushFigure(node, blocks, baseUrl) {
   const captionNode = findFirst(node, child => localName(child.name) === 'figcaption' || hasClass(child, 'ltx_caption'))
   const caption = captionNode
     ? collapse(textOf(captionNode)).replace(/^(?:Figure|Fig\.|Table)\s*\d+[:.]\s*/i, '')
     : ''
   const imageNode = findFirst(node, child => localName(child.name) === 'img' && Boolean(attr(child, 'src')))
-  const image = imageNode ? attr(imageNode, 'src') : ''
+    ?? findFirst(node, child => localName(child.name) === 'img' && Boolean(attr(child, 'data-src')))
+  const image = imageNode ? resolveImage(attr(imageNode, 'src') || attr(imageNode, 'data-src'), baseUrl) : null
   if (!caption && !image) return
   blocks.push({
     type: 'figure',
-    image: image && !image.startsWith('data:') ? image : null,
+    image,
     ...(caption ? { caption: { original: caption } } : {}),
   })
 }
@@ -284,7 +298,7 @@ function pushCode(node, blocks) {
 }
 
 /** Turn a LaTeXML article into ordered reader blocks. */
-export function extractArticleBlocks(html, { maxBlocks = DEFAULT_ARXIV_CONFIG.maxBlocks } = {}) {
+export function extractArticleBlocks(html, { maxBlocks = DEFAULT_ARXIV_CONFIG.maxBlocks, baseUrl = '' } = {}) {
   const tree = parseMarkup(html, { html: true })
   const article = findFirst(tree, node => localName(node.name) === 'article')
     ?? findFirst(tree, node => localName(node.name) === 'body')
@@ -303,7 +317,7 @@ export function extractArticleBlocks(html, { maxBlocks = DEFAULT_ARXIV_CONFIG.ma
       return
     }
     if (tag === 'figure' || hasClass(node, 'ltx_figure')) {
-      pushFigure(node, blocks)
+      pushFigure(node, blocks, baseUrl)
       return
     }
     if (hasClass(node, 'ltx_equation') || (tag === 'math' && attr(node, 'display') === 'block')) {
@@ -371,7 +385,7 @@ export async function extractArxivPaper({ candidate, config, fetch: fetchImpl })
 
   let blocks = []
   try {
-    blocks = extractArticleBlocks(html, { maxBlocks: settings.maxBlocks })
+    blocks = extractArticleBlocks(html, { maxBlocks: settings.maxBlocks, baseUrl: url })
   } catch (error) {
     return fallback(`arXiv HTML could not be parsed: ${error?.message ?? error}`)
   }

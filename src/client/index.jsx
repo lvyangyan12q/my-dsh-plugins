@@ -1410,7 +1410,9 @@ export function PaperReaderPage() {
                       return (
                         <figure className="pr-equation" key={index} {...anchor}>
                           <div className="pr-eq-line">
-                            <span className="pr-eq-display">{renderMath(block.display)}</span>
+                            {block.mathml
+                              ? <span className="pr-eq-display pr-eq-math" dangerouslySetInnerHTML={{ __html: block.mathml }} />
+                              : <span className="pr-eq-display">{renderMath(block.display)}</span>}
                             {block.label && <span className="pr-eq-label">{block.label}</span>}
                           </div>
                           {block.detail && <div className="pr-eq-detail">{renderMath(block.detail)}</div>}

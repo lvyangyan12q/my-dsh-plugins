@@ -101,7 +101,7 @@ test('listArxiv reports an HTTP failure instead of returning an empty day', asyn
 })
 
 test('extracts headings, paragraphs, equations, figures and code from LaTeXML', () => {
-  const blocks = extractArticleBlocks(ARTICLE)
+  const blocks = extractArticleBlocks(ARTICLE, { baseUrl: 'https://arxiv.org/html/2305.10601' })
 
   assert.deepEqual(blocks.map(block => block.type), [
     'heading',
@@ -124,9 +124,10 @@ test('extracts headings, paragraphs, equations, figures and code from LaTeXML', 
   const equation = blocks[5]
   assert.equal(equation.display, 'E = mc^{2}')
   assert.equal(equation.label, '(1)')
+  assert.match(equation.mathml, /^<math[\s>]/, 'equation keeps safe MathML for native rendering')
 
   const figure = blocks[6]
-  assert.equal(figure.image, 'figures/pipeline.png')
+  assert.equal(figure.image, 'https://arxiv.org/html/2305.10601/figures/pipeline.png')
   assert.match(figure.caption.original, /Overview of the planner, tool executor and verifier\./)
   assert.doesNotMatch(figure.caption.original, /^Figure 1:/)
 

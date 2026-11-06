@@ -270,3 +270,59 @@ export function textOf(node) {
 export function collapse(text) {
   return String(text ?? '').replace(/\s+/g, ' ').trim()
 }
+
+/* ------------------------------------------------------------------ */
+/* MathML                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The MathML subset LaTeXML emits and a browser can render natively. Only
+ * these tags/attributes survive serialization, so untrusted page markup cannot
+ * smuggle scripts or event handlers into the reader.
+ */
+const MATHML_TAGS = new Set([
+  'math', 'mrow', 'mi', 'mn', 'mo', 'mtext', 'mspace', 'mfrac', 'msqrt', 'mroot',
+  'msub', 'msup', 'msubsup', 'munder', 'mover', 'munderover', 'mmultiscripts',
+  'mprescripts', 'none', 'mtable', 'mtr', 'mtd', 'mlabeledtr', 'mstyle', 'mpadded',
+  'menclose', 'maction', 'semantics', 'annotation', 'annotation-xml', 'mglyph',
+])
+
+const MATHML_ATTRS = new Set([
+  'display', 'mathvariant', 'stretchy', 'fence', 'separator', 'lspace', 'rspace',
+  'displaystyle', 'scriptlevel', 'columnalign', 'rowalign', 'columnlines',
+  'rowlines', 'columnspacing', 'rowspacing', 'frame', 'framespacing', 'notation',
+  'width', 'height', 'depth', 'linethickness', 'accent', 'accentunder', 'largeop',
+  'movablelimits', 'symmetric', 'minsize', 'maxsize', 'form', 'mathcolor',
+  'mathbackground', 'xmlns', 'encoding',
+])
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function escapeAttribute(text) {
+  return escapeHtml(text).replaceAll('"', '&quot;')
+}
+
+/** Serialize a parsed `<math>` subtree to the safe MathML subset. */
+export function serializeMathml(node) {
+  if (!isElement(node) || localName(node.name) !== 'math') return ''
+  const walk = (current) => {
+    if (typeof current === 'string') return escapeHtml(current)
+    if (!isElement(current)) return ''
+    const tag = localName(current.name)
+    const body = current.children.map(walk).join('')
+    if (!MATHML_TAGS.has(tag)) return body
+    if (tag === 'annotation' || tag === 'annotation-xml') return ''
+    const attributes = Object.entries(current.attributes)
+      .filter(([name]) => MATHML_ATTRS.has(localName(name)))
+      .map(([name, value]) => ` ${localName(name)}="${escapeAttribute(value)}"`)
+      .join('')
+    return `<${tag}${attributes}>${body}</${tag}>`
+  }
+  return walk(node)
+}
+
