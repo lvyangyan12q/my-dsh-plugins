@@ -20,7 +20,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:installed": "node scripts/installed-gate.mjs"
+    "test:installed": "node scripts/installed-gate.mjs",
+    "accept:lab": "node scripts/lab-real-generation.mjs"
   },
   "dsh": {
     "bundle": {
