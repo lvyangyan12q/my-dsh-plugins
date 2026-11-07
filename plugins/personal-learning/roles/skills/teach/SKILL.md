@@ -59,3 +59,13 @@ The host may also push updates after load: listen for the `personal-learning:par
 约束：参数 1–8 个，`initial` 必须在 `[min,max]` 内；读数只能引用已声明的参数，分母为 0 时宿主显示“未定义”；预测的 `correct` 必须是某个选项的 `id`，每个错误选项尽量给 `feedback`；复述 1–5 个检查项，每项至少一个关键词。课程 HTML 必须用同一组参数 id 读取 `window.personalLearning.parameters`，并在控件变化时 `save` 完整参数对象。
 
 
+
+## 视觉契约（课程 HTML）
+生成课与宿主实验台共用一套中性工作区语言，避免看起来像另一套产品：
+
+- 背景 `#ffffff`，面板 `#f7f7f5`，边框 `1px solid #e6e6e2`，圆角 8–12px。
+- 正文 `#1f1f1d`，次要文字 `#6f6f68`，说明文字 `#8a8a84`。
+- 唯一强调色 `#0f6b3f`（选中、正确、主按钮）；不要使用蓝色、紫色或渐变作为主色。
+- 系统字体栈；正文 13–15px，标题 18–24px；不要营销式大标题或卡片阴影堆叠。
+- 来源引用用浅灰面板 + 左侧细线，不要用彩色横幅。
+- 预测前宿主会置 `locked=true`：隐藏所有数值与结论，只保留实验的定性图形。
