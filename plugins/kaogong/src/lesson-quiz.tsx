@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { CSSProperties } from 'react'
 
 /** 当堂检测的题目数据：判分与解析都在客户端完成，不写错题本、不计入正确率。 */
@@ -136,19 +135,22 @@ const optionStyle = (state: 'correct' | 'wrong' | 'dim' | undefined): CSSPropert
   textAlign: 'left', cursor: state ? 'default' : 'pointer', maxWidth: '100%',
 })
 
-/** 当堂检测页：3 道选择题，选完立即判分并锁定该题；答错可回跳，答完给小结与下一步。 */
-export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, onJump, onPractice }: {
+/** 当堂检测页：3 道选择题，选完立即判分并锁定该题；答错可回跳，答完给小结与下一步。作答由课堂面板持有，切页签不丢。 */
+export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, onJump, onPractice }: {
   questions?: readonly QuizQuestion[]
+  /** 已作答：`null` 表示未答，作答后不可改选。 */
+  answers: readonly QuizAnswer[]
+  /** 记录一题的作答；已答的题由课堂面板忽略重复点击。 */
+  onAnswer: (index: number, option: number) => void
   /** 回跳：由课堂面板切到讲义页签、滚动并高亮目标小节。 */
   onJump?: (anchorId: string) => void
   /** 全对后的专项练习入口：由课堂面板透传。 */
   onPractice?: () => void
 }) {
-  const [answers, setAnswers] = useState<QuizAnswer[]>(() => questions.map(() => null))
   const grade = gradeQuiz(questions, answers)
   const advice = quizAdvice(grade)
   const choose = (index: number, option: number) => {
-    setAnswers(current => current[index] === null ? current.map((value, at) => at === index ? option : value) : current)
+    if ((answers[index] ?? null) === null) onAnswer(index, option)
   }
   if (questions.length === 0) return <p role="status">本课暂无检测。</p>
   return (
