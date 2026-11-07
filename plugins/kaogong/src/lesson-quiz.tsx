@@ -10,7 +10,7 @@ export type QuizQuestion = {
   answer: number
   /** 解析：说明错在哪一步，而不只是答案。 */
   why: string
-  /** 目标小节锚点；本票只携带，回跳在下一票接入。 */
+  /** 目标小节锚点：答错时「回对应小节」落到讲义的那一节。 */
   anchorId: string
 }
 
@@ -31,9 +31,13 @@ export type QuizGrade = {
   correct: number
   allAnswered: boolean
   items: QuizItemGrade[]
-  /** 全部答完时的一句话小结；未答完为空。票 04 负责展示。 */
+  /** 全部答完时的一句话小结；未答完为空。 */
   summary: string
 }
+
+export type QuizAdvice =
+  | { kind: 'practice'; text: string; action: string }
+  | { kind: 'jump'; text: string; action: string; anchorId: string }
 
 /** 纯判分：给题与选择，逐题返回对错与解析，并给出计数与（答完后的）小结。 */
 export function gradeQuiz(questions: readonly QuizQuestion[], answers: readonly QuizAnswer[]): QuizGrade {
@@ -58,6 +62,31 @@ export function gradeQuiz(questions: readonly QuizQuestion[], answers: readonly 
     allAnswered,
     items,
     summary: allAnswered ? `检测 ${correct} / ${questions.length} 正确` : '',
+  }
+}
+
+/** 答完后的下一步建议：全对去专项；只错一题回错的那一节；其余先重读快速思路。 */
+export function quizAdvice(grade: QuizGrade): QuizAdvice | null {
+  if (!grade.allAnswered || grade.total === 0) return null
+  if (grade.correct === grade.total) return {
+    kind: 'practice',
+    text: '全对：方法已经会了，下一步用 10 道专项把速度练稳。',
+    action: '去做 10 题专项',
+  }
+  const reread: QuizAdvice = {
+    kind: 'jump',
+    text: '先别急着刷题：回第 5 节重读「快速思路」的定区间、定偏向，再测一次。',
+    action: '回第 5 节重读',
+    anchorId: 'handout-s5',
+  }
+  if (grade.correct * 3 <= grade.total) return reread
+  const wrong = grade.items.filter(item => !item.correct)
+  if (wrong.length !== 1) return reread
+  return {
+    kind: 'jump',
+    text: '只错一题：回错的那一节，把这一步补上再来一轮。',
+    action: '回错的那一节',
+    anchorId: wrong[0].anchorId,
   }
 }
 
@@ -107,10 +136,17 @@ const optionStyle = (state: 'correct' | 'wrong' | 'dim' | undefined): CSSPropert
   textAlign: 'left', cursor: state ? 'default' : 'pointer', maxWidth: '100%',
 })
 
-/** 当堂检测页：3 道选择题，选完立即判分并锁定该题。 */
-export function QuizPanel({ questions = MIXED_GROWTH_QUIZ }: { questions?: readonly QuizQuestion[] }) {
+/** 当堂检测页：3 道选择题，选完立即判分并锁定该题；答错可回跳，答完给小结与下一步。 */
+export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, onJump, onPractice }: {
+  questions?: readonly QuizQuestion[]
+  /** 回跳：由课堂面板切到讲义页签、滚动并高亮目标小节。 */
+  onJump?: (anchorId: string) => void
+  /** 全对后的专项练习入口：由课堂面板透传。 */
+  onPractice?: () => void
+}) {
   const [answers, setAnswers] = useState<QuizAnswer[]>(() => questions.map(() => null))
   const grade = gradeQuiz(questions, answers)
+  const advice = quizAdvice(grade)
   const choose = (index: number, option: number) => {
     setAnswers(current => current[index] === null ? current.map((value, at) => at === index ? option : value) : current)
   }
@@ -148,10 +184,18 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ }: { questions?: reado
             {answered && <div role="status" style={{ borderTop: '1px dashed #dbe2d8', paddingTop: 8, display: 'grid', gap: 4, fontSize: 12.5, lineHeight: 1.8 }}>
               <b style={{ color: right ? '#2f6b58' : '#b42318' }}>{right ? '回答正确' : `回答错误，正确选项是 ${LETTERS[question.answer]}`}</b>
               <p style={{ margin: 0 }}>{question.why}</p>
+              {!right && onJump && <button data-pwb-button type="button" style={{ justifySelf: 'start' }} onClick={() => onJump(question.anchorId)}>回对应小节</button>}
             </div>}
           </div>
         )
       })}
+      {advice && <div role="status" aria-label="当堂检测小结" data-quiz-summary style={{ border: '1px solid #cfe0d3', borderRadius: 8, padding: 12, display: 'grid', gap: 6, background: '#f6faf7' }}>
+        <strong style={{ color: '#1f5a41', fontVariantNumeric: 'tabular-nums' }}>{grade.correct} / {grade.total} 正确</strong>
+        <p style={{ margin: 0, lineHeight: 1.8 }}>{advice.text}</p>
+        {advice.kind === 'practice'
+          ? <button data-pwb-button data-variant="primary" type="button" style={{ justifySelf: 'start' }} onClick={() => onPractice?.()}>{advice.action}</button>
+          : <button data-pwb-button data-variant="primary" type="button" style={{ justifySelf: 'start' }} onClick={() => onJump?.(advice.anchorId)}>{advice.action}</button>}
+      </div>}
     </div>
   )
 }

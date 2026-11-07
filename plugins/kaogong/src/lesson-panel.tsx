@@ -36,6 +36,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const [busy, setBusy] = useBusinessState('lesson.busy', false)
   const [confirmed, setConfirmed] = useBusinessState('lesson.confirmed', false)
   const [tab, setTab] = useState<'handout' | 'quiz'>('handout')
+  const [jump, setJump] = useState<{ anchorId: string; token: number } | null>(null)
   const [material] = useBusinessState('reader.entry', null)
   const [practice] = useBusinessState('practice', null)
   const [result] = useBusinessState('result', null)
@@ -79,6 +80,27 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const context = view ? { subject: view.lesson.request.subject, title: view.lesson.request.objective, limit: 10,
     ...(view.lesson.request.taskId?{taskId:view.lesson.request.taskId,planRevision:view.lesson.request.planRevision}:{}),
     ...(view.lesson.request.knowledgePoint ? { knowledgePoint: view.lesson.request.knowledgePoint } : {}) } : null
+  const startPractice = () => {
+    if (!context) return
+    void onPractice(context).catch(cause => setError(String(cause)))
+  }
+  /** 回跳：先切到讲义页签，再由下面的 effect 滚动并高亮目标小节 1.6 秒。 */
+  const jumpToSection = (anchorId: string) => {
+    setTab('handout')
+    setJump(current => ({ anchorId, token: (current?.token ?? 0) + 1 }))
+  }
+  useEffect(() => {
+    if (!jump || tab !== 'handout') return
+    const node = document.getElementById(jump.anchorId)
+    if (!node) return
+    node.setAttribute('data-section-highlight', 'true')
+    if (typeof node.scrollIntoView === 'function') node.scrollIntoView({ block: 'start' })
+    const timer = setTimeout(() => { node.removeAttribute('data-section-highlight') }, 1600)
+    return () => {
+      clearTimeout(timer)
+      node.removeAttribute('data-section-highlight')
+    }
+  }, [jump, tab])
   const create = () => run(async () => {
     const lessonId = draft.id || crypto.randomUUID()
     setDraft({ ...draft, id: lessonId })
@@ -90,7 +112,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     setList(await request<typeof list>('list', {}))
   })
   return <section aria-label="课堂与课后任务" style={{ borderTop: '1px solid #ddd', padding: '16px 0', marginBottom: 16, minWidth: 0, overflowWrap: 'anywhere', fontSize: 13 }}>
-    <style>{`[aria-label="课堂与课后任务"] input:not([type=checkbox]),[aria-label="课堂与课后任务"] select{max-width:100%;box-sizing:border-box}[aria-label="课堂与课后任务"] form label{display:flex;flex-wrap:wrap;align-items:center;gap:6px}[aria-label="课堂与课后任务"] button{display:inline-flex;align-items:center;gap:4px;min-height:30px;max-width:100%;white-space:normal}`}</style>
+    <style>{`[aria-label="课堂与课后任务"] input:not([type=checkbox]),[aria-label="课堂与课后任务"] select{max-width:100%;box-sizing:border-box}[aria-label="课堂与课后任务"] form label{display:flex;flex-wrap:wrap;align-items:center;gap:6px}[aria-label="课堂与课后任务"] button{display:inline-flex;align-items:center;gap:4px;min-height:30px;max-width:100%;white-space:normal}[data-section-highlight="true"]{outline:2px solid #b8892f;outline-offset:4px;border-radius:6px;background:#fffaf0}`}</style>
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       <h2 style={{ margin: 0, fontSize: 16 }}>课堂与课后任务</h2>
       <button data-pwb-button data-variant="primary" title="新建课堂" aria-label="新建课堂" disabled={busy} onClick={() => setForm(!form)}><Plus size={16} />新建课堂</button>
@@ -116,7 +138,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
       </div>
-      {tab === 'handout' ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <QuizPanel questions={MIXED_GROWTH_QUIZ} />}
+      {tab === 'handout' ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <QuizPanel questions={MIXED_GROWTH_QUIZ} onJump={jumpToSection} onPractice={startPractice} />}
       <strong>{view.lesson.request.objective}</strong>
       <span>{view.lesson.request.subject} · {view.lesson.completion ? '学习者已确认完成' : '课后任务未完成'}</span>
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
@@ -125,7 +147,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       <span>课后任务：{view.lesson.request.requirePractice===false?'保存本次学习总结后明确确认':'保存学习总结、提交一轮本科目真实作答'+(view.lesson.request.requireReflections?'，保存全部错题错因':'')+'，再明确确认'}；不代表长期掌握。</span>
       {view.evidence.map(row => <div key={row.roundId}>{row.roundId} · {row.correct}/{row.total} 正确 · {row.answered ? '已作答' : '存在未作答'} · {row.reflectionsComplete ? '反思齐全' : '待补反思'}{row.projection === 'pending' ? ' · 错题本同步待恢复' : ''}</div>)}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        <button data-pwb-button disabled={busy || !!view.lesson.completion} onClick={() => void onPractice(context).catch(cause => setError(String(cause)))}><Play size={14} />课后练习</button>
+        <button data-pwb-button disabled={busy || !!view.lesson.completion} onClick={startPractice}><Play size={14} />课后练习</button>
         <button data-pwb-button disabled={busy || !result || result.roundId !== practice?.roundId || !!view.lesson.completion} onClick={() => void run(async () => accept(await request<LessonView>('link', { lessonId: view.lesson.request.lessonId, roundId: practice!.roundId })))}><Link size={14} />关联当前已提交轮次</button>
         <button data-pwb-button disabled={busy || !roles} onClick={() => void run(async () => {
           const value = await request<LessonView>('prepare', { lessonId: view.lesson.request.lessonId })
