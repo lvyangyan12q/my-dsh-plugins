@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { LessonFrame } from './lesson-frame.mjs'
 import { RequestPanel } from './request-panel.tsx'
 import { RecoveryPanel } from './recovery-panel.tsx'
-import { checkRestate, computeReadouts, normalizeParameters } from './lab-protocol.mjs'
+import { computeReadouts, normalizeParameters } from './lab-protocol.mjs'
 
 const labStyles = `.pl-lab{display:block}.pl-lab-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.pl-lab-head small{display:block;color:#8a8a84;font-size:11.5px;letter-spacing:.12em}.pl-lab-head b{font-size:22px}.pl-lab .pl-more{background:#fff;color:#444;border:1px solid #e6e6e2;border-radius:8px;padding:6px 12px}.pl-lab-body{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start}.pl-lab .pl-canvas iframe{height:460px}.pl-lab .pl-controls{border:1px solid #e6e6e2;border-radius:10px;margin-top:12px;padding:12px 16px}.pl-lab .pl-control{display:grid;grid-template-columns:90px 1fr 52px;align-items:center;gap:12px;margin:8px 0;font-size:13px;color:#666}.pl-lab .pl-control input{width:100%;accent-color:#0f6b3f;margin:0;padding:0;border:0}.pl-lab .pl-control output{text-align:right;color:#1f1f1d;font-variant-numeric:tabular-nums}.pl-lab .pl-bench{border:1px solid #e6e6e2;border-radius:12px;padding:18px 20px;background:#fff}.pl-lab .pl-seg + .pl-seg{border-top:1px solid #eee;margin-top:14px;padding-top:14px}.pl-lab .pl-seg h3{font-size:13px;margin:0 0 8px;display:flex;gap:8px;align-items:baseline}.pl-lab .pl-seg h3 span{color:#9a9a92;font-size:11px;letter-spacing:.08em}.pl-lab .pl-q{font-size:13px;color:#3a3a35;margin:0 0 10px}.pl-lab .pl-opts{display:grid;gap:8px}.pl-lab .pl-opt{background:#fff;color:#1f1f1d;border:1px solid #dbdbdb;border-radius:8px;padding:9px 12px;text-align:left;display:flex;gap:8px;align-items:center}.pl-lab .pl-opt i{font-style:normal;color:#9a9a92;font-size:11px}.pl-lab .pl-opt:disabled{cursor:default;opacity:1;border-color:#e6e6e2;background:#fafaf8}.pl-lab .pl-fb{font-size:12.5px;line-height:1.7;margin:10px 0 0}.pl-lab .pl-fb.ok{color:#0f6b3f}.pl-lab .pl-fb.no{color:#a2462a}.pl-lab .pl-lock{color:#a6a69e;font-size:12.5px;margin:0 0 10px}.pl-lab .pl-explain{font-size:12.5px;line-height:1.85;color:#3b3b36;margin:0 0 10px;border-left:2px solid #0f6b3f;padding-left:10px}.pl-lab .pl-readouts{display:flex;gap:10px;margin:12px 0 0}.pl-lab .pl-readouts div{flex:1;border:1px solid #e6e6e2;border-radius:8px;padding:8px 10px}.pl-lab .pl-readouts dt{font-size:11px;color:#8a8a84}.pl-lab .pl-readouts dd{margin:2px 0 0;font-size:17px;font-variant-numeric:tabular-nums}.pl-lab .pl-ask{display:block;font-size:12.5px;color:#3a3a35;margin:0 0 8px}.pl-lab .pl-restate{display:flex;gap:8px;align-items:flex-end}.pl-lab .pl-restate textarea{flex:1;margin:0;padding:9px 10px;border:1px solid #dbdbdb;border-radius:8px;font:inherit;resize:vertical}.pl-lab .pl-restate button{padding:8px 14px;background:#0f6b3f;color:#fff;border:0;border-radius:8px}.pl-lab .pl-checks{list-style:none;margin:10px 0 0;padding:0;display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#9a9a92}.pl-lab .pl-checks li[data-passed=true]{color:#0f6b3f}.pl-lab .pl-primary{margin-top:16px;background:#0f6b3f;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:600}.pl-lab .pl-done{margin-top:14px;color:#0f6b3f;font-size:12.5px}.pl-lab .pl-legacy{color:#8a8a84;font-size:12.5px;margin-top:10px}.pl-lab .pl-empty{color:#8a8a84}.pl-lab .pl-error{color:#a22}.pl-lab .pl-drawer{position:fixed;top:0;right:0;height:100%;width:420px;max-width:94vw;background:#fff;border-left:1px solid #e6e6e2;transform:translateX(102%);transition:transform .2s;z-index:20;display:flex;flex-direction:column}.pl-lab .pl-drawer[data-open=true]{transform:none}.pl-lab .pl-drawer-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #eee}.pl-lab .pl-drawer-body{overflow:auto;padding:8px 18px 30px}.pl-lab .pl-drawer section{border-bottom:1px solid #f1f1ed;padding:14px 0}.pl-lab .pl-drawer h4{margin:0 0 8px;font-size:12px;color:#8a8a84;letter-spacing:.08em}.pl-lab .pl-course-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}.pl-lab .pl-course-list button{background:none;color:#1f1f1d;text-align:left;padding:7px 8px;border-radius:6px}.pl-lab .pl-course-list button[aria-pressed=true]{background:#eaf3ed;color:#0f6b3f}.pl-lab .pl-muted{color:#a6a69e;font-size:12px}@media(max-width:1000px){.pl-lab-body{grid-template-columns:minmax(0,1fr)}}`
 
 function LabFrame ({ course, instanceId, parameters, onSnapshot }) {
   const ref = useRef(null)
   const nonce = useRef(crypto.randomUUID())
+  const initial = useRef(parameters)
   useEffect(() => {
     const listener = event => {
       const data = event.data
@@ -16,14 +17,18 @@ function LabFrame ({ course, instanceId, parameters, onSnapshot }) {
       if (data?.type !== 'personal-learning:snapshot') return
       if (data.nonce !== nonce.current || data.courseId !== course.id || data.instanceId !== instanceId) return
       if (!data.parameters || Array.isArray(data.parameters) || Object.getPrototypeOf(data.parameters) !== Object.prototype) return
+      if (JSON.stringify(data.parameters).length > 4000) return
       onSnapshot?.(data.parameters)
     }
     window.addEventListener('message', listener)
     return () => window.removeEventListener('message', listener)
   }, [course.id, instanceId, onSnapshot])
+  useEffect(() => {
+    ref.current?.contentWindow?.postMessage({ type: 'personal-learning:parameters', parameters }, '*')
+  }, [parameters])
   const identity = JSON.stringify({ nonce: nonce.current, courseId: course.id, instanceId }).replaceAll('<', '\\u003c')
-  const restore = JSON.stringify(parameters ?? {}).replaceAll('<', '\\u003c')
-  const bridge = `<script>window.personalLearning={parameters:${restore},save(parameters){parent.postMessage({...${identity},type:'personal-learning:snapshot',parameters},'*')}};<\/script>`
+  const restore = JSON.stringify(initial.current ?? {}).replaceAll('<', '\\u003c')
+  const bridge = `<script>window.personalLearning={parameters:${restore},save(parameters){parent.postMessage({...${identity},type:'personal-learning:snapshot',parameters},'*')}};window.addEventListener('message',function(event){var data=event.data;if(!data||data.type!=='personal-learning:parameters')return;window.personalLearning.parameters=data.parameters;window.dispatchEvent(new CustomEvent('personal-learning:parameters',{detail:data.parameters}))});<\/script>`
   return <LessonFrame html={bridge + course.html} title={course.title} frameRef={ref} />
 }
 
@@ -174,11 +179,10 @@ export function LabPanel ({ instanceId, request, openSession }) {
 
   async function check () {
     if (!lab?.restate) return
-    const local = checkRestate(lab, restate.text)
-    setRestate(current => ({ ...current, busy: true, checks: local.checks, passed: local.passed, message: local.passed ? '复述通过：三个要点都覆盖了。' : '还缺上面的要点，补一句再提交。' }))
+    setRestate(current => ({ ...current, busy: true }))
     try {
       const row = await request({ action: 'evidence-save', instanceId, courseId: course.id, version: course.version, kind: 'explanation', answer: restate.text })
-      if (row.checks) setRestate(current => ({ ...current, checks: row.checks, passed: row.passed, message: row.passed ? '复述通过：三个要点都覆盖了。' : '部分要点还没覆盖，看看缺哪一条。' }))
+      setRestate(current => ({ ...current, checks: row.checks ?? null, passed: Boolean(row.passed), message: row.passed ? '复述通过：要点都覆盖了。' : '部分要点还没覆盖，看看缺哪一条。' }))
     } catch (reason) { setError(reason.message) } finally { setRestate(current => ({ ...current, busy: false })) }
   }
 
@@ -206,7 +210,13 @@ export function LabPanel ({ instanceId, request, openSession }) {
         <div className="pl-lab-body">
           <div className="pl-canvas">
             {lab
-              ? <LabFrame course={course} instanceId={instanceId} parameters={parameters} onSnapshot={next => setParameters(next)} />
+              ? <LabFrame course={course} instanceId={instanceId} parameters={parameters} onSnapshot={next => {
+                try {
+                  const normalized = normalizeParameters(lab, next)
+                  setParameters(normalized)
+                  void request({ action: 'continuation-save', instanceId, courseId: course.id, parameters: normalized }).catch(reason => setError(reason.message))
+                } catch { /* ignore malformed snapshots from the lesson */ }
+              }} />
               : <LessonFrame html={course.html} title={course.title} />}
             {!lab && <p className="pl-legacy">这一课没有交互协议，只能阅读；实验台不会伪装出可调参数。</p>}
             {lab && (
