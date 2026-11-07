@@ -85,9 +85,9 @@ export function quizAdvice(grade: QuizGrade): QuizAdvice | null {
   }
   const reread: QuizAdvice = {
     kind: 'jump',
-    text: '先别急着刷题：回第 5 节重读「快速思路」的定区间、定偏向，再测一次。',
-    action: '回第 5 节重读',
-    anchorId: 'handout-s5',
+    text: '先别急着刷题：回讲义里对应那一节重读，再测一次。',
+    action: '回对应小节重读',
+    anchorId: grade.items[0]?.anchorId ?? 'handout-s5',
   }
   if (grade.correct / grade.total <= REREAD_CORRECT_RATIO_LIMIT) return reread
   const wrong = grade.wrongItems
