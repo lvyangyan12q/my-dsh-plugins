@@ -1,5 +1,6 @@
 import {LessonCloseout} from './lesson-closeout.tsx'
 import {HandoutView,MIXED_GROWTH_HANDOUT} from './lesson-handout.tsx'
+import {QuizPanel,MIXED_GROWTH_QUIZ} from './lesson-quiz.tsx'
 import { useEffect,useState } from 'react'
 import { BookOpen, Plus, Save, Check, Link, RefreshCw, Play } from 'lucide-react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
@@ -115,7 +116,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
       </div>
-      {tab === 'handout' ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <p role="status">本课暂无检测。</p>}
+      {tab === 'handout' ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <QuizPanel questions={MIXED_GROWTH_QUIZ} />}
       <strong>{view.lesson.request.objective}</strong>
       <span>{view.lesson.request.subject} · {view.lesson.completion ? '学习者已确认完成' : '课后任务未完成'}</span>
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
