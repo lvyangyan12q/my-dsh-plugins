@@ -1,7 +1,8 @@
 import {LessonCloseout} from './lesson-closeout.tsx'
-import {HandoutView,MIXED_GROWTH_HANDOUT,lessonMatchesHandout} from './lesson-handout.tsx'
-import {QuizPanel,MIXED_GROWTH_QUIZ,MIXED_GROWTH_QUIZ_PROVENANCE,emptyQuizAnswers} from './lesson-quiz.tsx'
-import type {QuizAnswer} from './lesson-quiz.tsx'
+import {HandoutView} from './lesson-handout.tsx'
+import {resolveLessonContent} from './lesson-content.ts'
+import {QuizPanel,emptyQuizAnswers} from './lesson-quiz.tsx'
+import type {QuizAnswer,QuizQuestion} from './lesson-quiz.tsx'
 import {LessonTasks} from './lesson-tasks.tsx'
 import { useEffect,useState } from 'react'
 import { BookOpen, Plus, Save, Check, Link, RefreshCw, Play } from 'lucide-react'
@@ -23,9 +24,9 @@ export async function lessonRequest<T>(action: string, body: unknown,send:(input
 }
 
 /** Restore saved in-class answers by stable question ID; a record without quiz stays all-unanswered. */
-export function lessonQuizAnswers(value: LessonView | null): QuizAnswer[] {
+export function lessonQuizAnswers(value: LessonView | null, questions: readonly QuizQuestion[]): QuizAnswer[] {
   const rows = value?.lesson.quiz ?? []
-  return MIXED_GROWTH_QUIZ.map(question => {
+  return questions.map(question => {
     const row = rows.find(item => item.questionId === question.id)
     return row ? row.choice : null
   })
@@ -50,7 +51,8 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const [jump, setJump] = useState<{ anchorId: string; token: number } | null>(null)
   /** 「读」由讲义实际渲染这一事实决定；页签只负责去哪，不负责标记完成。 */
   const [readDone, setReadDone] = useBusinessState('lesson.readDone', false)
-  const [answers, setAnswers] = useState<QuizAnswer[]>(() => emptyQuizAnswers(MIXED_GROWTH_QUIZ))
+  /** 作答按课堂归属：切课后立刻回到该课记录，不拿上一课的作答渲染。 */
+  const [quizState, setQuizState] = useState<{ lessonId: string | null; answers: QuizAnswer[] }>({ lessonId: null, answers: [] })
   /** In-class evidence save errors stay visible without blocking the next answer. */
   const [quizError, setQuizError] = useState('')
   const [material] = useBusinessState('reader.entry', null)
@@ -59,6 +61,11 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const [legacyRoles] = useBusinessState('roles', null)
   const services=useViewServices()
   const roles=services?services.roles:legacyRoles
+  const lessonId = view?.lesson.request.lessonId
+  /** 讲义与检测都来自内容注册表：命中哪一课就渲染哪一课，都不命中则只有空态。 */
+  const content = resolveLessonContent(view?.lesson.request)
+  const questions = content?.quiz ?? []
+  const answers = lessonId && quizState.lessonId === lessonId ? quizState.answers : lessonQuizAnswers(view, questions)
   const accept = (value: LessonView, resetNotes = false) => {
     setView(value)
     if (resetNotes || !owner.cell('lesson.notesDirty', false).value) { setNotes(value.lesson.notes); setNotesDirty(false) }
@@ -107,12 +114,12 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     setTab('handout')
     setJump(current => ({ anchorId, token: (current?.token ?? 0) + 1 }))
   }
-  /** 讲义按知识点挂接：本课目标或限定考点不命中关键词时，只有空态，没有检测。 */
-  const handoutMatched = lessonMatchesHandout(view?.lesson.request)
+  /** 内容注册表没命中时只有空态，没有讲义也没有检测。 */
+  const handoutMatched = content !== null
   const answerQuiz = (index: number, option: number) => {
-    const question = MIXED_GROWTH_QUIZ[index], lessonId = view?.lesson.request.lessonId
+    const question = questions[index]
     if (!question || !lessonId || answers[index] !== null) return
-    setAnswers(current => current.map((value, at) => at === index ? option : value))
+    setQuizState({ lessonId, answers: answers.map((value, at) => at === index ? option : value) })
     setQuizError('')
     // The local answer is already visible; a failed write is surfaced, never thrown back into the quiz.
     void request<LessonView>('quiz', { lessonId, entry: {
@@ -120,10 +127,9 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       section: question.anchorId, answeredAt: new Date().toISOString() } })
       .catch(cause => setQuizError(`检测作答保存失败；继续答题不受影响：${cause instanceof Error ? cause.message : String(cause)}`))
   }
-  const retakeQuiz = () => { setAnswers(emptyQuizAnswers(MIXED_GROWTH_QUIZ)); setTab('quiz') }
-  const lessonId = view?.lesson.request.lessonId
+  const retakeQuiz = () => { setQuizState({ lessonId: lessonId ?? null, answers: emptyQuizAnswers(questions) }); setTab('quiz') }
   useEffect(() => {
-    setAnswers(lessonQuizAnswers(view)); setQuizError(''); setReadDone(false); setTab('handout'); setJump(null)
+    setQuizError(''); setReadDone(false); setTab('handout'); setJump(null)
   }, [lessonId])
   // 讲义首次渲染即视为「读」完成；页签点击本身不标记任何完成。
   useEffect(() => {
@@ -180,8 +186,8 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
       </div>
       {tab === 'handout'
-        ? (handoutMatched ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <p role="status">本课暂无讲义。</p>)
-        : <QuizPanel questions={handoutMatched ? MIXED_GROWTH_QUIZ : []} provenance={handoutMatched ? MIXED_GROWTH_QUIZ_PROVENANCE : undefined} answers={answers} onAnswer={answerQuiz} onJump={jumpToSection} onPractice={startPractice} />}
+        ? (content ? <HandoutView handout={content.handout} /> : <p role="status">本课暂无讲义。</p>)
+        : <QuizPanel questions={questions} provenance={content?.quizProvenance} answers={answers} onAnswer={answerQuiz} onJump={jumpToSection} onPractice={startPractice} />}
       <strong>{view.lesson.request.objective}</strong>
       <span>{view.lesson.request.subject} · {view.lesson.completion ? '学习者已确认完成' : '课后任务未完成'}</span>
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
@@ -209,7 +215,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
         if (owner.cell('lesson.notes', '').value === notes) setNotesDirty(false)
         accept(value)
       })}><Save size={14} />保存总结</button>
-      {!view.lesson.completion && <LessonTasks questions={handoutMatched ? MIXED_GROWTH_QUIZ : []} answers={answers} readDone={readDone} practiceDone={practiceDone} onJump={jumpToSection} onPractice={startPractice} onRetake={retakeQuiz}/>}
+      {!view.lesson.completion && <LessonTasks questions={questions} answers={answers} readDone={readDone} practiceDone={practiceDone} onJump={jumpToSection} onPractice={startPractice} onRetake={retakeQuiz}/>}
       <LessonCloseout onOpenTeacher={onOpenTeacher} onReturnToday={onReturnToday} view={view} notes={notes} accept={accept}/>
       <details><summary>共享证据摘要</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{view.summary}</pre></details>
     </div>}

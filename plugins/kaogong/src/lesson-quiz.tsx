@@ -130,6 +130,37 @@ export const MIXED_GROWTH_QUIZ: readonly QuizQuestion[] = [
   },
 ]
 
+/** 与 GROWTH_COMPARISON_HANDOUT 同一口径：自编、非真题。 */
+export const GROWTH_COMPARISON_QUIZ_PROVENANCE = '自编检测题：教学设计用，非真题；真题在练习轮次里。'
+
+/** 第 2 课的检测题：锚点指向第 2 课的讲义小节，回跳机制与第 1 课一致。 */
+export const GROWTH_COMPARISON_QUIZ: readonly QuizQuestion[] = [
+  {
+    id: 'growth-quiz-1',
+    prompt: '甲现期量 100、同比增长 20%；乙现期量 200、同比增长 10%。谁的增长量大？',
+    options: ['甲，约 16.7', '乙，约 18.2', '甲，约 20', '一样大'],
+    answer: 1,
+    why: '增长量 = 现期量 × 增长率 ÷ (1 + 增长率)：甲 ≈ 100 × 20% ÷ 1.2 ≈ 16.7，乙 = 200 × 10% ÷ 1.1 ≈ 18.2。乙的增长率低，但现期量大，增长量仍然更大。',
+    anchorId: 'handout2-s2',
+  },
+  {
+    id: 'growth-quiz-2',
+    prompt: '判断：增长量 = 现期量 × 增长率 ÷ (1 + 增长率)。',
+    options: ['正确', '错误：应为 现期量 × 增长率', '错误：应为 基期量 ÷ 增长率', '错误：应为 现期量 ÷ (1 + 增长率)'],
+    answer: 0,
+    why: '基期量 = 现期量 ÷ (1 + 增长率)，增长量 = 基期量 × 增长率 = 现期量 × 增长率 ÷ (1 + 增长率)，式子正确。直接用 现期量 × 增长率 会把增长量算大。',
+    anchorId: 'handout2-s2',
+  },
+  {
+    id: 'growth-quiz-3',
+    prompt: '判断：增长率高的一方，增长量一定大。',
+    options: ['正确', '错误：还要看现期量的大小', '错误：增长量只与基期量有关'],
+    answer: 1,
+    why: '增长量同时取决于现期量（或基期量）与增长率。第 1 题里乙的增长率更低，增长量反而更大；只比增长率就会掉进陷阱。',
+    anchorId: 'handout2-s3',
+  },
+]
+
 const LETTERS = 'ABCD'
 
 function choiceState(question: QuizQuestion, chosen: QuizAnswer, option: number): 'correct' | 'wrong' | 'dim' | undefined {
