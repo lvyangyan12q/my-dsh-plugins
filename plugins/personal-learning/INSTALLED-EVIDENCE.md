@@ -89,5 +89,23 @@ Machine-readable summary: `evidence/lab-browser-acceptance.json`.
 Still not verified: real `/teach` model generation of a protocol course, and a generated course that
 implements the lock and host-pushed parameter events.
 
+## Real `/teach` generation (2026-11-07)
+
+The isolated host was configured with the local `zai-coding-cn / glm-5.3-flash` provider and a temporary
+copy of the credential store, then driven through the native teaching session by
+`scripts/lab-real-generation.mjs`. No credential value is stored in this repository or the receipt.
+
+The model produced《条件概率：把范围缩小到 B》v1 with a complete `lab` protocol (N/B/AB parameters, joint and
+conditional readouts, a prediction, three restate checks). The host accepted it without repair. The course
+HTML listens for both `personal-learning:parameters` and `personal-learning:lock`.
+
+In the real UI the generated course opened behind the lock cover, showed `?` readouts, unlocked after the
+prediction to 30% and 75%, and displayed option feedback. Its own canvas rendered with controls and a
+citation. Receipt: `evidence/real-generation-receipt.json`; screenshots `accept-generated-locked.png` and
+`accept-generated.png`.
+
+Not inspected: the generated course's own hidden state behind the host lock cover, i.e. whether it also
+hides its internal numbers rather than only listening for the event.
+
 
 

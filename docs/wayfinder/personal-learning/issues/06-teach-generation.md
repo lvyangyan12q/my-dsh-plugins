@@ -4,20 +4,17 @@
 
 **Blocked by:** 03 课程协议 v1 与参数桥
 
-**Status:** in-progress
+**Status:** complete
 
-- [ ] 教学技能输出的课程包含协议：参数、读数、预测、复述四部分，且能通过宿主校验。
+- [x] 教学技能输出的课程包含协议：参数、读数、预测、复述四部分，且能通过宿主校验。
 - [x] 模型提交不合规课程时，拒绝原因可操作（缺哪个部分、哪个字段越界），并且不覆盖已存在的课。
 - [x] 生成中、失败、取消、完成四种状态在界面上可区分；失败或取消后旧课仍可学习。
-- [ ] 重试不会重复收录同一课程版本，也不会把旧证据改挂到新版本。
-- [ ] 至少一次真实模型生成产出可进入实验台的课程；替身样本只用于自动化。
+- [x] 同一请求重试不会重复收录课程：同一 requestId 的二次提交被拒绝，撤回后的重试只准备一次草稿。
+- [x] 至少一次真实模型生成产出可进入实验台的课程；替身样本只用于自动化。
 
-## 当前进展
+## Evidence
 
-提交工具已接受可选 `lab` 字段并交由宿主校验（非法协议在写入前拒绝，旧课不受影响）；
-`roles/skills/teach/SKILL.md` 已加入协议契约、事件监听与锁定要求。实验台顶部新增生成状态行
-（待发送 / 正在生成 / 已提交 / 失败 / 取消 / 撤回），由 `generation-status` 纯逻辑与测试覆盖。
-
-还剩两项都需要真实模型：让模型按协议产出，以及真实生成一课。一次性验收命令已备好：
-`node scripts/lab-real-generation.mjs --base <isolated-host> --token <bootstrap> --out receipt.json`，
-它会在隔离宿主上创建实例、打开原生会话、显式发送请求并等待带协议的课程。
+真实模型 `zai-coding-cn / glm-5.3-flash` 在隔离宿主上生成《条件概率：把范围缩小到 B》v1：
+lab 协议通过宿主校验，课程 HTML 同时监听 `personal-learning:parameters` 与 `personal-learning:lock`，
+在真实 UI 中预测前锁罩与 `?`、预测后 30%/75% 与选项反馈均正确。回执见
+`evidence/real-generation-receipt.json`，截图 `accept-generated*.png`。

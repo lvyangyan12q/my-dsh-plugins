@@ -32,7 +32,6 @@
   },
   "screenshots": ["accept-locked.png", "accept-lab-1440.png", "accept-lab-390.png", "accept-keyboard.png", "accept-legacy.png"],
   "notVerified": [
-    "real /teach model generation of a protocol course",
-    "interaction with a generated course that implements the lock and host-pushed parameter events"
+    "visual inspection of the generated course's own locked rendering behind the host cover"
   ]
 }

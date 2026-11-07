@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-07",
+  "method": "real /teach model generation on an isolated DSH host",
+  "host": "official DSH 0.2.2-rc.1 build",
+  "provider": "zai-coding-cn / glm-5.3-flash (credential read from the local credential store at run time; not copied into the repository)",
+  "requestId": "02693cb0-005c-4889-b962-257f72d54db3",
+  "course": {
+    "id": "ad84dec4-8c28-4817-9685-0c60489fe608",
+    "title": "条件概率：把范围缩小到 B",
+    "version": 1,
+    "labVersion": 1,
+    "parameters": ["N", "B", "AB"],
+    "hasPrediction": true,
+    "hasRestate": true,
+    "htmlBytes": 7660,
+    "listensForParameters": true,
+    "listensForLock": true
+  },
+  "ui": {
+    "openedFromIndependentMenu": true,
+    "lockCoverBeforePrediction": true,
+    "readoutsBeforePrediction": ["?", "?"],
+    "readoutsAfterPrediction": ["30%", "75%"],
+    "optionFeedback": "对：分母从 100 缩到 40，比例被抬高。",
+    "canvasRenderedGeneratedHtml": true
+  },
+  "screenshots": ["accept-generated-locked.png", "accept-generated.png"],
+  "notes": [
+    "The host accepted the model's lab protocol without repair; the course rendered its own controls and citation inside the lab canvas.",
+    "The isolated DSH home was temporary and its credential copy is deleted after the run."
+  ]
+}
