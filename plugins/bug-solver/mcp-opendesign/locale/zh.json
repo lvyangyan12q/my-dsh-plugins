@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "OpenDesign MCP",
+    "description": "连接本机 OpenDesign 桌面端，把它的设计工作区工具与资源提供给 Agent 使用。"
+  }
+}

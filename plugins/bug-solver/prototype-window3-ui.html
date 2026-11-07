@@ -1,0 +1,923 @@
+<!doctype html>
+<!-- 窗口3 调度台 · UI 原型（throwaway）。
+     目标：在三个差异很大的布局方向里选一个，不验证业务实现。
+     假数据；交互只改内存状态；不做持久化。
+     在工作台里打开会加载 dshell 原生皮肤；直接双击也有基础样式。 -->
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>窗口3 调度台 · UI 原型</title>
+  <link id="dshellCss" rel="stylesheet" href="/api/worktable/template/dshell.css"
+        onerror="document.documentElement.classList.add('no-dshell')" />
+  <style>
+    :root {
+      --pt-bg: var(--dsw-alias-bg-base, #0b0e14);
+      --pt-panel: var(--dsw-alias-fill-l1, rgba(255,255,255,.025));
+      --pt-line: var(--dsw-alias-border-l1, #262b36);
+      --pt-line2: var(--dsw-alias-border-l2, #3a4150);
+      --pt-text: var(--dsw-alias-label-primary, #e6e8eb);
+      --pt-muted: var(--dsw-alias-label-secondary, #9aa4b2);
+      --pt-dim: var(--dsw-alias-label-tertiary, #6b7280);
+      --pt-green: #3fb950;
+      --pt-yellow: #d29922;
+      --pt-red: #f85149;
+      --pt-blue: #4f8ef7;
+      --pt-purple: #a371f7;
+      --pt-radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--pt-bg); color: var(--pt-text);
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; line-height: 1.55; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .pt-shell { padding: 14px 16px 104px; max-width: 1440px; margin: 0 auto; }
+    .pt-ribbon { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px;
+      padding: 5px 12px; background: #2b1d00; color: #f0c674; border-bottom: 1px solid #5a4300;
+      font-size: 11px; letter-spacing: .02em; }
+    .pt-ribbon b { color: #ffd77a; }
+    .pt-ribbon .pt-ribbonTag { margin-left: auto; color: #b99a4a; }
+    .pt-header { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; margin: 4px 0 14px; }
+    .pt-kicker { font-size: 11px; color: var(--pt-dim); letter-spacing: .08em; text-transform: uppercase; }
+    .pt-title { margin: 2px 0 4px; font-size: 18px; line-height: 1.35; font-weight: 650; }
+    .pt-sub { margin: 0; color: var(--pt-muted); font-size: 12px; }
+    .pt-headerRight { display: flex; align-items: center; gap: 8px; flex: none; padding-top: 4px; }
+    .pt-variantTag { padding: 3px 9px; border: 1px dashed var(--pt-line2); border-radius: 999px; color: var(--pt-muted); font-size: 11px; }
+    .pt-card { border: 1px solid var(--pt-line); border-radius: var(--pt-radius); background: var(--pt-panel); padding: 13px 14px; }
+    .pt-card + .pt-card { margin-top: 10px; }
+    .pt-cardHead { display: flex; align-items: center; gap: 8px; justify-content: space-between; margin-bottom: 8px; }
+    .pt-cardHead h2 { margin: 0; font-size: 13.5px; font-weight: 600; }
+    .pt-cardHead .pt-hint { color: var(--pt-dim); font-size: 11px; }
+    .pt-sectionTitle { margin: 12px 0 6px; font-size: 11px; color: var(--pt-dim); letter-spacing: .06em; text-transform: uppercase; }
+    .pt-kvGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 18px; }
+    .pt-kv { display: flex; gap: 8px; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,.06); padding-bottom: 5px; font-size: 12px; }
+    .pt-kv .k { color: var(--pt-muted); flex: none; }
+    .pt-kv .v { color: var(--pt-text); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pt-kv .v.mono { font-family: "Cascadia Code", Consolas, monospace; font-size: 11.5px; }
+    .pt-fieldGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+    .pt-field label { display: block; color: var(--pt-muted); font-size: 11px; margin-bottom: 4px; }
+    .pt-field input, .pt-field select, .pt-field textarea { width: 100%; padding: 6px 9px; border: 1px solid var(--pt-line); border-radius: 8px;
+      background: rgba(255,255,255,.03); color: var(--pt-text); outline: none; font-size: 12px; }
+    .pt-field textarea { min-height: 58px; resize: vertical; }
+    .pt-field input:focus, .pt-field select:focus, .pt-field textarea:focus { border-color: var(--pt-blue); }
+    .pt-fieldWide { grid-column: 1 / -1; }
+    .pt-warn { display: flex; gap: 9px; align-items: flex-start; margin-top: 12px; padding: 9px 11px; border: 1px solid rgba(210,153,34,.4);
+      border-radius: 9px; background: rgba(210,153,34,.08); color: #e8c877; font-size: 12px; }
+    .pt-warn b { color: #ffd77a; }
+    .pt-ok { color: var(--pt-green); }
+    .pt-danger { color: var(--pt-red); }
+    .pt-checkrow { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; color: var(--pt-muted); font-size: 11.5px; }
+    .pt-checkrow .ok { color: var(--pt-green); }
+    .pt-checkrow .bad { color: var(--pt-yellow); }
+    .pt-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; align-items: center; }
+    .pt-btn { border: 1px solid var(--pt-line2); background: rgba(255,255,255,.03); color: var(--pt-text); border-radius: 999px;
+      padding: 6px 13px; font-size: 12px; }
+    .pt-btn:hover { border-color: var(--pt-muted); }
+    .pt-btnPrimary { background: var(--pt-green); border-color: var(--pt-green); color: #07120a; font-weight: 650; }
+    .pt-btnDanger { border-color: rgba(248,81,73,.55); color: #ff9a94; background: transparent; }
+    .pt-btnGhost { background: transparent; }
+    .pt-btnTiny { padding: 3px 9px; font-size: 11px; border-radius: 999px; }
+    .pt-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--pt-line);
+      color: var(--pt-muted); font-size: 11px; background: rgba(255,255,255,.03); }
+    .pt-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--pt-dim); }
+    .pt-badge.wait { color: #e8c877; border-color: rgba(210,153,34,.45); }
+    .pt-badge.wait::before { background: var(--pt-yellow); }
+    .pt-badge.done { color: #7ee787; border-color: rgba(63,185,80,.45); }
+    .pt-badge.done::before { background: var(--pt-green); }
+    .pt-badge.bad { color: #ff9a94; border-color: rgba(248,81,73,.45); }
+    .pt-badge.bad::before { background: var(--pt-red); }
+    .pt-badge.info { color: #9ecbff; border-color: rgba(79,142,247,.45); }
+    .pt-badge.info::before { background: var(--pt-blue); }
+    .pt-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border: 1px solid var(--pt-line);
+      border-radius: 6px; color: var(--pt-muted); font-size: 11px; background: rgba(255,255,255,.02); }
+    .pt-chip.mono { font-family: "Cascadia Code", Consolas, monospace; }
+    .pt-list { display: flex; flex-direction: column; gap: 6px; }
+    .pt-run { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; border: 1px solid var(--pt-line); border-radius: 9px;
+      background: rgba(255,255,255,.02); cursor: pointer; }
+    .pt-run:hover { border-color: var(--pt-line2); }
+    .pt-run.on { border-color: rgba(79,142,247,.6); background: rgba(79,142,247,.07); }
+    .pt-run .t { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pt-run .m { display: flex; gap: 8px; align-items: center; color: var(--pt-dim); font-size: 10.5px; }
+    .pt-artifact { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,.06); font-size: 11.5px; }
+    .pt-artifact .n { color: var(--pt-text); font-family: "Cascadia Code", Consolas, monospace; }
+    .pt-artifact .s { color: var(--pt-dim); flex: none; }
+    .pt-session { padding: 8px 9px; border: 1px solid var(--pt-line); border-radius: 8px; background: rgba(255,255,255,.02); margin-top: 7px; }
+    .pt-session .h { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+    .pt-session .n { font-size: 12px; }
+    .pt-session .id { color: var(--pt-dim); font-size: 10.5px; font-family: "Cascadia Code", Consolas, monospace; }
+    .pt-log { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #070a0f; border: 1px solid var(--pt-line);
+      font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; color: #a8b3c2; max-height: 130px; overflow: auto; }
+    .pt-log div { white-space: nowrap; }
+    .pt-log .muted { color: #5b6676; }
+    .pt-log .ok { color: #7ee787; }
+    .pt-log .warn { color: #e8c877; }
+    .pt-progress { height: 5px; border-radius: 4px; background: rgba(255,255,255,.07); overflow: hidden; margin: 9px 0 6px; }
+    .pt-progress i { display: block; height: 100%; background: var(--pt-green); }
+    .pt-console { display: grid; grid-template-columns: 232px minmax(0, 1fr) 286px; gap: 12px; align-items: start; }
+    .pt-rail { min-width: 0; }
+    .pt-rail .pt-card { margin-top: 10px; }
+    .pt-rail .pt-card:first-child { margin-top: 0; }
+    .pt-main { min-width: 0; }
+    .pt-roundHead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .pt-roundNo { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 22px; padding: 0 7px;
+      border-radius: 6px; background: rgba(79,142,247,.15); color: #9ecbff; border: 1px solid rgba(79,142,247,.4); font-size: 11px; font-weight: 650; }
+    .pt-planSection { margin-top: 10px; }
+    .pt-planSection h3 { margin: 0 0 4px; font-size: 12px; color: var(--pt-muted); font-weight: 600; }
+    .pt-planSection p, .pt-planSection ul { margin: 0; color: var(--pt-text); font-size: 12px; }
+    .pt-planSection ul { padding-left: 18px; }
+    .pt-planSection li { margin: 2px 0; }
+    .pt-diffstat { display: flex; gap: 10px; font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; }
+    .pt-diffstat .plus { color: #7ee787; }
+    .pt-diffstat .minus { color: #ff9a94; }
+    .pt-timeline { position: relative; padding-left: 26px; margin-top: 12px; }
+    .pt-timeline::before { content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 2px; background: var(--pt-line); }
+    .pt-node { position: relative; margin-bottom: 12px; }
+    .pt-node::before { content: ''; position: absolute; left: -22px; top: 14px; width: 10px; height: 10px; border-radius: 50%;
+      background: var(--pt-dim); border: 2px solid var(--pt-bg); box-shadow: 0 0 0 1px var(--pt-line2); }
+    .pt-node.done::before { background: var(--pt-green); box-shadow: 0 0 8px rgba(63,185,80,.5); }
+    .pt-node.current::before { background: var(--pt-yellow); box-shadow: 0 0 10px rgba(210,153,34,.7); }
+    .pt-node.future { opacity: .42; }
+    .pt-node .pt-card { background: rgba(255,255,255,.017); }
+    .pt-wizardStep { display: flex; gap: 0; margin: 2px 0 14px; border: 1px solid var(--pt-line); border-radius: 10px; overflow: hidden; }
+    .pt-wizardStep .s { flex: 1; padding: 8px 10px; border-right: 1px solid var(--pt-line); color: var(--pt-dim); font-size: 11px; }
+    .pt-wizardStep .s:last-child { border-right: 0; }
+    .pt-wizardStep .s.on { color: var(--pt-text); background: rgba(79,142,247,.09); }
+    .pt-wizardStep .s.done { color: #9ecbff; }
+    .pt-wizardStep .s b { display: block; font-size: 12px; font-weight: 600; color: inherit; }
+    .pt-center { max-width: 900px; margin: 0 auto; }
+    .pt-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .pt-stat { border: 1px solid var(--pt-line); border-radius: 9px; padding: 8px 10px; background: rgba(255,255,255,.02); }
+    .pt-stat .l { color: var(--pt-dim); font-size: 10.5px; }
+    .pt-stat .v { color: var(--pt-text); font-size: 14px; font-weight: 600; margin-top: 1px; }
+    .pt-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 8px 14px; background: rgba(12,15,21,.94); border-top: 1px solid var(--pt-line); backdrop-filter: blur(8px); }
+    .pt-bar .grow { flex: 1; }
+    .pt-protoTag { color: #f0c674; font-size: 10.5px; letter-spacing: .08em; border: 1px solid rgba(240,198,116,.4);
+      padding: 2px 7px; border-radius: 999px; }
+    .pt-variants { display: flex; gap: 4px; padding: 3px; border: 1px solid var(--pt-line); border-radius: 999px; background: rgba(255,255,255,.02); }
+    .pt-variants button { border: 0; background: none; color: var(--pt-muted); padding: 4px 10px; border-radius: 999px; font-size: 11.5px; }
+    .pt-variants button.on { background: var(--pt-blue); color: #07101f; font-weight: 650; }
+    .pt-bar select { background: rgba(255,255,255,.03); color: var(--pt-text); border: 1px solid var(--pt-line); border-radius: 7px; padding: 4px 7px; font-size: 11.5px; }
+    .pt-barState { color: var(--pt-dim); font-size: 10.5px; font-family: "Cascadia Code", Consolas, monospace; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pt-statePanel { position: fixed; left: 12px; right: 12px; bottom: 62px; z-index: 29; max-height: 38vh; overflow: auto; display: none;
+      border: 1px solid var(--pt-line); border-radius: 10px; background: #0a0d13; padding: 10px 12px; }
+    .pt-statePanel.on { display: block; }
+    .pt-statePanel pre { margin: 0; font-size: 11px; color: #a8b3c2; white-space: pre-wrap; }
+    .pt-toast { position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%) translateY(8px); z-index: 40;
+      padding: 7px 14px; border-radius: 999px; background: #1b2433; border: 1px solid var(--pt-line2); color: var(--pt-text);
+      font-size: 12px; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; }
+    .pt-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .pt-mock { border-style: dashed !important; color: #9ecbff !important; }
+    .pt-note { color: var(--pt-dim); font-size: 11px; margin-top: 7px; }
+    .pt-empty { padding: 18px; text-align: center; color: var(--pt-dim); border: 1px dashed var(--pt-line); border-radius: 9px; }
+    .pt-viewTabs { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--pt-line); border-radius: 8px; background: rgba(255,255,255,.02); margin-right: 4px; }
+    .pt-viewTabs button { border: 0; background: none; color: var(--pt-muted); padding: 3px 9px; border-radius: 6px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 4px; }
+    .pt-viewTabs button.on { background: rgba(79,142,247,.16); color: #cfe4ff; }
+    .pt-lock { font-size: 9px; color: var(--pt-dim); border: 1px solid var(--pt-line); border-radius: 4px; padding: 0 3px; }
+    .pt-chatTabs { display: flex; gap: 4px; border-bottom: 1px solid var(--pt-line); margin: 2px 0 10px; }
+    .pt-chatTabs button { border: 0; background: none; color: var(--pt-muted); padding: 6px 10px; border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 12px; }
+    .pt-chatTabs button.on { color: var(--pt-text); border-bottom-color: var(--pt-blue); }
+    .pt-readonly { display: flex; gap: 7px; align-items: center; padding: 7px 9px; margin-bottom: 10px; border: 1px solid rgba(79,142,247,.28);
+      border-radius: 8px; background: rgba(79,142,247,.06); color: #a9c8f5; font-size: 11.5px; }
+    .pt-chatList { display: flex; flex-direction: column; gap: 9px; max-height: 430px; overflow: auto; padding-right: 4px; }
+    .pt-msg { border-left: 3px solid var(--pt-line2); padding: 1px 0 1px 10px; }
+    .pt-msg.user { border-left-color: var(--pt-blue); }
+    .pt-msg.assistant { border-left-color: var(--pt-green); }
+    .pt-msg.tool { border-left-color: var(--pt-purple); }
+    .pt-msg.verdict { border-left-color: var(--pt-yellow); }
+    .pt-msgHead { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; }
+    .pt-msgRole { font-size: 11px; font-weight: 650; color: var(--pt-text); }
+    .pt-msgTime { font-size: 10px; color: var(--pt-dim); }
+    .pt-msgBody { font-size: 12px; color: var(--pt-text); white-space: pre-wrap; }
+    .pt-msg.tool .pt-msgBody { font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; color: #c7b8ff;
+      background: #070a0f; border: 1px solid var(--pt-line); border-radius: 7px; padding: 6px 8px; overflow-wrap: anywhere; }
+    .pt-msg.verdict .pt-msgBody { color: #e8c877; }
+    .pt-msgRound { margin-left: auto; font-size: 9.5px; color: var(--pt-dim); border: 1px solid var(--pt-line); border-radius: 4px; padding: 0 4px; }
+    .pt-split { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+    @media (max-width: 1080px) {
+      .pt-console { grid-template-columns: 210px minmax(0, 1fr); }
+      .pt-console > .pt-railRight { display: none; }
+    }
+    @media (max-width: 860px) {
+      .pt-console { display: block; }
+      .pt-console > .pt-railLeft { display: none; }
+      .pt-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .pt-split { display: block; }
+      .pt-header { flex-direction: column; }
+    }
+    @media (max-width: 640px) {
+      .pt-kvGrid, .pt-fieldGrid { grid-template-columns: 1fr; }
+      .pt-barState { display: none; }
+    }
+    /* 直接双击（file://）时的最小兜底；工作台里 dshell.css 会接管 */
+    html.no-dshell body { background: #0b0e14; color: #e6e8eb; }
+    html.no-dshell .pt-card { background: rgba(255,255,255,.025); }
+    html.no-dshell .dshell-btn { background: #3fb950; color: #07120a; border: 0; border-radius: 999px; padding: 6px 13px; }
+    html.no-dshell .dshell-btnGhost { background: transparent; color: #9aa4b2; border: 1px solid #262b36; }
+  </style>
+</head>
+<body>
+  <div class="pt-ribbon">
+    <b>PROTOTYPE</b>
+    <span>窗口3 调度台 · UI 方向选择</span>
+    <span style="opacity:.7">假数据 · 交互仅改内存 · 不做持久化</span>
+    <span class="pt-ribbonTag">按 1 / 2 / 3 切换方案 · 右上角切「对话」</span>
+  </div>
+
+  <div class="pt-shell">
+    <div id="app"></div>
+  </div>
+
+  <div class="pt-statePanel" id="statePanel"><pre id="stateJson"></pre></div>
+
+  <div class="pt-bar">
+    <span class="pt-protoTag">PROTOTYPE</span>
+    <span class="pt-barState" id="barState"></span>
+    <span class="grow"></span>
+    <div class="pt-variants" id="variants">
+      <button data-variant="console" title="三栏控制台">A 控制台</button>
+      <button data-variant="timeline" title="轮次时间线">B 时间线</button>
+      <button data-variant="wizard" title="分步向导">C 向导</button>
+    </div>
+    <select id="scenario" title="跳到某个状态看界面">
+      <option value="confirm">场景：确认信息</option>
+      <option value="plan1">场景：第 1 轮方案</option>
+      <option value="implement1">场景：第 1 轮执行</option>
+      <option value="review1">场景：第 1 轮审核（要改）</option>
+      <option value="plan2">场景：第 2 轮方案</option>
+      <option value="needs">场景：需要你回复</option>
+      <option value="final">场景：待你通过</option>
+      <option value="approved">场景：已通过</option>
+      <option value="stopped">场景：已停止</option>
+    </select>
+    <button class="pt-btn pt-btnTiny pt-btnGhost" data-act="debug">状态</button>
+    <button class="pt-btn pt-btnTiny pt-btnGhost" data-act="reset">重置</button>
+  </div>
+
+  <div class="pt-toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var BUG = {
+    uid: 3096,
+    title: 'DCOM-消息通知发送-工单流程中选择飞书微应用发送消息，通知人选择通讯录用户时，消息发送失败（未做地区选择适配）',
+    status: '待处理',
+    priority: '普通',
+    service: 'datacenter-service-se-dcom:1.0.3-dev.17',
+    host: '10.12.139.111',
+    desc: '工单通知人选择通讯录用户时，飞书消息发送失败；日志显示 region 为空，未做地区选择适配。'
+  };
+  var CONN = { name: '111', host: '10.12.139.111', port: '22', user: 'root', key: 'C:\\Users\\Administrator\\.ssh\\id_ed25519' };
+  var PROJ = { name: 'cet-electric-api', path: 'F:\\ai-project\\cet-electric-api', spec: 'specs/notify-feishu/spec.md', branch: 'master' };
+  var RUNS = [
+    { uid: 3096, title: '消息通知发送 · 通讯录用户 region 为空', state: '待确认方案', tone: 'wait', time: '刚刚' },
+    { uid: 3083, title: 'BPM 工单转办后审批人权限校验失败', state: '第 2 轮审核', tone: 'wait', time: '12 分钟前' },
+    { uid: 3077, title: 'datacenter-service-se-flow 频繁 Broken pipe', state: '第 1 轮执行', tone: 'info', time: '1 小时前' },
+    { uid: 3061, title: '资产出库单保存多余库存校验', state: '待你通过', tone: 'wait', time: '昨天' }
+  ];
+  var PLAN1 = {
+    diag: 'FeishuAppSender 直接使用 notifyUser.region 拼接口参数；DCOM 通讯录用户 region 为空时未做地区选择适配，导致飞书返回 400。',
+    changes: ['MessageNotifyService：解析工单所属区域，补 region 来源', 'FeishuAppSender：region 为空时给出明确错误，不静默拼空值', '补 MessageNotifyServiceTest 单测'],
+    tests: ['单测：region 为空 / 有地区 / 跨地区三种工单', '本地 mock 飞书接口，验证请求体'],
+    risk: '会影响其他通知渠道的 region 解析；先只改飞书链路。',
+    files: ['MessageNotifyService.java', 'FeishuAppSender.java', 'MessageNotifyServiceTest.java'],
+    diff: '+42 −7'
+  };
+  var REVIEW1 = {
+    verdict: 'request_changes',
+    summary: '方向对，但“region 为空回退默认地区”会掩盖配置错误，且缺少集成测试。',
+    blocking: ['region 为空时不要静默回退到默认地区', '补一条从工单到飞书请求的集成测试', '错误信息不要带完整手机号/邮箱'],
+    tests: '建议补：region 缺失、跨地区、通讯录用户三种用例。'
+  };
+  var PLAN2 = {
+    diag: '接受审核意见：不静默回退；在 DTO 层校验 region，缺失时返回可读错误；飞书请求前再兜底一次并脱敏日志。',
+    changes: ['NotifyUserDTO：region 缺失时返回明确校验错误', 'FeishuAppSender：保留兜底但只用于非通讯录用户', '日志脱敏手机号/邮箱'],
+    tests: ['集成测试：工单 → 通知 → 飞书请求体', '单测：region 缺失错误分支'],
+    risk: '错误信息变化可能影响前端提示；需要确认前端是否按 code 展示。',
+    files: ['NotifyUserDTO.java', 'FeishuAppSender.java', 'MessageNotifyIntegrationTest.java'],
+    diff: '+58 −12'
+  };
+  var REVIEW2 = {
+    verdict: 'approve',
+    summary: 'region 缺失路径有明确错误，集成测试覆盖工单到飞书请求；日志已脱敏。',
+    blocking: [],
+    tests: '建议后续补：跨地区工单的飞书模板变量。'
+  };
+  var CHAT = {
+    fix: [
+      { round: 1, role: 'user', kind: 'text', at: '14:18', text: 'BUG-3096 派发：工单通知人选择通讯录用户时飞书消息发送失败；服务 datacenter-service-se-dcom:1.0.3-dev.17；仓库 cet-electric-api；spec specs/notify-feishu/spec.md。' },
+      { round: 1, role: 'assistant', kind: 'plan', at: '14:20', text: '第 1 轮方案：\n1. 读 MessageNotifyService / FeishuAppSender；\n2. 在工单通知链路补 region 来源；\n3. region 为空时返回明确错误；\n4. 单测 + 本地 mock 飞书。\n先不动代码，等你批准。' },
+      { round: 1, role: 'tool', kind: 'tool', toolName: 'ssh', at: '14:22', text: 'ssh root@10.12.139.111 "docker logs --since 2h docker-dcim-web-1 2>&1 | grep -E \'ERROR|Exception\' | tail -40"' },
+      { round: 1, role: 'assistant', kind: 'text', at: '14:25', text: '日志确认：FeishuAppSender 收到 region=null 后拼出空参数，飞书返回 400；代码里没有地区选择适配。方案已写好，等你批准。' },
+      { round: 1, role: 'user', kind: 'text', at: '14:31', text: '按 cet-electric-api 继续。注意别静默回退默认地区。' },
+      { round: 1, role: 'assistant', kind: 'text', at: '14:36', text: '实现完成：3 个文件 +42 −7；单测 3 passed；已提交到 bugfix/3096-8f2a1c。产物写到 round-1/。' },
+      { round: 2, role: 'assistant', kind: 'plan', at: '14:44', text: '第 2 轮方案：接受审核意见，region 缺失时在 DTO 层返回明确错误；飞书兜底只用于非通讯录用户；日志脱敏。等你批准。' }
+    ],
+    review: [
+      { round: 1, role: 'assistant', kind: 'verdict', at: '14:40', text: '审核结论：request_changes\n\n阻塞项：\n1. region 为空时不要静默回退默认地区；\n2. 补一条工单 → 飞书请求的集成测试；\n3. 错误信息不要带完整手机号/邮箱。\n\n测试建议：region 缺失、跨地区、通讯录用户三种用例。' },
+      { round: 2, role: 'assistant', kind: 'verdict', at: '14:52', text: '审核结论：approve\n\nregion 缺失路径有明确错误；集成测试覆盖工单到飞书请求；日志已脱敏。残余建议：后续补跨地区模板变量。' }
+    ]
+  };
+
+  var state = {
+    variant: new URLSearchParams(location.search).get('variant') || 'timeline',
+    phase: 'confirm',
+    round: 1,
+    runUid: 3096,
+    planApproved: false,
+    verdict: '',
+    feedback: '',
+    feedbackOpen: false,
+    needsBack: 'plan',
+    scenario: 'confirm',
+    view: new URLSearchParams(location.search).get('view') === 'chat' ? 'chat' : 'task',
+    chatRole: 'fix',
+    debug: false,
+    toast: ''
+  };
+
+  var VARIANTS = {
+    console: { name: 'A · 三栏控制台', blurb: '左队列 / 中详情 / 右会话与产物；适合每天盯多条 run 的人。' },
+    timeline: { name: 'B · 轮次时间线', blurb: '以“第 N 轮方案 → 执行 → 审核”为主线；适合复盘反复返工。' },
+    wizard: { name: 'C · 分步向导', blurb: '确认 → 方案 → 执行/审核 → 通过/复盘，一次只做一个决定；适合新手。' }
+  };
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function badge(text, tone) {
+    return '<span class="pt-badge ' + (tone || '') + '">' + esc(text) + '</span>';
+  }
+  function planForRound() { return state.round === 2 ? PLAN2 : PLAN1; }
+  function reviewForRound() { return state.round === 2 ? REVIEW2 : REVIEW1; }
+  function phaseLabel() {
+    var map = {
+      confirm: ['待确认信息', 'wait'],
+      plan: ['待确认方案', 'wait'],
+      implement: ['修复中', 'info'],
+      review: ['审核中', 'info'],
+      needs: ['需要你回复', 'bad'],
+      final: ['待你通过', 'wait'],
+      approved: ['已通过', 'done'],
+      stopped: ['已停止', ''],
+      failed: ['失败', 'bad']
+    };
+    return map[state.phase] || ['未知', ''];
+  }
+  function stageChip() {
+    var p = phaseLabel();
+    return badge(p[0], p[1]);
+  }
+  function toast(message) {
+    var el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add('on');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { el.classList.remove('on'); }, 2200);
+  }
+  function setPhase(phase, extra) {
+    state.phase = phase;
+    if (extra) Object.assign(state, extra);
+    render();
+  }
+  function scenario(name) {
+    state.scenario = name;
+    state.feedback = '';
+    state.feedbackOpen = false;
+    var table = {
+      confirm: { phase: 'confirm', round: 1, planApproved: false, verdict: '' },
+      plan1: { phase: 'plan', round: 1, planApproved: false, verdict: '' },
+      implement1: { phase: 'implement', round: 1, planApproved: true, verdict: '' },
+      review1: { phase: 'review', round: 1, planApproved: true, verdict: 'request_changes' },
+      plan2: { phase: 'plan', round: 2, planApproved: false, verdict: '' },
+      needs: { phase: 'needs', round: 2, planApproved: false, verdict: '', needsBack: 'plan' },
+      final: { phase: 'final', round: 2, planApproved: true, verdict: 'approve' },
+      approved: { phase: 'approved', round: 2, planApproved: true, verdict: 'approve' },
+      stopped: { phase: 'stopped', round: 2, planApproved: true, verdict: '' }
+    };
+    Object.assign(state, table[name] || table.confirm);
+    render();
+  }
+
+  /* ---------- 共享块 ---------- */
+
+  function runList() {
+    return '<div class="pt-card"><div class="pt-cardHead"><h2>运行队列</h2><span class="pt-hint">' + RUNS.length + ' 条</span></div>' +
+      '<div class="pt-list">' + RUNS.map(function (r) {
+        var on = r.uid === state.runUid ? ' on' : '';
+        return '<div class="pt-run' + on + '" data-act="select-run" data-uid="' + r.uid + '">' +
+          '<span class="t">BUG-' + r.uid + ' · ' + esc(r.title) + '</span>' +
+          '<span class="m">' + badge(r.state, r.tone) + '<span>' + esc(r.time) + '</span></span></div>';
+      }).join('') + '</div></div>';
+  }
+
+  function confirmCard(compact) {
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><h2>确认信息</h2>' + badge('待确认', 'wait') + '</div>' +
+      '<div class="pt-kvGrid">' +
+        kv('缺陷', 'BUG-' + BUG.uid) +
+        kv('服务', BUG.service, true) +
+        kv('状态 / 优先级', BUG.status + ' · ' + BUG.priority) +
+        kv('环境', BUG.host, true) +
+        kv('SSH 连接', CONN.name + ' · ' + CONN.user + '@' + CONN.host + ':' + CONN.port, true) +
+        kv('代码项目', PROJ.name) +
+        kv('本地仓库', PROJ.path, true) +
+        kv('目标 spec', PROJ.spec, true) +
+      '</div>' +
+      '<div class="pt-warn"><span>⚠</span><div><b>服务 → 项目映射缺失</b><br>' +
+        'datacenter-service-se-dcom 还没有映射到项目。选一个并写回窗口2，下次自动匹配。' +
+        '<div class="pt-field" style="margin-top:7px;max-width:320px"><select id="mapSel"><option>cet-electric-api（推荐）</option><option>cet-electric-web</option><option>本次不写回</option></select></div>' +
+      '</div></div>' +
+      '<div class="pt-fieldGrid">' +
+        '<div class="pt-field"><label>容器</label><input id="container" value="docker-dcim-web-1" /></div>' +
+        '<div class="pt-field"><label>日志时间窗</label><input id="window" value="最近 6 小时" /></div>' +
+        '<div class="pt-field pt-fieldWide"><label>补充说明（会进修复会话的上下文）</label><textarea id="notes" placeholder="例如：只复现于工单通知；通讯录用户没有地区字段">用户反馈只出现在工单通知；通讯录用户没有地区字段。</textarea></div>' +
+      '</div>' +
+      '<div class="pt-checkrow"><span class="ok">✓ 路径存在</span><span class="ok">✓ git 仓库</span><span class="ok">✓ SSH 配置完整</span><span class="bad">! 服务映射待补</span><span class="ok">✓ spec 可读</span></div>' +
+      '<div class="pt-actions"><button class="pt-btn pt-btnPrimary" data-act="confirm">确认并派发</button>' +
+        '<button class="pt-btn pt-btnGhost" data-act="toast" data-msg="草稿已保存（原型）">保存草稿</button>' +
+        '<span class="pt-note">' + (compact ? '确认后进入第 1 轮方案。' : '确认后先出方案，你批准后才动代码。') + '</span></div>' +
+    '</div>';
+  }
+
+  function planCard(round, opts) {
+    var p = planForRound();
+    var approved = state.planApproved;
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><div class="pt-roundHead"><span class="pt-roundNo">第 ' + round + ' 轮</span><h2>修复方案</h2>' +
+        (approved ? badge('已批准', 'done') : badge('待你确认', 'wait')) + '</div>' +
+        '<span class="pt-hint">' + (opts && opts.hint ? opts.hint : '批准后才开始动代码') + '</span></div>' +
+      '<div class="pt-planSection"><h3>诊断</h3><p>' + esc(p.diag) + '</p></div>' +
+      '<div class="pt-planSection"><h3>改什么</h3><ul>' + p.changes.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="pt-planSection"><h3>怎么测</h3><ul>' + p.tests.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="pt-planSection"><h3>风险</h3><p>' + esc(p.risk) + '</p></div>' +
+      '<div class="pt-planSection"><h3>涉及文件</h3><div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        p.files.map(function (f) { return '<span class="pt-chip mono">' + esc(f) + '</span>'; }).join('') +
+        '<span class="pt-chip"><span class="pt-diffstat"><span class="plus">' + p.diff.split(' ')[0] + '</span><span class="minus">' + p.diff.split(' ')[1] + '</span></span></span>' +
+      '</div></div>' +
+      (state.feedbackOpen ? '<div class="pt-field pt-fieldWide" style="margin-top:10px"><label>退回意见（会进下一版方案）</label>' +
+        '<textarea id="feedback" data-bind="feedback" placeholder="例如：不要静默回退默认地区，先补集成测试">' + esc(state.feedback) + '</textarea></div>' : '') +
+      '<div class="pt-actions">' +
+        (approved ? '<button class="pt-btn" data-act="toast" data-msg="方案已批准；实现阶段已开始（原型）">方案已批准</button>' :
+          '<button class="pt-btn pt-btnPrimary" data-act="approve-plan">批准方案</button>' +
+          '<button class="pt-btn pt-btnGhost" data-act="toggle-feedback">退回修改</button>') +
+        '<button class="pt-btn pt-btnDanger" data-act="stop">Stop</button>' +
+        '<span class="pt-note">' + (approved ? '实现完成后自动送审。' : '这是第 ' + round + ' 轮；批准前不会产生 commit。') + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function implementCard(round) {
+    var p = planForRound();
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><div class="pt-roundHead"><span class="pt-roundNo">第 ' + round + ' 轮</span><h2>实现中</h2>' + badge('修复中', 'info') + '</div>' +
+        '<span class="pt-hint">同一修复会话 · ' + esc(p.files.length) + ' 个文件</span></div>' +
+      '<div class="pt-progress"><i style="width:62%"></i></div>' +
+      '<div class="pt-log">' +
+        '<div class="muted">[14:22:08] session BUG-3096 分析修复 · 已批准方案</div>' +
+        '<div>[14:22:11] read ' + esc(p.files[0]) + '</div>' +
+        '<div>[14:22:19] edit ' + esc(p.files[0]) + ' <span class="ok">+42 −7</span></div>' +
+        '<div>[14:22:31] read ' + esc(p.files[1]) + '</div>' +
+        '<div>[14:23:02] run mvn -q -Dtest=MessageNotifyServiceTest test</div>' +
+        '<div class="ok">[14:23:40] BUILD SUCCESS · 3 tests passed</div>' +
+        '<div class="muted">[14:23:41] 写入 round-1/result.json / diff.patch …</div>' +
+      '</div>' +
+      '<div class="pt-actions"><button class="pt-btn pt-btnPrimary pt-mock" data-act="complete">模拟：修复完成</button>' +
+        '<button class="pt-btn pt-btnGhost" data-act="needs">模拟：会话问你问题</button>' +
+        '<button class="pt-btn pt-btnDanger" data-act="stop">Stop</button>' +
+        '<span class="pt-note">真实实现由 DSH 会话执行；这里是假进度。</span></div>' +
+    '</div>';
+  }
+
+  function reviewCard(round) {
+    var r = reviewForRound();
+    var approve = r.verdict === 'approve';
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><div class="pt-roundHead"><span class="pt-roundNo">第 ' + round + ' 轮</span><h2>审核结论</h2>' +
+        (approve ? badge('通过', 'done') : badge('要改', 'bad')) + '</div>' +
+        '<span class="pt-hint">只读审核会话 · 不改代码</span></div>' +
+      '<p style="margin:6px 0 0">' + esc(r.summary) + '</p>' +
+      (r.blocking.length ? '<div class="pt-planSection"><h3>阻塞项</h3><ul>' + r.blocking.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' : '') +
+      '<div class="pt-planSection"><h3>测试建议</h3><p>' + esc(r.tests) + '</p></div>' +
+      '<div class="pt-actions">' +
+        (approve ? '<button class="pt-btn pt-btnPrimary" data-act="final">通过并进入复盘</button>' :
+          '<button class="pt-btn pt-btnPrimary" data-act="next-round">自动进入第 2 轮方案</button>') +
+        '<button class="pt-btn pt-btnGhost" data-act="toast" data-msg="已打开审核会话（原型）">打开审核会话</button>' +
+        '<button class="pt-btn pt-btnDanger" data-act="stop">Stop</button>' +
+        '<span class="pt-note">' + (approve ? '通过后仍需你最终确认，才进入复盘。' : '你可以先看阻塞项，再同意进入下一轮。') + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function needsCard() {
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><h2>会话需要你确认</h2>' + badge('需要你回复', 'bad') + '</div>' +
+      '<p style="margin:0 0 8px">修复会话停在一次确认：<b>容器名 docker-dcim-web-1 没有匹配到项目。</b>是否按 cet-electric-api 继续？</p>' +
+      '<div class="pt-warn" style="margin-top:0"><span>?</span><div>这是 DSH 原生提问；窗口3 只负责提示和给入口，不替你回答。</div></div>' +
+      '<div class="pt-actions"><button class="pt-btn pt-btnPrimary" data-act="answer-needs" data-answer="按 cet-electric-api 继续">按 cet-electric-api 继续</button>' +
+        '<button class="pt-btn pt-btnGhost" data-act="answer-needs" data-answer="换一个项目">换一个项目</button>' +
+        '<button class="pt-btn pt-btnDanger" data-act="stop">Stop</button></div>' +
+      '<div class="pt-note">回答后从当前阶段继续，不重头开始。</div>' +
+    '</div>';
+  }
+
+  function finalCard() {
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><h2>待你最终确认</h2>' + badge('待你通过', 'wait') + '</div>' +
+      '<p style="margin:0 0 8px">第 2 轮审核已通过：region 缺失路径有明确错误，集成测试覆盖工单到飞书请求，日志已脱敏。</p>' +
+      '<div class="pt-kvGrid">' + kv('分支', 'bugfix/3096-8f2a1c', true) + kv('commit', '7c1e9a2', true) + kv('改动', '3 files · +58 −12') + kv('审核', 'approve') + '</div>' +
+      '<div class="pt-actions"><button class="pt-btn pt-btnPrimary" data-act="approve-final">通过并进入复盘</button>' +
+        '<button class="pt-btn pt-btnGhost" data-act="toast" data-msg="已把意见发回第 2 轮（原型）">要求再改</button>' +
+        '<span class="pt-note">通过后不会自动合入；你先复盘，再手工 merge。</span></div>' +
+    '</div>';
+  }
+
+  function approvedCard() {
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><h2>已通过 · 待复盘</h2>' + badge('已通过', 'done') + '</div>' +
+      '<p style="margin:0 0 8px">循环结束。合入前进入复盘窗口，读本次 spec、分支、commit、每轮 plan/diff/review，产出 retro、知识候选和改进提案。</p>' +
+      '<div class="pt-kvGrid">' + kv('分支', 'bugfix/3096-8f2a1c', true) + kv('commit', '7c1e9a2', true) + kv('轮次', '2 轮 · 1 次返工') + kv('spec', PROJ.spec, true) + '</div>' +
+      '<div class="pt-actions"><button class="pt-btn pt-btnPrimary" data-act="toast" data-msg="真实环境会打开窗口4（复盘）">去复盘窗口4</button>' +
+        '<button class="pt-btn pt-btnGhost" data-act="toast" data-msg="已标记已合入（原型）">标记已合入</button>' +
+        '<button class="pt-btn pt-btnGhost" data-act="reset">再来一条</button></div>' +
+    '</div>';
+  }
+
+  function stoppedCard() {
+    return '<div class="pt-card"><div class="pt-cardHead"><h2>已停止</h2>' + badge('已停止', '') + '</div>' +
+      '<p style="margin:0">Stop 会取消当前会话；旧 run 保留记录。重试需要新 run / 新会话，不复用旧上下文。</p>' +
+      '<div class="pt-actions"><button class="pt-btn pt-btnPrimary" data-act="reset">新开一条</button></div></div>';
+  }
+
+  function artifacts() {
+    var r1 = state.round >= 1;
+    var r2 = state.round >= 2;
+    var items = [];
+    if (r1) items.push(['round-1/plan.md', '2.1k'], ['round-1/result.json', '0.4k'], ['round-1/diff.patch', '3.8k'], ['round-1/review.md', '1.2k']);
+    if (r2) items.push(['round-2/plan.md', '2.4k'], ['round-2/diff.patch', '4.6k']);
+    return '<div class="pt-card"><div class="pt-cardHead"><h2>产物</h2><span class="pt-hint">.bug-solver/runs/3096</span></div>' +
+      (items.length ? items.map(function (x) { return '<div class="pt-artifact"><span class="n">' + x[0] + '</span><span class="s">' + x[1] + '</span></div>'; }).join('') :
+        '<div class="pt-empty">确认后生成 plan 与产物</div>') + '</div>';
+  }
+
+  function sessions() {
+    var fixStatus = state.phase === 'implement' ? '修复中' : (state.phase === 'plan' ? '待方案' : (state.phase === 'needs' ? '需要你回复' : '空闲'));
+    var fixTone = state.phase === 'implement' ? 'info' : (state.phase === 'needs' ? 'bad' : '');
+    var reviewStatus = state.phase === 'review' ? '审核中' : ((state.phase === 'final' || state.phase === 'approved') ? '已结束' : (state.planApproved ? '待启动' : '未启动'));
+    var reviewTone = state.phase === 'review' ? 'info' : ((state.phase === 'final' || state.phase === 'approved') ? 'done' : '');
+    return '<div class="pt-card"><div class="pt-cardHead"><h2>DSH 会话</h2><span class="pt-hint">原生</span></div>' +
+      sessionRow('BUG-3096 分析修复', 'fix', fixStatus, fixTone) +
+      sessionRow('BUG-3096 审核', 'review', reviewStatus, reviewTone) +
+      '<div class="pt-note">审批/提问/Stop 在 DSH 里；窗口3 只做控制面。</div></div>';
+  }
+  function sessionRow(title, kind, status, tone) {
+    return '<div class="pt-session"><div class="h"><span class="n">' + esc(title) + '</span>' + badge(status, tone) + '</div>' +
+      '<div class="id">session 6f9c…' + (kind === 'fix' ? 'a1' : 'b2') + ' · 打开</div></div>';
+  }
+
+  function safety() {
+    return '<div class="pt-card"><div class="pt-cardHead"><h2>边界</h2></div>' +
+      '<div class="pt-kv"><span class="k">服务器</span><span class="v">只读（白名单）</span></div>' +
+      '<div class="pt-kv"><span class="k">本地</span><span class="v">新分支，不合入</span></div>' +
+      '<div class="pt-kv"><span class="k">审核</span><span class="v">read-only 沙箱</span></div>' +
+      '<div class="pt-kv"><span class="k">凭据</span><span class="v">脱敏，不进 prompt</span></div></div>';
+  }
+
+  function kv(k, v, mono) {
+    return '<div class="pt-kv"><span class="k">' + esc(k) + '</span><span class="v' + (mono ? ' mono' : '') + '" title="' + esc(v) + '">' + esc(v) + '</span></div>';
+  }
+
+  function stageContent(compact) {
+    switch (state.phase) {
+      case 'confirm': return confirmCard(compact);
+      case 'plan': return planCard(state.round, { hint: state.round === 2 ? '上一轮审核要改' : '批准后才动代码' });
+      case 'implement': return implementCard(state.round);
+      case 'review': return reviewCard(state.round);
+      case 'needs': return needsCard();
+      case 'final': return finalCard();
+      case 'approved': return approvedCard();
+      case 'stopped': return stoppedCard();
+      default: return '<div class="pt-empty">未知状态</div>';
+    }
+  }
+
+  /* ---------- 三个布局 ---------- */
+
+  function viewTabs() {
+    return '<div class="pt-viewTabs">' +
+      '<button data-view="task" class="' + (state.view === 'task' ? 'on' : '') + '">任务</button>' +
+      '<button data-view="chat" class="' + (state.view === 'chat' ? 'on' : '') + '">对话 <span class="pt-lock">只读</span></button>' +
+      '</div>';
+  }
+
+  function chatMessage(m) {
+    var role = m.role === 'user' ? '你' : (m.role === 'tool' ? '工具' : 'agent');
+    var kind = m.kind === 'plan' ? '方案' : (m.kind === 'verdict' ? '审核结论' : '');
+    return '<div class="pt-msg ' + m.role + (m.kind === 'verdict' ? ' verdict' : '') + '">' +
+      '<div class="pt-msgHead"><span class="pt-msgRole">' + role + '</span>' +
+        (kind ? '<span class="pt-chip">' + kind + '</span>' : '') +
+        '<span class="pt-msgTime">' + m.at + '</span>' +
+        '<span class="pt-msgRound">第 ' + m.round + ' 轮</span></div>' +
+      '<div class="pt-msgBody">' + esc(m.text) + '</div></div>';
+  }
+
+  function chatPanel() {
+    var msgs = CHAT[state.chatRole] || [];
+    var fixCount = (CHAT.fix || []).length;
+    var reviewCount = (CHAT.review || []).length;
+    return '<div class="pt-card">' +
+      '<div class="pt-cardHead"><h2>对话镜像</h2>' + badge('只读', 'info') + '</div>' +
+      '<div class="pt-chatTabs">' +
+        '<button data-chat="fix" class="' + (state.chatRole === 'fix' ? 'on' : '') + '">分析修复 <span class="pt-chip">' + fixCount + '</span></button>' +
+        '<button data-chat="review" class="' + (state.chatRole === 'review' ? 'on' : '') + '">审核 <span class="pt-chip">' + reviewCount + '</span></button>' +
+      '</div>' +
+      '<div class="pt-readonly"><span>🔒</span><span>只读镜像：输入、审批、Stop 在 DSH 原生会话；窗口3 不写回、不代发。</span></div>' +
+      '<div class="pt-chatList">' + msgs.map(chatMessage).join('') + '</div>' +
+      '<div class="pt-actions">' +
+        '<button class="pt-btn pt-btnTiny pt-btnGhost" data-act="toast" data-msg="原型：会加载更早的消息">加载更早</button>' +
+        '<button class="pt-btn pt-btnTiny" data-act="toast" data-msg="真实环境会打开 DSH 原生会话（' + state.chatRole + '）">在 DSH 打开并回复</button>' +
+        '<span class="pt-note">镜像可能落后；以 DSH 原生会话为准。</span>' +
+      '</div></div>';
+  }
+
+  function header() {
+    var v = VARIANTS[state.variant] || VARIANTS.console;
+    return '<div class="pt-header"><div>' +
+      '<div class="pt-kicker">窗口3 · 调度台</div>' +
+      '<h1 class="pt-title">BUG-' + BUG.uid + ' · ' + esc(BUG.title) + '</h1>' +
+      '<p class="pt-sub">' + esc(BUG.service) + ' · ' + esc(CONN.name) + ' · ' + esc(PROJ.name) + ' · ' + esc(PROJ.spec) + '</p>' +
+      '</div><div class="pt-headerRight">' + viewTabs() + stageChip() + '<span class="pt-variantTag">' + v.name + '</span></div></div>';
+  }
+
+  function renderConsole() {
+    return header() +
+      '<div class="pt-console">' +
+        '<div class="pt-rail pt-railLeft">' + runList() + safety() + '</div>' +
+        '<div class="pt-main">' + (state.view === 'chat' ? chatPanel() : stageContent(false)) + '</div>' +
+        '<div class="pt-rail pt-railRight">' + sessions() + artifacts() + '</div>' +
+      '</div>';
+  }
+
+  function node(round, kind, done, current, future) {
+    var plan = round === 2 ? PLAN2 : PLAN1;
+    var review = round === 2 ? REVIEW2 : REVIEW1;
+    if (kind === 'plan') {
+      return '<div class="pt-node ' + (done ? 'done' : current ? 'current' : 'future') + '">' +
+        '<div class="pt-card"><div class="pt-cardHead"><div class="pt-roundHead"><span class="pt-roundNo">第 ' + round + ' 轮</span><h2>方案</h2>' +
+          (done ? badge('已批准', 'done') : current ? badge('待你确认', 'wait') : badge('未开始', '')) + '</div></div>' +
+        '<p style="margin:0;color:var(--pt-muted);font-size:12px">' + esc(plan.diag) + '</p>' +
+        (current ? '<div class="pt-actions"><button class="pt-btn pt-btnPrimary" data-act="approve-plan">批准方案</button><button class="pt-btn pt-btnGhost" data-act="toggle-feedback">退回修改</button></div>' : '') +
+        '</div></div>';
+    }
+    if (kind === 'implement') {
+      return '<div class="pt-node ' + (done ? 'done' : current ? 'current' : 'future') + '">' +
+        '<div class="pt-card"><div class="pt-cardHead"><div class="pt-roundHead"><span class="pt-roundNo">第 ' + round + ' 轮</span><h2>实现</h2>' +
+          (done ? badge('已完成', 'done') : current ? badge('修复中', 'info') : badge('未开始', '')) + '</div></div>' +
+        '<p style="margin:0;color:var(--pt-muted);font-size:12px">' + plan.files.length + ' 个文件 · ' + plan.diff + ' · 新分支提交</p>' +
+        (current ? '<div class="pt-actions"><button class="pt-btn pt-btnPrimary pt-mock" data-act="complete">模拟：修复完成</button><button class="pt-btn pt-btnGhost" data-act="needs">模拟：会话问你问题</button></div>' : '') +
+        '</div></div>';
+    }
+    return '<div class="pt-node ' + (done ? 'done' : current ? 'current' : 'future') + '">' +
+      '<div class="pt-card"><div class="pt-cardHead"><div class="pt-roundHead"><span class="pt-roundNo">第 ' + round + ' 轮</span><h2>审核</h2>' +
+        (done ? badge(review.verdict === 'approve' ? '通过' : '要改', review.verdict === 'approve' ? 'done' : 'bad') : current ? badge('审核中', 'info') : badge('未开始', '')) + '</div></div>' +
+      '<p style="margin:0;color:var(--pt-muted);font-size:12px">' + esc(review.summary) + '</p>' +
+      (current ? '<div class="pt-actions">' + (review.verdict === 'approve' ? '<button class="pt-btn pt-btnPrimary" data-act="final">通过并进入复盘</button>' : '<button class="pt-btn pt-btnPrimary" data-act="next-round">自动进入第 2 轮方案</button>') + '</div>' : '') +
+      '</div></div>';
+  }
+
+  function renderTimeline() {
+    var p = state.phase;
+    var round = state.round;
+    var planDone = state.planApproved || p === 'implement' || p === 'review' || p === 'final' || p === 'approved';
+    var implDone = p === 'review' || p === 'final' || p === 'approved';
+    var reviewDone = p === 'final' || p === 'approved';
+    if (state.view === 'chat') {
+      return header() + '<div class="pt-center">' +
+        '<div class="pt-summary">' +
+          '<div class="pt-stat"><div class="l">当前阶段</div><div class="v">' + phaseLabel()[0] + '</div></div>' +
+          '<div class="pt-stat"><div class="l">轮次</div><div class="v">第 ' + round + ' / 2 轮</div></div>' +
+          '<div class="pt-stat"><div class="l">分支</div><div class="v" style="font-size:12px">bugfix/3096</div></div>' +
+          '<div class="pt-stat"><div class="l">spec</div><div class="v" style="font-size:12px">notify-feishu</div></div>' +
+        '</div>' + chatPanel() + '</div>';
+    }
+    return header() +
+      '<div class="pt-center">' +
+        '<div class="pt-summary">' +
+          '<div class="pt-stat"><div class="l">当前阶段</div><div class="v">' + phaseLabel()[0] + '</div></div>' +
+          '<div class="pt-stat"><div class="l">轮次</div><div class="v">第 ' + round + ' / 2 轮</div></div>' +
+          '<div class="pt-stat"><div class="l">分支</div><div class="v" style="font-size:12px">bugfix/3096</div></div>' +
+          '<div class="pt-stat"><div class="l">spec</div><div class="v" style="font-size:12px">notify-feishu</div></div>' +
+        '</div>' +
+        (p === 'confirm' ? confirmCard(true) : '') +
+        (p === 'needs' ? needsCard() : '') +
+        (p !== 'stopped' && p !== 'approved' ? '<div class="pt-timeline">' +
+          node(1, 'plan', true, p === 'plan' && round === 1, p === 'confirm') +
+          node(1, 'implement', implDone, p === 'implement' && round === 1, !planDone) +
+          node(1, 'review', reviewDone || (round === 2), p === 'review' && round === 1, !implDone) +
+          node(2, 'plan', state.planApproved, p === 'plan' && round === 2, round < 2) +
+          node(2, 'implement', p === 'final' || p === 'approved', p === 'implement' && round === 2, round < 2 || (p === 'plan' && round === 2)) +
+          node(2, 'review', p === 'final' || p === 'approved', p === 'review' && round === 2, round < 2 || !state.planApproved) +
+        '</div>' : '') +
+        (p === 'final' ? finalCard() : '') +
+        (p === 'approved' ? approvedCard() : '') +
+        (p === 'stopped' ? stoppedCard() : '') +
+      '</div>';
+  }
+
+  function renderWizard() {
+    var p = state.phase;
+    var step = p === 'confirm' ? 1 : (p === 'plan' ? 2 : (p === 'implement' || p === 'review' || p === 'needs' ? 3 : 4));
+    var steps = [['1', '确认信息'], ['2', '方案审批'], ['3', '执行与审核'], ['4', '通过与复盘']];
+    if (state.view === 'chat') {
+      return header() + '<div class="pt-center">' +
+        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">' +
+          '<span class="pt-chip">步骤 3 · 执行与审核</span><span class="pt-note">对话是只读镜像，不替代右侧 DSH 原生会话</span>' +
+        '</div>' + chatPanel() + '</div>';
+    }
+    return header() +
+      '<div class="pt-center">' +
+        '<div class="pt-wizardStep">' + steps.map(function (s, i) {
+          var n = i + 1;
+          var cls = n === step ? 'on' : (n < step ? 'done' : '');
+          return '<div class="s ' + cls + '"><b>' + s[0] + '</b>' + s[1] + '</div>';
+        }).join('') + '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">' +
+          '<span class="pt-hint">当前 run</span><span class="pt-chip">BUG-' + BUG.uid + ' · ' + phaseLabel()[0] + '</span>' +
+          '<span class="grow" style="flex:1"></span><button class="pt-btn pt-btnTiny pt-btnGhost" data-act="toast" data-msg="会打开完整运行列表（原型）">运行列表</button>' +
+        '</div>' +
+        (p === 'needs' ? needsCard() : stageContent(true)) +
+        '<div class="pt-note" style="margin-top:10px">向导一次只做一个决定；真实页面在左侧保留运行列表入口。</div>' +
+      '</div>';
+  }
+
+  function render() {
+    var app = document.getElementById('app');
+    if (!app) return;
+    var html = state.variant === 'timeline' ? renderTimeline() : (state.variant === 'wizard' ? renderWizard() : renderConsole());
+    app.innerHTML = html;
+    var bar = document.getElementById('barState');
+    if (bar) bar.textContent = state.phase + ' · round=' + state.round + ' · plan=' + (state.planApproved ? 'approved' : 'pending') + ' · verdict=' + (state.verdict || '-') + ' · view=' + state.view + '/' + state.chatRole;
+    var json = document.getElementById('stateJson');
+    if (json) json.textContent = JSON.stringify({ variant: state.variant, phase: state.phase, round: state.round, planApproved: state.planApproved, verdict: state.verdict, feedback: state.feedback, needsBack: state.needsBack, view: state.view, chatRole: state.chatRole }, null, 2);
+    document.querySelectorAll('#variants button').forEach(function (b) {
+      b.classList.toggle('on', b.getAttribute('data-variant') === state.variant);
+    });
+    var sel = document.getElementById('scenario');
+    if (sel && sel.value !== state.scenario) sel.value = state.scenario;
+    var panel = document.getElementById('statePanel');
+    if (panel) panel.classList.toggle('on', state.debug);
+    if (state.toast) { toast(state.toast); state.toast = ''; }
+  }
+
+  function setVariant(v) {
+    if (!VARIANTS[v]) return;
+    state.variant = v;
+    try {
+      var u = new URL(location.href);
+      u.searchParams.set('variant', v);
+      u.searchParams.set('view', state.view);
+      history.replaceState(null, '', u.pathname + u.search);
+    } catch (e) { /* file:// */ }
+    render();
+  }
+
+  function setView(v) {
+    state.view = v === 'chat' ? 'chat' : 'task';
+    try {
+      var u = new URL(location.href);
+      u.searchParams.set('view', state.view);
+      history.replaceState(null, '', u.pathname + u.search);
+    } catch (e) { /* file:// */ }
+    render();
+  }
+
+  /* ---------- 事件 ---------- */
+
+  document.addEventListener('click', function (e) {
+    var viewBtn = e.target.closest('[data-view]');
+    if (viewBtn) { setView(viewBtn.getAttribute('data-view')); return; }
+    var chatBtn = e.target.closest('[data-chat]');
+    if (chatBtn) { state.chatRole = chatBtn.getAttribute('data-chat'); render(); return; }
+    var el = e.target.closest('[data-act]');
+    if (el) {
+      var act = el.getAttribute('data-act');
+      if (act === 'toast') { toast(el.getAttribute('data-msg') || '原型操作'); return; }
+      if (act === 'confirm') {
+        scenario('plan1');
+        state.planApproved = false;
+        toast('已派发：第 1 轮先出方案，批准后才动代码');
+        render();
+        return;
+      }
+      if (act === 'approve-plan') {
+        if (state.round === 2) state.round = 2;
+        state.planApproved = true;
+        state.phase = 'implement';
+        state.scenario = state.round === 1 ? 'implement1' : 'plan2';
+        toast('方案已批准：修复会话开始实现');
+        render();
+        return;
+      }
+      if (act === 'toggle-feedback') {
+        state.feedbackOpen = !state.feedbackOpen;
+        render();
+        var ta = document.getElementById('feedback');
+        if (ta) ta.focus();
+        return;
+      }
+      if (act === 'complete') {
+        state.phase = 'review';
+        state.verdict = state.round === 2 ? 'approve' : 'request_changes';
+        state.scenario = state.round === 2 ? 'final' : 'review1';
+        toast(state.round === 2 ? '审核通过：等你最终确认' : '审核要求修改：准备进入第 2 轮方案');
+        render();
+        return;
+      }
+      if (act === 'next-round') {
+        state.round = 2;
+        state.planApproved = false;
+        state.feedback = '';
+        state.feedbackOpen = false;
+        state.phase = 'plan';
+        state.verdict = '';
+        state.scenario = 'plan2';
+        toast('已自动进入第 2 轮方案');
+        render();
+        return;
+      }
+      if (act === 'needs') {
+        state.needsBack = state.phase;
+        state.phase = 'needs';
+        state.scenario = 'needs';
+        render();
+        return;
+      }
+      if (act === 'answer-needs') {
+        state.phase = state.needsBack === 'review' ? 'review' : (state.planApproved ? 'implement' : 'plan');
+        state.scenario = 'plan2';
+        toast('已按「' + (el.getAttribute('data-answer') || '继续') + '」继续（原型）');
+        render();
+        return;
+      }
+      if (act === 'final') {
+        state.phase = 'approved';
+        state.scenario = 'approved';
+        toast('已通过；下一步是复盘，不是自动合入');
+        render();
+        return;
+      }
+      if (act === 'approve-final') {
+        state.phase = 'approved';
+        state.scenario = 'approved';
+        toast('已通过；合入前去复盘');
+        render();
+        return;
+      }
+      if (act === 'stop') {
+        state.phase = 'stopped';
+        state.scenario = 'stopped';
+        toast('已 Stop；重试会开新 run');
+        render();
+        return;
+      }
+      if (act === 'reset') { state.view = 'task'; state.chatRole = 'fix'; scenario('confirm'); toast('已重置'); return; }
+      if (act === 'debug') { state.debug = !state.debug; render(); return; }
+      if (act === 'select-run') {
+        state.runUid = Number(el.getAttribute('data-uid')) || state.runUid;
+        toast('原型里只有 BUG-3096 的完整流程；其他 run 仅作队列样式');
+        render();
+        return;
+      }
+    }
+    var vbtn = e.target.closest('[data-variant]');
+    if (vbtn) { setVariant(vbtn.getAttribute('data-variant')); return; }
+  });
+
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el && el.getAttribute('data-bind') === 'feedback') state.feedback = el.value;
+  });
+
+  document.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el && el.id === 'scenario') scenario(el.value);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (e.key === '1') setVariant('console');
+    if (e.key === '2') setVariant('timeline');
+    if (e.key === '3') setVariant('wizard');
+  });
+
+  if (!VARIANTS[state.variant]) state.variant = 'timeline';
+  render();
+})();
+</script>
+</body>
+</html>

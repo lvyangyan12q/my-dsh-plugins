@@ -1,0 +1,22 @@
+- insert:
+    - id: opendesign-mcp
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: opendesign
+        transport: stdio
+        command: 'F:\Open Design\Open Design.exe'
+        args:
+          - 'F:\Open Design\resources\app\prebundled\daemon\daemon-cli.mjs'
+          - mcp
+        env:
+          ELECTRON_RUN_AS_NODE: '1'
+          OD_DATA_DIR: 'F:\OpenDesignData'
+          # Daemon sidecar endpoint of a normally launched OpenDesign desktop app.
+          OD_SIDECAR_CLIENT_ENDPOINT: '\\.\pipe\open-design-sidecar-045b8740d8210acc67a7c4f97f9c9975'
+          # Managed discovery: accept both the app's own (runtime mode) pipes and the
+          # headless-mode pipes created when the MCP bootstrap launches the app itself.
+          OD_MCP_DISCOVERY: '{"daemon":["\\\\.\\pipe\\open-design-sidecar-045b8740d8210acc67a7c4f97f9c9975","\\\\.\\pipe\\open-design-sidecar-aa28d0c6bdfe237f3de5abf70a9768f6"],"desktop":["\\\\.\\pipe\\open-design-sidecar-63690268a7207d92414dfde0d5aafcf1","\\\\.\\pipe\\open-design-sidecar-52bd531a83dc35abea778c36c5e99ff2"]}'
+          OD_MCP_BOOTSTRAP_COMMAND: 'F:\Open Design\Open Design.exe'
+          OD_MCP_BOOTSTRAP_ARGS: '["--headless","--od-mcp-managed"]'
+        toolCallTimeoutMs: 120000
+        failOnStartupError: false
