@@ -81,10 +81,23 @@ test('默认读数：整体增长率、偏向 A、距两侧点数与权重对照
     assert.match(body, /现期当权重 8\.31%/)
     assert.match(body, /差 0\.03 个百分点/)
 
+    const sectionIds = [...document.querySelectorAll('article[aria-label="课堂讲义"] section')].map(node => node.id)
+    assert.deepEqual(sectionIds, ['handout-s1', 'handout-s2', 'handout-lab', 'handout-s3', 'handout-s4', 'handout-s5', 'handout-s6'], '动手是 02 与 03 之间的小节，原有小节 id 不变')
+
     const section = document.querySelector('#handout-s2')
-    assert.ok(section, '实验台应放在第 02 节')
-    assert.match(section.textContent ?? '', /混合增长率实验台/)
-    assert.match(section.textContent ?? '', /整体增长率 8\.28%/)
+    assert.ok(section, '第 02 节应保持原 id')
+    assert.doesNotMatch(section.textContent ?? '', /混合增长率实验台/, '实验台已移出第 02 节')
+
+    const lab = document.querySelector('#handout-lab')
+    assert.ok(lab, '动手应成为独立小节')
+    assert.match(lab.textContent ?? '', /混合增长率实验台/)
+    assert.match(lab.textContent ?? '', /整体增长率 8\.28%/)
+
+    const links = [...document.querySelectorAll('nav[aria-label="讲义目录"] a')]
+    const labLink = links.find(node => node.getAttribute('href') === '#handout-lab')
+    assert.ok(labLink, '目录应包含动手小节')
+    assert.equal(labLink.textContent, '＋ 动手试一试', '动手小节不编号')
+    assert.ok(links.some(node => node.textContent === '02 为什么是这样'), '原有小节仍带编号')
   } finally {
     await ui.unmount()
   }
@@ -131,15 +144,22 @@ test('拖动滑杆后读数实时变化', async () => {
   }
 })
 
-test('先猜再看：藏起结果、点数轴记录猜测、揭晓显示误差', async () => {
+test('先猜再看：未猜也能揭晓只给结果，拖动滑杆不清空猜测', async () => {
   const ui = await mount()
   try {
     await ui.click('先猜再看')
     assert.doesNotMatch(ui.body(), /整体增长率 8\.28%/)
     assert.doesNotMatch(ui.body(), /基期当权重 8\.28%/)
     assert.match(ui.body(), /结果已藏起/)
-    assert.equal(ui.buttons().find(node => node.textContent === '揭晓答案')?.disabled, true)
+    assert.equal(ui.buttons().find(node => node.textContent === '揭晓答案')?.disabled, false, '没猜过也应能揭晓')
 
+    await ui.click('揭晓答案')
+    assert.match(ui.body(), /整体增长率 8\.28%/, '未猜时揭晓只显示结果')
+    assert.match(ui.body(), /基期当权重 8\.28%/)
+    assert.doesNotMatch(ui.body(), /你的猜测/, '没猜过就不显示猜测与误差')
+    assert.doesNotMatch(ui.body(), /误差/)
+
+    await ui.click('先猜再看')
     const axis = document.querySelector('[aria-label="在数轴上点选猜测"]') as HTMLElement | null
     assert.ok(axis, '数轴应能按可访问名找到')
     axis.getBoundingClientRect = () => ({left: 0, width: 1000, top: 0, height: 40, right: 1000, bottom: 40, x: 0, y: 0, toJSON() {}}) as DOMRect
@@ -147,12 +167,14 @@ test('先猜再看：藏起结果、点数轴记录猜测、揭晓显示误差',
       axis.dispatchEvent(new ui.dom.window.MouseEvent('click', {bubbles: true, clientX: 500}))
     })
     assert.match(ui.body(), /你的猜测 6\.90%/)
+
+    await ui.setRange('A 基期量', '600')
+    assert.match(ui.body(), /你的猜测 6\.90%/, '拖动滑杆不应清空猜测')
     assert.equal(ui.buttons().find(node => node.textContent === '揭晓答案')?.disabled, false)
 
     await ui.click('揭晓答案')
-    assert.match(ui.body(), /整体增长率 8\.28%/)
-    assert.match(ui.body(), /基期当权重 8\.28%/)
-    assert.match(ui.body(), /你的猜测 6\.90%，实际 8\.28%，误差 1\.38 个百分点/)
+    assert.match(ui.body(), /整体增长率 8\.05%/)
+    assert.match(ui.body(), /你的猜测 6\.90%，实际 8\.05%，误差 1\.15 个百分点/)
   } finally {
     await ui.unmount()
   }
