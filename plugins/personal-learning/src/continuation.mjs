@@ -1,3 +1,4 @@
+import {normalizeParameters} from './lab-protocol.mjs'
 export function createContinuation(storage){return {async request(body){
  const s=await storage.read();if(!s.instances.some(i=>i.id===body.instanceId))throw Error('学习位置归属不符');s.continuations??=[];
  const graph=s.maps?.find(m=>m.instanceId===body.instanceId),courses=(s.courses??[]).filter(c=>c.instanceId===body.instanceId);
@@ -6,6 +7,7 @@ export function createContinuation(storage){return {async request(body){
   const next={...old};for(const k of ['courseId','conceptId','view','parameters'])if(Object.hasOwn(body,k))next[k]=body[k];
   if(next.courseId&&!courses.some(c=>c.id===next.courseId))throw Error('课程归属不符');if(next.conceptId&&!graph?.nodes.some(n=>n.id===next.conceptId))throw Error('概念归属不符');
   if(!['course','map'].includes(next.view)||!next.parameters||Array.isArray(next.parameters)||typeof next.parameters!=='object'||JSON.stringify(next.parameters).length>8000)throw Error('学习位置无效');
+  if(next.courseId){const course=courses.find(c=>c.id===next.courseId);if(course?.lab)next.parameters=normalizeParameters(course.lab,next.parameters)}
   if(next.courseId!==old.courseId&&!Object.hasOwn(body,'parameters'))next.parameters={};
   s.continuations=s.continuations.filter(p=>p.instanceId!==body.instanceId);s.continuations.push(next);await storage.write(s);return structuredClone(next);
  }

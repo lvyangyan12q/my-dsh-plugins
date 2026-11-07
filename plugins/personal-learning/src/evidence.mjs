@@ -1,9 +1,9 @@
 import {acceptedArtifactRequest} from './ownership.mjs'
-import {checkRestate, judgePrediction} from './lab-protocol.mjs'
+import {checkRestate, judgePrediction, normalizeParameters} from './lab-protocol.mjs'
 import {randomUUID} from 'node:crypto'
 
 const KINDS = ['prediction', 'explanation', 'application']
-const SAVE_KEYS = ['action', 'instanceId', 'courseId', 'version', 'answer', 'kind', 'task', 'optionId']
+const SAVE_KEYS = ['action', 'instanceId', 'courseId', 'version', 'answer', 'kind', 'task', 'optionId', 'parameters']
 
 export function createEvidence (storage, requests) {
   return {
@@ -30,11 +30,12 @@ export function createEvidence (storage, requests) {
         const c = s.courses?.find(c => c.id === body.courseId && c.instanceId === body.instanceId && c.version === body.version)
         if (!c) throw Error('课程或版本归属不符')
         if (!c.lab?.restate) throw Error('该课没有复述检查')
+        if (c.lab.prediction && !s.evidence.some(e => e.instanceId === body.instanceId && e.courseId === c.id && e.version === c.version && e.kind === 'prediction')) throw Error('先完成预测')
         const passed = s.evidence.some(e => e.instanceId === body.instanceId && e.courseId === c.id && e.version === c.version && e.kind === 'explanation' && e.passed === true)
         if (!passed) throw Error('先完成复述检查')
         const existing = s.evidence.find(e => e.instanceId === body.instanceId && e.courseId === c.id && e.version === c.version && e.task === '__lab_complete__')
         if (existing) return structuredClone(existing)
-        const row = { id: randomUUID(), instanceId: body.instanceId, courseId: c.id, version: c.version, courseTitle: c.title, kind: 'application', answer: '本节完成', task: '__lab_complete__', passed: true, createdAt: new Date().toISOString(), feedback: null }
+        const row = { id: randomUUID(), instanceId: body.instanceId, courseId: c.id, version: c.version, courseTitle: c.title, kind: 'application', answer: '本节完成', task: '__lab_complete__', passed: true, parameters: c.lab ? normalizeParameters(c.lab, body.parameters) : {}, createdAt: new Date().toISOString(), feedback: null }
         s.evidence.push(row)
         await storage.write(s)
         return structuredClone(row)
@@ -55,6 +56,7 @@ export function createEvidence (storage, requests) {
         kind: body.kind,
         answer: body.answer.trim(),
         task: typeof body.task === 'string' ? body.task.slice(0, 2000) : '解释本课核心概念并举例',
+        parameters: c.lab ? normalizeParameters(c.lab, body.parameters) : {},
         createdAt: new Date().toISOString(),
         feedback: null,
       }
@@ -72,6 +74,8 @@ export function createEvidence (storage, requests) {
         const checked = checkRestate(c.lab, row.answer)
         row.checks = checked.checks
         row.passed = checked.passed
+        const duplicate = s.evidence.find(e => e.instanceId === body.instanceId && e.courseId === c.id && e.version === c.version && e.kind === 'explanation' && e.answer === row.answer)
+        if (duplicate) return structuredClone(duplicate)
       }
 
       s.evidence.push(row)

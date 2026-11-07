@@ -7,7 +7,7 @@ export function createLearningDispatcher(services){
   if(execution){const owner=body.kind==='feedback'?'evidence':body.kind==='map'?'maps':'courses';const method=body.kind==='feedback'?'feedback':'submit';return services[owner][method](body,execution.agent?.session?.id)}
   if(body?.action==='teaching-workspaces')return services.teacher.workspaces();
   if(body?.action==='teaching-open')return services.teacher.open(body.instanceId,body.workspaceId);
-  const routes={continuation:'continuation',evidence:'evidence',map:'maps',course:'courses',request:'requests'};
+  const routes={continuation:'continuation',evidence:'evidence',lab:'evidence',map:'maps',course:'courses',request:'requests'};
   const owner=routes[body?.action?.split('-')[0]]??'app';return services[owner].request(body);
  }
  return (body,execution)=>{const result=queue.then(()=>dispatch(body,execution));queue=result.catch(()=>{});return result};
