@@ -22,35 +22,38 @@ test('studio selector opens another instance and remount restores it',async()=>{
  let root=createRoot(document.getElementById('root'))
  const studio=()=>document.querySelector('[aria-label="学习实验台"]')
  const map=()=>document.querySelector('[aria-label="知识地图视图"]')
- const selectedTitle=()=>document.querySelector('[aria-label="当前学习空间"]').selectedOptions[0].textContent
+ const selectedTitle=()=>document.querySelector('[aria-label="学习空间"] button[aria-pressed="true"]')?.textContent
+ async function settle(){await act(async()=>{await new Promise(resolve=>setTimeout(resolve,5))})}
  async function ready(){
   for(let i=0;i<20;i++){
-   const button=[...document.querySelectorAll('button')].find(b=>b.textContent==='B · 知识地图')
+   const button=[...document.querySelectorAll('button')].find(b=>b.textContent==='知识地图')
    if(button&&!button.disabled)return button
-   await act(async()=>{await new Promise(resolve=>setTimeout(resolve,5))})
+   await settle()
   }
   throw Error('view switch never became ready')
  }
- async function settle(){await act(async()=>{await new Promise(resolve=>setTimeout(resolve,5))})}
  async function view(name){
   await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent===name).click())
   await settle()
+ }
+ async function switchTo(title){
+  await act(async()=>[...document.querySelectorAll('[aria-label="学习空间"] button')].find(b=>b.textContent===title).click())
+  await ready()
  }
  try{
   await act(async()=>root.render(React.createElement(LearningStudio)))
   await ready()
   assert.equal(selectedTitle(),'绘画')
   assert.ok(studio())
-  await view('B · 知识地图')
+  await view('知识地图')
   assert.ok(map())
   assert.equal(studio(),null)
-  await view('A · 工作室')
+  await view('工作室')
   assert.ok(studio())
   assert.equal(map(),null)
-  await act(async()=>{const select=document.querySelector('[aria-label="当前学习空间"]');select.value=first.id;select.dispatchEvent(new dom.window.Event('change',{bubbles:true}))})
-  await ready()
+  await switchTo('概率')
   assert.equal(selectedTitle(),'概率')
-  await view('B · 知识地图')
+  await view('知识地图')
   assert.equal((await continuation.request({action:'continuation-read',instanceId:first.id})).position.view,'map')
   await act(async()=>root.unmount());root=createRoot(document.getElementById('root'))
   await act(async()=>root.render(React.createElement(LearningStudio)))
@@ -58,12 +61,9 @@ test('studio selector opens another instance and remount restores it',async()=>{
   assert.equal(selectedTitle(),'概率')
   assert.ok(map())
   const second=(await app.request()).instances.find(row=>row.id!==first.id)
-  async function switchTo(id){await act(async()=>{const select=document.querySelector('[aria-label="当前学习空间"]');select.value=id;select.dispatchEvent(new dom.window.Event('change',{bubbles:true}))})}
-  await switchTo(second.id)
-  await ready()
+  await switchTo('绘画')
   assert.ok(studio())
-  await switchTo(first.id)
-  await ready()
+  await switchTo('概率')
   assert.ok(map())
   assert.equal((await app.request()).instances.length,2)
  }finally{await act(async()=>root.unmount());dom.window.close();for(const[key,value]of old)value?Object.defineProperty(globalThis,key,value):delete globalThis[key]}
