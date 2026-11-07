@@ -1,9 +1,6 @@
-import {RecoveryPanel} from './recovery-panel.tsx'
-import {PersonalMap} from './personal-map.tsx'
 import {LabPanel} from './lab-panel.tsx'
-import {TeachingPanel} from './teaching-panel.tsx'
+import {MapPanel} from './map-panel.tsx'
 import React,{useEffect,useState} from 'react'
-import {KnowledgeExplorer} from './knowledge-map.mjs'
 
 export const inject=['slots','layout','uiWorkspace']
 export async function learningRequest(body?:Record<string,unknown>){const res=await fetch('/api/personal-learning',{credentials:'same-origin',...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{})});const value=await res.json();if(!res.ok)throw Error(value.error||'学习空间读取失败');return value}
@@ -38,7 +35,7 @@ export function LearningStudio({openSession}){
    {state&&(current&&!creating
     ? (view==='studio'
       ? <LabPanel key={current.id+'-lab'} instanceId={current.id} request={learningRequest} openSession={openSession}/>
-      : <div className="pl-workspace" aria-label="知识地图视图"><div className="pl-canvas"><small>知识地图 / 系统探索</small><h1>{current.title}</h1><PersonalMap key={current.id+"map"} instanceId={current.id} request={learningRequest} openSession={openSession} openCourse={async id=>{await learningRequest({action:'continuation-save',instanceId:current.id,courseId:id});setView('studio')}}/><details><summary>查看示例知识地图与样课</summary><KnowledgeExplorer key={current.id}/></details></div><aside className="pl-context" aria-label="教学与上下文"><TeachingPanel key={current.id+"-teaching"} instanceId={current.id} request={learningRequest} openSession={openSession}/><details><summary>生成任务与恢复</summary><RecoveryPanel key={current.id+"recovery"} instanceId={current.id} request={learningRequest} openSession={openSession}/></details></aside></div>)
+      : <MapPanel key={current.id+'-map'} instanceId={current.id} instanceTitle={current.title} goal={current.goal} request={learningRequest} openSession={openSession} openCourse={async id=>{await learningRequest({action:'continuation-save',instanceId:current.id,courseId:id});setView('studio')}}/>)
     : <form className="pl-create" onSubmit={create}><small>开始一段新的探索</small><h1>你想理解什么？</h1><label>学习名称<input required maxLength={200} value={title} onChange={e=>setTitle(e.target.value)}/></label><label>学习目标<textarea required maxLength={8000} value={goal} onChange={e=>setGoal(e.target.value)}/></label><label>已有基础<textarea maxLength={8000} value={prior} onChange={e=>setPrior(e.target.value)}/></label><div className="pl-create-actions"><button type="button" className="pl-quiet" onClick={()=>setCreating(false)} disabled={!current}>取消</button><button className="pl-primary" disabled={busy}>{busy?'正在保存…':'创建学习空间'}</button></div></form>)}
   </main>
  </section>
