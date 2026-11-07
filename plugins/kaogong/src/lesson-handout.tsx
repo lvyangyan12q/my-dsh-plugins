@@ -3,11 +3,28 @@ import { useState } from 'react'
 /** 讲义是数据：渲染器只认结构，不认某一课的文字。 */
 export type HandoutStep = { label: string; text: string }
 
+export type LabValues = { aBase: number; bBase: number; aRate: number; bRate: number }
+
+export type LabPreset = LabValues & { label: string }
+
+/** 实验台同样只认结构：两部分的名字、取值范围、初值与预设都由数据给。 */
+export type LabBlock = {
+  kind: 'lab'
+  title: string
+  hint: string
+  labels: { a: string; b: string }
+  baseLimit: { min: number; max: number; step: number }
+  rateLimit: { min: number; max: number; step: number }
+  initial: LabValues
+  presets: LabPreset[]
+}
+
 export type HandoutBlock =
   | { kind: 'p'; text: string }
   | { kind: 'bullets'; items: string[] }
   | { kind: 'formula'; text: string }
   | { kind: 'callout'; label: string; text: string }
+  | LabBlock
   | { kind: 'example'; no: string; tag: string; seconds: string; question: string; options: string[]; answer: number; steps: HandoutStep[]; slow?: string }
 
 export type HandoutSection = { id: string; no: string; title: string; blocks: HandoutBlock[] }
@@ -20,6 +37,49 @@ export type Handout = {
   /** 内容来源说明：自编还是真题。自编必须写明，不冒充真题。 */
   provenance: string
   sections: HandoutSection[]
+}
+
+export type LabCalculation = {
+  /** 以基期量为权重算出的整体增长率。 */
+  overallRate: number
+  /** 若错把现期量当权重，会算出的整体增长率。 */
+  currentWeightRate: number
+  /** 现期权重结果 − 基期权重结果（百分点）。 */
+  weightGap: number
+  lower: number
+  upper: number
+  lean: 'a' | 'b' | 'equal' | 'same-rate'
+  distanceToA: number
+  distanceToB: number
+}
+
+/** 纯计算：整体增长率、偏向判定、现期权重对照。 */
+export function labCalculation(values: LabValues): LabCalculation {
+  const totalBase = values.aBase + values.bBase
+  const overallRate = totalBase > 0
+    ? (values.aBase * values.aRate + values.bBase * values.bRate) / totalBase
+    : (values.aRate + values.bRate) / 2
+  const aCurrent = values.aBase * (1 + values.aRate / 100)
+  const bCurrent = values.bBase * (1 + values.bRate / 100)
+  const totalCurrent = aCurrent + bCurrent
+  const currentWeightRate = totalCurrent > 0
+    ? (aCurrent * values.aRate + bCurrent * values.bRate) / totalCurrent
+    : overallRate
+  const lean = values.aRate === values.bRate
+    ? 'same-rate' as const
+    : values.aBase === values.bBase
+      ? 'equal' as const
+      : values.aBase > values.bBase ? 'a' as const : 'b' as const
+  return {
+    overallRate,
+    currentWeightRate,
+    weightGap: currentWeightRate - overallRate,
+    lower: Math.min(values.aRate, values.bRate),
+    upper: Math.max(values.aRate, values.bRate),
+    lean,
+    distanceToA: Math.abs(overallRate - values.aRate),
+    distanceToB: Math.abs(overallRate - values.bRate),
+  }
 }
 
 export const MIXED_GROWTH_HANDOUT: Handout = {
@@ -45,6 +105,21 @@ export const MIXED_GROWTH_HANDOUT: Handout = {
         { kind: 'p', text: '右边就是一个加权平均：夹在两个数中间，被权重大的那个拉过去。把它反过来解，就是十字交叉。' },
         { kind: 'formula', text: 'A基 : B基 = |b − r| : |r − a|' },
         { kind: 'p', text: '交叉相减，得到的是对面的权重。这一步很多人背反，快 3 专门练。' },
+        {
+          kind: 'lab',
+          title: '混合增长率实验台',
+          hint: '拖动两部分的基期量与增长率，看整体增长率落在区间里的位置、偏向哪一侧。',
+          labels: { a: 'A', b: 'B' },
+          baseLimit: { min: 100, max: 1000, step: 10 },
+          rateLimit: { min: 0, max: 30, step: 0.1 },
+          initial: { aBase: 800, bBase: 200, aRate: 9.2, bRate: 4.6 },
+          presets: [
+            { label: '回到例题', aBase: 800, bBase: 200, aRate: 9.2, bRate: 4.6 },
+            { label: '两边一样大', aBase: 500, bBase: 500, aRate: 9.2, bRate: 4.6 },
+            { label: 'A 是 B 的 9 倍', aBase: 900, bBase: 100, aRate: 9.2, bRate: 4.6 },
+            { label: '把两个率拉开', aBase: 800, bBase: 400, aRate: 20, bRate: 0 },
+          ],
+        },
       ],
     },
     {
@@ -154,6 +229,7 @@ function BlockView({ block, fastOnly }: { block: HandoutBlock; fastOnly: boolean
   if (block.kind === 'bullets') return <ul style={{ margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>{block.items.map((item, index) => <li key={index}>{item}</li>)}</ul>
   if (block.kind === 'formula') return <code style={{ display: 'block', background: '#f4f6f1', border: '1px solid #dbe2d8', borderRadius: 6, padding: '6px 10px', fontFamily: 'ui-monospace, Consolas, monospace' }}>{block.text}</code>
   if (block.kind === 'callout') return <div style={{ background: '#f4f8f4', borderLeft: '3px solid #2f6b58', borderRadius: '0 6px 6px 0', padding: '8px 12px' }}><b>{block.label}　</b>{block.text}</div>
+  if (block.kind === 'lab') return <LabBench block={block} />
   return (
     <div style={{ border: '1px solid #dbe2d8', borderRadius: 8, padding: 10, display: 'grid', gap: 6, background: '#fff' }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
@@ -170,6 +246,114 @@ function BlockView({ block, fastOnly }: { block: HandoutBlock; fastOnly: boolean
         {block.steps.map((step, index) => <li key={index}><b>{step.label}</b>　{step.text}</li>)}
         {block.slow && !fastOnly && <li style={{ color: '#667085' }}><b>慢解</b>　{block.slow}</li>}
       </ul>
+    </div>
+  )
+}
+
+function LabSlider({ label, value, text, min, max, step, onChange }: { label: string; value: number; text: string; min: number; max: number; step: number; onChange: (value: number) => void }) {
+  return (
+    <label style={{ display: 'grid', gap: 2 }}>
+      <span style={{ fontSize: 12, color: '#475467' }}>{label} <b style={{ color: '#1f2420' }}>{text}</b></span>
+      <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onInput={event => onChange(Number(event.currentTarget.value))} />
+    </label>
+  )
+}
+
+function LabBench({ block }: { block: LabBlock }) {
+  const [values, setValues] = useState<LabValues>(block.initial)
+  const [revealed, setRevealed] = useState(true)
+  const [guess, setGuess] = useState<number | null>(null)
+  const calc = labCalculation(values)
+  const { a, b } = block.labels
+
+  const change = (patch: Partial<LabValues>) => {
+    setValues(current => ({ ...current, ...patch }))
+    setGuess(null)
+  }
+  const applyPreset = (preset: LabPreset) => change({ aBase: preset.aBase, bBase: preset.bBase, aRate: preset.aRate, bRate: preset.bRate })
+  const position = (rate: number) => calc.upper === calc.lower ? 50 : ((rate - calc.lower) / (calc.upper - calc.lower)) * 100
+  const leanText = calc.lean === 'equal' ? '正中间（两边一样重）'
+    : calc.lean === 'same-rate' ? '两个部分率相同，区间退成一个点'
+      : `偏向 ${calc.lean === 'a' ? a : b}`
+  const distanceText = calc.lean === 'same-rate' ? ''
+    : calc.lean === 'equal' ? `　距两侧各 ${calc.distanceToA.toFixed(1)} 个点`
+      : `　距 ${a} ${calc.distanceToA.toFixed(1)} 个点 · 距 ${b} ${calc.distanceToB.toFixed(1)} 个点`
+
+  return (
+    <div style={{ border: '1px solid #dbe2d8', borderRadius: 8, padding: 12, display: 'grid', gap: 10, background: '#fbfcf9' }}>
+      <div style={{ display: 'grid', gap: 2 }}>
+        <b>{block.title}</b>
+        <small style={{ color: '#667085' }}>{block.hint}</small>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px 14px' }}>
+        <LabSlider label={`${a} 基期量`} value={values.aBase} text={String(values.aBase)} min={block.baseLimit.min} max={block.baseLimit.max} step={block.baseLimit.step} onChange={value => change({ aBase: value })} />
+        <LabSlider label={`${b} 基期量`} value={values.bBase} text={String(values.bBase)} min={block.baseLimit.min} max={block.baseLimit.max} step={block.baseLimit.step} onChange={value => change({ bBase: value })} />
+        <LabSlider label={`${a} 增长率`} value={values.aRate} text={`${values.aRate.toFixed(1)}%`} min={block.rateLimit.min} max={block.rateLimit.max} step={block.rateLimit.step} onChange={value => change({ aRate: value })} />
+        <LabSlider label={`${b} 增长率`} value={values.bRate} text={`${values.bRate.toFixed(1)}%`} min={block.rateLimit.min} max={block.rateLimit.max} step={block.rateLimit.step} onChange={value => change({ bRate: value })} />
+      </div>
+
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="在数轴上点选猜测"
+        aria-disabled={revealed}
+        onClick={event => {
+          if (revealed) return
+          const rect = event.currentTarget.getBoundingClientRect()
+          const span = calc.upper - calc.lower
+          const ratio = rect.width > 0 ? Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)) : 0.5
+          setGuess(Math.round((calc.lower + span * ratio) * 100) / 100)
+        }}
+        onKeyDown={event => {
+          if (revealed || (event.key !== 'Enter' && event.key !== ' ')) return
+          event.preventDefault()
+          setGuess(Math.round(((calc.lower + calc.upper) / 2) * 100) / 100)
+        }}
+        style={{ position: 'relative', height: 54, cursor: revealed ? 'default' : 'crosshair', outline: 'none', touchAction: 'none' }}
+      >
+        <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: 23, height: 8, borderRadius: 999, background: '#e5e9e2' }} />
+        <div aria-hidden style={{ position: 'absolute', left: 0, top: 19, width: 2, height: 16, background: '#98a29a' }} />
+        <div aria-hidden style={{ position: 'absolute', right: 0, top: 19, width: 2, height: 16, background: '#98a29a' }} />
+        {revealed && (
+          <div aria-hidden title="整体增长率" style={{ position: 'absolute', top: 20, left: `${position(calc.overallRate)}%`, width: 14, height: 14, marginLeft: -7, borderRadius: '50%', background: '#2f6b58', border: '2px solid #fff', boxShadow: '0 0 0 1px #2f6b58' }} />
+        )}
+        {guess !== null && (
+          <div aria-hidden title="你的猜测" style={{ position: 'absolute', top: 21, left: `${position(guess)}%`, width: 12, height: 12, marginLeft: -6, borderRadius: 2, background: '#b8892f', boxShadow: '0 0 0 1px #b8892f' }} />
+        )}
+        <span style={{ position: 'absolute', left: 0, top: 36, fontSize: 11, color: '#667085' }}>{calc.lower.toFixed(1)}%</span>
+        <span style={{ position: 'absolute', right: 0, top: 36, fontSize: 11, color: '#667085' }}>{calc.upper.toFixed(1)}%</span>
+      </div>
+
+      <p role="status" style={{ margin: 0, lineHeight: 1.7, fontWeight: 600 }}>
+        {revealed
+          ? `整体增长率 ${calc.overallRate.toFixed(2)}%　${leanText}${distanceText}`
+          : guess === null
+            ? '结果已藏起：在数轴上点一个位置，再揭晓。'
+            : `结果已藏起　你的猜测 ${guess.toFixed(2)}%　点「揭晓答案」对照。`}
+      </p>
+      <div style={{ fontSize: 12, color: '#475467' }}>
+        {revealed
+          ? `基期当权重 ${calc.overallRate.toFixed(2)}%　现期当权重 ${calc.currentWeightRate.toFixed(2)}%　差 ${Math.abs(calc.weightGap).toFixed(2)} 个百分点`
+          : '基期当权重 ——　现期当权重 ——　差 ——（揭晓后显示）'}
+      </div>
+      {revealed && guess !== null && (
+        <div style={{ fontSize: 12, color: '#475467' }}>你的猜测 {guess.toFixed(2)}%，实际 {calc.overallRate.toFixed(2)}%，误差 {Math.abs(guess - calc.overallRate).toFixed(2)} 个百分点。</div>
+      )}
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+        <button data-pwb-button type="button" disabled={!revealed && guess === null} onClick={() => {
+          if (!revealed) { setRevealed(true); return }
+          setGuess(null)
+          setRevealed(false)
+        }}>{!revealed ? '揭晓答案' : guess !== null ? '再猜一次' : '先猜再看'}</button>
+        <small style={{ color: '#667085' }}>先猜再看：藏起结果，在数轴上点一下猜位置。</small>
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+        <small style={{ color: '#667085' }}>预设</small>
+        {block.presets.map(preset => <button key={preset.label} data-pwb-button type="button" onClick={() => applyPreset(preset)}>{preset.label}</button>)}
+      </div>
     </div>
   )
 }
