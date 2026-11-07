@@ -40,6 +40,12 @@ import {
   validateKimiConfig,
 } from './kimi.js'
 import {
+  DEFAULT_GOOGLE_CONFIG,
+  extractGoogleArticle,
+  listGoogle,
+  validateGoogleConfig,
+} from './google.js'
+import {
   DEFAULT_OPENAI_CONFIG,
   extractOpenAiArticle,
   listOpenAi,
@@ -110,6 +116,18 @@ export const SOURCES = {
     list: listKimi,
     extract: extractKimiArticle,
     validateConfig: validateKimiConfig,
+  },
+  google: {
+    id: 'google',
+    kind: 'blog',
+    label: 'Google',
+    short: 'G',
+    defaults: DEFAULT_GOOGLE_CONFIG,
+    tracksSeen: false,
+    onExtractFailure: 'skip',
+    list: listGoogle,
+    extract: extractGoogleArticle,
+    validateConfig: validateGoogleConfig,
   },
   openai: {
     id: 'openai',
