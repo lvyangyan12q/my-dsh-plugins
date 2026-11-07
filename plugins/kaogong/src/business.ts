@@ -33,7 +33,7 @@ import { Lessons } from './lessons.ts'
 import {registerStudyPlanRoutes} from './study-plan-http.ts'
 import {registerStudyPlanTools} from './study-plan-tools.ts'
 import type {StudyPlan} from './study-plan.ts'
-import { lessonCreate, lessonCommand, lessonLink, lessonSummaryInput, lessonConfirm } from './lesson-schema.ts'
+import { lessonCreate, lessonCommand, lessonLink, lessonSummaryInput, lessonConfirm, lessonQuizInput } from './lesson-schema.ts'
 import type { Lesson } from './lesson-schema.ts'
 import { z as wire } from 'zod'
 import { searchKnowledge, knowledgeExcerpt } from './knowledge.ts'
@@ -468,6 +468,7 @@ export function registerBusiness(ctx: BusinessRegistry, config: Config, state: i
   lessonRoute('prepare', input => lessons.read(lessonCommand.parse(input).lessonId))
   lessonRoute('link', input => { const args = lessonLink.parse(input); return lessons.link(args.lessonId, args.roundId) })
   lessonRoute('summary', input => { const args = lessonSummaryInput.parse(input); return lessons.saveSummary(args.lessonId, args.notes) })
+  lessonRoute('quiz', input => { const args = lessonQuizInput.parse(input); return lessons.saveQuiz(args.lessonId, args.entry) })
   lessonRoute('confirm', async input => { const args=lessonConfirm.parse(input),value=await lessons.confirm(args.lessonId,args.confirmed),taskId=value.lesson.request.taskId;if(taskId){const current=state.plan.read(),task=current.tasks.find(t=>t.id===taskId);if(task&&task.status!=='completed'){const saved=await state.plan.saveSummary(taskId,current.revision,value.lesson.notes);await state.plan.complete(taskId,saved.revision,true,{roundId:value.lesson.completion?.proofs.at(-1)?.roundId})}}return value })
   ctx.tools.register(defineTool({
     name: 'kaogong_lesson_read', description: '读取持久课堂与最小摘要；不复制会话历史、不修改完成状态。省略 lessonId 返回课堂列表。',

@@ -22,6 +22,15 @@ export async function lessonRequest<T>(action: string, body: unknown,send:(input
   return value
 }
 
+/** Restore saved in-class answers by stable question ID; a record without quiz stays all-unanswered. */
+export function lessonQuizAnswers(value: LessonView | null): QuizAnswer[] {
+  const rows = value?.lesson.quiz ?? []
+  return MIXED_GROWTH_QUIZ.map(question => {
+    const row = rows.find(item => item.questionId === question.id)
+    return row ? row.choice : null
+  })
+}
+
 /** Shared instance-owned lesson UI; practice starts through the existing request/draft owner. */
 export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher'] }) {
   const http=useLearningHttp()
@@ -42,6 +51,8 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   /** 「读」由讲义实际渲染这一事实决定；页签只负责去哪，不负责标记完成。 */
   const [readDone, setReadDone] = useBusinessState('lesson.readDone', false)
   const [answers, setAnswers] = useState<QuizAnswer[]>(() => emptyQuizAnswers(MIXED_GROWTH_QUIZ))
+  /** In-class evidence save errors stay visible without blocking the next answer. */
+  const [quizError, setQuizError] = useState('')
   const [material] = useBusinessState('reader.entry', null)
   const [practice] = useBusinessState('practice', null)
   const [result] = useBusinessState('result', null)
@@ -98,11 +109,21 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   }
   /** 讲义按知识点挂接：本课目标或限定考点不命中关键词时，只有空态，没有检测。 */
   const handoutMatched = lessonMatchesHandout(view?.lesson.request)
-  const answerQuiz = (index: number, option: number) => setAnswers(current => current[index] === null ? current.map((value, at) => at === index ? option : value) : current)
+  const answerQuiz = (index: number, option: number) => {
+    const question = MIXED_GROWTH_QUIZ[index], lessonId = view?.lesson.request.lessonId
+    if (!question || !lessonId || answers[index] !== null) return
+    setAnswers(current => current.map((value, at) => at === index ? option : value))
+    setQuizError('')
+    // The local answer is already visible; a failed write is surfaced, never thrown back into the quiz.
+    void request<LessonView>('quiz', { lessonId, entry: {
+      questionId: question.id, index, choice: option, correct: option === question.answer,
+      section: question.anchorId, answeredAt: new Date().toISOString() } })
+      .catch(cause => setQuizError(`检测作答保存失败；继续答题不受影响：${cause instanceof Error ? cause.message : String(cause)}`))
+  }
   const retakeQuiz = () => { setAnswers(emptyQuizAnswers(MIXED_GROWTH_QUIZ)); setTab('quiz') }
   const lessonId = view?.lesson.request.lessonId
   useEffect(() => {
-    setAnswers(emptyQuizAnswers(MIXED_GROWTH_QUIZ)); setReadDone(false); setTab('handout'); setJump(null)
+    setAnswers(lessonQuizAnswers(view)); setQuizError(''); setReadDone(false); setTab('handout'); setJump(null)
   }, [lessonId])
   // 讲义首次渲染即视为「读」完成；页签点击本身不标记任何完成。
   useEffect(() => {
@@ -141,6 +162,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       </select>}
     </header>
     {error && <p role="alert" style={{ color: '#b42318' }}>{error}</p>}
+    {quizError && <p role="alert" style={{ color: '#b42318' }}>{quizError}</p>}
     {form && <form onSubmit={event => { event.preventDefault(); void create() }} style={{ display: 'grid', gap: 8, marginTop: 12 }}>
       <label>科目 <select aria-label="课堂科目" value={draft.subject} onChange={event => setDraft({ ...draft, subject: event.target.value })}>{TAXONOMY.map(row => <option key={row.subject}>{row.subject}</option>)}</select></label>
       <label>学习目标 <input required maxLength={500} aria-label="学习目标" value={draft.objective} onChange={event => setDraft({ ...draft, objective: event.target.value })} style={{ width: '100%', boxSizing: 'border-box' }} /></label>
