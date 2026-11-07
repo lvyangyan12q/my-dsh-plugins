@@ -1,0 +1,12 @@
+{
+  "archive": "deepseek-ai-dsh-tool-personal-learning-0.1.0-alpha.1.tgz",
+  "sha256": "564ca52956a7a14d12aa1dc474c1280fc3d6db35f955ebd4e1437d824a73f58e",
+  "host": "official DSH 0.2.2-rc.1 build",
+  "officialInstall": true,
+  "hostActivation": true,
+  "persistenceRestart": true,
+  "warnings": [],
+  "modelInvocation": false,
+  "browserUI": false,
+  "note": "Isolated temp home; original temp root withheld. Produced by scripts/installed-gate.mjs with DSH_SOURCE pointing at the official rc.1 checkout."
+}

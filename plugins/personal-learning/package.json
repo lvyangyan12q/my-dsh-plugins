@@ -37,10 +37,10 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "4.0.5",
-    "@deepseek-ai/dsh-storage-domain": "0.2.2-alpha.2",
+    "@deepseek-ai/dsh-storage-domain": "0.2.2-rc.1",
     "react": "^18.2.0",
     "zod": "^4.0.0",
-    "@deepseek-ai/dsh-tools": "0.2.2-alpha.2"
+    "@deepseek-ai/dsh-tools": "0.2.2-rc.1"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
@@ -50,6 +50,6 @@
   },
   "engines": {
     "node": ">=24.9.0",
-    "dsh": "0.2.2-alpha.2"
+    "dsh": "0.2.2-rc.1"
   }
 }

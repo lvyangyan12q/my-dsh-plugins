@@ -1,5 +1,9 @@
 # Local Task Tracking
 
+## 个人学习插件规格（2026-11-01）
+
+本地任务 [DSH 个人学习插件：交互课程、知识地图与持续学习](../wayfinder/personal-learning/spec.md)，身份 `personal-learning-spec`，状态 open，唯一 triage 标签 ready-for-agent。用户确认个人使用、DSH、/teach、交互 HTML/动画、知识图与 OpenDesign 风格。测试边界待用户核对，原型 A/B/C 尚未选定；规格发布不等于实现完成，不改变其他任务状态。
+
 The user chose local numbered tasks for this project, not remote issue IDs. Review a ticket against [the shared spec](../personal-workbench-spec.md) and its evidence below; do not infer completion from a commit or draft PR.
 
 | Local task | Scope | Evidence |
@@ -81,3 +85,10 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 ## rc.3 已确认后续图（2026-10-24）
 
 用户已明确确认正式版本等待验收、未知版本仅独立显式试用；历史学习私有实例与原始资料库显式只读共享方案；最终审查基线a81ac77。决策03/04关闭，课堂原型和具体切换门槛保留。现按[rc.3执行图](../wayfinder/harness-upgrade/implementation/README.md)推进05—11，05/06与原型并行。原阶段pending-decisions记录为历史上下文，不能覆盖本轮已明确决定；具体正式迁移仍按影响预览确认。
+
+## 学习实验台规格（2026-11-07）
+
+本地规格身份 `personal-learning-lab-spec`，标题[知间 · 学习实验台](../wayfinder/personal-learning/lab-spec.md)，status=open、唯一 triage 标签 ready-for-agent。接续个人学习插件规格，不覆盖其历史验收；设计依据是已选定的 B 原型「实验台」。
+
+九张实施票在[学习实验台实施图](../wayfinder/personal-learning/issues/README.md)，一票一文件，按依赖排列：01 rc.1 兼容 → 02 实验台骨架 → 03 课程协议 → 04 预测门控 → 05 复述与证据 → 08 恢复 → 09 验收；02 另有 07 配置收纳，03 另有 06 `/teach` 生成适配。测试边界以真实安装用户流程为最高 seam，协议与状态机用纯逻辑测试补足。规格发布不等于实现完成。
+

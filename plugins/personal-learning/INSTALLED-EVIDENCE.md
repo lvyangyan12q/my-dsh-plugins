@@ -33,3 +33,19 @@ Final delta from50f203b affects continuation/navigation restoration; native mode
 On unchanged final archive6ebc97432f82e763fe9a61a441ade9f6c7fa9d310d52aad6a8ec1c6970fb8feb (code1d05fc0), opened the real generated course0b1990c5-176b-4bf0-bc91-703333324ec5 v1. Focused its intersection slider and pressed ArrowLeft:30→29. Host UI confirmed captured exported parameters. Prepared a course follow-up asking for an alternative ball-drawing explanation and explicitly sent it through the native session. Request2e83abc9-41ac-4e4a-81af-a7a948e8a3e8 completed in11s. Native model explained shrinking the sample space and explicitly related the captured experiment to29/40=0.725; no new course was generated.
 
 Returned through the independent learning menu: the same course remained selected. Stopped/restarted the owned host process and used a fresh independent Chrome session. The same generated iframe inputs restored N100/B40/intersection29. This is actual generated HTML bridge persistence, not a fixture or HTTP-only substitute. Existing recommendations with explicit prerequisite/no-evidence reasons, saved feedback and11-node map remained visible; free A/B selection remained available. Tickets08/12 now have their previously missing actual follow-up/parameter evidence. Final artifact unchanged; no product edits or additional generation. Only isolated profile9pZYsF used.
+
+## rc.1 compatibility gate (2026-11-07)
+
+Declarations moved to the current host: `engines.dsh` and both peers (storage-domain, tools) now require
+`0.2.2-rc.1`. `scripts/installed-gate.mjs` ran against the official rc.1 checkout with a fresh temp home:
+
+- archive SHA256 `564ca52956a7a14d12aa1dc474c1280fc3d6db35f955ebd4e1437d824a73f58e`
+- official offline install: true, host activation: true, persistence across process restart: true
+- activation warnings: none
+- receipt: `evidence/rc1-installed-receipt.json`
+
+The plugin's 20 automated tests still report 19 pass / 1 skip (the `DSH_SOURCE`-gated host import test).
+All earlier receipts in this file were produced on `0.2.2-alpha.2` and remain historical; they are not
+re-read as rc.1 passes. Enabling the plugin in the user's daily profile and a browser acceptance run are
+scoped to the installed-acceptance ticket, not this gate.
+

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict'
 const plugin=resolve(dirname(fileURLToPath(import.meta.url)),'..'),native=process.env.DSH_SOURCE
 assert(native,'DSH_SOURCE required');const root=await mkdtemp(join(tmpdir(),'personal-learning-installed-')),home=join(root,'home'),cli=join(native,'apps/cli/lib/bin.js'),env={...process.env,DSH_HOME:home,DSH_TELEMETRY_DISABLED:'1'}
 for(const key of ['NODE_PATH','NODE_OPTIONS','OPENAI_API_KEY','DEEPSEEK_API_KEY','ANTHROPIC_API_KEY','DSH_TOKEN'])delete env[key]
-const npm=process.env.npm_execpath||join(dirname(process.execPath),'node_modules/npm/bin/npm-cli.js')
+const npm=process.env.npm_execpath?.endsWith('npm-cli.js')?process.env.npm_execpath:join(dirname(process.execPath),'node_modules/npm/bin/npm-cli.js')
 function run(args,cwd){const r=spawnSync(process.execPath,args,{cwd,env,encoding:'utf8',windowsHide:true,timeout:180000});assert.equal(r.status,0,'Gate subprocess failed (output withheld to protect credentials)');return r.stdout}
 run([join(plugin,'scripts/build.mjs')],plugin)
 const [pack]=JSON.parse(run([npm,'pack','--ignore-scripts','--json','--pack-destination',root],plugin)),archive=join(root,pack.filename)
