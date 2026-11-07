@@ -1,5 +1,6 @@
 import {LessonCloseout} from './lesson-closeout.tsx'
-import { useEffect } from 'react'
+import {HandoutView,MIXED_GROWTH_HANDOUT} from './lesson-handout.tsx'
+import { useEffect,useState } from 'react'
 import { BookOpen, Plus, Save, Check, Link, RefreshCw, Play } from 'lucide-react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { TAXONOMY } from './taxonomy.ts'
@@ -33,6 +34,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const [error, setError] = useBusinessState('lesson.error', '')
   const [busy, setBusy] = useBusinessState('lesson.busy', false)
   const [confirmed, setConfirmed] = useBusinessState('lesson.confirmed', false)
+  const [tab, setTab] = useState<'handout' | 'quiz'>('handout')
   const [material] = useBusinessState('reader.entry', null)
   const [practice] = useBusinessState('practice', null)
   const [result] = useBusinessState('result', null)
@@ -109,6 +111,11 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     </form>}
     {!view && !form && <p role="status">暂无选中的课堂</p>}
     {view && context && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+      <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
+      </div>
+      {tab === 'handout' ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <p role="status">本课暂无检测。</p>}
       <strong>{view.lesson.request.objective}</strong>
       <span>{view.lesson.request.subject} · {view.lesson.completion ? '学习者已确认完成' : '课后任务未完成'}</span>
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
