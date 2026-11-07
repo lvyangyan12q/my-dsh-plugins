@@ -80,7 +80,7 @@ test('答错一题：解析下出现回对应小节，点击后回讲义并高�
   }
 })
 
-test('三题全错：小结 0 / 3 正确，并回到第 5 节重读', async () => {
+test('三题全错：小结 0 / 3 正确，并回到对应小节重读', async () => {
   const ui = await mountClassroom()
   try {
     await ui.click('当堂检测')
@@ -88,10 +88,10 @@ test('三题全错：小结 0 / 3 正确，并回到第 5 节重读', async () =
     await ui.choose(2, 'C')
     await ui.choose(3, 'C')
     assert.match(ui.body(), /0 \/ 3 正确/)
-    assert.match(ui.body(), /先.*快速思路|快速思路.*再测/)
-    assert.match(ui.body(), /回第 5 节重读/)
+    assert.match(ui.body(), /先别急着刷题/)
+    assert.match(ui.body(), /回对应小节重读/)
 
-    await ui.click('回第 5 节重读')
+    await ui.click('回对应小节重读')
     assert.equal(ui.tab('讲义')?.getAttribute('aria-selected'), 'true')
     assert.equal(ui.highlighted('handout-s5'), true)
   } finally {
