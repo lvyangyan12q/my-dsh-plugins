@@ -16,11 +16,12 @@ function fixture(){
  return {evidence:createEvidence(storage,{request:async()=>{throw Error('unused')}}),get state(){return state}}
 }
 
-test('prediction evidence records the host judgement',async()=>{
+test('prediction evidence records the host judgement and a parameter snapshot',async()=>{
  const {evidence}=fixture()
- const right=await evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'prediction',answer:'变大',optionId:'up'})
+ const right=await evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'prediction',answer:'变大',optionId:'up',parameters:{N:100,B:40,AB:30}})
  assert.equal(right.correct,true)
  assert.equal(right.optionId,'up')
+ assert.deepEqual(right.parameters,{N:100,B:40,AB:30})
  assert.match(right.feedbackText,/对/)
  const wrong=await evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'prediction',answer:'不变',optionId:'same'})
  assert.equal(wrong.correct,false)
@@ -33,21 +34,33 @@ test('prediction without an option and on a lab-less course is refused',async()=
  await assert.rejects(evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'prediction',answer:'变大',optionId:'up'}),/没有预测/)
 })
 
-test('restate evidence keeps per-check results and never marks single answers as mastered',async()=>{
+test('restate evidence keeps per-check results and rejects an out-of-range snapshot',async()=>{
  const {evidence}=fixture()
  const partial=await evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'explanation',answer:'因为分母变了'})
  assert.equal(partial.passed,false)
  assert.deepEqual(partial.checks.map(check=>[check.id,check.passed]),[['den',true],['narrow',false],['num',false]])
  const full=await evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'explanation',answer:'分母从 100 缩小到 40'})
  assert.equal(full.passed,true)
+ await assert.rejects(evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'explanation',answer:'分母从 100 缩小到 40',parameters:{B:999}}),/越界/)
 })
 
-test('completion requires a passed restate and is idempotent',async()=>{
+test('repeating the same restate answer does not create duplicate evidence',async()=>{
+ const f=fixture()
+ const body={action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'explanation',answer:'分母从 100 缩小到 40'}
+ const first=await f.evidence.request(body)
+ const again=await f.evidence.request(body)
+ assert.equal(again.id,first.id)
+ assert.equal(f.state.evidence.filter(row=>row.kind==='explanation').length,1)
+})
+
+test('completion requires a prediction and a passed restate, then is idempotent',async()=>{
  const {evidence}=fixture()
- await assert.rejects(evidence.request({action:'lab-complete',instanceId:'i',courseId:'c',version:1}),/复述/)
  await evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'explanation',answer:'分母从 100 缩小到 40'})
- const first=await evidence.request({action:'lab-complete',instanceId:'i',courseId:'c',version:1})
+ await assert.rejects(evidence.request({action:'lab-complete',instanceId:'i',courseId:'c',version:1}),/预测/)
+ await evidence.request({action:'evidence-save',instanceId:'i',courseId:'c',version:1,kind:'prediction',answer:'变大',optionId:'up'})
+ const first=await evidence.request({action:'lab-complete',instanceId:'i',courseId:'c',version:1,parameters:{N:100,B:40,AB:30}})
  assert.equal(first.passed,true)
+ assert.deepEqual(first.parameters,{N:100,B:40,AB:30})
  const again=await evidence.request({action:'lab-complete',instanceId:'i',courseId:'c',version:1})
  assert.equal(again.id,first.id)
 })

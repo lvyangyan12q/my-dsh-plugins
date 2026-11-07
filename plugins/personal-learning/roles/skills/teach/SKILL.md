@@ -20,6 +20,8 @@ Use the native DSH conversation for follow-up questions, approvals and stopping.
 
 Interactive lessons must restore controls from window.personalLearning.parameters and call window.personalLearning.save({parameter: value}) when controls change. Export bounded JSON parameters only; the host bridge is not a grading or command API.
 
+The host may also push updates after load: listen for the `personal-learning:parameters` window event and re-render from `event.detail` (or read `window.personalLearning.parameters`), because dragging a host slider does not reload the iframe. Before the learner answers the prediction the host sets `window.personalLearning.locked = true` and fires `personal-learning:lock`; while locked, hide numeric readouts and disable your own play/step controls. Courses that ignore the lock event will show numbers the learner was supposed to predict.
+
 ## 课程协议（`lab` 字段）
 想让课程进入实验台，必须同时提交 `lab` 对象。宿主会校验；不合格的协议会被拒绝并保留旧课。缺省 `lab` 时课程按只读呈现，不要假装可交互。
 

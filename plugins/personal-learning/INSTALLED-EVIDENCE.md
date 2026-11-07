@@ -63,4 +63,29 @@ Automated suite at this commit: 33 tests, 32 pass, 1 skip (`DSH_SOURCE`). The ga
 activates; it does not prove the lab UI in a browser, which remains for the installed-acceptance ticket.
 Real `/teach` generation of a protocol-compliant course is also still unverified.
 
+## Lab browser acceptance (2026-11-07)
+
+A fresh isolated `DSH_HOME` received the built archive through the official offline CLI and served the GUI on
+an isolated port. The independent 个人学习 menu was opened in headless Chrome over the DevTools protocol.
+The course was a seeded protocol-compliant fixture, not a model generation.
+
+Verified in the real host UI:
+
+- prediction unanswered: host readouts show `?`, sliders are disabled, the canvas is covered by a lock
+  panel, and the restate section is not rendered;
+- after choosing a prediction: readouts appear, controls unlock, option feedback is shown;
+- restate with all keywords passes the three host checks and reveals the single completion action;
+- completion returns the recorded confirmation;
+- 390px viewport has no horizontal document overflow;
+- after stopping and restarting the host, the same course and `B=55` are restored;
+- evidence and parameters are present in the isolated storage file.
+
+Screenshots: `evidence/accept-locked.png`, `evidence/accept-lab-1440.png`, `evidence/accept-lab-390.png`.
+Machine-readable summary: `evidence/lab-browser-acceptance.json`.
+
+Still not verified: real `/teach` model generation of a protocol course, keyboard-only operation,
+a legacy lab-less course in the new shell, and a generated course that implements the lock and
+host-pushed parameter events.
+
+
 

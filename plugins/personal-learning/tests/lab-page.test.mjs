@@ -47,12 +47,16 @@ test('lab bench hides numbers until the prediction, then unlocks restate and com
   const readouts=()=>[...document.querySelectorAll('.pl-readouts dd')].map(node=>node.textContent)
   assert.deepEqual(readouts(),['?','?'])
   assert.equal([...document.querySelectorAll('.pl-control input')].every(input=>input.disabled),true)
+  assert.equal(document.querySelector('#pl-restate'),null)
+  assert.ok(document.querySelector('.pl-lock-cover'))
   assert.equal([...document.querySelectorAll('button')].some(button=>button.textContent.includes('把这一节记下来')),false)
 
   await act(async()=>[...document.querySelectorAll('.pl-opt')].find(button=>button.textContent.includes('变大')).click())
   assert.equal(predictionCalls,1)
   assert.deepEqual(readouts(),['30%','75%'])
   assert.equal([...document.querySelectorAll('.pl-control input')].every(input=>input.disabled),false)
+  assert.equal(document.querySelector('.pl-lock-cover'),null)
+  assert.ok(document.querySelector('#pl-restate'))
   assert.match(document.querySelector('.pl-fb').textContent,/分母变小/)
 
   const textarea=document.querySelector('#pl-restate')
