@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { gradeQuiz } from './lesson-quiz.tsx'
-import type { QuizAnswer, QuizQuestion } from './lesson-quiz.tsx'
+import type { QuizAnswer, QuizGrade, QuizQuestion } from './lesson-quiz.tsx'
 
 /** 课后任务的四步：读 / 测 / 练 / 回炉。状态全部由已发生的作答推导，不需要学员手动勾选。 */
 export type LessonTaskKey = 'read' | 'quiz' | 'practice' | 'reheat'
@@ -16,22 +16,22 @@ export type LessonTask = {
 export type LessonTaskInput = {
   questions: readonly QuizQuestion[]
   answers: readonly QuizAnswer[]
-  /** 打开过检测页签即视为「读」完成。 */
+  /** 讲义已实际渲染（不是点过「当堂检测」）。 */
   readDone: boolean
   /** 已有一轮真实提交的专项练习（或已关联到本课）即视为「练」完成。 */
   practiceDone: boolean
 }
 
-/** 由检测作答与练习证据推导四步状态：同一时刻最多一个当前步。 */
-export function deriveLessonTasks({ questions, answers, readDone, practiceDone }: LessonTaskInput): LessonTask[] {
+/** 由检测作答与练习证据推导四步状态：同一时刻最多一个当前步。判分只在这里算一次。 */
+export function deriveLessonTasks({ questions, answers, readDone, practiceDone }: LessonTaskInput): { tasks: LessonTask[]; grade: QuizGrade } {
   const grade = gradeQuiz(questions, answers)
-  const wrong = grade.items.filter(item => item.chosen !== null && !item.correct).length
+  const wrong = grade.wrongItems.length
   const allAnswered = grade.allAnswered
-  return [
+  const tasks: LessonTask[] = [
     {
       key: 'read', label: '读', title: '读讲义',
       state: readDone ? 'done' : 'current',
-      detail: readDone ? '已打开检测，讲义视为读过' : '先读讲义，再打开检测',
+      detail: readDone ? '已读讲义' : '先读讲义，再开始检测',
     },
     {
       key: 'quiz', label: '测', title: '当堂检测',
@@ -49,6 +49,7 @@ export function deriveLessonTasks({ questions, answers, readDone, practiceDone }
       detail: allAnswered ? (wrong > 0 ? `待回炉 ${wrong} 题` : '无需回炉') : wrong > 0 ? `已错 ${wrong} 题，检测完成后回炉` : '检测完成后决定',
     },
   ]
+  return { tasks, grade }
 }
 
 const stepStyle = (state: LessonTaskState): CSSProperties => ({
@@ -69,9 +70,8 @@ export function LessonTasks({ questions, answers, readDone, practiceDone, onJump
   /** 重做检测：清空作答并回到检测页签。 */
   onRetake: () => void
 }) {
-  const tasks = deriveLessonTasks({ questions, answers, readDone, practiceDone })
-  const grade = gradeQuiz(questions, answers)
-  const wrong = grade.items.filter(item => item.chosen !== null && !item.correct)
+  const { tasks, grade } = deriveLessonTasks({ questions, answers, readDone, practiceDone })
+  const wrong = grade.wrongItems
   return <section aria-label="课后任务" data-lesson-tasks style={{ display: 'grid', gap: 10, marginTop: 12 }}>
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
       <h3 style={{ margin: 0, fontSize: 14 }}>课后任务</h3>
@@ -86,7 +86,7 @@ export function LessonTasks({ questions, answers, readDone, practiceDone, onJump
         </div>
         <span style={{ fontSize: 12.5, color: '#1f2420' }}>{task.title}</span>
         <small style={{ fontSize: 11.5, color: '#667085' }}>{task.detail}</small>
-        {task.key === 'practice' && task.state === 'current' && <button data-pwb-button data-variant="primary" type="button" style={{ justifySelf: 'start', marginTop: 4 }} onClick={onPractice}>进入专项练习</button>}
+        {task.key === 'practice' && task.state === 'current' && <button data-pwb-button type="button" style={{ justifySelf: 'start', marginTop: 4 }} onClick={onPractice}>进入专项练习</button>}
       </li>)}
     </ol>
     {grade.allAnswered && wrong.length > 0 && <div data-reheat-card role="status" style={{ border: '1px solid #d8b46a', borderRadius: 8, padding: 12, display: 'grid', gap: 6, background: '#fffaf0' }}>

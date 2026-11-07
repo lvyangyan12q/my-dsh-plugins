@@ -27,7 +27,8 @@ export type HandoutBlock =
   | LabBlock
   | { kind: 'example'; no: string; tag: string; seconds: string; question: string; options: string[]; answer: number; steps: HandoutStep[]; slow?: string }
 
-export type HandoutSection = { id: string; no: string; title: string; blocks: HandoutBlock[] }
+/** 小节编号可为空：独立小节（如「动手试一试」）不编号，渲染成「＋ 标题」。 */
+export type HandoutSection = { id: string; no?: string; title: string; blocks: HandoutBlock[] }
 
 export type Handout = {
   id: string
@@ -82,6 +83,21 @@ export function labCalculation(values: LabValues): LabCalculation {
   }
 }
 
+/** 讲义按知识点挂接：本课目标或限定考点命中关键词才渲染这份讲义。 */
+export const HANDOUT_MATCH_KEYWORDS = ['混合增长', '增长率混合'] as const
+
+/** 判断一堂课是否匹配这份混合增长率讲义；换课只改这里的数据口径，不加接口。 */
+export function lessonMatchesHandout(request: { knowledgePoint?: string; objective?: string } | null | undefined): boolean {
+  if (!request) return false
+  const texts = [request.knowledgePoint ?? '', request.objective ?? '']
+  return HANDOUT_MATCH_KEYWORDS.some(keyword => texts.some(text => text.includes(keyword)))
+}
+
+/** 有编号就显示「02 标题」，独立小节显示「＋ 标题」。 */
+function sectionHeading(section: HandoutSection): string {
+  return section.no ? `${section.no} ${section.title}` : `＋ ${section.title}`
+}
+
 export const MIXED_GROWTH_HANDOUT: Handout = {
   id: 'mixed-growth',
   subject: '行测-资料分析',
@@ -105,10 +121,15 @@ export const MIXED_GROWTH_HANDOUT: Handout = {
         { kind: 'p', text: '右边就是一个加权平均：夹在两个数中间，被权重大的那个拉过去。把它反过来解，就是十字交叉。' },
         { kind: 'formula', text: 'A基 : B基 = |b − r| : |r − a|' },
         { kind: 'p', text: '交叉相减，得到的是对面的权重。这一步很多人背反，快 3 专门练。' },
+      ],
+    },
+    {
+      id: 'handout-lab', title: '动手试一试',
+      blocks: [
         {
           kind: 'lab',
           title: '混合增长率实验台',
-          hint: '拖动两部分的基期量与增长率，看整体增长率落在区间里的位置、偏向哪一侧。',
+          hint: '拖动两部分的基期量与增长率，看整体增长率落在区间里的位置、偏向哪一侧。可以再拖动滑杆换一组数，猜过的位置仍留在数轴上。',
           labels: { a: 'A', b: 'B' },
           baseLimit: { min: 100, max: 1000, step: 10 },
           rateLimit: { min: 0, max: 30, step: 0.1 },
@@ -212,11 +233,11 @@ export function HandoutView({ handout }: { handout: Handout }) {
         </span>
       </header>
       <nav aria-label="讲义目录" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', fontSize: 12 }}>
-        {handout.sections.map(section => <a key={section.id} href={'#' + section.id}>{section.no} {section.title}</a>)}
+        {handout.sections.map(section => <a key={section.id} href={'#' + section.id}>{sectionHeading(section)}</a>)}
       </nav>
       {handout.sections.map(section => (
         <section key={section.id} id={section.id} aria-label={section.title} style={{ display: 'grid', gap: 8 }}>
-          <h3 style={{ margin: 0, fontSize: 14 }}>{section.no} {section.title}</h3>
+          <h3 style={{ margin: 0, fontSize: 14 }}>{sectionHeading(section)}</h3>
           {section.blocks.map((block, index) => <BlockView key={index} block={block} fastOnly={fastOnly} />)}
         </section>
       ))}
@@ -267,8 +288,8 @@ function LabBench({ block }: { block: LabBlock }) {
   const { a, b } = block.labels
 
   const change = (patch: Partial<LabValues>) => {
+    // 拖动滑杆只改参数，不清空猜过的位置：换一组数还能对照原来的判断。
     setValues(current => ({ ...current, ...patch }))
-    setGuess(null)
   }
   const applyPreset = (preset: LabPreset) => change({ aBase: preset.aBase, bBase: preset.bBase, aRate: preset.aRate, bRate: preset.bRate })
   const position = (rate: number) => calc.upper === calc.lower ? 50 : ((rate - calc.lower) / (calc.upper - calc.lower)) * 100
@@ -329,7 +350,7 @@ function LabBench({ block }: { block: LabBlock }) {
         {revealed
           ? `整体增长率 ${calc.overallRate.toFixed(2)}%　${leanText}${distanceText}`
           : guess === null
-            ? '结果已藏起：在数轴上点一个位置，再揭晓。'
+            ? '结果已藏起：在数轴上点一个位置猜一猜，或直接揭晓答案。'
             : `结果已藏起　你的猜测 ${guess.toFixed(2)}%　点「揭晓答案」对照。`}
       </p>
       <div style={{ fontSize: 12, color: '#475467' }}>
@@ -342,7 +363,7 @@ function LabBench({ block }: { block: LabBlock }) {
       )}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-        <button data-pwb-button type="button" disabled={!revealed && guess === null} onClick={() => {
+        <button data-pwb-button type="button" onClick={() => {
           if (!revealed) { setRevealed(true); return }
           setGuess(null)
           setRevealed(false)

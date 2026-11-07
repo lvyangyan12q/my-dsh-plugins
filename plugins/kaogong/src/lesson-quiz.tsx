@@ -30,6 +30,8 @@ export type QuizGrade = {
   correct: number
   allAnswered: boolean
   items: QuizItemGrade[]
+  /** 已作答且答错的题：错题计数只从这里取，避免各处再按不同条件过滤。 */
+  wrongItems: QuizItemGrade[]
   /** 全部答完时的一句话小结；未答完为空。 */
   summary: string
 }
@@ -37,6 +39,14 @@ export type QuizGrade = {
 export type QuizAdvice =
   | { kind: 'practice'; text: string; action: string }
   | { kind: 'jump'; text: string; action: string; anchorId: string }
+
+/** 清空一组题的作答：初始渲染、重做检测、换课都走这里，避免三处各写一遍。 */
+export function emptyQuizAnswers(questions: readonly QuizQuestion[]): QuizAnswer[] {
+  return questions.map(() => null)
+}
+
+/** 正确率不超过这个比例时，先回第 5 节重读再测，而不是直接刷题。 */
+const REREAD_CORRECT_RATIO_LIMIT = 1 / 3
 
 /** 纯判分：给题与选择，逐题返回对错与解析，并给出计数与（答完后的）小结。 */
 export function gradeQuiz(questions: readonly QuizQuestion[], answers: readonly QuizAnswer[]): QuizGrade {
@@ -60,6 +70,7 @@ export function gradeQuiz(questions: readonly QuizQuestion[], answers: readonly 
     correct,
     allAnswered,
     items,
+    wrongItems: items.filter(item => item.chosen !== null && !item.correct),
     summary: allAnswered ? `检测 ${correct} / ${questions.length} 正确` : '',
   }
 }
@@ -78,8 +89,8 @@ export function quizAdvice(grade: QuizGrade): QuizAdvice | null {
     action: '回第 5 节重读',
     anchorId: 'handout-s5',
   }
-  if (grade.correct * 3 <= grade.total) return reread
-  const wrong = grade.items.filter(item => !item.correct)
+  if (grade.correct / grade.total <= REREAD_CORRECT_RATIO_LIMIT) return reread
+  const wrong = grade.wrongItems
   if (wrong.length !== 1) return reread
   return {
     kind: 'jump',
@@ -88,6 +99,9 @@ export function quizAdvice(grade: QuizGrade): QuizAdvice | null {
     anchorId: wrong[0].anchorId,
   }
 }
+
+/** 与 MIXED_GROWTH_HANDOUT 同一口径：自编、非真题。 */
+export const MIXED_GROWTH_QUIZ_PROVENANCE = '自编检测题：教学设计用，非真题；真题在练习轮次里。'
 
 export const MIXED_GROWTH_QUIZ: readonly QuizQuestion[] = [
   {
@@ -136,7 +150,7 @@ const optionStyle = (state: 'correct' | 'wrong' | 'dim' | undefined): CSSPropert
 })
 
 /** 当堂检测页：3 道选择题，选完立即判分并锁定该题；答错可回跳，答完给小结与下一步。作答由课堂面板持有，切页签不丢。 */
-export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, onJump, onPractice }: {
+export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, onJump, onPractice, provenance }: {
   questions?: readonly QuizQuestion[]
   /** 已作答：`null` 表示未答，作答后不可改选。 */
   answers: readonly QuizAnswer[]
@@ -146,6 +160,8 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
   onJump?: (anchorId: string) => void
   /** 全对后的专项练习入口：由课堂面板透传。 */
   onPractice?: () => void
+  /** 这套题是自编还是真题：由课堂面板随题给，不冒充真题。 */
+  provenance?: string
 }) {
   const grade = gradeQuiz(questions, answers)
   const advice = quizAdvice(grade)
@@ -159,6 +175,7 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
         <strong>当堂检测</strong>
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#667085', fontVariantNumeric: 'tabular-nums' }}>检测 <b style={{ color: '#2f6b58' }}>{grade.answered}</b>/{grade.total}</span>
       </div>
+      {provenance && <small style={{ color: '#667085' }}>{provenance}</small>}
       <small style={{ color: '#667085' }}>选完立刻判分，不能改选；答错先看解析，再回对应小节重读。</small>
       {questions.map((question, index) => {
         const chosen = answers[index] ?? null

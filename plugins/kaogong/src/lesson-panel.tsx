@@ -1,6 +1,6 @@
 import {LessonCloseout} from './lesson-closeout.tsx'
-import {HandoutView,MIXED_GROWTH_HANDOUT} from './lesson-handout.tsx'
-import {QuizPanel,MIXED_GROWTH_QUIZ} from './lesson-quiz.tsx'
+import {HandoutView,MIXED_GROWTH_HANDOUT,lessonMatchesHandout} from './lesson-handout.tsx'
+import {QuizPanel,MIXED_GROWTH_QUIZ,MIXED_GROWTH_QUIZ_PROVENANCE,emptyQuizAnswers} from './lesson-quiz.tsx'
 import type {QuizAnswer} from './lesson-quiz.tsx'
 import {LessonTasks} from './lesson-tasks.tsx'
 import { useEffect,useState } from 'react'
@@ -39,8 +39,9 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const [confirmed, setConfirmed] = useBusinessState('lesson.confirmed', false)
   const [tab, setTab] = useState<'handout' | 'quiz'>('handout')
   const [jump, setJump] = useState<{ anchorId: string; token: number } | null>(null)
-  const [readDone, setReadDone] = useState(false)
-  const [answers, setAnswers] = useState<QuizAnswer[]>(() => MIXED_GROWTH_QUIZ.map(() => null))
+  /** 「读」由讲义实际渲染这一事实决定；页签只负责去哪，不负责标记完成。 */
+  const [readDone, setReadDone] = useBusinessState('lesson.readDone', false)
+  const [answers, setAnswers] = useState<QuizAnswer[]>(() => emptyQuizAnswers(MIXED_GROWTH_QUIZ))
   const [material] = useBusinessState('reader.entry', null)
   const [practice] = useBusinessState('practice', null)
   const [result] = useBusinessState('result', null)
@@ -95,14 +96,18 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     setTab('handout')
     setJump(current => ({ anchorId, token: (current?.token ?? 0) + 1 }))
   }
-  /** 打开检测即视为「读」完成；作答状态由课堂面板持有，切页签不丢。 */
-  const openQuiz = () => { setReadDone(true); setTab('quiz') }
+  /** 讲义按知识点挂接：本课目标或限定考点不命中关键词时，只有空态，没有检测。 */
+  const handoutMatched = lessonMatchesHandout(view?.lesson.request)
   const answerQuiz = (index: number, option: number) => setAnswers(current => current[index] === null ? current.map((value, at) => at === index ? option : value) : current)
-  const retakeQuiz = () => { setAnswers(MIXED_GROWTH_QUIZ.map(() => null)); openQuiz() }
+  const retakeQuiz = () => { setAnswers(emptyQuizAnswers(MIXED_GROWTH_QUIZ)); setTab('quiz') }
   const lessonId = view?.lesson.request.lessonId
   useEffect(() => {
-    setAnswers(MIXED_GROWTH_QUIZ.map(() => null)); setReadDone(false); setTab('handout'); setJump(null)
+    setAnswers(emptyQuizAnswers(MIXED_GROWTH_QUIZ)); setReadDone(false); setTab('handout'); setJump(null)
   }, [lessonId])
+  // 讲义首次渲染即视为「读」完成；页签点击本身不标记任何完成。
+  useEffect(() => {
+    if (tab === 'handout' && handoutMatched && !readDone) setReadDone(true)
+  }, [tab, handoutMatched, readDone, setReadDone])
   useEffect(() => {
     if (!jump || tab !== 'handout') return
     const node = document.getElementById(jump.anchorId)
@@ -150,9 +155,11 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     {view && context && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
       <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
-        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={openQuiz}>当堂检测</button>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
       </div>
-      {tab === 'handout' ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <QuizPanel questions={MIXED_GROWTH_QUIZ} answers={answers} onAnswer={answerQuiz} onJump={jumpToSection} onPractice={startPractice} />}
+      {tab === 'handout'
+        ? (handoutMatched ? <HandoutView handout={MIXED_GROWTH_HANDOUT} /> : <p role="status">本课暂无讲义。</p>)
+        : <QuizPanel questions={handoutMatched ? MIXED_GROWTH_QUIZ : []} provenance={handoutMatched ? MIXED_GROWTH_QUIZ_PROVENANCE : undefined} answers={answers} onAnswer={answerQuiz} onJump={jumpToSection} onPractice={startPractice} />}
       <strong>{view.lesson.request.objective}</strong>
       <span>{view.lesson.request.subject} · {view.lesson.completion ? '学习者已确认完成' : '课后任务未完成'}</span>
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
@@ -180,7 +187,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
         if (owner.cell('lesson.notes', '').value === notes) setNotesDirty(false)
         accept(value)
       })}><Save size={14} />保存总结</button>
-      {!view.lesson.completion && <LessonTasks questions={MIXED_GROWTH_QUIZ} answers={answers} readDone={readDone} practiceDone={practiceDone} onJump={jumpToSection} onPractice={startPractice} onRetake={retakeQuiz}/>}
+      {!view.lesson.completion && <LessonTasks questions={handoutMatched ? MIXED_GROWTH_QUIZ : []} answers={answers} readDone={readDone} practiceDone={practiceDone} onJump={jumpToSection} onPractice={startPractice} onRetake={retakeQuiz}/>}
       <LessonCloseout onOpenTeacher={onOpenTeacher} onReturnToday={onReturnToday} view={view} notes={notes} accept={accept}/>
       <details><summary>共享证据摘要</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{view.summary}</pre></details>
     </div>}

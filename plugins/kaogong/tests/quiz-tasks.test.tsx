@@ -66,7 +66,7 @@ async function mountClassroom() {
   }
 }
 
-test('初始四步：读是当前步，其余待开始，且没有回炉卡', async () => {
+test('初始四步：讲义渲染即标记读完，测成为当前步，其余待开始，且没有回炉卡', async () => {
   const ui = await mountClassroom()
   try {
     assert.ok(ui.task('read'), '课堂里应出现课后任务四步')
@@ -74,8 +74,8 @@ test('初始四步：读是当前步，其余待开始，且没有回炉卡', as
     assert.match(ui.task('quiz')!.textContent ?? '', /测/)
     assert.match(ui.task('practice')!.textContent ?? '', /练/)
     assert.match(ui.task('reheat')!.textContent ?? '', /回炉/)
-    assert.equal(ui.taskState('read'), 'current')
-    assert.equal(ui.taskState('quiz'), 'pending')
+    assert.equal(ui.taskState('read'), 'done', '讲义已渲染，读即完成')
+    assert.equal(ui.taskState('quiz'), 'current')
     assert.equal(ui.taskState('practice'), 'pending')
     assert.equal(ui.taskState('reheat'), 'pending')
     assert.equal(ui.dom.window.document.querySelector('[data-reheat-card]'), null, '没有错题时不应出现回炉卡')
@@ -85,9 +85,10 @@ test('初始四步：读是当前步，其余待开始，且没有回炉卡', as
   }
 })
 
-test('打开检测：读标记完成，测成为当前步，答题推进 n/3 且切换页签不丢进度', async () => {
+test('打开检测：页签只切页签，读与作答进度都不因点击检测而改变', async () => {
   const ui = await mountClassroom()
   try {
+    assert.equal(ui.taskState('read'), 'done', '读在讲义渲染时已完成，不靠点检测')
     await ui.click('当堂检测')
     assert.equal(ui.taskState('read'), 'done')
     assert.equal(ui.taskState('quiz'), 'current')
@@ -115,6 +116,13 @@ test('三题答完：练成为当前步，专项练习入口复用面板的 onPr
     await ui.choose(3, 'B')
     assert.equal(ui.taskState('quiz'), 'done')
     assert.equal(ui.taskState('practice'), 'current')
+
+    const entry = [...ui.dom.window.document.querySelectorAll('button')].find(node => node.textContent === '进入专项练习')
+    assert.ok(entry, '课后任务应提供练习入口')
+    assert.equal(entry.hasAttribute('data-variant'), false, '课后任务的练习入口不是主按钮')
+    const primaries = [...ui.dom.window.document.querySelectorAll('[data-variant="primary"]')].filter(node => node.getAttribute('aria-label') !== '新建课堂')
+    assert.equal(primaries.length, 1, '内容区同屏只保留一个主按钮')
+    assert.equal(primaries[0].textContent, '去做 10 题专项')
 
     const before = ui.calls.length
     await ui.click('进入专项练习')

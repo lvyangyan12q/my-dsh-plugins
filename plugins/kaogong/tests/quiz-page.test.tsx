@@ -69,11 +69,13 @@ test('判分纯函数：对错、解析、锚点与小结', () => {
   assert.equal(partial.items[0].anchorId, 'handout-s5')
   assert.equal(partial.items[1].correct, false)
   assert.equal(partial.items[2].chosen, null)
+  assert.deepEqual(partial.wrongItems.map(item => item.id), ['quiz-2'], '错题计数只来自已作答且答错的题')
 
   const done = gradeQuiz(MIXED_GROWTH_QUIZ, [1, 0, 1])
   assert.equal(done.correct, 3)
   assert.equal(done.allAnswered, true)
   assert.equal(done.summary, '检测 3 / 3 正确')
+  assert.deepEqual(done.wrongItems, [])
 })
 
 test('当堂检测：初始不泄露答案，答对立即判分并计数', async () => {
@@ -84,6 +86,7 @@ test('当堂检测：初始不泄露答案，答对立即判分并计数', async
     assert.match(ui.body(), /检测 0\/3/)
     assert.match(ui.body(), /第 1 题/)
     assert.match(ui.body(), /5\.4%/)
+    assert.match(ui.body(), /自编检测题：教学设计用，非真题/, '检测页应标明自编、非真题')
     assert.doesNotMatch(ui.body(), /6\.58%/, '作答前不应出现解析')
     assert.doesNotMatch(ui.body(), /混合不可能等于其中一个部分值/, '作答前不应出现解析')
     assert.doesNotMatch(ui.body(), /回答正确|回答错误/, '作答前不应出现判分')
