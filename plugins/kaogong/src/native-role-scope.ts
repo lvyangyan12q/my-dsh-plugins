@@ -47,7 +47,7 @@ async function hasActiveTsx(anchor:string){
 }
 /** A public discovery result is only a candidate; the actual Native scope probe remains decisive. */
 async function declaredSource(scopeManifest:string,presetManifest:string,version:string){
- if(!['0.2.1-rc.3','0.2.2-alpha.2','0.2.2-alpha.3'].includes(version)||!await hasActiveTsx(presetManifest))return
+ if(!['0.2.1-rc.3','0.2.2-alpha.2','0.2.2-alpha.3','0.2.2-rc.1'].includes(version)||!await hasActiveTsx(presetManifest))return
  let config=process.env.TSX_TSCONFIG_PATH
  if(config===undefined){
   // TSX exposes no active-config accessor. Reproduce its default cwd search

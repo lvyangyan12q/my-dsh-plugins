@@ -64,6 +64,8 @@ export function SdkClassroom(props:StudyViewProps){
 }
 
 export const sdkLearningStyles=`
+.kg-study-dashboard{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.kg-study-dashboard>.kg-sdk-classroom{flex:1;min-height:0;height:auto}
 .kg-sdk-classroom{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;color:inherit;font:inherit;background:var(--dsh-background,#f8f8f5)}
 .kg-sdk-classroom>header,.kg-sdk-classroom>nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #dfe3dd}.kg-sdk-classroom small{font-size:12px;color:#667062}.kg-sdk-content{min-height:0;min-width:0;flex:1;overflow:auto}.kg-overview,.kg-sdk-content>section[aria-label="待发送教学任务"]{padding:18px 22px}
 .kg-sdk-classroom button{min-height:34px;padding:6px 10px;border:1px solid #cad2c7;border-radius:6px;background:#fff;color:#283b2a;font:inherit;cursor:pointer}.kg-sdk-classroom button[aria-pressed=true]{background:#2f6248;color:#fff;border-color:#2f6248}.kg-sdk-classroom button:disabled{opacity:.5;cursor:not-allowed}.kg-sdk-classroom :is(button,input,select,textarea):focus-visible{outline:2px solid #2f6248;outline-offset:2px}

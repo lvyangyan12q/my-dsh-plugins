@@ -1,6 +1,6 @@
 # 考公学习插件
 
-学习与复习改版候选（当前版本见 package.json），面向官方 DSH Web `0.2.2-alpha.3`（`8bd0733`），不需要安装或启用 Worktable。准确发行包与实装进度见[发行准备](docs/evidence/08-release-preparation.md)；源码与构建通过不代表全部浏览器验收完成。现有工作台冻结包仅声明支持 alpha.2，本轮 alpha.3 共存尚未通过，不使用版本豁免。旧 alpha.2 和 rc.3 发行包保留回退，历史验收不替代本轮证据。
+学习与复习改版候选（当前版本见 package.json），面向官方 DSH Web `0.2.2-rc.1`（`fcc0ad4`），不需要安装或启用 Worktable。源码与构建通过不代表全部浏览器验收完成。其他插件与本宿主的兼容性须分别验证，不使用版本豁免。旧 alpha.3、alpha.2 和 rc.3 发行包保留回退，历史验收不替代本轮证据。
 
 原生侧栏的“考公学习”提供今日、学习路线、复习中心、学习进度四个主要入口；资料库、自由练习和设置按需展开。学习路线按完整科目、章节、知识点大纲展示，只有本人确认完成才计入已学覆盖；缺资料项仍保留在分母。课堂使用完整 Native 对话及原生右侧学习面板，保留模型、轨迹、提问、审批和 Stop，只有一个聊天输入框。班主任、科目老师与辅导员使用标准 preset 和私有 Persona/kaogong-teach Skill；普通会话不能访问档案数据。
 
@@ -44,7 +44,7 @@ MinerU只在明确选择授权PDF及持久输出根后调用配置的外部服�
 
 ## 构建与候选包检查
 
-在本插件目录维护源码与物理隔离依赖。构建工具必须真实位于本目录node_modules，不通过共享junction安装或修改Native源码。DSH_SOURCE指向已构建、未补丁的官方0.2.2-alpha.3目录。
+在本插件目录维护源码与物理隔离依赖。构建工具必须真实位于本目录node_modules，不通过共享junction安装或修改Native源码。DSH_SOURCE指向已构建、未补丁的官方0.2.2-rc.1目录。
 
 ```powershell
 $env:DSH_SOURCE = 'C:/runtime/deepseek-harness'
