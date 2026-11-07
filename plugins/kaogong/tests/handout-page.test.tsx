@@ -43,7 +43,8 @@ test('课堂的讲义页签渲染整节课，并能收起慢解', async () => {
     assert.match(body(), /显示慢解/)
 
     await click('当堂检测')
-    assert.match(body(), /本课暂无检测/)
+    assert.match(body(), /检测 0\/3/)
+    assert.match(body(), /第 1 题/)
     assert.ok(!body().includes('一句话结论'), '切走后讲义不再显示')
 
     await click('讲义')
