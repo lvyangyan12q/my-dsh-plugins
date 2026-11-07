@@ -78,14 +78,16 @@ Verified in the real host UI:
 - completion returns the recorded confirmation;
 - 390px viewport has no horizontal document overflow;
 - after stopping and restarting the host, the same course and `B=55` are restored;
-- evidence and parameters are present in the isolated storage file.
+- evidence and parameters are present in the isolated storage file;
+- keyboard-only: focus the prediction, press Enter, readouts unlock; focus restate, type, submit with Enter;
+- a lab-less legacy course opens read-only with no sliders or prediction.
 
-Screenshots: `evidence/accept-locked.png`, `evidence/accept-lab-1440.png`, `evidence/accept-lab-390.png`.
+Screenshots: `evidence/accept-locked.png`, `evidence/accept-lab-1440.png`, `evidence/accept-lab-390.png`,
+`evidence/accept-keyboard.png`, `evidence/accept-legacy.png`.
 Machine-readable summary: `evidence/lab-browser-acceptance.json`.
 
-Still not verified: real `/teach` model generation of a protocol course, keyboard-only operation,
-a legacy lab-less course in the new shell, and a generated course that implements the lock and
-host-pushed parameter events.
+Still not verified: real `/teach` model generation of a protocol course, and a generated course that
+implements the lock and host-pushed parameter events.
 
 
 
