@@ -48,7 +48,8 @@ const course = {
   },
 }
 
-let state = {instances:[instance],lastInstanceId:'i1',bindings:[],requests:[],courses:[course],maps:[],mapDrafts:[],evidence:[],continuations:[{instanceId:'i1',courseId:'c1',conceptId:null,view:'course',parameters:{N:100,B:40,AB:30}}]}
+const initialView = new URLSearchParams(location.search).get('view') === 'map' ? 'map' : 'course'
+let state = {instances:[instance],lastInstanceId:'i1',bindings:[],requests:[],courses:[course],maps:[],mapDrafts:[],evidence:[],continuations:[{instanceId:'i1',courseId:'c1',conceptId:null,view:initialView,parameters:{N:100,B:40,AB:30}}]}
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 window.fetch = async (_url, options) => {
