@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>配置管理 · SSH 连接</title>
+<link rel="stylesheet" href="/api/worktable/template/dshell.css" />
+<style>
+  /* ============ bug-solver 窗口2：配置管理 ============
+     交互按确认结果：A 主从布局 · 私钥用本机路径 · SSH 连接 × 代码项目 多对多
+     数据：data/ssh-config.json（窗口读 + 经 /api/worktable/write 写）
+     测试连接 / 读分支：经工作台终端通道执行 ssh（只读命令） */
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { overflow: hidden; }
+  #root { height: 100%; }
+  button, input, select, textarea { font-family: inherit; }
+  a { color: var(--dsw-alias-state-accent-primary, #4f8ef7); text-decoration: none; cursor: pointer; }
+  a:hover { text-decoration: underline; }
+
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+  .smBtn { font-size: 12px; padding: 5px 12px; }
+  .dshell-badge { white-space: nowrap; }
+  .badgeErr { color: #f85149 !important; border-color: rgba(248,81,73,.45) !important; }
+  .badgeErr::before { background: #f85149 !important; box-shadow: 0 0 5px #f85149 !important; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #6b7280; flex: none; }
+  .dot.ok { background: #3fb950; box-shadow: 0 0 5px #3fb950; }
+  .dot.fail { background: #f85149; }
+  .dot.unknown { background: #6b7280; }
+  .tag { font-size: 9.5px; padding: 0 6px; border-radius: 999px; border: 1px solid rgba(63,185,80,.4); color: #3fb950; flex: none; }
+  .tagDim { font-size: 9.5px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1, #262b36); color: var(--dsw-alias-label-tertiary, #6b7280); flex: none; }
+
+  /* 表单件 */
+  .fld { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fldLabel { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--dsw-alias-label-secondary, #9aa4b2); font-size: 11.5px; }
+  .fldErr { color: #f85149; font-size: 10.5px; white-space: nowrap; }
+  .fldHint { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dshell-input.bad { border-color: rgba(248,81,73,.7); }
+  .inputRow { display: flex; gap: 8px; align-items: center; }
+  .inputRow .dshell-input { flex: 1; min-width: 0; }
+  .inputRow > button { flex: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chipsLabel { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 11px; margin-right: 2px; }
+  .chip { border: 1px solid var(--dsw-alias-border-l1, #262b36); background: transparent; color: var(--dsw-alias-label-secondary, #9aa4b2); font-size: 11.5px; padding: 3px 9px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  .chip:hover { color: var(--dsw-alias-label-primary, #e6e8eb); border-color: var(--dsw-alias-border-l2, #3a4150); }
+  .chip.on { color: var(--dsw-alias-label-primary, #e6e8eb); border-color: var(--dsw-alias-state-accent-primary, #4f8ef7); background: color-mix(in srgb, var(--dsw-alias-state-accent-primary, #4f8ef7) 14%, transparent); }
+  .chip .cnt { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10px; margin-left: 3px; }
+  .miniBtn { font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--dsw-alias-border-l1, #262b36); background: transparent; color: var(--dsw-alias-label-secondary, #9aa4b2); cursor: pointer; white-space: nowrap; }
+  .miniBtn:hover { color: var(--dsw-alias-label-primary, #e6e8eb); border-color: var(--dsw-alias-border-l2, #3a4150); }
+  .miniBtn.danger { color: #f85149; border-color: rgba(248,81,73,.4); }
+  .cmdLine { margin: 0; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--dsw-alias-border-l1, #262b36); background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--dsw-alias-label-secondary, #9aa4b2); overflow-x: auto; white-space: nowrap; }
+  .notice { border-radius: 8px; padding: 6px 11px; font-size: 11.5px; border: 1px solid transparent; line-height: 1.55; }
+  .notice.info { color: var(--dsw-alias-label-secondary, #9aa4b2); border-color: var(--dsw-alias-border-l1, #262b36); background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); }
+  .notice.warn { color: #d29922; border-color: rgba(210,153,34,.4); background: rgba(210,153,34,.08); }
+  .notice.error { color: #f85149; border-color: rgba(248,81,73,.4); background: rgba(248,81,73,.08); }
+  .notice.ok { color: #3fb950; border-color: rgba(63,185,80,.4); background: rgba(63,185,80,.08); }
+
+  /* 外壳 */
+  .cfg { display: flex; flex-direction: column; height: 100%; min-width: 0; }
+  .cfg-top { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding: 10px 16px 7px; }
+  .cfg-tabs { flex: none; display: flex; gap: 2px; padding: 0 16px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); overflow-x: auto; }
+  .cfg-tab { padding: 7px 11px; font: inherit; font-size: 12px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--dsw-alias-label-secondary, #9aa4b2); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .cfg-tab:hover { color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .cfg-tab.on { color: var(--dsw-alias-label-primary, #e6e8eb); border-bottom-color: var(--dsw-alias-state-accent-primary, #4f8ef7); }
+  .cfg-count { font-size: 10px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1, #262b36); color: var(--dsw-alias-label-tertiary, #6b7280); }
+  .cfg-body { flex: 1; min-height: 0; }
+
+  /* A 主从 */
+  .ma { display: grid; grid-template-columns: 276px 1fr; height: 100%; min-width: 0; }
+  .ma-side { display: flex; flex-direction: column; min-height: 0; min-width: 0; border-right: 1px solid var(--dsw-alias-border-l1, #262b36); }
+  .ma-sideHead { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); font-size: 12px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .ma-filters { flex: none; padding: 7px 12px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); }
+  .ma-list { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .ma-item { display: flex; flex-direction: column; gap: 3px; width: 100%; text-align: left; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--dsw-alias-border-l1, #262b36); background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); color: var(--dsw-alias-label-secondary, #9aa4b2); cursor: pointer; font: inherit; }
+  .ma-item:hover { border-color: var(--dsw-alias-border-l2, #3a4150); }
+  .ma-item.on { border-color: var(--dsw-alias-state-accent-primary, #4f8ef7); background: color-mix(in srgb, var(--dsw-alias-state-accent-primary, #4f8ef7) 10%, transparent); }
+  .ma-itemTop { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .ma-itemName { font-size: 12.5px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ma-itemAddr { font-size: 11px; font-family: ui-monospace, Consolas, monospace; color: var(--dsw-alias-label-secondary, #9aa4b2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ma-itemMeta { font-size: 10px; color: var(--dsw-alias-label-tertiary, #6b7280); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ma-editor { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .edHead { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 16px 8px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); }
+  .edHead h2 { margin: 0; font-size: 14px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .edHead .sub { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10.5px; margin-top: 2px; }
+  .edBody { flex: 1; min-height: 0; min-width: 0; overflow: auto; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .edFoot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 8px 16px; border-top: 1px solid var(--dsw-alias-border-l1, #262b36); }
+  .edFoot .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .edGrid3 { display: grid; grid-template-columns: 1.15fr 88px 1fr; gap: 10px; }
+  .edGrid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .spanAll { grid-column: 1 / -1; }
+  .edSection { display: flex; flex-direction: column; gap: 8px; }
+  .edSectionTitle { font-size: 11px; font-weight: 600; color: var(--dsw-alias-label-secondary, #9aa4b2); letter-spacing: .3px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .edSectionTitle .dshell-muted { font-weight: 400; }
+  .edToggle { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dsw-alias-label-primary, #e6e8eb); cursor: pointer; }
+  .edToggle input { accent-color: #3fb950; width: 14px; height: 14px; }
+  .delConfirm { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #f85149; flex-wrap: wrap; }
+
+  /* 多对多关联勾选 */
+  .linkGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr)); gap: 7px; }
+  .linkItem { display: flex; align-items: flex-start; gap: 8px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--dsw-alias-border-l1, #262b36); background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); cursor: pointer; min-width: 0; }
+  .linkItem:hover { border-color: var(--dsw-alias-border-l2, #3a4150); }
+  .linkItem.on { border-color: rgba(63,185,80,.45); background: rgba(63,185,80,.07); }
+  .linkItem input { margin-top: 2px; accent-color: #3fb950; flex: none; }
+  .linkText { display: flex; flex-direction: column; min-width: 0; }
+  .linkName { font-size: 12px; color: var(--dsw-alias-label-primary, #e6e8eb); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .linkMeta { font-size: 10px; color: var(--dsw-alias-label-tertiary, #6b7280); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, Consolas, monospace; }
+
+  /* 分支 */
+  .branchRow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .branchChip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 9px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1, #262b36); background: transparent; color: var(--dsw-alias-label-secondary, #9aa4b2); font-size: 11.5px; }
+  .branchChip.on { border-color: var(--dsw-alias-state-accent-primary, #4f8ef7); color: var(--dsw-alias-label-primary, #e6e8eb); background: color-mix(in srgb, var(--dsw-alias-state-accent-primary, #4f8ef7) 12%, transparent); }
+  .branchName { font-family: ui-monospace, Consolas, monospace; }
+  .branchX { border: none; background: transparent; color: var(--dsw-alias-label-tertiary, #6b7280); cursor: pointer; font-size: 12px; line-height: 1; padding: 2px 4px; border-radius: 50%; }
+  .branchX:hover { color: #f85149; background: rgba(248,81,73,.12); }
+  .pickBranch { border: 1px dashed var(--dsw-alias-border-l2, #3a4150); background: transparent; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 11px; padding: 3px 9px; border-radius: 999px; cursor: pointer; }
+
+  /* 连接测试面板 */
+  .tstHead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 5px; }
+  .tstTitle { font-size: 12px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .tstHint { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10.5px; margin-left: auto; }
+  .tstRow { display: flex; align-items: center; gap: 8px; font-size: 11.5px; padding: 2px 0; color: var(--dsw-alias-label-secondary, #9aa4b2); }
+  .tstRow .tstIcon { width: 14px; text-align: center; flex: none; }
+  .tstRow.done { color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .tstRow.done .tstIcon { color: #3fb950; }
+  .tstRow.run .tstIcon { color: #d29922; }
+  .tstRow.fail { color: #f85149; }
+  .tstRow.fail .tstIcon { color: #f85149; }
+  .tstRow .tstMs { margin-left: auto; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10.5px; }
+  .tstFail { margin-top: 6px; padding: 6px 9px; border-radius: 7px; border: 1px solid rgba(248,81,73,.4); background: rgba(248,81,73,.08); color: #f85149; font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .termTail { margin-top: 6px; max-height: 128px; overflow: auto; padding: 6px 9px; border-radius: 7px; border: 1px solid var(--dsw-alias-border-l1, #262b36); background: rgba(0,0,0,.28); font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; line-height: 1.5; color: var(--dsw-alias-label-secondary, #9aa4b2); white-space: pre-wrap; word-break: break-all; }
+
+  /* 关联视图（矩阵） */
+  .mx { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  .mx-top { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 9px 16px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); }
+  .mx-wrap { flex: 1; min-height: 0; overflow: auto; padding: 12px 16px 16px; }
+  .mx-table { border-collapse: separate; border-spacing: 0; font-size: 11.5px; }
+  .mx-table th, .mx-table td { padding: 7px 9px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); border-right: 1px solid var(--dsw-alias-border-l1, #262b36); text-align: center; }
+  .mx-table thead th { position: sticky; top: 0; z-index: 2; background: var(--dsw-alias-bg-base, #0b0e14); color: var(--dsw-alias-label-secondary, #9aa4b2); font-weight: 500; font-size: 10.5px; white-space: nowrap; }
+  .mx-table tbody th { position: sticky; left: 0; z-index: 1; background: var(--dsw-alias-bg-base, #0b0e14); text-align: left; color: var(--dsw-alias-label-primary, #e6e8eb); font-weight: 600; white-space: nowrap; }
+  .mx-table tbody th small { display: block; color: var(--dsw-alias-label-tertiary, #6b7280); font-weight: 400; font-family: ui-monospace, Consolas, monospace; }
+  .mx-cell { width: 34px; height: 26px; border-radius: 6px; border: 1px solid var(--dsw-alias-border-l1, #262b36); background: transparent; color: var(--dsw-alias-label-tertiary, #6b7280); cursor: pointer; font-size: 12px; line-height: 1; }
+  .mx-cell:hover { border-color: var(--dsw-alias-border-l2, #3a4150); }
+  .mx-cell.on { border-color: rgba(63,185,80,.5); background: rgba(63,185,80,.14); color: #3fb950; }
+  .mx-note { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10.5px; margin-top: 10px; line-height: 1.6; }
+
+  /* 服务 / 容器 → 项目 映射 */
+  .svcRow { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 8px; align-items: center; padding: 8px 9px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 8px; background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); }
+  .svcRow .fldErr { grid-column: 1 / -1; white-space: normal; }
+  .svcRow .dshell-input { min-width: 0; }
+  .svcHead { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 8px; padding: 0 9px; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10.5px; }
+  .svcList { display: flex; flex-direction: column; gap: 7px; }
+  .svcHint { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 10.5px; line-height: 1.6; }
+
+  .emptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; padding: 34px 20px; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 12.5px; text-align: center; }
+  .emptyState .big { font-size: 24px; opacity: .6; }
+  .loading { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 12.5px; }
+
+  .toast { position: fixed; right: 14px; bottom: 14px; max-width: min(440px, 88vw); background: #1b2230; border: 1px solid rgba(255,255,255,.22); border-radius: 10px; padding: 8px 12px; font-size: 11.5px; line-height: 1.5; color: #e6e8eb; box-shadow: 0 8px 24px rgba(0,0,0,.5); opacity: 0; transform: translateY(6px); transition: .18s ease; z-index: 60; pointer-events: none; }
+  .toast.on { opacity: 1; transform: none; }
+
+  @media (max-width: 780px) {
+    .ma { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .ma-side { border-right: none; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); max-height: 32vh; }
+    .ma-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
+    .ma-item { min-width: 210px; }
+    .edGrid3, .edGrid2 { grid-template-columns: 1fr; }
+    .edGrid3 > .fld:nth-child(2) { max-width: 130px; }
+    .linkGrid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">加载配置…</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CONFIG_REL = 'data/ssh-config.json';
+  var CONFIG_VERSION = 2;
+  var EMPTY = { version: CONFIG_VERSION, updatedAt: null, connections: [], projects: [], links: [], serviceMap: [] };
+  var KEY_HINTS = ['~/.ssh/id_ed25519', '~/.ssh/id_rsa', 'C:\\Users\\Administrator\\.ssh\\id_ed25519'];
+
+  var S = {
+    tab: 'conn',
+    data: JSON.parse(JSON.stringify(EMPTY)),
+    connSel: null,
+    connDraft: null,
+    connDirty: false,
+    projSel: null,
+    projDraft: null,
+    projDirty: false,
+    connErr: {},
+    projErr: {},
+    mapErr: {},
+    pathCheck: { status: 'idle', msg: '', path: '' },
+    test: { status: 'idle', steps: [], msg: '', tail: '', forId: null },
+    branchLoad: { status: 'idle', msg: '', forId: null },
+    notice: null,
+    confirmDelete: null,
+    saving: false,
+    loading: true,
+    newBranch: ''
+  };
+
+  var root = document.getElementById('root');
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+
+  /* ---------------- 基础工具 ---------------- */
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function uid(prefix) {
+    return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+  }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 3600);
+  }
+  function clockText(d) {
+    if (!d) return '';
+    function p(n) { return n < 10 ? '0' + n : String(n); }
+    return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  function siteRoot() {
+    var parts = location.pathname.split('/').filter(Boolean);
+    return parts.length >= 4 ? decodeURIComponent(parts[3]) : '';
+  }
+  function blankConn() {
+    return { id: null, name: '', host: '', port: '22', user: '', key: '~/.ssh/id_ed25519', isDefault: false, projectIds: [], lastTestOk: null, lastTestAt: null, lastTestMsg: '' };
+  }
+  function blankProj() {
+    return { id: null, name: '', repo: '', remotePath: '', localPath: '', defaultBranch: '', branches: [], note: '', connectionIds: [] };
+  }
+  function connById(id) {
+    for (var i = 0; i < S.data.connections.length; i++) if (S.data.connections[i].id === id) return S.data.connections[i];
+    return null;
+  }
+  function projById(id) {
+    for (var i = 0; i < S.data.projects.length; i++) if (S.data.projects[i].id === id) return S.data.projects[i];
+    return null;
+  }
+  function defaultConn() {
+    for (var i = 0; i < S.data.connections.length; i++) if (S.data.connections[i].isDefault) return S.data.connections[i];
+    return S.data.connections[0] || null;
+  }
+  function linksOf(type, id) {
+    return S.data.links.filter(function (l) {
+      return type === 'conn' ? l.connectionId === id : l.projectId === id;
+    });
+  }
+  function linkedProjectIds(connId) {
+    return S.data.links.filter(function (l) { return l.connectionId === connId; }).map(function (l) { return l.projectId; });
+  }
+  function linkedConnIds(projId) {
+    return S.data.links.filter(function (l) { return l.projectId === projId; }).map(function (l) { return l.connectionId; });
+  }
+  function sshCmd(c, opts) {
+    opts = opts || {};
+    var base = 'ssh -i "' + (c.key || '<私钥>') + '" -p ' + (c.port || '22');
+    if (opts.batch) base += ' -o BatchMode=yes -o ConnectTimeout=8 -o StrictHostKeyChecking=accept-new';
+    return base + ' ' + (c.user || '<用户>') + '@' + (c.host || '<主机>');
+  }
+
+  /* ---------------- 读写配置 ---------------- */
+  async function loadConfig() {
+    try {
+      var r = await fetch(CONFIG_REL, { cache: 'no-store', credentials: 'same-origin' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var j = await r.json();
+      S.data = normalize(j);
+      S.notice = null;
+      if (S.data._migratedFrom) {
+        S.notice = {
+          kind: 'warn',
+          text: '检测到 v' + S.data._migratedFrom + ' 配置：已为代码项目补齐 project.localPath，并在顶层补 serviceMap 空数组；保存后写回 version ' +
+            CONFIG_VERSION + '，原有连接 / 项目 / 关联不丢。'
+        };
+      }
+    } catch (e) {
+      S.data = JSON.parse(JSON.stringify(EMPTY));
+      S.notice = { kind: 'warn', text: '还没有配置文件（' + CONFIG_REL + '），已从空配置开始：先新建一条 SSH 连接。' };
+    }
+    S.loading = false;
+    if (S.data.connections.length) selectConn(S.data.connections[0].id, true);
+    if (S.data.projects.length) selectProj(S.data.projects[0].id, true);
+    render();
+  }
+  function normalize(j) {
+    var src = (j && typeof j === 'object') ? j : {};
+    var fromVer = Number(src.version) || 1;
+    var out = { version: CONFIG_VERSION, updatedAt: src.updatedAt || null, connections: [], projects: [], links: [], serviceMap: [] };
+    out.connections = (src.connections || []).map(function (c) {
+      return {
+        id: c.id || uid('conn'), name: c.name || '', host: c.host || '', port: String(c.port == null ? '' : c.port),
+        user: c.user || '', key: c.key || '', isDefault: !!c.isDefault,
+        lastTestOk: c.lastTestOk == null ? null : !!c.lastTestOk, lastTestAt: c.lastTestAt || null, lastTestMsg: c.lastTestMsg || ''
+      };
+    });
+    out.projects = (src.projects || []).map(function (p) {
+      return {
+        id: p.id || uid('proj'), name: p.name || '', repo: p.repo || '', remotePath: p.remotePath || '',
+        localPath: p.localPath || '',
+        defaultBranch: p.defaultBranch || '', branches: Array.isArray(p.branches) ? p.branches.slice() : [], note: p.note || ''
+      };
+    });
+    var connIds = {}, projIds = {};
+    out.connections.forEach(function (c) { connIds[c.id] = 1; });
+    out.projects.forEach(function (p) { projIds[p.id] = 1; });
+    var seen = {};
+    (src.links || []).forEach(function (l) {
+      if (!l || !connIds[l.connectionId] || !projIds[l.projectId]) return;
+      var k = l.connectionId + '|' + l.projectId;
+      if (seen[k]) return;
+      seen[k] = 1;
+      out.links.push({ connectionId: l.connectionId, projectId: l.projectId });
+    });
+    out.serviceMap = normalizeServiceMap(src.serviceMap, out.projects);
+    out._migratedFrom = fromVer < CONFIG_VERSION ? fromVer : null;
+    return out;
+  }
+  function normalizeServiceMap(raw, projects) {
+    var ids = {};
+    projects.forEach(function (p) { ids[p.id] = 1; });
+    var out = [];
+    (Array.isArray(raw) ? raw : []).forEach(function (m) {
+      if (!m || typeof m !== 'object') return;
+      var match = (Array.isArray(m.match) ? m.match : String(m.match == null ? '' : m.match).split(','))
+        .map(function (s) { return String(s).trim(); })
+        .filter(Boolean);
+      if (!match.length || !ids[m.projectId]) return;
+      out.push({ match: match, projectId: m.projectId, container: String(m.container == null ? '' : m.container).trim() });
+    });
+    return out;
+  }
+  function configText() {
+    var clean = {
+      version: CONFIG_VERSION,
+      updatedAt: new Date().toISOString(),
+      connections: S.data.connections.map(function (c) {
+        return { id: c.id, name: c.name, host: c.host, port: c.port, user: c.user, key: c.key, isDefault: !!c.isDefault, lastTestOk: c.lastTestOk, lastTestAt: c.lastTestAt, lastTestMsg: c.lastTestMsg || '' };
+      }),
+      projects: S.data.projects.map(function (p) {
+        return { id: p.id, name: p.name, repo: p.repo, remotePath: p.remotePath, localPath: p.localPath || '', defaultBranch: p.defaultBranch, branches: p.branches.slice(), note: p.note };
+      }),
+      links: S.data.links.map(function (l) { return { connectionId: l.connectionId, projectId: l.projectId }; }),
+      serviceMap: S.data.serviceMap.map(function (m) {
+        return { match: (m.match || []).slice(), projectId: m.projectId, container: String(m.container || '').trim() };
+      })
+    };
+    return JSON.stringify(clean, null, 2);
+  }
+  async function saveConfig(silent) {
+    if (S.saving) return false;
+    S.saving = true;
+    var ok = false;
+    try {
+      var path = siteRoot().replace(/[\\\/]+$/, '') + '\\' + CONFIG_REL.replace(/\//g, '\\');
+      var r = await fetch('/api/worktable/write', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ path: path, content: configText() })
+      });
+      ok = r.ok;
+      if (!ok) S.notice = { kind: 'error', text: '写入配置失败（HTTP ' + r.status + '）：请确认窗口运行在工作台内、且项目目录可写。当前修改只在内存里。' };
+      else S.notice = silent ? S.notice : { kind: 'ok', text: '已保存到 ' + CONFIG_REL + '（' + clockText(new Date()) + '）' };
+    } catch (e) {
+      S.notice = { kind: 'error', text: '写入配置失败：' + (e && e.message ? e.message : e) + '。当前修改只在内存里。' };
+      ok = false;
+    }
+    S.saving = false;
+    if (!ok) toast('保存失败：配置未落盘');
+    return ok;
+  }
+
+  /* ---------------- 终端通道（真实 ssh 用） ---------------- */
+  function runTerminal(cmd, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var cwd = siteRoot() || '.';
+      var wsUrl = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host +
+        '/api/worktable/term?cwd=' + encodeURIComponent(cwd) + '&cols=180&rows=40';
+      var ws = null, buf = '', settled = false, timer = null;
+      function finish(ok, output, reason) {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        try { if (ws) ws.close(); } catch (e) { /* ignore */ }
+        resolve({ ok: ok, output: output || '', reason: reason || '' });
+      }
+      try { ws = new WebSocket(wsUrl); } catch (e) { return finish(false, '', '无法创建终端通道：' + e.message); }
+      timer = setTimeout(function () { finish(false, buf, '命令超时（>' + Math.round((opts.waitMs || 25000) / 1000) + ' 秒）'); }, opts.waitMs || 25000);
+      ws.onopen = function () {
+        setTimeout(function () {
+          try { ws.send(cmd + '\r'); } catch (e) { finish(false, '', '无法发送命令'); }
+        }, 260);
+      };
+      ws.onmessage = function (ev) {
+        buf = (buf + (typeof ev.data === 'string' ? ev.data : '')).slice(-20000);
+        var text = stripAnsi(buf);
+        if (opts.doneWhen && opts.doneWhen(text)) finish(true, text);
+        else if (opts.failWhen && opts.failWhen(text)) finish(false, text, '命令返回错误');
+      };
+      ws.onerror = function () { finish(false, buf, '终端通道连接失败：请确认窗口运行在工作台内（可用「终端」窗先试）'); };
+      ws.onclose = function () { if (!settled) finish(false, stripAnsi(buf), '终端通道提前关闭'); };
+    });
+  }
+  function stripAnsi(text) {
+    return String(text || '').replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').replace(/\r/g, '');
+  }
+  function tailOf(text, n) {
+    var t = stripAnsi(text).replace(/\s+/g, ' ').trim();
+    return t.slice(-(n || 400));
+  }
+
+  /* ---------------- 校验 ---------------- */
+  var HOST_RE = /^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$/;
+  var USER_RE = /^[A-Za-z_][A-Za-z0-9_-]{0,31}$/;
+  function validateConn(d) {
+    var e = {};
+    if (!String(d.name || '').trim()) e.name = '必填';
+    var host = String(d.host || '').trim();
+    if (!host) e.host = '必填';
+    else if (!HOST_RE.test(host)) e.host = '只能是 IP 或域名';
+    var port = Number(d.port);
+    if (!String(d.port || '').trim()) e.port = '必填';
+    else if (!isFinite(port) || Math.floor(port) !== port || port < 1 || port > 65535) e.port = '1–65535';
+    if (!USER_RE.test(String(d.user || '').trim())) e.user = '格式不正确';
+    if (!String(d.key || '').trim()) e.key = '必填';
+    return e;
+  }
+  function validateProj(d) {
+    var e = {};
+    if (!String(d.name || '').trim()) e.name = '必填';
+    if (!String(d.remotePath || '').trim()) e.remotePath = '必填';
+    else if (!/^[\/~]/.test(String(d.remotePath).trim())) e.remotePath = '请填绝对路径';
+    var lp = String(d.localPath || '').trim();
+    if (lp && !isAbsolutePath(lp)) e.localPath = '请填绝对路径（如 F:\\repos\\demo 或 /srv/repos/demo）';
+    if (d.defaultBranch && d.branches.indexOf(d.defaultBranch) < 0) e.defaultBranch = '不在分支列表里';
+    return e;
+  }
+  function isAbsolutePath(p) {
+    var s = String(p || '').trim();
+    if (!s) return false;
+    if (/^[A-Za-z]:[\\\/]/.test(s)) return true;      // C:\repo 或 C:/repo
+    if (/^\\\\[^\\]/.test(s)) return true;            // UNC \\server\share
+    if (/^\/(?!\/)/.test(s)) return true;             // POSIX /srv/repo
+    return false;
+  }
+  // 本地仓库路径校验：node 探针只读 fs.existsSync / statSync，不碰仓库内容
+  function pathProbeSource(p) {
+    var lit = "'" + String(p).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+    return "var fs=require('fs'),path=require('path'),p=" + lit + ",g=path.join(p,'.git'),r;" +
+      "try{if(!fs.existsSync(p)){r='MISS'}else if(!fs.statSync(p).isDirectory()){r='NOTDIR'}else if(!fs.existsSync(g)){r='NOGIT'}else{r='OK'}}catch(e){r='ERR'}" +
+      "console.log('WB_PATH_'+r)";
+  }
+  async function probeLocalPath(p) {
+    var cmd = 'node -e "' + pathProbeSource(p) + '"';
+    var r = await runTerminal(cmd, {
+      waitMs: 12000,
+      doneWhen: function (t) { return /WB_PATH_(OK|MISS|NOTDIR|NOGIT|ERR)/.test(t); }
+    });
+    var out = r.output || '';
+    var m = out.match(/WB_PATH_(OK|MISS|NOTDIR|NOGIT|ERR)/);
+    if (!m) return { ok: false, msg: '无法校验路径：' + (r.reason || '终端通道没有返回结果（窗口需运行在工作台内）') };
+    if (m[1] === 'OK') return { ok: true, msg: '路径存在，是 git 仓库' };
+    if (m[1] === 'MISS') return { ok: false, msg: '目录不存在：' + p };
+    if (m[1] === 'NOTDIR') return { ok: false, msg: '不是目录：' + p };
+    if (m[1] === 'NOGIT') return { ok: false, msg: '不是 git 仓库（缺少 .git）：' + p };
+    return { ok: false, msg: '无法读取该路径：' + p + '（权限或路径格式问题）' };
+  }
+  function refreshErrors() {
+    root.querySelectorAll('[data-err]').forEach(function (node) {
+      var k = node.getAttribute('data-err');
+      var bag = node.getAttribute('data-bag') === 'proj' ? S.projErr : S.connErr;
+      node.textContent = bag[k] || '';
+    });
+    root.querySelectorAll('[data-field]').forEach(function (node) {
+      var k = node.getAttribute('data-field');
+      var bag = node.getAttribute('data-bag') === 'proj' ? S.projErr : S.connErr;
+      node.classList.toggle('bad', !!bag[k]);
+    });
+  }
+  function focusFirstBad(bagName) {
+    var bag = bagName === 'proj' ? S.projErr : S.connErr;
+    var node = root.querySelector('[data-bag="' + bagName + '"].bad');
+    if (node) { try { node.focus(); node.scrollIntoView({ block: 'center' }); } catch (e) { /* ignore */ } }
+  }
+
+  /* ---------------- 选择 / 草稿 ---------------- */
+  function selectConn(id, quiet) {
+    var c = connById(id);
+    if (!c) return;
+    S.connSel = id;
+    S.connDraft = {
+      id: c.id, name: c.name, host: c.host, port: c.port, user: c.user, key: c.key,
+      isDefault: !!c.isDefault, projectIds: linkedProjectIds(c.id),
+      lastTestOk: c.lastTestOk, lastTestAt: c.lastTestAt, lastTestMsg: c.lastTestMsg
+    };
+    S.connDirty = false;
+    S.connErr = {};
+    S.confirmDelete = null;
+    S.newBranch = '';
+    S.test = { status: 'idle', steps: [], msg: '', tail: '', forId: null };
+    if (!quiet) render();
+  }
+  function newConn() {
+    S.tab = 'conn';
+    S.connSel = null;
+    S.connDraft = Object.assign(blankConn(), { projectIds: [] });
+    S.connDirty = false;
+    S.connErr = {};
+    S.confirmDelete = null;
+    S.test = { status: 'idle', steps: [], msg: '', tail: '', forId: null };
+    render();
+  }
+  function selectProj(id, quiet) {
+    var p = projById(id);
+    if (!p) return;
+    S.projSel = id;
+    S.projDraft = {
+      id: p.id, name: p.name, repo: p.repo, remotePath: p.remotePath, localPath: p.localPath || '',
+      defaultBranch: p.defaultBranch, branches: p.branches.slice(), note: p.note,
+      connectionIds: linkedConnIds(p.id)
+    };
+    S.projDirty = false;
+    S.projErr = {};
+    S.pathCheck = { status: 'idle', msg: '', path: '' };
+    S.confirmDelete = null;
+    S.newBranch = '';
+    S.branchLoad = { status: 'idle', msg: '', forId: null };
+    if (!quiet) render();
+  }
+  function newProj() {
+    S.tab = 'proj';
+    S.projSel = null;
+    S.projDraft = blankProj();
+    S.projDirty = false;
+    S.projErr = {};
+    S.confirmDelete = null;
+    S.newBranch = '';
+    S.branchLoad = { status: 'idle', msg: '', forId: null };
+    render();
+  }
+  function syncLinks(connId, projectIds) {
+    var keep = {};
+    projectIds.forEach(function (pid) { keep[pid] = 1; });
+    S.data.links = S.data.links.filter(function (l) { return l.connectionId !== connId || keep[l.projectId]; });
+    var have = {};
+    S.data.links.forEach(function (l) { if (l.connectionId === connId) have[l.projectId] = 1; });
+    projectIds.forEach(function (pid) {
+      if (!have[pid] && projById(pid)) S.data.links.push({ connectionId: connId, projectId: pid });
+    });
+  }
+  function syncLinksByProj(projId, connIds) {
+    var keep = {};
+    connIds.forEach(function (cid) { keep[cid] = 1; });
+    S.data.links = S.data.links.filter(function (l) { return l.projectId !== projId || keep[l.connectionId]; });
+    var have = {};
+    S.data.links.forEach(function (l) { if (l.projectId === projId) have[l.connectionId] = 1; });
+    connIds.forEach(function (cid) {
+      if (!have[cid] && connById(cid)) S.data.links.push({ connectionId: cid, projectId: projId });
+    });
+  }
+
+  /* ---------------- 保存 / 删除 ---------------- */
+  async function saveConn() {
+    var d = S.connDraft;
+    S.connErr = validateConn(d);
+    if (Object.keys(S.connErr).length) { refreshErrors(); toast('请先修正标红的字段'); focusFirstBad('conn'); return; }
+    var id = S.connSel;
+    if (id) {
+      S.data.connections = S.data.connections.map(function (c) {
+        return c.id === id ? Object.assign({}, c, {
+          name: d.name.trim(), host: d.host.trim(), port: String(d.port).trim(), user: d.user.trim(), key: d.key.trim(), isDefault: !!d.isDefault
+        }) : c;
+      });
+    } else {
+      id = uid('conn');
+      S.data.connections = S.data.connections.concat([{
+        id: id, name: d.name.trim(), host: d.host.trim(), port: String(d.port).trim(), user: d.user.trim(), key: d.key.trim(),
+        isDefault: !!d.isDefault, lastTestOk: null, lastTestAt: null, lastTestMsg: ''
+      }]);
+      S.connSel = id;
+      if (!S.data.connections.some(function (c) { return c.id !== id && c.isDefault; })) {
+        S.data.connections = S.data.connections.map(function (c) { return Object.assign({}, c, { isDefault: c.id === id }); });
+      }
+    }
+    if (d.isDefault) {
+      S.data.connections = S.data.connections.map(function (c) { return Object.assign({}, c, { isDefault: c.id === id }); });
+    }
+    syncLinks(id, d.projectIds || []);
+    S.connDirty = false;
+    var ok = await saveConfig(true);
+    selectConn(id, true);
+    render();
+    toast(ok ? '已保存连接「' + d.name + '」' : '已更新（未落盘，见顶部提示）');
+  }
+  async function saveProj() {
+    var d = S.projDraft;
+    S.projErr = validateProj(d);
+    if (Object.keys(S.projErr).length) { refreshErrors(); toast('请先修正标红的字段'); focusFirstBad('proj'); return; }
+    var lp = String(d.localPath || '').trim();
+    if (lp) {
+      S.pathCheck = { status: 'running', msg: '校验本地仓库路径…', path: lp };
+      render();
+      var chk = await probeLocalPath(lp);
+      if (!chk.ok) {
+        S.pathCheck = { status: 'fail', msg: chk.msg, path: lp };
+        S.projErr.localPath = chk.msg;
+        render();
+        toast('本地仓库路径校验失败，未保存');
+        return;
+      }
+      S.pathCheck = { status: 'ok', msg: chk.msg, path: lp };
+    } else {
+      S.pathCheck = { status: 'idle', msg: '', path: '' };
+    }
+    var id = S.projSel;
+    var payload = {
+      name: d.name.trim(), repo: d.repo.trim(), remotePath: d.remotePath.trim(), localPath: lp,
+      defaultBranch: d.defaultBranch || '', branches: (d.branches || []).slice(), note: d.note || ''
+    };
+    if (id) {
+      S.data.projects = S.data.projects.map(function (p) { return p.id === id ? Object.assign({}, p, payload) : p; });
+    } else {
+      id = uid('proj');
+      S.data.projects = S.data.projects.concat([Object.assign({ id: id }, payload)]);
+      S.projSel = id;
+    }
+    syncLinksByProj(id, d.connectionIds || []);
+    S.projDirty = false;
+    var ok = await saveConfig(true);
+    selectProj(id, true);
+    render();
+    toast(ok ? '已保存项目「' + d.name + '」' : '已更新（未落盘，见顶部提示）');
+  }
+  async function deleteConn(id) {
+    if (S.confirmDelete !== 'conn:' + id) { S.confirmDelete = 'conn:' + id; render(); return; }
+    S.data.connections = S.data.connections.filter(function (c) { return c.id !== id; });
+    S.data.links = S.data.links.filter(function (l) { return l.connectionId !== id; });
+    S.confirmDelete = null;
+    if (S.connSel === id) {
+      S.connSel = null;
+      S.connDraft = blankConn();
+      if (S.data.connections.length) selectConn(S.data.connections[0].id, true);
+    }
+    await saveConfig(true);
+    render();
+    toast('已删除连接，关联项目一并解除');
+  }
+  async function deleteProj(id) {
+    if (S.confirmDelete !== 'proj:' + id) { S.confirmDelete = 'proj:' + id; render(); return; }
+    S.data.projects = S.data.projects.filter(function (p) { return p.id !== id; });
+    S.data.links = S.data.links.filter(function (l) { return l.projectId !== id; });
+    S.confirmDelete = null;
+    if (S.projSel === id) {
+      S.projSel = null;
+      S.projDraft = blankProj();
+      if (S.data.projects.length) selectProj(S.data.projects[0].id, true);
+    }
+    await saveConfig(true);
+    render();
+    toast('已删除项目，关联连接一并解除');
+  }
+  async function toggleMatrix(connId, projId) {
+    var has = S.data.links.some(function (l) { return l.connectionId === connId && l.projectId === projId; });
+    if (has) S.data.links = S.data.links.filter(function (l) { return !(l.connectionId === connId && l.projectId === projId); });
+    else S.data.links.push({ connectionId: connId, projectId: projId });
+    if (S.connSel === connId) S.connDraft.projectIds = linkedProjectIds(connId);
+    if (S.projSel === projId) S.projDraft.connectionIds = linkedConnIds(projId);
+    await saveConfig(true);
+    render();
+  }
+
+  /* ---------------- 本地仓库路径 / 服务映射 ---------------- */
+  async function checkLocalPath() {
+    var d = S.projDraft;
+    if (!d) return;
+    var lp = String(d.localPath || '').trim();
+    if (!lp) { toast('先填本地仓库路径'); return; }
+    if (!isAbsolutePath(lp)) {
+      S.projErr.localPath = '请填绝对路径（如 F:\\repos\\demo 或 /srv/repos/demo）';
+      render(); toast('路径格式不对：需要绝对路径'); focusFirstBad('proj'); return;
+    }
+    S.pathCheck = { status: 'running', msg: '校验中…', path: lp };
+    render();
+    var chk = await probeLocalPath(lp);
+    if (chk.ok) {
+      delete S.projErr.localPath;
+      S.pathCheck = { status: 'ok', msg: chk.msg, path: lp };
+      toast('路径校验通过：存在且是 git 仓库');
+    } else {
+      S.projErr.localPath = chk.msg;
+      S.pathCheck = { status: 'fail', msg: chk.msg, path: lp };
+      toast('路径校验失败');
+    }
+    render();
+  }
+  function validateServiceMap() {
+    var errs = {};
+    var seen = {};
+    S.data.serviceMap.forEach(function (m, i) {
+      var kws = (m.match || []).map(function (s) { return String(s).trim(); }).filter(Boolean);
+      if (!m.projectId || !projById(m.projectId)) errs[i] = '请选择项目';
+      if (!kws.length) errs[i] = '必填：至少一个服务 / 容器关键字';
+      kws.forEach(function (k) {
+        var key = k.toLowerCase();
+        if (seen[key] != null) errs[i] = '关键字重复：' + k + '（已在第 ' + (seen[key] + 1) + ' 行）';
+        else seen[key] = i;
+      });
+    });
+    return errs;
+  }
+  async function saveMap() {
+    var errs = validateServiceMap();
+    S.mapErr = errs;
+    if (Object.keys(errs).length) { render(); toast('请先修正服务映射中的标红项'); return; }
+    S.data.serviceMap = S.data.serviceMap.map(function (m) {
+      var seen = {}, match = [];
+      (m.match || []).forEach(function (k) {
+        var s = String(k).trim();
+        if (!s || seen[s.toLowerCase()]) return;
+        seen[s.toLowerCase()] = 1;
+        match.push(s);
+      });
+      return { match: match, projectId: m.projectId, container: String(m.container || '').trim() };
+    });
+    var ok = await saveConfig(false);
+    render();
+    toast(ok ? '已保存服务映射' : '已更新（未落盘，见顶部提示）');
+  }
+  function addMapRow() {
+    if (!S.data.projects.length) { toast('先建一个代码项目，再配服务映射'); return; }
+    S.data.serviceMap = S.data.serviceMap.concat([{ match: [], projectId: S.data.projects[0].id, container: '' }]);
+    S.mapErr = {};
+    render();
+  }
+  function removeMapRow(index) {
+    S.data.serviceMap = S.data.serviceMap.filter(function (_, i) { return i !== index; });
+    S.mapErr = {};
+    render();
+  }
+
+  /* ---------------- 测试连接（真实 ssh） ---------------- */
+  function testBadgeHtml() {
+    var st = S.test.status;
+    var cls = st === 'ok' ? 'dshell-badge dshell-badgeDone' : st === 'fail' ? 'dshell-badge badgeErr' : st === 'running' ? 'dshell-badge dshell-badgeWait' : 'dshell-badge';
+    var text = st === 'ok' ? '已连接' : st === 'fail' ? '连接失败' : st === 'running' ? '测试中…' : '未测试';
+    return '<span class="' + cls + '" data-test-badge>' + text + '</span>';
+  }
+  function testBoxHtml() {
+    var t = S.test;
+    if (t.status === 'idle') return '';
+    var rows = t.steps.map(function (s) {
+      var icon = s.state === 'done' ? '✓' : s.state === 'fail' ? '✕' : s.state === 'run' ? '…' : '·';
+      return '<div class="tstRow ' + esc(s.state) + '"><span class="tstIcon">' + icon + '</span><span>' + esc(s.label) + '</span><span class="tstMs">' + esc(s.detail || '') + '</span></div>';
+    }).join('');
+    var head = '<div class="tstHead"><span class="tstTitle">连接检查</span>' + testBadgeHtml() +
+      '<span class="tstHint">本机 ssh · 只执行 echo，不改服务器</span></div>';
+    var msg = t.msg ? '<div class="tstFail">' + esc(t.msg) + '</div>' : '';
+    var tail = t.tail ? '<div class="termTail">' + esc(t.tail) + '</div>' : '';
+    return head + rows + msg + tail;
+  }
+  function refreshTestUI() {
+    root.querySelectorAll('.testSlot').forEach(function (box) { box.innerHTML = testBoxHtml(); });
+    root.querySelectorAll('[data-test-badge]').forEach(function (node) {
+      var st = S.test.status;
+      node.className = 'dshell-badge' + (st === 'ok' ? ' dshell-badgeDone' : st === 'fail' ? ' badgeErr' : st === 'running' ? ' dshell-badgeWait' : '');
+      node.textContent = st === 'ok' ? '已连接' : st === 'fail' ? '连接失败' : st === 'running' ? '测试中…' : '未测试';
+    });
+    root.querySelectorAll('button[data-action="test-conn"]').forEach(function (node) {
+      node.disabled = S.test.status === 'running';
+      node.textContent = S.test.status === 'running' ? '测试中…' : '测试连接';
+    });
+  }
+  function setStep(i, state, detail) {
+    if (S.test.steps[i]) { S.test.steps[i].state = state; if (detail != null) S.test.steps[i].detail = detail; }
+    refreshTestUI();
+  }
+  function failReasonOf(text) {
+    var t = String(text || '');
+    if (/Permission denied/i.test(t)) return 'Permission denied：服务器拒绝了该私钥。检查公钥是否已加到服务器 ~/.ssh/authorized_keys。';
+    if (/Connection refused/i.test(t)) return 'Connection refused：端口没有服务在监听，检查端口号与 sshd 是否运行。';
+    if (/Connection timed out|timed out|Operation timed out/i.test(t)) return '连接超时：网络不通或被防火墙拦，检查 IP / 网段 / 跳板机。';
+    if (/Could not resolve hostname|Name or service not known/i.test(t)) return '主机名解析失败：检查主机 / IP 是否写错。';
+    if (/No such file or directory/i.test(t)) return '私钥文件不存在：检查「私钥路径」是否指向本机真实文件。';
+    if (/Host key verification failed/i.test(t)) return 'Host key 校验失败：服务器指纹变了，先手工 ssh 一次确认。';
+    if (/Bad permissions|UNPROTECTED PRIVATE KEY/i.test(t)) return '私钥权限过宽：Windows 可忽略，Linux/macOS 需 chmod 600。';
+    return '';
+  }
+  async function testConnection(conn) {
+    if (!conn || S.test.status === 'running') return;
+    S.test = {
+      status: 'running', forId: conn.id, msg: '', tail: '',
+      steps: [
+        { label: '检查本机私钥文件', state: 'run', detail: '' },
+        { label: 'ssh 建立连接并认证', state: 'wait', detail: '' },
+        { label: '确认可执行远端命令', state: 'wait', detail: '' }
+      ]
+    };
+    render();
+    var slot = document.querySelector('.testSlot');
+    if (slot) { try { slot.scrollIntoView({ block: 'nearest' }); } catch (e) { /* ignore */ } }
+
+    // 1) 本机私钥是否存在（用 node 判断，Windows / POSIX 都能跑）
+    var key = String(conn.key || '').trim();
+    var keyLit = "'" + key.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+    var probe = 'node -e "var fs=require(\'fs\'),os=require(\'os\'),p=process.env.USERPROFILE||os.homedir(),k=' + keyLit +
+      ',f=k.indexOf(\'~/\')===0?p+k.slice(1):k;console.log(fs.existsSync(f)?(\'WB_KEY_\'+\'OK\'):(\'WB_KEY_\'+\'MISS\'+\':\'+f))"';
+    var pr = await runTerminal(probe, {
+      waitMs: 10000,
+      doneWhen: function (t) { return /WB_KEY_OK|WB_KEY_MISS/.test(t); }
+    });
+    var pout = pr.output || '';
+    if (/WB_KEY_MISS/.test(pout)) {
+      setStep(0, 'fail', '未找到');
+      S.test.status = 'fail';
+      S.test.msg = '本机找不到私钥文件：' + key + '\n（换一个路径，或先用 ssh-keygen 生成一对密钥）';
+      S.test.tail = tailOf(pout, 300);
+      applyTestResult(conn.id, false, '本机找不到私钥文件');
+      render();
+      return;
+    }
+    setStep(0, /WB_KEY_OK/.test(pout) ? 'done' : 'done', /WB_KEY_OK/.test(pout) ? '存在' : '跳过检查');
+
+    // 2) 真实 ssh：BatchMode + 短超时，远端只执行 printf（不改服务器任何东西）
+    setStep(1, 'run');
+    var t0 = Date.now();
+    var cmd = sshCmd(conn, { batch: true }) + ' "printf WB_SSH_%s OK"';
+    var r = await runTerminal(cmd, {
+      waitMs: 25000,
+      doneWhen: function (t) { return /WB_SSH_OK/.test(t); }
+    });
+    var ms = Date.now() - t0;
+    var out = r.output || '';
+    if (/WB_SSH_OK/.test(out)) {
+      setStep(1, 'done', ms + 'ms');
+      setStep(2, 'done', 'printf 成功');
+      S.test.status = 'ok';
+      S.test.msg = '';
+      S.test.tail = '';
+      applyTestResult(conn.id, true, '连接正常（' + ms + 'ms）');
+      render();
+      toast('连接成功：' + conn.user + '@' + conn.host + ':' + conn.port);
+      return;
+    }
+    var reason = failReasonOf(out) || ('ssh 未返回预期结果' + (r.reason ? '（' + r.reason + '）' : ''));
+    setStep(1, 'fail', ms + 'ms');
+    S.test.status = 'fail';
+    S.test.msg = reason;
+    S.test.tail = tailOf(out, 600);
+    applyTestResult(conn.id, false, reason);
+    render();
+  }
+  function applyTestResult(connId, ok, msg) {
+    S.data.connections = S.data.connections.map(function (c) {
+      return c.id === connId ? Object.assign({}, c, { lastTestOk: ok, lastTestAt: new Date().toISOString(), lastTestMsg: msg }) : c;
+    });
+    var c = connById(connId);
+    if (c && S.connDraft && S.connDraft.id === connId) {
+      S.connDraft.lastTestOk = c.lastTestOk;
+      S.connDraft.lastTestAt = c.lastTestAt;
+      S.connDraft.lastTestMsg = c.lastTestMsg;
+    }
+    saveConfig(true);
+  }
+
+  /* ---------------- 读取远端分支（真实 ssh + git） ---------------- */
+  async function readBranchesForProject() {
+    var d = S.projDraft;
+    if (!d) return;
+    if (!d.remotePath || !/^[\/~]/.test(d.remotePath)) { toast('先填远端目录（绝对路径）'); return; }
+    var connId = (d.connectionIds || [])[0];
+    var conn = connId ? connById(connId) : defaultConn();
+    if (!conn) { toast('没有可用的 SSH 连接：先建一条连接并关联到本项目'); return; }
+    S.branchLoad = { status: 'running', msg: '正在通过「' + conn.name + '」读取 ' + d.remotePath + ' 的分支…', forId: d.id };
+    render();
+    var cmd = sshCmd(conn, { batch: true }) + ' "cd ' + d.remotePath + ' && git rev-parse --abbrev-ref HEAD && git branch -a --no-color && printf WB_BRANCH_%s END"';
+    var r = await runTerminal(cmd, {
+      waitMs: 30000,
+      doneWhen: function (t) { return /WB_BRANCH_END/.test(t); }
+    });
+    var out = r.output || '';
+    await sleep(400);
+    var names = [];
+    out.split('\n').forEach(function (line) {
+      var m = line.match(/^\s*(?:\*\s*)?(?:remotes\/[^\/]+\/)?([A-Za-z0-9][A-Za-z0-9._\/-]*)\s*$/);
+      if (!m) return;
+      var b = m[1];
+      if (!b || b === 'HEAD' || b === 'END' || /^WB_/.test(b)) return;
+      if (/^(ssh|git|branch|printf|cd|echo|node|remote|origin)$/i.test(b)) return;
+      if (names.indexOf(b) < 0) names.push(b);
+    });
+    names = names.filter(function (b) { return b.indexOf('/') !== 0; }).slice(0, 60);
+    if (!names.length) {
+      var why = failReasonOf(out) || '没读到分支：确认远端目录是 git 仓库、且该连接有读权限';
+      S.branchLoad = { status: 'fail', msg: why + (out ? '\n' + tailOf(out, 300) : ''), forId: d.id };
+      render();
+      return;
+    }
+    S.projDraft.branches = names;
+    if (!S.projDraft.defaultBranch || names.indexOf(S.projDraft.defaultBranch) < 0) S.projDraft.defaultBranch = names[0];
+    S.projDirty = true;
+    S.branchLoad = { status: 'ok', msg: '已读取 ' + names.length + ' 个分支（来自 ' + conn.name + '）', forId: d.id };
+    render();
+    toast('已读取 ' + names.length + ' 个分支');
+  }
+
+  /* ---------------- 渲染片段 ---------------- */
+  function connStatus(conn) {
+    if (conn.lastTestOk === true) return { cls: 'ok', text: '已连接' };
+    if (conn.lastTestOk === false) return { cls: 'fail', text: '异常' };
+    return { cls: 'unknown', text: '未测试' };
+  }
+  function relTime(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var diff = Date.now() - d.getTime();
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+    return Math.floor(diff / 86400000) + ' 天前';
+  }
+  function noticeHtml() {
+    if (!S.notice) return '';
+    return '<div class="notice ' + esc(S.notice.kind) + '" style="margin:0 16px">' + esc(S.notice.text) + '</div>';
+  }
+  function connItemHtml(c) {
+    var st = connStatus(c);
+    var projCount = linkedProjectIds(c.id).length;
+    return '<button type="button" class="ma-item' + (c.id === S.connSel ? ' on' : '') + '" data-action="select-conn" data-value="' + c.id + '">' +
+      '<span class="ma-itemTop"><span class="dot ' + st.cls + '"></span><span class="ma-itemName">' + esc(c.name) + '</span>' + (c.isDefault ? '<span class="tag" style="margin-left:auto">默认</span>' : '') + '</span>' +
+      '<span class="ma-itemAddr">' + esc(c.user) + '@' + esc(c.host) + ':' + esc(c.port) + '</span>' +
+      '<span class="ma-itemMeta">' + projCount + ' 个项目 · ' + (c.lastTestAt ? relTime(c.lastTestAt) + '测试' : '未测试') + '</span>' +
+      '</button>';
+  }
+  function projItemHtml(p) {
+    var conns = linkedConnIds(p.id).length;
+    return '<button type="button" class="ma-item' + (p.id === S.projSel ? ' on' : '') + '" data-action="select-proj" data-value="' + p.id + '">' +
+      '<span class="ma-itemTop"><span class="ma-itemName">' + esc(p.name) + '</span></span>' +
+      '<span class="ma-itemAddr">' + esc(p.defaultBranch || '未设分支') + '</span>' +
+      '<span class="ma-itemMeta">' + conns + ' 个连接 · ' + (p.localPath ? '本地仓库已配' : '未配本地路径') + '</span>' +
+      '</button>';
+  }
+  function editorHeadHtml(kind, isNew) {
+    var d = kind === 'conn' ? S.connDraft : S.projDraft;
+    var dirty = kind === 'conn' ? S.connDirty : S.projDirty;
+    var title = isNew ? (kind === 'conn' ? '新建 SSH 连接' : '新建代码项目') : (kind === 'conn' ? '编辑连接 · ' : '编辑项目 · ') + (d && d.name ? d.name : '未命名');
+    var badge = '';
+    if (kind === 'conn') {
+      var conn = S.connSel ? connById(S.connSel) : null;
+      var st = conn ? connStatus(conn) : null;
+      if (st) badge = '<span class="dshell-badge' + (st.cls === 'ok' ? ' dshell-badgeDone' : st.cls === 'fail' ? ' badgeErr' : '') + '" data-test-badge>' + st.text + '</span>';
+      else badge = '<span class="dshell-badge">未保存</span>';
+    } else {
+      var linked = (d && d.connectionIds) ? d.connectionIds.length : 0;
+      badge = '<span class="tagDim">' + linked + ' 个连接</span>';
+    }
+    return '<div class="edHead">' +
+      '<div><div class="row" style="gap:8px"><h2>' + esc(title) + '</h2>' + badge +
+        (dirty ? '<span class="tagDim" style="border-color:rgba(210,153,34,.5);color:#d29922" data-dirty>未保存</span>' : '<span data-dirty></span>') +
+      '</div><div class="sub">' + (kind === 'conn'
+        ? '私钥用本机路径（ssh -i）；一台服务器上的多个项目在下方勾选'
+        : '服务器目录 + 本地仓库路径（localPath）+ git 分支；可通过左侧任一连接读取')
+      + '</div></div>' +
+      '</div>';
+  }
+  function connField(name, label, placeholder, hint, cls, type) {
+    var err = S.connErr[name];
+    return '<label class="fld ' + (cls || '') + '">' +
+      '<span class="fldLabel"><span>' + esc(label) + '</span><span class="fldErr" data-err="' + name + '" data-bag="conn">' + esc(err || '') + '</span></span>' +
+      '<input class="dshell-input' + (err ? ' bad' : '') + '" data-field="' + name + '" data-bag="conn" type="' + (type || 'text') + '" value="' + esc(S.connDraft[name] == null ? '' : S.connDraft[name]) + '" placeholder="' + esc(placeholder) + '" autocomplete="off" spellcheck="false" />' +
+      '<span class="fldHint">' + esc(hint || '') + '</span>' +
+      '</label>';
+  }
+  function projField(name, label, placeholder, hint, cls) {
+    var err = S.projErr[name];
+    return '<label class="fld ' + (cls || '') + '">' +
+      '<span class="fldLabel"><span>' + esc(label) + '</span><span class="fldErr" data-err="' + name + '" data-bag="proj">' + esc(err || '') + '</span></span>' +
+      '<input class="dshell-input' + (err ? ' bad' : '') + '" data-field="' + name + '" data-bag="proj" value="' + esc(S.projDraft[name] == null ? '' : S.projDraft[name]) + '" placeholder="' + esc(placeholder) + '" autocomplete="off" spellcheck="false" />' +
+      '<span class="fldHint">' + esc(hint || '') + '</span>' +
+      '</label>';
+  }
+  function projLocalPathField() {
+    var err = S.projErr.localPath;
+    var hint = S.pathCheck.status === 'running' ? '校验中…'
+      : S.pathCheck.status === 'ok' ? '✓ ' + (S.pathCheck.msg || '校验通过')
+        : S.pathCheck.status === 'fail' ? S.pathCheck.msg
+          : '绝对路径 · 目录存在 · 是 git 仓库（确认页会用它启动修复会话）';
+    return '<label class="fld spanAll">' +
+      '<span class="fldLabel"><span>本地仓库路径</span><span class="fldErr" data-err="localPath" data-bag="proj">' + esc(err || '') + '</span></span>' +
+      '<span class="inputRow">' +
+        '<input class="dshell-input' + (err ? ' bad' : '') + '" data-field="localPath" data-bag="proj" value="' + esc(S.projDraft.localPath == null ? '' : S.projDraft.localPath) + '" placeholder="F:\\ai-project\\dcom-web" autocomplete="off" spellcheck="false" />' +
+        '<button class="dshell-btnGhost smBtn" type="button" data-action="check-path"' + (S.pathCheck.status === 'running' ? ' disabled' : '') + '>' + (S.pathCheck.status === 'running' ? '校验中…' : '校验路径') + '</button>' +
+      '</span>' +
+      '<span class="fldHint" style="white-space:normal">' + esc(hint) + '</span>' +
+      '</label>';
+  }
+  function linkProjectsHtml() {
+    if (!S.data.projects.length) {
+      return '<div class="dshell-muted" style="font-size:11.5px">还没有代码项目。<a data-action="new-proj">先建一个项目</a>，再回来勾选。</div>';
+    }
+    var picked = S.connDraft.projectIds || [];
+    return '<div class="linkGrid">' + S.data.projects.map(function (p) {
+      var on = picked.indexOf(p.id) >= 0;
+      return '<label class="linkItem' + (on ? ' on' : '') + '">' +
+        '<input type="checkbox" data-link="proj" data-value="' + p.id + '"' + (on ? ' checked' : '') + ' />' +
+        '<span class="linkText"><span class="linkName">' + esc(p.name) + '</span><span class="linkMeta">' + esc(p.remotePath) + '</span></span>' +
+        '</label>';
+    }).join('') + '</div>';
+  }
+  function linkConnsHtml() {
+    if (!S.data.connections.length) {
+      return '<div class="dshell-muted" style="font-size:11.5px">还没有 SSH 连接。<a data-action="new-conn">先建一条连接</a>，再回来勾选。</div>';
+    }
+    var picked = S.projDraft.connectionIds || [];
+    return '<div class="linkGrid">' + S.data.connections.map(function (c) {
+      var on = picked.indexOf(c.id) >= 0;
+      var st = connStatus(c);
+      return '<label class="linkItem' + (on ? ' on' : '') + '">' +
+        '<input type="checkbox" data-link="conn" data-value="' + c.id + '"' + (on ? ' checked' : '') + ' />' +
+        '<span class="linkText"><span class="linkName"><span class="dot ' + st.cls + '" style="display:inline-block;margin-right:5px"></span>' + esc(c.name) + '</span><span class="linkMeta">' + esc(c.user) + '@' + esc(c.host) + ':' + esc(c.port) + '</span></span>' +
+        '</label>';
+    }).join('') + '</div>';
+  }
+  function branchesHtml() {
+    var d = S.projDraft;
+    var list = d.branches || [];
+    if (!list.length) {
+      return '<div class="dshell-muted" style="font-size:11.5px">还没有分支：点「从服务器读取」自动拉取，或在下面手工添加。</div>';
+    }
+    return '<div class="branchRow">' + list.map(function (b) {
+      var on = b === d.defaultBranch;
+      return '<span class="branchChip' + (on ? ' on' : '') + '">' +
+        (on ? '<span class="dot ok" style="width:6px;height:6px"></span>' : '') +
+        '<span class="branchName">' + esc(b) + '</span>' +
+        '<button type="button" class="miniBtn" data-action="pick-branch" data-value="' + esc(b) + '" title="设为默认分支">' + (on ? '默认' : '设默认') + '</button>' +
+        '<button type="button" class="branchX" data-action="remove-branch" data-value="' + esc(b) + '" title="移除">✕</button>' +
+        '</span>';
+    }).join('') + '</div>';
+  }
+  function testButtonHtml(label) {
+    var running = S.test.status === 'running';
+    return '<button class="dshell-btnGhost smBtn" type="button" data-action="test-conn"' + (running ? ' disabled' : '') + '>' + (running ? '测试中…' : (label || '测试连接')) + '</button>';
+  }
+
+  /* ---------------- 三个页签 ---------------- */
+  function renderConnTab() {
+    var isNew = !S.connSel;
+    if (!S.connDraft) S.connDraft = blankConn();
+    var d = S.connDraft || blankConn();
+    var list = S.data.connections;
+    var items = list.length ? list.map(connItemHtml).join('')
+      : '<div class="emptyState"><span class="big">🗝</span><span>还没有 SSH 连接</span><button class="dshell-btn smBtn" type="button" data-action="new-conn">＋ 新建连接</button></div>';
+    var del = '';
+    if (!isNew) {
+      if (S.confirmDelete === 'conn:' + S.connSel) {
+        del = '<div class="delConfirm">删除连接<button class="miniBtn danger" type="button" data-action="delete-conn" data-value="' + S.connSel + '">确认删除</button><button class="miniBtn" type="button" data-action="cancel-delete">取消</button></div>';
+      } else {
+        del = '<button class="miniBtn danger" type="button" data-action="delete-conn" data-value="' + S.connSel + '">删除连接</button>';
+      }
+    }
+    return '<div class="ma">' +
+      '<aside class="ma-side">' +
+        '<div class="ma-sideHead"><span>SSH 连接</span><button class="dshell-btnGhost smBtn" type="button" data-action="new-conn">＋ 新建</button></div>' +
+        '<div class="ma-filters dshell-muted" style="font-size:10.5px">私钥走本机路径 · 端口默认 22</div>' +
+        '<div class="ma-list" data-scroll="connList">' + items + '</div>' +
+      '</aside>' +
+      '<section class="ma-editor">' + editorHeadHtml('conn', isNew) +
+        '<div class="edBody" data-scroll="connEditor">' +
+          '<div class="edGrid3">' +
+            connField('name', '连接名称', '生产服务器', '列表里用它区分服务器', 'spanAll') +
+            connField('host', '主机 / IP', '10.20.31.87', 'IPv4 或域名') +
+            connField('port', '端口', '22', '默认 22', '', 'text') +
+            connField('user', '用户名', 'deploy', '服务器登录用户') +
+          '</div>' +
+          '<div class="edSection">' +
+            '<div class="edSectionTitle">本机私钥路径 <span class="dshell-muted">通过 ssh -i 使用，不保存密钥内容</span></div>' +
+            connField('key', '私钥文件', '~/.ssh/id_ed25519', '支持 ~/.ssh/xxx 或 C:\\Users\\...\\id_ed25519') +
+            '<div class="chips"><span class="chipsLabel">常用</span>' + KEY_HINTS.map(function (k) {
+              return '<button type="button" class="chip' + (d.key === k ? ' on' : '') + '" data-action="chip-key" data-value="' + esc(k) + '">' + esc(k) + '</button>';
+            }).join('') + '</div>' +
+            '<pre class="cmdLine">' + esc(sshCmd(d, { batch: false })) + '</pre>' +
+          '</div>' +
+
+          '<label class="edToggle"><input type="checkbox" data-field="isDefault" data-bag="conn"' + (d.isDefault ? ' checked' : '') + ' />设为默认连接（项目未指定连接时优先用它）</label>' +
+          '<div class="testSlot">' + testBoxHtml() + '</div>' +
+        '</div>' +
+        '<footer class="edFoot"><div class="row">' + del + '</div>' +
+          '<div class="right">' +
+            '<button class="dshell-btnGhost smBtn" type="button" data-action="copy-ssh">复制 ssh 命令</button>' +
+            testButtonHtml() +
+            '<button class="dshell-btn smBtn" type="button" data-action="save-conn">保存</button>' +
+          '</div>' +
+        '</footer>' +
+      '</section>' +
+      '</div>';
+  }
+  function renderProjTab() {
+    var isNew = !S.projSel;
+    if (!S.projDraft) S.projDraft = blankProj();
+    var d = S.projDraft || blankProj();
+    var list = S.data.projects;
+    var items = list.length ? list.map(projItemHtml).join('')
+      : '<div class="emptyState"><span class="big">📦</span><span>还没有代码项目</span><button class="dshell-btn smBtn" type="button" data-action="new-proj">＋ 新建项目</button></div>';
+    var del = '';
+    if (!isNew) {
+      if (S.confirmDelete === 'proj:' + S.projSel) {
+        del = '<div class="delConfirm">删除后关联连接一并解除<button class="miniBtn danger" type="button" data-action="delete-proj" data-value="' + S.projSel + '">确认删除</button><button class="miniBtn" type="button" data-action="cancel-delete">取消</button></div>';
+      } else {
+        del = '<button class="miniBtn danger" type="button" data-action="delete-proj" data-value="' + S.projSel + '">删除项目</button>';
+      }
+    }
+    var load = S.branchLoad;
+    var loadHtml = '';
+    if (load.status === 'running') loadHtml = '<div class="notice info" style="font-size:11px">' + esc(load.msg) + '</div>';
+    else if (load.status === 'fail') loadHtml = '<div class="notice error" style="font-size:11px;white-space:pre-wrap">' + esc(load.msg) + '</div>';
+    else if (load.status === 'ok') loadHtml = '<div class="notice ok" style="font-size:11px">' + esc(load.msg) + '</div>';
+    return '<div class="ma">' +
+      '<aside class="ma-side">' +
+        '<div class="ma-sideHead"><span>代码项目</span><button class="dshell-btnGhost smBtn" type="button" data-action="new-proj">＋ 新建</button></div>' +
+        '<div class="ma-filters dshell-muted" style="font-size:10.5px">服务器目录 · git 分支</div>' +
+        '<div class="ma-list" data-scroll="projList">' + items + '</div>' +
+      '</aside>' +
+      '<section class="ma-editor">' + editorHeadHtml('proj', isNew) +
+        '<div class="edBody" data-scroll="projEditor">' +
+          '<div class="edGrid2">' +
+            projField('name', '项目名称', 'cet-electric-web', '列表里用它区分项目', 'spanAll') +
+            projField('remotePath', '服务器上的目录', '/srv/www/cet-electric-web', 'git 仓库根目录的绝对路径') +
+            projField('repo', 'git 仓库地址', 'git@git.cet-electric.com:web/web.git', '仅作备注 / 以后克隆用') +
+          '</div>' +
+          '<div class="edSection">' +
+            '<div class="edSectionTitle">本地代码库 <span class="dshell-muted">窗口3 在该目录启动修复会话</span></div>' +
+            projLocalPathField() +
+          '</div>' +
+          '<div class="edSection">' +
+            '<div class="edSectionTitle">git 分支 <span class="dshell-muted">默认分支用于缺陷定位时 checkout</span>' +
+              '<span style="margin-left:auto" class="row">' +
+                '<button class="miniBtn" type="button" data-action="read-branches"' + (load.status === 'running' ? ' disabled' : '') + '>' + (load.status === 'running' ? '读取中…' : '从服务器读取') + '</button>' +
+              '</span>' +
+            '</div>' +
+            branchesHtml() +
+            '<div class="inputRow"><input class="dshell-input" data-new-branch="1" value="' + esc(S.newBranch) + '" placeholder="手工添加分支，如 feature/tb-sync" autocomplete="off" spellcheck="false" /><button class="dshell-btnGhost smBtn" type="button" data-action="add-branch">添加</button></div>' +
+            loadHtml +
+          '</div>' +
+          '<div class="edSection">' +
+            '<div class="edSectionTitle">可通过哪些 SSH 连接访问 <span class="dshell-muted">多对多</span></div>' +
+            linkConnsHtml() +
+          '</div>' +
+          '<div class="edSection">' +
+            '<div class="edSectionTitle">备注</div>' +
+            projField('note', '备注', '前端 · Vue3 + Vite', '') +
+          '</div>' +
+        '</div>' +
+        '<footer class="edFoot"><div class="row">' + del + '</div>' +
+          '<div class="right"><button class="dshell-btn smBtn" type="button" data-action="save-proj">保存</button></div>' +
+        '</footer>' +
+      '</section>' +
+      '</div>';
+  }
+  function renderMapTab() {
+    if (!S.data.projects.length) {
+      return '<div class="emptyState" style="height:100%"><span class="big">🧩</span>' +
+        '<span>还没有代码项目：服务 / 容器映射需要一个目标项目。</span>' +
+        '<button class="dshell-btn smBtn" type="button" data-action="new-proj">＋ 新建项目</button></div>';
+    }
+    var rows = S.data.serviceMap.map(function (m, i) {
+      var opts = '<option value="">选择项目…</option>' + S.data.projects.map(function (p) {
+        return '<option value="' + esc(p.id) + '"' + (p.id === m.projectId ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+      }).join('');
+      var bad = S.mapErr[i] && /关键字|必填/.test(S.mapErr[i]);
+      return '<div class="svcRow" data-map-row="' + i + '">' +
+        '<input class="dshell-input' + (bad ? ' bad' : '') + '" data-map-field="match" data-map-row="' + i + '" value="' + esc((m.match || []).join(', ')) + '" placeholder="服务名 / 镜像 / 容器关键字，逗号分隔" autocomplete="off" spellcheck="false" />' +
+        '<select class="dshell-input" data-map-field="project" data-map-row="' + i + '">' + opts + '</select>' +
+        '<input class="dshell-input" data-map-field="container" data-map-row="' + i + '" value="' + esc(m.container || '') + '" placeholder="容器名（可选）" autocomplete="off" spellcheck="false" />' +
+        '<button class="miniBtn danger" type="button" data-action="remove-map" data-value="' + i + '">移除</button>' +
+        '<span class="fldErr" data-map-err="' + i + '">' + esc(S.mapErr[i] || '') + '</span>' +
+        '</div>';
+    }).join('');
+    return '<div class="mx">' +
+      '<div class="mx-top"><span class="dshell-sub">把缺陷里的服务名 / 镜像名 / 容器名映射到代码项目；窗口3 确认页据此自动匹配</span>' +
+        '<span class="row" style="margin-left:auto"><button class="dshell-btnGhost smBtn" type="button" data-action="add-map">＋ 添加映射</button>' +
+        '<button class="dshell-btn smBtn" type="button" data-action="save-map">保存映射</button></span></div>' +
+      '<div class="mx-wrap">' +
+        (S.data.serviceMap.length
+          ? '<div class="svcHead"><span>服务 / 容器 关键字</span><span>代码项目</span><span>容器名（可选）</span><span></span></div><div class="svcList">' + rows + '</div>'
+          : '<div class="emptyState" style="padding:26px 20px"><span>还没有映射。</span><button class="dshell-btn smBtn" type="button" data-action="add-map">＋ 添加映射</button></div>') +
+        '<div class="svcHint" style="margin-top:10px">匹配规则：缺陷「服务/版本」「环境主机」「标题/描述」里出现任一关键字即命中；容器名用于窗口3 只读日志定位。改动写入 data/ssh-config.json（version ' + CONFIG_VERSION + ' 顶层 serviceMap）。</div>' +
+      '</div></div>';
+  }
+  function renderMatrix() {
+    var conns = S.data.connections, projs = S.data.projects;
+    if (!conns.length || !projs.length) {
+      return '<div class="mx"><div class="emptyState" style="flex:1"><span class="big">⇄</span>' +
+        '<span>' + (conns.length ? '还没有代码项目' : '还没有 SSH 连接') + '，先把两边各建一条，再回来勾关联。</span>' +
+        '<div class="row"><button class="dshell-btn smBtn" type="button" data-action="new-conn">＋ 新建连接</button><button class="dshell-btnGhost smBtn" type="button" data-action="new-proj">＋ 新建项目</button></div>' +
+        '</div></div>';
+    }
+    var head = '<tr><th style="text-align:left">连接 \\ 项目</th>' + projs.map(function (p) {
+      return '<th>' + esc(p.name) + '<br><span style="font-family:ui-monospace,Consolas,monospace;font-size:9.5px">' + esc(p.defaultBranch || '—') + '</span></th>';
+    }).join('') + '</tr>';
+    var rows = conns.map(function (c) {
+      var st = connStatus(c);
+      return '<tr><th><span class="dot ' + st.cls + '" style="display:inline-block;margin-right:6px"></span>' + esc(c.name) + '<small>' + esc(c.user) + '@' + esc(c.host) + ':' + esc(c.port) + '</small></th>' +
+        projs.map(function (p) {
+          var on = S.data.links.some(function (l) { return l.connectionId === c.id && l.projectId === p.id; });
+          return '<td><button type="button" class="mx-cell' + (on ? ' on' : '') + '" data-action="toggle-link" data-conn="' + c.id + '" data-proj="' + p.id + '" title="' + esc(c.name) + ' → ' + esc(p.name) + '">' + (on ? '✓' : '') + '</button></td>';
+        }).join('') + '</tr>';
+    }).join('');
+    return '<div class="mx">' +
+      '<div class="mx-top"><span class="dshell-sub">点格子勾选 / 取消：一条连接可以访问多个项目，一个项目也可以有多条连接</span>' +
+        '<span class="dshell-muted" style="margin-left:auto;font-size:10.5px">' + S.data.links.length + ' 条关联 · ' + conns.length + ' 连接 × ' + projs.length + ' 项目</span></div>' +
+      '<div class="mx-wrap"><table class="mx-table"><thead>' + head + '</thead><tbody>' + rows + '</tbody></table>' +
+        '<div class="mx-note">改动即时保存。关联只是「这台机器能不能访问这个项目」的声明，测试连接只验证 SSH 本身。</div>' +
+      '</div></div>';
+  }
+
+  /* ---------------- 外壳渲染 ---------------- */
+  function headerHtml() {
+    var def = defaultConn();
+    var tabs = [
+      { key: 'conn', label: 'SSH 连接', count: S.data.connections.length }
+    ];
+    var running = S.test.status === 'running';
+    return '<header class="cfg-top">' +
+      '<div><div class="row"><h1 class="dshell-title">配置管理</h1>' +
+        (running ? '<span class="dshell-badge dshell-badgeWait">测试中…</span>' : '') +
+        (S.data.connections.length ? '<span class="dshell-badge">' + (def ? '默认连接 ' + esc(def.name) : '未设默认连接') + '</span>' : '<span class="dshell-badge">尚未配置</span>') +
+      '</div>' +
+      '<p class="dshell-sub">SSH 连接 · 只读诊断认证 · 私钥用本机路径 · 代码仓库与分支在窗口3 派发时指定</p></div>' +
+      '<div class="row"><span class="dshell-muted" style="font-size:10.5px">' +
+        (S.data.updatedAt ? '上次修改 ' + esc(relTime(S.data.updatedAt)) : '尚未保存') + ' · 数据 ' + CONFIG_REL +
+      '</span></div>' +
+      '</header>' +
+      '<nav class="cfg-tabs">' + tabs.map(function (t) {
+        return '<button class="cfg-tab' + (S.tab === t.key ? ' on' : '') + '" type="button" data-action="tab" data-value="' + t.key + '">' + t.label + '<span class="cfg-count">' + t.count + '</span></button>';
+      }).join('') + '</nav>';
+  }
+  function render() {
+    if (S.loading) { root.innerHTML = '<div class="loading">加载配置…</div>'; return; }
+    var scrolls = {};
+    root.querySelectorAll('[data-scroll]').forEach(function (n) { scrolls[n.getAttribute('data-scroll')] = n.scrollTop; });
+    if (S.tab !== 'conn') S.tab = 'conn';
+    var body = renderConnTab();
+    root.innerHTML = '<div class="cfg">' + headerHtml() + noticeHtml() + '<div class="cfg-body">' + body + '</div></div>';
+    root.querySelectorAll('[data-scroll]').forEach(function (n) {
+      var k = n.getAttribute('data-scroll');
+      if (scrolls[k] != null) n.scrollTop = scrolls[k];
+    });
+  }
+  function markDirty(kind) {
+    if (kind === 'conn') { if (S.connDirty) return; S.connDirty = true; }
+    else { if (S.projDirty) return; S.projDirty = true; }
+    var badge = root.querySelector('[data-dirty]');
+    if (badge) { badge.className = 'tagDim'; badge.style.borderColor = 'rgba(210,153,34,.5)'; badge.style.color = '#d29922'; badge.textContent = '未保存'; }
+  }
+
+  /* ---------------- 事件 ---------------- */
+  function onClick(ev) {
+    var target = ev.target.closest ? ev.target.closest('[data-action]') : null;
+    if (!target) return;
+    var action = target.getAttribute('data-action');
+    var value = target.getAttribute('data-value');
+    if (action === 'tab') { ev.preventDefault(); S.tab = value; S.confirmDelete = null; render(); return; }
+    if (action === 'new-conn') { ev.preventDefault(); newConn(); return; }
+    if (action === 'new-proj') { ev.preventDefault(); newProj(); return; }
+    if (action === 'select-conn') { ev.preventDefault(); S.tab = 'conn'; selectConn(value); return; }
+    if (action === 'select-proj') { ev.preventDefault(); S.tab = 'proj'; selectProj(value); return; }
+    if (action === 'save-conn') { ev.preventDefault(); saveConn(); return; }
+    if (action === 'save-proj') { ev.preventDefault(); saveProj(); return; }
+    if (action === 'delete-conn') { ev.preventDefault(); deleteConn(value); return; }
+    if (action === 'delete-proj') { ev.preventDefault(); deleteProj(value); return; }
+    if (action === 'cancel-delete') { ev.preventDefault(); S.confirmDelete = null; render(); return; }
+    if (action === 'chip-key') { ev.preventDefault(); S.connDraft.key = value; if (S.connErr.key) { delete S.connErr.key; refreshErrors(); } markDirty('conn'); render(); return; }
+    if (action === 'test-conn') { ev.preventDefault(); testConnFromDraft(); return; }
+    if (action === 'copy-ssh') { ev.preventDefault(); copyText(sshCmd(S.connDraft, { batch: false })); return; }
+    if (action === 'read-branches') { ev.preventDefault(); readBranchesForProject(); return; }
+    if (action === 'check-path') { ev.preventDefault(); checkLocalPath(); return; }
+    if (action === 'add-map') { ev.preventDefault(); addMapRow(); return; }
+    if (action === 'remove-map') { ev.preventDefault(); removeMapRow(Number(value)); return; }
+    if (action === 'save-map') { ev.preventDefault(); saveMap(); return; }
+    if (action === 'pick-branch') { ev.preventDefault(); S.projDraft.defaultBranch = value; markDirty('proj'); render(); return; }
+    if (action === 'remove-branch') { ev.preventDefault(); S.projDraft.branches = S.projDraft.branches.filter(function (b) { return b !== value; }); if (S.projDraft.defaultBranch === value) S.projDraft.defaultBranch = S.projDraft.branches[0] || ''; markDirty('proj'); render(); return; }
+    if (action === 'add-branch') { ev.preventDefault(); addBranch(); return; }
+    if (action === 'toggle-link') { ev.preventDefault(); toggleMatrix(target.getAttribute('data-conn'), target.getAttribute('data-proj')); return; }
+  }
+  function addBranch() {
+    var name = String(S.newBranch || '').trim();
+    if (!name) { toast('先输入分支名'); return; }
+    if (!/^[A-Za-z0-9._\/-]+$/.test(name)) { toast('分支名只能包含字母数字 . _ - /'); return; }
+    if (S.projDraft.branches.indexOf(name) < 0) S.projDraft.branches.push(name);
+    if (!S.projDraft.defaultBranch) S.projDraft.defaultBranch = name;
+    S.newBranch = '';
+    markDirty('proj');
+    render();
+  }
+  function testConnFromDraft() {
+    var d = S.connDraft;
+    var errs = validateConn(d);
+    if (Object.keys(errs).length) { S.connErr = errs; refreshErrors(); toast('先补全连接信息再测试'); focusFirstBad('conn'); return; }
+    if (S.connSel) {
+      testConnection(connById(S.connSel));
+    } else {
+      // 未保存的连接：直接拿草稿测，结果不落盘
+      testConnection(Object.assign({}, d, { id: null }));
+    }
+  }
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); toast('已复制：' + text); return; }
+      throw new Error('no clipboard');
+    } catch (e) {
+      toast('复制失败，可手动选择命令：' + text);
+    }
+  }
+  function applyMapField(node) {
+    var mapField = node.getAttribute && node.getAttribute('data-map-field');
+    if (!mapField) return false;
+    var idx = Number(node.getAttribute('data-map-row'));
+    var row = S.data.serviceMap[idx];
+    if (row) {
+      if (mapField === 'match') {
+        row.match = String(node.value || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      } else if (mapField === 'container') {
+        row.container = node.value;
+      } else if (mapField === 'project') {
+        row.projectId = node.value;
+      }
+    }
+    if (S.mapErr[idx]) { delete S.mapErr[idx]; refreshMapErrors(); }
+    return true;
+  }
+  function refreshMapErrors() {
+    root.querySelectorAll('[data-map-err]').forEach(function (node) {
+      node.textContent = S.mapErr[node.getAttribute('data-map-err')] || '';
+    });
+  }
+  function onInput(ev) {
+    var node = ev.target;
+    if (node.hasAttribute && node.hasAttribute('data-new-branch')) { S.newBranch = node.value; return; }
+    if (applyMapField(node)) return;
+    var field = node.getAttribute('data-field');
+    if (!field) return;
+    var bag = node.getAttribute('data-bag');
+    if (bag === 'proj') {
+      if (node.type === 'checkbox') S.projDraft[field] = node.checked;
+      else S.projDraft[field] = node.value;
+      if (S.projErr[field]) { delete S.projErr[field]; refreshErrors(); }
+      markDirty('proj');
+    } else {
+      if (node.type === 'checkbox') S.connDraft[field] = node.checked;
+      else S.connDraft[field] = node.value;
+      if (S.connErr[field]) { delete S.connErr[field]; refreshErrors(); }
+      markDirty('conn');
+    }
+  }
+  function onChange(ev) {
+    var node = ev.target;
+    if (applyMapField(node)) return;
+    var link = node.getAttribute && node.getAttribute('data-link');
+    if (link) {
+      if (link === 'proj') {
+        var pid = node.getAttribute('data-value');
+        var list = S.connDraft.projectIds || [];
+        S.connDraft.projectIds = node.checked ? (list.indexOf(pid) < 0 ? list.concat([pid]) : list) : list.filter(function (x) { return x !== pid; });
+        markDirty('conn');
+      } else {
+        var cid = node.getAttribute('data-value');
+        var list2 = S.projDraft.connectionIds || [];
+        S.projDraft.connectionIds = node.checked ? (list2.indexOf(cid) < 0 ? list2.concat([cid]) : list2) : list2.filter(function (x) { return x !== cid; });
+        markDirty('proj');
+      }
+      render();
+      return;
+    }
+    var field = node.getAttribute && node.getAttribute('data-field');
+    if (field === 'isDefault') {
+      S.connDraft.isDefault = node.checked;
+      markDirty('conn');
+      render();
+    }
+  }
+  root.addEventListener('click', onClick);
+  root.addEventListener('input', onInput);
+  root.addEventListener('change', onChange);
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var t = e.target;
+    if (t && t.hasAttribute && t.hasAttribute('data-new-branch')) { e.preventDefault(); addBranch(); }
+  });
+
+  loadConfig().catch(function (e) {
+    S.loading = false;
+    root.innerHTML = '<div class="emptyState" style="height:100%">配置加载失败：' + esc(e && e.message ? e.message : e) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>

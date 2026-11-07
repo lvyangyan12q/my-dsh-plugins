@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>原型 · TB 缺陷雷达（3 种布局）</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #11151d;
+    --panel2: #151a24;
+    --border: rgba(255,255,255,.08);
+    --border2: rgba(255,255,255,.14);
+    --text: #e6e8eb;
+    --muted: #8b949e;
+    --dim: #6b7280;
+    --accent: #4f8ef7;
+    --green: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; font-size: 13px; overflow: hidden; }
+  button, select, input { font-family: inherit; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 5px; }
+  #root { height: 100%; }
+  .empty { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--dim); font-size: 13px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+  .pill b { color: var(--text); font-weight: 600; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .prio { font-size: 10.5px; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; }
+  .btn { border: 1px solid var(--border2); background: transparent; color: var(--text); padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: rgba(255,255,255,.05); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #08101f; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  select, input[type=search] { background: var(--panel2); border: 1px solid var(--border); color: var(--text); padding: 6px 9px; border-radius: 8px; font-size: 12px; outline: none; }
+  select { max-width: 220px; }
+  .va-picks select, .vb-picks select, .vc-tools select { max-width: 200px; }
+  select:focus, input:focus { border-color: var(--accent); }
+  .mono { font-variant-numeric: tabular-nums; }
+  .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ============ Variant A · 驾驶舱（统计 + 双栏） ============ */
+  .va { display: flex; flex-direction: column; height: 100%; }
+  .va-top { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .va-brand { display: flex; align-items: baseline; gap: 10px; }
+  .va-brand h1 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: .2px; }
+  .va-brand span { color: var(--dim); font-size: 11.5px; }
+  .va-picks { display: flex; gap: 8px; margin-left: auto; }
+  .va-sync { color: var(--dim); font-size: 11px; white-space: nowrap; }
+  .va-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 14px 16px 4px; }
+  .va-stat { position: relative; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: radial-gradient(120% 140% at 0% 0%, rgba(79,142,247,.14), transparent 55%), var(--panel); overflow: hidden; }
+  .va-stat::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); opacity: .8; }
+  .va-stat.green::after { background: var(--green); }
+  .va-stat.amber::after { background: var(--amber); }
+  .va-stat.red::after { background: var(--red); }
+  .va-stat .n { font-size: 26px; font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .va-stat .l { margin-top: 4px; color: var(--muted); font-size: 11px; }
+  .va-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(320px, 41%) 1fr; gap: 14px; padding: 12px 16px 16px; }
+  .va-list { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); overflow: auto; }
+  .va-group { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(17,21,29,.96); backdrop-filter: blur(4px); border-bottom: 1px solid var(--border); color: var(--muted); font-size: 11px; }
+  .va-group .cnt { margin-left: auto; color: var(--dim); }
+  .va-row { display: flex; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.05); cursor: pointer; }
+  .va-row:hover { background: rgba(255,255,255,.035); }
+  .va-row.on { background: rgba(79,142,247,.1); box-shadow: inset 3px 0 0 var(--accent); }
+  .va-row .body { min-width: 0; flex: 1; }
+  .va-row .t { line-height: 1.45; font-size: 12.5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .va-row .m { margin-top: 4px; display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 11px; }
+  .va-detail { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); overflow: auto; padding: 18px 20px; }
+  .va-detail h2 { margin: 0 0 10px; font-size: 16px; line-height: 1.5; font-weight: 600; }
+  .va-detail .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .va-kv { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel2); }
+  .va-kv div { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+  .va-kv .k { color: var(--muted); flex: none; }
+  .va-kv .v { text-align: right; word-break: break-word; }
+  .va-sec { margin: 16px 0 8px; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: .3px; }
+  .va-note { white-space: pre-wrap; word-break: break-word; margin: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel2); line-height: 1.7; font-size: 12.5px; }
+  .va-cf { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .va-cf th, .va-cf td { text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.06); vertical-align: top; }
+  .va-cf th { width: 32%; color: var(--muted); font-weight: 500; }
+  .va-actions { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+
+  /* ============ Variant B · 看板（泳道 + 抽屉） ============ */
+  .vb { display: flex; flex-direction: column; height: 100%; }
+  .vb-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .vb-top h1 { margin: 0; font-size: 16px; font-weight: 650; }
+  .vb-top .tag { color: var(--dim); font-size: 11px; }
+  .vb-picks { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+  .vb-board { flex: 1; min-height: 0; display: flex; gap: 12px; padding: 14px 16px; overflow-x: auto; overflow-y: hidden; }
+  .vb-col { flex: 0 0 320px; max-width: 320px; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--border); border-radius: 12px; background: rgba(17,21,29,.6); }
+  .vb-colHead { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+  .vb-colHead .cnt { margin-left: auto; color: var(--dim); font-size: 11px; }
+  .vb-colBody { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .vb-card { position: relative; padding: 10px 12px 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); cursor: pointer; }
+  .vb-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+  .vb-card::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--accent); }
+  .vb-card.pr-red::before { background: var(--red); }
+  .vb-card.pr-orange::before { background: var(--amber); }
+  .vb-card.pr-grey::before { background: var(--dim); }
+  .vb-card .t { font-size: 12.5px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .vb-card .m { display: flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--dim); font-size: 10.5px; }
+  .vb-drawerMask { position: fixed; inset: 0; background: rgba(0,0,0,.5); opacity: 0; pointer-events: none; transition: opacity .18s ease; }
+  .vb-drawerMask.on { opacity: 1; pointer-events: auto; }
+  .vb-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(430px, 94vw); background: var(--panel); border-left: 1px solid var(--border2); box-shadow: -24px 0 60px rgba(0,0,0,.45); transform: translateX(102%); transition: transform .2s ease; display: flex; flex-direction: column; z-index: 5; }
+  .vb-drawer.on { transform: none; }
+  .vb-drawerHead { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 11.5px; }
+  .vb-drawerHead .x { margin-left: auto; }
+  .vb-drawerBody { flex: 1; overflow: auto; padding: 16px 18px; }
+  .vb-drawerBody h2 { margin: 0 0 10px; font-size: 15.5px; line-height: 1.55; font-weight: 600; }
+  .vb-drawerBody .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+  .vb-drawerBody .note { white-space: pre-wrap; word-break: break-word; margin: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel2); line-height: 1.7; font-size: 12.5px; }
+  .vb-drawerBody .kv { display: grid; gap: 7px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel2); }
+  .vb-drawerBody .kv div { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+  .vb-drawerBody .kv .k { color: var(--muted); }
+  .vb-drawerBody .kv .v { text-align: right; word-break: break-word; }
+  .vb-cf { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 6px; }
+  .vb-cf th, .vb-cf td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.06); vertical-align: top; }
+  .vb-cf th { width: 34%; color: var(--muted); font-weight: 500; }
+
+  /* ============ Variant C · 数据表（工具栏 + 行内展开） ============ */
+  .vc { display: flex; flex-direction: column; height: 100%; }
+  .vc-top { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .vc-top h1 { margin: 0; font-size: 16px; font-weight: 650; }
+  .vc-tools { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+  .vc-wrap { flex: 1; min-height: 0; overflow: auto; padding: 0 16px 16px; }
+  .vc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .vc-table thead th { position: sticky; top: 0; z-index: 1; text-align: left; padding: 9px 10px; color: var(--muted); font-size: 11px; font-weight: 500; background: var(--bg); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .vc-table tbody tr.row { cursor: pointer; }
+  .vc-table tbody tr.row:nth-child(odd) { background: rgba(255,255,255,.012); }
+  .vc-table tbody tr.row:hover { background: rgba(255,255,255,.04); }
+  .vc-table tbody tr.row.on { background: rgba(79,142,247,.1); }
+  .vc-table td { padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,.05); vertical-align: middle; }
+  .vc-table td.title { max-width: 520px; }
+  .vc-table td.title .t { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.45; }
+  .vc-table td.num { color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .vc-table td.state { white-space: nowrap; }
+  .vc-expand td { padding: 0 !important; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02); }
+  .vc-expand .inner { padding: 14px 18px 18px; display: grid; gap: 14px; }
+  .vc-expand .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .vc-expand .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--panel2); }
+  .vc-expand .grid div { display: flex; justify-content: space-between; gap: 10px; }
+  .vc-expand .grid .k { color: var(--muted); }
+  .vc-expand .grid .v { text-align: right; word-break: break-word; }
+  .vc-expand .note { white-space: pre-wrap; word-break: break-word; margin: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel2); line-height: 1.7; font-size: 12.5px; }
+  .vc-cf { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .vc-cf th, .vc-cf td { text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.06); vertical-align: top; }
+  .vc-cf th { width: 30%; color: var(--muted); font-weight: 500; }
+  .vc-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .vc-foot { padding: 8px 16px; border-top: 1px solid var(--border); color: var(--dim); font-size: 11px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ============ 浮动的原型切换条（不属于设计本身） ============ */
+  .switcher { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 999px; background: #1b2230; border: 1px solid rgba(255,255,255,.2); box-shadow: 0 10px 30px rgba(0,0,0,.55); z-index: 50; color: var(--text); }
+  .switcher button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); background: transparent; color: var(--text); cursor: pointer; font-size: 14px; line-height: 1; }
+  .switcher button:hover { background: rgba(255,255,255,.08); }
+  .switcher .label { font-size: 12px; padding: 0 4px; white-space: nowrap; }
+  .switcher .label b { font-weight: 650; }
+  .switcher .state { color: var(--dim); font-size: 11px; border-left: 1px solid rgba(255,255,255,.16); padding-left: 10px; white-space: nowrap; }
+  .toast { position: fixed; right: 16px; bottom: 66px; background: #1b2230; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 9px 13px; font-size: 12px; color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,.5); opacity: 0; transform: translateY(6px); transition: .18s ease; z-index: 60; }
+  .toast.on { opacity: 1; transform: none; }
+
+  @media (max-width: 900px) {
+    .va-stats { grid-template-columns: repeat(2, 1fr); }
+    .va-body { grid-template-columns: 1fr; grid-template-rows: minmax(200px, 42%) 1fr; }
+    .vc-expand .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="switcher" id="switcher">
+  <button type="button" id="prevBtn" aria-label="上一个变体">←</button>
+  <span class="label" id="swLabel"><b>A</b> · 驾驶舱</span>
+  <button type="button" id="nextBtn" aria-label="下一个变体">→</button>
+  <span class="state" id="swState">—</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var VARIANTS = [
+    { key: 'A', name: '驾驶舱', desc: '统计卡片 + 双栏主从' },
+    { key: 'B', name: '看板', desc: '按状态分列 + 右侧抽屉' },
+    { key: 'C', name: '数据表', desc: '密集表格 + 行内展开' }
+  ];
+  var STATUS_COLORS = { '待处理': '#d29922', '修复中': '#4f8ef7', '已解决': '#3fb950', '重新打开': '#f85149', '已拒绝': '#6b7280', '关闭': '#6b7280', '已完成': '#3fb950' };
+  var PRIO_COLORS = { red: '#f85149', orange: '#d29922', blue: '#4f8ef7', grey: '#6b7280' };
+
+  var S = {
+    variant: 'A',
+    projects: null,
+    control: null,
+    stateData: null,
+    members: null,
+    bugs: null,
+    pid: null,
+    uid: null,
+    selectedId: null,
+    draftUid: null
+  };
+
+  var root = document.getElementById('root');
+  var swLabel = document.getElementById('swLabel');
+  var swState = document.getElementById('swState');
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function rel(iso) {
+    if (!iso) return '—';
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return '—';
+    var diff = Date.now() - t;
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+    return Math.floor(diff / 86400000) + ' 天前';
+  }
+  function fmt(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function json(url) {
+    return fetch(url, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+  function list() { return (S.bugs && S.bugs.bugs) || []; }
+  function openBugs() { return list().filter(function (b) { return !b.sd; }); }
+  function doneBugs() { return list().filter(function (b) { return b.sd; }); }
+  function groupByStatus(arr) {
+    var map = {};
+    arr.forEach(function (b) {
+      var key = b.st || (b.sd ? '已完成' : '未分状态');
+      (map[key] || (map[key] = [])).push(b);
+    });
+    return map;
+  }
+  function prioOf(b) {
+    var p = S.projects && S.projects.priorities && S.projects.priorities[String(b.pr)];
+    return p || { name: b.pr === 0 ? '普通' : 'P' + b.pr, color: 'blue' };
+  }
+  function statusColor(st) { return STATUS_COLORS[st] || '#6b7280'; }
+  function bugById(id) { return list().find(function (b) { return b.id === id; }); }
+  function projectName() {
+    var p = (S.projects && S.projects.projects || []).find(function (x) { return x.id === S.pid; });
+    return p ? p.name : '—';
+  }
+  function personName() {
+    var m = (S.members && S.members.members || []).find(function (x) { return x.id === S.uid; });
+    return m ? m.name : '—';
+  }
+  function badgeHtml(b) {
+    return '<span class="pill"><span class="dot" style="background:' + statusColor(b.st) + '"></span>' + esc(b.st || (b.sd ? '已完成' : '—')) + '</span>';
+  }
+  function prioHtml(b) {
+    var p = prioOf(b);
+    return '<span class="prio" style="color:' + (PRIO_COLORS[p.color] || '#6b7280') + '">' + esc(p.name) + '</span>';
+  }
+  function pickHtml(idPrefix) {
+    var projects = (S.projects && S.projects.projects || []);
+    var opts = projects.map(function (p) {
+      return '<option value="' + esc(p.id) + '"' + (p.id === S.pid ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+    }).join('');
+    var members = (S.members && S.members.members || []);
+    var mopts = members.map(function (m) {
+      return '<option value="' + esc(m.id) + '"' + (m.id === S.uid ? ' selected' : '') + '>' + esc(m.name) + '</option>';
+    }).join('');
+    return '<select id="' + idPrefix + '-project" aria-label="项目">' + (opts || '<option>（无项目）</option>') + '</select>' +
+      '<select id="' + idPrefix + '-person" aria-label="负责人">' + (mopts || '<option>（无成员）</option>') + '</select>';
+  }
+  function toast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 2200);
+  }
+  function bindPicks(prefix) {
+    var p = document.getElementById(prefix + '-project');
+    var m = document.getElementById(prefix + '-person');
+    if (p) p.addEventListener('change', function () { selectProject(p.value); });
+    if (m) m.addEventListener('change', function () { selectPerson(m.value); });
+    var pull = document.getElementById(prefix + '-pull');
+    if (pull) pull.addEventListener('click', function () { toast('原型模式：拉取按钮暂不接真实采集，正式版保留该交互。'); });
+    var open = document.getElementById(prefix + '-open');
+  }
+
+  /* ---------------- 数据加载 ---------------- */
+
+  async function boot() {
+    S.projects = await json('data/projects.json');
+    S.control = await json('data/control.json');
+    S.stateData = await json('data/state.json');
+    S.pid = (S.control && S.control.projectId) || (S.projects && S.projects.projects[0] && S.projects.projects[0].id) || null;
+    if (S.pid) {
+      S.members = await json('data/members/' + encodeURIComponent(S.pid) + '.json');
+      S.uid = (S.control && S.control.personId) || (S.members && S.members.members[0] && S.members.members[0].id) || null;
+      if (S.uid) {
+        S.bugs = await json('data/bugs/' + encodeURIComponent(S.pid) + '__' + encodeURIComponent(S.uid) + '.json');
+      }
+    }
+    mount();
+  }
+
+  async function selectProject(pid) {
+    S.pid = pid;
+    S.uid = null;
+    S.members = null;
+    S.bugs = null;
+    S.selectedId = null;
+    S.members = await json('data/members/' + encodeURIComponent(pid) + '.json');
+    var first = S.members && S.members.members[0];
+    if (first) {
+      S.uid = first.id;
+      S.bugs = await json('data/bugs/' + encodeURIComponent(pid) + '__' + encodeURIComponent(first.id) + '.json');
+    }
+    mount();
+  }
+  async function selectPerson(uid) {
+    S.uid = uid;
+    S.bugs = await json('data/bugs/' + encodeURIComponent(S.pid) + '__' + encodeURIComponent(uid) + '.json');
+    S.selectedId = null;
+    mount();
+  }
+
+  /* ---------------- 变体 A · 驾驶舱 ---------------- */
+
+  function renderA() {
+    var all = list();
+    var open = openBugs();
+    var done = list().filter(function (b) { return b.sd; });
+    var pending = all.filter(function (b) { return b.st === '待处理'; }).length;
+    var groups = groupByStatus(open);
+    var order = Object.keys(groups).sort(function (a, b) { return groups[b].length - groups[a].length; });
+    var rowsHtml = order.map(function (st) {
+      return '<div class="va-group"><span class="dot" style="background:' + statusColor(st) + '"></span>' + esc(st) +
+        '<span class="cnt">' + groups[st].length + '</span></div>' +
+        groups[st].map(function (b) {
+          return '<div class="va-row' + (S.selectedId === b.id ? ' on' : '') + '" data-id="' + esc(b.id) + '">' +
+            '<span class="dot" style="background:' + statusColor(b.st) + ';margin-top:6px"></span>' +
+            '<div class="body"><div class="t">' + esc(b.t) + '</div>' +
+            '<div class="m"><span class="mono">#' + esc(b.uid == null ? '—' : b.uid) + '</span>' + prioHtml(b) + '<span>' + esc(rel(b.updated)) + '</span></div></div></div>';
+        }).join('');
+    }).join('');
+    var selected = S.selectedId ? bugById(S.selectedId) : null;
+    return '<div class="va">' +
+      '<div class="va-top">' +
+        '<div class="va-brand"><h1>缺陷雷达</h1><span>' + esc(projectName()) + ' · 负责人视图</span></div>' +
+        '<div class="va-picks">' + pickHtml('va') + '<button class="btn primary" id="va-pull" type="button">立即拉取</button></div>' +
+      '</div>' +
+      '<div class="va-stats">' +
+        '<div class="va-stat"><div class="n">' + all.length + '</div><div class="l">缺陷总数</div></div>' +
+        '<div class="va-stat amber"><div class="n">' + open.length + '</div><div class="l">未完成</div></div>' +
+        '<div class="va-stat red"><div class="n">' + pending + '</div><div class="l">待处理</div></div>' +
+        '<div class="va-stat green"><div class="n">' + done.length + '</div><div class="l">已解决</div></div>' +
+      '</div>' +
+      '<div class="va-body">' +
+        '<div class="va-list">' + (rowsHtml || '<div class="empty">该负责人暂无未完成缺陷</div>') + '</div>' +
+        '<div class="va-detail">' + (selected ? detailA(selected) : '<div class="empty" style="height:auto;padding:40px 0;">从左侧选择一条缺陷</div>') + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  function detailA(b) {
+    var kv = [
+      ['编号', '#' + (b.uid == null ? '—' : b.uid)],
+      ['负责人', b.ex || '—'],
+      ['创建人', b.cr || '—'],
+      ['创建时间', fmt(b.created)],
+      ['更新时间', fmt(b.updated)],
+      ['截止时间', b.due ? fmt(b.due) : '—']
+    ].map(function (r) {
+      return '<div><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+    }).join('');
+    var cf = (b.cf && b.cf.length) ? '<table class="va-cf"><tbody>' + b.cf.map(function (c) {
+      return '<tr><th>' + esc(c.n) + '</th><td>' + esc(c.v) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<div class="empty" style="height:auto;padding:10px 0;">无自定义字段</div>';
+    return '<h2>' + esc(b.t) + '</h2>' +
+      '<div class="meta">' + badgeHtml(b) + prioHtml(b) + '<span class="pill">' + esc(projectName()) + '</span></div>' +
+      '<div class="va-kv">' + kv + '</div>' +
+      '<div class="va-sec">描述</div>' +
+      (b.note ? '<pre class="va-note">' + esc(b.note) + '</pre>' : '<div class="empty" style="height:auto;padding:10px 0;">未填写描述</div>') +
+      '<div class="va-sec">自定义字段</div>' + cf +
+      '<div class="va-actions"><button class="btn primary" type="button" data-toast="在 TB 中打开（原型占位）">在 TB 中打开</button><button class="btn" type="button" data-toast="已复制链接（原型占位）">复制链接</button></div>';
+  }
+  function bindA() {
+    bindPicks('va');
+    root.querySelectorAll('.va-row').forEach(function (row) {
+      row.addEventListener('click', function () {
+        S.selectedId = row.getAttribute('data-id');
+        mount();
+      });
+    });
+    root.querySelectorAll('[data-toast]').forEach(function (el) {
+      el.addEventListener('click', function () { toast(el.getAttribute('data-toast')); });
+    });
+  }
+
+  /* ---------------- 变体 B · 看板 ---------------- */
+
+  function renderB() {
+    var open = openBugs();
+    var done = list().filter(function (b) { return b.sd; });
+    var all = open.concat(done);
+    var groups = groupByStatus(all);
+    var order = Object.keys(groups).sort(function (a, b) { return groups[b].length - groups[a].length; });
+    var cols = order.map(function (st) {
+      return '<div class="vb-col">' +
+        '<div class="vb-colHead"><span class="dot" style="background:' + statusColor(st) + '"></span>' + esc(st) + '<span class="cnt">' + groups[st].length + '</span></div>' +
+        '<div class="vb-colBody">' + groups[st].map(function (b) {
+          return '<div class="vb-card pr-' + (prioOf(b).color || 'blue') + '" data-id="' + esc(b.id) + '">' +
+            '<div class="t">' + esc(b.t) + '</div>' +
+            '<div class="m"><span class="mono">#' + esc(b.uid == null ? '—' : b.uid) + '</span><span>' + esc(rel(b.updated)) + '</span><span class="prio" style="color:' + (PRIO_COLORS[prioOf(b).color] || '#6b7280') + ';margin-left:auto">' + esc(prioOf(b).name) + '</span></div></div>';
+        }).join('') + '</div></div>';
+    }).join('');
+    return '<div class="vb">' +
+      '<div class="vb-top"><h1>缺陷看板</h1><span class="tag">' + esc(projectName()) + ' × ' + esc(personName()) + '</span>' +
+        '<div class="vb-picks">' + pickHtml('vb') + '<button class="btn primary" id="vb-pull" type="button">立即拉取</button></div></div>' +
+      '<div class="vb-board">' + (cols || '<div class="empty">暂无缺陷</div>') + '</div>' +
+      '<div class="vb-drawerMask" id="vb-mask"></div>' +
+      '<aside class="vb-drawer" id="vb-drawer"><div class="vb-drawerHead"><span id="vb-drawerTitle">缺陷详情</span><button class="btn x" id="vb-close" type="button" style="padding:3px 9px">✕</button></div><div class="vb-drawerBody" id="vb-drawerBody"></div></aside>' +
+    '</div>';
+  }
+  function detailB(b) {
+    var kv = [
+      ['编号', '#' + (b.uid == null ? '—' : b.uid)],
+      ['负责人', b.ex || '—'],
+      ['创建人', b.cr || '—'],
+      ['创建时间', fmt(b.created)],
+      ['更新时间', fmt(b.updated)],
+      ['截止时间', b.due ? fmt(b.due) : '—']
+    ].map(function (r) {
+      return '<div><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+    }).join('');
+    var cf = (b.cf && b.cf.length) ? '<table class="vb-cf"><tbody>' + b.cf.map(function (c) {
+      return '<tr><th>' + esc(c.n) + '</th><td>' + esc(c.v) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<div class="empty" style="height:auto;padding:10px 0;">无自定义字段</div>';
+    return '<h2>' + esc(b.t) + '</h2>' +
+      '<div class="meta">' + badgeHtml(b) + prioHtml(b) + '</div>' +
+      '<div class="kv">' + kv + '</div>' +
+      '<div class="va-sec">描述</div>' + (b.note ? '<pre class="note">' + esc(b.note) + '</pre>' : '<div class="empty" style="height:auto;padding:10px 0;">未填写描述</div>') +
+      '<div class="va-sec">自定义字段</div>' + cf +
+      '<div class="va-actions"><button class="btn primary" type="button" data-toast="在 TB 中打开（原型占位）">在 TB 中打开</button><button class="btn" type="button" data-toast="已复制链接（原型占位）">复制链接</button></div>';
+  }
+  function bindB() {
+    bindPicks('vb');
+    var drawer = document.getElementById('vb-drawer');
+    var mask = document.getElementById('vb-mask');
+    var body = document.getElementById('vb-drawerBody');
+    var close = document.getElementById('vb-close');
+    function openDrawer(id) {
+      var b = bugById(id);
+      if (!b) return;
+      S.selectedId = id;
+      body.innerHTML = detailB(b);
+      body.querySelectorAll('[data-toast]').forEach(function (el) {
+        el.addEventListener('click', function () { toast(el.getAttribute('data-toast')); });
+      });
+      drawer.classList.add('on');
+      mask.classList.add('on');
+    }
+    function closeDrawer() {
+      drawer.classList.remove('on');
+      mask.classList.remove('on');
+    }
+    root.querySelectorAll('.vb-card').forEach(function (card) {
+      card.addEventListener('click', function () { openDrawer(card.getAttribute('data-id')); });
+    });
+    close.addEventListener('click', closeDrawer);
+    mask.addEventListener('click', closeDrawer);
+  }
+
+  /* ---------------- 变体 C · 数据表 ---------------- */
+
+  function renderC() {
+    var all = list();
+    var rows = all.map(function (b) {
+      var open = S.selectedId === b.id;
+      return '<tr class="row' + (open ? ' on' : '') + '" data-id="' + esc(b.id) + '">' +
+        '<td class="num">#' + esc(b.uid == null ? '—' : b.uid) + '</td>' +
+        '<td class="title"><div class="t">' + esc(b.t) + '</div></td>' +
+        '<td class="state"><span class="pill"><span class="dot" style="background:' + statusColor(b.st) + '"></span>' + esc(b.st || '—') + '</span></td>' +
+        '<td>' + prioHtml(b) + '</td>' +
+        '<td class="num">' + esc(rel(b.updated)) + '</td>' +
+      '</tr>' +
+      (open ? '<tr class="vc-expand"><td colspan="5">' + detailC(b) + '</td></tr>' : '');
+    }).join('');
+    return '<div class="vc">' +
+      '<div class="vc-top"><h1>缺陷列表</h1><span class="pill">' + esc(projectName()) + ' × ' + esc(personName()) + '</span>' +
+        '<div class="vc-tools">' + pickHtml('vc') + '<button class="btn primary" id="vc-pull" type="button">立即拉取</button></div></div>' +
+      '<div class="vc-wrap"><table class="vc-table">' +
+        '<thead><tr><th style="width:70px">编号</th><th>标题</th><th style="width:110px">状态</th><th style="width:90px">优先级</th><th style="width:90px">更新</th></tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="5"><div class="empty" style="height:auto;padding:40px 0;">该负责人暂无缺陷</div></td></tr>') + '</tbody>' +
+      '</table></div>' +
+      '<div class="vc-foot"><span>共 ' + all.length + ' 条 · 未完成 ' + openBugs().length + ' 条</span><span>上次同步 ' + esc(S.stateData && S.stateData.lastPullAt ? fmt(S.stateData.lastPullAt) : '—') + '</span></div>' +
+    '</div>';
+  }
+  function detailC(b) {
+    var kv = [
+      ['编号', '#' + (b.uid == null ? '—' : b.uid)],
+      ['负责人', b.ex || '—'],
+      ['创建人', b.cr || '—'],
+      ['创建时间', fmt(b.created)],
+      ['更新时间', fmt(b.updated)],
+      ['截止时间', b.due ? fmt(b.due) : '—']
+    ].map(function (r) {
+      return '<div><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+    }).join('');
+    var cf = (b.cf && b.cf.length) ? '<table class="vc-cf"><tbody>' + b.cf.map(function (c) {
+      return '<tr><th>' + esc(c.n) + '</th><td>' + esc(c.v) + '</td></tr>';
+    }).join('') + '</tbody></table>' : '<div class="empty" style="height:auto;padding:10px 0;">无自定义字段</div>';
+    return '<div class="inner">' +
+      '<div class="head">' + badgeHtml(b) + prioHtml(b) + '<span class="pill">' + esc(b.cfg || '缺陷') + '</span></div>' +
+      '<div class="grid">' + kv + '</div>' +
+      '<div class="va-sec">描述</div>' + (b.note ? '<pre class="note">' + esc(b.note) + '</pre>' : '<div class="empty" style="height:auto;padding:10px 0;">未填写描述</div>') +
+      '<div class="va-sec">自定义字段</div>' + cf +
+      '<div class="vc-actions"><button class="btn primary" type="button" data-toast="在 TB 中打开（原型占位）">在 TB 中打开</button><button class="btn" type="button" data-toast="已复制链接（原型占位）">复制链接</button></div>' +
+    '</div>';
+  }
+  function bindC() {
+    bindPicks('vc');
+    root.querySelectorAll('.vc-table tr.row').forEach(function (row) {
+      row.addEventListener('click', function () {
+        var id = row.getAttribute('data-id');
+        S.selectedId = S.selectedId === id ? null : id;
+        mount();
+      });
+    });
+    root.querySelectorAll('[data-toast]').forEach(function (el) {
+      el.addEventListener('click', function () { toast(el.getAttribute('data-toast')); });
+    });
+  }
+
+  /* ---------------- 切换与挂载 ---------------- */
+
+  function mount() {
+    var v = S.variant;
+    if (v === 'A') { root.innerHTML = renderA(); bindA(); }
+    else if (v === 'B') { root.innerHTML = renderB(); bindB(); }
+    else { root.innerHTML = renderC(); bindC(); }
+    swLabel.innerHTML = '<b>' + v + '</b> · ' + VARIANTS.find(function (x) { return x.key === v; }).name;
+    swState.textContent = (S.bugCount == null ? '' : '') + (list().length ? list().length + ' 条 · ' + (S.stateData && S.stateData.lastPullAt ? '同步于 ' + fmt(S.stateData.lastPullAt) : '未同步') : '无数据');
+  }
+
+  function setVariant(key, push) {
+    if (key !== 'A' && key !== 'B' && key !== 'C') key = 'A';
+    S.variant = key;
+    S.selectedId = null;
+    if (push) {
+      try { history.replaceState(null, '', '?variant=' + key); } catch (e) { /* ignore */ }
+    }
+    if (document.getElementById('vb-drawer')) { /* 关闭抽屉 */ }
+    mount();
+  }
+
+  function cycle(delta) {
+    var idx = VARIANTS.findIndex(function (x) { return x.key === S.variant; });
+    var next = VARIANTS[(idx + delta + VARIANTS.length) % VARIANTS.length];
+    setVariant(next.key, true);
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', function () { cycle(-1); });
+  document.getElementById('nextBtn').addEventListener('click', function () { cycle(1); });
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); cycle(-1); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); cycle(1); }
+  });
+
+  var params = new URLSearchParams(location.search);
+  var initial = (params.get('variant') || 'A').toUpperCase();
+  S.variant = initial === 'B' || initial === 'C' ? initial : 'A';
+
+  boot().catch(function (e) {
+    root.innerHTML = '<div class="empty">原型数据加载失败：' + esc(e && e.message ? e.message : e) + '</div>';
+  });
+})();
+</script>
+</body>
+</html>

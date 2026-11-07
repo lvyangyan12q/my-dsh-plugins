@@ -1,0 +1,2055 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>窗口3 · 调度台</title>
+<link rel="stylesheet" href="/api/worktable/template/dshell.css" />
+<style>
+  /* ============ bug-solver 窗口3：调度台 ============
+     UI 方向 B：以「第 N 轮 方案 → 实现 → 审核」为主线的轮次时间线。
+     顶部：任务 / 对话（只读）两个页签 + run 摘要。
+     控制面：确认、批准方案、退回意见、Stop、通过、去复盘。
+     对话：只读镜像（分页、运行中刷新），输入/审批/Stop 永远回 DSH 原生会话。
+     数据：桥插件 /api/bug-solver/*；桥不可用时降级为示例数据并禁用全部写操作。 */
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { overflow: auto; background: var(--dsw-alias-bg-base, #0b0e14); color: var(--dsw-alias-label-primary, #e6e8eb); }
+  button, input, select, textarea { font-family: inherit; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+  .w3 { max-width: 1360px; margin: 0 auto; padding: 14px 16px 56px; }
+  .w3-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .w3-spacer { flex: 1; }
+  .w3-hint { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 11px; }
+  .w3-busy { color: #d29922; font-size: 11.5px; }
+
+  /* 头部 + 页签 */
+  .w3-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px 18px; flex-wrap: wrap; margin-bottom: 12px; }
+  .w3-headMain { min-width: 0; flex: 1 1 380px; }
+  .w3-kicker { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dsw-alias-label-tertiary, #6b7280); }
+  .w3-headMain .dshell-title { font-size: 17.5px; line-height: 1.4; margin: 2px 0 3px; overflow-wrap: anywhere; }
+  .w3-headMain .dshell-sub { overflow-wrap: anywhere; }
+  .w3-headRight { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: none; padding-top: 4px; }
+  .w3-tabs { border-bottom: 0; }
+
+  /* 桥状态提示 */
+  .w3-banner { display: flex; align-items: flex-start; gap: 9px; flex-wrap: wrap; padding: 9px 12px; margin-bottom: 10px; border: 1px solid transparent; border-radius: 9px; font-size: 12px; line-height: 1.55; }
+  .w3-banner b { flex: none; }
+  .w3-banner .w3-bannerActions { margin-left: auto; display: flex; gap: 8px; }
+  .w3-banner.is-degraded { color: #e8c877; border-color: rgba(210, 153, 34, .45); background: rgba(210, 153, 34, .09); }
+  .w3-banner.is-degraded b { color: #ffd77a; }
+  .w3-banner.is-error { color: #ff9a94; border-color: rgba(248, 81, 73, .45); background: rgba(248, 81, 73, .09); }
+  .w3-banner code { color: inherit; }
+  .w3-notice { display: flex; align-items: flex-start; gap: 8px; padding: 7px 11px; margin-bottom: 10px; border-radius: 8px; border: 1px solid transparent; font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; }
+  .w3-notice.is-error { color: #ff9a94; border-color: rgba(248, 81, 73, .45); background: rgba(248, 81, 73, .08); }
+  .w3-notice.is-warn { color: #e8c877; border-color: rgba(210, 153, 34, .4); background: rgba(210, 153, 34, .08); }
+  .w3-notice.is-ok { color: #7ee787; border-color: rgba(63, 185, 80, .4); background: rgba(63, 185, 80, .07); }
+  .w3-notice.is-info { color: #a9c8f5; border-color: rgba(79, 142, 247, .35); background: rgba(79, 142, 247, .07); }
+  .w3-noticeX { margin-left: auto; border: 0; background: none; color: inherit; opacity: .7; cursor: pointer; font-size: 12px; }
+  .w3-noticeX:hover { opacity: 1; }
+
+  /* 概览统计 */
+  .w3-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin-bottom: 12px; }
+  .w3-stat { padding: 9px 11px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 9px; background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); min-width: 0; }
+  .w3-stat .l { font-size: 10.5px; color: var(--dsw-alias-label-tertiary, #6b7280); }
+  .w3-stat .v { font-size: 13px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .w3-stat .v.mono { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; }
+
+  /* 两栏 */
+  .w3-body { display: grid; grid-template-columns: minmax(0, 1.72fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+  .w3-main { min-width: 0; }
+  .w3-rail { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .w3-rail .dshell-card + .dshell-card { margin-top: 0; }
+
+  .w3-cardHead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }
+  .w3-cardHead h2 { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .w3-cardHead .w3-hint { margin-left: auto; }
+
+  /* 摘要键值 */
+  .w3-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; }
+  .w3-summary .dshell-kvRow { align-items: baseline; border-bottom: 1px dashed rgba(255,255,255,.06); padding-bottom: 4px; font-size: 11.5px; }
+  .w3-summary .dshell-kvKey { flex: none; }
+  .w3-summary .dshell-kvValue { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .w3-summary .dshell-kvValue.mono { font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+
+  /* 轮次时间线 */
+  .w3-timeline { position: relative; padding-left: 22px; }
+  .w3-timeline::before { content: ''; position: absolute; left: 6px; top: 10px; bottom: 10px; width: 2px; background: var(--dsw-alias-border-l1, #262b36); }
+  .w3-node { position: relative; margin-bottom: 9px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 9px; background: rgba(255,255,255,.017); padding: 10px 12px; }
+  .w3-node:last-child { margin-bottom: 0; }
+  .w3-node::before { content: ''; position: absolute; left: -20px; top: 15px; width: 9px; height: 9px; border-radius: 50%; background: var(--dsw-alias-label-tertiary, #6b7280); border: 2px solid var(--dsw-alias-bg-base, #0b0e14); box-shadow: 0 0 0 1px var(--dsw-alias-border-l2, #3a4150); }
+  .w3-node.is-done::before { background: #3fb950; box-shadow: 0 0 7px rgba(63,185,80,.5); }
+  .w3-node.is-current::before { background: #d29922; box-shadow: 0 0 9px rgba(210,153,34,.65); }
+  .w3-node.is-future { opacity: .5; }
+  .w3-node.is-current { border-color: rgba(210, 153, 34, .38); background: rgba(210, 153, 34, .045); }
+  .w3-nodeHead { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .w3-roundNo { display: inline-flex; align-items: center; justify-content: center; min-width: 42px; height: 20px; padding: 0 7px; border-radius: 6px; background: rgba(79,142,247,.14); border: 1px solid rgba(79,142,247,.38); color: #9ecbff; font-size: 10.5px; font-weight: 650; }
+  .w3-nodeTitle { font-size: 12.5px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .w3-nodeHead .dshell-badge { margin-left: auto; }
+  .w3-nodeBody { margin-top: 7px; font-size: 12px; color: var(--dsw-alias-label-secondary, #9aa4b2); line-height: 1.6; }
+  .w3-nodeBody p { margin: 0 0 5px; }
+  .w3-nodeBody ul { margin: 0 0 6px; padding-left: 18px; }
+  .w3-nodeBody li { margin: 1px 0; }
+  .w3-section { margin-top: 6px; }
+  .w3-section h3 { margin: 0 0 2px; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; color: var(--dsw-alias-label-tertiary, #6b7280); text-transform: uppercase; }
+  .w3-section p, .w3-section ul { color: var(--dsw-alias-label-primary, #e6e8eb); font-size: 12px; }
+  .w3-prose { margin: 4px 0 0; padding: 7px 9px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 7px; background: rgba(0,0,0,.18); font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: #c9d3e0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto; }
+  .w3-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+  .w3-chip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 6px; background: rgba(255,255,255,.02); color: var(--dsw-alias-label-secondary, #9aa4b2); font-size: 10.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .w3-chip.mono { font-family: ui-monospace, Consolas, monospace; }
+  .w3-planActions { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 9px; }
+  .w3-planActions .w3-hint { margin-left: auto; }
+  .w3-progress { height: 5px; border-radius: 4px; background: rgba(255,255,255,.07); overflow: hidden; margin: 8px 0 5px; }
+  .w3-progressBar { height: 100%; width: 38%; border-radius: 4px; background: #d29922; animation: w3slide 1.5s ease-in-out infinite alternate; }
+  @keyframes w3slide { from { transform: translateX(0); } to { transform: translateX(160%); } }
+
+  /* 确认页 */
+  .w3-fieldGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 10px; }
+  .w3-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .w3-field label { font-size: 11px; color: var(--dsw-alias-label-secondary, #9aa4b2); }
+  .w3-field .dshell-input { font-size: 12px; }
+  .w3-fieldWide { grid-column: 1 / -1; }
+  .w3-fieldHint { font-size: 10.5px; color: var(--dsw-alias-label-tertiary, #6b7280); overflow-wrap: anywhere; }
+  .w3-checks { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 10px; font-size: 11px; }
+  .w3-check[data-ok="1"] { color: #3fb950; }
+  .w3-check[data-ok="0"] { color: #d29922; }
+  .w3-check [data-check] { color: inherit; }
+  .w3-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .w3-actions .w3-hint { margin-left: auto; }
+
+  /* 会话 / 产物 / run 列表 */
+  .w3-runItem { display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left; padding: 7px 9px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 8px; background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); color: var(--dsw-alias-label-secondary, #9aa4b2); cursor: pointer; font: inherit; }
+  .w3-runItem + .w3-runItem { margin-top: 5px; }
+  .w3-runItem:hover { border-color: var(--dsw-alias-border-l2, #3a4150); }
+  .w3-runItem.on { border-color: var(--dsw-alias-state-accent-primary, #4f8ef7); background: color-mix(in srgb, var(--dsw-alias-state-accent-primary, #4f8ef7) 10%, transparent); }
+  .w3-runItem .t { font-size: 11.5px; color: var(--dsw-alias-label-primary, #e6e8eb); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .w3-runItem .m { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--dsw-alias-label-tertiary, #6b7280); }
+  .w3-session { padding: 7px 9px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 8px; background: rgba(255,255,255,.02); }
+  .w3-session + .w3-session { margin-top: 6px; }
+  .w3-sessionHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .w3-sessionName { font-size: 11.5px; color: var(--dsw-alias-label-primary, #e6e8eb); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .w3-sessionId { margin-top: 2px; font-family: ui-monospace, Consolas, monospace; font-size: 10px; color: var(--dsw-alias-label-tertiary, #6b7280); overflow-wrap: anywhere; }
+  .w3-session .w3-row { margin-top: 5px; }
+  .w3-artifact { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,.06); font-size: 11px; }
+  .w3-artifact:last-child { border-bottom: 0; }
+  .w3-artifact .n { color: var(--dsw-alias-label-primary, #e6e8eb); font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+  .w3-artifactViewer { margin-top: 8px; padding: 8px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 8px; background: rgba(0,0,0,.2); }
+  .w3-artifactViewer .w3-row { gap: 8px; }
+  .w3-artifactViewer .w3-prose { max-height: 320px; margin-top: 7px; }
+  a.dshell-btn { text-decoration: none; display: inline-flex; align-items: center; }
+
+  /* 空 / 错 / 加载 */
+  .w3-state { padding: 26px 18px; text-align: center; color: var(--dsw-alias-label-tertiary, #6b7280); border: 1px dashed var(--dsw-alias-border-l1, #262b36); border-radius: 9px; font-size: 12px; line-height: 1.7; }
+  .w3-state b { display: block; color: var(--dsw-alias-label-primary, #e6e8eb); font-size: 13px; margin-bottom: 4px; }
+  .w3-state .w3-actions { justify-content: center; }
+
+  /* 对话只读镜像 */
+  .w3-chatTabs { display: flex; gap: 4px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); margin-bottom: 9px; }
+  .w3-chatTab { padding: 5px 9px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; color: var(--dsw-alias-label-secondary, #9aa4b2); font: inherit; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+  .w3-chatTab.on { color: var(--dsw-alias-label-primary, #e6e8eb); border-bottom-color: var(--dsw-alias-state-accent-primary, #4f8ef7); }
+  .w3-count { font-size: 9.5px; padding: 0 5px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1, #262b36); color: var(--dsw-alias-label-tertiary, #6b7280); }
+  .w3-readonly { display: flex; gap: 7px; align-items: flex-start; padding: 7px 10px; margin-bottom: 10px; border: 1px solid rgba(79,142,247,.28); border-radius: 8px; background: rgba(79,142,247,.06); color: #a9c8f5; font-size: 11.5px; line-height: 1.55; }
+  .w3-chatList { display: flex; flex-direction: column; gap: 8px; max-height: 460px; overflow: auto; padding-right: 4px; }
+  .w3-msg { border-left: 3px solid var(--dsw-alias-border-l2, #3a4150); padding: 1px 0 1px 9px; }
+  .w3-msg[data-role="user"] { border-left-color: #4f8ef7; }
+  .w3-msg[data-role="assistant"] { border-left-color: #3fb950; }
+  .w3-msg[data-role="tool"] { border-left-color: #a371f7; }
+  .w3-msg[data-kind="review"] { border-left-color: #d29922; }
+  .w3-msgHead { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+  .w3-msgRole { font-size: 11px; font-weight: 650; color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .w3-msgKind, .w3-msgTool { font-size: 9.5px; padding: 0 5px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 5px; color: var(--dsw-alias-label-tertiary, #6b7280); }
+  .w3-msgTime { margin-left: auto; font-size: 9.5px; color: var(--dsw-alias-label-tertiary, #6b7280); }
+  .w3-msgBody { font-size: 12px; color: var(--dsw-alias-label-primary, #e6e8eb); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .w3-msg[data-kind="tool"] .w3-msgBody { font-family: ui-monospace, Consolas, monospace; font-size: 10.5px; color: #c7b8ff; background: rgba(0,0,0,.28); border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 6px; padding: 5px 7px; }
+  .w3-msg[data-kind="review"] .w3-msgBody { color: #e8c877; }
+  .w3-chatFoot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--dsw-alias-border-l1, #262b36); }
+  .w3-chatFoot .w3-hint { margin-left: auto; }
+
+  .w3-badgeInfo { color: #9ecbff; border-color: rgba(79,142,247,.45); }
+  .w3-badgeInfo::before { background: #4f8ef7; box-shadow: 0 0 5px #4f8ef7; }
+  .w3-badgeBad { color: #ff9a94; border-color: rgba(248,81,73,.45); }
+  .w3-badgeBad::before { background: #f85149; box-shadow: 0 0 5px #f85149; }
+
+  @media (max-width: 1020px) {
+    .w3-body { grid-template-columns: minmax(0, 1fr); }
+    .w3-rail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 720px) {
+    .w3-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .w3-fieldGrid, .w3-summary, .w3-rail { grid-template-columns: minmax(0, 1fr); }
+    .w3-headRight { width: 100%; }
+  }
+  /* 深色主题下原生下拉弹层别用系统白底（否则白字看不清） */
+  select { color-scheme: dark; }
+  select option, select optgroup { background-color: #101521; color: #e9edf5; }
+</style>
+</head>
+<body>
+<div class="dshell w3" id="app" data-view="task" data-bridge="loading" data-phase="loading"></div>
+<div class="w3-toast" id="toast" style="position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:50;padding:7px 14px;border-radius:999px;background:#1b2433;border:1px solid #3a4150;color:#e6e8eb;font-size:12px;opacity:0;pointer-events:none;transition:opacity .18s"></div>
+<script>
+/*
+ * 窗口3 调度台（单文件，dshell 皮肤）。
+ *
+ * 桥 HTTP 契约（bug-solver 桥插件；仅同源、JSON、无 CORS）：
+ *   GET  /api/bug-solver/runs                     -> { runs: RunSummary[] }
+ *   GET  /api/bug-solver/run?id=<runId>           -> { run: Run }
+ *   GET  /api/bug-solver/messages?runId&role&before&limit
+ *                                                 -> { messages: ChatMessage[], before, hasMore }
+ *   GET  /api/bug-solver/artifact?runId&name[&download=1]
+ *                                                 -> { name, size, sha256, text } / 文本附件
+ *   POST /api/bug-solver/start                    <- DispatchDraft -> { run }
+ *   POST /api/bug-solver/approve-plan             { runId, round }
+ *   POST /api/bug-solver/plan-feedback            { runId, round, feedback }
+ *   POST /api/bug-solver/request-changes          { runId, note }
+ *   POST /api/bug-solver/resume                   { runId, note }
+ *   POST /api/bug-solver/writeback                { projectId, localPath, serviceMap }
+ *   POST /api/bug-solver/stop                     { runId }
+ *   POST /api/bug-solver/approve                  { runId }
+ *
+ * 字段契约（与桥 publicRun 一致）：
+ *   run.bug {id,uid,title,...} / run.connection / run.project / run.specRef / run.service
+ *   run.needsAttention {from, code, message, reason, round}
+ *   run.rounds[].review {verdict, blocking, summary, tests, path}
+ *   run.rounds[].planText（顶层 run.plan 为当前轮正文）
+ *
+ * 语义约束：
+ * - 404 / 非 JSON / 连接失败：视为「桥未安装」，进入降级：示例数据 + 顶部提示，
+ *   所有写操作禁用，不假装已派发/已停止。
+ * - 其它 HTTP 失败：明确报错，保持当前状态，按钮可重试。
+ * - 对话只读：只有 GET；页面不提供输入、发送、审批、Stop 写入口，也不在前端改写
+ *   消息文本（脱敏由桥在返回前完成，窗口3 原样展示）。
+ * - 轮询：活跃 run 1.5s，空闲 10s；needs_attention 视为等待用户，走空闲间隔。
+ */
+(function () {
+  'use strict';
+
+  var API = '/api/bug-solver';
+  // 窗口1 的 v1 map（按 bugId 幂等）是真相；兼容单键仅作旧版回退。
+  var DRAFT_MAP_KEY = 'bug-solver.dispatch.draft.v1';
+  var DRAFT_KEYS = ['bugSolver.dispatchDraft', 'bugSolver.window3Draft'];
+  var DRAFT_KEY = DRAFT_KEYS[0];
+  var DRAFT_CHANNEL = 'bug-solver-dispatch';
+  var LIMIT = 40;
+  var POLL_ACTIVE = 1500;
+  var POLL_IDLE = 10000;
+  var REQUEST_TIMEOUT = 15000;
+
+  var PHASES = {
+    draft: { label: '待确认信息', tone: 'wait', active: false },
+    confirmed: { label: '已确认', tone: 'wait', active: true },
+    fix_planning: { label: '方案生成中', tone: 'info', active: true },
+    awaiting_plan_approval: { label: '待确认方案', tone: 'wait', active: true },
+    fix_implementing: { label: '修复中', tone: 'info', active: true },
+    fix_done: { label: '待审核', tone: 'info', active: true },
+    review_starting: { label: '审核准备中', tone: 'info', active: true },
+    review_running: { label: '审核中', tone: 'info', active: true },
+    review_done: { label: '审核完成', tone: 'info', active: true },
+    needs_attention: { label: '需要你回复', tone: 'bad', active: false },
+    awaiting_user_approval: { label: '待你通过', tone: 'wait', active: true },
+    approved: { label: '已通过', tone: 'done', active: false },
+    stopped: { label: '已停止', tone: '', active: false },
+    fix_failed: { label: '修复失败', tone: 'bad', active: false },
+    review_failed: { label: '审核失败', tone: 'bad', active: false },
+    unknown: { label: '结果未知', tone: 'bad', active: false },
+    none: { label: '未开始', tone: '', active: false },
+    loading: { label: '连接中', tone: '', active: false },
+    error: { label: '桥不可用', tone: 'bad', active: false }
+  };
+
+  var S = {
+    view: 'task',
+    chatRole: 'fix',
+    bridge: 'loading',
+    bridgeError: '',
+    sample: false,
+    runs: [],
+    run: null,
+    runId: null,
+    runError: '',
+    draft: null,
+    form: null,
+    messages: { fix: blankPage(), review: blankPage() },
+    artifact: null,
+    feedbackOpen: false,
+    feedback: '',
+    busy: false,
+    notice: null,
+    pollTimer: null,
+    renderPending: false,
+    pollMs: null,
+    booted: false
+  };
+
+  var root = document.getElementById('app');
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+
+  /* ---------------- 基础 ---------------- */
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function fmtAt(ts) {
+    if (!ts) return '';
+    var d = new Date(Number(ts));
+    if (isNaN(d.getTime())) return '';
+    return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+  function isoLocal(ts) {
+    if (!ts) return '';
+    var d = new Date(Number(ts));
+    if (isNaN(d.getTime())) return '';
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function toIso(value) {
+    if (!value) return '';
+    var d = new Date(value);
+    return isNaN(d.getTime()) ? '' : d.toISOString();
+  }
+  function displayTime(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    return isNaN(d.getTime()) ? '' : isoLocal(d.getTime());
+  }
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.style.opacity = '0'; }, 2600);
+  }
+  function isActive(state) {
+    return !!(PHASES[state] && PHASES[state].active);
+  }
+  function phaseInfo(state) {
+    return PHASES[state] || { label: state || '未知', tone: '', active: false };
+  }
+  function toneClass(tone) {
+    if (tone === 'done') return 'dshell-badgeDone';
+    if (tone === 'wait') return 'dshell-badgeWait';
+    if (tone === 'bad') return 'w3-badgeBad';
+    if (tone === 'info') return 'w3-badgeInfo';
+    return '';
+  }
+  function badge(label, tone) {
+    return '<span class="dshell-badge ' + toneClass(tone) + '">' + esc(label) + '</span>';
+  }
+  function kv(key, value, mono) {
+    return '<div class="dshell-kvRow"><span class="dshell-kvKey">' + esc(key) + '</span>' +
+      '<span class="dshell-kvValue' + (mono ? ' mono' : '') + '" title="' + esc(value) + '">' + esc(value) + '</span></div>';
+  }
+  function featureOf(specPath) {
+    var m = String(specPath || '').replace(/\\/g, '/').match(/specs\/([^/]+)\//);
+    return m ? m[1] : '';
+  }
+  function blankPage() {
+    return { list: [], before: null, more: false, loaded: false, loading: false, error: '' };
+  }
+
+  /* ---------------- API 适配层 ---------------- */
+
+  async function apiRequest(method, path, body) {
+    var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = null;
+    if (controller) timer = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT);
+    var opts = { method: method, credentials: 'same-origin', cache: 'no-store', headers: {} };
+    if (controller) opts.signal = controller.signal;
+    if (body !== undefined) {
+      opts.headers['content-type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    var response;
+    try {
+      response = await fetch(API + path, opts);
+    } catch (e) {
+      var aborted = e && (e.name === 'AbortError' || /abort/i.test(String(e.message || '')));
+      return { kind: 'unreachable', message: aborted ? '请求超时' : ('无法连接桥：' + ((e && e.message) || e)) };
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+    var contentType = '';
+    try { contentType = (response.headers && response.headers.get && response.headers.get('content-type')) || ''; } catch (e) { contentType = ''; }
+    if (!response.ok) {
+      // SPA/静态服务器把未知路由回成 HTML 时，说明桥路由没挂上（桥未安装）。
+      if (/text\/html/i.test(contentType)) {
+        return { kind: 'missing', status: response.status, message: 'HTTP ' + response.status };
+      }
+      var errData = null;
+      try { errData = await response.json(); } catch (e) { errData = null; }
+      return {
+        kind: 'http',
+        status: response.status,
+        data: errData,
+        message: (errData && (errData.error || errData.message)) || ('HTTP ' + response.status)
+      };
+    }
+    var data = null;
+    try {
+      data = await response.json();
+    } catch (e) {
+      return { kind: 'bad-json', status: response.status, message: '响应不是 JSON' };
+    }
+    return { kind: 'ok', status: response.status, data: data };
+  }
+  function apiGet(path) { return apiRequest('GET', path); }
+  function apiPost(path, body) { return apiRequest('POST', path, body); }
+  function apiErrorText(res) {
+    if (!res) return '未知错误';
+    if (res.kind === 'missing') return '桥未安装（HTTP ' + (res.status || 404) + '）';
+    if (res.kind === 'unreachable') return res.message || '无法连接桥';
+    if (res.kind === 'bad-json') return '桥返回了非 JSON 响应';
+    if (res.kind === 'http') {
+      var base = 'HTTP ' + res.status + (res.message ? ' · ' + res.message : '');
+      var details = res.data && Array.isArray(res.data.details) ? res.data.details : [];
+      if (details.length) {
+        base += '：' + details.map(function (d) {
+          return (d && d.field ? d.field + ' ' : '') + ((d && d.message) || (d && d.code) || '');
+        }).filter(Boolean).join('；');
+      }
+      return base;
+    }
+    return res.message || '未知错误';
+  }
+  function canWrite() {
+    return S.bridge === 'ok' && !S.busy && !S.sample;
+  }
+
+  /* ---------------- 数据正规化 ---------------- */
+
+  function normalizeRun(raw) {
+    raw = raw && typeof raw === 'object' ? raw : {};
+    var run = Object.assign({}, raw);
+    run.id = String(run.id || run.runId || '');
+    run.state = String(run.state || run.status || 'unknown');
+    run.currentRound = Number(run.currentRound || run.round || 1) || 1;
+    run.rounds = (Array.isArray(run.rounds) ? run.rounds : []).map(function (r, i) {
+      var copy = Object.assign({}, r);
+      if (!copy.round) copy.round = i + 1;
+      return copy;
+    });
+    run.artifacts = Array.isArray(run.artifacts) ? run.artifacts : [];
+    run.commits = Array.isArray(run.commits) ? run.commits : [];
+    if (!run.bug && (run.bugTitle || run.bugUid != null)) {
+      run.bug = { uid: run.bugUid, title: run.bugTitle || '' };
+    }
+    return run;
+  }
+  function normalizeRuns(data) {
+    var list = Array.isArray(data) ? data : (data && (data.runs || data.items)) || [];
+    return list.map(function (r) {
+      var run = normalizeRun(r);
+      return {
+        id: run.id,
+        bugUid: run.bugUid != null ? run.bugUid : (run.bug && run.bug.uid),
+        bugTitle: run.bug && run.bug.title || run.bugTitle || '',
+        state: run.state,
+        currentRound: run.currentRound,
+        branch: run.branch || '',
+        updatedAt: run.updatedAt || run.createdAt || 0
+      };
+    });
+  }
+  function normalizeMessages(data) {
+    var rawList = Array.isArray(data) ? data : (data && (data.messages || data.items)) || [];
+    var list = rawList.map(function (m, i) {
+      return {
+        seq: typeof m.seq === 'number' ? m.seq : i,
+        at: m.at || 0,
+        role: m.role || 'assistant',
+        kind: m.kind || 'text',
+        text: m.text == null ? '' : String(m.text),
+        toolName: m.toolName || null
+      };
+    }).sort(function (a, b) { return a.seq - b.seq; });
+    // before 是「继续向前翻」的水位：本页最旧一条的 seq；hasMore 表示还有更早消息。
+    var before = null;
+    if (data && !Array.isArray(data) && data.before != null) before = data.before;
+    else if (list.length) before = list[0].seq;
+    var more = data && !Array.isArray(data) && data.hasMore != null ? !!data.hasMore : false;
+    return { list: list, before: before, more: more };
+  }
+  function mergeMessages(existing, incoming) {
+    var seen = {};
+    var out = [];
+    existing.concat(incoming).forEach(function (m) {
+      var key = m.seq + '|' + m.role + '|' + m.kind;
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push(m);
+    });
+    return out.sort(function (a, b) { return a.seq - b.seq; });
+  }
+
+  /* ---------------- 示例数据（仅降级显示） ---------------- */
+
+  function sampleBug() {
+    return {
+      id: 'bug-3096',
+      uid: 3096,
+      title: 'DCOM 消息通知发送 · 通讯录用户 region 为空导致飞书发送失败',
+      description: '工单通知人选择通讯录用户时飞书消息发送失败；日志显示 region 为空，未做地区选择适配。',
+      status: '待处理',
+      priority: 0
+    };
+  }
+  function sampleRun() {
+    return normalizeRun({
+      id: 'run-sample',
+      state: 'awaiting_plan_approval',
+      bug: sampleBug(),
+      service: 'datacenter-service-se-dcom:1.0.3-dev.17',
+      connection: { id: 'conn-test', name: '111', host: '10.12.139.111', port: '22', user: 'root', keyPath: 'C:\\Users\\Administrator\\.ssh\\id_ed25519' },
+      project: { id: 'proj-api', name: 'cet-electric-api', localPath: 'F:\\ai-project\\cet-electric-api', defaultBranch: 'master' },
+      specRef: { kind: 'file', path: 'specs/notify-feishu/spec.md', feature: 'notify-feishu' },
+      fixSessionId: 'sess-fix-sample',
+      reviewSessionId: 'sess-review-sample',
+      currentRound: 2,
+      branch: 'bugfix/3096-sample',
+      baseBranch: 'master',
+      rounds: [
+        {
+          round: 1,
+          planPath: 'round-1/plan.md',
+          planApprovedAt: 1790000000000,
+          planFeedback: '',
+          commit: '7c1e9a2',
+          diffPath: 'round-1/diff.patch',
+          verdict: 'request_changes',
+          reviewPath: 'round-1/review.md',
+          plan: {
+            diagnosis: 'FeishuAppSender 直接用 notifyUser.region 拼接口参数；通讯录用户 region 为空时未做地区选择适配，飞书返回 400。',
+            changes: ['工单通知链路补 region 来源', 'region 为空时给出明确错误，不静默拼空值'],
+            tests: ['单测：region 为空 / 有地区 / 跨地区', '本地 mock 飞书接口验证请求体'],
+            risk: '影响其他通知渠道的 region 解析；先只改飞书链路。'
+          },
+          review: {
+            verdict: 'request_changes',
+            summary: '方向对，但“region 为空回退默认地区”会掩盖配置错误，且缺少集成测试。',
+            blocking: ['region 为空时不要静默回退到默认地区', '补一条从工单到飞书请求的集成测试'],
+            tests: '建议补：region 缺失、跨地区、通讯录用户三种用例。'
+          },
+          completedAt: 1790000100000
+        },
+        {
+          round: 2,
+          planPath: 'round-2/plan.md',
+          planApprovedAt: 0,
+          planFeedback: '',
+          plan: {
+            diagnosis: '接受审核意见：不静默回退；在 DTO 层校验 region，缺失时返回可读错误。',
+            changes: ['NotifyUserDTO：region 缺失时返回明确校验错误', 'FeishuAppSender：兜底只用于非通讯录用户'],
+            tests: ['集成测试：工单 → 通知 → 飞书请求体'],
+            risk: '错误信息变化可能影响前端提示。'
+          }
+        }
+      ],
+      artifacts: ['round-1/plan.md', 'round-1/diagnosis.md', 'round-1/result.json', 'round-1/diff.patch', 'round-1/review.md', 'round-2/plan.md'],
+      retro: { state: 'pending', sessionId: null, reportPath: null },
+      createdAt: 1790000000000,
+      updatedAt: 1790000200000
+    });
+  }
+  function sampleSummary() {
+    var run = sampleRun();
+    return {
+      id: run.id,
+      bugUid: run.bugUid,
+      bugTitle: run.bug.title,
+      state: run.state,
+      currentRound: run.currentRound,
+      branch: run.branch,
+      updatedAt: run.updatedAt
+    };
+  }
+  function sampleMessages() {
+    return {
+      fix: {
+        list: [
+          { seq: 1, at: 1790000000000, role: 'user', kind: 'text', text: 'BUG-3096 派发：工单通知人选择通讯录用户时飞书消息发送失败；服务 datacenter-service-se-dcom:1.0.3-dev.17；spec specs/notify-feishu/spec.md。', toolName: null },
+          { seq: 2, at: 1790000002000, role: 'tool', kind: 'tool', text: 'ssh root@10.12.139.111 "docker logs --since 2h docker-dcim-web-1 2>&1 | grep -E \'ERROR|Exception\' | tail -40"', toolName: 'ssh' },
+          { seq: 3, at: 1790000005000, role: 'assistant', kind: 'plan', text: '第 2 轮方案：不静默回退默认地区；在 DTO 层校验 region，缺失时返回可读错误。先不动代码，等你批准。', toolName: null },
+          { seq: 4, at: 1790000006000, role: 'user', kind: 'text', text: '不要静默回退默认地区，先补集成测试。', toolName: null }
+        ],
+        before: null, more: false, loaded: true, loading: false, error: ''
+      },
+      review: {
+        list: [
+          { seq: 5, at: 1790000007000, role: 'assistant', kind: 'review', text: '审核结论：request_changes\n阻塞项：region 为空时不要静默回退默认地区；补一条工单 → 飞书请求的集成测试。', toolName: null },
+          { seq: 6, at: 1790000008000, role: 'assistant', kind: 'text', text: '测试建议：region 缺失、跨地区、通讯录用户三种用例。', toolName: null }
+        ],
+        before: null, more: false, loaded: true, loading: false, error: ''
+      }
+    };
+  }
+
+  /* ---------------- 草稿 / 确认页表单 ---------------- */
+
+  function readDraft() {
+    // 1) v1 map（窗口1 的真相）：取 updatedAt 最新的未确认草稿。
+    try {
+      var rawMap = localStorage.getItem(DRAFT_MAP_KEY);
+      var map = rawMap ? JSON.parse(rawMap) : null;
+      var drafts = map && map.drafts && typeof map.drafts === 'object' ? map.drafts : null;
+      if (drafts) {
+        var best = null;
+        Object.keys(drafts).forEach(function (id) {
+          var item = drafts[id];
+          if (!item || !item.bug) return;
+          if (item.status === 'confirmed') return;
+          if (!best || String(item.updatedAt || '') > String(best.updatedAt || '')) best = item;
+        });
+        if (best) return best;
+      }
+    } catch (e) { /* 损坏的 map 回落到兼容单键 */ }
+    // 2) 旧版兼容单草稿键。
+    for (var i = 0; i < DRAFT_KEYS.length; i++) {
+      try {
+        var raw = localStorage.getItem(DRAFT_KEYS[i]);
+        if (!raw) continue;
+        var parsed = JSON.parse(raw);
+        if (parsed && parsed.bug) return parsed;
+      } catch (e) { /* 忽略损坏草稿 */ }
+    }
+    return null;
+  }
+  function clearDraft() {
+    // v1 map 按 bugId 删除本条，不误删其它缺陷的草稿。
+    try {
+      var bugId = S.draft && S.draft.bug && S.draft.bug.id;
+      if (bugId) {
+        var rawMap = localStorage.getItem(DRAFT_MAP_KEY);
+        var map = rawMap ? JSON.parse(rawMap) : null;
+        if (map && map.drafts && Object.prototype.hasOwnProperty.call(map.drafts, bugId)) {
+          delete map.drafts[bugId];
+          map.updatedAt = new Date().toISOString();
+          localStorage.setItem(DRAFT_MAP_KEY, JSON.stringify(map));
+        }
+      }
+    } catch (e) { /* ignore */ }
+    DRAFT_KEYS.forEach(function (key) {
+      try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
+    });
+  }
+  function formFromDraft(draft) {
+    var spec = draft.specRef || {};
+    var win = draft.timeWindow || {};
+    return {
+      connectionId: draft.connection && draft.connection.id || '',
+      localPath: draft.project && draft.project.localPath || '',
+      baseBranch: (draft.project && (draft.project.baseBranch || draft.project.defaultBranch)) || 'master',
+      specKind: spec.kind || (spec.path ? 'file' : 'none'),
+      specPath: spec.path || '',
+      container: draft.container || '',
+      from: displayTime(win.from) || isoLocal(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      to: displayTime(win.to) || isoLocal(Date.now()),
+      notes: draft.notes || ''
+    };
+  }
+  function draftBug() {
+    return (S.draft && S.draft.bug) || {};
+  }
+  function connectionOptions() {
+    if (S.draft && Array.isArray(S.draft.connections) && S.draft.connections.length) return S.draft.connections;
+    if (S.draft && S.draft.connection) return [S.draft.connection];
+    return [];
+  }
+  function projectOptions() {
+    if (S.draft && Array.isArray(S.draft.projects) && S.draft.projects.length) return S.draft.projects;
+    if (S.draft && S.draft.project) return [S.draft.project];
+    return [];
+  }
+  function selectedConnection() {
+    var list = connectionOptions();
+    var id = S.form && S.form.connectionId;
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return list[0] || null;
+  }
+  function selectedProject() {
+    var list = projectOptions();
+    var id = S.form && S.form.projectId;
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return list[0] || null;
+  }
+  function isAbsolutePath(value) {
+    var v = String(value || '').trim();
+    if (!v) return false;
+    return /^[A-Za-z]:[\\/]/.test(v) || /^\\\\[^\\]+\\/.test(v) || v.charAt(0) === '/';
+  }
+  function checkItems() {
+    var bug = draftBug();
+    var conn = selectedConnection();
+    var specPath = String(S.form && S.form.specPath || '').trim();
+    var specKind = (S.form && S.form.specKind) || 'none';
+    var from = S.form && S.form.from;
+    var to = S.form && S.form.to;
+    var windowOk = true;
+    if (from || to) {
+      windowOk = !!(from && to) && !isNaN(new Date(from).getTime()) && !isNaN(new Date(to).getTime()) &&
+        new Date(from).getTime() <= new Date(to).getTime();
+    }
+    return [
+      { key: 'bug', label: '缺陷信息', ok: !!(bug && (bug.uid != null || bug.id) && bug.title) },
+      { key: 'connection', label: 'SSH 连接', ok: !!(conn && conn.host && conn.user && conn.keyPath) },
+      { key: 'localPath', label: '本地仓库路径', ok: isAbsolutePath(S.form && S.form.localPath) },
+      { key: 'baseBranch', label: '基线分支', ok: !!(S.form && String(S.form.baseBranch || '').trim()) },
+      { key: 'spec', label: '目标 spec', ok: specKind === 'none' || !!specPath },
+      { key: 'window', label: '日志时间窗', ok: windowOk }
+    ];
+  }
+  function validateForm() {
+    return checkItems().filter(function (item) { return !item.ok; });
+  }
+  function checksHtml() {
+    return checkItems().map(function (item) {
+      return '<span class="w3-check" data-check="' + item.key + '" data-ok="' + (item.ok ? '1' : '0') + '">' +
+        (item.ok ? '✓ ' : '! ') + esc(item.label) + (item.ok ? '' : '（待补）') + '</span>';
+    }).join('');
+  }
+  function buildDraftPayload() {
+    var draft = S.draft || {};
+    var conn = selectedConnection();
+    var specPath = String(S.form && S.form.specPath || '').trim();
+    var specKind = (S.form && S.form.specKind) || 'none';
+    var proj = {
+      name: '窗口3 指定仓库',
+      localPath: String(S.form && S.form.localPath || '').trim(),
+      baseBranch: String(S.form && S.form.baseBranch || 'master').trim() || 'master',
+      defaultBranch: String(S.form && S.form.baseBranch || 'master').trim() || 'master'
+    };
+    return {
+      version: 1,
+      status: 'pending',
+      createdAt: draft.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      runId: draft.runId || ('run-' + Date.now().toString(36)),
+      bug: draft.bug,
+      connection: conn,
+      project: proj,
+      specRef: { kind: specKind, path: specKind === 'none' ? '' : specPath, feature: featureOf(specPath) },
+      container: String(S.form && S.form.container || '').trim(),
+      timeWindow: {
+        from: toIso(S.form && S.form.from) || new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        to: toIso(S.form && S.form.to) || new Date().toISOString()
+      },
+      notes: String(S.form && S.form.notes || ''),
+      source: draft.source || { window: '窗口3', pane: 'p3' }
+    };
+  }
+  function saveDraftLocal() {
+    if (!S.draft) return;
+    try {
+      var payload = buildDraftPayload();
+      // 同时更新 v1 map（按 bugId）与兼容单键，窗口1 打开时能看到同一份未确认草稿。
+      var bugId = payload.bug && payload.bug.id;
+      if (bugId) {
+        var rawMap = localStorage.getItem(DRAFT_MAP_KEY);
+        var map = rawMap ? JSON.parse(rawMap) : null;
+        if (!map || typeof map !== 'object' || Array.isArray(map)) map = { version: 1, drafts: {} };
+        if (!map.drafts || typeof map.drafts !== 'object' || Array.isArray(map.drafts)) map.drafts = {};
+        map.version = 1;
+        map.updatedAt = payload.updatedAt;
+        map.drafts[bugId] = payload;
+        localStorage.setItem(DRAFT_MAP_KEY, JSON.stringify(map));
+      }
+      DRAFT_KEYS.forEach(function (key) {
+        try { localStorage.setItem(key, JSON.stringify(payload)); } catch (e) { /* ignore */ }
+      });
+      S.notice = { kind: 'ok', text: '草稿已保存到本机；窗口3 关闭或刷新后还在。' };
+    } catch (e) {
+      S.notice = { kind: 'error', text: '草稿保存失败：' + (e && e.message ? e.message : e) };
+    }
+    render();
+  }
+  function discardDraft() {
+    clearDraft();
+    S.draft = null;
+    S.form = null;
+    S.notice = { kind: 'info', text: '已放弃这条草稿。窗口1 再点「派发到窗口3」会重新发来。' };
+    render();
+  }
+
+  /* ---------------- 装载 / 轮询 ---------------- */
+
+  async function boot() {
+    S.bridge = 'loading';
+    S.bridgeError = '';
+    S.runError = '';
+    S.notice = null;
+    S.sample = false;
+    S.run = null;
+    S.runId = null;
+    S.view = 'task';
+    S.chatRole = 'fix';
+    S.messages = { fix: blankPage(), review: blankPage() };
+    S.artifact = null;
+    S.feedbackOpen = false;
+    S.feedback = '';
+    render();
+
+    S.draft = readDraft();
+    S.form = S.draft ? formFromDraft(S.draft) : null;
+    var fromUrl = '';
+    try { fromUrl = new URLSearchParams(location.search).get('runId') || ''; } catch (e) { fromUrl = ''; }
+    if (fromUrl) {
+      // 直接打开某个 run（例如从复盘/通知里跳回）时优先它，不被旧草稿挡住。
+      S.draft = null;
+      S.form = null;
+    }
+
+    try {
+      var res = await apiGet('/runs');
+      if (res.kind === 'ok') {
+        S.bridge = 'ok';
+        S.runs = normalizeRuns(res.data);
+        await pickRun(fromUrl);
+      } else if (res.kind === 'missing' || res.kind === 'unreachable') {
+        enterDegraded(apiErrorText(res));
+      } else {
+        S.bridge = 'error';
+        S.bridgeError = apiErrorText(res);
+      }
+    } catch (e) {
+      S.bridge = 'error';
+      S.bridgeError = (e && e.message) || String(e);
+    }
+
+    schedulePoll();
+    render();
+    markReady();
+    bindDraftChannel();
+  }
+
+  async function pickRun(fromUrl) {
+    if (S.draft) return; // 有待确认草稿时先走确认页
+    if (fromUrl) {
+      S.runId = fromUrl;
+    } else {
+      var active = null;
+      for (var i = 0; i < S.runs.length; i++) {
+        if (isActive(S.runs[i].state)) { active = S.runs[i]; break; }
+      }
+      S.runId = (active || S.runs[0] || {}).id || null;
+    }
+    if (S.runId) await refreshRun({ silent: true });
+  }
+
+  function enterDegraded(detail) {
+    S.bridge = 'degraded';
+    S.sample = true;
+    S.bridgeError = detail || '';
+    S.runs = [sampleSummary()];
+    S.run = sampleRun();
+    S.runId = null;
+    S.messages = sampleMessages();
+    S.notice = null;
+    S.pollMs = null;
+    if (S.pollTimer) { clearTimeout(S.pollTimer); S.pollTimer = null; }
+  }
+
+  async function refreshRun(opts) {
+    if (!S.runId || S.bridge !== 'ok') return;
+    var res = await apiGet('/run?id=' + encodeURIComponent(S.runId));
+    if (res.kind === 'ok') {
+      S.run = normalizeRun(res.data && res.data.run ? res.data.run : res.data);
+      if (S.run.id) S.runId = S.run.id;
+      S.runError = '';
+    } else if (res.kind === 'missing') {
+      S.run = null;
+      S.runError = 'run ' + S.runId + ' 不存在（可能已被清理）。';
+    } else if (res.kind === 'unreachable') {
+      S.runError = '读取 run 失败：' + apiErrorText(res);
+    } else {
+      S.runError = '读取 run 失败：' + apiErrorText(res);
+    }
+    if (!opts || !opts.silent) render();
+  }
+
+  async function refreshRuns(opts) {
+    if (S.bridge !== 'ok') return;
+    var res = await apiGet('/runs');
+    if (res.kind === 'ok') {
+      S.runs = normalizeRuns(res.data);
+    } else if (res.kind === 'missing') {
+      enterDegraded(apiErrorText(res));
+      render();
+    } else if (!opts || !opts.silent) {
+      S.notice = { kind: 'warn', text: '刷新 run 列表失败：' + apiErrorText(res) };
+    }
+  }
+
+  function schedulePoll() {
+    if (S.pollTimer) { clearTimeout(S.pollTimer); S.pollTimer = null; }
+    if (S.bridge !== 'ok') { S.pollMs = null; return; }
+    S.pollMs = isActive(S.run && S.run.state) ? POLL_ACTIVE : POLL_IDLE;
+    S.pollTimer = setTimeout(pollTick, S.pollMs);
+  }
+
+  async function pollTick() {
+    S.pollTimer = null;
+    if (S.bridge !== 'ok') { schedulePoll(); return; }
+    await refreshRun({ silent: true });
+    if (S.view === 'chat') await loadMessages(S.chatRole, false, { silent: true, refresh: true });
+    await refreshRuns({ silent: true });
+    schedulePoll();
+    render();
+  }
+
+  async function markReady() {
+    document.documentElement.setAttribute('data-w3-ready', '1');
+  }
+
+  function bindDraftChannel() {
+    if (S.booted) return;
+    S.booted = true;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        var channel = new BroadcastChannel(DRAFT_CHANNEL);
+        channel.onmessage = function (ev) {
+          var data = ev && ev.data;
+          if (data && data.type === 'dispatch' && data.draft && data.draft.bug) {
+            S.draft = data.draft;
+            S.form = formFromDraft(S.draft);
+            S.runError = '';
+            S.view = 'task';
+            render();
+            toast('收到窗口1 派发的缺陷，先确认信息');
+          }
+        };
+      }
+    } catch (e) { /* 旧环境没有 BroadcastChannel，忽略 */ }
+    try {
+      window.addEventListener('storage', function (ev) {
+        if (DRAFT_KEYS.indexOf(ev.key) < 0 || !ev.newValue) return;
+        try {
+          var parsed = JSON.parse(ev.newValue);
+          if (parsed && parsed.bug) {
+            S.draft = parsed;
+            S.form = formFromDraft(parsed);
+            render();
+          }
+        } catch (e) { /* ignore */ }
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ---------------- 写操作 ---------------- */
+
+  async function dispatchDraft() {
+    if (!S.draft) return;
+    var failed = validateForm();
+    if (failed.length) {
+      S.notice = { kind: 'warn', text: '先补齐：' + failed.map(function (i) { return i.label; }).join('、') + '。' };
+      render();
+      return;
+    }
+    if (!canWrite()) { toast('桥未安装：操作未执行'); return; }
+    var payload = buildDraftPayload();
+    S.busy = true;
+    S.notice = null;
+    render();
+    // 代码仓库和基线分支由窗口3 直接指定；不再写回/依赖窗口2 的项目配置。
+    var res = await apiPost('/start', payload);
+    S.busy = false;
+    if (res.kind === 'ok') {
+      var run = normalizeRun(res.data && res.data.run ? res.data.run : res.data);
+      if (!run.bug) run.bug = payload.bug;
+      if (!run.id) run.id = payload.runId;
+      S.run = run;
+      S.runId = run.id;
+      clearDraft();
+      S.draft = null;
+      S.form = null;
+      S.feedbackOpen = false;
+      S.notice = { kind: 'ok', text: '已派发：第 1 轮先出方案，你批准后才动代码。' };
+      await refreshRuns({ silent: true });
+      await refreshRun({ silent: true });
+    } else if (res.kind === 'missing') {
+      enterDegraded(apiErrorText(res));
+      S.notice = { kind: 'error', text: '派发失败：桥未安装或路由不可用，操作没有执行。草稿仍保留。' };
+    } else {
+      var pathHint = payload.project && payload.project.localPath ? '（仓库：' + payload.project.localPath + '）' : '';
+      S.notice = { kind: 'error', text: '派发失败：' + apiErrorText(res) + pathHint + '。草稿仍保留，可重试。' };
+    }
+    schedulePoll();
+    render();
+  }
+
+  async function writeAction(path, body, prefix, nextState) {
+    if (!canWrite()) { toast('桥未安装：操作未执行'); return; }
+    S.busy = true;
+    S.notice = null;
+    render();
+    var res = await apiPost(path, body);
+    S.busy = false;
+    if (res.kind === 'ok') {
+      var run = res.data && res.data.run;
+      if (run) {
+        S.run = normalizeRun(run);
+        if (S.run.id) S.runId = S.run.id;
+      } else if (S.run && nextState) {
+        S.run.state = nextState;
+      }
+      S.runError = '';
+      S.notice = null;
+      await refreshRun({ silent: true });
+      await refreshRuns({ silent: true });
+      schedulePoll();
+      render();
+    } else if (res.kind === 'missing') {
+      enterDegraded(apiErrorText(res));
+      S.notice = { kind: 'error', text: prefix + '失败：桥未安装或路由不可用，操作没有执行。' };
+      render();
+    } else {
+      S.notice = { kind: 'error', text: prefix + '失败：' + apiErrorText(res) };
+      render();
+    }
+  }
+
+  function approvePlan() {
+    if (!S.run) return;
+    writeAction('/approve-plan', { runId: S.run.id || S.runId, round: S.run.currentRound || 1 }, '批准方案', 'fix_implementing');
+  }
+  function submitPlanFeedback() {
+    var text = String(S.feedback || '').trim();
+    if (!text) { toast('先写退回意见'); return; }
+    if (!S.run) return;
+    var body = { runId: S.run.id || S.runId, round: S.run.currentRound || 1, feedback: text };
+    S.feedbackOpen = false;
+    S.feedback = '';
+    writeAction('/plan-feedback', body, '退回方案', 'fix_planning');
+  }
+  function submitRequestChanges() {
+    var text = String(S.feedback || '').trim();
+    if (!text) { toast('先写再改意见'); return; }
+    if (!S.run) return;
+    var body = { runId: S.run.id || S.runId, note: text };
+    S.feedbackOpen = false;
+    S.feedback = '';
+    writeAction('/request-changes', body, '要求再改', 'fix_planning');
+  }
+  function resumeRun() {
+    if (!S.run) return;
+    writeAction('/resume', { runId: S.run.id || S.runId }, '继续', null);
+  }
+  function viewArtifact(name) {
+    if (!name || S.bridge !== 'ok' || !S.runId) return;
+    S.artifact = { name: name, text: '', size: 0, sha256: '', loading: true, error: '' };
+    render();
+    apiGet('/artifact?runId=' + encodeURIComponent(S.runId) + '&name=' + encodeURIComponent(name)).then(function (res) {
+      if (!S.artifact || S.artifact.name !== name) return;
+      S.artifact.loading = false;
+      if (res.kind === 'ok' && res.data) {
+        S.artifact.text = res.data.text || '';
+        S.artifact.size = res.data.size || 0;
+        S.artifact.sha256 = res.data.sha256 || '';
+      } else {
+        S.artifact.error = apiErrorText(res);
+      }
+      render();
+    });
+  }
+  function stopRun() {
+    if (!S.run) return;
+    writeAction('/stop', { runId: S.run.id || S.runId }, 'Stop', 'stopped');
+  }
+  function approveRun() {
+    if (!S.run) return;
+    writeAction('/approve', { runId: S.run.id || S.runId }, '通过', 'approved');
+  }
+
+  /* ---------------- 只读对话 ---------------- */
+
+  function loadMessages(role, reset, opts) {
+    opts = opts || {};
+    var page = S.messages[role];
+    if (!page) return Promise.resolve();
+    if (S.sample || S.bridge !== 'ok') return Promise.resolve();
+    if (!S.runId) { page.loaded = true; return Promise.resolve(); }
+    if (page.loading) return Promise.resolve();
+    if (!reset && !opts.refresh && !page.more) return Promise.resolve();
+    page.loading = true;
+    page.error = '';
+    // 初始/刷新加载最新一页（无 before）；「加载更早」用 before=本页最旧 seq 向前翻。
+    var before = reset || opts.refresh ? null : page.before;
+    var url = '/messages?runId=' + encodeURIComponent(S.runId || '') +
+      '&role=' + encodeURIComponent(role) + '&limit=' + LIMIT +
+      (before ? '&before=' + encodeURIComponent(before) : '');
+    return apiGet(url).then(function (res) {
+      page.loading = false;
+      if (res.kind === 'ok') {
+        var data = normalizeMessages(res.data);
+        if (reset) {
+          page.list = data.list;
+          page.before = data.before;
+          page.more = data.more;
+        } else if (opts.refresh) {
+          // 运行中刷新最新一页：按 seq 合并，保留已加载的更早消息与向前游标。
+          var hadHistory = page.loaded && page.list.length > 0;
+          page.list = mergeMessages(page.list, data.list);
+          if (!hadHistory) {
+            page.before = data.before;
+            page.more = data.more;
+          }
+        } else {
+          page.list = mergeMessages(data.list, page.list);
+          page.before = data.before;
+          page.more = data.more;
+        }
+        page.loaded = true;
+      } else if (res.kind === 'missing') {
+        enterDegraded(apiErrorText(res));
+        S.notice = { kind: 'error', text: '对话加载失败：桥未安装或路由不可用。' };
+      } else {
+        page.error = '加载对话失败：' + apiErrorText(res);
+      }
+      if (!opts.silent) render();
+    });
+  }
+
+  function switchChatRole(role) {
+    S.chatRole = role === 'review' ? 'review' : 'fix';
+    S.view = 'chat';
+    render();
+    var page = S.messages[S.chatRole];
+    if (!page.loaded && !page.loading) loadMessages(S.chatRole, true);
+  }
+
+  function openSession(kind) {
+    var run = S.run;
+    var sessionId = kind === 'review' ? (run && run.reviewSessionId) : (run && run.fixSessionId);
+    if (!sessionId) { toast('这个会话还没启动'); return; }
+    var opened = false;
+    [window.top, window.parent, window].forEach(function (win) {
+      if (opened || !win) return;
+      try {
+        if (typeof win.__dshOpenSession === 'function') { win.__dshOpenSession(sessionId); opened = true; }
+      } catch (e) { /* 跨域或未实现 */ }
+    });
+    if (opened) return;
+    copyText(sessionId, '无法自动打开 DSH 会话；已复制会话 ID，请在 DSH 里搜索打开。');
+  }
+
+  function copyText(text, okMessage) {
+    var task = null;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) task = navigator.clipboard.writeText(text);
+    } catch (e) { task = null; }
+    if (task && typeof task.then === 'function') {
+      task.then(function () { toast(okMessage || ('已复制：' + text)); }, function () { toast('复制失败：' + text); });
+      return;
+    }
+    toast(okMessage || text);
+  }
+
+  function messageHtml(m, index) {
+    var roleLabel = m.role === 'user' ? '你的回答' : (m.role === 'tool' ? '工具' : (m.role === 'system' ? '系统' : 'agent'));
+    var kindLabel = m.kind === 'tool' ? '工具调用' : (m.kind === 'plan' ? '方案' : (m.kind === 'review' ? '审核结论' : (m.kind === 'notice' ? '提示' : '')));
+    return '<div class="w3-msg" data-msg data-role="' + esc(m.role) + '" data-kind="' + esc(m.kind) + '"' +
+      (m.toolName ? ' data-tool="' + esc(m.toolName) + '"' : '') + '>' +
+      '<div class="w3-msgHead"><span class="w3-msgRole">' + esc(roleLabel) + '</span>' +
+      (kindLabel ? '<span class="w3-msgKind">' + esc(kindLabel) + '</span>' : '') +
+      (m.toolName ? '<span class="w3-msgTool">' + esc(m.toolName) + '</span>' : '') +
+      (m.at ? '<span class="w3-msgTime">' + esc(fmtAt(m.at)) + '</span>' : '') +
+      '</div><div class="w3-msgBody">' + esc(m.text) + '</div></div>';
+  }
+
+  function chatHtml() {
+    var page = S.messages[S.chatRole] || blankPage();
+    var fixCount = S.messages.fix.list.length + (S.messages.fix.more ? '+' : '');
+    var reviewCount = S.messages.review.list.length + (S.messages.review.more ? '+' : '');
+    var sessionKind = S.chatRole === 'review' ? 'review' : 'fix';
+    var body;
+    if (!page.loaded && page.loading) {
+      body = '<div class="w3-state">正在加载对话镜像…</div>';
+    } else if (page.error) {
+      body = '<div class="w3-state" data-chat-error><b>对话加载失败</b>' + esc(page.error) + '</div>';
+    } else if (!page.list.length) {
+      body = '<div class="w3-state"><b>还没有消息</b>镜像可能落后；以 DSH 原生会话为准。</div>';
+    } else {
+      body = page.list.map(messageHtml).join('');
+    }
+    return '<div class="dshell-card" data-card="chat">' +
+      '<div class="w3-cardHead"><h2>对话（只读镜像）</h2>' +
+      (S.sample ? badge('示例数据', 'wait') : badge('只读', 'info')) +
+      '<span class="w3-hint">' + esc(S.chatRole === 'review' ? '审核会话' : '分析修复会话') + (S.sample ? '' : ' · 运行中自动刷新') + '</span></div>' +
+      '<div class="w3-chatTabs">' +
+        '<button class="w3-chatTab' + (S.chatRole === 'fix' ? ' on' : '') + '" data-chat-role="fix">分析修复 <span class="w3-count">' + esc(fixCount) + '</span></button>' +
+        '<button class="w3-chatTab' + (S.chatRole === 'review' ? ' on' : '') + '" data-chat-role="review">审核 <span class="w3-count">' + esc(reviewCount) + '</span></button>' +
+      '</div>' +
+      '<div class="w3-readonly" data-readonly-banner><span>🔒</span><span>只读镜像：窗口3 不提供输入、发送、审批；回复、审批、提问、Stop 请回 DSH 原生会话。消息文本由桥脱敏后原样展示。</span></div>' +
+      '<div class="w3-chatList" data-chat-list data-has-more="' + (page.more ? '1' : '0') + '">' + body + '</div>' +
+      '<div class="w3-chatFoot">' +
+        (page.more ? '<button class="dshell-btn dshell-btnGhost" data-act="load-more"' + (page.loading ? ' disabled' : '') + '>' + (page.loading ? '加载中…' : '加载更早') + '</button>' : '') +
+        '<span class="w3-hint">镜像可能落后；状态机不依赖镜像。</span>' +
+        '<button class="dshell-btn" data-act="open-session" data-session="' + sessionKind + '">在 DSH 打开并回复</button>' +
+      '</div></div>';
+  }
+
+  /* ---------------- 渲染：头部 / 提示 ---------------- */
+
+  function bugOf() {
+    if (S.draft && S.draft.bug) return S.draft.bug;
+    if (S.run) {
+      if (S.run.bug && (S.run.bug.title || S.run.bug.uid != null)) return S.run.bug;
+      return { uid: S.run.bugUid, title: S.run.bugTitle || '' };
+    }
+    return {};
+  }
+  function titleText() {
+    var bug = bugOf();
+    var prefix = bug.uid != null ? 'BUG-' + bug.uid : (bug.id || '');
+    var title = bug.title || '等待窗口1 派发缺陷';
+    return (prefix ? prefix + ' · ' : '') + title;
+  }
+  function currentService() {
+    if (S.run && S.run.service) return S.run.service;
+    if (S.run && S.run.bug && S.run.bug.service) return S.run.bug.service;
+    if (S.draft && S.draft.bug && S.draft.bug.service) return S.draft.bug.service;
+    return '服务未知';
+  }
+  function currentConnection() {
+    if (S.draft) return selectedConnection() || S.draft.connection || null;
+    return (S.run && S.run.connection) || (S.draft && S.draft.connection) || null;
+  }
+  function currentProject() {
+    if (S.draft) return selectedProject() || S.draft.project || null;
+    return (S.run && S.run.project) || (S.draft && S.draft.project) || null;
+  }
+  function currentSpec() {
+    var spec = (S.draft && S.draft.specRef) || (S.run && S.run.specRef) || null;
+    if (!spec) return null;
+    return spec;
+  }
+  function subtitleText() {
+    var conn = currentConnection();
+    var proj = currentProject();
+    var spec = currentSpec();
+    var parts = [currentService()];
+    if (conn) parts.push((conn.name || '连接') + ' · ' + (conn.user || '?') + '@' + (conn.host || '?'));
+    if (proj) parts.push(proj.name || proj.localPath || '项目');
+    if (spec && spec.kind && spec.kind !== 'none') parts.push(spec.feature || spec.path || 'spec');
+    return parts.join(' · ');
+  }
+  function phaseAttr() {
+    if (S.draft) return 'draft';
+    if (S.run) return S.run.state || 'unknown';
+    if (S.bridge === 'loading') return 'loading';
+    if (S.bridge === 'error') return 'error';
+    return 'none';
+  }
+  function currentPhase() {
+    if (S.draft) return phaseInfo('draft');
+    if (S.run) return phaseInfo(S.run.state);
+    if (S.bridge === 'loading') return phaseInfo('loading');
+    if (S.bridge === 'error') return phaseInfo('error');
+    return phaseInfo('none');
+  }
+
+  function headerHtml() {
+    var phase = currentPhase();
+    return '<header class="w3-head">' +
+      '<div class="w3-headMain">' +
+        '<div class="w3-kicker">窗口3 · 调度台</div>' +
+        '<h1 class="dshell-title" data-role="title">' + esc(titleText()) + '</h1>' +
+        '<p class="dshell-sub" data-role="subtitle">' + esc(subtitleText()) + '</p>' +
+      '</div>' +
+      '<div class="w3-headRight">' +
+        '<div class="dshell-tabs w3-tabs">' +
+          '<button class="dshell-tab' + (S.view === 'task' ? ' dshell-tabOn' : '') + '" data-view="task">任务</button>' +
+          '<button class="dshell-tab' + (S.view === 'chat' ? ' dshell-tabOn' : '') + '" data-view="chat">对话（只读）</button>' +
+        '</div>' +
+        '<span class="dshell-badge ' + toneClass(phase.tone) + '" data-role="phase-badge">' + esc(phase.label) + '</span>' +
+        (S.busy ? '<span class="w3-busy">处理中…</span>' : '') +
+        '<button class="dshell-btn dshell-btnGhost" data-act="refresh"' + (S.bridge === 'loading' ? ' disabled' : '') + '>刷新</button>' +
+      '</div>' +
+    '</header>';
+  }
+
+  function bannerHtml() {
+    if (S.bridge === 'degraded') {
+      return '<div class="w3-banner is-degraded" data-bridge-banner data-kind="degraded" role="alert">' +
+        '<b>桥未安装</b>' +
+        '<span>没有检测到 <code>/api/bug-solver/*</code> 桥插件。下面是<strong>示例数据</strong>，只用于看界面；写操作已禁用，不会真的派发或停止。安装桥插件后点「重新检测」。</span>' +
+        '<span class="w3-bannerActions"><button class="dshell-btn dshell-btnGhost" data-act="retry-bridge">重新检测</button></span>' +
+      '</div>';
+    }
+    if (S.bridge === 'error') {
+      return '<div class="w3-banner is-error" data-bridge-banner data-kind="error" role="alert">' +
+        '<b>桥不可用</b><span>' + esc(S.bridgeError || '桥返回了错误') + '。页面没有假装已派发；可重试。</span>' +
+        '<span class="w3-bannerActions"><button class="dshell-btn dshell-btnGhost" data-act="retry-bridge">重试</button></span>' +
+      '</div>';
+    }
+    return '';
+  }
+
+  function noticeHtml() {
+    var notice = S.notice;
+    if (!notice && S.runError && !S.run) notice = { kind: 'warn', text: S.runError };
+    if (!notice) return '';
+    return '<div class="w3-notice is-' + esc(notice.kind) + '" data-notice data-kind="' + esc(notice.kind) + '">' +
+      '<span>' + esc(notice.text) + '</span>' +
+      '<button class="w3-noticeX" data-act="dismiss-notice" title="关闭">✕</button></div>';
+  }
+
+  /* ---------------- 渲染：概览 / 主区 ---------------- */
+
+  function statsHtml() {
+    if (S.bridge === 'loading' || S.bridge === 'error') return '';
+    var spec = currentSpec();
+    var specText = spec && spec.kind !== 'none' ? (spec.feature || spec.path || '已指定') : '无 spec';
+    var state = S.draft ? '待确认信息' : (S.run ? phaseInfo(S.run.state).label : '未开始');
+    var roundText = S.run ? ('第 ' + (S.run.currentRound || 1) + ' 轮') : (S.draft ? '第 1 轮（未开始）' : '—');
+    var branch = (S.run && S.run.branch) || '—';
+    return '<div class="w3-stats" data-card="stats">' +
+      '<div class="w3-stat"><div class="l">当前阶段</div><div class="v">' + esc(state) + '</div></div>' +
+      '<div class="w3-stat"><div class="l">轮次</div><div class="v">' + esc(roundText) + '</div></div>' +
+      '<div class="w3-stat"><div class="l">分支</div><div class="v mono" title="' + esc(branch) + '">' + esc(branch) + '</div></div>' +
+      '<div class="w3-stat"><div class="l">spec</div><div class="v mono" title="' + esc(specText) + '">' + esc(specText) + '</div></div>' +
+    '</div>';
+  }
+
+  function summaryHtml() {
+    var conn = currentConnection();
+    var proj = currentProject();
+    var spec = currentSpec();
+    var bug = bugOf();
+    var stateLabel = S.draft ? '待确认信息' : (S.run ? phaseInfo(S.run.state).label : '未开始');
+    var rows = [
+      kv('缺陷', bug.uid != null ? 'BUG-' + bug.uid : (bug.id || '—')),
+      kv('服务', currentService(), true),
+      kv('SSH 连接', conn ? ((conn.name || '连接') + ' · ' + (conn.user || '?') + '@' + (conn.host || '?') + ':' + (conn.port || '22')) : '—', true),
+      kv('代码仓库', (S.form && S.form.localPath) || (proj && proj.localPath) || '—', true),
+      kv('基线 / 分支', S.run ? ((S.run.baseBranch || '—') + ' / ' + (S.run.branch || '—')) : ((S.form && S.form.baseBranch) || (proj && proj.baseBranch) || '—'), true),
+      kv('目标 spec', spec && spec.kind !== 'none' ? (spec.path || spec.feature || '—') : '无（只按 diff + 缺陷描述）', true),
+      kv('状态', stateLabel)
+    ].join('');
+    return '<div class="dshell-card" data-card="run-summary">' +
+      '<div class="w3-cardHead"><h2>run 摘要</h2>' +
+        (S.sample ? badge('示例数据', 'wait') : '') +
+        '<span class="w3-hint">' + esc(S.run && S.run.id ? 'run ' + S.run.id : (S.draft && S.draft.runId ? '草稿 ' + S.draft.runId : '')) + '</span>' +
+      '</div><div class="w3-summary">' + rows + '</div></div>';
+  }
+
+  function loadingCard() {
+    return '<div class="dshell-card"><div class="w3-state" data-card="loading"><b>正在连接 bug-solver 桥…</b>读取 run 列表与当前状态。</div></div>';
+  }
+  function errorCard() {
+    return '<div class="dshell-card"><div class="w3-state" data-card="error"><b>桥不可用</b>' +
+      esc(S.bridgeError || '桥返回了错误') +
+      '<div class="w3-actions"><button class="dshell-btn dshell-btnGhost" data-act="retry-bridge">重试</button></div></div></div>';
+  }
+  function emptyCard() {
+    return '<div class="dshell-card"><div class="w3-state" data-card="empty"><b>还没有 run</b>' +
+      '在窗口1 点「派发到窗口3」后，这里会出现确认信息与轮次时间线。<br>确认后先出方案；你批准方案，修复会话才会动代码。' +
+      '<div class="w3-actions"><button class="dshell-btn dshell-btnGhost" data-act="refresh">刷新</button></div></div></div>';
+  }
+
+  function writeBtn(act, label, cls) {
+    var disabled = !canWrite();
+    return '<button class="dshell-btn ' + (cls || '') + '" data-act="' + act + '"' + (disabled ? ' disabled' : '') + '>' + label + '</button>';
+  }
+  function ghostBtn(act, label, attrs) {
+    return '<button class="dshell-btn dshell-btnGhost" data-act="' + act + '"' + (attrs || '') + '>' + label + '</button>';
+  }
+
+  function confirmCard() {
+    var draft = S.draft;
+    var bug = draftBug();
+    var conns = connectionOptions();
+    var conn = selectedConnection();
+    var spec = (S.form && S.form.specPath) || '';
+    var connOptions = conns.map(function (c) {
+      return '<option value="' + esc(c.id || c.name) + '"' + (conn && (c.id || c.name) === (conn.id || conn.name) ? ' selected' : '') + '>' +
+        esc((c.name || '连接') + ' · ' + (c.user || '?') + '@' + (c.host || '?') + ':' + (c.port || '22')) + '</option>';
+    }).join('');
+    var canGo = canWrite() && validateForm().length === 0;
+    return '<div class="dshell-card" data-card="confirm">' +
+      '<div class="w3-cardHead"><h2>确认信息</h2>' + badge('待确认', 'wait') +
+        '<span class="w3-hint">确认后先出方案；你批准方案后才动代码。</span></div>' +
+      '<div class="w3-summary">' +
+        kv('缺陷', bug.uid != null ? 'BUG-' + bug.uid : (bug.id || '—')) +
+        kv('状态 / 优先级', (bug.status || '—') + ' / ' + (bug.priority == null ? '—' : bug.priority)) +
+        kv('服务 / 版本', currentService(), true) +
+        kv('环境主机', conn ? (conn.host || '—') : '—', true) +
+      '</div>' +
+      '<div class="w3-fieldGrid">' +
+        '<div class="w3-field"><label for="w3-conn">SSH 连接</label>' +
+          (connOptions.length
+            ? '<select class="dshell-input" id="w3-conn" data-field="connectionId">' + connOptions + '</select>'
+            : '<div class="w3-fieldHint">窗口2 里还没有可用连接；先去窗口2 配一条。</div>') +
+        '</div>' +
+        '<div class="w3-field"><label for="w3-base">基线分支</label>' +
+          '<input class="dshell-input" id="w3-base" data-field="baseBranch" value="' + esc(S.form && S.form.baseBranch || 'master') + '" placeholder="develop-v3.0" autocomplete="off" spellcheck="false" />' +
+          '<div class="w3-fieldHint">修复分支会从它切出；不再从窗口2 项目配置取。</div>' +
+        '</div>' +
+        '<div class="w3-field w3-fieldWide"><label for="w3-local">代码仓库本地路径（绝对路径，必须是 git 仓库）</label>' +
+          '<input class="dshell-input" id="w3-local" data-field="localPath" value="' + esc(S.form && S.form.localPath || '') + '" placeholder="E:\\work\\projects\\dcom" autocomplete="off" spellcheck="false" />' +
+          '<div class="w3-fieldHint">由窗口3 直接指定；桥会校验路径在 allowedRoots 内且是干净 git 仓库。</div>' +
+        '</div>' +
+        '<div class="w3-field"><label for="w3-specKind">目标 spec</label>' +
+          '<select class="dshell-input" id="w3-specKind" data-field="specKind">' +
+            '<option value="file"' + (S.form && S.form.specKind === 'file' ? ' selected' : '') + '>文件（仓库内或仓库外绝对路径）</option>' +
+            '<option value="url"' + (S.form && S.form.specKind === 'url' ? ' selected' : '') + '>URL</option>' +
+            '<option value="none"' + (S.form && S.form.specKind === 'none' ? ' selected' : '') + '>无（只按 diff + 缺陷描述）</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="w3-field"><label for="w3-spec">spec 文件 / 链接（支持仓库外绝对路径）</label>' +
+          '<input class="dshell-input" id="w3-spec" data-field="specPath" value="' + esc(spec) + '" placeholder="F:\\docs\\spec.md 或 specs/&lt;feature&gt;/spec.md" autocomplete="off" spellcheck="false" />' +
+          '<div class="w3-fieldHint">选「文件」时可填目标仓库内相对路径，或仓库外绝对路径（如 F:\\docs\\spec.md）；选「无」则只按缺陷描述与 diff 判断。</div>' +
+        '</div>' +
+        '<div class="w3-field"><label for="w3-container">容器名（可选）</label>' +
+          '<input class="dshell-input" id="w3-container" data-field="container" value="' + esc(S.form && S.form.container || '') + '" placeholder="留空：按项目名查 docker ps" autocomplete="off" spellcheck="false" />' +
+          '<div class="w3-fieldHint">留空时分析会话会先用只读 docker ps 按项目/服务名匹配容器。</div>' +
+        '</div>' +
+        '<div class="w3-field"><label for="w3-from">日志时间窗（默认最近 3 天）</label>' +
+          '<div class="w3-row"><input class="dshell-input" id="w3-from" type="datetime-local" data-field="from" value="' + esc(S.form && S.form.from || '') + '" style="flex:1;min-width:0" />' +
+          '<input class="dshell-input" type="datetime-local" data-field="to" value="' + esc(S.form && S.form.to || '') + '" aria-label="日志时间窗结束" style="flex:1;min-width:0" /></div>' +
+        '</div>' +
+        '<div class="w3-field w3-fieldWide"><label for="w3-notes">补充说明（会进修复会话的上下文）</label>' +
+          '<textarea class="dshell-input" id="w3-notes" data-field="notes" rows="3" placeholder="例如：只复现于工单通知；通讯录用户没有地区字段">' + esc(S.form && S.form.notes || '') + '</textarea>' +
+        '</div>' +
+      '</div>' +
+      '<div class="w3-checks" data-validation>' + checksHtml() + '</div>' +
+      '<div class="w3-actions">' +
+        '<button class="dshell-btn" data-act="confirm-dispatch"' + (canGo ? '' : ' disabled') + '>确认并派发</button>' +
+        ghostBtn('save-draft', '保存草稿') +
+        ghostBtn('discard-draft', '放弃草稿') +
+        '<span class="w3-hint">' + (canWrite() ? '派发后进入第 1 轮方案；批准前不会产生 commit。' : '桥未安装：写操作已禁用，确认信息仍可查看/保存。') + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ---------------- 渲染：轮次时间线 ---------------- */
+
+  function stageStates(run, round) {
+    var cur = run.currentRound || 1;
+    var state = run.state;
+    var approved = !!round.planApprovedAt;
+    var verdict = round.verdict || (round.review && round.review.verdict) || '';
+    var commit = round.commit;
+    var reviewStates = ['review_starting', 'review_running', 'review_done', 'awaiting_user_approval', 'approved'];
+
+    if (round.round < cur) {
+      var implDone = !!commit || verdict || reviewStates.indexOf(state) >= 0 || state === 'fix_done';
+      return { plan: 'done', implement: implDone ? 'done' : (state === 'fix_implementing' ? 'current' : 'future'), review: verdict ? 'done' : 'future' };
+    }
+    if (round.round > cur) {
+      return { plan: 'future', implement: 'future', review: 'future' };
+    }
+    if (state === 'draft' || state === 'confirmed') {
+      return { plan: 'future', implement: 'future', review: 'future' };
+    }
+    if (state === 'fix_planning' || state === 'awaiting_plan_approval') {
+      return { plan: 'current', implement: 'future', review: 'future' };
+    }
+    if (state === 'fix_implementing') {
+      return { plan: approved ? 'done' : 'current', implement: 'current', review: 'future' };
+    }
+    if (state === 'fix_done') {
+      return { plan: 'done', implement: 'done', review: 'future' };
+    }
+    if (state === 'review_starting' || state === 'review_running') {
+      return { plan: 'done', implement: 'done', review: 'current' };
+    }
+    if (state === 'review_done' || state === 'awaiting_user_approval' || state === 'approved') {
+      return { plan: 'done', implement: 'done', review: 'done' };
+    }
+    if (state === 'needs_attention') {
+      if (!approved) return { plan: 'current', implement: 'future', review: 'future' };
+      if (!commit) return { plan: 'done', implement: 'current', review: 'future' };
+      return { plan: 'done', implement: 'done', review: verdict ? 'done' : 'current' };
+    }
+    if (state === 'stopped' || state === 'fix_failed' || state === 'review_failed' || state === 'unknown') {
+      return {
+        plan: approved ? 'done' : 'current',
+        implement: commit ? 'done' : (approved ? 'current' : 'future'),
+        review: verdict ? 'done' : (commit ? 'current' : 'future')
+      };
+    }
+    return {
+      plan: approved ? 'done' : 'future',
+      implement: commit ? 'done' : 'future',
+      review: verdict ? 'done' : 'future'
+    };
+  }
+
+  function roundsToRender(run) {
+    var seen = {};
+    (run.rounds || []).forEach(function (r) { seen[r.round || 1] = 1; });
+    seen[run.currentRound || 1] = 1;
+    return Object.keys(seen).map(Number).sort(function (a, b) { return a - b; });
+  }
+
+  function roundOf(run, n) {
+    for (var i = 0; i < (run.rounds || []).length; i++) {
+      if (run.rounds[i].round === n) return run.rounds[i];
+    }
+    return { round: n };
+  }
+
+  function nodeShell(roundNo, title, state, badgeHtml, bodyHtml) {
+    var cls = state === 'done' ? 'is-done' : (state === 'current' ? 'is-current' : 'is-future');
+    return '<div class="w3-node ' + cls + '" data-node="round-' + roundNo + '-' + title.key + '" data-node-state="' + state + '">' +
+      '<div class="w3-nodeHead"><span class="w3-roundNo">第 ' + roundNo + ' 轮</span>' +
+      '<span class="w3-nodeTitle">' + esc(title.label) + '</span>' + badgeHtml + '</div>' +
+      '<div class="w3-nodeBody">' + bodyHtml + '</div></div>';
+  }
+
+  function planBody(run, round, state) {
+    var plan = round.plan;
+    var planText = typeof plan === 'string'
+      ? plan
+      : (round.planText || (round.round === run.currentRound && typeof run.plan === 'string' ? run.plan : '') || '');
+    var out = '';
+    if (plan && typeof plan === 'object') {
+      if (plan.diagnosis) out += '<div class="w3-section"><h3>诊断</h3><p>' + esc(plan.diagnosis) + '</p></div>';
+      if (plan.changes && plan.changes.length) out += '<div class="w3-section"><h3>改什么</h3><ul>' + plan.changes.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+      if (plan.tests && plan.tests.length) out += '<div class="w3-section"><h3>怎么测</h3><ul>' + plan.tests.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+      if (plan.risk) out += '<div class="w3-section"><h3>风险</h3><p>' + esc(plan.risk) + '</p></div>';
+      if (plan.files && plan.files.length) out += '<div class="w3-chips">' + plan.files.map(function (f) { return '<span class="w3-chip mono">' + esc(f) + '</span>'; }).join('') + '</div>';
+    } else if (planText) {
+      out += '<pre class="w3-prose" data-scroll-key="plan-' + round.round + '">' + esc(planText) + '</pre>';
+    } else if (round.planPath) {
+      out += '<p>方案已生成：<code>' + esc(round.planPath) + '</code>（正文以 DSH 会话语义与产物为准）。</p>';
+    } else if (state === 'current' && run.state === 'fix_planning') {
+      out += '<p>修复会话正在读 spec / 缺陷 / 上一轮审核结论，写第 ' + round.round + ' 轮方案。完成后等你批准。</p>';
+    } else if (state === 'future') {
+      out += '<p>未开始。</p>';
+    }
+    if (round.planFeedback) {
+      out += '<div class="w3-section"><h3>退回意见</h3><p>' + esc(round.planFeedback) + '</p></div>';
+    }
+    if (round.planApprovedAt) {
+      out += '<p class="w3-hint">已于 ' + esc(fmtAt(round.planApprovedAt)) + ' 批准。</p>';
+    }
+    if (state === 'current' && run.state === 'awaiting_plan_approval') {
+      out += '<div class="w3-planActions">' +
+        writeBtn('approve-plan', '批准方案', '') +
+        ghostBtn('toggle-feedback', '退回修改') +
+        writeBtn('stop', 'Stop', 'dshell-btnDanger') +
+        '<span class="w3-hint">' + (S.sample ? '示例：写操作已禁用' : '批准前不会产生 commit') + '</span>' +
+      '</div>';
+      if (S.feedbackOpen) {
+        out += '<div class="w3-field w3-fieldWide" style="margin-top:8px"><label for="w3-feedback">退回意见（会进下一版方案）</label>' +
+          '<textarea class="dshell-input" id="w3-feedback" data-field="plan-feedback" rows="3" placeholder="例如：不要静默回退默认地区，先补集成测试">' + esc(S.feedback) + '</textarea></div>' +
+          '<div class="w3-planActions">' +
+          '<button class="dshell-btn" data-act="submit-plan-feedback"' + (canWrite() && String(S.feedback).trim() ? '' : ' disabled') + '>提交退回意见</button>' +
+          '<span class="w3-hint">同一修复会话改方案，不进入实现。</span></div>';
+      }
+    }
+    return out || '<p>未开始。</p>';
+  }
+
+  function implementBody(run, round, state) {
+    var out = '';
+    if (state === 'current') {
+      out += '<div class="w3-progress"><div class="w3-progressBar"></div></div>' +
+        '<p>修复会话正在实现已批准的方案（同一会话）；完成后自动送审。' +
+        (round.commit ? '' : '') + '</p>';
+      out += '<div class="w3-planActions">' + writeBtn('stop', 'Stop', 'dshell-btnDanger') +
+        '<span class="w3-hint">' + (S.sample ? '示例：写操作已禁用' : 'Stop 后不复用旧会话；重试开新 run') + '</span></div>';
+    } else if (state === 'done') {
+      out += '<p>已完成并提交到新分支。</p>';
+      if (round.commit) out += '<div class="w3-chips"><span class="w3-chip mono">commit ' + esc(round.commit) + '</span></div>';
+      if (round.diffPath) out += '<div class="w3-chips"><span class="w3-chip mono">' + esc(round.diffPath) + '</span></div>';
+    } else {
+      out += '<p>未开始。</p>';
+    }
+    return out;
+  }
+
+  function verdictLabel(verdict) {
+    if (verdict === 'approve') return '通过';
+    if (verdict === 'request_changes') return '要改';
+    if (verdict === 'needs_info') return '需补充信息';
+    return verdict || '未出结论';
+  }
+  function verdictTone(verdict) {
+    if (verdict === 'approve') return 'done';
+    if (verdict === 'request_changes') return 'bad';
+    if (verdict === 'needs_info') return 'wait';
+    return 'info';
+  }
+
+  function reviewBody(run, round, state) {
+    var review = round.review && typeof round.review === 'object' ? round.review : null;
+    var verdict = (review && review.verdict) || round.verdict || '';
+    var out = '';
+    if (state === 'current') {
+      return '<p>只读审核会话正在读 spec、diff 与产物；结论出来后自动推进。</p>' +
+        '<div class="w3-planActions">' + writeBtn('stop', 'Stop', 'dshell-btnDanger') +
+        '<span class="w3-hint">' + (S.sample ? '示例：写操作已禁用' : '审核会话 read-only，不改代码') + '</span></div>';
+    }
+    if (state === 'future') return '<p>未开始。</p>';
+    var reviewPath = review && review.path;
+    if (review) {
+      if (review.summary) out += '<p>' + esc(review.summary) + '</p>';
+      if (review.blocking && review.blocking.length) {
+        out += '<div class="w3-section"><h3>阻塞项</h3><ul>' + review.blocking.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+      }
+      if (review.tests) {
+        out += '<div class="w3-section"><h3>测试建议</h3>' +
+          (Array.isArray(review.tests)
+            ? '<ul>' + review.tests.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'
+            : '<p>' + esc(review.tests) + '</p>') +
+          '</div>';
+      }
+    } else if (round.reviewText) {
+      out += '<pre class="w3-prose" data-scroll-key="review-' + round.round + '">' + esc(round.reviewText) + '</pre>';
+    } else {
+      out += '<p>审核结论：' + esc(verdictLabel(verdict)) + '。' +
+        (reviewPath ? '原文见 <code>' + esc(reviewPath) + '</code>。' : '') + '</p>';
+    }
+    if (reviewPath) out += '<div class="w3-chips"><span class="w3-chip mono">' + esc(reviewPath) + '</span></div>';
+    return out;
+  }
+
+  function timelineHtml() {
+    var run = S.run;
+    if (!run) return '';
+    var rounds = roundsToRender(run);
+    var out = '<div class="dshell-card" data-card="timeline">' +
+      '<div class="w3-cardHead"><h2>轮次时间线</h2>' +
+      (S.sample ? badge('示例数据', 'wait') : '') +
+      '<span class="w3-hint">第 N 轮：方案 → 实现 → 审核；批准前不动代码</span></div>' +
+      '<div class="w3-timeline">';
+    rounds.forEach(function (n) {
+      var round = roundOf(run, n);
+      var states = stageStates(run, round);
+      var planTone = states.plan === 'done' ? 'done' : (states.plan === 'current' ? (run.state === 'awaiting_plan_approval' ? 'wait' : 'info') : '');
+      var planLabel = states.plan === 'done' ? '已批准' : (states.plan === 'current' ? (run.state === 'fix_planning' ? '方案生成中' : (run.state === 'needs_attention' ? '需你确认' : '待你确认')) : '未开始');
+      out += nodeShell(n, { key: 'plan', label: '方案' }, states.plan, badge(planLabel, planTone), planBody(run, round, states.plan));
+
+      var implLabel = states.implement === 'done' ? '已完成' : (states.implement === 'current' ? '实现中' : '未开始');
+      out += nodeShell(n, { key: 'implement', label: '实现' }, states.implement, badge(implLabel, states.implement === 'done' ? 'done' : (states.implement === 'current' ? 'info' : '')), implementBody(run, round, states.implement));
+
+      var verdict = round.verdict || (round.review && round.review.verdict) || '';
+      var reviewLabel = states.review === 'done' ? verdictLabel(verdict) : (states.review === 'current' ? '审核中' : '未开始');
+      out += nodeShell(n, { key: 'review', label: '审核' }, states.review, badge(reviewLabel, states.review === 'done' ? verdictTone(verdict) : (states.review === 'current' ? 'info' : '')), reviewBody(run, round, states.review));
+    });
+    out += '</div></div>';
+    return out;
+  }
+
+  function needsCard() {
+    var run = S.run;
+    var attention = run.needsAttention || {};
+    var reason = attention.reason || attention.message || attention.question || run.error || '会话在等一次确认或补充信息。';
+    var sessionKind = attention.from && String(attention.from).indexOf('review') === 0 ? 'review' : 'fix';
+    var stageLabel = attention.from === 'fix_planning' ? '方案'
+      : (attention.from === 'fix_implementing' ? '实现'
+        : (attention.from && String(attention.from).indexOf('review') === 0 ? '审核' : '当前'));
+    return '<div class="dshell-card" data-card="needs-attention">' +
+      '<div class="w3-cardHead"><h2>需要你回复</h2>' + badge('需要你回复', 'bad') +
+      '<span class="w3-hint">' + esc(run.state === 'needs_attention' ? '循环已暂停' : '') + '</span></div>' +
+      '<p style="margin:0 0 7px">' + esc(reason) + '</p>' +
+      '<div class="w3-notice is-warn" style="margin:0"><span>这是 DSH 原生提问/确认：窗口3 只提示并给入口，不替你回答，也不自动跳下一轮。你回答后的下一个 turn 结束会自动继续；也可以在这里手动继续。</span></div>' +
+      '<div class="w3-actions">' +
+        '<button class="dshell-btn" data-act="open-session" data-session="' + sessionKind + '">在 DSH 打开并回复</button>' +
+        writeBtn('resume', '继续' + stageLabel + '阶段', '') +
+        writeBtn('stop', 'Stop', 'dshell-btnDanger') +
+        '<span class="w3-hint">回答后从当前阶段继续，不重头开始。</span>' +
+      '</div></div>';
+  }
+
+  function finalCard() {
+    var run = S.run;
+    var last = null;
+    (run.rounds || []).forEach(function (r) {
+      var v = r.verdict || (r.review && r.review.verdict);
+      if (v === 'approve') last = r;
+    });
+    var summary = last && last.review && last.review.summary ? last.review.summary : '最后一轮审核已通过。';
+    var commit = (last && last.commit) || run.commits[run.commits.length - 1] || '—';
+    return '<div class="dshell-card" data-card="final">' +
+      '<div class="w3-cardHead"><h2>待你最终确认</h2>' + badge('待你通过', 'wait') + '</div>' +
+      '<p style="margin:0 0 8px">' + esc(summary) + '</p>' +
+      '<div class="w3-summary">' +
+        kv('分支', run.branch || '—', true) + kv('commit', commit, true) +
+        kv('轮次', '第 ' + (run.currentRound || 1) + ' 轮' + ((run.currentRound || 1) > 1 ? ' · ' + ((run.currentRound || 1) - 1) + ' 次返工' : '')) +
+        kv('审核', 'approve') +
+      '</div>' +
+      '<div class="w3-actions">' +
+        writeBtn('approve', '通过并进入复盘', '') +
+        ghostBtn('toggle-feedback', '要求再改') +
+        writeBtn('stop', 'Stop', 'dshell-btnDanger') +
+        '<span class="w3-hint">通过后不会自动合入；先复盘，再手工 merge。</span>' +
+      '</div>' +
+      (S.feedbackOpen
+        ? '<div class="w3-field w3-fieldWide" style="margin-top:8px"><label for="w3-feedback">要求再改的意见（进下一轮方案）</label>' +
+          '<textarea class="dshell-input" id="w3-feedback" data-field="plan-feedback" rows="3">' + esc(S.feedback) + '</textarea></div>' +
+          '<div class="w3-actions"><button class="dshell-btn" data-act="submit-request-changes"' + (canWrite() && String(S.feedback).trim() ? '' : ' disabled') + '>提交再改意见</button>' +
+          '<span class="w3-hint">同一 run 继续，进入下一轮方案。</span></div>'
+        : '') +
+    '</div>';
+  }
+
+  function approvedCard() {
+    var run = S.run;
+    var spec = (run && run.specRef) || {};
+    return '<div class="dshell-card" data-card="approved">' +
+      '<div class="w3-cardHead"><h2>已通过 · 待复盘</h2>' + badge('已通过', 'done') + '</div>' +
+      '<p style="margin:0 0 8px">循环结束。合入前进入复盘窗口（窗口4），读本次 spec、分支、commit、每轮 plan/diff/review。窗口3 不写复盘文件，也不会自动合入；合入由你手工完成。</p>' +
+      '<div class="w3-summary">' +
+        kv('分支', run.branch || '—', true) + kv('commit', (run.commits[run.commits.length - 1] || '—'), true) +
+        kv('轮次', '第 ' + (run.currentRound || 1) + ' 轮') +
+        kv('spec', spec.kind && spec.kind !== 'none' ? (spec.path || spec.feature || '—') : '无', true) +
+      '</div>' +
+      '<div class="w3-actions">' +
+        '<button class="dshell-btn" data-act="retro">去复盘窗口4</button>' +
+        ghostBtn('reset', '再来一条') +
+        '<span class="w3-hint">合入由你手工完成；窗口3 只记录已审核/已通过。</span>' +
+      '</div></div>';
+  }
+
+  function stoppedCard() {
+    var run = S.run;
+    return '<div class="dshell-card" data-card="stopped">' +
+      '<div class="w3-cardHead"><h2>已停止</h2>' + badge('已停止', '') + '</div>' +
+      '<p style="margin:0 0 8px">Stop 会取消当前会话；旧 run 保留记录。重试需要新 run / 新会话，不复用旧上下文。' +
+        (run && run.error ? '原因：' + esc(run.error) : '') + '</p>' +
+      '<div class="w3-actions">' + ghostBtn('reset', '新开一条') +
+        '<button class="dshell-btn dshell-btnGhost" data-act="open-session" data-session="fix">打开旧会话</button></div></div>';
+  }
+
+  function failedCard() {
+    var run = S.run;
+    var isUnknown = run.state === 'unknown';
+    return '<div class="dshell-card" data-card="failed">' +
+      '<div class="w3-cardHead"><h2>' + (isUnknown ? '结果未知' : '会话失败') + '</h2>' +
+      badge(isUnknown ? '结果未知' : '失败', 'bad') + '</div>' +
+      '<p style="margin:0 0 8px">' + esc(run.error || (isUnknown ? '宿主中断后补写的结果；不要自动重发。' : '会话以失败结束。')) + '</p>' +
+      '<div class="w3-actions">' + ghostBtn('reset', '新开一条') +
+        '<button class="dshell-btn dshell-btnGhost" data-act="open-session" data-session="fix">查看会话</button>' +
+        '<span class="w3-hint">不会自动重发；保留旧 run 记录。</span></div></div>';
+  }
+
+  function runStageHtml() {
+    var run = S.run;
+    var out = summaryHtml();
+    if (run.state === 'needs_attention') out += needsCard();
+    out += timelineHtml();
+    if (run.state === 'awaiting_user_approval') out += finalCard();
+    if (run.state === 'approved') out += approvedCard();
+    if (run.state === 'stopped') out += stoppedCard();
+    if (run.state === 'fix_failed' || run.state === 'review_failed' || run.state === 'unknown') out += failedCard();
+    return out;
+  }
+
+  /* ---------------- 渲染：右栏 ---------------- */
+
+  function runsHtml() {
+    if (!S.runs.length) {
+      return '<div class="dshell-card" data-card="runs"><div class="w3-cardHead"><h2>运行队列</h2></div>' +
+        '<div class="w3-hint">还没有 run。</div></div>';
+    }
+    var items = S.runs.map(function (r) {
+      var active = S.run && r.id === S.run.id ? ' on' : '';
+      var label = r.bugUid != null ? 'BUG-' + r.bugUid : (r.id || 'run');
+      return '<button class="w3-runItem' + active + '" data-act="select-run" data-run-id="' + esc(r.id || '') + '">' +
+        '<span class="t">' + esc(label + (r.bugTitle ? ' · ' + r.bugTitle : '')) + '</span>' +
+        '<span class="m">' + badge(phaseInfo(r.state).label, phaseInfo(r.state).tone) +
+          '<span>第 ' + esc(r.currentRound || 1) + ' 轮</span></span></button>';
+    }).join('');
+    return '<div class="dshell-card" data-card="runs">' +
+      '<div class="w3-cardHead"><h2>运行队列</h2>' + (S.sample ? badge('示例', 'wait') : '') +
+      '<span class="w3-hint">' + S.runs.length + ' 条</span></div>' +
+      '<div class="w3-runList">' + items + '</div></div>';
+  }
+
+  function sessionsHtml() {
+    var run = S.run;
+    var uid = bugOf().uid;
+    var fixId = run && run.fixSessionId;
+    var reviewId = run && run.reviewSessionId;
+    function row(kind, title, id, statusText, tone) {
+      return '<div class="w3-session"><div class="w3-sessionHead">' +
+        '<span class="w3-sessionName">' + esc(title) + '</span>' + badge(statusText, tone) + '</div>' +
+        '<div class="w3-sessionId">' + esc(id || '未启动') + '</div>' +
+        (id
+          ? '<div class="w3-row"><button class="dshell-btn dshell-btnGhost" data-act="open-session" data-session="' + kind + '">打开</button>' +
+            '<button class="dshell-btn dshell-btnGhost" data-act="copy-session" data-session="' + kind + '">复制 ID</button></div>'
+          : '') +
+        '</div>';
+    }
+    var fixStatus = '空闲';
+    var reviewStatus = '未启动';
+    if (run) {
+      if (run.state === 'fix_implementing' || run.state === 'fix_planning') fixStatus = '运行中';
+      else if (run.state === 'needs_attention') fixStatus = '等待回复';
+      else if (run.state === 'fix_done' || run.state === 'review_running' || run.state === 'review_starting' || run.state === 'awaiting_plan_approval') fixStatus = '空闲';
+      else if (run.state === 'stopped' || run.state === 'approved') fixStatus = '已结束';
+      if (run.state === 'review_running' || run.state === 'review_starting') reviewStatus = '运行中';
+      else if (run.state === 'review_done' || run.state === 'awaiting_user_approval' || run.state === 'approved') reviewStatus = '已结束';
+      else if (run.state === 'needs_attention' && reviewId) reviewStatus = '等待回复';
+      else if (reviewId) reviewStatus = '空闲';
+    }
+    return '<div class="dshell-card" data-card="sessions">' +
+      '<div class="w3-cardHead"><h2>DSH 会话</h2><span class="w3-hint">原生 · 唯一真相</span></div>' +
+      row('fix', 'BUG-' + (uid == null ? '?' : uid) + ' 分析修复', fixId, fixStatus, fixStatus === '运行中' ? 'info' : (fixStatus === '等待回复' ? 'bad' : '')) +
+      row('review', 'BUG-' + (uid == null ? '?' : uid) + ' 审核', reviewId, reviewStatus, reviewStatus === '运行中' ? 'info' : (reviewStatus === '等待回复' ? 'bad' : (reviewStatus === '已结束' ? 'done' : ''))) +
+      '<div class="w3-hint" style="margin-top:7px">审批/提问/Stop 在 DSH 里；窗口3 只做控制面。</div></div>';
+  }
+
+  function artifactUrl(name, download) {
+    return API + '/artifact?runId=' + encodeURIComponent((S.run && S.run.id) || S.runId || '') +
+      '&name=' + encodeURIComponent(name) + (download ? '&download=1' : '');
+  }
+
+  function artifactsHtml() {
+    var run = S.run;
+    var list = (run && run.artifacts) || [];
+    var viewer = '';
+    if (S.artifact) {
+      var art = S.artifact;
+      viewer = '<div class="w3-artifactViewer" data-artifact-viewer>' +
+        '<div class="w3-row"><b class="mono">' + esc(art.name) + '</b>' +
+        '<span class="w3-hint">' + (art.loading ? '正在读取…' : (art.error ? esc(art.error) : esc(art.size || 0) + ' 字节 · sha256 ' + esc(String(art.sha256 || '').slice(0, 12)))) + '</span>' +
+        '<span class="w3-spacer"></span>' +
+        '<a class="dshell-btn dshell-btnGhost" data-artifact-download href="' + esc(artifactUrl(art.name, true)) + '" download>下载</a>' +
+        '<button class="dshell-btn dshell-btnGhost" data-act="close-artifact">关闭</button></div>' +
+        (art.loading || art.error ? '' : '<pre class="w3-prose" data-scroll-key="artifact-' + esc(art.name) + '">' + esc(art.text || '') + '</pre>') +
+        '</div>';
+    }
+    return '<div class="dshell-card" data-card="artifacts">' +
+      '<div class="w3-cardHead"><h2>产物</h2><span class="w3-hint">' + esc(run && run.id ? 'run ' + run.id : '确认后生成') + '</span></div>' +
+      (list.length
+        ? list.map(function (p) {
+            return '<div class="w3-artifact"><span class="n">' + esc(p) + '</span>' +
+              '<span class="w3-row">' +
+              '<button class="dshell-btn dshell-btnGhost" data-act="view-artifact" data-artifact="' + esc(p) + '">查看</button>' +
+              '<a class="dshell-btn dshell-btnGhost" data-artifact-download href="' + esc(artifactUrl(p, true)) + '" download>下载</a>' +
+              '</span></div>';
+          }).join('')
+        : '<div class="w3-hint">确认后生成 plan 与产物。</div>') +
+      viewer +
+      '</div>';
+  }
+
+  function railHtml() {
+    if (!S.run && !S.draft && !S.runs.length) return '';
+    // 有待确认草稿时只显示运行队列：会话/产物属于另一个 run，混在一起会误导。
+    return runsHtml() + (S.run && !S.draft ? sessionsHtml() + artifactsHtml() : '');
+  }
+
+  function taskHtml() {
+    var main;
+    if (S.bridge === 'loading') main = loadingCard();
+    else if (S.bridge === 'error') main = errorCard();
+    else if (S.draft) main = confirmCard();
+    else if (!S.run) main = emptyCard();
+    else main = runStageHtml();
+    var rail = railHtml();
+    return statsHtml() +
+      '<div class="w3-body"><div class="w3-main">' + main + '</div>' +
+      (rail ? '<aside class="w3-rail">' + rail + '</aside>' : '') + '</div>';
+  }
+
+  /* ---------------- 总渲染 ---------------- */
+
+  /** 是否正在输入或展开下拉：此时重建 DOM 会丢焦点、关掉下拉、让输入框不可用 */
+  function isEditing() {
+    var a = document.activeElement;
+    if (!a) return false;
+    var tag = String(a.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || a.isContentEditable === true;
+  }
+  function render() {
+    if (!root) return;
+    if (isEditing()) { S.renderPending = true; return; }
+    S.renderPending = false;
+    // 轮询替换DOM前保存同一run/视图的阅读位置，不串到其他运行或对话。
+    var scrollScope = JSON.stringify([S.run && S.run.id, S.view, S.chatRole]);
+    var sameScope = root.getAttribute('data-scroll-scope') === scrollScope;
+    var positions = Object.create(null);
+    if (sameScope) root.querySelectorAll('[data-scroll-key]').forEach(function (el) {
+      positions[el.getAttribute('data-scroll-key')] = { top: el.scrollTop, left: el.scrollLeft };
+    });
+    var oldChat = sameScope && root.querySelector('[data-chat-list]');
+    var chatPosition = oldChat ? {
+      top: oldChat.scrollTop,
+      atEnd: oldChat.scrollHeight - oldChat.clientHeight - oldChat.scrollTop <= 8
+    } : null;
+    root.setAttribute('data-scroll-scope', scrollScope);
+    root.setAttribute('data-view', S.view);
+    root.setAttribute('data-bridge', S.bridge);
+    root.setAttribute('data-phase', phaseAttr());
+    root.setAttribute('data-chat-role', S.chatRole);
+    root.setAttribute('data-poll', S.pollMs == null ? 'none' : String(S.pollMs));
+    if (S.sample) root.setAttribute('data-sample', '1');
+    else root.removeAttribute('data-sample');
+    root.innerHTML = headerHtml() + bannerHtml() + noticeHtml() + (S.view === 'chat' ? chatHtml() : taskHtml());
+    root.querySelectorAll('[data-scroll-key]').forEach(function (el) {
+      var saved = positions[el.getAttribute('data-scroll-key')];
+      if (saved) { el.scrollTop = saved.top; el.scrollLeft = saved.left; }
+    });
+    if (S.view === 'chat') {
+      var list = root.querySelector('[data-chat-list]');
+      if (list) list.scrollTop = !chatPosition || chatPosition.atEnd ? list.scrollHeight : chatPosition.top;
+    }
+  }
+
+  // 输入/选择结束（失焦）后，把这段时间攒下的状态变化补渲染一次
+  document.addEventListener('focusout', function () {
+    if (!S.renderPending) return;
+    setTimeout(function () { if (!isEditing() && S.renderPending) render(); }, 0);
+  });
+  /* ---------------- 交互 ---------------- */
+
+  function patchConfirm() {
+    var wrap = root.querySelector('[data-validation]');
+    if (wrap) wrap.innerHTML = checksHtml();
+    var btn = root.querySelector('[data-act="confirm-dispatch"]');
+    if (btn) btn.disabled = !(canWrite() && validateForm().length === 0);
+    var hint = root.querySelector('[data-card="confirm"] .w3-actions .w3-hint');
+    if (hint) hint.textContent = canWrite() ? '派发后进入第 1 轮方案；批准前不会产生 commit。' : '桥未安装：写操作已禁用，确认信息仍可查看/保存。';
+  }
+  function patchFeedback() {
+    var enabled = canWrite() && String(S.feedback || '').trim();
+    ['submit-plan-feedback', 'submit-request-changes'].forEach(function (act) {
+      var btn = root.querySelector('[data-act="' + act + '"]');
+      if (btn) btn.disabled = !enabled;
+    });
+  }
+
+  function fieldChanged(node) {
+    var field = node.getAttribute && node.getAttribute('data-field');
+    if (!field) return;
+    if (field === 'plan-feedback') {
+      S.feedback = node.value;
+      patchFeedback();
+      return;
+    }
+    if (!S.form) return;
+    if (node.type === 'checkbox') S.form[field] = node.checked;
+    else S.form[field] = node.value;
+    patchConfirm();
+  }
+
+  document.addEventListener('click', function (ev) {
+    var target = ev.target && ev.target.closest ? ev.target.closest('[data-act], [data-view], [data-chat-role]') : null;
+    if (!target) return;
+
+    if (target.hasAttribute('data-view')) {
+      S.view = target.getAttribute('data-view') === 'chat' ? 'chat' : 'task';
+      render();
+      if (S.view === 'chat') {
+        var page = S.messages[S.chatRole];
+        if (!page.loaded && !page.loading) loadMessages(S.chatRole, true);
+      }
+      return;
+    }
+    if (target.hasAttribute('data-chat-role')) {
+      switchChatRole(target.getAttribute('data-chat-role'));
+      return;
+    }
+
+    var act = target.getAttribute('data-act');
+    if (act === 'dismiss-notice') { S.notice = null; render(); return; }
+    if (act === 'refresh') { manualRefresh(); return; }
+    if (act === 'retry-bridge') { boot(); return; }
+    if (act === 'select-run') { selectRun(target.getAttribute('data-run-id')); return; }
+    if (act === 'toggle-feedback') { S.feedbackOpen = !S.feedbackOpen; render(); return; }
+    if (act === 'save-draft') { saveDraftLocal(); return; }
+    if (act === 'discard-draft') { discardDraft(); return; }
+    if (act === 'confirm-dispatch') { dispatchDraft(); return; }
+    if (act === 'approve-plan') { approvePlan(); return; }
+    if (act === 'submit-plan-feedback') { submitPlanFeedback(); return; }
+    if (act === 'submit-request-changes') { submitRequestChanges(); return; }
+    if (act === 'resume') { resumeRun(); return; }
+    if (act === 'view-artifact') { viewArtifact(target.getAttribute('data-artifact')); return; }
+    if (act === 'close-artifact') { S.artifact = null; render(); return; }
+    if (act === 'stop') { stopRun(); return; }
+    if (act === 'approve') { approveRun(); return; }
+    if (act === 'load-more') {
+      var role = S.chatRole;
+      if (S.messages[role].more) loadMessages(role, false);
+      return;
+    }
+    if (act === 'open-session') { openSession(target.getAttribute('data-session') || 'fix'); return; }
+    if (act === 'copy-session') {
+      var kind = target.getAttribute('data-session') || 'fix';
+      var id = S.run && (kind === 'review' ? S.run.reviewSessionId : S.run.fixSessionId);
+      if (id) copyText(id, '已复制会话 ID：' + id);
+      else toast('这个会话还没启动');
+      return;
+    }
+    if (act === 'retro') {
+      toast('复盘窗口（窗口4）还没挂载；run ' + ((S.run && S.run.id) || '?') + ' 已记录，可在复盘页打开。');
+      return;
+    }
+    if (act === 'reset') {
+      clearDraft();
+      S.draft = null;
+      S.form = null;
+      S.run = null;
+      S.runId = null;
+      S.runError = '';
+      S.view = 'task';
+      S.messages = { fix: blankPage(), review: blankPage() };
+      S.artifact = null;
+      S.feedbackOpen = false;
+      S.feedback = '';
+      S.notice = { kind: 'info', text: '已清空当前视图；窗口1 再派发会开新 run / 新会话。旧 run 仍可在运行队列里打开。' };
+      if (S.bridge === 'ok') {
+        refreshRuns({ silent: true }).then(function () { schedulePoll(); render(); });
+      }
+      schedulePoll();
+      render();
+      return;
+    }
+  });
+
+  document.addEventListener('input', function (ev) {
+    fieldChanged(ev.target);
+  });
+  document.addEventListener('change', function (ev) {
+    var node = ev.target;
+    if (!node || !node.getAttribute) return;
+    var field = node.getAttribute('data-field');
+    if (field === 'connectionId') {
+      if (!S.form) return;
+      S.form[field] = node.value;
+      patchConfirm();
+      return;
+    }
+    fieldChanged(node);
+  });
+
+  async function manualRefresh() {
+    if (S.bridge !== 'ok') { boot(); return; }
+    S.notice = null;
+    await refreshRuns({ silent: true });
+    await refreshRun({ silent: true });
+    if (S.view === 'chat') await loadMessages(S.chatRole, true);
+    render();
+    toast('已刷新');
+  }
+
+  function selectRun(id) {
+    if (!id || S.bridge !== 'ok') return;
+    S.draft = null;
+    S.form = null;
+    S.runId = id;
+    S.run = null;
+    S.runError = '';
+    S.view = 'task';
+    S.chatRole = 'fix';
+    S.messages = { fix: blankPage(), review: blankPage() };
+    S.artifact = null;
+    S.feedbackOpen = false;
+    S.feedback = '';
+    S.notice = null;
+    refreshRun().then(function () { schedulePoll(); render(); });
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

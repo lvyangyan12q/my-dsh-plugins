@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TB 缺陷雷达</title>
+<link rel="stylesheet" href="/api/worktable/template/dshell.css" />
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; min-height: 100%; }
+  body { overflow: hidden; }
+  .app { height: 100%; min-height: 100vh; display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; box-sizing: border-box; }
+  .topbar { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; padding: 6px 10px; flex: none; }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .brand .sync { font-weight: 400; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 11px; }
+  .ctrl { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; margin-left: auto; }
+  .field { display: flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--dsw-alias-label-secondary, #9aa4b2); white-space: nowrap; }
+  .field select { max-width: 168px; padding: 3px 7px; font-size: 11.5px; }
+  .chips { display: flex; gap: 4px; }
+  .chip { border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary, #9aa4b2); font: inherit; font-size: 11px; padding: 2px 9px; cursor: pointer; }
+  .chip.on { color: var(--dsw-alias-label-primary, #e6e8eb); border-color: var(--dsw-alias-state-accent-primary, #4f8ef7); }
+  .search { flex: 1 1 110px; min-width: 90px; padding: 3px 8px; font-size: 11.5px; }
+  .notice { border-radius: 8px; padding: 5px 10px; font-size: 12px; border: 1px solid transparent; flex: none; }
+  .notice.info { color: var(--dsw-alias-label-secondary, #9aa4b2); border-color: var(--dsw-alias-border-l1, #262b36); }
+  .notice.warn { color: #d29922; border-color: rgba(210,153,34,.4); background: rgba(210,153,34,.07); }
+  .notice.error { color: #f85149; border-color: rgba(248,81,73,.4); background: rgba(248,81,73,.07); }
+  .listWrap { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 10px; background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); overflow: hidden; }
+  .list { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0; padding: 0; list-style: none; }
+  .row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 86px 70px 66px 58px; align-items: center; gap: 8px; padding: 4px 10px; min-height: 30px; border-bottom: 1px solid rgba(255,255,255,.05); cursor: pointer; font-size: 12px; }
+  .row:hover { background: rgba(255,255,255,.035); }
+  .row.on { background: rgba(79,142,247,.09); }
+  .row .uid { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .row .title { min-width: 0; color: var(--dsw-alias-label-primary, #e6e8eb); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badgeS { display: inline-flex; align-items: center; gap: 5px; padding: 0 7px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1, #262b36); font-size: 10.5px; line-height: 18px; color: var(--dsw-alias-label-secondary, #9aa4b2); }
+  .badgeS .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .prio { font-size: 10px; padding: 0 6px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+  .handleBtn { border: 1px solid var(--dsw-alias-border-l2, #3a4150); background: transparent; color: var(--dsw-alias-label-secondary, #9aa4b2); border-radius: 6px; font-size: 10.5px; padding: 1px 7px; cursor: pointer; justify-self: end; }
+  .handleBtn:hover { color: #3fb950; border-color: rgba(63,185,80,.5); }
+  .handleBtn[data-state="sending"] { color: #d29922; border-color: rgba(210,153,34,.5); }
+  .handleBtn[data-state="sent"] { color: #3fb950; border-color: rgba(63,185,80,.5); }
+  .handleBtn[data-state="local"] { color: #d29922; border-color: rgba(210,153,34,.5); }
+  .handleBtn[data-state="active"] { color: #4f8ef7; border-color: rgba(79,142,247,.5); }
+  .handleBtn[data-state="error"] { color: #f85149; border-color: rgba(248,81,73,.5); }
+  .empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 12.5px; padding: 20px; text-align: center; }
+  .badgeErr { color: #f85149 !important; border-color: rgba(248,81,73,.45) !important; }
+  .badgeErr::before { background: #f85149 !important; }
+
+  .overlay { position: fixed; inset: 0; z-index: 20; background: var(--dsw-alias-bg-base, #0b0e14); display: flex; flex-direction: column; }
+  .overlay[hidden] { display: none; }
+  .ovHead { flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); }
+  .ovHead .ttl { font-size: 12.5px; color: var(--dsw-alias-label-primary, #e6e8eb); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ovHead .x { margin-left: auto; }
+  .ovBody { flex: 1; min-height: 0; overflow: auto; padding: 14px 18px 24px; }
+  .dTitle { margin: 0 0 8px; font-size: 16px; font-weight: 600; line-height: 1.5; word-break: break-word; }
+  .dMeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 11.5px; }
+  .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 18px; padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 8px; background: var(--dsw-alias-fill-l1, rgba(255,255,255,.02)); }
+  .kv div { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+  .kv .k { color: var(--dsw-alias-label-secondary, #9aa4b2); flex: none; }
+  .kv .v { text-align: right; word-break: break-word; }
+  .sec { margin: 14px 0 6px; color: var(--dsw-alias-label-secondary, #9aa4b2); font-size: 12px; font-weight: 600; }
+  .note { white-space: pre-wrap; word-break: break-word; margin: 0; padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l1, #262b36); border-radius: 8px; line-height: 1.7; font-size: 12.5px; }
+  .cf { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cf th, .cf td { text-align: left; padding: 5px 9px; border-bottom: 1px solid var(--dsw-alias-border-l1, #262b36); vertical-align: top; word-break: break-word; }
+  .cf th { width: 30%; color: var(--dsw-alias-label-secondary, #9aa4b2); font-weight: 500; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .actions a.btn { text-decoration: none; }
+  .handle { margin-top: 16px; border: 1px solid rgba(63,185,80,.35); border-radius: 10px; background: rgba(63,185,80,.05); padding: 12px 14px; }
+  .handleHead { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .handleHead b { font-size: 13px; color: #3fb950; }
+  .handleHead .sp { margin-left: auto; display: flex; gap: 6px; }
+  .hsec { margin: 12px 0 6px; font-size: 12px; font-weight: 600; color: var(--dsw-alias-label-primary, #e6e8eb); }
+  .hgroup { display: grid; grid-template-columns: 96px 1fr; gap: 6px 10px; font-size: 12px; margin: 4px 0; }
+  .hgroup .hk { color: var(--dsw-alias-label-secondary, #9aa4b2); }
+  .hgroup .hv { word-break: break-word; }
+  .hgroup .hv div { margin-bottom: 2px; }
+  .hnote { white-space: pre-wrap; word-break: break-word; margin: 0; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,.03); border: 1px solid var(--dsw-alias-border-l1, #262b36); font-size: 12px; line-height: 1.65; }
+  .none { color: var(--dsw-alias-label-tertiary, #6b7280); font-size: 12px; }
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 52px minmax(0, 1fr) 80px 62px 52px; }
+    .row .upd { display: none; }
+    .kv { grid-template-columns: 1fr; }
+    .brand .sync { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="dshell-card topbar">
+    <div class="brand">
+      TB 缺陷雷达
+      <span id="badge" class="dshell-badge">初始化…</span>
+      <span id="relayState" class="dshell-badge" title="常驻连接：启动后 Edge 只需授权一次">连接…</span>
+      <span class="sync" id="lastSync">—</span>
+    </div>
+    <div class="ctrl">
+      <label class="field">项目 <select id="projectSel" class="dshell-input" aria-label="选择项目"></select></label>
+      <label class="field">负责人 <select id="personSel" class="dshell-input" aria-label="选择负责人" disabled></select></label>
+      <div class="chips" id="chips" role="group" aria-label="状态筛选"></div>
+      <input id="search" class="dshell-input search" placeholder="搜索标题 / 编号 / 描述" aria-label="搜索缺陷" />
+      <button id="pullBtn" class="dshell-btn" type="button">立即拉取</button>
+      <button id="refreshBtn" class="dshell-btnGhost" type="button">刷新</button>
+    </div>
+  </section>
+
+  <div id="notice" class="notice" hidden></div>
+
+  <section class="listWrap">
+    <ul class="list" id="list"></ul>
+    <div class="empty" id="empty" hidden></div>
+  </section>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="ovHead">
+    <button class="dshell-btnGhost" type="button" id="ovBack">← 返回列表</button>
+    <span class="ttl" id="ovTitle">缺陷详情</span>
+    <button class="dshell-btnGhost x" type="button" id="ovClose" aria-label="关闭">✕</button>
+  </div>
+  <div class="ovBody" id="ovBody"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var DEFAULT_CONTROL = { enabled: true, projectId: null, projectName: null, personId: null, personName: null, intervalMinutes: 10, updatedAt: null };
+  var TB_BASE = 'https://tb.cet-electric.com:4753';
+  var PRIO_COLOR = { red: '#f85149', orange: '#d29922', blue: '#4f8ef7', grey: '#6b7280' };
+  var STATUS_COLOR = { '待处理': '#d29922', '修复中': '#4f8ef7', '已解决': '#3fb950', '重新打开': '#f85149', '已拒绝': '#6b7280', '关闭': '#6b7280', '已完成': '#3fb950' };
+
+  // 窗口3 派发契约（v1）：localStorage 草稿 + BroadcastChannel 通知 + 队列文件
+  var DRAFT_KEY = 'bug-solver.dispatch.draft.v1';
+  var DISPATCH_CHANNEL = 'bug-solver.dispatch.v1';
+  // 与窗口3 页面（IM02）对齐的兼容单草稿键 / 频道：窗口3 打开时读它、开着时收广播
+  var COMPAT_KEYS = ['bugSolver.dispatchDraft', 'bugSolver.window3Draft'];
+  var COMPAT_CHANNEL = 'bug-solver-dispatch';
+  var RUNS_KEY = 'bug-solver.runs.v1';
+  var QUEUE_REL = 'data/dispatch/queue.json';
+  var ACTIVE_RUN_STATES = ['draft', 'confirmed', 'fix_planning', 'awaiting_plan_approval', 'fix_implementing', 'fix_done',
+    'review_starting', 'review_running', 'review_done', 'needs_attention', 'awaiting_user_approval'];
+
+  var dom = {
+    badge: document.getElementById('badge'),
+    relayState: document.getElementById('relayState'),
+    lastSync: document.getElementById('lastSync'),
+    projectSel: document.getElementById('projectSel'),
+    personSel: document.getElementById('personSel'),
+    chips: document.getElementById('chips'),
+    search: document.getElementById('search'),
+    pullBtn: document.getElementById('pullBtn'),
+    refreshBtn: document.getElementById('refreshBtn'),
+    notice: document.getElementById('notice'),
+    list: document.getElementById('list'),
+    empty: document.getElementById('empty'),
+    overlay: document.getElementById('overlay'),
+    ovTitle: document.getElementById('ovTitle'),
+    ovBody: document.getElementById('ovBody'),
+    ovBack: document.getElementById('ovBack'),
+    ovClose: document.getElementById('ovClose')
+  };
+
+  var S = {
+    control: null, projects: null, stateData: null, members: null, bugs: null,
+    selectedId: null, filter: 'open', q: '', flow: 0, pulling: false, panel: false, relay: null, envConfig: null,
+    sshConfig: undefined
+  };
+
+  function reqId() { return 'req-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
+  function siteRoot() {
+    var parts = location.pathname.split('/').filter(Boolean);
+    return parts.length >= 4 ? decodeURIComponent(parts[3]) : '';
+  }
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  async function fetchJson(url) {
+    try {
+      var r = await fetch(url, { cache: 'no-store', credentials: 'same-origin' });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch (e) { return null; }
+  }
+  function fmtTime(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function rel(iso) {
+    if (!iso) return '—';
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return '—';
+    var diff = Date.now() - t;
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+    return Math.floor(diff / 86400000) + ' 天前';
+  }
+  function priorityOf(b) {
+    var p = S.projects && S.projects.priorities && S.projects.priorities[String(b.pr)];
+    return p || { name: b.pr === 0 ? '普通' : 'P' + b.pr, color: 'blue' };
+  }
+  function statusColor(st) { return STATUS_COLOR[st] || '#6b7280'; }
+  function projectName() {
+    if (!S.control || !S.control.projectId) return '—';
+    var p = (S.projects && S.projects.projects || []).find(function (x) { return x.id === S.control.projectId; });
+    return p ? p.name : (S.control.projectName || '—');
+  }
+  function personName() {
+    if (!S.control || !S.control.personId) return '—';
+    var m = (S.members && S.members.members || []).find(function (x) { return x.id === S.control.personId; });
+    return m ? m.name : (S.control.personName || '—');
+  }
+
+  function showNotice(text, kind) {
+    if (!text) { dom.notice.hidden = true; dom.notice.textContent = ''; return; }
+    dom.notice.hidden = false;
+    dom.notice.className = 'notice ' + (kind || 'info');
+    dom.notice.textContent = text;
+  }
+  function hideNotice() { showNotice(''); }
+
+  function renderHeader() {
+    var st = S.stateData || {};
+    var cls = 'dshell-badge';
+    var text = '未拉取';
+    if (S.pulling) text = '拉取中…';
+    else if (st.error) { text = '采集异常'; cls += ' badgeErr'; }
+    else if (st.lastPullAt) { text = '已同步'; cls += ' dshell-badgeDone'; }
+    dom.badge.className = cls;
+    dom.badge.textContent = text;
+    dom.lastSync.textContent = st.lastPullAt ? ('上次同步 ' + rel(st.lastPullAt)) : '';
+    if (!S.pulling && st.error) showNotice('采集失败：' + st.error + '。请检查 Edge 远程调试与 TB 登录状态。', 'error');
+  }
+
+  // 常驻连接状态（只影响“要不要弹 Edge 授权”，不影响数据读取）
+  async function checkRelay() {
+    var h = await relayHealth();
+    if (h && h.ok) {
+      S.relay = h;
+      dom.relayState.className = 'dshell-badge ' + (h.connected ? 'dshell-badgeDone' : 'dshell-badgeWait');
+      dom.relayState.textContent = h.connected ? '常驻连接' : '待连接';
+      dom.relayState.title = h.connected ? '已复用授权连接，拉取不会再弹窗' : '首次拉取会请你在 Edge 点一次“允许”';
+    } else {
+      S.relay = null;
+      dom.relayState.className = 'dshell-badge badgeErr';
+      dom.relayState.textContent = '无常驻连接';
+      dom.relayState.title = '未启动 scripts/tb-relay.cjs：每次拉取都会让 Edge 重新授权';
+    }
+  }
+
+  function fillProjects() {
+    var list = (S.projects && S.projects.projects) || [];
+    dom.projectSel.innerHTML = '';
+    if (!list.length) {
+      var o = document.createElement('option');
+      o.textContent = '（暂无项目）';
+      o.value = '';
+      dom.projectSel.appendChild(o);
+      dom.projectSel.disabled = true;
+      return;
+    }
+    dom.projectSel.disabled = false;
+    list.forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      dom.projectSel.appendChild(opt);
+    });
+    if (S.control && S.control.projectId) dom.projectSel.value = S.control.projectId;
+  }
+
+  function renderPersons() {
+    var members = (S.members && S.members.members) || [];
+    dom.personSel.innerHTML = '';
+    if (!members.length) {
+      var o = document.createElement('option');
+      o.textContent = '（暂无成员）';
+      o.value = '';
+      dom.personSel.appendChild(o);
+      dom.personSel.disabled = true;
+      return;
+    }
+    dom.personSel.disabled = false;
+    members.forEach(function (m) {
+      var opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.name;
+      dom.personSel.appendChild(opt);
+    });
+    if (S.control && S.control.personId) dom.personSel.value = S.control.personId;
+  }
+
+  function counts() {
+    var arr = (S.bugs && S.bugs.bugs) || [];
+    return { all: arr.length, open: arr.filter(function (b) { return !b.sd; }).length };
+  }
+
+  function renderChips() {
+    var c = counts();
+    var items = [
+      { id: 'open', label: '未完成 ' + c.open },
+      { id: 'all', label: '全部 ' + c.all }
+    ];
+    dom.chips.innerHTML = '';
+    items.forEach(function (it) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (S.filter === it.id ? ' on' : '');
+      b.textContent = it.label;
+      b.addEventListener('click', function () { S.filter = it.id; renderChips(); renderList(); });
+      dom.chips.appendChild(b);
+    });
+  }
+
+  function visibleBugs() {
+    var arr = (S.bugs && S.bugs.bugs) || [];
+    if (S.filter === 'open') arr = arr.filter(function (b) { return !b.sd; });
+    var q = (S.q || '').trim().toLowerCase();
+    if (q) arr = arr.filter(function (b) { return (b.t + ' #' + b.uid + ' ' + (b.note || '')).toLowerCase().indexOf(q) >= 0; });
+    return arr;
+  }
+
+  function renderListState() {
+    var hasData = !!S.bugs;
+    var visible = visibleBugs();
+    var isEmpty = true;
+    var text = '';
+    if (S.pulling) text = '正在拉取数据（本地采集脚本，通常 5–40 秒）…';
+    else if (!hasData) text = '还没有数据：点击「立即拉取」获取该负责人的缺陷。';
+    else if (!visible.length) text = S.q ? ('没有匹配“' + S.q + '”的缺陷。') : '该负责人暂无未完成缺陷。';
+    else isEmpty = false;
+    dom.empty.hidden = !isEmpty;
+    dom.empty.textContent = text;
+    dom.list.hidden = isEmpty && !hasData;
+  }
+
+  function renderList() {
+    var arr = visibleBugs();
+    dom.list.innerHTML = '';
+    if (S.bugs) {
+      arr.forEach(function (b) {
+        var li = document.createElement('li');
+        li.className = 'row' + (S.selectedId === b.id ? ' on' : '');
+        li.innerHTML =
+          '<span class="uid">#' + esc(b.uid == null ? '—' : b.uid) + '</span>' +
+          '<span class="title" title="' + esc(b.t) + '">' + esc(b.t) + '</span>' +
+          '<span><span class="badgeS"><span class="dot" style="background:' + statusColor(b.st) + '"></span>' + esc(b.st || '—') + '</span></span>' +
+          '<span><span class="prio" style="color:' + (PRIO_COLOR[priorityOf(b).color] || '#6b7280') + '">' + esc(priorityOf(b).name) + '</span></span>' +
+          '<span class="upd" style="color:var(--dsw-alias-label-tertiary,#6b7280);font-size:11px;white-space:nowrap;text-align:right">' + esc(rel(b.updated)) + '</span>' +
+          '<button class="handleBtn" type="button" data-handle="' + esc(b.id) + '" data-state="idle" title="派发到窗口3（写草稿并通知）">派发</button>';
+        li.addEventListener('click', function () { openDetail(b.id, false); });
+        var hb = li.querySelector('.handleBtn');
+        hb.addEventListener('click', function (ev) { ev.stopPropagation(); dispatchBug(b.id); });
+        dom.list.appendChild(li);
+      });
+    }
+    renderListState();
+  }
+
+  function listOrNone(arr) {
+    if (!arr || !arr.length) return '<div class="none">未获取</div>';
+    return arr.map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('');
+  }
+
+  function mappingHtml(b) {
+    var cfg = S.envConfig;
+    var services = (b.env && b.env.services) || [];
+    if (!cfg || !cfg.services) return '<div class="none">未加载 config/herdr-env.json</div>';
+    if (!services.length) return '<div class="none">该缺陷没有服务/版本字段，无法映射容器</div>';
+    var rows = [];
+    services.forEach(function (svc) {
+      var low = String(svc).toLowerCase();
+      var hit = cfg.services.find(function (s) {
+        return (s.match || []).some(function (m) { return low.indexOf(String(m).toLowerCase()) >= 0; });
+      });
+      if (hit) {
+        rows.push('<div><span class="k">' + esc(svc) + '</span><span class="v">容器 ' + esc(hit.container) +
+          (hit.repo ? ' · 仓库 ' + esc(hit.repo) : ' · 仓库未配置') + '</span></div>');
+      } else {
+        rows.push('<div><span class="k">' + esc(svc) + '</span><span class="v none">未映射</span></div>');
+      }
+    });
+    return '<div class="kv">' + rows.join('') + '</div>';
+  }
+
+  function handlePanel(b) {
+    var env = b.env || {};
+    var services = env.services || [];
+    var hosts = env.hosts || [];
+    var hints = env.hints || [];
+    var repos = b.repo || [];
+    var content = '标题：' + (b.t || '') + '\n编号：#' + (b.uid == null ? '—' : b.uid) + '\n状态：' + (b.st || '—') + '\n优先级：' + priorityOf(b).name + '\n\n' + (b.note || '（未填写描述）');
+    return '<div class="handle">' +
+      '<div class="handleHead"><b>处理信息</b><span class="sp"><button class="dshell-btnGhost" type="button" id="copyPack">复制处理信息</button></span></div>' +
+      '<div class="hsec">问题内容</div>' +
+      '<pre class="hnote">' + esc(content) + '</pre>' +
+      '<div class="hsec">环境服务信息</div>' +
+      '<div class="hgroup"><span class="hk">服务 / 版本</span><span class="hv">' + listOrNone(services) + '</span></div>' +
+      '<div class="hgroup"><span class="hk">环境 / 主机</span><span class="hv">' + listOrNone(hosts) + '</span></div>' +
+      '<div class="hgroup"><span class="hk">环境标识</span><span class="hv">' + (hints.length ? hints.map(function (h) { return '<span class="prio" style="color:#d29922">' + esc(h) + '</span>'; }).join(' ') : '<span class="none">未获取</span>') + '</span></div>' +
+      '<div class="hsec">容器 / 代码库（来自 config/herdr-env.json）</div>' +
+      mappingHtml(b) +
+      '<div class="hsec">代码库信息</div>' +
+      '<div class="hgroup"><span class="hk">仓库 / 线索</span><span class="hv">' + listOrNone(repos) + '</span></div>' +
+      '<div class="hgroup"><span class="hk">herdr</span><span class="hv"><button class="dshell-btnGhost" type="button" id="copyHerdr">复制 herdr 指令</button> <code style="font-size:11px">pwsh -NoProfile -File scripts\\herdr-run.ps1 -Bug ' + esc(b.uid == null ? '' : b.uid) + '</code></span></div>' +
+      '<div class="none" style="margin-top:8px">诊断只读：只取容器状态/版本/日志，不重启、不修改服务器。指令粘到窗口3（herdr 终端）执行。</div>' +
+      '</div>';
+  }
+
+  function detailHtml(b) {
+    var rows = [
+      ['项目', projectName()],
+      ['编号', '#' + (b.uid == null ? '—' : b.uid)],
+      ['负责人', b.ex || '—'],
+      ['创建人', b.cr || '—'],
+      ['创建时间', fmtTime(b.created)],
+      ['更新时间', fmtTime(b.updated)],
+      ['截止时间', b.due ? fmtTime(b.due) : '—']
+    ].map(function (r) {
+      return '<div><span class="k">' + esc(r[0]) + '</span><span class="v">' + esc(r[1]) + '</span></div>';
+    }).join('');
+    var cf = (b.cf && b.cf.length)
+      ? '<table class="cf"><tbody>' + b.cf.map(function (c) { return '<tr><th>' + esc(c.n) + '</th><td>' + esc(c.v) + '</td></tr>'; }).join('') + '</tbody></table>'
+      : '<div class="none">无自定义字段</div>';
+    var url = TB_BASE + '/task/' + b.id;
+    return '<h2 class="dTitle">' + esc(b.t) + '</h2>' +
+      '<div class="dMeta">' +
+        '<span class="dshell-badge ' + (b.sd ? 'dshell-badgeDone' : 'dshell-badgeWait') + '">' + esc(b.st || (b.sd ? '已完成' : '未完成')) + '</span>' +
+        '<span class="prio" style="color:' + (PRIO_COLOR[priorityOf(b).color] || '#6b7280') + '">' + esc(priorityOf(b).name) + '</span>' +
+        '<span>' + esc(b.cfg || '缺陷') + '</span>' +
+      '</div>' +
+      '<div class="kv">' + rows + '</div>' +
+      '<div class="sec">描述</div>' +
+      (b.note ? '<pre class="note">' + esc(b.note) + '</pre>' : '<div class="none">未填写描述</div>') +
+      '<div class="sec">自定义字段</div>' + cf +
+      '<div class="actions">' +
+        '<a class="dshell-btn" href="' + esc(url) + '" target="_blank" rel="noreferrer noopener">在 TB 中打开</a>' +
+        '<button class="dshell-btn" type="button" data-action="dispatch-detail">派发到窗口3</button>' +
+        '<button class="dshell-btnGhost" type="button" id="copyLink">复制链接</button>' +
+        '<button class="dshell-btnGhost" type="button" id="togglePanel">' + (S.panel ? '收起处理信息' : '处理信息') + '</button>' +
+      '</div>' +
+      (S.panel ? handlePanel(b) : '');
+  }
+
+  /* ---------------- 派发到窗口3 ---------------- */
+  function nowIso() { return new Date().toISOString(); }
+  function newRunId() {
+    try { if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID(); } catch (e) { /* ignore */ }
+    return 'run-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+  }
+  function draftStore() {
+    try {
+      var raw = localStorage.getItem(DRAFT_KEY);
+      var j = raw ? JSON.parse(raw) : null;
+      if (!j || typeof j !== 'object' || Array.isArray(j)) return { version: 1, updatedAt: null, drafts: {} };
+      if (!j.drafts || typeof j.drafts !== 'object' || Array.isArray(j.drafts)) j.drafts = {};
+      j.version = 1;
+      return j;
+    } catch (e) {
+      return { version: 1, updatedAt: null, drafts: {} };
+    }
+  }
+  function saveDraftStore(store) {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(store)); return true; } catch (e) { return false; }
+  }
+  var dispatchChannel = null;
+  function channel() {
+    if (dispatchChannel !== null) return dispatchChannel;
+    try { dispatchChannel = (typeof BroadcastChannel === 'undefined') ? false : new BroadcastChannel(DISPATCH_CHANNEL); } catch (e) { dispatchChannel = false; }
+    return dispatchChannel;
+  }
+  function notifyDraft(draft, type) {
+    var ch = channel();
+    if (!ch) return false;
+    try { ch.postMessage({ version: 1, type: type, at: draft.updatedAt, draft: draft }); return true; } catch (e) { return false; }
+  }
+  var compatChannel = null;
+  function notifyCompatDraft(draft) {
+    try {
+      if (typeof BroadcastChannel === 'undefined') return false;
+      if (!compatChannel) compatChannel = new BroadcastChannel(COMPAT_CHANNEL);
+      compatChannel.postMessage({ type: 'dispatch', at: draft.updatedAt, draft: draft });
+      return true;
+    } catch (e) { return false; }
+  }
+  function writeCompatDraft(draft) {
+    var ok = true;
+    COMPAT_KEYS.forEach(function (key) {
+      try { localStorage.setItem(key, JSON.stringify(draft)); } catch (e) { ok = false; }
+    });
+    return ok;
+  }
+  // 窗口2 配置 → 草稿里的连接 / 项目候选（窗口3 确认页据此自动带出）
+  async function loadSshConfig() {
+    if (S.sshConfig !== undefined) return S.sshConfig;
+    var j = await fetchJson('data/ssh-config.json');
+    S.sshConfig = (j && typeof j === 'object') ? j : null;
+    return S.sshConfig;
+  }
+  function connForDraft(c) {
+    return { id: c.id || '', name: c.name || '', host: c.host || '', port: String(c.port == null ? '22' : c.port), user: c.user || '', keyPath: c.key || '' };
+  }
+  function projForDraft(p) {
+    return {
+      id: p.id || '', name: p.name || '', localPath: p.localPath || '',
+      remotePath: p.remotePath || '', repo: p.repo || '', defaultBranch: p.defaultBranch || ''
+    };
+  }
+  function matchDraftContext(cfg, b) {
+    var out = { connections: [], projects: [], connection: null, project: null, container: null };
+    if (!cfg || typeof cfg !== 'object') return out;
+    var rawConns = cfg.connections || [];
+    out.connections = rawConns.map(connForDraft);
+    out.projects = (cfg.projects || []).map(projForDraft);
+    var hay = [b.t || '', b.note || '']
+      .concat((b.env && b.env.services) || [], (b.env && b.env.hosts) || [])
+      .join(' ').toLowerCase();
+    var hit = null;
+    (cfg.serviceMap || []).some(function (m) {
+      var kws = (m && m.match) || [];
+      var found = kws.some(function (k) { return k && hay.indexOf(String(k).toLowerCase()) >= 0; });
+      if (found) { hit = m; return true; }
+      return false;
+    });
+    function isDefaultConn(id) {
+      return rawConns.some(function (c) { return c.id === id && c.isDefault; });
+    }
+    var defaultConn = rawConns.filter(function (c) { return c.isDefault; })[0] || rawConns[0] || null;
+    var linkOfDefault = defaultConn
+      ? (cfg.links || []).filter(function (l) { return l.connectionId === defaultConn.id; })[0]
+      : null;
+    var projId = (hit && hit.projectId) || (linkOfDefault && linkOfDefault.projectId) || ((cfg.projects || [])[0] || {}).id || null;
+    out.project = out.projects.filter(function (p) { return p.id === projId; })[0] || null;
+    var linkedIds = (cfg.links || []).filter(function (l) { return l.projectId === projId; }).map(function (l) { return l.connectionId; });
+    var linkedConns = out.connections.filter(function (c) { return linkedIds.indexOf(c.id) >= 0; });
+    out.connection = linkedConns.filter(function (c) { return isDefaultConn(c.id); })[0]
+      || linkedConns[0]
+      || out.connections.filter(function (c) { return defaultConn && c.id === defaultConn.id; })[0]
+      || out.connections[0]
+      || null;
+    if (hit && hit.container) out.container = hit.container;
+    return out;
+  }
+  function buildDraft(b, prev, ctx) {
+    var env = b.env || {};
+    var ts = nowIso();
+    ctx = ctx || {};
+    return {
+      version: 1,
+      runId: prev && prev.runId ? prev.runId : newRunId(),
+      status: 'pending',
+      createdAt: prev && prev.createdAt ? prev.createdAt : ts,
+      updatedAt: ts,
+      bug: {
+        id: b.id,
+        uid: b.uid == null ? null : b.uid,
+        title: b.t || '',
+        description: b.note || '',
+        status: b.st || '',
+        priority: priorityOf(b).name,
+        fields: (b.cf || []).map(function (c) { return { name: c.n, value: c.v }; }),
+        services: env.services || [],
+        hosts: env.hosts || [],
+        hints: env.hints || [],
+        repos: b.repo || [],
+        updatedAt: b.updated || null,
+        url: TB_BASE + '/task/' + b.id
+      },
+      connections: ctx.connections || [],
+      projects: ctx.projects || [],
+      connection: ctx.connection || (prev && prev.connection) || null,
+      project: ctx.project || (prev && prev.project) || null,
+      specRef: (prev && prev.specRef) || { kind: 'none', path: '', feature: '' },
+      container: ctx.container || (prev && prev.container) || null,
+      timeWindow: { from: new Date(Date.now() - 24 * 3600 * 1000).toISOString(), to: ts },
+      notes: (prev && prev.notes) || '',
+      source: { window: '窗口1', pane: 'p1', project: projectName() }
+    };
+  }
+  function withTimeout(promise, ms) {
+    return Promise.race([promise, new Promise(function (resolve) { setTimeout(function () { resolve(null); }, ms); })]);
+  }
+  async function activeRunOf(b) {
+    try {
+      var raw = localStorage.getItem(RUNS_KEY);
+      var j = raw ? JSON.parse(raw) : null;
+      var list = Array.isArray(j) ? j : (j && j.runs) || [];
+      var local = list.find(function (r) {
+        return r && (r.bugId === b.id || (b.uid != null && r.bugUid === b.uid)) && ACTIVE_RUN_STATES.indexOf(r.state) >= 0;
+      });
+      if (local) return local;
+    } catch (e) { /* 本机 run 表不可读时继续问桥 */ }
+    try {
+      var r = await withTimeout(fetch('/api/bug-solver/runs?bugId=' + encodeURIComponent(b.id), { cache: 'no-store', credentials: 'same-origin' }), 2500);
+      if (!r || !r.ok) return null;
+      var body = await r.json();
+      var runs = Array.isArray(body) ? body : (body && body.runs) || [];
+      return runs.find(function (x) {
+        return x && (x.bugId === b.id || (b.uid != null && x.bugUid === b.uid)) && ACTIVE_RUN_STATES.indexOf(x.state) >= 0;
+      }) || null;
+    } catch (e) { return null; }
+  }
+  async function pushQueue(store) {
+    var items = Object.keys(store.drafts).map(function (k) { return store.drafts[k]; }).filter(function (d) { return d && d.status !== 'confirmed'; });
+    var body = { version: 1, updatedAt: nowIso(), items: items };
+    try {
+      var r = await fetch('/api/worktable/write', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ path: siteRoot().replace(/[\\\/]+$/, '') + '\\' + QUEUE_REL.replace(/\//g, '\\'), content: JSON.stringify(body, null, 2) })
+      });
+      return !!r.ok;
+    } catch (e) {
+      return false;
+    }
+  }
+  function setDispatchState(id, state) {
+    var label = { sending: '派发中…', sent: '已发送', local: '待确认', active: '进行中', error: '重试' };
+    Array.prototype.forEach.call(dom.list.querySelectorAll('.handleBtn'), function (btn) {
+      if (btn.getAttribute('data-handle') !== id) return;
+      btn.setAttribute('data-state', state);
+      btn.textContent = label[state] || '派发';
+      btn.disabled = state === 'sending';
+    });
+  }
+  var dispatchBusy = {};
+  async function dispatchBug(id) {
+    var b = ((S.bugs && S.bugs.bugs) || []).find(function (x) { return x.id === id; });
+    if (!b || dispatchBusy[id]) return;
+    dispatchBusy[id] = true;
+    setDispatchState(id, 'sending');
+    try {
+      var active = await activeRunOf(b);
+      if (active) {
+        setDispatchState(id, 'active');
+        showNotice('缺陷 #' + (b.uid == null ? '—' : b.uid) + ' 已有进行中的运行（' + (active.state || '进行中') + '）：不重复派发，请到窗口3 查看该 run。', 'warn');
+        return;
+      }
+      var store = draftStore();
+      var prev = store.drafts[id] || null;
+      var cfg = await loadSshConfig();
+      var ctx = matchDraftContext(cfg, b);
+      var draft = buildDraft(b, prev, ctx);
+      store.drafts[id] = draft;
+      store.version = 1;
+      store.updatedAt = draft.updatedAt;
+      if (!saveDraftStore(store)) {
+        setDispatchState(id, 'error');
+        showNotice('派发失败：本机浏览器存储不可用（隐私模式或配额已满），窗口3 收不到这条缺陷。请检查浏览器设置后重试。', 'error');
+        return;
+      }
+      var compatOk = writeCompatDraft(draft);
+      notifyDraft(draft, prev ? 'dispatch.draft.updated' : 'dispatch.draft.created');
+      notifyCompatDraft(draft);
+      var queued = await pushQueue(store);
+      if (queued && compatOk) {
+        setDispatchState(id, 'sent');
+        showNotice((prev ? '已更新草稿并重新发送：#' : '已发送到窗口3：#') + (b.uid == null ? '—' : b.uid) + ' ' + (b.t || '') +
+          '（等待确认）。在窗口3 补充连接/项目后确认派发。', 'info');
+      } else {
+        setDispatchState(id, 'local');
+        var misses = [];
+        if (!queued) misses.push('队列文件 ' + QUEUE_REL + ' 未写入（工作台写入通道不可用）');
+        if (!compatOk) misses.push('窗口3 兼容草稿键未写入（本机存储异常）');
+        showNotice('已发送（本机草稿）：#' + (b.uid == null ? '—' : b.uid) + ' 已写入浏览器草稿并广播，但 ' + misses.join('；') +
+          '。窗口3 打开后仍可接手，请勿重复派发。', 'warn');
+      }
+    } finally {
+      dispatchBusy[id] = false;
+    }
+  }
+
+  function openDetail(id, panel) {
+    S.selectedId = id;
+    S.panel = !!panel;
+    renderList();
+    renderOverlay();
+  }
+  function closeDetail() {
+    S.selectedId = null;
+    S.panel = false;
+    dom.overlay.hidden = true;
+    renderList();
+  }
+
+  function renderOverlay() {
+    var b = ((S.bugs && S.bugs.bugs) || []).find(function (x) { return x.id === S.selectedId; });
+    if (!b) { dom.overlay.hidden = true; return; }
+    dom.overlay.hidden = false;
+    dom.ovTitle.textContent = (b.st || '缺陷') + ' · #' + (b.uid == null ? '—' : b.uid);
+    dom.ovBody.innerHTML = detailHtml(b);
+    dom.ovBody.scrollTop = 0;
+
+    var linkBtn = document.getElementById('copyLink');
+    if (linkBtn) {
+      linkBtn.addEventListener('click', function () {
+        var url = TB_BASE + '/task/' + b.id;
+        var done = function (ok) { linkBtn.textContent = ok ? '已复制' : '复制失败'; setTimeout(function () { linkBtn.textContent = '复制链接'; }, 1500); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { done(true); }, function () { done(false); });
+        else done(false);
+      });
+    }
+    var toggle = document.getElementById('togglePanel');
+    if (toggle) toggle.addEventListener('click', function () { S.panel = !S.panel; renderOverlay(); });
+    var dispatchBtn = dom.ovBody.querySelector('[data-action="dispatch-detail"]');
+    if (dispatchBtn) {
+      dispatchBtn.addEventListener('click', async function () {
+        dispatchBtn.disabled = true;
+        dispatchBtn.textContent = '派发中…';
+        await dispatchBug(b.id);
+        dispatchBtn.disabled = false;
+        dispatchBtn.textContent = '派发到窗口3';
+      });
+    }
+    var copyPack = document.getElementById('copyPack');
+    if (copyPack) {
+      copyPack.addEventListener('click', function () {
+        var pack = buildPack(b);
+        var done = function (ok) { copyPack.textContent = ok ? '已复制' : '复制失败'; setTimeout(function () { copyPack.textContent = '复制处理信息'; }, 1500); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pack).then(function () { done(true); }, function () { done(false); });
+        else done(false);
+      });
+    }
+    var copyHerdr = document.getElementById('copyHerdr');
+    if (copyHerdr) {
+      copyHerdr.addEventListener('click', function () {
+        var cmd = 'pwsh -NoProfile -File scripts\\herdr-run.ps1 -Bug ' + (b.uid == null ? '' : b.uid);
+        var done = function (ok) { copyHerdr.textContent = ok ? '已复制' : '复制失败'; setTimeout(function () { copyHerdr.textContent = '复制 herdr 指令'; }, 1500); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cmd).then(function () { done(true); }, function () { done(false); });
+        else done(false);
+      });
+    }
+  }
+
+  function buildPack(b) {
+    var env = b.env || {};
+    var lines = [];
+    lines.push('# 缺陷 #' + (b.uid == null ? '—' : b.uid) + ' ' + (b.t || ''));
+    lines.push('');
+    lines.push('- 项目：' + projectName());
+    lines.push('- 负责人：' + (b.ex || '—'));
+    lines.push('- 状态：' + (b.st || '—') + ' / 优先级：' + priorityOf(b).name);
+    lines.push('- TB 链接：' + TB_BASE + '/task/' + b.id);
+    lines.push('');
+    lines.push('## 问题内容');
+    lines.push('');
+    lines.push(b.note || '（未填写描述）');
+    lines.push('');
+    lines.push('## 环境服务信息');
+    lines.push('');
+    if ((env.services || []).length) { lines.push('服务/版本：'); lines.push(''); (env.services || []).forEach(function (s) { lines.push('- ' + s); }); }
+    if ((env.hosts || []).length) { lines.push(''); lines.push('环境/主机：'); lines.push(''); (env.hosts || []).forEach(function (s) { lines.push('- ' + s); }); }
+    if ((env.hints || []).length) { lines.push(''); lines.push('环境标识：' + (env.hints || []).join('、')); }
+    if (!(env.services || []).length && !(env.hosts || []).length) lines.push('未获取');
+    lines.push('');
+    lines.push('## 代码库信息');
+    lines.push('');
+    lines.push((b.repo && b.repo.length) ? (b.repo || []).map(function (r) { return '- ' + r; }).join('\n') : '未获取');
+    lines.push('');
+    return lines.join('\n');
+  }
+
+  async function writeControl(patch) {
+    var base = S.control || Object.assign({}, DEFAULT_CONTROL);
+    var next = Object.assign({}, base, patch, { updatedAt: new Date().toISOString(), requestId: reqId() });
+    S.control = next;
+    var ok = false;
+    try {
+      var r = await fetch('/api/worktable/write', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ path: siteRoot().replace(/[\\\/]+$/, '') + '\\data\\control.json', content: JSON.stringify(next, null, 1) })
+      });
+      ok = r.ok;
+    } catch (e) { ok = false; }
+    if (!ok) showNotice('无法写入控制文件：采集脚本读不到当前选择。请确认窗口运行在工作台内。', 'warn');
+    return ok;
+  }
+
+  async function loadMembers(pid) {
+    var m = await fetchJson('data/members/' + encodeURIComponent(pid) + '.json');
+    if (m && m.projectId === pid && Array.isArray(m.members)) {
+      S.members = m;
+      renderPersons();
+      return m;
+    }
+    return null;
+  }
+
+  async function loadBugs(pid, uid) {
+    var b = await fetchJson('data/bugs/' + encodeURIComponent(pid) + '__' + encodeURIComponent(uid) + '.json');
+    if (b && b.projectId === pid && b.personId === uid) {
+      S.bugs = b;
+      if (!b.bugs.some(function (x) { return x.id === S.selectedId; })) { S.selectedId = null; S.panel = false; dom.overlay.hidden = true; }
+      renderChips();
+      renderList();
+      if (S.selectedId) renderOverlay();
+      return b;
+    }
+    return null;
+  }
+
+  function ansiTail(text) {
+    return String(text || '').replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').replace(/\s+/g, ' ').trim().slice(-260);
+  }
+
+  // 常驻转发：Edge 只授权一次，之后每次拉取复用同一条连接（不会再弹授权）
+  var RELAY = 'http://127.0.0.1:47821';
+  async function relayHealth() {
+    try {
+      var c = new AbortController();
+      var timer = setTimeout(function () { c.abort(); }, 1500);
+      var r = await fetch(RELAY + '/health', { signal: c.signal, cache: 'no-store' });
+      clearTimeout(timer);
+      if (!r.ok) return null;
+      return await r.json();
+    } catch (e) { return null; }
+  }
+  async function relayPull() {
+    var r = await fetch(RELAY + '/pull', { method: 'POST', cache: 'no-store' });
+    var body = null;
+    try { body = await r.json(); } catch (e) { body = null; }
+    if (!r.ok || !body || body.ok !== true) {
+      return { ok: false, message: (body && body.error) ? body.error : ('常驻转发返回 HTTP ' + r.status) };
+    }
+    return { ok: true };
+  }
+
+  function runTerminalCollect() {
+    return new Promise(function (resolve) {
+      var root = siteRoot().replace(/[\\\/]+$/, '');
+      var wsUrl = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host +
+        '/api/worktable/term?cwd=' + encodeURIComponent(root) + '&cols=120&rows=30';
+      var ws = null, buf = '', settled = false, timer = null;
+      function finish(ok, message) {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        try { if (ws) ws.close(); } catch (e) { /* ignore */ }
+        resolve({ ok: ok, message: message || '' });
+      }
+      try { ws = new WebSocket(wsUrl); } catch (e) { return finish(false, '无法创建终端通道：' + e.message); }
+      timer = setTimeout(function () { finish(false, '拉取超时（>180 秒）。请检查 Edge 调试端口与 TB 登录状态。'); }, 180000);
+      ws.onopen = function () { setTimeout(function () { try { ws.send('node scripts/collect-tb.cjs\r'); } catch (e) { finish(false, '无法发送采集命令。'); } }, 300); };
+      ws.onmessage = function (ev) {
+        buf = (buf + (typeof ev.data === 'string' ? ev.data : '')).slice(-12000);
+        if (buf.indexOf('TB-PULL-DONE ok') >= 0) finish(true);
+        else if (buf.indexOf('TB-PULL-DONE fail') >= 0) finish(false, '采集脚本失败：' + ansiTail(buf));
+      };
+      ws.onerror = function () { finish(false, '终端通道连接失败：请确认本窗口运行在工作台内。'); };
+      ws.onclose = function () { if (!settled) finish(false, '终端通道提前关闭：' + ansiTail(buf)); };
+    });
+  }
+
+  async function refreshState() {
+    var st = await fetchJson('data/state.json');
+    if (st) { S.stateData = st; renderHeader(); }
+    return st;
+  }
+
+  async function reloadCurrent() {
+    if (!S.control || !S.control.projectId) return;
+    await loadMembers(S.control.projectId);
+    if (S.control.personId) await loadBugs(S.control.projectId, S.control.personId);
+    renderHeader();
+    renderPersons();
+    renderChips();
+    renderList();
+    if (S.selectedId) renderOverlay();
+  }
+
+  async function runPull() {
+    if (S.pulling) return false;
+    S.pulling = true;
+    dom.pullBtn.disabled = true;
+    dom.pullBtn.textContent = '拉取中…';
+    renderHeader();
+    renderListState();
+    try {
+      await writeControl({ enabled: true, requestId: reqId() });
+
+      // 优先走常驻转发：复用已授权的 Edge 连接，不再弹授权
+      var health = await relayHealth();
+      if (health && health.ok) {
+        showNotice('正在通过常驻连接读取 TB（只读），通常 3–20 秒…', 'info');
+        var relay = await relayPull();
+        await refreshState();
+        await reloadCurrent();
+        if (relay.ok) hideNotice();
+        else showNotice(relay.message, 'error');
+        return relay.ok;
+      }
+
+      // 没有常驻转发时退回一次性连接（Edge 会要求授权一次）
+      showNotice('未发现常驻连接：本次会新建一次 Edge 授权。建议启动 scripts/tb-relay.cjs，可只授权一次。', 'warn');
+      var result = await runTerminalCollect();
+      await refreshState();
+      await reloadCurrent();
+      if (result.ok) hideNotice();
+      else showNotice(result.message, 'error');
+      return result.ok;
+    } catch (e) {
+      showNotice('拉取失败：' + (e && e.message ? e.message : e), 'error');
+      return false;
+    } finally {
+      S.pulling = false;
+      dom.pullBtn.disabled = false;
+      dom.pullBtn.textContent = '立即拉取';
+      renderHeader();
+      renderListState();
+      checkRelay();
+    }
+  }
+
+  function preferredPerson(m) {
+    return m.members.find(function (x) { return x.name === '周泽宇'; }) || m.members[0];
+  }
+
+  async function selectProject(pid) {
+    var flow = ++S.flow;
+    var proj = (S.projects && S.projects.projects.find(function (p) { return p.id === pid; })) || null;
+    S.members = null;
+    S.bugs = null;
+    S.selectedId = null;
+    S.panel = false;
+    dom.overlay.hidden = true;
+    renderPersons(); renderChips(); renderList();
+    await writeControl({ projectId: pid, projectName: proj ? proj.name : null, personId: null, personName: null, enabled: true });
+    var m = await loadMembers(pid);
+    if (!m) {
+      await runPull();
+      if (S.flow !== flow) return;
+      m = await loadMembers(pid);
+    }
+    if (S.flow !== flow) return;
+    if (!m) { showNotice('项目成员还没拉到：点「立即拉取」重试。', 'warn'); return; }
+    var person = preferredPerson(m);
+    if (!person) { showNotice('该项目暂无成员。', 'warn'); return; }
+    dom.personSel.value = person.id;
+    await writeControl({ projectId: pid, projectName: proj ? proj.name : null, personId: person.id, personName: person.name, enabled: true });
+    await loadBugs(pid, person.id);
+    if (S.flow !== flow) return;
+    await runPull();
+  }
+
+  async function selectPerson(uid) {
+    var flow = ++S.flow;
+    var person = (S.members && S.members.members.find(function (m) { return m.id === uid; })) || null;
+    if (!person || !S.control.projectId) return;
+    await writeControl({ personId: uid, personName: person.name, projectId: S.control.projectId, enabled: true });
+    await loadBugs(S.control.projectId, uid);
+    if (S.flow !== flow) return;
+    await runPull();
+  }
+
+  dom.projectSel.addEventListener('change', function () {
+    var pid = dom.projectSel.value;
+    if (pid && pid !== (S.control && S.control.projectId)) selectProject(pid);
+  });
+  dom.personSel.addEventListener('change', function () {
+    var uid = dom.personSel.value;
+    if (uid && uid !== (S.control && S.control.personId)) selectPerson(uid);
+  });
+  dom.search.addEventListener('input', function () { S.q = dom.search.value; renderList(); });
+  dom.pullBtn.addEventListener('click', function () { runPull(); });
+  dom.refreshBtn.addEventListener('click', async function () {
+    S.projects = await fetchJson('data/projects.json');
+    S.control = (await fetchJson('data/control.json')) || S.control || Object.assign({}, DEFAULT_CONTROL);
+    fillProjects();
+    await refreshState();
+    await reloadCurrent();
+    showNotice('视图已刷新（数据来自最近一次拉取）。', 'info');
+  });
+
+  dom.ovBack.addEventListener('click', closeDetail);
+  dom.ovClose.addEventListener('click', closeDetail);
+  document.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (e.key === 'Escape' && S.selectedId) { e.preventDefault(); closeDetail(); }
+  });
+
+  async function boot() {
+    S.projects = await fetchJson('data/projects.json');
+    S.control = (await fetchJson('data/control.json')) || Object.assign({}, DEFAULT_CONTROL);
+    S.stateData = await fetchJson('data/state.json');
+    S.envConfig = await fetchJson('config/herdr-env.json');
+    fillProjects(); renderHeader(); renderPersons(); renderChips(); renderList();
+    checkRelay();
+    setInterval(checkRelay, 60000);
+
+    if (!S.projects || !S.projects.projects || !S.projects.projects.length) {
+      showNotice('首次使用：正在拉取项目列表（≤40 秒）…', 'info');
+      await runPull();
+      S.projects = await fetchJson('data/projects.json');
+      fillProjects();
+      if (!S.projects || !S.projects.projects || !S.projects.projects.length) {
+        showNotice('项目列表拉取失败：请检查 Edge 调试端口与 TB 登录状态后点「立即拉取」重试。', 'error');
+        return;
+      }
+    }
+    var pid = S.control.projectId || (S.projects.projects[0] && S.projects.projects[0].id);
+    if (!pid) return;
+    if (!S.control.projectId) {
+      var proj0 = S.projects.projects.find(function (p) { return p.id === pid; }) || {};
+      await writeControl({ projectId: pid, projectName: proj0.name || null, enabled: true });
+    }
+    dom.projectSel.value = pid;
+    var m = await loadMembers(pid);
+    if (!m) { await runPull(); m = await loadMembers(pid); }
+    if (!m) { showNotice('项目成员还没拉到：点「立即拉取」重试。', 'warn'); return; }
+    var personId = S.control.personId;
+    if (!personId || !m.members.some(function (x) { return x.id === personId; })) {
+      var person = preferredPerson(m);
+      if (!person) { showNotice('该项目暂无成员。', 'warn'); return; }
+      personId = person.id;
+      await writeControl({ projectId: pid, personId: personId, personName: person.name, enabled: true });
+    }
+    dom.personSel.value = personId;
+    await loadBugs(pid, personId);
+    if (!S.bugs) showNotice('点击「立即拉取」获取该负责人的缺陷数据。', 'info');
+    renderListState();
+  }
+
+  boot().catch(function (e) {
+    showNotice('初始化失败：' + (e && e.message ? e.message : e), 'error');
+  });
+})();
+</script>
+</body>
+</html>
