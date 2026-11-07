@@ -49,3 +49,18 @@ All earlier receipts in this file were produced on `0.2.2-alpha.2` and remain hi
 re-read as rc.1 passes. Enabling the plugin in the user's daily profile and a browser acceptance run are
 scoped to the installed-acceptance ticket, not this gate.
 
+## rc.1 lab build gate (2026-11-07)
+
+After the lab bench, course protocol, prediction gate and restate evidence landed, the same gate was rerun
+on the official rc.1 checkout:
+
+- archive SHA256 `9b527c0e745a9ecc6214e6c783d981c8a16c8486f4a325b31bd4126e7730e705`
+- official offline install: true, host activation: true, persistence across process restart: true
+- activation warnings: none
+- receipt: `evidence/rc1-lab-receipt.json`
+
+Automated suite at this commit: 33 tests, 32 pass, 1 skip (`DSH_SOURCE`). The gate proves the plugin still
+activates; it does not prove the lab UI in a browser, which remains for the installed-acceptance ticket.
+Real `/teach` generation of a protocol-compliant course is also still unverified.
+
+
