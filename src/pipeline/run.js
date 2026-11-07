@@ -260,6 +260,18 @@ export function toDigestItem(candidate, extraction, { collectedAt }) {
   const finalized = extraction.finalized === true
   const meta = extraction.meta ?? {}
   const blocks = finalized ? (extraction.blocks ?? []) : pendingBlocks(extraction.blocks ?? [])
+  // Captions and notes may come from an extractor that never created a
+  // translation key (for example a table caption). The contract wants the key
+  // present with `null`, not absent.
+  const pairedBlocks = blocks.map((block) => {
+    const next = { ...block }
+    for (const key of ['caption', 'note']) {
+      if (next[key] && typeof next[key] === 'object' && !Object.prototype.hasOwnProperty.call(next[key], 'translation')) {
+        next[key] = { ...next[key], translation: null }
+      }
+    }
+    return next
+  })
   // An extractor may refine what the list declared: the article page knows the
   // canonical title, date and author list, the RSS only the headline.
   const publishedAt = normalizeInstant(extraction.publishedAt ?? meta.publishedAt ?? candidate.publishedAt)
@@ -305,7 +317,7 @@ export function toDigestItem(candidate, extraction, { collectedAt }) {
     ...(extraction.excerptReason ? { excerptReason: extraction.excerptReason } : {}),
     url: meta.url ?? candidate.url ?? null,
     translationState: finalized ? (extraction.translationState ?? 'pending') : 'pending',
-    blocks,
+    blocks: pairedBlocks,
   }
 }
 
