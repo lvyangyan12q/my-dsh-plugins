@@ -100,7 +100,7 @@ test('当堂检测：初始不泄露答案，答对立即判分并计数', async
     for (const letter of ['A', 'B', 'C', 'D']) {
       assert.equal(ui.dom.window.document.querySelector(`button[aria-label="第 1 题 选项 ${letter}"]`)?.hasAttribute('disabled'), true, `第 1 题 ${letter} 应锁定`)
     }
-    assert.equal(ui.calls.length, before, '当堂检测判分不应发任何请求')
+    assert.deepEqual(ui.calls.slice(before), ['/api/kaogong/lesson/quiz'], '当堂检测判分只写一条课堂检测证据，不写错题本或统计')
   } finally {
     await ui.unmount()
   }

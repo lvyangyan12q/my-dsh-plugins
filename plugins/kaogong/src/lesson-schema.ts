@@ -13,6 +13,12 @@ export const lessonCommand = z.object({ lessonId: z.string().uuid() }).strict()
 export const lessonLink = lessonCommand.extend({ roundId: z.string().uuid() }).strict()
 export const lessonSummaryInput = lessonCommand.extend({ notes: z.string().trim().max(2000) }).strict()
 export const lessonConfirm = lessonCommand.extend({ confirmed: z.literal(true) }).strict()
+/** One in-class quiz answer; the client scores it, this record only preserves the evidence. */
+export const lessonQuizEntry = z.object({
+  questionId: text, index: z.number().int().min(0), choice: z.number().int().min(0).max(3),
+  correct: z.boolean(), section: text, answeredAt: z.string(),
+})
+export const lessonQuizInput = lessonCommand.extend({ entry: lessonQuizEntry }).strict()
 
 const role = z.object({ appId: z.literal('kaogong'), instanceId, roleId: z.literal('teacher'), subject: text })
 const proof = z.object({ roundId: z.string().uuid(), total: z.number().int().positive(), correct: z.number().int().nonnegative(),
@@ -25,6 +31,8 @@ export const lessonRecord = z.object({
   materials: z.array(z.object({ id: text, title: z.string(), source: z.string(), updatedAt: z.string() })).max(8),
   legacyNote: z.object({ id: text, updatedAt: z.string() }).optional(),
   roundIds: z.array(z.string().uuid()).max(20), notes: z.string().max(2000),
+  /** Additive optional evidence: old records without it still parse unchanged. */
+  quiz: z.array(lessonQuizEntry).max(20).optional(),
   completion: z.object({ confirmedAt: z.string(), summary:z.string().optional(), proofs: z.array(proof).max(20) }).nullable(),
   createdAt: z.string(), updatedAt: z.string(), revision: z.number().int().nonnegative(),
 }).refine(row => row.instanceId === row.roleKey.instanceId && new Set(row.roundIds).size === row.roundIds.length && row.request.subject === row.roleKey.subject &&
@@ -32,6 +40,7 @@ export const lessonRecord = z.object({
     p.total === p.questionIds.length && new Set(p.questionIds).size === p.total && new Set(p.reflectedIds).size === p.reflectedIds.length && p.reflectedIds.every(id => p.questionIds.includes(id)))), 'Invalid lesson evidence')
 export type Lesson = z.infer<typeof lessonRecord>
 export type LessonCreate = z.infer<typeof lessonCreate>
+export type LessonQuizEntry = z.infer<typeof lessonQuizEntry>
 export type LessonEvidence = { roundId: string; total: number; correct: number; questionIds: string[]; reflectedIds: string[];
   answered: boolean; reflectionsComplete: boolean; projection: 'complete' | 'pending'; review: 'ready' | 'sending' | 'sent' }
 export type LessonView = { lesson: Lesson; evidence: LessonEvidence[]; canConfirm: boolean; summary: string }

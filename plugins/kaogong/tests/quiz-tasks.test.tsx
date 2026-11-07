@@ -190,8 +190,8 @@ test('检测与课后任务全程不写错题本、不写统计', async () => {
 
     const forbidden = ui.calls.filter(call => /notebook|question|statistic|practice\/(round|submit|score)/.test(call.path))
     assert.deepEqual(forbidden, [], '课堂检测不应产生错题本、题库或统计写入请求')
-    const writes = ui.calls.filter(call => call.method !== 'GET' && !/\/api\/kaogong\/lesson\/(list|current|read|closeout-preview)$/.test(call.path))
-    assert.deepEqual(writes, [], '课堂检测只允许读取课堂，不应写课堂记录或练习成绩')
+    const writes = ui.calls.filter(call => call.method !== 'GET' && !/\/api\/kaogong\/lesson\/(list|current|read|closeout-preview|quiz)$/.test(call.path))
+    assert.deepEqual(writes, [], '课堂检测只允许写当堂检测证据，不应写错题本、统计或练习成绩')
   } finally {
     await ui.unmount()
   }

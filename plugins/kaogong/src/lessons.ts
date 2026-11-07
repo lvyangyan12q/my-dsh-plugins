@@ -1,7 +1,7 @@
 import {learningOutline} from './learning-outline.ts'
 import type { KvTable, DomainGlobal } from '@deepseek-ai/dsh-storage-domain'
 import { lessonCreate } from './lesson-schema.ts'
-import type { Lesson, LessonCreate, LessonView, LessonEvidence } from './lesson-schema.ts'
+import type { Lesson, LessonCreate, LessonView, LessonEvidence, LessonQuizEntry } from './lesson-schema.ts'
 import type { KnowledgeEntryRecord } from './schemas.ts'
 import type { PracticeRounds } from './practice-rounds.ts'
 import { PracticeError } from './practice-rounds.ts'
@@ -87,6 +87,13 @@ export class Lessons {
   saveSummary(id: string, notes: string) { return this.run(async () => {
     const row = this.get(id)
     if (row.notes !== notes) await this.put(id, { ...row, notes })
+    return this.view(this.get(id))
+  }) }
+  /** Upsert one quiz answer by questionId so a retake replaces its prior evidence instead of stacking it. */
+  saveQuiz(id: string, entry: LessonQuizEntry) { return this.run(async () => {
+    const row = this.get(id)
+    const quiz = [...(row.quiz ?? []).filter(item => item.questionId !== entry.questionId), entry].sort((a, b) => a.index - b.index)
+    await this.put(id, { ...row, quiz })
     return this.view(this.get(id))
   }) }
   /** Only the learner HTTP gesture exposes this operation, never an Agent completion tool. */
