@@ -83,16 +83,6 @@ export function labCalculation(values: LabValues): LabCalculation {
   }
 }
 
-/** 讲义按知识点挂接：本课目标或限定考点命中关键词才渲染这份讲义。 */
-export const HANDOUT_MATCH_KEYWORDS = ['混合增长', '增长率混合'] as const
-
-/** 判断一堂课是否匹配这份混合增长率讲义；换课只改这里的数据口径，不加接口。 */
-export function lessonMatchesHandout(request: { knowledgePoint?: string; objective?: string } | null | undefined): boolean {
-  if (!request) return false
-  const texts = [request.knowledgePoint ?? '', request.objective ?? '']
-  return HANDOUT_MATCH_KEYWORDS.some(keyword => texts.some(text => text.includes(keyword)))
-}
-
 /** 有编号就显示「02 标题」，独立小节显示「＋ 标题」。 */
 function sectionHeading(section: HandoutSection): string {
   return section.no ? `${section.no} ${section.title}` : `＋ ${section.title}`
@@ -213,6 +203,40 @@ export const MIXED_GROWTH_HANDOUT: Handout = {
         { kind: 'p', text: '一、权重用成现期量。这是混合增长率里最贵的错，算出来的数看着还挺合理，所以很难自己发现。当堂检测第 3 题专门设了这个坑。' },
         { kind: 'p', text: '二、增长率混基期，比重混现期。增长率混的是去年的量，比重混的是今年的量。' },
         { kind: 'p', text: '三、百分点不是增长率。「提高 2 个百分点」是比重的变化，是个减法结果，不能拿去和增长率加权平均。' },
+      ],
+    },
+  ],
+}
+
+/** 第 2 课：同样只提供数据；渲染、目录、回跳都用上面那套结构。 */
+export const GROWTH_COMPARISON_HANDOUT: Handout = {
+  id: 'growth-comparison',
+  subject: '行测-资料分析',
+  title: '增长量比较',
+  goal: '看到「增长最多 / 最少」先看现期量与增长率，两个快解在 20 秒内定答案。',
+  provenance: '自编讲义：例题为教学设计用，非真题。',
+  sections: [
+    {
+      id: 'handout2-s1', no: '01', title: '一句话结论',
+      blocks: [
+        { kind: 'callout', label: '记住这一句', text: '增长量比较别硬算，先看现期量与增长率；两者都大就必胜，一增一减再动笔。' },
+        { kind: 'p', text: '增长量 = 基期量 × 增长率 = 现期量 × 增长率 ÷ (1 + 增长率)。比较时先看两边的现期量和增长率，能不动笔就不动笔。' },
+      ],
+    },
+    {
+      id: 'handout2-s2', no: '02', title: '两个快解',
+      blocks: [
+        { kind: 'bullets', items: ['两者都大则必大：现期量大、增长率也大的一方，增长量一定更大，直接选。', '一增一减用公式估：现期量与增长率一大一小时，用 现期 × 增长率 ÷ (1 + 增长率) 约算，保留两位有效数字即可。'] },
+        { kind: 'p', text: '例：甲现期 100、增长 20%；乙现期 200、增长 10%。乙的增长率低，但现期量是甲的两倍，属于一增一减，要估。' },
+        { kind: 'formula', text: '甲 ≈ 100 × 20% ÷ 1.2 ≈ 16.7；乙 = 200 × 10% ÷ 1.1 ≈ 18.2' },
+        { kind: 'p', text: '所以乙的增长量更大：增长率低的一方也能赢，关键看现期量。' },
+      ],
+    },
+    {
+      id: 'handout2-s3', no: '03', title: '一个陷阱',
+      blocks: [
+        { kind: 'callout', label: '别踩', text: '增长率高不等于增长量大，还要看现期量（或基期量）。' },
+        { kind: 'p', text: '上场先问自己：两边的现期量差多少？只拿增长率比大小，是把「跑得快」当成了「跑得远」。' },
       ],
     },
   ],
