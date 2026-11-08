@@ -185,6 +185,12 @@ function IconMenu() {
 function IconClose() {
   return <svg {...SVG}><path d="m6 6 12 12M18 6 6 18" /></svg>
 }
+function IconChevronLeft() {
+  return <svg {...SVG}><path d="m15 18-6-6 6-6" /></svg>
+}
+function IconChevronRight() {
+  return <svg {...SVG}><path d="m9 18 6-6-6-6" /></svg>
+}
 function IconBook() {
   return <svg {...SVG}><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z" /><path d="M4 5.5v15" /></svg>
 }
@@ -317,6 +323,7 @@ export function PaperReaderPage() {
   const [activeHeading, setActiveHeading] = useState(-1)
 
   const searchRef = useRef(null)
+  const workspaceRef = useRef(null)
   const scrollRef = useRef(null)
   const restoreBlockRef = useRef(null)
   const rafRef = useRef(0)
@@ -325,6 +332,34 @@ export function PaperReaderPage() {
   const digestRef = useRef(null)
 
   const update = useCallback((patch) => setPrefs(previous => ({ ...previous, ...patch })), [])
+
+  /** Drag the divider to trade list width for reading width. */
+  const startResize = useCallback((event) => {
+    if (event.button !== 0) return
+    if (typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 900px)').matches) return
+    const workspace = workspaceRef.current
+    if (!workspace) return
+    event.preventDefault()
+    const startX = event.clientX
+    const startWidth = prefs.sidebarWidth
+    const clamp = value => Math.min(460, Math.max(220, value))
+    let width = startWidth
+    document.body.classList.add('pr-resizing')
+    const move = (moveEvent) => {
+      width = clamp(startWidth + moveEvent.clientX - startX)
+      workspace.style.setProperty('--pr-sidebar-width', `${width}px`)
+    }
+    const end = () => {
+      update({ sidebarWidth: width })
+      document.body.classList.remove('pr-resizing')
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+  }, [prefs.sidebarWidth, update])
 
   const showToast = useCallback((message) => {
     setToast(message)
@@ -1024,7 +1059,11 @@ export function PaperReaderPage() {
         </div>
       )}
 
-      <div className="pr-workspace">
+      <div
+        className="pr-workspace"
+        ref={workspaceRef}
+        style={{ '--pr-sidebar-width': `${prefs.sidebarWidth}px` }}
+      >
         {drawerOpen && <div className="pr-scrim" onClick={() => setDrawerOpen(false)} />}
 
         <aside
@@ -1036,6 +1075,18 @@ export function PaperReaderPage() {
           aria-label="每日论文列表"
         >
           <div className="pr-sidebar-head">
+            <div className="pr-sidebar-title">
+              <span>每日列表</span>
+              <button
+                type="button"
+                className="pr-icon-btn pr-sidebar-collapse"
+                onClick={() => update({ sidebarCollapsed: true })}
+                title="收起列表，放大阅读区（Ctrl+B）"
+                aria-label="收起列表"
+              >
+                <IconChevronLeft />
+              </button>
+            </div>
             <div className="pr-search">
               <span className="pr-search-icon"><IconSearch /></span>
               <input
@@ -1218,6 +1269,30 @@ export function PaperReaderPage() {
             </button>
           </div>
         </aside>
+
+        {!prefs.sidebarCollapsed && !drawerOpen && (
+          <div
+            className="pr-resizer"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="调整列表宽度"
+            title="拖动调整宽度，双击恢复默认"
+            onPointerDown={startResize}
+            onDoubleClick={() => update({ sidebarWidth: 300 })}
+          />
+        )}
+
+        {prefs.sidebarCollapsed && !drawerOpen && (
+          <button
+            type="button"
+            className="pr-expand-rail"
+            onClick={() => update({ sidebarCollapsed: false })}
+            title="展开列表（Ctrl+B）"
+            aria-label="展开列表"
+          >
+            <IconChevronRight />
+          </button>
+        )}
 
         <main className="pr-reader">
           <div className="pr-reader-bar">

@@ -19,6 +19,7 @@ export const DEFAULT_PREFS = {
   bookmarks: [],
   collapsed: [],
   sidebarCollapsed: false,
+  sidebarWidth: 300,
   outlineOpen: false,
 }
 
@@ -40,6 +41,8 @@ export function readStoredPrefs(storage = globalThis.localStorage) {
     }
     prefs.bookmarksOnly = prefs.bookmarksOnly === true
     prefs.sidebarCollapsed = prefs.sidebarCollapsed === true
+    const width = Number(prefs.sidebarWidth)
+    prefs.sidebarWidth = Number.isFinite(width) ? Math.min(460, Math.max(220, width)) : DEFAULT_PREFS.sidebarWidth
     prefs.outlineOpen = prefs.outlineOpen === true
     return { prefs, stored: true }
   } catch {
