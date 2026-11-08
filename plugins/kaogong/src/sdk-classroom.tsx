@@ -16,7 +16,7 @@ import {TeachingTasks} from './study-task-panel.tsx'
 import {SourceConnections} from './study-source-panel.tsx'
 import {StudyPlanPanel} from './study-plan-panel.tsx'
 
-export const learningPages=[{id:'overview',title:'今日'},{id:'plan',title:'学习路线'},{id:'practice',title:'练习训练'},{id:'errors',title:'复习中心'},{id:'progress',title:'学习进度'},{id:'materials',title:'资料库'}]
+export const learningPages=[{id:'overview',title:'今日'},{id:'classroom',title:'课堂'},{id:'plan',title:'学习路线'},{id:'practice',title:'练习训练'},{id:'errors',title:'复习中心'},{id:'progress',title:'学习进度'},{id:'materials',title:'资料库'}]
 
 /** Prepare evidence before navigation unmounts main. Only the later send gesture admits a Native prompt. */
 export async function prepareLearningTask(services:{roles:StudyViewProps['roles'];tasks:StudyViewProps['tasks'];instanceId:string},request:KaogongTeachingRequest,material:Entry|null,isCurrent=()=>true,onOpened?:(key:LearningRoleKey)=>void){

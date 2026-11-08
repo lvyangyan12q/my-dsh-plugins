@@ -1,6 +1,6 @@
 import {LessonCloseout} from './lesson-closeout.tsx'
 import {HandoutView} from './lesson-handout.tsx'
-import {resolveLessonContent} from './lesson-content.ts'
+import {resolveLessonContent,LESSON_CONTENTS} from './lesson-content.ts'
 import {QuizPanel,emptyQuizAnswers} from './lesson-quiz.tsx'
 import type {QuizAnswer,QuizQuestion} from './lesson-quiz.tsx'
 import {LessonTasks} from './lesson-tasks.tsx'
@@ -179,7 +179,16 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       <label>旧课堂笔记 ID <input maxLength={500} aria-label="旧课堂笔记 ID" value={draft.legacyNoteId} onChange={event => setDraft({ ...draft, legacyNoteId: event.target.value })} /></label>
       <button data-pwb-button data-variant="primary" disabled={busy} type="submit" style={{ justifySelf: 'start' }}><Save size={14} />确认目标并保存课堂</button>
     </form>}
-    {!view && !form && <p role="status">暂无选中的课堂</p>}
+    {!view && !form && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+      <p role="status">还没有选中的课堂。下面先读第 1 课；新建或选择课堂后，讲义与检测按本课目标匹配。</p>
+      <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
+      </div>
+      {tab === 'handout'
+        ? <HandoutView handout={LESSON_CONTENTS[0].handout} />
+        : <p role="status">检测要记到课堂记录上：先新建或选择一个课堂，再来做当堂检测。</p>}
+    </div>}
     {view && context && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
       <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>

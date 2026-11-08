@@ -128,3 +128,31 @@ test('限定考点命中关键词也视为匹配：讲义与检测都显示', as
     await ui.unmount()
   }
 })
+test('没有选中课堂时也能读讲义，检测则要求先有课堂', async () => {
+  const {dom, restore} = environment()
+  const original = globalThis.fetch
+  globalThis.fetch = async (input) => {
+    const path = String(input)
+    if (path.endsWith('/list')) return new Response('[]')
+    if (path.includes('/api/kaogong/plan')) return Response.json({tasks: [], revision: 0, goal: null})
+    if (path.endsWith('/closeout-preview')) return Response.json({operation: null, candidates: []})
+    return Response.json(null)
+  }
+  const root = createRoot(document.getElementById('root')!)
+  try {
+    const {LessonPanel} = await import('../src/lesson-panel.tsx')
+    const {KaogongStateContext, KaogongViewState} = await import('../src/view-state.tsx')
+    profileSequence += 1
+    await act(async () => root.render(<KaogongStateContext.Provider value={new KaogongViewState('no-lesson-' + profileSequence)}><LessonPanel active onOpenTeacher={async () => {}} onPractice={async () => {}} /></KaogongStateContext.Provider>))
+    const body = () => document.body.textContent ?? ''
+    assert.match(body(), /混合增长率/)
+    assert.match(body(), /一句话结论/)
+    await act(async () => [...document.querySelectorAll('button')].find(button => button.textContent === '当堂检测')!.click())
+    assert.match(body(), /先新建或选择一个课堂/)
+  } finally {
+    await act(async () => root.unmount())
+    globalThis.fetch = original
+    dom.window.close()
+    restore()
+  }
+})
