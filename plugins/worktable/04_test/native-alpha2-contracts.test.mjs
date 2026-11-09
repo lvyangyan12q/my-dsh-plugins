@@ -48,16 +48,19 @@ test('fixed official alpha.2 public native contracts', { skip: !root }, async t 
     })
   })
 
-  await t.test('both plugin manifests admit only verified runtimes without exemptions', async () => {
+  await t.test('the bridge manifest keeps its verified runtimes; worktable targets 0.2.2-rc.1 and later', async () => {
     const boot = createRequire(join(root, 'packages/boot/app-boot/package.json'))
     const { evaluatePluginCompatibility } = await import(pathToFileURL(boot.resolve('@deepseek-ai/dsh-app-boot/src/plugin-compatibility.ts')).href)
-    for (const file of ['../01_content/package.json', '../../bug-solver/bridge/package.json']) {
-      const manifest = JSON.parse(await readFile(new URL(file, import.meta.url), 'utf8'))
-      assert.equal(evaluatePluginCompatibility(manifest, {}, version), undefined, manifest.name)
-      assert.equal(evaluatePluginCompatibility(manifest, {}, '0.2.1-rc.3'), undefined, manifest.name)
-      for (const candidate of ['0.2.2-alpha.3', '0.2.2', '0.2.1-rc.4']) {
-        assert.equal(evaluatePluginCompatibility(manifest, {}, candidate).exempted, false)
-      }
+    const worktable = JSON.parse(await readFile(new URL('../01_content/package.json', import.meta.url), 'utf8'))
+    // The archive rebuilt for 0.2.2-rc.1 no longer admits alpha.2; the frozen archive serves it.
+    const frozen = evaluatePluginCompatibility(worktable, {}, version)
+    assert.deepEqual(frozen?.requirements, { 'engines.dsh': worktable.engines.dsh })
+    assert.equal(frozen?.exempted, false)
+    const manifest = JSON.parse(await readFile(new URL('../../bug-solver/bridge/package.json', import.meta.url), 'utf8'))
+    assert.equal(evaluatePluginCompatibility(manifest, {}, version), undefined, manifest.name)
+    assert.equal(evaluatePluginCompatibility(manifest, {}, '0.2.1-rc.3'), undefined, manifest.name)
+    for (const candidate of ['0.2.2-alpha.3', '0.2.2', '0.2.1-rc.4']) {
+      assert.equal(evaluatePluginCompatibility(manifest, {}, candidate).exempted, false)
     }
   })
 })

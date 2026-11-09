@@ -1,8 +1,13 @@
 # Local Task Tracking
 
-## 个人学习插件规格（2026-11-01）
+## Configuration（setup-matt-pocock-skills · 2026-11-07）
 
-本地任务 [DSH 个人学习插件：交互课程、知识地图与持续学习](../wayfinder/personal-learning/spec.md)，身份 `personal-learning-spec`，状态 open，唯一 triage 标签 ready-for-agent。用户确认个人使用、DSH、/teach、交互 HTML/动画、知识图与 OpenDesign 风格。测试边界待用户核对，原型 A/B/C 尚未选定；规格发布不等于实现完成，不改变其他任务状态。
+- **Tracker**: local markdown. No remote issue IDs; no `gh` / `glab` dependency.
+- **Layout**: spec at `.scratch/<feature-slug>/spec.md`; tickets at `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order, one ticket per file, never a combined tickets file.
+- **Ticket fields**: `**Blocked by:**` names the upstream tickets; `**Status:**` records the triage role; comments append under `## Comments`.
+- **Triage vocabulary**: `ready-for-agent` only. The `triage` skill is not installed in this profile, so the other four canonical roles (`needs-triage`, `needs-info`, `ready-for-human`, `wontfix`) are not defined here.
+- **Caveat**: `.scratch/` is in `.gitignore`, so new tickets are local-only. Use `git add -f` for a ticket that must travel with the repo, or place durable specs under `docs/` as earlier efforts did.
+- **Authoritative index**: everything below this section is the running project index. It is not template boilerplate — read it, do not overwrite it.
 
 The user chose local numbered tasks for this project, not remote issue IDs. Review a ticket against [the shared spec](../personal-workbench-spec.md) and its evidence below; do not infer completion from a commit or draft PR.
 
@@ -86,9 +91,17 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 
 用户已明确确认正式版本等待验收、未知版本仅独立显式试用；历史学习私有实例与原始资料库显式只读共享方案；最终审查基线a81ac77。决策03/04关闭，课堂原型和具体切换门槛保留。现按[rc.3执行图](../wayfinder/harness-upgrade/implementation/README.md)推进05—11，05/06与原型并行。原阶段pending-decisions记录为历史上下文，不能覆盖本轮已明确决定；具体正式迁移仍按影响预览确认。
 
-## 学习实验台规格（2026-11-07）
+## 个人学习课堂全新重建（2026-11-08）
 
-本地规格身份 `personal-learning-lab-spec`，标题[知间 · 学习实验台](../wayfinder/personal-learning/lab-spec.md)，status=open、唯一 triage 标签 ready-for-agent。接续个人学习插件规格，不覆盖其历史验收；设计依据是已选定的 B 原型「实验台」。
+用户明确放弃旧个人学习插件作为基线，允许删除，不要求兼容、迁移或运行回退。新版规划以[基于本地知识文件的 DSH 学习课堂重建路线](../wayfinder/personal-learning-rebuild/map.md)为准；旧个人学习实现、专属规格与实验台工单已按授权删除，不再作为新版任务来源。
 
-九张实施票在[学习实验台实施图](../wayfinder/personal-learning/issues/README.md)，一票一文件，按依赖排列：01 rc.1 兼容 → 02 实验台骨架 → 03 课程协议 → 04 预测门控 → 05 复述与证据 → 08 恢复 → 09 验收；02 另有 07 配置收纳，03 另有 06 `/teach` 生成适配。测试边界以真实安装用户流程为最高 seam，协议与状态机用纯逻辑测试补足。规格发布不等于实现完成。
+本地地图及子票沿用 parent、labels、status、assignee、blocked_by 的 frontmatter 约定，仅使用 wayfinder 标签；结论写各票 Resolution，地图只作索引。首版方向为 DSH 四区课堂、Obsidian 兼容本地知识文件和真实内嵌会话。当前为规划，不代表新版已实现。
+
+旧包已从当前 web profile 卸载；旧源码、构建产物、发行包及专属规划目录已在正确工作目录内删除，原先的删除保护阻碍已解除。未清除 DSH Session 或共享存储。实际范围与验证见已关闭的[旧个人学习插件安全退场](../wayfinder/personal-learning-rebuild/issues/05-legacy-retirement.md)。
+
+## 考公任务驱动课堂（2026-11-08）
+
+本地规格身份 `kaogong-task-centered-learning`，入口为[本地规格](../../.scratch/kaogong-task-centered-learning/spec.md)，唯一正文为[考公任务驱动课堂规格](../../plugins/kaogong/docs/task-centered-learning-spec.md)，配套[PR 正文草稿](../../plugins/kaogong/docs/task-centered-learning-pr-draft.md)。status=open，唯一 triage 标签 ready-for-agent；尚未实施或发布实施子票。
+
+用户已确认今日任务直接进入课堂、固定班主任/老师职责、资料库与自由练习同层展示、在插件内学习与答疑。准确安装包在现有 3080 的完整用户流程为拟定最高测试 seam，待用户核对；公开原生会话内嵌和任务级会话隔离须先验证。此增量替代旧课堂的强制原生页导航和手动角色配置交互，不关闭旧票、不影响个人学习插件重建范围。
 

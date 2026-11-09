@@ -1,3 +1,0 @@
-import {defineDomain} from '@deepseek-ai/dsh-storage-domain'
-import {z} from 'zod'
-export const learningDomain=defineDomain({name:'personal_learning',version:1,tables:{},global:{schema:z.object({instances:z.array(z.object({id:z.string(),title:z.string(),goal:z.string(),priorKnowledge:z.string(),createdAt:z.string()})),bindings:z.array(z.object({instanceId:z.string(),workspaceId:z.string(),sessionId:z.string(),phase:z.enum(['intent','ready'])})).default([]),requests:z.array(z.any()).default([]),courses:z.array(z.any()).default([]),maps:z.array(z.any()).default([]),mapDrafts:z.array(z.any()).default([]),evidence:z.array(z.any()).default([]),continuations:z.array(z.any()).default([]),lastInstanceId:z.string().nullable()}),initial:{instances:[],lastInstanceId:null}}})
