@@ -3,12 +3,26 @@ import type { ClassroomCommand, ClassroomSpaceView, ClassroomView } from './cont
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
 import { LectureZone } from './lecture-zone.tsx'
 import { NotesZone } from './notes-zone.tsx'
+import {
+  teacherSessionSeat,
+  TeacherConversationSeat,
+  TeacherSessionZone,
+  type RenderSlotLike,
+  type SessionProviderLike,
+  type SessionsLike,
+} from './session-zone.tsx'
 
 export const panelId = 'learning-classroom'
 export const panelLabel = '学习课堂'
 
 export interface ClassroomPanelProps {
   client?: ClassroomClient
+  /** Framework-injected public Session service (`ctx.sessions`). */
+  sessions?: SessionsLike
+  /** Framework-injected child-slot renderer for the main entry that declares the session seat. */
+  renderSlot?: RenderSlotLike
+  /** Framework-injected Session area component for the declared session seat. */
+  SessionProvider?: SessionProviderLike
 }
 
 const styles = `
@@ -32,7 +46,16 @@ const styles = `
 .lc-directory ul{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
 .lc-directory button{width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;background:transparent;color:inherit;text-align:left;cursor:pointer}
 .lc-directory button[aria-current="true"]{border-color:var(--dsh-accent,#0969da);background:#ddf4ff}
-.lc-conversation{background:#f6f8fa}
+.lc-conversation{background:#f6f8fa;overflow:hidden}
+.lc-conversation>h2{flex:none}
+.lc-session-zone{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;min-width:0}
+.lc-session-empty{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.lc-session-empty p{margin:0}
+.lc-session-body{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;overflow:hidden;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff)}
+.lc-session-body [data-slot="learningClassroom.teacherSession"]{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0}
+.lc-teacher-session{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0}
+.lc-session-error{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #d1242f;border-radius:8px;background:#ffebe9;color:#82071e}
+.lc-session-error p{margin:0}
 .lc-note-file{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}
 `
 
@@ -59,8 +82,20 @@ function VaultForm(props: { busy: boolean; value: string; onChange: (value: stri
   )
 }
 
-function ClassroomGrid(props: { client: ClassroomClient; view: ClassroomView; space: ClassroomSpaceView; busy: boolean; onOpen: (spaceId: string) => void }) {
-  const { client, view, space, busy, onOpen } = props
+interface ClassroomGridProps {
+  view: ClassroomView
+  space: ClassroomSpaceView
+  busy: boolean
+  onOpen: (spaceId: string) => void
+  client: ClassroomClient
+  sessions?: SessionsLike
+  renderSlot?: RenderSlotLike
+  SessionProvider?: SessionProviderLike
+  onView: (view: ClassroomView) => void
+}
+
+function ClassroomGrid(props: ClassroomGridProps) {
+  const { view, space, busy, onOpen, client, sessions, renderSlot, SessionProvider, onView } = props
   return (
     <div className="lc-grid">
       <LectureZone
@@ -77,14 +112,22 @@ function ClassroomGrid(props: { client: ClassroomClient; view: ClassroomView; sp
       </section>
       <section className="lc-pane lc-conversation" aria-label="老师对话">
         <h2>老师对话</h2>
-        <p role="note">老师对话尚未连接。这里不会显示伪造的聊天回复；连接真实会话后会在这个区域显示。</p>
+        <TeacherSessionZone
+          key={space.id}
+          space={space}
+          client={client}
+          sessions={sessions}
+          renderSlot={renderSlot}
+          SessionProvider={SessionProvider}
+          onView={onView}
+        />
       </section>
     </div>
   )
 }
 
 /** Main panel: vault onboarding, space creation and the four-region shell. */
-export function ClassroomPanel({ client }: ClassroomPanelProps) {
+export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }: ClassroomPanelProps) {
   const api = useMemo(() => client ?? createClassroomClient(), [client])
   const [view, setView] = useState<ClassroomView | null>(null)
   const [loadError, setLoadError] = useState('')
@@ -192,7 +235,19 @@ export function ClassroomPanel({ client }: ClassroomPanelProps) {
           </form>
 
           {space !== undefined
-            ? <ClassroomGrid client={api} view={view} space={space} busy={busy} onOpen={spaceId => void run({ action: 'space-open', spaceId })} />
+            ? (
+              <ClassroomGrid
+                view={view}
+                space={space}
+                busy={busy}
+                onOpen={spaceId => void run({ action: 'space-open', spaceId })}
+                client={api}
+                sessions={sessions}
+                renderSlot={renderSlot}
+                SessionProvider={SessionProvider}
+                onView={setView}
+              />
+            )
             : (
               <div className="lc-empty">
                 <h2>{view.spaces.length === 0 ? '还没有学习空间' : '选择一个学习空间'}</h2>
@@ -211,6 +266,8 @@ export function ClassroomPanel({ client }: ClassroomPanelProps) {
 }
 
 interface SlotsContext {
+  /** Public Session Controller face; the classroom owns and releases its own references. */
+  sessions: SessionsLike
   slots: {
     inject(name: string, install: () => unknown): unknown
     register(spec: Record<string, unknown>, component: unknown): unknown
@@ -218,9 +275,30 @@ interface SlotsContext {
   effect(install: () => unknown): unknown
 }
 
-/** Public sidebar entry and main panel registration, same id for both. */
+/** Waits for the client services this entry composes with. */
+export const inject = ['slots', 'sessions']
+
+/**
+ * Public sidebar entry and main panel registration, same id for both.
+ *
+ * The main entry declares one Session child seat of this plugin's own name:
+ * that is what makes the framework inject `SessionProvider` into the panel.
+ * The seat entry then renders the native `conversation.content` Factory inside
+ * that explicit Session binding. Neither registration imports a private Chat
+ * component or opens the native Conversation page.
+ */
 export function apply(ctx: SlotsContext) {
-  ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({ name: 'main', key: panelId }, ClassroomPanel)))
+  const sessions = ctx.sessions
+  ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({
+    name: 'main',
+    key: panelId,
+    inject: () => ({ sessions }),
+    children: { [teacherSessionSeat]: { kind: 'single', scope: 'session' } },
+  }, ClassroomPanel)))
+  ctx.effect(() => ctx.slots.inject(teacherSessionSeat, () => ctx.slots.register(
+    { name: teacherSessionSeat },
+    TeacherConversationSeat,
+  )))
   ctx.effect(() => ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
     name: 'sidebar.panellist',
     id: panelId,

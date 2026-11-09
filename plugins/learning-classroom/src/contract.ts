@@ -5,6 +5,10 @@ export interface ClassroomSpaceView {
   directory: string
   notePath: string
   createdAt: string
+  /** Bound teacher Session for this space, or null before it is opened. */
+  sessionId: string | null
+  /** Absolute space folder used as the teacher Session working directory, or null when it cannot be derived. */
+  cwd: string | null
 }
 
 export interface ClassroomVaultView {
@@ -59,6 +63,7 @@ export type ClassroomCommand =
   | { action: 'vault-choose'; path: string }
   | { action: 'space-create'; title: string }
   | { action: 'space-open'; spaceId: string }
+  | { action: 'session-open'; spaceId: string; sessionId: string }
   | { action: 'lecture-list'; spaceId: string }
   | { action: 'lecture-read'; spaceId: string; path: string }
 

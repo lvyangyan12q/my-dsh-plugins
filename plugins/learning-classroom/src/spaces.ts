@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { ClassroomError } from './errors.ts'
 
 export const defaultNotePath = '笔记/我的笔记.md'
@@ -34,4 +35,19 @@ export function spaceDirectoryName(title: string): string {
     throw new ClassroomError('invalid-space-name', `学习空间名称是系统保留名，请换一个：${title}`)
   }
   return name
+}
+
+/**
+ * Absolute folder of one registered learning space inside the vault. The
+ * browser needs it to create its teacher Session on the Host; the directory
+ * value comes from stored navigation state, so containment is re-checked here
+ * instead of trusting it.
+ * @param root - canonical vault root.
+ * @param directory - stored space folder name.
+ * @returns the containment-checked absolute folder, or null when the stored name is not a plain folder name.
+ */
+export function spaceCwdPath(root: string, directory: string): string | null {
+  if (typeof directory !== 'string' || directory === '' || directory === '.' || directory === '..') return null
+  if (/[\\/]/.test(directory)) return null
+  return join(root, directory)
 }

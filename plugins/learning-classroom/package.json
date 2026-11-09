@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "main": "lib/index.js",
-  "description": "课堂式个人学习：知识文件库、学习空间与四区课堂骨架",
+  "description": "课堂式个人学习：知识文件库、学习空间与内嵌老师会话",
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",

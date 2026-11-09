@@ -128,7 +128,7 @@ test('选择已存在目录后进入创建学习空间流程', async () => {
   }
 })
 
-test('创建学习空间后显示四区骨架，对话区是明确未连接占位而不是假聊天', async () => {
+test('创建学习空间后显示四区骨架，会话服务缺失时是真实错误而不是假聊天', async () => {
   const client = fakeClient(readyView)
   const ui = await mount(client)
   try {
@@ -143,9 +143,10 @@ test('创建学习空间后显示四区骨架，对话区是明确未连接占�
     assert.match(ui.document.querySelector('[aria-label="讲义"]').textContent, /还没有讲义/)
     assert.match(ui.document.querySelector('[aria-label="我的笔记"]').textContent, /笔记\/我的笔记\.md/)
     const conversation = ui.document.querySelector('[aria-label="老师对话"]')
-    assert.match(conversation.textContent, /尚未连接/)
+    assert.match(conversation.textContent, /老师会话服务不可用/)
     assert.doesNotMatch(conversation.textContent, /你好|我是老师|已连接/)
-    assert.equal(conversation.querySelector('textarea, input, [contenteditable="true"]'), null)
+    assert.equal(conversation.querySelector('textarea, [contenteditable="true"]'), null)
+    assert.equal(conversation.querySelector('[data-testid="composer"]'), null)
     assert.equal(ui.document.querySelectorAll('[aria-label="老师对话"]').length, 1)
   } finally {
     await ui.unmount()
@@ -183,9 +184,10 @@ test('读取状态失败时可重试', async () => {
   }
 })
 
-test('侧栏登记「学习课堂」，主面板使用同名 key', async () => {
+test('侧栏登记「学习课堂」，主面板使用同名 key 并声明自有 session 子 seat', async () => {
   const registrations = [], disposers = []
   const ctx = {
+    sessions: { async create() { return 'session-1' }, retain() { throw new Error('测试不应取得引用') } },
     slots: {
       inject: (_name, install) => install(),
       register: (spec, component) => { registrations.push({ spec, component }); return () => {} },

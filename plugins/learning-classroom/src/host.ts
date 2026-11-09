@@ -3,14 +3,25 @@ import { lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } fr
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import type { ClassroomLectureView, LectureListView, LectureReadView, NoteDocumentView, NoteListView, NoteSaveView } from './contract.ts'
+import type {
+  ClassroomLectureView,
+  ClassroomSpaceView,
+  ClassroomView,
+  LectureListView,
+  LectureReadView,
+  NoteDocumentView,
+  NoteListView,
+  NoteSaveView,
+} from './contract.ts'
 import { ClassroomError } from './errors.ts'
 import { lectureFileKind, lectureFolder, readLectureMeta, sortLectures } from './lectures.ts'
 import { listNotes, readNote, saveNote } from './notes-io.ts'
 import { maxNoteBytes } from './notes.ts'
-import { defaultNoteContent, defaultNotePath, spaceDirectoryName, spaceFolders } from './spaces.ts'
+import { defaultNoteContent, defaultNotePath, spaceCwdPath, spaceDirectoryName, spaceFolders } from './spaces.ts'
 import type { ClassroomState, ClassroomStateStore, ClassroomSpace } from './state.ts'
 import { inspectVaultRoot, resolveVaultPath, vaultRelativePath, type VaultProbe } from './vault.ts'
+
+export { type ClassroomSpaceView, type ClassroomVaultView, type ClassroomView } from './contract.ts'
 
 export const unsetVaultHint = '请选择一个已存在的本地目录作为知识文件库。'
 export const unavailableVaultHint = '请重新选择知识文件库，或修复该目录的访问权限后重试。'
@@ -25,25 +36,20 @@ const maxRequestBytes = 2 * 1024 * 1024
 export const experimentPlaceholder =
   '这是一节动态实验（HTML）。隔离渲染会在后续工单中打开；现在它只出现在目录里，不会把 HTML 直接注入课堂。'
 
-export interface ClassroomVaultView {
-  path: string | null
-  status: 'unset' | 'ready' | 'unavailable'
-  reason: string | null
-  hint: string
-}
-
-export interface ClassroomView {
-  vault: ClassroomVaultView
-  spaces: ClassroomState['spaces']
-  currentSpaceId: string | null
-}
-
-const knownActions = ['vault-choose', 'space-create', 'space-open', 'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save'] as const
+const knownActions = [
+  'vault-choose', 'space-create', 'space-open', 'session-open',
+  'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save',
+] as const
 
 const commandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('vault-choose'), path: z.string().min(1).max(4096) }).strict(),
   z.object({ action: z.literal('space-create'), title: z.string().min(1).max(120) }).strict(),
   z.object({ action: z.literal('space-open'), spaceId: z.string().min(1).max(64) }).strict(),
+  z.object({
+    action: z.literal('session-open'),
+    spaceId: z.string().min(1).max(64),
+    sessionId: z.string().trim().min(1).max(200),
+  }).strict(),
   z.object({ action: z.literal('lecture-list'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({ action: z.literal('lecture-read'), spaceId: z.string().min(1).max(64), path: z.string().min(1).max(400) }).strict(),
   z.object({ action: z.literal('note-list'), spaceId: z.string().min(1).max(64) }).strict(),
@@ -96,26 +102,29 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     return task
   }
 
+  const spaceViews = (root: string | null, spaces: readonly ClassroomSpace[]): ClassroomSpaceView[] =>
+    spaces.map(space => ({ ...space, cwd: root === null ? null : spaceCwdPath(root, space.directory) }))
+
   const view = async (state: ClassroomState = store.read()): Promise<ClassroomView> => {
     if (state.vaultPath === null) {
       return {
         vault: { path: null, status: 'unset', reason: null, hint: unsetVaultHint },
-        spaces: state.spaces,
+        spaces: spaceViews(null, state.spaces),
         currentSpaceId: state.currentSpaceId,
       }
     }
     try {
-      await inspectVaultRoot(state.vaultPath, probe)
+      const canonical = await inspectVaultRoot(state.vaultPath, probe)
       return {
-        vault: { path: state.vaultPath, status: 'ready', reason: null, hint: '' },
-        spaces: state.spaces,
+        vault: { path: canonical, status: 'ready', reason: null, hint: '' },
+        spaces: spaceViews(canonical, state.spaces),
         currentSpaceId: state.currentSpaceId,
       }
     } catch (error) {
       const reason = error instanceof Error ? error.message : '知识文件库不可访问。'
       return {
         vault: { path: state.vaultPath, status: 'unavailable', reason, hint: unavailableVaultHint },
-        spaces: state.spaces,
+        spaces: spaceViews(state.vaultPath, state.spaces),
         currentSpaceId: state.currentSpaceId,
       }
     }
@@ -187,6 +196,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       directory,
       notePath: defaultNotePath,
       createdAt: new Date().toISOString(),
+      sessionId: null,
       lecturePath: null,
     }
     const next: ClassroomState = { ...state, spaces: [...state.spaces, space], currentSpaceId: space.id }
@@ -228,6 +238,40 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
     return space
   }
+
+  /** Require the registered space folder to still exist and be a directory. */
+  const spaceFolderOf = async (root: string, space: ClassroomSpace): Promise<void> => {
+    const target = await resolveVaultPath(root, space.directory, probe)
+    let info
+    try {
+      info = await stat(target)
+    } catch {
+      throw new ClassroomError('space-unavailable', `学习空间文件夹不存在：${space.directory}`, 409)
+    }
+    if (!info.isDirectory()) {
+      throw new ClassroomError('space-unavailable', `学习空间路径不是文件夹：${space.directory}`, 409)
+    }
+  }
+
+  /**
+   * Record the teacher Session the browser created for one space. The Host
+   * never creates or drives the Session here: it only stores the binding so a
+   * later visit retains the same Session identity. The space folder must still
+   * exist, because that folder is the Session working directory.
+   */
+  const bindSession = (spaceId: string, sessionId: string): Promise<ClassroomView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    const next: ClassroomState = {
+      ...state,
+      currentSpaceId: space.id,
+      spaces: state.spaces.map(row => row.id === space.id ? { ...row, sessionId } : row),
+    }
+    await store.write(next)
+    return view(next)
+  })
 
   /** A lecture path is space-relative, restricted to `讲义/<file>.md|html`. */
   const lecturePathOf = (input: string): { relative: string; fileName: string } => {
@@ -408,6 +452,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       case 'vault-choose': return chooseVault(command.path)
       case 'space-create': return createSpace(command.title)
       case 'space-open': return openSpace(command.spaceId)
+      case 'session-open': return bindSession(command.spaceId, command.sessionId)
       case 'lecture-list': return listLectures(command.spaceId)
       case 'lecture-read': return readLecture(command.spaceId, command.path)
       case 'note-list': return noteList(command.spaceId)

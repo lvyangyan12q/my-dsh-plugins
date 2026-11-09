@@ -1,5 +1,13 @@
-export { apply, ClassroomPanel, panelId, panelLabel } from './classroom-panel.tsx'
+export { apply, ClassroomPanel, panelId, panelLabel, inject } from './classroom-panel.tsx'
 export type { ClassroomPanelProps } from './classroom-panel.tsx'
+export { TeacherSessionZone, TeacherConversationSeat, teacherSessionSeat, teacherSessionSource } from './session-zone.tsx'
+export type {
+  SessionProviderLike,
+  SessionReferenceLike,
+  SessionsLike,
+  TeacherConversationSeatProps,
+  TeacherSessionZoneProps,
+} from './session-zone.tsx'
 export { LectureZone } from './lecture-zone.tsx'
 export type { LectureZoneProps } from './lecture-zone.tsx'
 export { NotesZone } from './notes-zone.tsx'
