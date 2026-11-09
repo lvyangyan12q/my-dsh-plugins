@@ -5,11 +5,19 @@ import type { ClassroomSpaceView, NoteDocumentView, NoteSaveCommand, NoteSummary
 
 export type NoteSaveStatus = 'loading' | 'saved' | 'dirty' | 'saving' | 'failed' | 'conflict'
 
+/** One-shot request to open a note; a new token re-opens the same path. */
+export interface NoteOpenRequest {
+  path: string
+  token: number
+}
+
 export interface NotesZoneProps {
   client: ClassroomClient
   space: ClassroomSpaceView
   /** Debounce for autosave; tests shorten it, the product uses the default. */
   debounceMs?: number
+  /** Ask the notes pane to open a specific note, e.g. from a canvas file node. */
+  openRequest?: NoteOpenRequest | null
 }
 
 const defaultDebounceMs = 700
@@ -44,7 +52,7 @@ function messageOf(error: unknown): string {
  * disk travels with every save, so an external edit is refused, never silently
  * overwritten.
  */
-export function NotesZone({ client, space, debounceMs = defaultDebounceMs }: NotesZoneProps) {
+export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openRequest = null }: NotesZoneProps) {
   const [notes, setNotes] = useState<NoteSummaryView[]>([])
   const [path, setPath] = useState(space.notePath)
   const [content, setContent] = useState('')
@@ -60,6 +68,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs }: Not
   const conflictRef = useRef(false)
   const saveChain = useRef<Promise<void>>(Promise.resolve())
   const loadToken = useRef(0)
+  const handledOpen = useRef<number | null>(null)
   const debouncer = useMemo(() => createDebouncer(debounceMs), [debounceMs])
   // Lets a debounce callback call the latest enqueueSave without capturing a
   // stale closure from the render that scheduled it.
@@ -187,6 +196,15 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs }: Not
       debouncer.flush()
     }
   }, [debouncer, load, space.notePath])
+
+  // A request from the canvas opens that specific note once; the token keeps
+  // repeated opens of the same path observable without resetting manual edits.
+  useEffect(() => {
+    if (openRequest === null) return
+    if (handledOpen.current === openRequest.token) return
+    handledOpen.current = openRequest.token
+    void load(openRequest.path)
+  }, [load, openRequest])
 
   const onChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const next = event.target.value
