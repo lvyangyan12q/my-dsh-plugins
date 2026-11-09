@@ -45,7 +45,7 @@ test('package metadata matches the installable Host plugin contract', () => {
   assert.equal(pkg.type, 'module')
   assert.equal(pkg.main, 'lib/index.js')
   assert.equal(pkg.dsh.bundle.patch, './cordis.patch.yml')
-  assert.equal(pkg.engines.dsh, '0.2.1-rc.3 || 0.2.2-alpha.2')
+  assert.equal(pkg.engines.dsh, '0.2.1-rc.3 || 0.2.2-alpha.2 || 0.2.2-rc.1')
   assert.equal(pkg.peerDependencies['@deepseek-ai/cordis'], '*')
   assert.equal(pkg.peerDependenciesMeta['@deepseek-ai/cordis'].optional, true)
 

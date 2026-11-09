@@ -1,6 +1,6 @@
 {
   "name": "bug-solver-dispatch",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "bug-solver 窗口3 调度桥（DSH Host 插件，ESM 无构建）",
   "type": "module",
@@ -23,7 +23,7 @@
   },
   "engines": {
     "node": ">=22",
-    "dsh": "0.2.1-rc.3 || 0.2.2-alpha.2"
+    "dsh": "0.2.1-rc.3 || 0.2.2-alpha.2 || 0.2.2-rc.1"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*"

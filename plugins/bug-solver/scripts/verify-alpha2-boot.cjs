@@ -36,7 +36,9 @@ const delay=ms=>new Promise(r=>setTimeout(r,ms));
     const runs=await fetch(base+'/api/bug-solver/runs',{headers:{cookie}});
     assert.equal(runs.status,200);const runBody=await runs.json();
     const denied=await fetch(base+'/api/bug-solver/runs');assert.equal(denied.status,401);
-    const evidence={runtime:'0.2.2-alpha.2',worktable:healthBody,bridge:'0.1.1',checks:{isolatedBoot:true,versionExemptions:false,authenticatedRuns:true,unauthenticatedDenied:true},runs:runBody,limits:'No model prompts, business fixes, SSH or production data used.'};
+    const runtime=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8')).version;
+    const bridge=JSON.parse(fs.readFileSync(path.join(profile,'node_modules','bug-solver-dispatch','package.json'),'utf8')).version;
+    const evidence={runtime,worktable:healthBody,bridge,checks:{isolatedBoot:true,versionExemptions:false,authenticatedRuns:true,unauthenticatedDenied:true},runs:runBody,limits:'No model prompts, business fixes, SSH or production data used.'};
     fs.writeFileSync(evidenceFile,JSON.stringify(evidence,null,2)+'\n');console.log(JSON.stringify(evidence,null,2));
   } finally {
     if (proc.exitCode === null) {

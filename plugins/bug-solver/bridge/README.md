@@ -1,8 +1,8 @@
-# bug-solver-dispatch 0.1.1
+# bug-solver-dispatch 0.1.2
 
 DSH Host bridge for the bug-solver dispatch page. Install this directory or its packed archive into the DSH web profile.
 
-Supported runtime declarations: `0.2.1-rc.3 || 0.2.2-alpha.2`. Other versions remain blocked; no compatibility exemptions are installed.
+Supported runtime declarations: `0.2.1-rc.3 || 0.2.2-alpha.2 || 0.2.2-rc.1`. Other versions remain blocked; no compatibility exemptions are installed.
 
 For DSH 0.2.2-alpha.2, the repository's Worktable native-contract gate checks the official fixed runtime revision. The bridge suite has 147 passing tests. Archive boot checks with the matching Worktable candidate use an isolated official web profile: authenticated run listing must succeed and unauthenticated access must be denied. See the release evidence for the exact tested archive versions.
 
