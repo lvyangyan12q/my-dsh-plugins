@@ -100,12 +100,15 @@ test('本课不匹配混合增长率：讲义空态、页签可用、不显示�
     assert.match(ui.body(), /本课暂无讲义。/)
     assert.doesNotMatch(ui.body(), /一句话结论/)
     assert.doesNotMatch(ui.body(), /混合增长率实验台/)
+    assert.doesNotMatch(ui.body(), /快 1|快 2|快 3|快 4/, '无关任务不应渲染第一课例题')
+    assert.doesNotMatch(ui.body(), /2022 年某地城镇|高技术产业|A 类车销量|上半年营收/, '无关任务不应渲染第一课题干')
     assert.deepEqual(ui.tabs(), ['讲义', '当堂检测'], '不匹配时页签仍可用')
 
     await ui.click('当堂检测')
     assert.match(ui.body(), /本课暂无检测。/)
     assert.doesNotMatch(ui.body(), /第 1 题/)
     assert.doesNotMatch(ui.body(), /检测 0\/3/)
+    assert.doesNotMatch(ui.body(), /自编检测题/, '无关任务不应渲染检测题来源与题目')
 
     await ui.click('讲义')
     assert.match(ui.body(), /本课暂无讲义。/)
