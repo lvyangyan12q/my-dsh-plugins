@@ -15,10 +15,11 @@ import type {
 } from './contract.ts'
 import { ClassroomError } from './errors.ts'
 import { lectureFileKind, lectureFolder, readLectureMeta, sortLectures } from './lectures.ts'
+import { defaultLayout, normalizeLayout } from './layout.ts'
 import { listNotes, readNote, saveNote } from './notes-io.ts'
 import { maxNoteBytes } from './notes.ts'
 import { defaultNoteContent, defaultNotePath, spaceCwdPath, spaceDirectoryName, spaceFolders } from './spaces.ts'
-import type { ClassroomState, ClassroomStateStore, ClassroomSpace } from './state.ts'
+import { layoutSchema, type ClassroomState, type ClassroomStateStore, type ClassroomSpace } from './state.ts'
 import { inspectVaultRoot, resolveVaultPath, vaultRelativePath, type VaultProbe } from './vault.ts'
 
 export { type ClassroomSpaceView, type ClassroomVaultView, type ClassroomView } from './contract.ts'
@@ -38,7 +39,7 @@ export const experimentPlaceholder =
 
 const knownActions = [
   'vault-choose', 'space-create', 'space-open', 'session-open',
-  'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save',
+  'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save', 'layout-save',
 ] as const
 
 const commandSchema = z.discriminatedUnion('action', [
@@ -52,6 +53,7 @@ const commandSchema = z.discriminatedUnion('action', [
   }).strict(),
   z.object({ action: z.literal('lecture-list'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({ action: z.literal('lecture-read'), spaceId: z.string().min(1).max(64), path: z.string().min(1).max(400) }).strict(),
+  z.object({ action: z.literal('layout-save'), spaceId: z.string().min(1).max(64), layout: layoutSchema }).strict(),
   z.object({ action: z.literal('note-list'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({
     action: z.literal('note-read'),
@@ -103,7 +105,15 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
   }
 
   const spaceViews = (root: string | null, spaces: readonly ClassroomSpace[]): ClassroomSpaceView[] =>
-    spaces.map(space => ({ ...space, cwd: root === null ? null : spaceCwdPath(root, space.directory) }))
+    spaces.map(space => ({
+      ...space,
+      cwd: root === null ? null : spaceCwdPath(root, space.directory),
+      // The wire view always carries the optional bindings with defaults, even
+      // when an older or hand-written state file reached the store without them.
+      lecturePath: space.lecturePath ?? null,
+      sessionId: space.sessionId ?? null,
+      layout: normalizeLayout(space.layout),
+    }))
 
   const view = async (state: ClassroomState = store.read()): Promise<ClassroomView> => {
     if (state.vaultPath === null) {
@@ -198,6 +208,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       createdAt: new Date().toISOString(),
       sessionId: null,
       lecturePath: null,
+      layout: defaultLayout(),
     }
     const next: ClassroomState = { ...state, spaces: [...state.spaces, space], currentSpaceId: space.id }
     try {
@@ -268,6 +279,23 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       ...state,
       currentSpaceId: space.id,
       spaces: state.spaces.map(row => row.id === space.id ? { ...row, sessionId } : row),
+    }
+    await store.write(next)
+    return view(next)
+  })
+
+  /**
+   * Persist one space's pane widths and collapsed zones. Layout is navigation
+   * state, so this never touches the vault and never needs the session.
+   */
+  const saveLayout = (spaceId: string, layout: unknown): Promise<ClassroomView> => enqueue(async () => {
+    const state = store.read()
+    const space = spaceOf(state, spaceId)
+    const parsed = layoutSchema.parse(layout)
+    if (JSON.stringify(space.layout) === JSON.stringify(parsed)) return view(state)
+    const next: ClassroomState = {
+      ...state,
+      spaces: state.spaces.map(row => (row.id === space.id ? { ...row, layout: parsed } : row)),
     }
     await store.write(next)
     return view(next)
@@ -458,6 +486,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       case 'note-list': return noteList(command.spaceId)
       case 'note-read': return noteRead(command.spaceId, command.path)
       case 'note-save': return noteSave(command)
+      case 'layout-save': return saveLayout(command.spaceId, command.layout)
     }
   }
 
