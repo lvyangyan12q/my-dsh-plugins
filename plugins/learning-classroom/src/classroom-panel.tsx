@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ClassroomCommand, ClassroomSpaceView, ClassroomView } from './contract.ts'
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
 import { CanvasZone, type CanvasOpenTarget } from './canvas-zone.tsx'
+import { ClassroomLayoutView } from './classroom-layout.tsx'
+import { normalizeLayout, type ClassroomLayout } from './layout.ts'
 import { LectureZone, type LectureOpenRequest } from './lecture-zone.tsx'
 import { NotesZone, type NoteOpenRequest } from './notes-zone.tsx'
 import {
@@ -40,7 +42,6 @@ const styles = `
 .lc-hint{margin:0;font-size:12px;color:var(--dsh-text-secondary,#59636e)}
 .lc-alert{padding:10px 12px;border:1px solid #d1242f;border-radius:8px;background:#ffebe9;color:#82071e}
 .lc-empty{padding:24px;border:1px dashed var(--dsh-border,#d8dee4);border-radius:8px;text-align:center}
-.lc-grid{display:grid;grid-template-columns:200px minmax(280px,2fr) minmax(220px,1fr) minmax(240px,1fr);gap:8px;min-height:0;flex:1}
 .lc-main{display:flex;flex-direction:column;flex:1;min-height:0}
 .lc-main[hidden]{display:none}
 .lc-view-tabs{display:flex;gap:6px}
@@ -52,8 +53,8 @@ const styles = `
 .lc-directory ul{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
 .lc-directory button{width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;background:transparent;color:inherit;text-align:left;cursor:pointer}
 .lc-directory button[aria-current="true"]{border-color:var(--dsh-accent,#0969da);background:#ddf4ff}
-.lc-conversation{background:#f6f8fa;overflow:hidden}
-.lc-conversation>h2{flex:none}
+.lc-conversation,.lc-zone-conversation{background:#f6f8fa;overflow:hidden}
+.lc-conversation>h2,.lc-zone-conversation>h2{flex:none}
 .lc-session-zone{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;min-width:0}
 .lc-session-empty{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .lc-session-empty p{margin:0}
@@ -100,25 +101,26 @@ function ClassroomGrid(props: {
   renderSlot?: RenderSlotLike
   SessionProvider?: SessionProviderLike
   onView: (view: ClassroomView) => void
+  onLayoutChange: (spaceId: string, layout: ClassroomLayout) => void
 }) {
-  const { client, view, space, busy, onOpen, openLecture, openNote, sessions, renderSlot, SessionProvider, onView } = props
+  const { client, view, space, busy, onOpen, openLecture, openNote, sessions, renderSlot, SessionProvider, onView, onLayoutChange } = props
   return (
-    <div className="lc-grid">
-      <LectureZone
-        client={client}
-        space={space}
-        spaces={view.spaces}
-        currentSpaceId={view.currentSpaceId}
-        busy={busy}
-        onOpenSpace={onOpen}
-        openRequest={openLecture}
-      />
-      <section className="lc-pane lc-notes" aria-label="我的笔记">
-        <h2>我的笔记</h2>
-        <NotesZone client={client} space={space} openRequest={openNote} />
-      </section>
-      <section className="lc-pane lc-conversation" aria-label="老师对话">
-        <h2>老师对话</h2>
+    <ClassroomLayoutView
+      layout={normalizeLayout(space.layout)}
+      onLayoutChange={next => onLayoutChange(space.id, next)}
+      lecture={(
+        <LectureZone
+          client={client}
+          space={space}
+          spaces={view.spaces}
+          currentSpaceId={view.currentSpaceId}
+          busy={busy}
+          onOpenSpace={onOpen}
+          openRequest={openLecture}
+        />
+      )}
+      notes={<NotesZone client={client} space={space} openRequest={openNote} />}
+      conversation={(
         <TeacherSessionZone
           key={space.id}
           space={space}
@@ -128,8 +130,8 @@ function ClassroomGrid(props: {
           SessionProvider={SessionProvider}
           onView={onView}
         />
-      </section>
-    </div>
+      )}
+    />
   )
 }
 
@@ -202,6 +204,21 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
     requestToken.current += 1
     setOpenLecture({ path: target.path, token: requestToken.current })
     setMode('classroom')
+  }
+
+  /**
+   * Layout is navigation state: apply it locally, then write it for the current
+   * space. A failed write keeps the on-screen layout and explains itself; no
+   * lecture, note or session request is involved.
+   */
+  const persistLayout = (spaceId: string, layout: ClassroomLayout) => {
+    setView(current => current === null ? current : {
+      ...current,
+      spaces: current.spaces.map(row => (row.id === spaceId ? { ...row, layout } : row)),
+    })
+    api.saveLayout({ action: 'layout-save', spaceId, layout }).catch(cause => {
+      if (alive.current) setError(`布局未能保存：${messageOf(cause)}`)
+    })
   }
 
   const space = view?.spaces.find(row => row.id === view.currentSpaceId)
@@ -300,6 +317,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
                     renderSlot={renderSlot}
                     SessionProvider={SessionProvider}
                     onView={setView}
+                    onLayoutChange={persistLayout}
                   />
                 </div>
                 {canvasMounted && (

@@ -1,4 +1,5 @@
 import type { CanvasNodeType, CanvasRelation } from './canvas.ts'
+import type { ClassroomLayout } from './layout.ts'
 
 /** Wire contract shared by the Host service and the browser panel. */
 export interface ClassroomSpaceView {
@@ -11,6 +12,8 @@ export interface ClassroomSpaceView {
   sessionId: string | null
   /** Absolute space folder used as the teacher Session working directory, or null when it cannot be derived. */
   cwd: string | null
+  /** Pane widths and collapsed zones, saved per learning space. */
+  layout: ClassroomLayout
 }
 
 export interface ClassroomVaultView {
@@ -69,6 +72,9 @@ export type ClassroomCommand =
   | { action: 'lecture-list'; spaceId: string }
   | { action: 'lecture-read'; spaceId: string; path: string }
   | { action: 'canvas-read'; spaceId: string }
+  | { action: 'layout-save'; spaceId: string; layout: ClassroomLayout }
+
+export type LayoutSaveCommand = Extract<ClassroomCommand, { action: 'layout-save' }>
 
 /** One Markdown note, addressed relative to its learning-space folder. */
 export interface NoteSummaryView {

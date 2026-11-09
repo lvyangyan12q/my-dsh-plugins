@@ -2,6 +2,7 @@ import type {
   CanvasReadView,
   ClassroomCommand,
   ClassroomView,
+  LayoutSaveCommand,
   LectureListView,
   LectureReadView,
   NoteCommand,
@@ -41,6 +42,7 @@ export interface ClassroomClient {
   readNote(spaceId: string, path: string, signal?: AbortSignal): Promise<NoteDocumentView>
   saveNote(input: NoteSaveCommand, signal?: AbortSignal): Promise<NoteSaveView>
   readCanvas(spaceId: string, signal?: AbortSignal): Promise<CanvasReadView>
+  saveLayout(input: LayoutSaveCommand, signal?: AbortSignal): Promise<ClassroomView>
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
@@ -76,5 +78,6 @@ export function createClassroomClient(fetchImpl: FetchLike = (input, init) => fe
     readNote: (spaceId, path, signal) => post<NoteDocumentView>({ action: 'note-read', spaceId, path }, signal),
     saveNote: (input, signal) => post<NoteSaveView>(input, signal),
     readCanvas: (spaceId, signal) => post<CanvasReadView>({ action: 'canvas-read', spaceId }, signal),
+    saveLayout: (input, signal) => post<ClassroomView>(input, signal),
   }
 }

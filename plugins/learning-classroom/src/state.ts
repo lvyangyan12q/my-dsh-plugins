@@ -1,5 +1,31 @@
 import { defineDomain } from '@deepseek-ai/dsh-storage-domain'
 import { z } from 'zod'
+import { clampWidth, defaultLayout, zoneWidthBounds, type FixedZone } from './layout.ts'
+
+/**
+ * Stored pane width. Numbers are rounded and truncated into their bounds; a
+ * non-number falls back to the zone default. Unknown fields are rejected by the
+ * surrounding `.strict()` object.
+ */
+function widthSchema(zone: FixedZone) {
+  return z.number().finite()
+    .transform(value => clampWidth(zone, value))
+    .default(zoneWidthBounds[zone].default)
+}
+
+/** Per-space classroom layout: pane widths plus collapsed zones. */
+export const layoutSchema = z.object({
+  widths: z.object({
+    directory: widthSchema('directory'),
+    notes: widthSchema('notes'),
+    conversation: widthSchema('conversation'),
+  }).strict(),
+  collapsed: z.object({
+    directory: z.boolean().default(false),
+    notes: z.boolean().default(false),
+    conversation: z.boolean().default(false),
+  }).strict(),
+}).strict()
 
 /** One learning space as stored: navigation identity plus its vault folder binding. */
 export const spaceSchema = z.object({
@@ -16,6 +42,11 @@ export const spaceSchema = z.object({
    * default so v1 state written before this ticket still loads.
    */
   lecturePath: z.string().min(1).max(400).nullable().default(null),
+  /**
+   * Pane widths and collapsed zones. Optional with a default so state written by
+   * tickets 01–03 still loads and existing spaces keep working.
+   */
+  layout: layoutSchema.default(defaultLayout()),
 }).strict()
 
 /**
