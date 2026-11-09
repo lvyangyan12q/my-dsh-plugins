@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ClassroomCommand, ClassroomSpaceView, ClassroomView } from './contract.ts'
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
+import { LectureZone } from './lecture-zone.tsx'
 
 export const panelId = 'learning-classroom'
 export const panelLabel = '学习课堂'
@@ -57,26 +58,18 @@ function VaultForm(props: { busy: boolean; value: string; onChange: (value: stri
   )
 }
 
-function ClassroomGrid(props: { view: ClassroomView; space: ClassroomSpaceView; busy: boolean; onOpen: (spaceId: string) => void }) {
-  const { view, space, busy, onOpen } = props
+function ClassroomGrid(props: { client: ClassroomClient; view: ClassroomView; space: ClassroomSpaceView; busy: boolean; onOpen: (spaceId: string) => void }) {
+  const { client, view, space, busy, onOpen } = props
   return (
     <div className="lc-grid">
-      <aside className="lc-pane lc-directory" aria-label="课程目录">
-        <h2>课程目录</h2>
-        <ul>
-          {view.spaces.map(row => (
-            <li key={row.id}>
-              <button aria-current={row.id === view.currentSpaceId ? 'true' : undefined} disabled={busy} onClick={() => onOpen(row.id)}>
-                {row.title}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </aside>
-      <section className="lc-pane lc-lectures" aria-label="讲义">
-        <h2>讲义</h2>
-        <p>还没有讲义文件。老师生成讲义后，会按文件顺序显示在这里。</p>
-      </section>
+      <LectureZone
+        client={client}
+        space={space}
+        spaces={view.spaces}
+        currentSpaceId={view.currentSpaceId}
+        busy={busy}
+        onOpenSpace={onOpen}
+      />
       <section className="lc-pane lc-notes" aria-label="我的笔记">
         <h2>我的笔记</h2>
         <p className="lc-note-file">{space.notePath}</p>
@@ -199,7 +192,7 @@ export function ClassroomPanel({ client }: ClassroomPanelProps) {
           </form>
 
           {space !== undefined
-            ? <ClassroomGrid view={view} space={space} busy={busy} onOpen={spaceId => void run({ action: 'space-open', spaceId })} />
+            ? <ClassroomGrid client={api} view={view} space={space} busy={busy} onOpen={spaceId => void run({ action: 'space-open', spaceId })} />
             : (
               <div className="lc-empty">
                 <h2>{view.spaces.length === 0 ? '还没有学习空间' : '选择一个学习空间'}</h2>

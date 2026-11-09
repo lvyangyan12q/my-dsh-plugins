@@ -8,6 +8,11 @@ export const spaceSchema = z.object({
   directory: z.string().min(1).max(120),
   notePath: z.string().min(1).max(200),
   createdAt: z.string().min(1).max(40),
+  /**
+   * Last opened lecture, relative to the space folder (`讲义/…`). Optional with a
+   * default so v1 state written before this ticket still loads.
+   */
+  lecturePath: z.string().min(1).max(400).nullable().default(null),
 }).strict()
 
 /**

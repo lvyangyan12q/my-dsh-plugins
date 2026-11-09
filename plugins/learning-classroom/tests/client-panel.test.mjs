@@ -47,6 +47,12 @@ function fakeClient(initial) {
       view = handler(input)
       return structuredClone(view)
     },
+    async listLectures(spaceId) {
+      return { spaceId, lectures: [], selectedPath: null, missingSelection: null, folderMissing: false }
+    },
+    async readLecture(_spaceId, path) {
+      throw new Error(`还没有讲义文件：${path}`)
+    },
     set(next) { view = structuredClone(next) },
   }
 }

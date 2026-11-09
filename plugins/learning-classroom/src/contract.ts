@@ -20,7 +20,44 @@ export interface ClassroomView {
   currentSpaceId: string | null
 }
 
+export type ClassroomLectureKind = 'markdown' | 'experiment'
+
+/** One file derived from the space's `讲义/` folder. */
+export interface ClassroomLectureView {
+  /** Space-relative path, e.g. `讲义/01-缩小样本空间.md`. */
+  path: string
+  fileName: string
+  title: string
+  order: number | null
+  kind: ClassroomLectureKind
+}
+
+export interface LectureListView {
+  spaceId: string
+  lectures: ClassroomLectureView[]
+  /** Previously opened lecture that still exists on disk. */
+  selectedPath: string | null
+  /** Previously opened lecture that no longer exists; the UI must offer a next step. */
+  missingSelection: string | null
+  /** `讲义/` itself is gone (deleted outside the plugin). */
+  folderMissing: boolean
+}
+
+export interface LectureReadView {
+  spaceId: string
+  path: string
+  fileName: string
+  title: string
+  kind: ClassroomLectureKind
+  /** Markdown body; null for experiments, which are not inlined into the DOM. */
+  content: string | null
+  /** Understandable stand-in copy for experiments until isolated rendering ships. */
+  placeholder: string | null
+}
+
 export type ClassroomCommand =
   | { action: 'vault-choose'; path: string }
   | { action: 'space-create'; title: string }
   | { action: 'space-open'; spaceId: string }
+  | { action: 'lecture-list'; spaceId: string }
+  | { action: 'lecture-read'; spaceId: string; path: string }
