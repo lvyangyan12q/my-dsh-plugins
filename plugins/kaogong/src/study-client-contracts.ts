@@ -1,3 +1,5 @@
+import type {ReactNode} from 'react'
+
 export type StudyProfile={id:string;kind:'learner'|'library';title:string;revision:number;goal?:{examDate?:string}}
 export type StudyView={id:string;profileId:string}
 export type StudySelection={profile:StudyProfile;view:StudyView;roleId?:string}
@@ -19,4 +21,6 @@ export interface TaskFacade {
   recover(id:string):Promise<StudyTask>
   discard(id:string,revision:number):Promise<StudyTask>
 }
-export type StudyViewProps=StudySelection&{roles?:RoleFacade;tasks?:TaskFacade;onReturn?():void;panel?:boolean;sessionId?:string}
+export type StudyViewProps=StudySelection&{roles?:RoleFacade;tasks?:TaskFacade;onReturn?():void;panel?:boolean;sessionId?:string
+  /** 课堂内嵌真实老师会话的位置；缺席时课堂不挂任何对话（例如右栏面板）。 */
+  renderTeacherSession?(sessionId:string):ReactNode}
