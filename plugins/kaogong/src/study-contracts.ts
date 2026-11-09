@@ -25,6 +25,8 @@ export type TeachingPlan = { id: string; text: string; contexts?: { resourceId: 
 export interface TeachingOwner {
   version: string
   prepare(context: TeachingContext, payload: unknown): TeachingPlan | Promise<TeachingPlan>
+  /** Stable business identity of the supplied payload, safe to read before any work. */
+  identify?(payload: unknown): string
   validate(task: TeachingTask): void | Promise<void>
   beforeSubmit(task: TeachingTask): void | Promise<void>
   accepted(task: TeachingTask): void | Promise<void>

@@ -4,6 +4,8 @@ import {StudySources,StudySourceRevoked} from './study-sources.ts'
 import {StudyRoles} from './study-roles.ts'
 import {mountStudyHttp} from './study-http.ts'
 import {StudyTeaching} from './study-teaching.ts'
+import {StudyTaskSessions} from './task-sessions.ts'
+import type {ClassroomTaskDirectory} from './task-sessions.ts'
 import {CurrentStudyHandoff} from './current-study-handoff.ts'
 import {registerTaskOwners} from './task-owners.ts'
 import {defineDomain,domainTable} from '@deepseek-ai/dsh-storage-domain'
@@ -42,11 +44,36 @@ export async function mountKaogong(ctx:Context,config:Config){
   disposers.push(()=>workspace.close())
   const sources=new StudySources(workspace),roles=new StudyRoles(ctx,workspace,config.roleCwd)
   disposers.push(await roles.install())
-  const teaching=new StudyTeaching(ctx,workspace,roles,sources)
+  // The task/classroom directory reads the same leased instance state as every
+  // business command; it never guesses a task from the current global Session.
+  const classroomTasks:ClassroomTaskDirectory={
+   task:(instanceId,taskId)=>{
+    if(!host)return Promise.reject(Error('考公宿主尚未就绪'))
+    return host.state(instanceId,async state=>{
+     const task=state.plan.read().tasks.find(row=>row.id===taskId)
+     if(!task||task.kind!=='learn'||task.status!=='in-progress'||!task.lessonId)return null
+     const lesson=state.lessonRecords.get(task.lessonId)
+     if(!lesson||lesson.instanceId!==instanceId||lesson.request.taskId!==task.id)return null
+     const roleId=subjectRoleIds[roleSubjects.indexOf(lesson.request.subject)]??'teacher'
+     return {taskId:task.id,lessonId:task.lessonId,subject:lesson.request.subject,roleId}
+    })
+   },
+   lesson:(instanceId,lessonId)=>{
+    if(!host)return Promise.reject(Error('考公宿主尚未就绪'))
+    return host.state(instanceId,async state=>{
+     const lesson=state.lessonRecords.get(lessonId)
+     if(!lesson||lesson.instanceId!==instanceId||!lesson.request.taskId)return null
+     const roleId=subjectRoleIds[roleSubjects.indexOf(lesson.request.subject)]??'teacher'
+     return {taskId:lesson.request.taskId,lessonId,subject:lesson.request.subject,roleId}
+    })
+   },
+  }
+  const classrooms=new StudyTaskSessions(workspace,roles,classroomTasks)
+  const teaching=new StudyTeaching(ctx,workspace,roles,sources,classrooms)
   disposers.push(()=>teaching.close())
   const handoff=new CurrentStudyHandoff(ctx,workspace,config.currentSourceProfile)
   disposers.push(()=>handoff.close())
-  disposers.push(mountStudyHttp(ctx,workspace,sources,roles,teaching,handoff))
+  disposers.push(mountStudyHttp(ctx,workspace,sources,roles,teaching,handoff,classrooms))
   const meta=await ctx.storageDomain.open(metadata)
   disposers.push(()=>meta.close())
   const adoptionState=await ctx.storageDomain.open(adoptionDomain)

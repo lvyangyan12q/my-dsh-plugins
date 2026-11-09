@@ -10,6 +10,6 @@ export function createStudyServices(viewId:string,open:(sessionId:string)=>Promi
   const request=<T,>(action:string,body:Record<string,unknown>={})=>studyRequest<T>({...body,action,viewId})
   return {
     roles:{read:roleId=>request('role-read',{roleId}),ensure:roleId=>request('role-ensure',{roleId}),open:async(roleId,sessionId,revision)=>{const result=await request<{sessionId:string}>('role-open',{roleId,sessionId,revision});if(result.sessionId!==sessionId)throw new Error('原生角色身份不匹配');await open(result.sessionId)}},
-    tasks:{prepare:input=>request('task-prepare',input),prepareOwned:input=>request('task-prepare-owned',input),list:()=>request('task-list'),edit:input=>request('task-edit',input),submit:(id,revision)=>request('task-submit',{id,revision}),recover:id=>request('task-recover',{id}),discard:(id,revision)=>request('task-discard',{id,revision})},
+    tasks:{prepare:input=>request('task-prepare',input),prepareOwned:input=>request('task-prepare-owned',input),list:()=>request('task-list'),edit:input=>request('task-edit',input),submit:(id,revision)=>request('task-submit',{id,revision}),recover:id=>request('task-recover',{id}),discard:(id,revision)=>request('task-discard',{id,revision}),session:taskId=>request('task-session',{taskId}),open:async taskId=>{const value=await request<{sessionId:string}>('task-session',{taskId});if(!value?.sessionId)throw new Error('任务会话身份不匹配');await open(value.sessionId)}},
   }
 }

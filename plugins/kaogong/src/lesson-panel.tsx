@@ -35,7 +35,7 @@ export function lessonQuizAnswers(value: LessonView | null, questions: readonly 
 }
 
 /** Shared instance-owned lesson UI; practice starts through the existing request/draft owner. */
-export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday, taskCentered=false }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher']; taskCentered?:boolean }) {
+export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask, onReturnToday, taskCentered=false }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher']; onClassroomTask?: KaogongViewProps['onClassroomTask']; taskCentered?:boolean }) {
   const http=useLearningHttp()
   const requestLesson=lessonRequest
   const request=<T,>(action:string,body:unknown)=>requestLesson<T>(action,body,http.fetch)
@@ -46,6 +46,14 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday, 
   /** A task classroom only renders its own task; a historical view is not silently reused. */
   const taskView=!!storedView?.lesson.request.taskId
   const view=taskCentered&&!taskView?null:storedView
+  /** Announce only this classroom's task identity; the parent never guesses a global Session. */
+  useEffect(() => {
+    if (!onClassroomTask) return
+    const taskId = view?.lesson.request.taskId
+    if (!taskId) { onClassroomTask(null); return }
+    onClassroomTask({id: taskId, subject: view!.lesson.request.subject})
+    return () => onClassroomTask(null)
+  }, [view?.lesson.request.taskId, view?.lesson.request.subject, onClassroomTask])
   const showForm=form&&!taskCentered
   const [taskStatus,setTaskStatus]=useState<'idle'|'loading'|'empty'|'error'>('idle')
   const [taskError,setTaskError]=useState('')

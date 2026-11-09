@@ -26,6 +26,7 @@ export function registerTaskOwners(host:KaogongHost, owners:ApplicationTaskOwner
  for(const kind of ['review','lesson'] as const){
   const load=(task:ApplicationOwnedTask)=>host.state(task.instanceId,async state=>{const value=evidence(state,kind,task.preparation.id);const token=task.preparation.token as {fingerprint?:string};if(token?.fingerprint!==fingerprint(value))throw Error('Business evidence changed; prepare again');return value})
   const owner:ApplicationTaskOwner={version:'1',
+   identify:payload=>payloadId(kind,payload),
    prepare:(context:ApplicationTaskContext,payload)=>host.state(context.instanceId,async state=>{
     const id=payloadId(kind,payload),value=evidence(state,kind,id)
     const role=kind==='review'?'counselor':subjectRoleIds[TAXONOMY.findIndex(row=>row.subject===value.subject)]??'teacher'
