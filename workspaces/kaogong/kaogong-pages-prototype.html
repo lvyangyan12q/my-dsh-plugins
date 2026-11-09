@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>考公面板 · 分页交互原型（throwaway）</title>
+<!--
+  THROWAWAY PROTOTYPE —— 不是产品代码。
+  前提：页签结构（N）保留。要解决的是“每个页面内部的点击乱”。
+  五条规矩：
+    1. 页签只负责“去哪”，页面内不再放“去某页”的链接。
+    2. 每页只有一个主按钮；同时最多出现一个（列表用手风琴，一次只展开一行）。
+    3. 行 = 展开/打开；按钮 = 执行。两者不混。
+    4. 刷新、确认这类流程噪音删掉或合并：数据自动刷新，确认只在最后一步出现一次。
+    5. 空态给一个动作，不把用户指回对话。
+  看底部「本页 N 个可点动作」和「对照」：对照会列出这一页被拿掉的东西。
+-->
+<style>
+  :root{
+    --bg:#fbfcf9; --ink:#1c231e; --mut:#6c756c; --line:#e5e8e1; --line2:#eef0ea;
+    --acc:#2f6b58; --acc-soft:#eaf2ee; --red:#c9463f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:radial-gradient(1200px 700px at 50% -10%,#f4f5ef,#e6e9e1 70%);
+    color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55;
+  }
+  .stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:12px;padding:34px 16px 40px}
+  .cap{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#828b80;font-weight:600}
+  .cap b{color:#3c473d}
+  .panel{width:460px;max-width:100%;height:760px;background:var(--bg);border:1px solid #dde1d9;border-radius:16px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 24px 50px -30px rgba(22,32,24,.55)}
+
+  .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px 11px;background:#fff}
+  .hd h1{margin:0;font-size:16px;font-weight:660;letter-spacing:-.01em}
+  .hd .sub{font-size:11px;color:var(--mut);margin-top:2px}
+  .tabs{display:flex;gap:2px;padding:0 10px;background:#fff;border-bottom:1px solid var(--line);overflow:auto}
+  .tab{font-size:12.5px;color:var(--mut);padding:9px 9px 8px;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:0;border-left:0;border-right:0;cursor:pointer;font-family:inherit}
+  .tab.on{color:var(--ink);border-bottom-color:var(--acc);font-weight:600}
+
+  .scroll{flex:1;min-height:0;overflow:auto;padding:0 0 16px}
+  .scroll::-webkit-scrollbar{width:8px}
+  .scroll::-webkit-scrollbar-thumb{background:#dde1d9;border-radius:8px}
+
+  .stats{display:flex;gap:0;border-bottom:1px solid var(--line);background:#fff}
+  .stats>div{flex:1;padding:11px 14px;border-right:1px solid var(--line2)}
+  .stats>div:last-child{border-right:0}
+  .stats b{display:block;font-size:17px;font-weight:650;letter-spacing:-.02em;line-height:1.25}
+  .stats span{font-size:10.5px;color:var(--mut)}
+
+  .sec-h{display:flex;justify-content:space-between;align-items:baseline;padding:16px 18px 4px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:700}
+  .sec-h em{font-style:normal;letter-spacing:0;text-transform:none;font-weight:400;font-size:11.5px}
+
+  .capbox{padding:14px 18px 12px;background:#fff;border-bottom:1px solid var(--line)}
+  .caprow{display:flex;align-items:center;gap:10px}
+  .step{width:30px;height:30px;border-radius:8px;border:1px solid #dfe3db;background:#fff;font-size:15px;line-height:1;color:#39423a;cursor:pointer;font-family:inherit;flex:none}
+  .step:hover{background:#f6f8f3}
+  .step:disabled{opacity:.3;cursor:not-allowed}
+  .capval{display:flex;align-items:baseline;gap:3px;min-width:52px}
+  .capval b{font-size:20px;font-weight:660;letter-spacing:-.02em}
+  .capval span{font-size:11px;color:var(--mut)}
+  .capmeta{margin-left:auto;font-size:11.5px;color:var(--mut);text-align:right}
+  .capnote{padding-top:9px;font-size:11.5px;color:#8b948a}
+  .row.backlog{background:#fbfbf9;cursor:default}
+  .row.backlog .t{color:#8b948a;font-weight:400}
+  .row.backlog:hover{background:#fbfbf9}
+
+  .row{display:flex;align-items:flex-start;gap:10px;width:100%;padding:12px 18px;border-bottom:1px solid var(--line2);background:#fff;text-align:left;cursor:pointer;font-family:inherit}
+  .row:hover{background:#f8faf5}
+  .row .dot{width:6px;height:6px;border-radius:50%;background:#cbd2c7;margin-top:8px;flex:none}
+  .dot.doing{background:#d9a13b}
+  .dot.done{background:#93c2a8}
+  .dot.weak{background:var(--red)}
+  .row .grow{flex:1;min-width:0}
+  .t{font-size:13.5px;font-weight:560;color:#222a24;display:block}
+  .m{font-size:11.5px;color:var(--mut);margin-top:2px;display:block}
+  .row .chev{color:#b6bdb1;font-size:12px;margin-top:4px}
+
+  .fold{padding:0 18px 14px;border-bottom:1px solid var(--line2);background:#fff}
+  .fold p{margin:0 0 10px;font-size:12.5px;color:#4c564e}
+  .primary{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .primary:active{transform:translateY(1px)}
+  .ghost{background:#fff;border:1px solid #dfe3db;border-radius:9px;padding:8px 12px;font-size:12.5px;color:#3d473f;cursor:pointer;font-family:inherit}
+  .quiet{background:none;border:0;color:var(--mut);font-size:12px;cursor:pointer;font-family:inherit;padding:2px 0}
+  .quiet:hover{color:#3d473f}
+  .act{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px 0}
+  .chip{font-size:12px;border:1px solid #dfe3db;background:#fff;border-radius:999px;padding:5px 11px;color:#3d473f;cursor:pointer;font-family:inherit}
+  .chip.on{background:var(--acc-soft);border-color:#cfe0d7;color:var(--acc);font-weight:600}
+  .field{padding:12px 18px 0}
+  .field label{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:5px}
+  select{width:100%;border:1px solid #dfe3db;border-radius:9px;padding:9px 10px;font:inherit;font-size:13px;background:#fff;color:var(--ink)}
+  .btnrow{padding:14px 18px 0}
+  .hint{padding:10px 18px 0;font-size:11.5px;color:var(--mut)}
+  .bar{height:4px;background:#edefe9;border-radius:999px;margin:0 18px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--acc);border-radius:999px}
+  .big{display:flex;align-items:baseline;gap:8px;padding:14px 18px 2px}
+  .big b{font-size:30px;font-weight:680;letter-spacing:-.03em;line-height:1}
+  .big span{font-size:12px;color:var(--mut)}
+  .table{padding:8px 18px 0}
+  .tr{display:grid;grid-template-columns:1fr 64px 56px;gap:8px;padding:9px 0;border-top:1px solid var(--line2);font-size:12.5px;align-items:center}
+  .tr.head{border-top:0;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-weight:700}
+  .tr .r{text-align:right;color:var(--mut)}
+  .srch{display:flex;align-items:center;gap:8px;margin:12px 18px 0;border:1px solid #dfe3db;border-radius:10px;padding:8px 11px;background:#fff}
+  .srch input{flex:1;border:0;outline:0;font:inherit;font-size:13px;background:none;min-width:0}
+
+  .probe{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 14px;border-top:1px solid var(--line);background:#f6f8f2;font-size:11px;color:var(--mut)}
+  .probe .n b{color:var(--acc);font-weight:700}
+  .probe .tools{display:flex;gap:6px}
+  .ptool{font-size:11px;border:1px solid #dfe3db;background:#fff;border-radius:999px;padding:3px 9px;color:#4c564e;cursor:pointer;font-family:inherit}
+  .ptool.on{background:#1f2820;color:#f0f4ee;border-color:#1f2820}
+
+  .cut{margin:14px 18px 0;border:1px dashed #e2c9c6;background:#fdf6f5;border-radius:10px;padding:10px 12px}
+  .cut b{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#a4554d;font-weight:700;margin-bottom:6px}
+  .cut span{display:inline-block;font-size:11.5px;color:#8d5a52;text-decoration:line-through;background:#fff;border:1px solid #f0d9d5;border-radius:6px;padding:3px 7px;margin:0 6px 6px 0}
+
+  .reader{position:absolute;inset:0;background:#fff;z-index:20;display:flex;flex-direction:column;animation:in .16s ease}
+  @keyframes in{from{transform:translateX(18px);opacity:.5}to{transform:none;opacity:1}}
+  .reader header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .reader h3{margin:0;font-size:14px;font-weight:640;flex:1}
+  .reader .body{padding:16px 18px;overflow:auto;font-size:13px;color:#39423a}
+  .reader .body p{margin:0 0 12px}
+
+  .menu{position:absolute;top:52px;right:14px;width:170px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 30px -18px rgba(0,0,0,.4);z-index:30;overflow:hidden}
+  .menu button{display:block;width:100%;text-align:left;padding:10px 12px;font-size:12.5px;border:0;border-bottom:1px solid var(--line2);background:#fff;cursor:pointer;font-family:inherit;color:#39423a}
+  .menu button:last-child{border-bottom:0}
+  .menu button:hover{background:#f8faf5}
+
+  .icobtn{font-size:15px;color:var(--mut);border:1px solid var(--line);border-radius:8px;padding:2px 8px;background:#fff;cursor:pointer;font-family:inherit;line-height:1.4}
+
+  .sheet{position:fixed;top:18px;right:18px;bottom:18px;width:392px;max-width:calc(100vw - 36px);background:#fff;border:1px solid #dde1d9;border-radius:14px;box-shadow:0 24px 60px -30px rgba(0,0,0,.4);z-index:80;display:none;flex-direction:column}
+  .sheet.show{display:flex}
+  .sheet header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .sheet header b{font-size:12.5px;letter-spacing:.04em}
+  .sheet .body{overflow:auto;padding:10px 18px 20px;font-size:12.2px;color:#3d473f}
+  .sheet h5{margin:16px 0 6px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+  .sheet ol{margin:6px 0;padding-left:18px}
+  .sheet li{margin:5px 0}
+  .sheet p{margin:6px 0}
+  .ct{width:100%;border-collapse:collapse;font-size:11.8px}
+  .ct td{border-top:1px solid var(--line2);padding:7px 4px;vertical-align:top}
+  .ct td:first-child{width:34%;font-weight:600;color:#222a24}
+  .ct td:nth-child(2){color:#4c564e}
+  .ct td:last-child{color:#8b948a;width:22%}
+  .x{background:none;border:0;font-size:18px;color:#9aa296;cursor:pointer;line-height:1;padding:2px 4px;font-family:inherit}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(8px);background:#1f2820;color:#f0f4ee;font-size:12px;padding:8px 14px;border-radius:10px;opacity:0;pointer-events:none;transition:.18s;z-index:90;max-width:min(520px,86vw);text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (max-width:520px){.panel{height:calc(100vh - 110px);border-radius:12px}.cap{display:none}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="cap">PROTOTYPE · 六个页签不动 · 只收敛每页内部的点击</div>
+  <div class="panel" id="panel"></div>
+</div>
+<div class="sheet" id="sheet">
+  <header><b>这一页只有几个动作</b><button class="x" id="sheetX">×</button></header>
+  <div class="body" id="sheetBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const TASKS = [
+    {id:"t1", sub:"资料分析", kp:"增长率·混合增长", type:"练习", title:"增长率混合计算 · 10 题", mins:18, status:"doing", why:"最弱考点之一，两天没碰；先做它，后面的增长量才接得上。"},
+    {id:"t2", sub:"判断推理", kp:"图形推理·数量规律", type:"复盘", title:"重做 8 道错题，写清错因", mins:12, status:"todo", why:"错误率 47%，是判断推理里最弱的一块。"},
+    {id:"t3", sub:"申论", kp:"归纳概括", type:"学", title:"讲义《要点合并的 4 种写法》", mins:25, status:"todo", why:"第 3 课留下的课后任务，读完要记 3 条笔记。"},
+    {id:"t4", sub:"常识判断", kp:"时政", type:"学", title:"本周时政速览（10 条）", mins:10, status:"done", why:""},
+    {id:"t5", sub:"言语理解", kp:"逻辑填空·成语辨析", type:"练习", title:"逻辑填空 · 成语辨析 10 题", mins:15, status:"todo", why:"错误率 23%，可提分的中间项。"}
+  ];
+  const WEAK = [
+    {kp:"图形推理·数量规律", sub:"判断推理", wrong:9, total:19, rate:.47, last:["11月5日 · 数量规律漏看交点","11月3日 · 数面数错"]},
+    {kp:"增长率·混合增长", sub:"资料分析", wrong:6, total:18, rate:.33, last:["11月5日 · 混合判断错","11月2日 · 权重算反"]},
+    {kp:"归纳概括·要点合并", sub:"申论", wrong:3, total:9, rate:.33, last:["11月4日 · 要点重复","10月30日 · 漏掉主体"]},
+    {kp:"逻辑填空·成语辨析", sub:"言语理解", wrong:5, total:22, rate:.23, last:["11月3日 · 望文生义","10月29日 · 褒贬误用"]}
+  ];
+  const NOTES = [
+    {t:"数量规律的 3 个入口：点、线、面", kp:"判断推理", kind:"笔记", at:"3 天前", body:"先数点，再数线，最后数面。数量规律题里，点线面三者只会考其一，先看图形的对称与曲直。"},
+    {t:"混合增长：先定区间，再算权重", kp:"资料分析", kind:"讲义", at:"5 天前", body:"混合后的增长率一定落在两个分量之间，且偏向基期量大的一方。先排除区间外的选项。"},
+    {t:"归纳概括：同类合并只留 3 条", kp:"申论", kind:"讲义", at:"1 周前", body:"材料里同义表述先合并，再按主体归类；每条控制在 15 字内。"},
+    {t:"本周时政 · 基层治理 10 条", kp:"常识判断", kind:"时政", at:"昨天", body:"重点记数字与提法：三治融合、网格化管理、接诉即办。"}
+  ];
+  const MODULES = [
+    {s:"资料分析", done:18, all:42, rate:"52%"},
+    {s:"判断推理", done:31, all:56, rate:"61%"},
+    {s:"言语理解", done:24, all:48, rate:"79%"},
+    {s:"申论", done:3, all:12, rate:"—"}
+  ];
+
+  const byId = id => TASKS.find(t => t.id === id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+
+  const S = {
+    tab:"overview", compare:false, sheet:false, menu:null,
+    ov:{open:"t1"},
+    pl:{cap:3, open:null, note:""},
+    pr:{sub:"资料分析", kp:"增长率·混合增长", n:10},
+    er:{open:"0", sub:"all"},
+    pg:{open:null},
+    ma:{q:"", kind:"all", open:null}
+  };
+
+  const TABS = [["overview","总览"],["plan","计划"],["practice","练习"],["errors","错题"],["progress","进度"],["materials","资料库"]];
+
+  /* ---------------- 页面 ---------------- */
+  function pageOV(){
+    return '<div class="stats">' +
+        '<div><b>128</b><span>天后笔试</span></div>' +
+        '<div><b>62%</b><span>计划完成</span></div>' +
+        '<div><b>78%</b><span>做题正确率</span></div>' +
+      '</div>' +
+      '<div class="sec-h"><span>今天 · 4 件</span><em>点一行看为什么现在做</em></div>' +
+      TASKS.filter(t => t.id !== "t5").map(t => {
+        const open = S.ov.open === t.id;
+        return '<button class="row" data-act="ov-row" data-id="' + t.id + '">' +
+            '<span class="dot ' + (t.status === "done" ? "done" : t.status === "doing" ? "doing" : "") + '"></span>' +
+            '<span class="grow"><span class="t">' + esc(t.title) + '</span>' +
+            '<span class="m">' + esc(t.sub) + ' · ' + t.type + ' · ' + t.mins + ' 分钟</span></span>' +
+            '<span class="chev">' + (open ? "▴" : "▾") + '</span></button>' +
+          (open ? '<div class="fold"><p>' + esc(t.why) + '</p>' +
+            '<div class="act"><button class="primary" data-act="ov-start" data-id="' + t.id + '">' +
+            (t.status === "done" ? "回看记录" : t.type === "复盘" ? "开始复盘" : "开始") + '</button>' +
+            '<button class="quiet" data-act="ov-later" data-id="' + t.id + '">稍后</button></div></div>' : '');
+      }).join("") +
+      (S.compare ? '<div class="cut"><b>这一页拿掉了</b>' +
+        ['刷新','查看学习计划','自由练习','错题与复习','练习历史','开始 10 题练习 ×2','去调整','进入历史错题与复习','打开知识库']
+          .map(x => '<span>' + x + '</span>').join("") + '</div>' : '');
+  }
+
+  function pagePL(){
+    const all = TASKS.filter(t => t.id !== "t5");
+    const cap = Math.min(S.pl.cap, all.length);
+    const todayList = all.slice(0, cap);
+    const backlog = all.slice(cap);
+    const mins = todayList.reduce((n,t) => n + t.mins, 0);
+    return '<div class="capbox">' +
+        '<div class="caprow">' +
+          '<button class="step" data-act="pl-dec" ' + (cap <= 1 ? "disabled" : "") + '>−</button>' +
+          '<div class="capval"><b>' + cap + '</b><span>件 / 天</span></div>' +
+          '<button class="step" data-act="pl-inc" ' + (cap >= all.length ? "disabled" : "") + '>+</button>' +
+          '<div class="capmeta">今天 ' + todayList.length + ' 件 · 约 ' + mins + ' 分钟</div>' +
+        '</div>' +
+        '<div class="capnote">' + (S.pl.note || "改一下就重排，没有保存按钮。") + '</div>' +
+      '</div>' +
+      '<div class="sec-h"><span>今天</span><em>本周 14 / 22 件</em></div>' +
+      todayList.map(t => {
+        const open = S.pl.open === t.id;
+        return '<button class="row" data-act="pl-row" data-id="' + t.id + '">' +
+            '<span class="dot ' + (t.status === "done" ? "done" : "") + '"></span>' +
+            '<span class="grow"><span class="t">' + esc(t.title) + '</span>' +
+            '<span class="m">' + esc(t.sub) + ' · ' + t.mins + ' 分钟</span></span>' +
+            '<span class="chev">' + (open ? "▴" : "▾") + '</span></button>' +
+          (open ? '<div class="fold"><p>' + esc(t.why || "已完成，排期保留。") + '</p></div>' : '');
+      }).join("") +
+      (backlog.length ? '<div class="sec-h"><span>待安排</span><em>容量放不下，不会消失</em></div>' +
+        backlog.map(t => '<div class="row backlog"><span class="dot"></span>' +
+          '<span class="grow"><span class="t">' + esc(t.title) + '</span>' +
+          '<span class="m">' + esc(t.sub) + ' · ' + t.mins + ' 分钟 · 等明天</span></span></div>').join("") : '') +
+      '<div class="hint">只排未来未开始的；进行中和已完成的保留。要加任务，在对话里说一句。</div>' +
+      (S.compare ? '<div class="cut"><b>这一页拿掉了</b>' +
+        ['刷新','科目下拉','任务类型下拉','标题输入','要求练习勾选','预览追加任务','预览计划','调整容量 → 2/3/4 三选一','保存']
+          .map(x => '<span>' + x + '</span>').join("") + '</div>' : '');
+  }
+
+  function pagePR(){
+    const subs = ["资料分析","判断推理","言语理解","申论"];
+    const kps = {"资料分析":["增长率·混合增长","增长量","比重"],"判断推理":["图形推理·数量规律","定义判断","类比推理"],"言语理解":["逻辑填空·成语辨析","片段阅读"],"申论":["归纳概括","大作文"]};
+    return '<div class="sec-h"><span>开始一组</span><em>判分由宿主完成</em></div>' +
+      '<div class="chips" style="padding:2px 18px 0">' +
+        subs.map(s => '<button class="chip ' + (S.pr.sub === s ? "on" : "") + '" data-act="pr-sub" data-id="' + s + '">' + s + '</button>').join("") +
+      '</div>' +
+      '<div class="field"><label>考点</label><select id="kpselect">' +
+        (kps[S.pr.sub] || []).map(k => '<option ' + (S.pr.kp === k ? "selected" : "") + '>' + k + '</option>').join("") +
+      '</select></div>' +
+      '<div class="field"><label>题量</label><div class="chips" style="padding:0">' +
+        [10,20].map(n => '<button class="chip ' + (S.pr.n === n ? "on" : "") + '" data-act="pr-n" data-id="' + n + '">' + n + ' 题</button>').join("") +
+      '</div></div>' +
+      '<div class="btnrow"><button class="primary" data-act="pr-start">开始练习 · ' + S.pr.n + ' 题</button></div>' +
+      '<div class="hint">错题会自动进错题本，做完再补错因。</div>' +
+      (S.compare ? '<div class="cut"><b>这一页拿掉了</b>' +
+        ['刷新','练习历史','专项训练 / 错题巩固 两个模式','练习历史下拉选轮次']
+          .map(x => '<span>' + x + '</span>').join("") + '</div>' : '');
+  }
+
+  function pageER(){
+    const list = WEAK;
+    return '<div class="sec-h" style="padding-top:14px"><span>按错误率排</span><em>点一行看最近错题</em></div>' +
+      list.map((w) => {
+        const idx = String(WEAK.indexOf(w));
+        const open = S.er.open === idx;
+        return '<button class="row" data-act="er-row" data-id="' + idx + '">' +
+            '<span class="dot weak"></span>' +
+            '<span class="grow"><span class="t">' + esc(w.kp) + '</span>' +
+            '<span class="m">错 ' + w.wrong + ' / ' + w.total + ' · 错误率 ' + Math.round(w.rate*100) + '%</span></span>' +
+            '<span class="chev">' + (open ? "▴" : "▾") + '</span></button>' +
+          (open ? '<div class="fold"><p>' + w.last.map(x => esc(x)).join('<br>') + '</p>' +
+            '<div class="act"><button class="primary" data-act="er-start" data-id="' + idx + '">开始复盘</button>' +
+            '<button class="quiet" data-act="er-note">看这一课</button></div></div>' : '');
+      }).join("") +
+      (S.compare ? '<div class="cut"><b>这一页拿掉了</b>' +
+        ['刷新','科目筛选 chip ×5','搜索题干','开始复盘 ×4（常驻按钮）','写错因 ×4','我确认课后任务已完成']
+          .map(x => '<span>' + x + '</span>').join("") + '</div>' : '');
+  }
+
+  function pagePG(){
+    return '<div class="big"><b>36</b><span>/ 58 天 · 62%</span></div>' +
+      '<div class="bar"><i style="width:62%"></i></div>' +
+      '<div class="sec-h"><span>模块</span><em>点一行看薄弱考点</em></div>' +
+      '<div class="table"><div class="tr head"><span>科目</span><span class="r">已练</span><span class="r">正确率</span></div>' +
+        MODULES.map((m) => {
+          const open = S.pg.open === m.s;
+          return '<button class="row" style="padding:9px 0;border-top:0;border-bottom:1px solid var(--line2);display:grid;grid-template-columns:1fr 64px 56px;gap:8px" data-act="pg-row" data-id="' + m.s + '">' +
+              '<span style="font-size:12.5px">' + m.s + '</span>' +
+              '<span class="r" style="text-align:right;font-size:12px">' + m.done + '/' + m.all + '</span>' +
+              '<span class="r" style="text-align:right;font-size:12px">' + m.rate + '</span></button>' +
+            (open ? '<div class="fold" style="padding:8px 0 12px;border-bottom:1px solid var(--line2)">' +
+              (WEAK.filter(w => w.sub === m.s).map(w => '<p style="margin:0 0 6px;font-size:12px">' + esc(w.kp) + ' · 错 ' + w.wrong + ' / ' + w.total + '</p>').join("") || '<p style="margin:0;font-size:12px">暂无记录</p>') +
+              '</div>' : '');
+        }).join("") +
+      '</div>' +
+      '<div class="hint">这一页没有按钮。它是用来看的，不是用来做的。</div>' +
+      (S.compare ? '<div class="cut"><b>这一页拿掉了</b>' +
+        ['刷新','查看模块统计','导出记录']
+          .map(x => '<span>' + x + '</span>').join("") + '</div>' : '');
+  }
+
+  function pageMA(){
+    const kinds = ["all","讲义","笔记","时政"];
+    const list = NOTES.filter(n => (S.ma.kind === "all" || n.kind === S.ma.kind) && (!S.ma.q || (n.t + n.kp).indexOf(S.ma.q) >= 0));
+    return '<div class="srch"><span style="color:#a9b1a6;font-size:13px">⌕</span>' +
+        '<input id="mainput" placeholder="搜标题 / 考点 / 正文" value="' + esc(S.ma.q) + '" autocomplete="off" /></div>' +
+      '<div class="chips" style="padding:10px 18px 6px">' +
+        kinds.map(k => '<button class="chip ' + (S.ma.kind === k ? "on" : "") + '" data-act="ma-kind" data-id="' + k + '">' + (k === "all" ? "全部" : k) + '</button>').join("") +
+      '</div>' +
+      list.map((n) => '<button class="row" data-act="ma-open" data-id="' + NOTES.indexOf(n) + '">' +
+          '<span class="grow"><span class="t">' + esc(n.t) + '</span>' +
+          '<span class="m">' + esc(n.kp) + ' · ' + n.kind + ' · ' + n.at + '</span></span>' +
+          '<span class="chev">›</span></button>').join("") +
+      (list.length ? '' : '<div class="hint">没有匹配的资料。换个词，或去对话里让我找。</div>') +
+      (S.compare ? '<div class="cut"><b>这一页拿掉了</b>' +
+        ['刷新','导入 PDF 资料','新建笔记','类型 chip ×4 两处重复']
+          .map(x => '<span>' + x + '</span>').join("") + '</div>' : '');
+  }
+
+  /* ---------------- 壳 ---------------- */
+  function view(){
+    const map = {overview:pageOV, plan:pagePL, practice:pagePR, errors:pageER, progress:pagePG, materials:pageMA};
+    const body = map[S.tab]();
+    const n = (body.match(/data-act=/g) || []).length;
+    return '<header class="hd"><div><h1>考公学习</h1><div class="sub">距笔试 128 天 · 今天 4 件</div></div>' +
+        '<button class="icobtn" data-act="more">⋯</button></header>' +
+      '<nav class="tabs">' + TABS.map(([k,l]) =>
+        '<button class="tab ' + (S.tab === k ? "on" : "") + '" data-act="tab" data-id="' + k + '">' + l + '</button>').join("") + '</nav>' +
+      '<div class="scroll">' + body + '</div>' +
+      (S.ma.open !== null && S.tab === "materials" ? reader(NOTES[S.ma.open]) : '') +
+      (S.menu ? '<div class="menu">' +
+        (S.tab === "practice" ? '<button data-act="m-act">练习历史</button><button data-act="m-act">错题巩固</button>' :
+         S.tab === "materials" ? '<button data-act="m-act">导入 PDF</button><button data-act="m-act">新建笔记</button>' :
+         S.tab === "progress" ? '<button data-act="m-act">导出记录</button>' :
+         '<button data-act="m-act">设置</button><button data-act="m-act">刷新</button>') +
+        '</div>' : '') +
+      '<div class="probe"><span class="n">本页 <b>' + n + '</b> 个可点动作</span>' +
+        '<span class="tools"><button class="ptool ' + (S.compare ? "on" : "") + '" data-act="compare">对照</button>' +
+        '<button class="ptool" data-act="sheet">说明</button></span></div>';
+  }
+
+  function reader(n){
+    return '<div class="reader"><header><button class="quiet" data-act="ma-close">‹ 资料库</button><h3>' + esc(n.t) + '</h3></header>' +
+      '<div class="body"><p class="m" style="margin-bottom:10px">' + esc(n.kp) + ' · ' + n.kind + ' · ' + n.at + '</p>' +
+      '<p>' + esc(n.body) + '</p><p class="m">（原型只有这一层。阅读器、划线、生成卡片是下一步的事。）</p></div></div>';
+  }
+
+  /* ---------------- 交互契约 ---------------- */
+  const CONTRACT = {
+    overview: [
+      ["任务行", "原地展开：为什么现在做 + 一个主按钮", "再点一次收起"],
+      ["开始 / 开始复盘", "进练习，预选该考点", "练习页左上「‹ 总览」"],
+      ["稍后", "移到明天，行变灰", "撤销在「⋯」里"]
+    ],
+    plan: [
+      ["每天 − / +", "点一下立刻重排：多一件从待安排排回今天，少一件退回待安排", "再点一下可逆"],
+      ["任务行", "展开展示“为什么排在这一天”", "再点一次收起"],
+      ["待安排行", "只读，不提供拖拽；放不下就留着", "—"]
+    ],
+    practice: [
+      ["科目 chip", "换科目，考点下拉自动跟着换", "—"],
+      ["题量 chip", "10 / 20，主按钮文案同步", "—"],
+      ["开始练习", "进入答题，判分由宿主完成", "左上返回"]
+    ],
+    errors: [
+      ["（不设筛选）", "考点只有几个，全列出来比筛选更快", "—"],
+      ["考点行", "展开最近两条错题 + 一个主按钮", "再点一次收起"],
+      ["开始复盘", "把该考点错题组一轮", "左上返回"]
+    ],
+    progress: [
+      ["模块行", "展开该科目的薄弱考点", "再点一次收起"],
+      ["（没有按钮）", "这一页只读；导出在「⋯」里", "—"]
+    ],
+    materials: [
+      ["搜索框", "实时过滤，不等“搜索”按钮", "清空恢复"],
+      ["类型 chip", "过滤讲义 / 笔记 / 时政", "—"],
+      ["资料行", "打开阅读器（覆盖层，不跳页）", "左上「‹ 资料库」"]
+    ]
+  };
+
+  function renderSheet(){
+    const rows = (CONTRACT[S.tab] || []).map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td></tr>').join("");
+    document.getElementById("sheetBody").innerHTML = '' +
+      '<h5>五条规矩</h5>' +
+      '<ol>' +
+        '<li><b>页签只负责去哪。</b>页面里不再出现“查看学习计划 / 打开知识库”这类导航链接 —— 那是页签的活。</li>' +
+        '<li><b>每页一个主按钮。</b>列表用手风琴，一次只展开一行，所以主按钮同时最多一个。</li>' +
+        '<li><b>行 = 展开或打开；按钮 = 执行。</b>两者不混，用户不用猜。</li>' +
+        '<li><b>删掉流程噪音。</b>刷新由数据变化触发；确认只在最后一步出现一次。</li>' +
+        '<li><b>空态给动作。</b>不写“请在对话里说……”。</li>' +
+      '</ol>' +
+      '<h5>本页：' + ({overview:"总览",plan:"计划",practice:"练习",errors:"错题",progress:"进度",materials:"资料库"})[S.tab] + '</h5>' +
+      '<table class="ct"><tbody>' + rows + '</tbody></table>' +
+      '<h5>这一页被拿掉的东西</h5>' +
+      '<p>打开底部「对照」看具体清单。原则：凡是不产生结果、只是把用户挪到别处的按钮，都可以删。</p>';
+  }
+
+  /* ---------------- 事件 ---------------- */
+  const panel = document.getElementById("panel");
+  const toastEl = document.getElementById("toast");
+  let tm = 0;
+  function toast(m){ toastEl.textContent = m; toastEl.classList.add("show"); clearTimeout(tm); tm = setTimeout(() => toastEl.classList.remove("show"), 2200); }
+
+  panel.addEventListener("click", function(ev){
+    const el = ev.target.closest("[data-act]");
+    if (!el) return;
+    const act = el.dataset.act, id = el.dataset.id || "";
+    if (act !== "tab" && act !== "compare" && act !== "sheet") S.menu = null;
+    switch (act){
+      case "tab": S.tab = id; S.menu = null; break;
+      case "more": S.menu = S.menu ? null : S.tab; break;
+      case "compare": S.compare = !S.compare; break;
+      case "sheet": S.sheet = !S.sheet; break;
+      case "m-act": S.menu = null; toast("低频动作统一收在「⋯」里：" + el.textContent); break;
+
+      case "ov-row": S.ov.open = S.ov.open === id ? null : id; break;
+      case "ov-start": {
+        const t = byId(id);
+        toast(t.status === "done" ? "打开这一轮记录" : "开始 · " + t.title);
+        S.tab = "practice"; S.pr.sub = t.sub; S.pr.kp = t.kp;
+        break;
+      }
+      case "ov-later": toast("已移到明天，这一行变灰"); break;
+
+      case "pl-row": S.pl.open = S.pl.open === id ? null : id; break;
+      case "pl-inc": {
+        const all = TASKS.filter(t => t.id !== "t5");
+        if (S.pl.cap >= all.length) break;
+        S.pl.cap += 1;
+        const back = all[S.pl.cap - 1];
+        S.pl.note = "已加到 " + S.pl.cap + " 件 · 「" + back.title + "」从待安排排回今天";
+        break;
+      }
+      case "pl-dec": {
+        const all = TASKS.filter(t => t.id !== "t5");
+        if (S.pl.cap <= 1) break;
+        const out = all[S.pl.cap - 1];
+        S.pl.cap -= 1;
+        S.pl.note = "已减到 " + S.pl.cap + " 件 · 「" + out.title + "」退回待安排";
+        break;
+      }
+
+      case "pr-sub": S.pr.sub = id; S.pr.kp = ({资料分析:"增长率·混合增长",判断推理:"图形推理·数量规律",言语理解:"逻辑填空·成语辨析",申论:"归纳概括"})[id]; break;
+      case "pr-n": S.pr.n = Number(id); break;
+      case "pr-start": toast("开始 " + S.pr.sub + " · " + S.pr.kp + " · " + S.pr.n + " 题"); break;
+
+      case "er-row": S.er.open = S.er.open === id ? null : id; break;
+      case "er-start": toast("开始复盘：" + WEAK[Number(id)].kp); break;
+      case "er-note": toast("跳到那一课（原型不复刻课堂）"); break;
+
+      case "pg-row": S.pg.open = S.pg.open === id ? null : id; break;
+
+      case "ma-kind": S.ma.kind = id; break;
+      case "ma-open": S.ma.open = Number(id); break;
+      case "ma-close": S.ma.open = null; break;
+      default: toast("（原型）" + el.textContent.trim().slice(0, 16));
+    }
+    render();
+  });
+
+  panel.addEventListener("input", function(ev){
+    if (ev.target.id === "mainput"){ S.ma.q = ev.target.value; render(); focusEnd("mainput"); }
+  });
+  panel.addEventListener("change", function(ev){
+    if (ev.target.id === "kpselect") S.pr.kp = ev.target.value;
+  });
+  document.addEventListener("keydown", function(ev){
+    if (ev.key === "Escape"){ S.menu = null; S.ma.open = null; S.sheet = false; render(); }
+  });
+  function focusEnd(id){
+    const el = document.getElementById(id);
+    if (el && el.focus){ el.focus(); if (el.setSelectionRange) { const v = el.value; el.setSelectionRange(v.length, v.length); } }
+  }
+
+  function render(){
+    panel.innerHTML = view();
+    document.getElementById("sheet").classList.toggle("show", S.sheet);
+    if (S.sheet) renderSheet();
+  }
+
+  document.getElementById("sheetX").onclick = function(){ S.sheet = false; render(); };
+  render();
+})();
+</script>
+</body>
+</html>

@@ -276,6 +276,26 @@ function setupTerminal(webServer: any, ctx: any) {
   }), 'dsh-worktable: terminal upgrade')
 }
 
+/** Read-only report of the host services this plugin uses on the server. Never throws. */
+function hostCapabilities(ctx: Context): Record<string, boolean> {
+  const out: Record<string, boolean> = {}
+  for (const name of ['webServer', 'connection', 'profileContext', 'sessions']) {
+    let present = false
+    try { present = (ctx as any).get?.(name) !== undefined } catch { present = false }
+    out[name] = present
+  }
+  return out
+}
+
+/** The health route is public by design; internals are reported only to an admitted caller. */
+function admittedCaller(ctx: Context, req: any): boolean {
+  try {
+    const connection = (ctx as any).get?.('connection')
+    if (!connection?.admit) return false
+    return !('rejection' in connection.admit(req))
+  } catch { return false }
+}
+
 export function apply(ctx: Context) {
   const originalServer = (ctx as any).webServer
   const webServer = originalServer ? protectWorktableRoutes(ctx, originalServer) : null
@@ -289,8 +309,13 @@ export function apply(ctx: Context) {
   registerRoute({
     kind: 'exact',
     path: HEALTH_PATH,
-    handler: (_req: any, res: any) => {
-      json(res, 200, { plugin: 'dsh-worktable', version: PLUGIN_VERSION, ok: true })
+    handler: (req: any, res: any) => {
+      json(res, 200, {
+        plugin: 'dsh-worktable',
+        version: PLUGIN_VERSION,
+        ok: true,
+        ...(admittedCaller(ctx, req) ? { hostCapabilities: hostCapabilities(ctx) } : {}),
+      })
     },
   })
 

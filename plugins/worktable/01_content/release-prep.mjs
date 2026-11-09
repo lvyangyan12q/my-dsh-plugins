@@ -2,7 +2,8 @@
  * dsh-worktable 发布准备脚本（本地构建 + 打包 + 消费方验收 合一）
  *
  * 职责边界（与 Codex 审阅结论一致）：
- *   - 只负责：版本一致性检查 → 构建 → 语法检查 → npm pack →
+ *   - 只负责：官方宿主契约门禁（runtime-surface 必跑 + 已知检出追加钉 commit 证据）→
+ *     版本一致性检查 → 构建 → 语法检查 → npm pack →
  *     结构清单断言（package/ 前缀 + 精确 9 文件 + 无源码/无 .map）→
  *     独立临时目录真实安装 + import() 断言 → 双资产从同一已验证包复制 → SHA-256 输出。
  *   - 绝不执行：git 操作 / push / tag / gh release / 任何对外发布动作。
@@ -86,16 +87,33 @@ if (patchOk && (patchEntries[0].id !== IDENTITY || patchEntries[0].name !== IDEN
 if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
-// Verify the fixed official runtime source/toolchain; never grant a version exemption.
+// Verify the official runtime source/toolchain; never grant a version exemption.
 const nativeRoot = process.env.WORKTABLE_NATIVE_RC1_ROOT ?? process.env.WORKTABLE_NATIVE_ALPHA2_ROOT ?? process.env.WORKTABLE_NATIVE_RC3_ROOT ?? process.env.DSH_SOURCE
-if (!nativeRoot) throw new Error('Set WORKTABLE_NATIVE_RC1_ROOT, WORKTABLE_NATIVE_ALPHA2_ROOT or WORKTABLE_NATIVE_RC3_ROOT to the corresponding fixed official checkout')
+if (!nativeRoot) throw new Error('Set WORKTABLE_NATIVE_RC1_ROOT (or WORKTABLE_NATIVE_ALPHA2_ROOT / WORKTABLE_NATIVE_RC3_ROOT) to the corresponding official checkout')
 const nativeVersion = JSON.parse(readFileSync(join(nativeRoot, 'package.json'), 'utf8')).version
-const nativeTest = ['0.2.2-alpha.2', '0.2.2-rc.1'].includes(nativeVersion) ? 'native-alpha2-contracts.test.mjs' : 'native-rc3-contracts.test.mjs'
+// A pinned evidence test runs only for a checkout whose exact identity this repository records.
+// The unpinned forward guard always runs, so a newer official checkout is still gated by it.
+const pinnedNativeTest = {
+  '0.2.2-rc.1': 'native-rc1-contracts.test.mjs',
+  '0.2.2-alpha.2': 'native-alpha2-contracts.test.mjs',
+  '0.2.1-rc.3': 'native-rc3-contracts.test.mjs',
+}[nativeVersion]
+const nativeTests = [...(pinnedNativeTest ? [pinnedNativeTest] : []), 'runtime-surface.test.mjs']
 const nativeLoader = join(nativeRoot, 'node_modules', 'tsx', 'dist', 'loader.mjs')
-const nativeConformance = spawnSync(process.execPath, ['--import', pathToFileURL(nativeLoader).href, '--test', join(HERE, '..', '04_test', nativeTest)], {
-  cwd: HERE, stdio: 'inherit', env: {...process.env, WORKTABLE_NATIVE_RC3_ROOT: nativeRoot, WORKTABLE_NATIVE_ALPHA2_ROOT: nativeRoot, WORKTABLE_NATIVE_RC1_ROOT: nativeVersion === '0.2.2-rc.1' ? nativeRoot : undefined, TSX_TSCONFIG_PATH: join(nativeRoot, 'tsconfig.json')},
-})
-if (nativeConformance.status !== 0) throw new Error('Official runtime public contract release gate failed')
+const nativeEnv = {
+  ...process.env,
+  WORKTABLE_NATIVE_RC1_ROOT: nativeRoot,
+  WORKTABLE_NATIVE_ALPHA2_ROOT: nativeRoot,
+  WORKTABLE_NATIVE_RC3_ROOT: nativeRoot,
+  WORKTABLE_DSH_ROOT: nativeRoot,
+  TSX_TSCONFIG_PATH: join(nativeRoot, 'tsconfig.json'),
+}
+for (const nativeTest of nativeTests) {
+  const nativeConformance = spawnSync(process.execPath, ['--import', pathToFileURL(nativeLoader).href, '--test', join(HERE, '..', '04_test', nativeTest)], {
+    cwd: HERE, stdio: 'inherit', env: nativeEnv,
+  })
+  if (nativeConformance.status !== 0) throw new Error('Official runtime public contract release gate failed: ' + nativeTest)
+}
 
 // ---------- 2. 会话/输入兼容回归 + 构建 + 语法检查 ----------
 const compatTests = ['instance-admission.test.mjs', 'owned-task-http.test.mjs', 'role-source-inspection.test.mjs', 'application-provision.test.mjs', 'application-task-owner.test.mjs', 'private-resource.test.mjs', 'role-history-adoption.test.mjs', 'role-adoption.test.mjs', 'role-adoption-http.test.mjs', 'host-route-lifetime.test.mjs', 'project-navigation.test.mjs', 'annotation-target.test.mjs', 'annotation-input.test.mjs', 'host-input.test.mjs', 'session-compat.test.mjs', 'session-details.test.mjs', 'host-transport.test.mjs', 'widget-mount.test.mjs', 'application-entry.test.mjs', 'application-http.test.mjs', 'application-component.test.mjs', 'directory-refresh.test.mjs', 'data-grants.test.mjs', 'data-grants-http.test.mjs', 'roles.test.mjs', 'capabilities.test.mjs', 'role-native.test.mjs', 'role-panel.test.mjs', 'capability-native.test.mjs', 'role-lifecycle.test.mjs', 'role-navigation.test.mjs', 'tasks.test.mjs', 'task-host.test.mjs', 'task-panel.test.mjs', 'recovery.test.mjs', 'recovery-host.test.mjs', 'recovery-drain.test.mjs', 'recovery-ui.test.mjs', 'sdk.test.mjs', 'presentation.test.mjs', 'lifecycle.test.mjs', 'lifecycle-ui.test.mjs', 'compositions.test.mjs', 'composition-http.test.mjs', 'storage-refusal-http.test.mjs', 'composition-state.test.mjs', 'composition-template.test.mjs', 'composition-sources.test.mjs', 'composition-references.test.mjs', 'composition-editor.test.mjs', 'composition-runtime.test.mjs', 'migrations.test.mjs', 'migration-http.test.mjs', 'migration-resource.test.mjs', 'migration-panel.test.mjs', 'migration-example.test.mjs', 'generation.test.mjs', 'generation-http.test.mjs', 'generation-panel.test.mjs', 'generation-rollback.test.mjs', 'generation-recovery.test.mjs', 'release-immutability.test.mjs', 'web-bridge.test.mjs', 'web-bridge-frame.test.mjs', 'web-bridge-component.test.mjs']

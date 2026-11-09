@@ -1,0 +1,23 @@
+{
+  "runtime": "0.2.2-rc.1",
+  "worktable": {
+    "plugin": "dsh-worktable",
+    "version": "0.10.0-rc.3.13",
+    "ok": true
+  },
+  "bridge": "0.1.1",
+  "checks": {
+    "isolatedBoot": true,
+    "versionExemptions": false,
+    "authenticatedRuns": true,
+    "unauthenticatedDenied": true
+  },
+  "healthRoute": "public by design; reports identity only to anonymous callers",
+  "hostCapabilities": {
+    "webServer": true,
+    "connection": true,
+    "profileContext": true,
+    "sessions": true
+  },
+  "limits": "No model prompts, business fixes, SSH or production data used."
+}

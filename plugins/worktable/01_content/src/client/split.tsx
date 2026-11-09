@@ -1798,7 +1798,7 @@ function ConsoleVideo(props: { src: string; style?: CSSProperties }) {
 
 /** 控制室面板：项目卡片网格（每行 3 张、超出换行）；数据由工作台组装推送（纯读镜像）。
  *  主题：dark/light 直接生效；system = 跟随宿主 html 的 color-scheme（DSH 深色/白色/跟随系统都会反映到它） */
-function ConsolePane() {
+export function ConsolePane() {
   const [, setTick] = useState(0)
   const [now, setNow] = useState(() => Date.now())
   const [cols, setColsState] = useState<number>(() => splitEnv?.console?.getCols?.() ?? 3)

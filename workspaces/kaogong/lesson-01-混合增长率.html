@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>讲义 · 资料分析 · 混合增长率</title>
+<style>
+  :root{
+    --paper:#fdfcf8; --ink:#1f2420; --soft:#4c564e; --mut:#8b948a;
+    --line:#e6e4da; --acc:#2f6b58; --acc-soft:#eef4ef;
+    --warm:#b8892f; --warm-soft:#fbf3e2; --red:#b4453d; --red-soft:#fbeeec;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:#f2f0e9;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    font-size:15.5px;line-height:1.95;-webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{font-family:"Songti SC","STSong","SimSun",Georgia,serif;font-weight:700;letter-spacing:0}
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 22px 80px;display:grid;grid-template-columns:196px minmax(0,760px);gap:44px;align-items:start}
+  .toc{position:sticky;top:26px;font-size:12.5px;line-height:1.7;color:var(--soft)}
+  .toc b{display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+  .toc a{display:block;color:var(--soft);text-decoration:none;padding:3px 0 3px 10px;border-left:2px solid transparent}
+  .toc a:hover{color:var(--acc);border-left-color:var(--acc)}
+  .paper{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:44px 52px 56px;box-shadow:0 20px 50px -40px rgba(30,38,30,.5)}
+
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);font-weight:700}
+  h1{font-size:42px;line-height:1.2;margin:10px 0 8px;letter-spacing:-.01em}
+  .sub{font-size:16px;color:var(--soft);margin:0 0 4px}
+  .meta{font-size:11.5px;color:var(--mut);margin-top:10px}
+  .toolbar{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+  .btn{font:inherit;font-size:12px;border:1px solid #d9d7cc;background:#fff;border-radius:999px;padding:6px 13px;color:#43504a;cursor:pointer}
+  .btn.on{background:#1f2a23;color:#f3f6f1;border-color:#1f2a23}
+
+  h2{font-size:22px;margin:44px 0 12px;padding-top:22px;border-top:1px solid var(--line)}
+  h2:first-of-type{border-top:0;margin-top:34px;padding-top:0}
+  h2 .no{color:var(--mut);font-size:13px;margin-right:8px;font-family:inherit;letter-spacing:.06em}
+  h3{font-size:16px;margin:26px 0 8px}
+  p{margin:10px 0}
+  strong{font-weight:700}
+  em{font-style:normal;background:linear-gradient(180deg,transparent 58%,#f6e7b8 58%);padding:0 2px}
+
+  .bigidea{background:#f4f8f4;border:1px solid #d8e5db;border-left:4px solid var(--acc);border-radius:0 10px 10px 0;padding:18px 20px;margin:22px 0}
+  .bigidea .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);font-weight:700;margin-bottom:6px}
+  .bigidea p{margin:0;font-size:17px;line-height:1.85;font-family:"Songti SC","STSong",serif;font-weight:700}
+
+  .formula{font-family:ui-monospace,Consolas,monospace;font-size:14px;background:#f6f7f2;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:12px 0;overflow:auto;white-space:nowrap}
+
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:6px 0}
+  .tight li{margin:3px 0}
+
+  .steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+  .steps li{counter-increment:s;position:relative;padding:9px 0 9px 42px;border-bottom:1px dashed var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:10px;width:26px;height:26px;border-radius:50%;background:var(--acc-soft);color:var(--acc);font-size:12.5px;font-weight:700;display:grid;place-items:center;font-family:inherit}
+
+  .example{border:1px solid var(--line);border-radius:12px;margin:26px 0;overflow:hidden;background:#fff}
+  .example .head{display:flex;align-items:baseline;gap:10px;padding:12px 18px;background:#f7f8f3;border-bottom:1px solid var(--line);font-size:12px;color:var(--soft)}
+  .example .head b{font-size:13px;color:var(--ink);font-family:inherit}
+  .example .head .t{margin-left:auto;color:var(--mut);font-variant-numeric:tabular-nums}
+  .example .stem{padding:16px 18px 6px}
+  .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px 18px 16px}
+  .opt{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13.5px;text-align:center;color:var(--soft)}
+  .opt.right{border-color:#bcd8c6;background:#f2f8f3;color:var(--acc);font-weight:700}
+  .sols{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+  .sol{padding:14px 18px}
+  .sol+.sol{border-left:1px solid var(--line)}
+  .sol .lab{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--mut);margin-bottom:6px}
+  .sol.fast{background:#fbfcf7}
+  .sol.fast .lab{color:var(--acc)}
+  .sol p{margin:6px 0;font-size:13.8px;line-height:1.85}
+  .sol .time{font-size:11px;color:var(--mut);margin-top:8px}
+  body.fast-only .sol.std{display:none}
+  body.fast-only .sols{grid-template-columns:1fr}
+  body.fast-only .sol+.sol{border-left:0}
+
+  .cross{font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.5;background:#f6f7f2;border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:inline-block;margin:6px 0}
+
+  .trap{background:var(--red-soft);border:1px solid #f0d6d2;border-radius:10px;padding:14px 18px;margin:18px 0}
+  .trap .k{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:6px}
+  .trap p{margin:6px 0;font-size:14px}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:#f7f8f3;font-weight:600;font-size:12.5px;color:var(--soft)}
+
+  .quiz{border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:14px 0;background:#fff}
+  .quiz .q{font-size:14.5px;margin:0 0 6px}
+  .quiz .o{font-size:13px;color:var(--soft);margin:2px 0}
+  details{margin-top:10px}
+  summary{cursor:pointer;font-size:12.5px;color:var(--acc);list-style:none;display:inline-flex;align-items:center;gap:5px}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";font-size:10px}
+  details[open] summary::before{content:"▾"}
+  .ans{margin-top:10px;padding:12px 14px;background:#f7f8f3;border-radius:8px;font-size:13.5px;line-height:1.85}
+  .ans b{color:var(--acc)}
+
+  .loop{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}
+  .loop div{border:1px solid var(--line);border-radius:10px;padding:12px 12px;background:#fff;font-size:12.5px;line-height:1.6}
+  .loop div b{display:block;font-size:12px;color:var(--acc);margin-bottom:4px;letter-spacing:.04em}
+  .loop div span{color:var(--mut);font-size:11.5px}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:18px 0}
+  .card h3{margin-top:0}
+
+  .cheat{background:#1f2a23;color:#eef3ec;border-radius:12px;padding:22px 26px;margin:30px 0}
+  .cheat .k{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#8fb7a1;font-weight:700;margin-bottom:10px}
+  .cheat ol{margin:0;padding-left:20px}
+  .cheat li{margin:7px 0;font-size:14.5px}
+  .cheat code{font-family:ui-monospace,Consolas,monospace;background:#2b3830;border-radius:4px;padding:1px 5px;font-size:12.5px;color:#d8e8dc}
+
+  .foot{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mut)}
+
+  @media (max-width:900px){
+    .wrap{grid-template-columns:1fr;gap:0;padding:18px 12px 60px}
+    .toc{display:none}
+    .paper{padding:28px 22px 36px;border-radius:12px}
+    h1{font-size:32px}
+    .sols{grid-template-columns:1fr}
+    .sol+.sol{border-left:0;border-top:1px solid var(--line)}
+    .opts{grid-template-columns:repeat(2,1fr)}
+    .loop{grid-template-columns:1fr 1fr}
+  }
+  @media print{
+    body{background:#fff;font-size:12pt}
+    .wrap{display:block;padding:0;max-width:none}
+    .toc,.toolbar{display:none}
+    .paper{border:0;box-shadow:none;padding:0;border-radius:0}
+    h2{page-break-after:avoid}
+    .example,.quiz,.cheat{page-break-inside:avoid}
+    body.fast-only .sol.std{display:block}
+    body.fast-only .sols{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="toc">
+    <b>本课目录</b>
+    <a href="#goal">0 · 这节课要会的三件事</a>
+    <a href="#idea">· 一句话主结论</a>
+    <a href="#why">1 · 为什么是这样</a>
+    <a href="#signal">2 · 怎么认出这种题</a>
+    <a href="#std">3 · 标准思路</a>
+    <a href="#fast">4 · 快速思路</a>
+    <a href="#eg">5 · 三道例题</a>
+    <a href="#trap">6 · 三个陷阱</a>
+    <a href="#quiz">7 · 当堂检测</a>
+    <a href="#home">8 · 课后任务</a>
+    <a href="#cheat">9 · 速查卡</a>
+  </aside>
+
+  <main class="paper">
+    <div class="eyebrow">行测 · 资料分析 · 第 1 课</div>
+    <h1>混合增长率</h1>
+    <p class="sub">15 分钟读懂，考场上 30 秒做完一道。</p>
+    <p class="meta">自编讲义 · 例题为教师自编（非真题），专门用来练判型；真题在课后练习里。</p>
+    <div class="toolbar">
+      <button class="btn" id="fastOnly">只看快速思路</button>
+      <button class="btn" id="printBtn">打印 / 存 PDF</button>
+    </div>
+
+    <h2 id="goal"><span class="no">00</span>这节课要会的三件事</h2>
+    <ul class="tight">
+      <li>看到「其中 A 增长 x%，B 增长 y%，合计增长多少」，<strong>立刻认出</strong>这是混合增长率。</li>
+      <li>不列式，用<strong>区间 + 偏向</strong>，20 秒内排掉 2–3 个选项。</li>
+      <li>要算两个部分的量之比时，30 秒写出<strong>十字交叉</strong>，而且知道权重是基期量不是现期量。</li>
+    </ul>
+
+    <div class="bigidea" id="idea">
+      <div class="k">一句话主结论</div>
+      <p>整体的增长率，是两个部分增长率的<u>加权平均</u>；权重是<u>基期量</u>，不是现期量。</p>
+    </div>
+
+    <p>这句话推出来的两条，就是考场上全部的动作：</p>
+    <ol class="tight">
+      <li>整体增长率<strong>一定落在</strong>两个部分增长率之间 —— 用来砍选项。</li>
+      <li>它<strong>更靠近基期量大的那一侧</strong> —— 用来在剩下的选项里二选一。</li>
+    </ol>
+
+    <h2 id="why"><span class="no">01</span>为什么是这样</h2>
+    <p>设两部分基期量分别为 <em>A基</em>、<em>B基</em>，增长率分别为 <em>a</em>、<em>b</em>。</p>
+    <p>整体基期 = A基 + B基；整体现期 = A基(1+a) + B基(1+b)。于是</p>
+    <div class="formula">整体增长率 r = (A基 · a + B基 · b) ÷ (A基 + B基)</div>
+    <p>右边就是一个以 A基、B基 为权重的加权平均。加权平均永远夹在两个数中间，并且被权重大的那个拉过去 —— 这就是全部原理，没有别的。</p>
+    <p>把它反过来用，就得到十字交叉：由 <code>r(A基+B基) = A基·a + B基·b</code> 整理得</p>
+    <div class="formula">A基 : B基 = |b − r| : |r − a|</div>
+    <p>也就是「交叉相减，得到的是<strong>对面</strong>的权重」。这一步很多人背反，下面例题 3 会专门练。</p>
+
+    <h2 id="signal"><span class="no">02</span>怎么认出这种题</h2>
+    <p>题干里出现下面任意一条，先在草稿纸上写「混」，再动笔：</p>
+    <ul class="tight">
+      <li>「其中……增长 x%，……增长 y%，<strong>合计 / 全市 / 全省 / 总体</strong>增长多少」。</li>
+      <li>给了整体增长率和其中一个部分，<strong>反过来求另一个部分</strong>或求两个部分的比例。</li>
+      <li>题干里同时出现「占比」和「增长」 —— 这时先分清<strong>混的是率，还是比重</strong>，两者权重不一样（见第 7 节）。</li>
+    </ul>
+    <p>反过来说：如果题目里只有一个整体、没有任何拆分，那就不是混合，别硬套。</p>
+
+    <h2 id="std"><span class="no">03</span>标准思路（写在本子上，别带上考场）</h2>
+    <ol class="steps">
+      <li><strong>定对象。</strong>谁和谁合成谁。先在纸上写「整体 = A + B」，写不出这句，说明判型没做对。</li>
+      <li><strong>定权重。</strong>增长率混合用<strong>基期量</strong>；比重混合用<strong>现期量</strong>。</li>
+      <li><strong>列式。</strong>r = (A基·a + B基·b) ÷ (A基 + B基)。</li>
+      <li><strong>算。</strong>截位直除，保留两位有效数字就够选。</li>
+    </ol>
+    <p>标准思路的价值是<strong>能算准、能验算</strong>。但它慢，40 秒起步。考场上一半以上的混合增长率题，根本不需要走到第 3 步。</p>
+
+    <h2 id="fast"><span class="no">04</span>快速思路（考场用这个）</h2>
+    <ol class="steps">
+      <li><strong>定区间。</strong>答案在两个部分增长率之间。区间外的选项，直接划掉。这一步 5 秒，通常能砍掉 2 个。</li>
+      <li><strong>定偏向。</strong>看谁的<strong>基期量</strong>大，答案就往谁那边靠。先看它在中点哪一侧，再在同一侧的选项里挑最靠那片的那一个。</li>
+      <li><strong>只剩两个都在同侧时，才动十字交叉。</strong>A基 : B基 = |b − r| : |r − a|。</li>
+    </ol>
+    <div class="trap">
+      <div class="k">快速思路的边界</div>
+      <p>如果两个部分增长率<strong>很接近</strong>（差 1–2 个百分点），或者两个选项都在正确一侧且离得很近，就别硬估 —— 老老实实写十字交叉。快是为了准，不是为了快。</p>
+    </div>
+
+    <h2 id="eg"><span class="no">05</span>三道例题</h2>
+    <p>三道题分别练三件事：<strong>只会区间就能做对</strong>、<strong>区间不够要加偏向</strong>、<strong>要比例才用十字交叉</strong>。</p>
+
+    <div class="example">
+      <div class="head"><b>例 1</b><span>区间排除</span><span class="t">目标 10 秒</span></div>
+      <div class="stem">2023 年某市规上工业中，高技术制造业增加值同比增长 12.4%，装备制造业增长 6.8%。这两类合计的增加值增速约为：</div>
+      <div class="opts">
+        <div class="opt">A. 5.9%</div><div class="opt right">B. 8.7%</div>
+        <div class="opt">C. 12.4%</div><div class="opt">D. 14.6%</div>
+      </div>
+      <div class="sols">
+        <div class="sol std"><div class="lab">标准解</div><p>整体增速一定在 6.8% 与 12.4% 之间。四个选项里只有 8.7% 落在区间内，直接选 B，不用算。</p><div class="time">实际耗时：8 秒</div></div>
+        <div class="sol fast"><div class="lab">快速解</div><p>扫一眼选项：5.9 低于 6.8，12.4 等于其中一个部分值（混合不可能等于部分值），14.6 高于 12.4。三个全出局，剩 B。</p><div class="time">实际耗时：5 秒</div></div>
+      </div>
+    </div>
+
+    <div class="example">
+      <div class="head"><b>例 2</b><span>区间 + 偏向</span><span class="t">目标 20 秒</span></div>
+      <div class="stem">2022 年某市社会消费品零售总额中，城镇 800 亿元、乡村 200 亿元；2023 年城镇零售额同比增长 9.2%，乡村增长 4.6%。2023 年全市社会消费品零售总额增速约为：</div>
+      <div class="opts">
+        <div class="opt">A. 4.2%</div><div class="opt">B. 6.8%</div>
+        <div class="opt right">C. 8.3%</div><div class="opt">D. 9.5%</div>
+      </div>
+      <div class="sols">
+        <div class="sol std"><div class="lab">标准解</div><p>r = (800×9.2% + 200×4.6%) ÷ 1000 = (73.6 + 9.2) ÷ 1000 = <b>8.28%</b>，约 8.3%，选 C。</p><div class="time">实际耗时：40 秒</div></div>
+        <div class="sol fast"><div class="lab">快速解</div><p>区间 4.6–9.2，先划掉 A（4.2）和 D（9.5）。城镇基期 800 是乡村 200 的 4 倍，答案应明显靠 9.2 那侧：8.3 离 9.2 只有 0.9 个点，6.8 离 9.2 有 2.4 个点。选 C。</p><div class="time">实际耗时：15 秒</div></div>
+      </div>
+    </div>
+
+    <div class="example">
+      <div class="head"><b>例 3</b><span>十字交叉求比例</span><span class="t">目标 30 秒</span></div>
+      <div class="stem">2023 年某企业 A 产品销售额同比增长 15%，B 产品增长 5%，两类合计增长 11%。2022 年 A、B 产品销售额之比为：</div>
+      <div class="opts">
+        <div class="opt">A. 2∶3</div><div class="opt right">B. 3∶2</div>
+        <div class="opt">C. 1∶1</div><div class="opt">D. 5∶3</div>
+      </div>
+      <div class="sols">
+        <div class="sol std"><div class="lab">标准解</div><p>设 A基 = x、B基 = y，由 15%x + 5%y = 11%(x+y) 得 4x = 6y，即 x∶y = <b>3∶2</b>。</p><div class="time">实际耗时：60 秒</div></div>
+        <div class="sol fast"><div class="lab">快速解 十字交叉</div>
+          <div class="cross">A  15% ────────  |11 − 5| = 6<br>        11%<br>B   5% ────────  |11 − 15| = 4</div>
+          <p>A基∶B基 = 6∶4 = <b>3∶2</b>。注意 6 是 A 对着的那个数，但它衡量的是 <b>B 的权重</b> —— 交叉相减，得到的是对面的量。</p><div class="time">实际耗时：25 秒</div></div>
+      </div>
+    </div>
+
+    <h2 id="trap"><span class="no">06</span>三个陷阱</h2>
+
+    <h3>陷阱一：权重用成现期量</h3>
+    <p>这是混合增长率里最贵的一个错，也最难自己发现 —— 因为算出来的数看着挺合理。第 8 节检测第 3 题专门设了这个坑，做完回头看。</p>
+
+    <h3>陷阱二：增长率混基期，比重混现期</h3>
+    <table>
+      <tr><th>混的是什么</th><th>权重</th><th>典型问法</th></tr>
+      <tr><td>增长率</td><td><strong>基期量</strong></td><td>合计 / 全市增长百分之几</td></tr>
+      <tr><td>比重、占比、平均数</td><td><strong>现期量</strong>（即分母那个整体量）</td><td>整体占比是多少、平均每人多少</td></tr>
+    </table>
+    <p>一句话记：<em>增长率混的是「去年的量」，比重混的是「今年的量」。</em>看到题先问自己这句。</p>
+
+    <h3>陷阱三：百分点不是增长率</h3>
+    <p>「提高 2 个百分点」「下降 0.8 个百分点」说的是<strong>比重</strong>的变化，是一个减法结果，不能拿去和增长率做加权平均。题干里出现「百分点」，先停下来看清楚混的到底是哪一个量。</p>
+
+    <h2 id="quiz"><span class="no">07</span>当堂检测（3 题，先做再看答案）</h2>
+    <p>每题限时 40 秒。做完再展开解析 —— 直接看答案，这节课就白上了。</p>
+
+    <div class="quiz">
+      <p class="q"><b>1.</b> 2022 年某地城镇居民人均可支配收入 4.2 万元、农村居民 1.8 万元；2023 年城镇增长 5.8%，农村增长 8.4%。2023 年全体居民人均可支配收入增速最接近：</p>
+      <p class="o">A. 5.4%　　B. 6.6%　　C. 8.4%　　D. 9.1%</p>
+      <details><summary>看答案</summary><div class="ans"><b>B。6.6%</b><br>区间 5.8–8.4，A 出局；城镇基期 4.2 万元是农村 1.8 万元的 2.3 倍，偏向 5.8 一侧。精确值 (4.2×5.8 + 1.8×8.4) ÷ 6 = 6.58%。<br>C 是农村的值 —— 混合不可能等于其中一个部分值。</div></details>
+    </div>
+
+    <div class="quiz">
+      <p class="q"><b>2.</b> 某公司上半年营收增长 10%，下半年增长 4%，全年增长 6%。上半年与下半年基期营收之比为：</p>
+      <p class="o">A. 1∶2　　B. 2∶1　　C. 3∶2　　D. 5∶3</p>
+      <details><summary>看答案</summary><div class="ans"><b>A。1∶2</b><br>十字交叉：上半年 ∶ 下半年 = |4 − 6| ∶ |6 − 10| = 2 ∶ 4 = <b>1∶2</b>。<br>验算：(1×10% + 2×4%) ÷ 3 = 6%，对。</div></details>
+    </div>
+
+    <div class="quiz">
+      <p class="q"><b>3.</b>（陷阱题）2023 年 A 区 GDP 增长 20%，B 区增长 0%，2023 年 A 区 GDP 恰好是 B 区的 2 倍。全市 GDP 增速最接近：</p>
+      <p class="o">A. 11.2%　　B. 12.5%　　C. 13.3%　　D. 14.0%</p>
+      <details><summary>看答案</summary><div class="ans"><b>B。12.5%</b><br>2 倍是<b>现期</b>的倍数，不能直接当权重。基期：A = 2 ÷ 1.2 = 1.67，B = 1 ÷ 1.0 = 1。<br>r = (1.67×20% + 1×0%) ÷ 2.67 = <b>12.5%</b>。<br>C 的 13.3% 正是拿现期 2∶1 直接算的结果 —— 这个选项就是为这个错法准备的。</div></details>
+    </div>
+
+    <h2 id="home"><span class="no">08</span>课后任务</h2>
+    <div class="card">
+      <h3 style="margin-bottom:8px">学 → 测 → 练 → 回炉</h3>
+      <div class="loop">
+        <div><b>① 学</b>读完这份讲义<span>15 分钟</span></div>
+        <div><b>② 测</b>上面 3 题当堂检测<span>限时 2 分钟</span></div>
+        <div><b>③ 练</b>混合增长率专项 10 题<span>做完即判分</span></div>
+        <div><b>④ 回炉</b>错的题选错因，同类再 3 题<span>再讲一遍</span></div>
+      </div>
+      <ul class="tight" style="margin-top:14px">
+        <li>练习范围：资料分析 · 增长率混合 · 10 题，做完立刻判分。</li>
+        <li>每道错题<strong>必须选错因</strong>：读题 / 概念 / 公式 / 计算 / 方法选择。不选错因的题，系统不会安排回炉。</li>
+        <li>错 2 题以上：回到第 4 节，把「区间 → 偏向」这两步重读一遍，再做 3 题同类。</li>
+        <li>全对：进入下一课「增长量比较」—— 它是混合增长率的下一环，考法更碎但更快。</li>
+      </ul>
+    </div>
+
+    <h2 id="cheat"><span class="no">09</span>速查卡（考前 30 秒看这个）</h2>
+    <div class="cheat">
+      <div class="k">混合增长率 · 四行</div>
+      <ol>
+        <li>先定区间：r 在两个部分增长率之间 → 砍选项。</li>
+        <li>再定偏向：靠近<strong>基期量大</strong>的一侧。</li>
+        <li>要比例才十字交叉：<code>A基 : B基 = |b − r| : |r − a|</code>（交叉相减，得到对面）。</li>
+        <li>权重别混：增长率用<strong>基期</strong>，比重 / 平均数用<strong>现期</strong>；百分点不是增长率。</li>
+      </ol>
+    </div>
+
+    <div class="foot">
+      行测 · 资料分析 · 第 1 课　｜　讲义自编，例题为教学设计用，非真题。真题与判分在练习与错题回炉里完成。
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var body = document.body;
+  var btn = document.getElementById("fastOnly");
+  btn.addEventListener("click", function(){
+    body.classList.toggle("fast-only");
+    var on = body.classList.contains("fast-only");
+    btn.classList.toggle("on", on);
+    btn.textContent = on ? "显示标准解" : "只看快速思路";
+  });
+  document.getElementById("printBtn").addEventListener("click", function(){ window.print(); });
+})();
+</script>
+</body>
+</html>

@@ -1,14 +1,23 @@
 # 本地派生 Worktable 平台
 
-## DSH 0.2.2-rc.1 compatibility (rc.3.10)
+## DSH compatibility
 
-This candidate adds DSH `0.2.2-rc.1` to the exact host and peer version ranges. Set `WORKTABLE_NATIVE_RC1_ROOT` to the official checkout at `fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159` when packing against rc.1.
+This archive declares `engines.dsh = ">=0.2.2-rc.1 <0.3.0-0"`: every 0.2.2 prerelease or patch from rc.1 on is admitted, and the upper bound stops before the 0.3 line. It is written `<0.3.0-0` because `<0.3.0` would also admit `0.3.0-alpha`. No version exemption is granted.
 
-## DSH 0.2.2-alpha.2 compatibility (rc.3.9)
+The range is an admission promise, not proof of behaviour. The evidence claim is this matrix:
 
-Version 0.10.0-rc.3.9 admits exactly `0.2.1-rc.3 || 0.2.2-alpha.2`; it does not grant version exemptions. The alpha.2 gate uses official revision f3803c96974ad4a94195fb97e5c637e9c2a3afe3. Set WORKTABLE_NATIVE_ALPHA2_ROOT to that built checkout when packing. Keyless final-archive boot evidence is in ../releases/v0.10.0-rc.3.9/host-boot-evidence.json. Model-driven production workflows remain outside this compatibility check.
+| DSH version | Status | Evidence |
+| --- | --- | --- |
+| 0.2.2-rc.1 | verified | `04_test/native-rc1-contracts.test.mjs` (revision fcc0ad46…) and this release's `host-boot-evidence.json` |
+| 0.2.2-alpha.2 | frozen with its archive | `04_test/native-alpha2-contracts.test.mjs` (revision f3803c96…) |
+| 0.2.1-rc.3 | frozen with its archive | `04_test/native-rc3-contracts.test.mjs` (revision 22ddee37…) |
+
+`04_test/runtime-surface.test.mjs` asserts no commit identity and runs on every pack. Red there means the new host needs a plugin change before the range may keep admitting it; do not widen the range to silence it. The worktable's health route is public by design and reports identity only to an anonymous caller; an admitted caller also receives `hostCapabilities`.
+
+Pack against a checkout with `WORKTABLE_NATIVE_RC1_ROOT` (or `WORKTABLE_NATIVE_ALPHA2_ROOT` / `WORKTABLE_NATIVE_RC3_ROOT`). Boot evidence is keyless and isolated: a throwaway `DSH_HOME`, an authenticated health answer, and a 401 for an anonymous caller on the protected route. Model-driven production workflows remain outside this compatibility check.
 
 The original rc.3 delivery notes below describe historical evidence.
+
 
 ## 当前 rc.3 候选与后续版本规则
 

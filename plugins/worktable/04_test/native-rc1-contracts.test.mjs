@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { readFile } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
+import { createRequire } from 'node:module'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { managedAgentDefinition } from '../01_content/src/framework/capability-native.mjs'
+
+const root = process.env.WORKTABLE_NATIVE_RC1_ROOT
+const revision = 'fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159'
+const version = '0.2.2-rc.1'
+const names = ['@deepseek-ai/dsh-tool-fs', '@deepseek-ai/dsh-tool-fs-search', '@deepseek-ai/dsh-tool-ask-user', '@deepseek-ai/dsh-tool-skill', '@deepseek-ai/dsh-persona']
+const definition = () => managedAgentDefinition({ presetId: 'worktable.managed.reader', title: 'Reader', content: 'Read.', skillIds: [], baseComposition: 'workspace-basic-v1' })
+
+// Opt-in evidence checks for one fixed official checkout: never boot a profile or activate tools.
+// An explicit rc.1 root is required; the unpinned forward guard is separate evidence.
+test('fixed official rc.1 public native contracts', { skip: !root }, async t => {
+  assert.equal(execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), revision)
+  const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
+  assert.equal(pkg.version, version)
+  const official = createRequire(join(root, 'apps/cli/package.json'))
+  const registry = createRequire(join(root, 'packages/preset/agent-preset-registry/package.json'))
+  const load = name => import(pathToFileURL(official.resolve(name)).href)
+
+  await t.test('managed definition passes actual exported parser and declared-composition reader', async () => {
+    const { entryListProblem } = await import(pathToFileURL(registry.resolve('@deepseek-ai/dsh-agent-preset-registry')).href)
+    const { definitionComposition } = await import(pathToFileURL(registry.resolve('@deepseek-ai/dsh-agent-preset-registry/src/composition-inventory.ts')).href)
+    const row = definition()
+    assert.equal(entryListProblem(row.plugins), undefined)
+    const result = definitionComposition(row.plugins, () => { throw new Error('fixed declaration has no expressions') })
+    assert.deepEqual(result.rows.map(item => [item.moduleName, item.enabled]), names.map(name => [name, true]))
+    assert.notEqual(entryListProblem([{ config: {} }]), undefined, 'negative control: malformed plugin declarations are refused')
+  })
+
+  await t.test('each managed layer satisfies its actual rc.1 exported Config schema', async t => {
+    for (const row of definition().plugins) await t.test(row.name, async () => {
+      const pkg = await readFile(official.resolve(row.name + '/package.json'), 'utf8')
+      assert.equal(JSON.parse(pkg).version, version)
+      const plugin = await load(row.name)
+      assert.equal(typeof plugin.Config, 'function', 'public Config schema must exist')
+      if (row.name === '@deepseek-ai/dsh-tool-fs-search') {
+        assert.throws(() => new plugin.Config({}), /sampleOverCapGlobResults/, 'negative control: missing deployment choice must fail')
+      }
+      let parsed
+      assert.doesNotThrow(() => { parsed = new plugin.Config(row.config ?? {}) })
+      if (row.name === '@deepseek-ai/dsh-tool-fs-search') assert.equal(parsed.sampleOverCapGlobResults, false)
+    })
+  })
+
+  await t.test('the declared range admits the whole 0.2 line and stops before 0.3', async () => {
+    const boot = createRequire(join(root, 'packages/boot/app-boot/package.json'))
+    const { evaluatePluginCompatibility } = await import(pathToFileURL(boot.resolve('@deepseek-ai/dsh-app-boot/src/plugin-compatibility.ts')).href)
+    const manifest = JSON.parse(await readFile(new URL('../01_content/package.json', import.meta.url), 'utf8'))
+    assert.equal(evaluatePluginCompatibility(manifest, {}, version), undefined, manifest.name)
+    for (const admitted of ['0.2.2', '0.2.3-rc.1', '0.2.99']) {
+      assert.equal(evaluatePluginCompatibility(manifest, {}, admitted), undefined, admitted)
+    }
+    for (const refused of ['0.2.1-rc.3', '0.2.2-alpha.2', '0.3.0-alpha.1', '0.3.0']) {
+      const issue = evaluatePluginCompatibility(manifest, {}, refused)
+      assert.deepEqual(issue?.requirements, { 'engines.dsh': manifest.engines.dsh }, refused)
+      assert.equal(issue?.exempted, false, refused)
+    }
+    const explicitTrial = { [manifest.name + '@' + manifest.version]: ['0.3.0-alpha.1'] }
+    assert.equal(evaluatePluginCompatibility(manifest, explicitTrial, '0.3.0-alpha.1').exempted, true)
+    assert.equal(evaluatePluginCompatibility(manifest, explicitTrial, '0.3.0').exempted, false)
+  })
+})
