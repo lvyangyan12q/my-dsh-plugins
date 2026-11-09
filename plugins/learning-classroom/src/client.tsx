@@ -1,0 +1,5 @@
+export { apply, ClassroomPanel, panelId, panelLabel } from './classroom-panel.tsx'
+export type { ClassroomPanelProps } from './classroom-panel.tsx'
+export { createClassroomClient, classroomEndpoint } from './classroom-client.ts'
+export type { ClassroomClient } from './classroom-client.ts'
+export type { ClassroomCommand, ClassroomSpaceView, ClassroomView, ClassroomVaultView } from './contract.ts'

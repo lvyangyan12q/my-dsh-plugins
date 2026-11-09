@@ -1,0 +1,3 @@
+- insert:
+    - id: learning-classroom
+      name: '@deepseek-ai/dsh-learning-classroom'
