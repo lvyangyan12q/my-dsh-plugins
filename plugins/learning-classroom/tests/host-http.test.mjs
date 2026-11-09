@@ -30,7 +30,8 @@ test('未知 action、未知字段、非 JSON 与不支持的方法一律拒绝�
     const content = await request(fixture.app.handle, { method: 'POST', body: { action: 'vault-choose', path: fixture.vault }, headers: { 'content-type': 'text/plain' } })
     assert.equal(content.status, 415)
 
-    const huge = await fixture.post({ action: 'vault-choose', path: 'x'.repeat(20 * 1024) })
+    // The request cap must stay above one maximal note but still reject junk.
+    const huge = await fixture.post({ action: 'vault-choose', path: 'x'.repeat(2 * 1024 * 1024 + 1024) })
     assert.equal(huge.status, 413)
     assert.equal(huge.body.code, 'request-too-large')
 

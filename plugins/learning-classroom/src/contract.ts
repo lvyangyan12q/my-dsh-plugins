@@ -61,3 +61,43 @@ export type ClassroomCommand =
   | { action: 'space-open'; spaceId: string }
   | { action: 'lecture-list'; spaceId: string }
   | { action: 'lecture-read'; spaceId: string; path: string }
+
+/** One Markdown note, addressed relative to its learning-space folder. */
+export interface NoteSummaryView {
+  path: string
+  name: string
+}
+
+export interface NoteListView {
+  notes: NoteSummaryView[]
+  defaultPath: string
+}
+
+export interface NoteDocumentView {
+  path: string
+  content: string
+  version: string
+  updatedAt: string
+}
+
+export interface NoteSaveView {
+  path: string
+  version: string
+  savedAt: string
+}
+
+export type NoteCommand =
+  | { action: 'note-list'; spaceId: string }
+  | { action: 'note-read'; spaceId: string; path: string }
+  | {
+    action: 'note-save'
+    spaceId: string
+    path: string
+    content: string
+    /** Version read from the file; the save is refused if the file moved on. */
+    version: string
+    /** Explicit learner choice to keep their content over an external edit. */
+    overwrite?: boolean
+  }
+
+export type NoteSaveCommand = Extract<NoteCommand, { action: 'note-save' }>

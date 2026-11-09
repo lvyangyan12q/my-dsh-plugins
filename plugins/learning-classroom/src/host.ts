@@ -3,9 +3,11 @@ import { lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } fr
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import type { ClassroomLectureView, LectureListView, LectureReadView } from './contract.ts'
+import type { ClassroomLectureView, LectureListView, LectureReadView, NoteDocumentView, NoteListView, NoteSaveView } from './contract.ts'
 import { ClassroomError } from './errors.ts'
 import { lectureFileKind, lectureFolder, readLectureMeta, sortLectures } from './lectures.ts'
+import { listNotes, readNote, saveNote } from './notes-io.ts'
+import { maxNoteBytes } from './notes.ts'
 import { defaultNoteContent, defaultNotePath, spaceDirectoryName, spaceFolders } from './spaces.ts'
 import type { ClassroomState, ClassroomStateStore, ClassroomSpace } from './state.ts'
 import { inspectVaultRoot, resolveVaultPath, vaultRelativePath, type VaultProbe } from './vault.ts'
@@ -17,6 +19,8 @@ export const unavailableVaultHint = '请重新选择知识文件库，或修复�
 const lectureHeadBytes = 16 * 1024
 /** Reading a lecture is bounded so a huge file cannot stall the panel. */
 const lectureReadLimit = 2 * 1024 * 1024
+/** JSON bodies carry note text, so the cap allows one maximal note plus framing. */
+const maxRequestBytes = 2 * 1024 * 1024
 
 export const experimentPlaceholder =
   '这是一节动态实验（HTML）。隔离渲染会在后续工单中打开；现在它只出现在目录里，不会把 HTML 直接注入课堂。'
@@ -34,7 +38,7 @@ export interface ClassroomView {
   currentSpaceId: string | null
 }
 
-const knownActions = ['vault-choose', 'space-create', 'space-open', 'lecture-list', 'lecture-read'] as const
+const knownActions = ['vault-choose', 'space-create', 'space-open', 'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save'] as const
 
 const commandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('vault-choose'), path: z.string().min(1).max(4096) }).strict(),
@@ -42,6 +46,20 @@ const commandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('space-open'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({ action: z.literal('lecture-list'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({ action: z.literal('lecture-read'), spaceId: z.string().min(1).max(64), path: z.string().min(1).max(400) }).strict(),
+  z.object({ action: z.literal('note-list'), spaceId: z.string().min(1).max(64) }).strict(),
+  z.object({
+    action: z.literal('note-read'),
+    spaceId: z.string().min(1).max(64),
+    path: z.string().min(1).max(1024),
+  }).strict(),
+  z.object({
+    action: z.literal('note-save'),
+    spaceId: z.string().min(1).max(64),
+    path: z.string().min(1).max(1024),
+    content: z.string().max(maxNoteBytes),
+    version: z.string().min(1).max(128),
+    overwrite: z.boolean().optional(),
+  }).strict(),
 ])
 
 export interface ClassroomHostOptions {
@@ -349,7 +367,34 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
   })
 
-  const dispatch = async (input: unknown): Promise<ClassroomView | LectureListView | LectureReadView> => {
+  const noteList = (spaceId: string) => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    return { notes: await listNotes(root, space.directory, probe), defaultPath: space.notePath }
+  })
+
+  const noteRead = (spaceId: string, path: string) => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    return readNote(root, space.directory, path, probe)
+  })
+
+  const noteSave = (command: {
+    spaceId: string
+    path: string
+    content: string
+    version: string
+    overwrite?: boolean
+  }) => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, command.spaceId)
+    return saveNote(root, space.directory, command.path, command.content, command.version, { overwrite: command.overwrite }, probe)
+  })
+
+  const dispatch = async (input: unknown): Promise<ClassroomView | LectureListView | LectureReadView | NoteListView | NoteDocumentView | NoteSaveView> => {
     const parsed = commandSchema.safeParse(input)
     if (!parsed.success) {
       const action = input !== null && typeof input === 'object' ? (input as { action?: unknown }).action : undefined
@@ -365,6 +410,9 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       case 'space-open': return openSpace(command.spaceId)
       case 'lecture-list': return listLectures(command.spaceId)
       case 'lecture-read': return readLecture(command.spaceId, command.path)
+      case 'note-list': return noteList(command.spaceId)
+      case 'note-read': return noteRead(command.spaceId, command.path)
+      case 'note-save': return noteSave(command)
     }
   }
 
@@ -374,7 +422,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     for await (const chunk of req) {
       const bytes = Buffer.from(chunk)
       size += bytes.length
-      if (size > 16 * 1024) throw new ClassroomError('request-too-large', '请求体过大。', 413)
+      if (size > maxRequestBytes) throw new ClassroomError('request-too-large', '请求体过大。', 413)
       chunks.push(bytes)
     }
     try {

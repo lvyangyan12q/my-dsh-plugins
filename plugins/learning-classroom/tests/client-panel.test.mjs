@@ -53,6 +53,15 @@ function fakeClient(initial) {
     async readLecture(_spaceId, path) {
       throw new Error(`还没有讲义文件：${path}`)
     },
+    async listNotes() {
+      return { notes: [{ path: '笔记/我的笔记.md', name: '我的笔记.md' }], defaultPath: '笔记/我的笔记.md' }
+    },
+    async readNote(_spaceId, path) {
+      return { path, content: '# 我的笔记\n\n', version: 'version-1', updatedAt: '2026-11-09T00:00:00.000Z' }
+    },
+    async saveNote(input) {
+      return { path: input.path, version: 'version-2', savedAt: '2026-11-09T00:01:00.000Z' }
+    },
     set(next) { view = structuredClone(next) },
   }
 }

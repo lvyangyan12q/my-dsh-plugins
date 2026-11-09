@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ClassroomCommand, ClassroomSpaceView, ClassroomView } from './contract.ts'
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
 import { LectureZone } from './lecture-zone.tsx'
+import { NotesZone } from './notes-zone.tsx'
 
 export const panelId = 'learning-classroom'
 export const panelLabel = '学习课堂'
@@ -72,8 +73,7 @@ function ClassroomGrid(props: { client: ClassroomClient; view: ClassroomView; sp
       />
       <section className="lc-pane lc-notes" aria-label="我的笔记">
         <h2>我的笔记</h2>
-        <p className="lc-note-file">{space.notePath}</p>
-        <p>笔记内容将在这里打开和编辑。现在还没有打开任何笔记。</p>
+        <NotesZone client={client} space={space} />
       </section>
       <section className="lc-pane lc-conversation" aria-label="老师对话">
         <h2>老师对话</h2>
