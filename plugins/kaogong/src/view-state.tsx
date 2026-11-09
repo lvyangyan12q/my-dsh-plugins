@@ -82,7 +82,7 @@ export class KaogongViewState {
   }
 
   /** Supersede earlier reads while allowing a pending practice command to survive view transfer. */
-  request(key: 'dashboard' | 'practice' | 'lesson' | 'closeout') {
+  request(key: 'dashboard' | 'practice' | 'lesson' | 'closeout' | 'classroom') {
     const generation = (this.requests.get(key) ?? 0) + 1
     this.requests.set(key, generation)
     return () => this.requests.get(key) === generation

@@ -9,8 +9,10 @@ import { BookOpen, Plus, Save, Check, Link, RefreshCw, Play } from 'lucide-react
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { TAXONOMY } from './taxonomy.ts'
 import type { LessonView } from './lesson-schema.ts'
+import type { StudyPlanState } from './study-plan.ts'
 import type { KaogongViewProps, PracticeContext } from './kaogong-view.tsx'
 import {useLearningHttp,useViewServices} from './view-context.tsx'
+import {pickCurrentLearningTask,readRecentTaskIds,rememberRecentTask,taskStartRevision} from './task-classroom.ts'
 
 /** Only Host responses supply lesson state; browser draft fields never supply scores. */
 export async function lessonRequest<T>(action: string, body: unknown,send:(input:string,init?:RequestInit)=>Promise<Response>=fetch): Promise<T> {
@@ -33,14 +35,20 @@ export function lessonQuizAnswers(value: LessonView | null, questions: readonly 
 }
 
 /** Shared instance-owned lesson UI; practice starts through the existing request/draft owner. */
-export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher'] }) {
+export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday, taskCentered=false }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher']; taskCentered?:boolean }) {
   const http=useLearningHttp()
   const requestLesson=lessonRequest
   const request=<T,>(action:string,body:unknown)=>requestLesson<T>(action,body,http.fetch)
   const owner = useRequestOwner()
-  const [view, setView] = useBusinessState('lesson.view', null)
+  const [storedView, setView] = useBusinessState('lesson.view', null)
   const [list, setList] = useBusinessState('lesson.list', [])
   const [form, setForm] = useBusinessState('lesson.form', false)
+  /** A task classroom only renders its own task; a historical view is not silently reused. */
+  const taskView=!!storedView?.lesson.request.taskId
+  const view=taskCentered&&!taskView?null:storedView
+  const showForm=form&&!taskCentered
+  const [taskStatus,setTaskStatus]=useState<'idle'|'loading'|'empty'|'error'>('idle')
+  const [taskError,setTaskError]=useState('')
   const [draft, setDraft] = useBusinessState('lesson.draft', { id: '', subject: TAXONOMY[0].subject, objective: '', knowledgePoint: '', reflections: true, material: false, legacyNoteId: '' })
   const [notes, setNotes] = useBusinessState('lesson.notes', '')
   const [, setNotesDirty] = useBusinessState('lesson.notesDirty', false)
@@ -80,7 +88,42 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     finally { release(); setBusy(false) }
   }
   useEffect(() => {
+    if (!active || !taskCentered) return
+    const live = owner.request('classroom')
+    if (owner.cell('lesson.view', null).value?.lesson.request.taskId) { setTaskStatus('idle'); setTaskError(''); return }
+    const current = owner.request('lesson')
+    setTaskStatus('loading'); setTaskError('')
+    void (async () => {
+      try {
+        const planResponse = await http.fetch('/api/kaogong/plan', { credentials: 'same-origin' })
+        if (!planResponse.ok) throw new Error(`学习计划读取失败 (${planResponse.status})`)
+        const plan = await planResponse.json() as StudyPlanState
+        if (!current() || !live()) return
+        if (!Array.isArray(plan?.tasks)) throw new Error('学习计划暂不可用，请稍后重试')
+        const task = pickCurrentLearningTask(plan.tasks, readRecentTaskIds(owner.instanceId))
+        if (!task) { if (current() && live()) setTaskStatus('empty'); return }
+        const startResponse = await http.fetch('/api/kaogong/plan/start', { method: 'POST', credentials: 'same-origin',
+          headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: task.id, revision: taskStartRevision(task, plan.revision) }) })
+        const value = await startResponse.json() as { error?: string; lesson?: LessonView }
+        if (!startResponse.ok) throw new Error(value.error ?? '恢复学习任务失败')
+        // Another task entered while this restore was in flight; keep the newer classroom.
+        if (!current() || !live()) return
+        const entered = owner.cell('lesson.view', null).value
+        if (entered?.lesson.request.taskId && entered.lesson.request.taskId !== task.id) { setTaskStatus('idle'); return }
+        if (value.lesson) {
+          owner.resumeLesson(value.lesson, value.lesson.lesson.notes, false)
+          rememberRecentTask(owner.instanceId, task.id)
+          setTaskStatus('idle')
+        } else setTaskStatus('empty')
+      } catch (cause) {
+        if (current() && live()) { setTaskError(cause instanceof Error ? cause.message : '恢复学习任务失败'); setTaskStatus('error') }
+      }
+    })()
+    return () => { owner.request('lesson') }
+  }, [active, taskCentered, owner, http])
+  useEffect(() => {
     if (!active) return
+    if (taskCentered) return
     const current = owner.request('lesson')
     void (async () => {
       try {
@@ -99,7 +142,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       } catch (cause) { if (current()) setError(cause instanceof Error ? cause.message : '课堂读取失败') }
     })()
     return () => { if (current()) owner.request('lesson') }
-  }, [active, owner,http])
+  }, [active, owner,http,taskCentered])
   const context = view ? { subject: view.lesson.request.subject, title: view.lesson.request.objective, limit: 10,
     ...(view.lesson.request.taskId?{taskId:view.lesson.request.taskId,planRevision:view.lesson.request.planRevision}:{}),
     ...(view.lesson.request.knowledgePoint ? { knowledgePoint: view.lesson.request.knowledgePoint } : {}) } : null
@@ -161,15 +204,15 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     <style>{`[aria-label="课堂与课后任务"] input:not([type=checkbox]),[aria-label="课堂与课后任务"] select{max-width:100%;box-sizing:border-box}[aria-label="课堂与课后任务"] form label{display:flex;flex-wrap:wrap;align-items:center;gap:6px}[aria-label="课堂与课后任务"] button{display:inline-flex;align-items:center;gap:4px;min-height:30px;max-width:100%;white-space:normal}[data-section-highlight="true"]{outline:2px solid #b8892f;outline-offset:4px;border-radius:6px;background:#fffaf0}`}</style>
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       <h2 style={{ margin: 0, fontSize: 16 }}>课堂与课后任务</h2>
-      <button data-pwb-button data-variant="primary" title="新建课堂" aria-label="新建课堂" disabled={busy} onClick={() => setForm(!form)}><Plus size={16} />新建课堂</button>
+      {!taskCentered && <button data-pwb-button data-variant="primary" title="新建课堂" aria-label="新建课堂" disabled={busy} onClick={() => setForm(!form)}><Plus size={16} />新建课堂</button>}
       <button data-pwb-button title="刷新课堂" aria-label="刷新课堂" disabled={busy} onClick={() => void run(async () => { setList(await request<typeof list>('list', {})); if (view) setView(await request<LessonView>('read', { lessonId: view.lesson.request.lessonId })) })}><RefreshCw size={16} />刷新课堂</button>
-      {list.length > 0 && <select aria-label="持久课堂" value={view?.lesson.request.lessonId ?? ''} disabled={busy} style={{ maxWidth: '100%' }} onChange={event => { if (event.target.value) void run(async () => accept(await request<LessonView>('select', { lessonId: event.target.value }), true)) }}>
+      {!taskCentered && list.length > 0 && <select aria-label="持久课堂" value={view?.lesson.request.lessonId ?? ''} disabled={busy} style={{ maxWidth: '100%' }} onChange={event => { if (event.target.value) void run(async () => accept(await request<LessonView>('select', { lessonId: event.target.value }), true)) }}>
         <option value="">选择课堂</option>{list.map(row => <option key={row.id} value={row.id}>{row.completed ? '已完成' : '待继续'} · {row.objective}</option>)}
       </select>}
     </header>
     {error && <p role="alert" style={{ color: '#b42318' }}>{error}</p>}
     {quizError && <p role="alert" style={{ color: '#b42318' }}>{quizError}</p>}
-    {form && <form onSubmit={event => { event.preventDefault(); void create() }} style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+    {showForm && <form onSubmit={event => { event.preventDefault(); void create() }} style={{ display: 'grid', gap: 8, marginTop: 12 }}>
       <label>科目 <select aria-label="课堂科目" value={draft.subject} onChange={event => setDraft({ ...draft, subject: event.target.value })}>{TAXONOMY.map(row => <option key={row.subject}>{row.subject}</option>)}</select></label>
       <label>学习目标 <input required maxLength={500} aria-label="学习目标" value={draft.objective} onChange={event => setDraft({ ...draft, objective: event.target.value })} style={{ width: '100%', boxSizing: 'border-box' }} /></label>
       <label>限定考点 <input maxLength={500} aria-label="限定考点" value={draft.knowledgePoint} onChange={event => setDraft({ ...draft, knowledgePoint: event.target.value })} /></label>
@@ -179,7 +222,15 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       <label>旧课堂笔记 ID <input maxLength={500} aria-label="旧课堂笔记 ID" value={draft.legacyNoteId} onChange={event => setDraft({ ...draft, legacyNoteId: event.target.value })} /></label>
       <button data-pwb-button data-variant="primary" disabled={busy} type="submit" style={{ justifySelf: 'start' }}><Save size={14} />确认目标并保存课堂</button>
     </form>}
-    {!view && !form && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+    {!view && !showForm && (taskCentered
+      ? <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+        {taskStatus === 'error'
+          ? <><p role="alert">{taskError}</p>{onReturnToday && <button data-pwb-button type="button" onClick={onReturnToday}>去今日学习</button>}</>
+          : taskStatus === 'empty'
+            ? <><p role="status">还没有学习任务。</p>{onReturnToday && <button data-pwb-button type="button" onClick={onReturnToday}>去今日学习</button>}</>
+            : <p role="status">正在恢复学习任务…</p>}
+      </div>
+      : <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
       <p role="status">还没有选中的课堂。下面先读第 1 课；新建或选择课堂后，讲义与检测按本课目标匹配。</p>
       <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
@@ -188,7 +239,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       {tab === 'handout'
         ? <HandoutView handout={LESSON_CONTENTS[0].handout} />
         : <p role="status">检测要记到课堂记录上：先新建或选择一个课堂，再来做当堂检测。</p>}
-    </div>}
+    </div>)}
     {view && context && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
       <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
