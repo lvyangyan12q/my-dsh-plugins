@@ -1,0 +1,10 @@
+node_modules/
+.test-home/
+tmp-*
+.acl-recovery/
+*.log
+probe.txt
+
+.worktrees/
+.probe/
+

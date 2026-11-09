@@ -1,0 +1,4 @@
+# dsh-paper-reader 服务端插件：注册 /api/paper-reader/* 只读路由
+- insert:
+    - id: dsh-paper-reader
+      name: dsh-paper-reader

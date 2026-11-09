@@ -1,0 +1,615 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-03T09:00:00+08:00",
+  "window": "过去 24 小时",
+  "directions": [
+    {
+      "id": "agent",
+      "label": "Agent",
+      "labelEn": "Agents"
+    },
+    {
+      "id": "reasoning",
+      "label": "推理",
+      "labelEn": "Reasoning"
+    },
+    {
+      "id": "training",
+      "label": "训练",
+      "labelEn": "Training"
+    },
+    {
+      "id": "alignment",
+      "label": "对齐",
+      "labelEn": "Alignment"
+    },
+    {
+      "id": "architecture",
+      "label": "架构",
+      "labelEn": "Architecture"
+    }
+  ],
+  "sources": [
+    {
+      "id": "x",
+      "label": "X",
+      "short": "X"
+    },
+    {
+      "id": "claude",
+      "label": "Claude Blog",
+      "short": "C"
+    },
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "short": "D"
+    }
+  ],
+  "days": [
+    {
+      "date": "2026-11-03",
+      "items": [
+        {
+          "id": "deepseek-v3-2024",
+          "sourceId": "deepseek",
+          "sourceLanguage": "zh",
+          "title": {
+            "original": "DeepSeek-V3 技术报告：更高效的混合专家模型",
+            "translation": "DeepSeek-V3 Technical Report: A More Efficient Mixture-of-Experts Model"
+          },
+          "summary": {
+            "original": "671B 总参数、每个 token 仅激活 37B；靠多头潜在注意力与 DeepSeekMoE，在同等算力下取得更强性能。",
+            "translation": "671B total parameters with only 37B activated per token; multi-head latent attention and DeepSeekMoE deliver stronger results at the same compute budget."
+          },
+          "authors": [
+            "DeepSeek-AI"
+          ],
+          "org": "DeepSeek",
+          "venue": "DeepSeek Technical Report",
+          "published": "2024-12-27",
+          "collectedAt": "2026-11-03T08:48:00+08:00",
+          "direction": "architecture",
+          "tags": [
+            "混合专家",
+            "MoE",
+            "MLA",
+            "预训练"
+          ],
+          "readingMinutes": 16,
+          "excerpt": true,
+          "url": "https://github.com/deepseek-ai/DeepSeek-V3",
+          "translationState": "partial",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "摘要",
+              "translation": "Abstract"
+            },
+            {
+              "type": "paragraph",
+              "original": "我们提出 DeepSeek-V3：一个总参数 671B、每个 token 只激活 37B 的混合专家（MoE）语言模型。架构上采用多头潜在注意力（MLA）压缩键值缓存，并用 DeepSeekMoE 做更细粒度的专家路由。",
+              "translation": "We introduce DeepSeek-V3, a mixture-of-experts language model with 671B total parameters and 37B activated per token. Architecturally it adopts multi-head latent attention (MLA), which compresses the key-value cache, and DeepSeekMoE, which enables finer-grained expert routing."
+            },
+            {
+              "type": "paragraph",
+              "original": "在 14.8T token 的预训练语料上，模型仅用 2.788M H800 GPU 小时完成训练，且训练过程保持稳定。",
+              "translation": null,
+              "translationState": "pending"
+            },
+            {
+              "type": "equation",
+              "display": "h_t = o_t + sum_{i=1}^{N_s} g_{i,t} FFN_i(u_t)",
+              "detail": "N_s = 8 个路由专家，每个 token 另加 1 个共享专家",
+              "label": "(1)",
+              "note": {
+                "original": "DeepSeekMoE 按门控权重求和专家输出；共享专家始终激活，减少路由专家之间的冗余学习。",
+                "translation": "DeepSeekMoE sums expert outputs weighted by the gate; a shared expert stays active, reducing redundancy among routed experts."
+              }
+            },
+            {
+              "type": "figure",
+              "diagram": {
+                "title": "DeepSeek-V3 训练与推理流程",
+                "steps": [
+                  "预训练",
+                  "长上下文扩展",
+                  "监督微调",
+                  "强化学习"
+                ]
+              },
+              "caption": {
+                "original": "示意图：从预训练到强化学习的完整流程。",
+                "translation": "Illustrative pipeline: from pre-training to reinforcement learning."
+              }
+            }
+          ]
+        },
+        {
+          "id": "cot-2022",
+          "sourceId": "x",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models",
+            "translation": "思维链提示：让大模型涌现推理能力"
+          },
+          "summary": {
+            "original": null,
+            "translation": "把中间推理步骤写出来再给答案，推理能力会在足够大的模型中自然涌现；仅用 8 个示例就把 GSM8K 推到当时最优。"
+          },
+          "authors": [
+            "Jason Wei",
+            "Xuezhi Wang",
+            "Dale Schuurmans",
+            "Maarten Bosma",
+            "Brian Ichter",
+            "Fei Xia",
+            "Ed Chi",
+            "Quoc Le",
+            "Denny Zhou"
+          ],
+          "org": "Google Research",
+          "venue": "NeurIPS 2022",
+          "published": "2022-01-28",
+          "collectedAt": "2026-11-03T08:42:00+08:00",
+          "direction": "reasoning",
+          "tags": [
+            "思维链",
+            "少样本",
+            "推理"
+          ],
+          "readingMinutes": 14,
+          "excerpt": true,
+          "url": "https://arxiv.org/abs/2201.11903",
+          "translationState": "complete",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Abstract",
+              "translation": "摘要"
+            },
+            {
+              "type": "paragraph",
+              "original": "We explore how generating a chain of thought — a series of intermediate reasoning steps — significantly improves the ability of large language models to perform complex reasoning. In particular, we show how such reasoning abilities emerge naturally in sufficiently large language models via a simple method called chain-of-thought prompting, where a few chain of thought demonstrations are provided as exemplars in prompting.",
+              "translation": "我们研究“思维链”——一系列中间推理步骤——的生成如何显著提升大语言模型完成复杂推理的能力。具体而言，我们展示了在规模足够大的语言模型中，这种推理能力会借助一种简单的方法自然涌现，即思维链提示：在提示中给出少量包含思维链的示例。"
+            },
+            {
+              "type": "paragraph",
+              "original": "Experiments on three large language models show that chain-of-thought prompting improves performance on a range of arithmetic, commonsense, and symbolic reasoning tasks. The empirical gains can be striking. For instance, prompting a PaLM 540B with just eight chain-of-thought exemplars achieves state-of-the-art accuracy on the GSM8K benchmark of math word problems, surpassing even finetuned GPT-3 with a verifier.",
+              "translation": "在三个大语言模型上的实验表明，思维链提示能提升模型在一系列算术、常识和符号推理任务上的表现。这些实证收益可能非常可观。例如，仅用八个思维链示例提示 PaLM 540B，就能在数学应用题基准 GSM8K 上达到当时最优的准确率，甚至超过带有验证器的微调版 GPT-3。"
+            }
+          ]
+        },
+        {
+          "id": "toolformer-2023",
+          "sourceId": "x",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "Toolformer: Language Models Can Teach Themselves to Use Tools",
+            "translation": "Toolformer：语言模型自学使用工具"
+          },
+          "summary": {
+            "original": null,
+            "translation": "让模型自己生成、执行、筛选 API 调用，再用筛选结果自监督微调——工具使用不必依赖人工标注。"
+          },
+          "authors": [
+            "Timo Schick",
+            "Jane Dwivedi-Yu",
+            "Roberto Dessì",
+            "Roberta Raileanu",
+            "Maria Lomeli",
+            "Luke Zettlemoyer",
+            "Nicola Cancedda",
+            "Thomas Scialom"
+          ],
+          "org": "Meta AI",
+          "venue": "NeurIPS 2023",
+          "published": "2023-02-09",
+          "collectedAt": "2026-11-03T08:40:00+08:00",
+          "direction": "agent",
+          "tags": [
+            "工具使用",
+            "自监督",
+            "API"
+          ],
+          "readingMinutes": 12,
+          "excerpt": true,
+          "url": "https://arxiv.org/abs/2302.04761",
+          "translationState": "complete",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Abstract",
+              "translation": "摘要"
+            },
+            {
+              "type": "paragraph",
+              "original": "Language models (LMs) exhibit remarkable abilities to solve new tasks from just a few examples or textual instructions, especially at scale. They also, paradoxically, struggle with basic functionality, such as arithmetic or factual lookup, where much simpler and smaller models excel. In this paper, we show that LMs can teach themselves to use external tools via simple APIs and achieve the best of both worlds. We introduce Toolformer, a model trained to decide which APIs to call, when to call them, what arguments to pass, and how to best incorporate the results into future token prediction.",
+              "translation": "语言模型展现出非凡的能力：只需少量示例或文本指令就能解决新任务，规模越大越是如此。但矛盾的是，它们在算术或事实查询这类基础功能上却举步维艰，而更简单、更小的模型反而更擅长。本文表明，语言模型可以通过简单的 API 教会自己使用外部工具，从而兼得两者之长。我们提出 Toolformer：一个经过训练的模型，用来决定调用哪些 API、何时调用、传入什么参数，以及如何最好地把结果融入后续的 token 预测。"
+            },
+            {
+              "type": "figure",
+              "diagram": {
+                "title": "原型示意：Toolformer 的自监督工具学习流程",
+                "steps": [
+                  "生成候选 API 调用",
+                  "执行 API",
+                  "按损失筛选",
+                  "用筛选数据微调"
+                ]
+              },
+              "caption": {
+                "original": "Illustrative pipeline: the model proposes API calls, executes them, keeps only calls that reduce the language-modeling loss, and fine-tunes on the filtered data.",
+                "translation": "流程示意：模型为文本位置提出候选 API 调用，执行后只保留能降低语言建模损失的调用，再用筛选出的数据微调模型。"
+              }
+            },
+            {
+              "type": "paragraph",
+              "original": "We evaluate our approach on a variety of downstream tasks and find that Toolformer achieves substantially improved zero-shot performance across a variety of downstream tasks, often competitive with much larger models, without sacrificing its core language modeling abilities.",
+              "translation": "我们在多种下游任务上评估该方法，发现 Toolformer 显著提升了零样本表现，往往能与大得多的模型竞争，同时不牺牲其核心的语言建模能力。"
+            }
+          ]
+        },
+        {
+          "id": "building-agents-2024",
+          "sourceId": "claude",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "Building effective agents",
+            "translation": "构建高效智能体"
+          },
+          "summary": {
+            "original": null,
+            "translation": "Anthropic 工程团队的实践总结：先用最简单、可组合的模式，只有在确实需要时才引入复杂框架。"
+          },
+          "authors": [
+            "Erik Schluntz",
+            "Barry Zhang"
+          ],
+          "org": "Anthropic",
+          "venue": "Anthropic Engineering",
+          "published": "2024-12-19",
+          "collectedAt": "2026-11-03T08:37:00+08:00",
+          "direction": "agent",
+          "tags": [
+            "智能体",
+            "工程实践",
+            "工作流"
+          ],
+          "readingMinutes": 9,
+          "excerpt": true,
+          "url": "https://www.anthropic.com/engineering/building-effective-agents",
+          "translationState": "complete",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Excerpt",
+              "translation": "节选"
+            },
+            {
+              "type": "paragraph",
+              "original": "Over the past year, we've worked with dozens of teams building large language model (LLM) agents across industries. Consistently, the most successful implementations weren't using complex frameworks or specialized libraries. Instead, they were building with simple, composable patterns.",
+              "translation": "过去一年里，我们与数十个团队合作，他们在各行各业构建大语言模型（LLM）智能体。一个反复出现的结论是：最成功的实现并没有使用复杂的框架或专用库，而是采用简单、可组合的模式。"
+            },
+            {
+              "type": "paragraph",
+              "original": "In this post, we share what we've learned from working with teams and from building agents ourselves, and offer practical guidance for developers and customers on how to build effective agents.",
+              "translation": "在本文中，我们分享与团队合作以及我们自己构建智能体的经验，并为开发者和客户提供构建高效智能体的实用建议。"
+            },
+            {
+              "type": "paragraph",
+              "original": "We'll start by defining what agents are, then describe when and how to use them, and finally share some common patterns and best practices.",
+              "translation": "我们首先定义什么是智能体，然后说明何时以及如何使用它们，最后分享一些常见模式和最佳实践。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "items": [
+        {
+          "id": "lora-2021",
+          "sourceId": "x",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "LoRA: Low-Rank Adaptation of Large Language Models",
+            "translation": "LoRA：大模型的低秩适配"
+          },
+          "summary": {
+            "original": null,
+            "translation": "冻结原模型，只训练低秩矩阵；可训练参数少 4 个数量级，显存需求约降 3 倍，推理无额外延迟。"
+          },
+          "authors": [
+            "Edward J. Hu",
+            "Yelong Shen",
+            "Phillip Wallis",
+            "Zeyuan Allen-Zhu",
+            "Yuanzhi Li",
+            "Shean Wang",
+            "Lu Wang",
+            "Weizhu Chen"
+          ],
+          "org": "Microsoft",
+          "venue": "ICLR 2022",
+          "published": "2021-10-16",
+          "collectedAt": "2026-11-02T09:05:00+08:00",
+          "direction": "training",
+          "tags": [
+            "参数高效微调",
+            "低秩分解",
+            "显存"
+          ],
+          "readingMinutes": 11,
+          "excerpt": true,
+          "url": "https://arxiv.org/abs/2106.09685",
+          "translationState": "partial",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Abstract",
+              "translation": "摘要"
+            },
+            {
+              "type": "paragraph",
+              "original": "An important paradigm of natural language processing consists of large-scale pre-training on general domain data and adaptation to particular tasks or domains. As we pre-train larger models, full fine-tuning, which retrains all model parameters, becomes less feasible. Using GPT-3 175B as an example — deploying independent instances of fine-tuned models, each with 175B parameters, is prohibitively expensive. We propose Low-Rank Adaptation, or LoRA, which freezes the pre-trained model weights and injects trainable rank decomposition matrices into each layer of the Transformer architecture, greatly reducing the number of trainable parameters for downstream tasks.",
+              "translation": "自然语言处理的一个重要范式是：先在通用领域数据上大规模预训练，再适配到特定任务或领域。随着预训练的模型越来越大，重新训练全部参数的全量微调变得越来越不可行。以 GPT-3 175B 为例——为每个微调模型部署独立实例、每个实例都有 175B 参数，成本高得难以承受。我们提出低秩适配（LoRA）：冻结预训练模型的权重，在 Transformer 架构的每一层注入可训练的低秩分解矩阵，从而大幅减少下游任务需要训练的参数数量。"
+            },
+            {
+              "type": "paragraph",
+              "original": "Compared to GPT-3 175B fine-tuned with Adam, LoRA can reduce the number of trainable parameters by 10,000 times and the GPU memory requirement by 3 times. LoRA performs on-par or better than fine-tuning in model quality on RoBERTa, DeBERTa, GPT-2, and GPT-3, despite having fewer trainable parameters, a higher training throughput, and, unlike adapters, no additional inference latency.",
+              "translation": null,
+              "translationState": "pending"
+            },
+            {
+              "type": "equation",
+              "display": "ΔW = B A",
+              "detail": "A ∈ ℝ^{r×d},  B ∈ ℝ^{d×r},  r ≪ d",
+              "label": "(1)",
+              "note": {
+                "original": "LoRA keeps the pre-trained weight W frozen and learns a low-rank update ΔW = BA instead.",
+                "translation": "LoRA 保持预训练权重 W 冻结，只学习低秩更新 ΔW = BA。"
+              }
+            },
+            {
+              "type": "paragraph",
+              "original": "LoRA makes training more efficient and lowers the hardware barrier to entry by up to 3 times when using adaptive optimizers since we do not need to calculate the gradients or maintain the optimizer states for most parameters. Instead, we only optimize the injected, much smaller low-rank matrices.",
+              "translation": "LoRA 让训练更高效：使用自适应优化器时，硬件门槛最多降低到原来的三分之一，因为对大多数参数既不需要计算梯度，也不需要维护优化器状态；我们只优化注入的、小得多的低秩矩阵。"
+            }
+          ]
+        },
+        {
+          "id": "instructgpt-2022",
+          "sourceId": "x",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "Training language models to follow instructions with human feedback",
+            "translation": "用人类反馈训练模型遵循指令"
+          },
+          "summary": {
+            "original": null,
+            "translation": "把「遵循意图」当作对齐目标：SFT → 奖励模型 → PPO 三步，让 1.3B 的模型在人类偏好上胜过 175B 的 GPT-3。"
+          },
+          "authors": [
+            "Long Ouyang",
+            "Jeff Wu",
+            "Xu Jiang",
+            "Diogo Almeida",
+            "Carroll L. Wainwright",
+            "Pamela Mishkin",
+            "Chong Zhang",
+            "Sandhini Agarwal",
+            "Katarina Slama",
+            "Alex Ray"
+          ],
+          "org": "OpenAI",
+          "venue": "NeurIPS 2022",
+          "published": "2022-03-04",
+          "collectedAt": "2026-11-02T09:01:00+08:00",
+          "direction": "alignment",
+          "tags": [
+            "RLHF",
+            "对齐",
+            "指令微调"
+          ],
+          "readingMinutes": 13,
+          "excerpt": true,
+          "bookmarked": true,
+          "url": "https://arxiv.org/abs/2203.02155",
+          "translationState": "complete",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Abstract",
+              "translation": "摘要"
+            },
+            {
+              "type": "paragraph",
+              "original": "Making language models bigger does not inherently make them better at following a user's intent. For example, large language models can generate outputs that are untruthful, toxic, or simply not helpful to the user. In other words, these models are not aligned with their users. In this paper, we show an avenue for aligning language models with user intent on a wide range of tasks by fine-tuning with human feedback.",
+              "translation": "把语言模型做大，并不会天然让它更善于遵循用户意图。例如，大语言模型可能生成不真实、有毒或对用户毫无帮助的输出。换言之，这些模型与用户并不对齐。本文展示了一条让语言模型在广泛任务上与用户意图对齐的途径：利用人类反馈进行微调。"
+            },
+            {
+              "type": "paragraph",
+              "original": "We start by training a supervised policy with human demonstrations, then train a reward model on human rankings of model outputs, and finally optimize the policy against the reward model using reinforcement learning. We call this procedure reinforcement learning from human feedback (RLHF).",
+              "translation": "我们首先用人类撰写的示范数据训练一个监督策略，再基于人类对模型输出的排序训练奖励模型，最后用强化学习让策略针对奖励模型进行优化。我们把这一流程称为基于人类反馈的强化学习（RLHF）。"
+            },
+            {
+              "type": "paragraph",
+              "original": "Our labelers prefer outputs from the 1.3B parameter InstructGPT model over outputs from the 175B GPT-3, despite the former being 100x smaller.",
+              "translation": "在人类标注者的偏好中，13 亿参数的 InstructGPT 的输出优于 1750 亿参数的 GPT-3，尽管前者小了 100 倍。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "items": [
+        {
+          "id": "gpt3-2020",
+          "sourceId": "x",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "Language Models are Few-Shot Learners",
+            "translation": "语言模型是少样本学习者"
+          },
+          "summary": {
+            "original": null,
+            "translation": "少样本学习的规模化验证：1750 亿参数、不做梯度更新，仅靠提示中的示例就能完成翻译、问答和算术。"
+          },
+          "authors": [
+            "Tom B. Brown",
+            "Benjamin Mann",
+            "Nick Ryder",
+            "Melanie Subbiah",
+            "Jared Kaplan"
+          ],
+          "org": "OpenAI",
+          "venue": "NeurIPS 2020",
+          "published": "2020-05-28",
+          "collectedAt": "2026-11-01T09:12:00+08:00",
+          "direction": "training",
+          "tags": [
+            "少样本",
+            "规模定律",
+            "175B"
+          ],
+          "readingMinutes": 15,
+          "excerpt": true,
+          "read": true,
+          "url": "https://arxiv.org/abs/2005.14165",
+          "translationState": "complete",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Abstract",
+              "translation": "摘要"
+            },
+            {
+              "type": "paragraph",
+              "original": "Recent work has demonstrated substantial gains on many NLP tasks and benchmarks by pre-training on a large corpus of text followed by fine-tuning on a specific task. While typically task-agnostic in architecture, this method still requires task-specific fine-tuning datasets of thousands or tens of thousands of examples. By contrast, humans can generally perform a new language task from only a few examples or from simple instructions — something which current NLP systems still largely struggle to do. Here we show that scaling up language models greatly improves task-agnostic, few-shot performance, sometimes even reaching competitiveness with prior state-of-the-art fine-tuning approaches. Specifically, we train GPT-3, an autoregressive language model with 175 billion parameters, 10x more than any previous non-sparse language model, and test its performance in the few-shot setting. For all tasks, GPT-3 is applied without any gradient updates or fine-tuning, with tasks and few-shot demonstrations specified purely via text interaction with the model.",
+              "translation": "近期的工作表明，先在大规模文本语料上预训练、再针对特定任务微调，可以在许多 NLP 任务和基准上取得显著提升。这种方法在架构上通常与任务无关，但仍需要数千到数万条任务特定的微调数据。相比之下，人类通常只需少量示例或简单指令就能完成新的语言任务，而当前的 NLP 系统在很大程度上仍难以做到这一点。本文表明，扩大语言模型规模可以大幅提升与任务无关的少样本性能，有时甚至能与此前最优的微调方法相竞争。具体而言，我们训练了 GPT-3，一个拥有 1750 亿参数的自回归语言模型，参数量是此前任何非稀疏语言模型的 10 倍，并在少样本设定下测试其性能。在所有任务中，GPT-3 都不做任何梯度更新或微调，任务和少样本示例完全通过文本交互指定。"
+            }
+          ]
+        },
+        {
+          "id": "transformer-2017",
+          "sourceId": "x",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "Attention Is All You Need",
+            "translation": "注意力就是你所需要的一切"
+          },
+          "summary": {
+            "original": null,
+            "translation": "Transformer 的起点：只用注意力、去掉循环与卷积，训练更并行、效果更好——今天几乎所有大模型的骨架。"
+          },
+          "authors": [
+            "Ashish Vaswani",
+            "Noam Shazeer",
+            "Niki Parmar",
+            "Jakob Uszkoreit",
+            "Llion Jones",
+            "Aidan N. Gomez",
+            "Łukasz Kaiser",
+            "Illia Polosukhin"
+          ],
+          "org": "Google Brain",
+          "venue": "NeurIPS 2017",
+          "published": "2017-06-12",
+          "collectedAt": "2026-11-01T09:08:00+08:00",
+          "direction": "architecture",
+          "tags": [
+            "Transformer",
+            "注意力机制",
+            "并行训练"
+          ],
+          "readingMinutes": 10,
+          "excerpt": true,
+          "read": true,
+          "url": "https://arxiv.org/abs/1706.03762",
+          "translationState": "complete",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Abstract",
+              "translation": "摘要"
+            },
+            {
+              "type": "paragraph",
+              "original": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English-to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU.",
+              "translation": "主流的序列转换模型基于复杂的循环或卷积神经网络，包含编码器和解码器。性能最好的模型还会通过注意力机制连接编码器和解码器。我们提出一种新的简单网络架构——Transformer，它完全基于注意力机制，彻底摒弃了循环与卷积。在两个机器翻译任务上的实验表明，这些模型质量更优，同时更易并行化，训练所需时间显著减少。我们的模型在 WMT 2014 英德翻译任务上取得 28.4 BLEU，比包括集成模型在内的现有最佳结果高出 2 BLEU 以上。"
+            },
+            {
+              "type": "equation",
+              "display": "Attention(Q, K, V) = softmax(QK^{T} / √d_{k}) V",
+              "detail": "",
+              "label": "(1)",
+              "note": {
+                "original": "Scaled dot-product attention: queries and keys are dotted, scaled by 1/√d_k, softmaxed, then used to weight the values.",
+                "translation": "缩放点积注意力：查询 Q 与键 K 做点积，除以 √d_k 后经 softmax，再对值 V 加权求和。"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mcp-2024",
+          "sourceId": "claude",
+          "sourceLanguage": "en",
+          "title": {
+            "original": "Introducing the Model Context Protocol",
+            "translation": "模型上下文协议：把 AI 接入数据与工具"
+          },
+          "summary": {
+            "original": null,
+            "translation": "把数据源和工具抽象成标准接口，让模型以统一方式接入外部系统；MCP 后来成为 Agent 工具生态的常见约定。"
+          },
+          "authors": [
+            "Anthropic"
+          ],
+          "org": "Anthropic",
+          "venue": "Anthropic News",
+          "published": "2024-11-25",
+          "collectedAt": "2026-11-01T09:03:00+08:00",
+          "direction": "agent",
+          "tags": [
+            "MCP",
+            "工具协议",
+            "上下文"
+          ],
+          "readingMinutes": 6,
+          "excerpt": true,
+          "read": true,
+          "url": "https://www.anthropic.com/news/model-context-protocol",
+          "translationState": "complete",
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 1,
+              "original": "Excerpt",
+              "translation": "节选"
+            },
+            {
+              "type": "paragraph",
+              "original": "Today, we're open-sourcing the Model Context Protocol (MCP), a new standard for connecting AI assistants to the systems where data lives, including content repositories, business tools, and development environments. Its aim is to help frontier models produce better, more relevant responses.",
+              "translation": "今天，我们开源了模型上下文协议（MCP）：一个把 AI 助手连接到数据所在系统的新标准，包括内容仓库、业务工具和开发环境。它的目标是帮助前沿模型给出更好、更相关的回答。"
+            },
+            {
+              "type": "paragraph",
+              "original": "Think of MCP like a USB-C port for AI applications. Just as USB-C provides a standardized way to connect electronic devices to various peripherals and accessories, MCP provides a standardized way to connect AI models to different data sources and tools.",
+              "translation": "可以把 MCP 想象成 AI 应用的 USB-C 接口。正如 USB-C 为电子设备连接各种外设和配件提供了标准方式，MCP 也为 AI 模型连接不同数据源和工具提供了标准方式。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

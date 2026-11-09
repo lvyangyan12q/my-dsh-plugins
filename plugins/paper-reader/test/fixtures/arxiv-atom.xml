@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <link href="http://arxiv.org/api/query?search_query=cat:cs.AI" rel="self" type="application/atom+xml"/>
+  <title type="html">ArXiv Query: search_query=cat:cs.AI</title>
+  <id>http://arxiv.org/api/query?search_query=cat:cs.AI</id>
+  <updated>2026-11-05T01:02:03-05:00</updated>
+  <opensearch:totalResults xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">3</opensearch:totalResults>
+  <opensearch:startIndex xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">0</opensearch:startIndex>
+  <opensearch:itemsPerPage xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">100</opensearch:itemsPerPage>
+  <entry>
+    <id>http://arxiv.org/abs/2611.05377v1</id>
+    <updated>2026-11-04T18:59:56Z</updated>
+    <published>2026-11-04T18:59:56Z</published>
+    <title>Agentic Reasoning with Tool-Augmented   Language Models</title>
+    <summary>We study &lt;tool use&gt; in agentic systems, where a model plans,
+      calls tools and revises its answer.
+      Experiments show strong gains on three benchmarks.</summary>
+    <author><name>Ada Lovelace</name></author>
+    <author><name>Alan Turing</name></author>
+    <arxiv:comment xmlns:arxiv="http://arxiv.org/schemas/atom">12 pages, 3 figures</arxiv:comment>
+    <link href="http://arxiv.org/abs/2611.05377v1" rel="alternate" type="text/html"/>
+    <link title="pdf" href="http://arxiv.org/pdf/2611.05377v1" rel="related" type="application/pdf"/>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2611.05380v1</id>
+    <updated>2026-11-04T17:10:00Z</updated>
+    <published>2026-11-04T17:10:00Z</published>
+    <title>Scaling Laws for Efficient Pretraining of Mixture-of-Experts Models</title>
+    <summary>We derive compute-optimal training recipes for sparse models and
+      report gains from better data mixtures and parallelism.</summary>
+    <author><name>Grace Hopper</name></author>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2611.05382v2</id>
+    <updated>2026-11-04T16:00:00Z</updated>
+    <published>2026-11-04T16:00:00Z</published>
+    <title>Preference Optimization and Safety Alignment for Instruction Models</title>
+    <summary>We compare preference objectives and measure jailbreak robustness
+      under a fixed evaluation suite.</summary>
+    <author><name>Katherine Johnson</name></author>
+    <author><name>Dorothy Vaughan</name></author>
+    <author><name>Mary Jackson</name></author>
+    <author><name>Annie Easley</name></author>
+    <arxiv:primary_category xmlns:arxiv="http://arxiv.org/schemas/atom" term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed>
