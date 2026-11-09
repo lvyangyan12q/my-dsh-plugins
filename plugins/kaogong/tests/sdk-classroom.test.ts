@@ -49,6 +49,22 @@ test('owned teaching prepares only persistent references and never calls browser
   assert.deepEqual(calls[0],['owned',{roleId:'counselor',kind:'review',payload:{roundId:'round-a'}}])
 })
 
+test('owned lesson opens its task Session, while a review keeps the counselor Session',async()=>{
+  const {prepareLearningTask}=await import('../src/sdk-classroom.tsx')
+  const opened:unknown[]=[],taskOpened:string[]=[]
+  const roles={ensure:async(id:string)=>({phase:'ready',sessionId:'role-'+id,revision:3}),open:async(...args:unknown[])=>{opened.push(args)}}
+  const tasks={
+    prepare:async()=>({}),
+    prepareOwned:async()=>({id:'prepared',sessionId:'task-session-a',taskSession:{taskId:'task-a',lessonId:'lesson-a',roleId:'teacher.data-analysis',revision:2}}),
+    open:async(taskId:string)=>{taskOpened.push(taskId)},
+  }
+  await prepareLearningTask({instanceId:'learning-a',roles,tasks} as never,{kind:'lesson',context:{subject:'行测-资料分析',title:'学习目标',limit:5},lessonEvidence:{id:'lesson-a',title:'课堂',source:'browser',content:'untrusted'}} as never,null)
+  assert.deepEqual(taskOpened,['task-a'],'准备课堂任务后打开该任务自己的会话')
+  assert.deepEqual(opened,[],'不能把角色会话当作任务会话打开')
+  await prepareLearningTask({instanceId:'learning-a',roles,tasks:{...tasks,prepareOwned:async()=>({id:'review',sessionId:'role-counselor'})}} as never,{kind:'review',context:{},result:{roundId:'round-a'}} as never,null)
+  assert.deepEqual(opened,[['counselor','role-counselor',3]],'讲评仍使用辅导员角色会话')
+})
+
 test('selected role hover stays legible inside the classroom without changing native buttons outside it',async()=>{
  const dom=new JSDOM('<div id="root"></div><button id="native" data-pwb-button aria-pressed="true">Native</button>',{url:'http://localhost'})
  const globals={React,window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true},previous=new Map(Object.keys(globals).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))

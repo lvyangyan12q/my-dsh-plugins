@@ -4,10 +4,11 @@ import type { StudySources } from './study-sources.ts'
 import type { StudyRoles } from './study-roles.ts'
 import type { StudyTeaching } from './study-teaching.ts'
 import type { CurrentStudyHandoff } from './current-study-handoff.ts'
+import type { StudyTaskSessions } from './task-sessions.ts'
 
 /** A small authenticated study command boundary, separate from business routes
  * which always require a Host-registered viewId. */
-export function mountStudyHttp(ctx: Context, workspace: StudyWorkspace, sources: StudySources, roles: StudyRoles, teaching: StudyTeaching, handoff?: CurrentStudyHandoff) {
+export function mountStudyHttp(ctx: Context, workspace: StudyWorkspace, sources: StudySources, roles: StudyRoles, teaching: StudyTeaching, handoff?: CurrentStudyHandoff, classrooms?: StudyTaskSessions) {
   return ctx.webServer.register({ kind: 'exact', path: '/api/kaogong/study', handler: async (req, res) => {
     const send = (status: number, value: unknown) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(value)) }
     const admission = ctx.connection.admit(req)
@@ -43,6 +44,10 @@ export function mountStudyHttp(ctx: Context, workspace: StudyWorkspace, sources:
       }
       if (typeof body.viewId !== 'string') throw Error('需要已登记的学习视图')
       const context = await workspace.resolveView(body.viewId)
+      if (body.action === 'task-session') {
+        if (!classrooms || Object.keys(body).some(key => !['action', 'viewId', 'taskId'].includes(key)) || typeof body.taskId !== 'string') throw Error('任务会话参数无效')
+        send(200, await classrooms.ensure(body.viewId, body.taskId)); return
+      }
       if (typeof body.action === 'string' && body.action.startsWith('task-')) {
         const fields: Record<string, string[]> = {
           'task-list': [], 'task-prepare': ['roleId', 'text', 'contexts'], 'task-prepare-owned': ['roleId', 'kind', 'payload'],

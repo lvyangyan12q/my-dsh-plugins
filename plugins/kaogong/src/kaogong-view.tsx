@@ -45,6 +45,8 @@ export type KaogongViewProps = {
   onClose?: () => void
   /** Explicit user teaching action. Structured evidence is not a Session binding or system instruction. */
   onOpenTeacher: (prompt: string, request: KaogongTeachingRequest, options?: TeachingTaskOptions) => void | Promise<void>
+  /** The learning task currently displayed by the classroom; null when no task classroom is loaded. */
+  onClassroomTask?: (task: {id: string; subject: string} | null) => void
 }
 
 export type TeachingTaskOptions = { beforeSend?: () => void | Promise<void>; afterSend?: () => void | Promise<void> }
@@ -162,7 +164,7 @@ function optionValue(option: string): string {
 }
 
 
-export function KaogongView({ embedded = false, focusedStudy = false, taskCentered = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher, onReturnToday }: KaogongViewProps) {
+export function KaogongView({ embedded = false, focusedStudy = false, taskCentered = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher, onClassroomTask, onReturnToday }: KaogongViewProps) {
   const answerGroupId = useId()
   const http=useLearningHttp()
   const {practiceRequest,readPracticeDraft,savePracticeDraft,readAdmittedReviews,markAdmittedReview}=usePracticeClient()
@@ -428,7 +430,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, taskCenter
             </header>}
             {notice && <div style={{ ...sectionStyle, marginBottom: 14, color: colors.blue, borderColor: '#bfdbfe', background: '#f8fbff' }}>{notice}</div>}
             {error && <div style={{ ...sectionStyle, color: colors.red, borderColor: '#fecaca', background: '#fff1f2' }}>{error}</div>}
-            <div hidden={!shown('classroom')}><LessonPanel taskCentered={taskCentered && shown('classroom')} onReturnToday={onReturnToday} active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {
+            <div hidden={!shown('classroom')}><LessonPanel taskCentered={taskCentered && shown('classroom')} onClassroomTask={onClassroomTask} onReturnToday={onReturnToday} active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {
               await loadPractice(context, [], true)
               onSelectPage?.('practice')
             }} /></div>
