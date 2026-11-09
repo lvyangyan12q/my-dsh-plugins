@@ -315,6 +315,7 @@ export function PaperReaderPage() {
   const [runStatus, setRunStatus] = useState(null)
   const [runStatusError, setRunStatusError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [fetching, setFetching] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [query, setQuery] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -528,6 +529,53 @@ export function PaperReaderPage() {
   }, [applyResults, fetchDay, fetchJson, loadRunStatus, showToast])
 
   useEffect(() => { void load(false) }, [load])
+
+  /* Manual backfill: POST once, then poll the trigger state until it ends. */
+  const fetchPollRef = useRef(0)
+  useEffect(() => () => window.clearInterval(fetchPollRef.current), [])
+  const pollRunState = useCallback(() => {
+    setFetching(true)
+    window.clearInterval(fetchPollRef.current)
+    let ticks = 0
+    fetchPollRef.current = window.setInterval(async () => {
+      ticks += 1
+      try {
+        const response = await fetch('/api/paper-reader/run/state', { cache: 'no-store' })
+        const state = response.ok ? await response.json() : null
+        if (state && !state.running) {
+          window.clearInterval(fetchPollRef.current)
+          setFetching(false)
+          showToast('抓取结束，正在刷新列表')
+          void load(true)
+          return
+        }
+      } catch { /* keep polling; the host may be restarting */ }
+      if (ticks >= 240) {
+        window.clearInterval(fetchPollRef.current)
+        setFetching(false)
+        showToast('抓取仍在进行，稍后点“刷新”查看')
+      }
+    }, 10_000)
+  }, [load, showToast])
+  const triggerRun = useCallback(async () => {
+    try {
+      const response = await fetch('/api/paper-reader/run', { method: 'POST', headers: { accept: 'application/json' } })
+      if (response.status === 409) {
+        showToast('已有抓取在进行，等待完成')
+        pollRunState()
+        return
+      }
+      if (!response.ok) {
+        showToast(`启动抓取失败（HTTP ${response.status}）`)
+        return
+      }
+      showToast('已在后台抓取近 3 天，完成后自动刷新')
+      pollRunState()
+    } catch (error) {
+      showToast(`启动抓取失败：${errorMessage(error)}`)
+    }
+  }, [pollRunState, showToast])
+
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)) } catch { /* storage may be unavailable */ }
   }, [prefs])
@@ -957,6 +1005,16 @@ export function PaperReaderPage() {
             aria-pressed={prefs.outlineOpen}
           >
             <IconOutline />
+          </button>
+          <button
+            type="button"
+            className="pr-ghost-btn"
+            onClick={() => void triggerRun()}
+            disabled={fetching || refreshing}
+            title="手动抓取最近 3 天（缺哪天补哪天，今天总是刷新）"
+          >
+            <span className={fetching ? 'pr-spin' : undefined}><IconSpark /></span>
+            {fetching ? '抓取中' : '抓取近3天'}
           </button>
           <button
             type="button"

@@ -7,6 +7,8 @@
  *   GET /api/paper-reader/digest/<date>   -> one stored day
  *   GET /api/paper-reader/digest          -> legacy single-file digest
  *   GET /api/paper-reader/health          -> liveness
+ *   POST /api/paper-reader/run            -> start a 3-day backfill (manual)
+ *   GET /api/paper-reader/run/state       -> is a manual backfill running?
  *
  * Day files live at `$DSH_HOME/paper-reader/digest/YYYY-MM-DD.json` with the
  * index at `$DSH_HOME/paper-reader/index.json` (see src/storage.js). The legacy
@@ -22,6 +24,7 @@ import { fileURLToPath } from 'node:url'
 import { MAX_DAY_BYTES, readDayDigest, readIndex } from './storage.js'
 import { validateDigest } from './shared/schema.js'
 import { readRunStatus } from './status.js'
+import { createRunTrigger } from './run-trigger.js'
 
 export const name = 'dsh-paper-reader'
 export const inject = ['webServer']
@@ -33,7 +36,14 @@ const DIGEST_ROUTE = '/api/paper-reader/digest'
 // would become `p//<anything>` and miss every real date URL.
 const DIGEST_DATE_PREFIX = DIGEST_ROUTE
 const HEALTH_ROUTE = '/api/paper-reader/health'
+const RUN_ROUTE = '/api/paper-reader/run'
+const RUN_STATE_ROUTE = '/api/paper-reader/run/state'
 const SAMPLE_PATH = fileURLToPath(new URL('../sample/digest.json', import.meta.url))
+const PLUGIN_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const runTrigger = createRunTrigger({
+  scriptPath: join(PLUGIN_ROOT, 'scripts', 'backfill-days.mjs'),
+  cwd: PLUGIN_ROOT,
+})
 
 /** Write one JSON response with no-store caching. */
 function json(res, status, value) {
@@ -111,14 +121,14 @@ async function readLegacyDigest(ctx) {
 }
 
 /** Apply the host browser-session admission when the runtime provides it. */
-function admissionStatus(ctx, req) {
+function admissionStatus(ctx, req, { required = false } = {}) {
   let connection
   try {
     connection = ctx.get?.('connection')
   } catch {
     connection = undefined
   }
-  if (!connection || typeof connection.admit !== 'function') return null
+  if (!connection || typeof connection.admit !== 'function') return required ? 403 : null
   const result = connection.admit(req)
   if (result && typeof result === 'object' && 'rejection' in result) return result.rejection || 403
   return null
@@ -247,6 +257,36 @@ export function apply(ctx) {
       }),
     }),
     'dsh-paper-reader: by-date digest route',
+  )
+
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: 'exact',
+      path: RUN_ROUTE,
+      handler: (req, res) => {
+        if (req.method !== 'POST') {
+          json(res, 405, { error: 'method_not_allowed' })
+          return
+        }
+        const rejected = admissionStatus(ctx, req, { required: true })
+        if (rejected) {
+          json(res, rejected, { error: 'forbidden' })
+          return
+        }
+        const { started, run } = runTrigger.start()
+        json(res, started ? 202 : 409, { started, run })
+      },
+    }),
+    'dsh-paper-reader: manual run route',
+  )
+
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: 'exact',
+      path: RUN_STATE_ROUTE,
+      handler: (req, res) => guard(ctx, req, res, () => runTrigger.state()),
+    }),
+    'dsh-paper-reader: manual run state route',
   )
 
   ctx.effect(

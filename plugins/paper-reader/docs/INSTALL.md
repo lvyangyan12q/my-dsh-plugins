@@ -7,7 +7,7 @@
 
 | 项 | 要求 |
 |---|---|
-| DSH | **固定 `0.2.2-alpha.2`**（`package.json` 的 `engines.dsh`） |
+| DSH | `0.2.2-alpha.2` 或 `0.2.2-rc.1`（`package.json` 的 `engines.dsh`） |
 | Node.js | `>=22` |
 | 包管理 | `pnpm` 在 `PATH` 上（`dsh plugin` 会转发给 pnpm） |
 | 数据目录 | `$DSH_HOME/paper-reader`，默认 `C:\Users\<你>\.dsh\paper-reader` |
@@ -211,7 +211,7 @@ dsh plugin --profile web remove dsh-paper-reader
 
 ## 版本锁定与不匹配拒绝加载
 
-- 插件把 DSH 版本固定在 `package.json` 的 `engines.dsh: "0.2.2-alpha.2"`，Node 固定在
+- 插件把 DSH 版本限定在 `package.json` 的 `engines.dsh` 范围内，Node 固定在
   `engines.node: ">=22"`。这是已验证的宿主契约，不承诺向前兼容。
 - 安装或激活时，DSH 插件管理器会校验 `engines.dsh`（以及声明的 DSH peer 包）。不匹配会被拒绝，
   错误码为 `incompatible-version`，拒绝信息会列出包名、版本、当前 runtime 与未满足的

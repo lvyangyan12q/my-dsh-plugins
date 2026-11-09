@@ -2364,6 +2364,9 @@ function IconLink() {
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" })
   ] });
 }
+function IconSpark() {
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg", { ...SVG, width: 14, height: 14, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { d: "M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" }) });
+}
 function renderMath(text2) {
   const source = typeof text2 === "string" ? text2 : "";
   const regex = /(\^\{[^}]*\}|_\{[^}]*\})/;
@@ -2449,6 +2452,7 @@ function PaperReaderPage() {
   const [runStatus, setRunStatus] = (0, import_react.useState)(null);
   const [runStatusError, setRunStatusError] = (0, import_react.useState)("");
   const [refreshing, setRefreshing] = (0, import_react.useState)(false);
+  const [fetching, setFetching] = (0, import_react.useState)(false);
   const [loadingMore, setLoadingMore] = (0, import_react.useState)(false);
   const [query, setQuery] = (0, import_react.useState)("");
   const [drawerOpen, setDrawerOpen] = (0, import_react.useState)(false);
@@ -2624,6 +2628,51 @@ function PaperReaderPage() {
   (0, import_react.useEffect)(() => {
     void load(false);
   }, [load]);
+  const fetchPollRef = (0, import_react.useRef)(0);
+  (0, import_react.useEffect)(() => () => window.clearInterval(fetchPollRef.current), []);
+  const pollRunState = (0, import_react.useCallback)(() => {
+    setFetching(true);
+    window.clearInterval(fetchPollRef.current);
+    let ticks = 0;
+    fetchPollRef.current = window.setInterval(async () => {
+      ticks += 1;
+      try {
+        const response = await fetch("/api/paper-reader/run/state", { cache: "no-store" });
+        const state = response.ok ? await response.json() : null;
+        if (state && !state.running) {
+          window.clearInterval(fetchPollRef.current);
+          setFetching(false);
+          showToast("\u6293\u53D6\u7ED3\u675F\uFF0C\u6B63\u5728\u5237\u65B0\u5217\u8868");
+          void load(true);
+          return;
+        }
+      } catch {
+      }
+      if (ticks >= 240) {
+        window.clearInterval(fetchPollRef.current);
+        setFetching(false);
+        showToast("\u6293\u53D6\u4ECD\u5728\u8FDB\u884C\uFF0C\u7A0D\u540E\u70B9\u201C\u5237\u65B0\u201D\u67E5\u770B");
+      }
+    }, 1e4);
+  }, [load, showToast]);
+  const triggerRun = (0, import_react.useCallback)(async () => {
+    try {
+      const response = await fetch("/api/paper-reader/run", { method: "POST", headers: { accept: "application/json" } });
+      if (response.status === 409) {
+        showToast("\u5DF2\u6709\u6293\u53D6\u5728\u8FDB\u884C\uFF0C\u7B49\u5F85\u5B8C\u6210");
+        pollRunState();
+        return;
+      }
+      if (!response.ok) {
+        showToast(`\u542F\u52A8\u6293\u53D6\u5931\u8D25\uFF08HTTP ${response.status}\uFF09`);
+        return;
+      }
+      showToast("\u5DF2\u5728\u540E\u53F0\u6293\u53D6\u8FD1 3 \u5929\uFF0C\u5B8C\u6210\u540E\u81EA\u52A8\u5237\u65B0");
+      pollRunState();
+    } catch (error) {
+      showToast(`\u542F\u52A8\u6293\u53D6\u5931\u8D25\uFF1A${errorMessage(error)}`);
+    }
+  }, [pollRunState, showToast]);
   (0, import_react.useEffect)(() => {
     try {
       localStorage.setItem(STORAGE_KEY2, JSON.stringify(prefs));
@@ -2983,6 +3032,20 @@ function PaperReaderPage() {
             "aria-label": "\u5207\u6362\u672C\u6587\u5927\u7EB2",
             "aria-pressed": prefs.outlineOpen,
             children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconOutline, {})
+          }
+        ),
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+          "button",
+          {
+            type: "button",
+            className: "pr-ghost-btn",
+            onClick: () => void triggerRun(),
+            disabled: fetching || refreshing,
+            title: "\u624B\u52A8\u6293\u53D6\u6700\u8FD1 3 \u5929\uFF08\u7F3A\u54EA\u5929\u8865\u54EA\u5929\uFF0C\u4ECA\u5929\u603B\u662F\u5237\u65B0\uFF09",
+            children: [
+              /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: fetching ? "pr-spin" : void 0, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconSpark, {}) }),
+              fetching ? "\u6293\u53D6\u4E2D" : "\u6293\u53D6\u8FD13\u5929"
+            ]
           }
         ),
         /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(

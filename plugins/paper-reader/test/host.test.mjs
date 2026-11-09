@@ -85,6 +85,26 @@ test('registers both routes with GET handlers', () => {
   assert.ok(routes.has('/api/paper-reader/status'))
 })
 
+test('the manual run route refuses GET and passes admission through', async () => {
+  assert.ok(routes.has('/api/paper-reader/run'))
+  assert.ok(routes.has('/api/paper-reader/run/state'))
+
+  const state = await call('/api/paper-reader/run/state')
+  assert.equal(state.status, 200)
+  assert.equal(JSON.parse(state.body).running, false)
+
+  const wrongMethod = await call('/api/paper-reader/run')
+  assert.equal(wrongMethod.status, 405)
+
+  const noAdmissionService = await call('/api/paper-reader/run', 'POST')
+  assert.equal(noAdmissionService.status, 403)
+
+  connection = { admit: () => ({ rejection: 403 }) }
+  const rejected = await call('/api/paper-reader/run', 'POST')
+  assert.equal(rejected.status, 403)
+  connection = null
+})
+
 test('missing user digest falls back to the bundled sample marked demo', async () => {
   const response = await call('/api/paper-reader/digest')
   assert.equal(response.status, 200)

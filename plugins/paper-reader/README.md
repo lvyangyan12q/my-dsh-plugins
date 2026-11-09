@@ -31,7 +31,7 @@ dsh plugin --profile web add "F:\ai-project\my-dsh-plugins\plugins\paper-reader"
 
 完整的安装、启用、每日 09:00 DSH Schedule 配置、手动补跑、升级、卸载、回退与版本锁定说明见 **[docs/INSTALL.md](docs/INSTALL.md)**。
 
-> 当前包按 DSH `0.2.2-alpha.2` 的客户端契约开发；其他宿主版本可能在安装时被 `engines.dsh` 拒绝。
+> 当前包声明支持 DSH `0.2.2-alpha.2` 和 `0.2.2-rc.1`。
 
 ## 数据：agent 每日写入
 
@@ -143,7 +143,7 @@ node build.mjs
 
 - 抓取、抽取与翻译由外部 CLI 完成；DSH 插件本身仍只读、不发起模型调用、不保存密钥、不访问外网。
 - `sample/digest.json` 是演示数据，不是真实抓取结果。
-- 当前版本在 DSH `0.2.2-alpha.2` 的客户端契约上开发；`package.json` 的 `engines.dsh` 固定为该版本，升级 DSH 后需按新契约复验。
+- 升级到 `engines.dsh` 范围之外的宿主版本时，需按新契约复验。
 - 已在隔离的 DOM 环境验证列表、筛选、搜索、三种模式、折叠与收藏；尚未在运行中的 DSH 实例里做安装后的视觉验收。
 
 ## License

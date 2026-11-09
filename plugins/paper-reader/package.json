@@ -1,7 +1,7 @@
 {
   "name": "dsh-paper-reader",
   "description": "DSH 论文与博客中英文对照阅读器：侧栏按天聚合列表，主面板三模式阅读",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "lib/index.js",
   "bin": {
@@ -14,13 +14,15 @@
   },
   "engines": {
     "node": ">=22",
-    "dsh": "0.2.2-alpha.2"
+    "dsh": "0.2.2-alpha.2 || 0.2.2-rc.1"
   },
   "license": "MIT",
   "files": [
     "lib/index.js",
     "lib/client.js",
     "scripts/paper-reader.mjs",
+    "scripts/backfill-days.mjs",
+    "scripts/run-daily.mjs",
     "src",
     "cordis.patch.yml",
     "dsh.plugin.json",
@@ -43,7 +45,7 @@
     "check": "node --check lib/index.js && node --check lib/client.js && node --check scripts/paper-reader.mjs",
     "digest": "node scripts/paper-reader.mjs",
     "test": "node test/host.test.mjs && node test/storage.test.mjs && node test/shared.test.mjs && node test/client.test.mjs && node test/history.test.mjs && node test/arxiv.test.mjs && node test/deepseek.test.mjs && node test/hf.test.mjs && node test/selection.test.mjs && node test/blog-sources.test.mjs && node test/translation.test.mjs && node test/proxy.test.mjs && node test/pipeline.test.mjs && node test/cli.test.mjs && node test/proxy-page.test.mjs && node test/openai.test.mjs && node test/openai-page.test.mjs && node test/e2e.test.mjs && node test/schedule-status.test.mjs",
-    "test:host": "node test/host.test.mjs",
+    "test:host": "node test/host.test.mjs && node test/run-trigger.test.mjs",
     "test:status": "node test/schedule-status.test.mjs",
     "test:storage": "node test/storage.test.mjs",
     "test:client": "node test/client.test.mjs",

@@ -2928,6 +2928,52 @@ async function readRunStatus({ root }) {
   };
 }
 
+// src/run-trigger.js
+import { spawn } from "node:child_process";
+function createRunTrigger({
+  scriptPath,
+  cwd,
+  spawnImpl = spawn,
+  execPath = process.execPath,
+  now = () => /* @__PURE__ */ new Date()
+} = {}) {
+  let current = null;
+  const state = () => current ? { ...current } : { running: false, pid: null, startedAt: null, finishedAt: null, exitCode: null };
+  return {
+    /** Start a run; `started` is false when one is already going. */
+    start() {
+      if (current?.running) return { started: false, run: state() };
+      const child = spawnImpl(execPath, [scriptPath], {
+        cwd,
+        stdio: "ignore",
+        detached: true
+      });
+      if (typeof child.unref === "function") child.unref();
+      current = {
+        running: true,
+        pid: typeof child.pid === "number" ? child.pid : null,
+        startedAt: now().toISOString(),
+        finishedAt: null,
+        exitCode: null
+      };
+      if (typeof child.on === "function") {
+        child.on("exit", (code) => {
+          if (current?.running) {
+            current = { ...current, running: false, finishedAt: now().toISOString(), exitCode: code ?? null };
+          }
+        });
+        child.on("error", () => {
+          if (current?.running) {
+            current = { ...current, running: false, finishedAt: now().toISOString(), exitCode: null };
+          }
+        });
+      }
+      return { started: true, run: state() };
+    },
+    state
+  };
+}
+
 // src/index.js
 var name = "dsh-paper-reader";
 var inject = ["webServer"];
@@ -2936,7 +2982,14 @@ var STATUS_ROUTE = "/api/paper-reader/status";
 var DIGEST_ROUTE = "/api/paper-reader/digest";
 var DIGEST_DATE_PREFIX = DIGEST_ROUTE;
 var HEALTH_ROUTE = "/api/paper-reader/health";
+var RUN_ROUTE = "/api/paper-reader/run";
+var RUN_STATE_ROUTE = "/api/paper-reader/run/state";
 var SAMPLE_PATH = fileURLToPath(new URL("../sample/digest.json", import.meta.url));
+var PLUGIN_ROOT = join3(dirname3(fileURLToPath(import.meta.url)), "..");
+var runTrigger = createRunTrigger({
+  scriptPath: join3(PLUGIN_ROOT, "scripts", "backfill-days.mjs"),
+  cwd: PLUGIN_ROOT
+});
 function json(res, status, value) {
   const body = JSON.stringify(value);
   res.writeHead(status, {
@@ -2991,14 +3044,14 @@ async function readLegacyDigest(ctx) {
   }
   return { ...parsed, demo: false, digestPath: path };
 }
-function admissionStatus(ctx, req) {
+function admissionStatus(ctx, req, { required = false } = {}) {
   let connection;
   try {
     connection = ctx.get?.("connection");
   } catch {
     connection = void 0;
   }
-  if (!connection || typeof connection.admit !== "function") return null;
+  if (!connection || typeof connection.admit !== "function") return required ? 403 : null;
   const result = connection.admit(req);
   if (result && typeof result === "object" && "rejection" in result) return result.rejection || 403;
   return null;
@@ -3112,6 +3165,34 @@ function apply(ctx) {
       })
     }),
     "dsh-paper-reader: by-date digest route"
+  );
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: "exact",
+      path: RUN_ROUTE,
+      handler: (req, res) => {
+        if (req.method !== "POST") {
+          json(res, 405, { error: "method_not_allowed" });
+          return;
+        }
+        const rejected = admissionStatus(ctx, req, { required: true });
+        if (rejected) {
+          json(res, rejected, { error: "forbidden" });
+          return;
+        }
+        const { started, run } = runTrigger.start();
+        json(res, started ? 202 : 409, { started, run });
+      }
+    }),
+    "dsh-paper-reader: manual run route"
+  );
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: "exact",
+      path: RUN_STATE_ROUTE,
+      handler: (req, res) => guard(ctx, req, res, () => runTrigger.state())
+    }),
+    "dsh-paper-reader: manual run state route"
   );
   ctx.effect(
     () => ctx.webServer.register({
