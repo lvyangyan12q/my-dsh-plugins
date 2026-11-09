@@ -1,0 +1,283 @@
+/**
+ * Daily selection: keyword/category filtering, arXiv-id/URL/title dedupe and
+ * the configurable paper quota. These are pure rules over candidates, so the
+ * tests describe ranking outcomes rather than how the score is computed.
+ */
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { selectDaily } from '../src/pipeline/select.js'
+
+let sequence = 0
+
+function candidate(patch = {}) {
+  sequence += 1
+  const id = patch.id ?? `arxiv:2611.${String(10000 + sequence)}`
+  return {
+    id,
+    sourceId: 'arxiv',
+    arxivId: id.startsWith('arxiv:') ? id.slice('arxiv:'.length) : null,
+    title: `Paper ${sequence}`,
+    summary: 'A summary.',
+    url: `https://arxiv.org/abs/2611.${String(10000 + sequence)}`,
+    publishedAt: '2026-11-04T18:59:56Z',
+    categories: ['cs.AI'],
+    direction: 'agent',
+    tags: [],
+    ...patch,
+  }
+}
+
+test('keeps the first occurrence and drops duplicates by id, URL or title', () => {
+  const first = candidate({ title: 'Same Paper', url: 'https://arxiv.org/abs/2611.00001' })
+  const byUrl = candidate({ id: 'arxiv:2611.00002', title: 'Different title', url: 'https://arxiv.org/abs/2611.00001/' })
+  const byTitle = candidate({ id: 'arxiv:2611.00003', title: 'Same  paper!', url: 'https://arxiv.org/abs/2611.00003' })
+  const byId = candidate({ ...first, url: 'https://example.com/other' })
+
+  const { selected, stats } = selectDaily([first, byUrl, byId, byTitle], {
+    quota: { total: 10, papers: 6 },
+  })
+
+  assert.equal(selected.length, 1)
+  assert.equal(selected[0], first)
+  assert.equal(stats.duplicates, 3)
+})
+
+test('applies the paper quota and the daily total cap without padding the list', () => {
+  const candidates = Array.from({ length: 8 }, () => candidate())
+
+  const six = selectDaily(candidates, { quota: { total: 10, papers: 6 } })
+  assert.equal(six.selected.length, 6)
+  assert.equal(six.stats.droppedByQuota, 2)
+
+  const three = selectDaily(candidates, { quota: { total: 10, papers: 3 } })
+  assert.equal(three.selected.length, 3)
+
+  const capped = selectDaily(candidates, { quota: { total: 2, papers: 6 } })
+  assert.equal(capped.selected.length, 2)
+
+  const short = selectDaily(candidates.slice(0, 4), { quota: { total: 10, papers: 6 } })
+  assert.equal(short.selected.length, 4, 'fewer candidates than quota is not padded')
+  assert.equal(short.stats.droppedByQuota, 0)
+})
+
+test('keyword filters narrow the candidates before the quota is applied', () => {
+  const agent = candidate({ title: 'Agentic browsing with tools' })
+  const summaryOnly = candidate({ title: 'A study of planning', summary: 'We build an agent that browses.' })
+  const survey = candidate({ title: 'Agent survey of the field' })
+  const unrelated = candidate({ title: 'A new kernel for attention' })
+
+  const { selected, stats } = selectDaily([agent, summaryOnly, survey, unrelated], {
+    quota: { total: 10, papers: 6 },
+    includeKeywords: ['agent'],
+    excludeKeywords: ['survey'],
+  })
+
+  assert.deepEqual(selected.map(item => item.title), ['Agentic browsing with tools', 'A study of planning'])
+  assert.equal(stats.filtered, 2)
+})
+
+test('category filters drop off-category papers but keep sources without categories', () => {
+  const inCategory = candidate({ categories: ['cs.CL'] })
+  const offCategory = candidate({ categories: ['cs.LG'] })
+  const noCategories = candidate({ categories: [] })
+
+  const { selected } = selectDaily([inCategory, offCategory, noCategories], {
+    quota: { total: 10, papers: 6 },
+    categories: ['cs.CL'],
+  })
+
+  assert.deepEqual(selected.map(item => item.id), [inCategory.id, noCategories.id])
+})
+
+test('blog posts fill the shared blog quota newest first, sharing it between sources', () => {
+  const blog = (sourceId, slug, publishedAt) => candidate({
+    id: `${sourceId}:${slug}`,
+    sourceId,
+    arxivId: null,
+    kind: 'blog',
+    title: `${sourceId} ${slug}`,
+    url: `https://example.test/${sourceId}/${slug}`,
+    categories: [],
+    publishedAt,
+  })
+
+  const anthropic = [
+    blog('anthropic', 'a-new', '2026-11-04T12:00:00Z'),
+    blog('anthropic', 'a-mid', '2026-11-03T12:00:00Z'),
+    blog('anthropic', 'a-old', '2026-10-01T12:00:00Z'),
+  ]
+  const kimi = [
+    blog('kimi', 'k-new', '2026-11-04T10:00:00Z'),
+    blog('kimi', 'k-mid', '2026-11-02T10:00:00Z'),
+  ]
+  const papers = Array.from({ length: 3 }, () => candidate())
+
+  const { selected, stats } = selectDaily([...papers, ...anthropic, ...kimi], {
+    quota: { total: 10, papers: 6, blogs: 4 },
+  })
+
+  assert.equal(selected.length, 7)
+  assert.equal(stats.paperLimit, 3)
+  assert.equal(stats.blogLimit, 4)
+  const blogs = selected.filter(item => item.kind === 'blog')
+  assert.equal(blogs.length, 4)
+  assert.deepEqual(blogs.map(item => item.id).sort(), [
+    'anthropic:a-mid',
+    'anthropic:a-new',
+    'kimi:k-mid',
+    'kimi:k-new',
+  ])
+})
+
+test('a duplicate with an upvote signal wins over the plain arXiv copy', () => {
+  const fromArxiv = candidate({
+    arxivId: '2611.11111',
+    title: 'Shared Agentic Paper',
+    url: 'https://arxiv.org/abs/2611.11111',
+  })
+  const fromHf = candidate({
+    id: 'hf:2611.11111',
+    sourceId: 'hf',
+    arxivId: '2611.11111',
+    title: 'Shared Agentic Paper',
+    url: 'https://arxiv.org/abs/2611.11111',
+    upvotes: 12,
+    publishedAt: '2026-11-04T18:00:00Z',
+  })
+
+  const { selected, stats } = selectDaily([fromArxiv, fromHf], { quota: { total: 10, papers: 6 } })
+
+  assert.equal(selected.length, 1)
+  assert.equal(selected[0], fromHf, 'the HF copy carries the heat the ranking needs')
+  assert.equal(stats.duplicates, 1)
+})
+
+test('a paper with votes outranks keyword hits and recency; an unvoted one does not', () => {
+  const voted = candidate({ title: 'A popular kernel result', summary: 'An agent community favourite.', upvotes: 40, publishedAt: '2026-11-03T00:00:00Z' })
+  const unvotedHf = candidate({
+    id: 'hf:2611.22222',
+    sourceId: 'hf',
+    arxivId: '2611.22222',
+    title: 'A fresh unvoted paper',
+    summary: 'An agent, unvoted.',
+    upvotes: 0,
+    publishedAt: '2026-11-02T00:00:00Z',
+  })
+  const keywordHit = candidate({ title: 'An agent that browses', summary: 'An agent.', publishedAt: '2026-11-04T10:00:00Z' })
+  const newest = candidate({ title: 'Brand new attention paper', summary: 'An agent benchmark.', publishedAt: '2026-11-04T23:00:00Z' })
+
+  const { selected } = selectDaily([unvotedHf, keywordHit, newest, voted], {
+    quota: { total: 10, papers: 4 },
+    includeKeywords: ['agent'],
+  })
+
+  assert.deepEqual(selected.map(item => item.title), [
+    'A popular kernel result',
+    'An agent that browses',
+    'Brand new attention paper',
+    'A fresh unvoted paper',
+  ])
+})
+
+test('per-source category filters leave other sources and their own tags untouched', () => {
+  const inCategory = candidate({ id: 'arxiv:2611.00101', categories: ['cs.CL'] })
+  const offCategory = candidate({ id: 'arxiv:2611.00102', categories: ['cs.LG'] })
+  const blog = candidate({
+    id: 'openai:introducing-agent-mode',
+    sourceId: 'openai',
+    arxivId: null,
+    kind: 'blog',
+    title: 'Introducing agent mode',
+    url: 'https://openai.com/index/introducing-agent-mode/',
+    categories: ['Product'],
+  })
+
+  const { selected } = selectDaily([inCategory, offCategory, blog], {
+    quota: { total: 10, papers: 6, blogs: 4 },
+    categoriesBySource: { arxiv: ['cs.CL'] },
+  })
+
+  assert.deepEqual(selected.map(item => item.id), [inCategory.id, blog.id])
+})
+
+test('HF votes lead: a high-vote paper is never pushed below a low-vote keyword hit', () => {
+  const highVotes = candidate({
+    id: 'hf:2611.33333',
+    sourceId: 'hf',
+    arxivId: '2611.33333',
+    title: 'An agent for efficient kernels',
+    summary: 'One keyword hit.',
+    upvotes: 88,
+    publishedAt: '2026-11-01T00:00:00Z',
+  })
+  const lowVotesKeyword = candidate({
+    id: 'hf:2611.44444',
+    sourceId: 'hf',
+    arxivId: '2611.44444',
+    title: 'Agent agent agent survey',
+    summary: 'agent agent agent agent',
+    upvotes: 2,
+    publishedAt: '2026-11-04T23:00:00Z',
+  })
+
+  const { selected } = selectDaily([lowVotesKeyword, highVotes], {
+    quota: { total: 10, papers: 6 },
+    includeKeywords: ['agent'],
+  })
+
+  assert.deepEqual(selected.map(item => item.id), ['hf:2611.33333', 'hf:2611.44444'])
+})
+
+test('configured source weights participate in paper ranking', () => {
+  const arxiv = candidate({ id: 'arxiv:2611.55555', title: 'An agentic planner', publishedAt: '2026-11-01T00:00:00Z' })
+  const hf = candidate({
+    id: 'hf:2611.55556',
+    sourceId: 'hf',
+    arxivId: '2611.55556',
+    title: 'An agentic planner, newer',
+    upvotes: 0,
+    publishedAt: '2026-11-04T00:00:00Z',
+  })
+
+  const weighted = selectDaily([hf, arxiv], {
+    quota: { total: 10, papers: 6 },
+    includeKeywords: ['agent'],
+    sourceWeights: { arxiv: 5 },
+  })
+  assert.equal(weighted.selected[0].id, 'arxiv:2611.55555', 'the weighted source wins the keyword tie')
+
+  const plain = selectDaily([arxiv, hf], {
+    quota: { total: 10, papers: 6 },
+    includeKeywords: ['agent'],
+  })
+  assert.equal(plain.selected[0].id, 'hf:2611.55556', 'without weights the newer paper wins the tie')
+})
+
+test('the institution allowlist filters declared non-matches and keeps undeclared papers', () => {
+  const mit = candidate({ id: 'arxiv:2611.66666', institutions: ['MIT CSAIL'] })
+  const stanford = candidate({ id: 'arxiv:2611.77777', institutions: ['Stanford University'] })
+  const undeclared = candidate({ id: 'arxiv:2611.88888', institutions: [] })
+
+  const { selected, stats } = selectDaily([mit, stanford, undeclared], {
+    quota: { total: 10, papers: 6 },
+    institutions: ['MIT'],
+  })
+
+  assert.deepEqual(selected.map(item => item.id), ['arxiv:2611.66666', 'arxiv:2611.88888'])
+  assert.equal(stats.filterReasons.institution, 1)
+  assert.deepEqual(stats.institutions, ['MIT'])
+})
+
+test('keyword hits in the title outrank summary-only hits, then recency breaks ties', () => {
+  const summaryOld = candidate({ title: 'A study of planning', summary: 'We use an agent.', publishedAt: '2026-11-04T09:00:00Z' })
+  const summaryNew = candidate({ title: 'Another planning study', summary: 'We also use an agent.', publishedAt: '2026-11-04T20:00:00Z' })
+  const titleHit = candidate({ title: 'An agent that browses', summary: 'Nothing here.', publishedAt: '2026-11-04T10:00:00Z' })
+  const noHit = candidate({ title: 'Kernel tricks', summary: 'Nothing here.', publishedAt: '2026-11-04T23:00:00Z' })
+
+  const { selected } = selectDaily([summaryOld, summaryNew, titleHit, noHit], {
+    quota: { total: 10, papers: 2 },
+    includeKeywords: ['agent'],
+  })
+
+  assert.deepEqual(selected.map(item => item.title), ['An agent that browses', 'Another planning study'])
+})

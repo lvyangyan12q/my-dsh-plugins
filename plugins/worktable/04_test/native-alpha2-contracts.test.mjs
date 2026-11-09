@@ -7,15 +7,16 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { managedAgentDefinition } from '../01_content/src/framework/capability-native.mjs'
 
-const root = process.env.WORKTABLE_NATIVE_ALPHA2_ROOT
-const revision = 'f3803c96974ad4a94195fb97e5c637e9c2a3afe3'
-const version = '0.2.2-alpha.2'
+const rc1Root = process.env.WORKTABLE_NATIVE_RC1_ROOT
+const root = rc1Root ?? process.env.WORKTABLE_NATIVE_ALPHA2_ROOT
+const revision = rc1Root ? 'fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159' : 'f3803c96974ad4a94195fb97e5c637e9c2a3afe3'
+const version = rc1Root ? '0.2.2-rc.1' : '0.2.2-alpha.2'
 const names = ['@deepseek-ai/dsh-tool-fs', '@deepseek-ai/dsh-tool-fs-search', '@deepseek-ai/dsh-tool-ask-user', '@deepseek-ai/dsh-tool-skill', '@deepseek-ai/dsh-persona']
 const definition = () => managedAgentDefinition({ presetId: 'worktable.managed.reader', title: 'Reader', content: 'Read.', skillIds: [], baseComposition: 'workspace-basic-v1' })
 
 // Opt-in owner-code conformance checks: never boot a profile or activate tools.
-// An explicit alpha.2 root is required; old rc.2 checks are separate evidence.
-test('fixed official alpha.2 public native contracts', { skip: !root }, async t => {
+// An explicit fixed official checkout is required.
+test('fixed official ' + version + ' public native contracts', { skip: !root }, async t => {
   assert.equal(execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), revision)
   const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
   assert.equal(pkg.version, version)
@@ -33,7 +34,7 @@ test('fixed official alpha.2 public native contracts', { skip: !root }, async t 
     assert.notEqual(entryListProblem([{ config: {} }]), undefined, 'negative control: malformed plugin declarations are refused')
   })
 
-  await t.test('each managed layer satisfies its actual alpha.2 exported Config schema', async t => {
+  await t.test('each managed layer satisfies its actual exported Config schema', async t => {
     for (const row of definition().plugins) await t.test(row.name, async () => {
       const pkg = await readFile(official.resolve(row.name + '/package.json'), 'utf8')
       assert.equal(JSON.parse(pkg).version, version)

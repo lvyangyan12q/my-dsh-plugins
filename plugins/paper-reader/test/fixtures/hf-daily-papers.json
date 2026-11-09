@@ -1,0 +1,86 @@
+[
+  {
+    "paper": {
+      "id": "2611.09002",
+      "authors": [{ "name": "Ivy Quiet" }],
+      "publishedAt": "2026-11-03T12:00:00.000Z",
+      "submittedOnDailyAt": "2026-11-04T01:30:00.000Z",
+      "title": "A Quiet Paper on Kernel Tricks",
+      "summary": "We study a small kernel approximation with no attention paid to popularity.",
+      "upvotes": 0,
+      "discussionId": "2611.09002",
+      "ai_summary": "A short note on faster kernel approximation.",
+      "ai_keywords": ["kernel methods", "approximation"],
+      "githubRepo": null,
+      "githubStars": 0,
+      "projectPage": null,
+      "numComments": 0
+    },
+    "publishedAt": "2026-11-04T01:30:00.000Z",
+    "title": "A Quiet Paper on Kernel Tricks",
+    "thumbnail": "https://cdn-thumbnails.huggingface.co/social-thumbnail-en/discussion-thumbnail.png"
+  },
+  {
+    "paper": {
+      "id": "2611.05377",
+      "authors": [{ "name": "Ada Lovelace" }, { "name": "Alan Turing" }],
+      "publishedAt": "2026-11-04T18:59:56.000Z",
+      "submittedOnDailyAt": "2026-11-04T03:10:00.000Z",
+      "title": "Agentic Reasoning with Tool-Augmented Language Models",
+      "summary": "We study tool use in agentic systems, where a model plans, calls tools and revises its answer.",
+      "upvotes": 3,
+      "discussionId": "2611.05377",
+      "ai_summary": "A model that plans, calls tools and revises its answer beats three benchmarks.",
+      "ai_keywords": ["agents", "tool use"],
+      "githubRepo": "https://github.com/example/tool-agent",
+      "githubStars": 128,
+      "projectPage": null,
+      "numComments": 2
+    },
+    "publishedAt": "2026-11-04T03:10:00.000Z",
+    "title": "Agentic Reasoning with Tool-Augmented Language Models",
+    "thumbnail": "https://cdn-thumbnails.huggingface.co/social-thumbnail-en/discussion-thumbnail-2.png"
+  },
+  {
+    "paper": {
+      "id": "2611.09003",
+      "authors": [{ "name": "Grace Hopper" }],
+      "publishedAt": "2026-11-03T20:00:00.000Z",
+      "submittedOnDailyAt": "2026-11-04T02:00:00.000Z",
+      "title": "Mixture-of-Experts Routing Revisited",
+      "summary": "We revisit routing for sparse mixture-of-experts models and report a better load balance.",
+      "upvotes": 7,
+      "discussionId": "2611.09003",
+      "ai_summary": "A routing change that balances expert load without hurting quality.",
+      "ai_keywords": ["mixture of experts", "routing"],
+      "githubRepo": null,
+      "githubStars": 0,
+      "projectPage": null,
+      "numComments": 0
+    },
+    "publishedAt": "2026-11-04T02:00:00.000Z",
+    "title": "Mixture-of-Experts Routing Revisited",
+    "thumbnail": "https://cdn-thumbnails.huggingface.co/social-thumbnail-en/discussion-thumbnail-3.png"
+  },
+  {
+    "paper": {
+      "id": "2611.09001",
+      "authors": [{ "name": "Barbara Liskov" }],
+      "publishedAt": "2026-11-03T15:00:00.000Z",
+      "submittedOnDailyAt": "2026-11-04T00:05:00.000Z",
+      "title": "Self-Correcting Agents that Plan Ahead",
+      "summary": "We train an agent to plan, verify intermediate steps and repair its own trajectories.",
+      "upvotes": 41,
+      "discussionId": "2611.09001",
+      "ai_summary": "An agent that verifies steps and repairs its own trajectories gains accuracy.",
+      "ai_keywords": ["agents", "planning"],
+      "githubRepo": "https://github.com/example/plan",
+      "githubStars": 512,
+      "projectPage": null,
+      "numComments": 9
+    },
+    "publishedAt": "2026-11-04T00:05:00.000Z",
+    "title": "Self-Correcting Agents that Plan Ahead",
+    "thumbnail": "https://cdn-thumbnails.huggingface.co/social-thumbnail-en/discussion-thumbnail-4.png"
+  }
+]

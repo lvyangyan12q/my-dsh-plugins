@@ -87,13 +87,13 @@ if (!patchOk) process.exit(1)
 console.log('[release-prep] identity check passed (' + IDENTITY + ', cordis.patch.yml strict)')
 
 // Verify the fixed official runtime source/toolchain; never grant a version exemption.
-const nativeRoot = process.env.WORKTABLE_NATIVE_ALPHA2_ROOT ?? process.env.WORKTABLE_NATIVE_RC3_ROOT ?? process.env.DSH_SOURCE
-if (!nativeRoot) throw new Error('Set WORKTABLE_NATIVE_ALPHA2_ROOT or WORKTABLE_NATIVE_RC3_ROOT to the corresponding fixed official checkout')
+const nativeRoot = process.env.WORKTABLE_NATIVE_RC1_ROOT ?? process.env.WORKTABLE_NATIVE_ALPHA2_ROOT ?? process.env.WORKTABLE_NATIVE_RC3_ROOT ?? process.env.DSH_SOURCE
+if (!nativeRoot) throw new Error('Set WORKTABLE_NATIVE_RC1_ROOT, WORKTABLE_NATIVE_ALPHA2_ROOT or WORKTABLE_NATIVE_RC3_ROOT to the corresponding fixed official checkout')
 const nativeVersion = JSON.parse(readFileSync(join(nativeRoot, 'package.json'), 'utf8')).version
-const nativeTest = nativeVersion === '0.2.2-alpha.2' ? 'native-alpha2-contracts.test.mjs' : 'native-rc3-contracts.test.mjs'
+const nativeTest = ['0.2.2-alpha.2', '0.2.2-rc.1'].includes(nativeVersion) ? 'native-alpha2-contracts.test.mjs' : 'native-rc3-contracts.test.mjs'
 const nativeLoader = join(nativeRoot, 'node_modules', 'tsx', 'dist', 'loader.mjs')
 const nativeConformance = spawnSync(process.execPath, ['--import', pathToFileURL(nativeLoader).href, '--test', join(HERE, '..', '04_test', nativeTest)], {
-  cwd: HERE, stdio: 'inherit', env: {...process.env, WORKTABLE_NATIVE_RC3_ROOT: nativeRoot, WORKTABLE_NATIVE_ALPHA2_ROOT: nativeRoot, TSX_TSCONFIG_PATH: join(nativeRoot, 'tsconfig.json')},
+  cwd: HERE, stdio: 'inherit', env: {...process.env, WORKTABLE_NATIVE_RC3_ROOT: nativeRoot, WORKTABLE_NATIVE_ALPHA2_ROOT: nativeRoot, WORKTABLE_NATIVE_RC1_ROOT: nativeVersion === '0.2.2-rc.1' ? nativeRoot : undefined, TSX_TSCONFIG_PATH: join(nativeRoot, 'tsconfig.json')},
 })
 if (nativeConformance.status !== 0) throw new Error('Official runtime public contract release gate failed')
 

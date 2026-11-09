@@ -1,5 +1,9 @@
 # 本地派生 Worktable 平台
 
+## DSH 0.2.2-rc.1 compatibility (rc.3.10)
+
+This candidate adds DSH `0.2.2-rc.1` to the exact host and peer version ranges. Set `WORKTABLE_NATIVE_RC1_ROOT` to the official checkout at `fcc0ad462172522aaf5c93a7b2e01f6b9f0b0159` when packing against rc.1.
+
 ## DSH 0.2.2-alpha.2 compatibility (rc.3.9)
 
 Version 0.10.0-rc.3.9 admits exactly `0.2.1-rc.3 || 0.2.2-alpha.2`; it does not grant version exemptions. The alpha.2 gate uses official revision f3803c96974ad4a94195fb97e5c637e9c2a3afe3. Set WORKTABLE_NATIVE_ALPHA2_ROOT to that built checkout when packing. Keyless final-archive boot evidence is in ../releases/v0.10.0-rc.3.9/host-boot-evidence.json. Model-driven production workflows remain outside this compatibility check.
