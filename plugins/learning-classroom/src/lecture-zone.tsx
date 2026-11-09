@@ -10,6 +10,14 @@ export interface LectureZoneProps {
   currentSpaceId: string | null
   busy: boolean
   onOpenSpace: (spaceId: string) => void
+  /** Ask the reader to open a specific lecture, e.g. from a canvas file node. */
+  openRequest?: LectureOpenRequest | null
+}
+
+/** One-shot request to open a lecture; a new token re-opens the same path. */
+export interface LectureOpenRequest {
+  path: string
+  token: number
 }
 
 type ListState =
@@ -158,6 +166,7 @@ export function LectureZone(props: LectureZoneProps) {
   const [notice, setNotice] = useState('')
   const alive = useRef(true)
   const generation = useRef(0)
+  const handledRequest = useRef<number | null>(null)
 
   useEffect(() => {
     alive.current = true
@@ -218,6 +227,18 @@ export function LectureZone(props: LectureZoneProps) {
   const reload = () => setReloadKey(key => key + 1)
   const list = listState.status === 'ready' ? listState.list : null
   const retryButton = <button className="lc-secondary" onClick={reload}>重新加载目录</button>
+
+  // A request from another zone (the canvas) opens a lecture once the directory
+  // is ready. The token makes repeated requests for the same path observable.
+  const requestToken = props.openRequest?.token ?? null
+  const requestPath = props.openRequest?.path ?? null
+  useEffect(() => {
+    if (requestToken === null || requestPath === null) return
+    if (handledRequest.current === requestToken) return
+    if (listState.status !== 'ready') return
+    handledRequest.current = requestToken
+    void select(requestPath)
+  }, [requestToken, requestPath, listState.status])
 
   return (
     <>

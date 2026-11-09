@@ -1,3 +1,5 @@
+import type { CanvasNodeType, CanvasRelation } from './canvas.ts'
+
 /** Wire contract shared by the Host service and the browser panel. */
 export interface ClassroomSpaceView {
   id: string
@@ -61,6 +63,7 @@ export type ClassroomCommand =
   | { action: 'space-open'; spaceId: string }
   | { action: 'lecture-list'; spaceId: string }
   | { action: 'lecture-read'; spaceId: string; path: string }
+  | { action: 'canvas-read'; spaceId: string }
 
 /** One Markdown note, addressed relative to its learning-space folder. */
 export interface NoteSummaryView {
@@ -101,3 +104,55 @@ export type NoteCommand =
   }
 
 export type NoteSaveCommand = Extract<NoteCommand, { action: 'note-save' }>
+
+export type CanvasTargetKind = 'lecture' | 'note'
+export type CanvasTargetStatus = 'ok' | 'missing' | 'outside' | 'unsupported'
+
+/** How one canvas file node resolves inside the knowledge vault. */
+export interface CanvasTargetView {
+  /** Space-relative path used by classroom commands, e.g. `讲义/01.md`. */
+  path: string | null
+  /** Vault-relative path shown to the reader, e.g. `概率论/讲义/01.md`. */
+  vaultPath: string | null
+  kind: CanvasTargetKind | null
+  status: CanvasTargetStatus
+  /** Actionable explanation when the target cannot be opened. */
+  message: string | null
+}
+
+export interface CanvasNodeView {
+  id: string
+  type: CanvasNodeType
+  x: number
+  y: number
+  width: number
+  height: number
+  color: string | null
+  text: string | null
+  file: string | null
+  url: string | null
+  label: string | null
+  /** Only file nodes carry an open target; it is null when they cannot. */
+  target: CanvasTargetView | null
+}
+
+export interface CanvasEdgeView {
+  id: string
+  fromNode: string
+  toNode: string
+  label: string | null
+  relation: CanvasRelation
+  /** A relation from a concept to itself; rendered explicitly, never guessed at. */
+  selfLoop: boolean
+}
+
+export interface CanvasReadView {
+  spaceId: string
+  /** Vault-relative canvas path, e.g. `概率论/脉络.canvas`. */
+  path: string
+  fileName: string
+  width: number
+  height: number
+  nodes: CanvasNodeView[]
+  edges: CanvasEdgeView[]
+}

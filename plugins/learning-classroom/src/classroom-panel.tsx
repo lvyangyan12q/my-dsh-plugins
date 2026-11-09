@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ClassroomCommand, ClassroomSpaceView, ClassroomView } from './contract.ts'
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
-import { LectureZone } from './lecture-zone.tsx'
-import { NotesZone } from './notes-zone.tsx'
+import { CanvasZone, type CanvasOpenTarget } from './canvas-zone.tsx'
+import { LectureZone, type LectureOpenRequest } from './lecture-zone.tsx'
+import { NotesZone, type NoteOpenRequest } from './notes-zone.tsx'
 
 export const panelId = 'learning-classroom'
 export const panelLabel = '学习课堂'
@@ -26,6 +27,11 @@ const styles = `
 .lc-alert{padding:10px 12px;border:1px solid #d1242f;border-radius:8px;background:#ffebe9;color:#82071e}
 .lc-empty{padding:24px;border:1px dashed var(--dsh-border,#d8dee4);border-radius:8px;text-align:center}
 .lc-grid{display:grid;grid-template-columns:200px minmax(280px,2fr) minmax(220px,1fr) minmax(240px,1fr);gap:8px;min-height:0;flex:1}
+.lc-main{display:flex;flex-direction:column;flex:1;min-height:0}
+.lc-main[hidden]{display:none}
+.lc-view-tabs{display:flex;gap:6px}
+.lc-view-tab{padding:5px 14px;border:1px solid var(--dsh-border,#d8dee4);border-radius:999px;background:var(--dsh-surface,#fff);color:inherit;cursor:pointer}
+.lc-view-tab[aria-selected="true"]{background:var(--dsh-accent,#0969da);border-color:var(--dsh-accent,#0969da);color:#fff}
 .lc-pane{display:flex;flex-direction:column;gap:8px;min-width:0;overflow:auto;padding:12px;border:1px solid var(--dsh-border,#d8dee4);border-radius:8px;background:var(--dsh-surface,#fff)}
 .lc-pane h2{margin:0;font-size:14px}
 .lc-pane p{margin:0;font-size:13px;line-height:1.6}
@@ -59,8 +65,16 @@ function VaultForm(props: { busy: boolean; value: string; onChange: (value: stri
   )
 }
 
-function ClassroomGrid(props: { client: ClassroomClient; view: ClassroomView; space: ClassroomSpaceView; busy: boolean; onOpen: (spaceId: string) => void }) {
-  const { client, view, space, busy, onOpen } = props
+function ClassroomGrid(props: {
+  client: ClassroomClient
+  view: ClassroomView
+  space: ClassroomSpaceView
+  busy: boolean
+  onOpen: (spaceId: string) => void
+  openLecture: LectureOpenRequest | null
+  openNote: NoteOpenRequest | null
+}) {
+  const { client, view, space, busy, onOpen, openLecture, openNote } = props
   return (
     <div className="lc-grid">
       <LectureZone
@@ -70,10 +84,11 @@ function ClassroomGrid(props: { client: ClassroomClient; view: ClassroomView; sp
         currentSpaceId={view.currentSpaceId}
         busy={busy}
         onOpenSpace={onOpen}
+        openRequest={openLecture}
       />
       <section className="lc-pane lc-notes" aria-label="我的笔记">
         <h2>我的笔记</h2>
-        <NotesZone client={client} space={space} />
+        <NotesZone client={client} space={space} openRequest={openNote} />
       </section>
       <section className="lc-pane lc-conversation" aria-label="老师对话">
         <h2>老师对话</h2>
@@ -94,6 +109,12 @@ export function ClassroomPanel({ client }: ClassroomPanelProps) {
   const [vaultInput, setVaultInput] = useState('')
   const [spaceTitle, setSpaceTitle] = useState('')
   const [showVaultForm, setShowVaultForm] = useState(false)
+  const [mode, setMode] = useState<'classroom' | 'canvas'>('classroom')
+  const [canvasMounted, setCanvasMounted] = useState(false)
+  const [openLecture, setOpenLecture] = useState<LectureOpenRequest | null>(null)
+  const [openNote, setOpenNote] = useState<NoteOpenRequest | null>(null)
+  const requestToken = useRef(0)
+  const noteToken = useRef(0)
   const alive = useRef(true)
 
   useEffect(() => {
@@ -122,11 +143,30 @@ export function ClassroomPanel({ client }: ClassroomPanelProps) {
       setSpaceTitle('')
       setVaultInput('')
       setShowVaultForm(false)
+      // Space/vault navigation always returns to the classroom; stale canvas
+      // targets from the previous space must not leak into the new one.
+      setMode('classroom')
+      setOpenLecture(null)
+      setOpenNote(null)
     } catch (cause) {
       if (alive.current) setError(messageOf(cause))
     } finally {
       if (alive.current) setBusy(false)
     }
+  }
+
+  /** Canvas file nodes hand their target to the classroom's existing zones. */
+  const openCanvasTarget = (target: CanvasOpenTarget) => {
+    setError('')
+    if (target.kind === 'note') {
+      noteToken.current += 1
+      setOpenNote({ path: target.path, token: noteToken.current })
+      setMode('classroom')
+      return
+    }
+    requestToken.current += 1
+    setOpenLecture({ path: target.path, token: requestToken.current })
+    setMode('classroom')
   }
 
   const space = view?.spaces.find(row => row.id === view.currentSpaceId)
@@ -192,7 +232,50 @@ export function ClassroomPanel({ client }: ClassroomPanelProps) {
           </form>
 
           {space !== undefined
-            ? <ClassroomGrid client={api} view={view} space={space} busy={busy} onOpen={spaceId => void run({ action: 'space-open', spaceId })} />
+            ? (
+              <>
+                <div className="lc-view-tabs" role="tablist" aria-label="主内容视图">
+                  <button
+                    type="button"
+                    role="tab"
+                    className="lc-view-tab"
+                    aria-selected={mode === 'classroom'}
+                    disabled={busy}
+                    onClick={() => setMode('classroom')}
+                  >课堂</button>
+                  <button
+                    type="button"
+                    role="tab"
+                    className="lc-view-tab"
+                    aria-selected={mode === 'canvas'}
+                    disabled={busy}
+                    onClick={() => { setCanvasMounted(true); setMode('canvas') }}
+                  >脉络</button>
+                </div>
+                <div className="lc-main" hidden={mode !== 'classroom'}>
+                  <ClassroomGrid
+                    client={api}
+                    view={view}
+                    space={space}
+                    busy={busy}
+                    onOpen={spaceId => void run({ action: 'space-open', spaceId })}
+                    openLecture={openLecture}
+                    openNote={openNote}
+                  />
+                </div>
+                {canvasMounted && (
+                  <div className="lc-main" hidden={mode !== 'canvas'}>
+                    <CanvasZone
+                      client={api}
+                      space={space}
+                      vaultPath={view.vault.path}
+                      busy={busy}
+                      onOpenTarget={openCanvasTarget}
+                    />
+                  </div>
+                )}
+              </>
+            )
             : (
               <div className="lc-empty">
                 <h2>{view.spaces.length === 0 ? '还没有学习空间' : '选择一个学习空间'}</h2>

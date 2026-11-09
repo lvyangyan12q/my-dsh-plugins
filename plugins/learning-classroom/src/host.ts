@@ -3,7 +3,23 @@ import { lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } fr
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import type { ClassroomLectureView, LectureListView, LectureReadView, NoteDocumentView, NoteListView, NoteSaveView } from './contract.ts'
+import {
+  CanvasFormatError,
+  canvasFileName,
+  canvasReadLimit,
+  classifyCanvasTarget,
+  parseCanvasDocument,
+} from './canvas.ts'
+import type {
+  CanvasReadView,
+  CanvasTargetView,
+  ClassroomLectureView,
+  LectureListView,
+  LectureReadView,
+  NoteDocumentView,
+  NoteListView,
+  NoteSaveView,
+} from './contract.ts'
 import { ClassroomError } from './errors.ts'
 import { lectureFileKind, lectureFolder, readLectureMeta, sortLectures } from './lectures.ts'
 import { listNotes, readNote, saveNote } from './notes-io.ts'
@@ -38,7 +54,7 @@ export interface ClassroomView {
   currentSpaceId: string | null
 }
 
-const knownActions = ['vault-choose', 'space-create', 'space-open', 'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save'] as const
+const knownActions = ['vault-choose', 'space-create', 'space-open', 'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save', 'canvas-read'] as const
 
 const commandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('vault-choose'), path: z.string().min(1).max(4096) }).strict(),
@@ -60,6 +76,7 @@ const commandSchema = z.discriminatedUnion('action', [
     version: z.string().min(1).max(128),
     overwrite: z.boolean().optional(),
   }).strict(),
+  z.object({ action: z.literal('canvas-read'), spaceId: z.string().min(1).max(64) }).strict(),
 ])
 
 export interface ClassroomHostOptions {
@@ -394,7 +411,163 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     return saveNote(root, space.directory, command.path, command.content, command.version, { overwrite: command.overwrite }, probe)
   })
 
-  const dispatch = async (input: unknown): Promise<ClassroomView | LectureListView | LectureReadView | NoteListView | NoteDocumentView | NoteSaveView> => {
+  /**
+   * Resolve one canvas file reference into an openable classroom target. The
+   * vault validation is re-done here (never trusting the browser or the file):
+   * traversal, absolute paths and links that escape the vault become `outside`,
+   * while a missing or non-openable file keeps its node visible with a reason.
+   */
+  const canvasTargetOf = async (root: string, space: ClassroomSpace, file: string): Promise<CanvasTargetView> => {
+    let relative: string
+    try {
+      relative = vaultRelativePath(file)
+    } catch {
+      return {
+        path: null,
+        vaultPath: null,
+        kind: null,
+        status: 'outside',
+        message: `文件节点路径越出知识文件库，无法打开：${file}`,
+      }
+    }
+
+    const classified = classifyCanvasTarget(relative, space.directory)
+    if (classified === null) {
+      return {
+        path: null,
+        vaultPath: relative,
+        kind: null,
+        status: 'unsupported',
+        message: `脉络里的文件节点只能打开本空间的讲义（.md/.html）或笔记（.md）：${relative}`,
+      }
+    }
+
+    const vaultPath = `${space.directory}/${classified.path}`
+    let target: string
+    try {
+      target = await resolveVaultPath(root, vaultPath, probe)
+    } catch {
+      return {
+        path: classified.path,
+        vaultPath,
+        kind: classified.kind,
+        status: 'outside',
+        message: `文件节点路径经符号链接越出知识文件库，无法打开：${relative}`,
+      }
+    }
+
+    let info
+    try {
+      info = await stat(target)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        return {
+          path: classified.path,
+          vaultPath,
+          kind: classified.kind,
+          status: 'missing',
+          message: `无法访问文件节点目标：${vaultPath}`,
+        }
+      }
+      return {
+        path: classified.path,
+        vaultPath,
+        kind: classified.kind,
+        status: 'missing',
+        message: `文件不存在或已被外部删除：${vaultPath}`,
+      }
+    }
+    if (!info.isFile()) {
+      return {
+        path: classified.path,
+        vaultPath,
+        kind: classified.kind,
+        status: 'missing',
+        message: `文件节点目标不是文件：${vaultPath}`,
+      }
+    }
+    return { path: classified.path, vaultPath, kind: classified.kind, status: 'ok', message: null }
+  }
+
+  /** Read `脉络.canvas` read-only; an illegal canvas never yields a partial graph. */
+  const readCanvas = (spaceId: string): Promise<CanvasReadView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    const canvasVaultPath = `${space.directory}/${canvasFileName}`
+    const target = await resolveVaultPath(root, canvasVaultPath, probe)
+
+    let info
+    try {
+      info = await stat(target)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        throw new ClassroomError(
+          'canvas-missing',
+          `学习空间「${space.title}」里还没有「${canvasFileName}」（期望路径：${canvasVaultPath}）。请在 Obsidian 中创建这个画布后刷新脉络；插件内不提供画布编辑。`,
+          409,
+        )
+      }
+      throw new ClassroomError('canvas-read-failed', `无法读取脉络文件：${canvasVaultPath}`, 500)
+    }
+    if (!info.isFile()) {
+      throw new ClassroomError('canvas-missing', `脉络路径不是文件：${canvasVaultPath}`, 409)
+    }
+    if (info.size > canvasReadLimit) {
+      throw new ClassroomError('canvas-too-large', `脉络文件过大（超过 ${Math.round(canvasReadLimit / 1024)} KB）：${canvasVaultPath}`, 413)
+    }
+
+    let text: string
+    try {
+      text = await readFile(target, 'utf8')
+    } catch {
+      throw new ClassroomError('canvas-read-failed', `读取脉络文件失败：${canvasVaultPath}`, 500)
+    }
+
+    let parsed
+    try {
+      parsed = parseCanvasDocument(text)
+    } catch (error) {
+      const reason = error instanceof CanvasFormatError ? error.reason : '结构无法识别'
+      throw new ClassroomError('canvas-invalid', `脉络.canvas 格式不合法：${reason}`, 400)
+    }
+
+    const nodes = await Promise.all(parsed.nodes.map(async node => ({
+      id: node.id,
+      type: node.type,
+      x: node.x,
+      y: node.y,
+      width: node.width,
+      height: node.height,
+      color: node.color,
+      text: node.text,
+      file: node.file,
+      url: node.url,
+      label: node.label,
+      target: node.type === 'file' && node.file !== null ? await canvasTargetOf(root, space, node.file) : null,
+    })))
+
+    return {
+      spaceId: space.id,
+      path: canvasVaultPath,
+      fileName: canvasFileName,
+      width: parsed.width,
+      height: parsed.height,
+      nodes,
+      edges: parsed.edges.map(edge => ({
+        id: edge.id,
+        fromNode: edge.fromNode,
+        toNode: edge.toNode,
+        label: edge.label,
+        relation: edge.relation,
+        selfLoop: edge.selfLoop,
+      })),
+    }
+  })
+
+  const dispatch = async (input: unknown): Promise<
+    ClassroomView | LectureListView | LectureReadView | NoteListView | NoteDocumentView | NoteSaveView | CanvasReadView
+  > => {
     const parsed = commandSchema.safeParse(input)
     if (!parsed.success) {
       const action = input !== null && typeof input === 'object' ? (input as { action?: unknown }).action : undefined
@@ -413,6 +586,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       case 'note-list': return noteList(command.spaceId)
       case 'note-read': return noteRead(command.spaceId, command.path)
       case 'note-save': return noteSave(command)
+      case 'canvas-read': return readCanvas(command.spaceId)
     }
   }
 
