@@ -17,7 +17,7 @@ DSH 的个人学习插件：从一个本地**知识文件库**开始，为每门
 - 编辑后防抖自动保存，另有显式「保存」；保存中、已保存、失败三态始终可见。
 - 每次保存携带读取时的内容哈希版本。外部编辑器改过同一文件后保存被拒绝，界面给出「重新加载」与「用我的覆盖」两个明确选择，绝不静默覆盖。
 - 保存失败（目录被删、无权限、磁盘错误）时保留编辑内容并说明原因，可重试。
-- Host 侧统一写入守卫：`笔记/` 只允许 `note-save` 写入，老师工具在落盘前被拒绝，拒绝不会破坏原文件。
+- 插件自己的写入路径只有一条：`writeVaultText` 先过 `assertVaultWriteAllowed`，`笔记/` 只允许 `note-save` 这个 actor 写入；插件将来的生成工具以 `teacher` actor 调用时会在落盘前被拒绝，拒绝不会破坏原文件。**这只覆盖插件内的写入路径，不是对老师会话的全局写保护**，见下节。
 - 老师对话是**真实 DSH 会话**：显式「打开老师会话」时用公开 `sessions.create({ cwd, agentPreset: 'standard' })` 创建，会话绑定按学习空间保存到插件状态（`session-open`）。
 - 课堂内嵌走公开组合：自有 `sessions.retain(id, { source: 'personalLearning' })` 引用 → 自己命名的 `learningClassroom.teacherSession` 子 seat 由框架 `SessionProvider` 包裹 → 在子 seat 内渲染 `conversation.content` 的 `embedded` 变体。原生输入、流式输出、工具呈现、Stop、提问与审批都由该 Factory 负责，插件不导入私有 Chat 组件、不重画消息列表、不调用会跳转原生页面的 `openSession`。
 - 离开课堂、切换学习空间或引用失败时只释放引用，绝不调用 `cancel`；Stop 只能由用户点原生停止。切回同一空间会重新 `retain` 同一会话。
@@ -35,6 +35,13 @@ DSH 的个人学习插件：从一个本地**知识文件库**开始，为每门
 ## 未在真实宿主验收
 
 真实内嵌的流式输出、工具卡片、原生 Stop、提问与审批需要一次真实浏览器验收（工单 09）；本版本的自动化测试使用注入的假 Session 服务与假 slot 运行时，只证明引用生命周期、切课隔离、错误重试、单 composer 与登记组合，不冒充浏览器验收。
+
+## AI 写权限边界（未验收前按下列边界理解）
+
+- 插件内的文件写入只有 `writeVaultText`，`assertVaultWriteAllowed` 拒绝非 `note-save` actor 写入 `笔记/`。这条守卫**只约束插件自己的写入路径**。
+- 老师会话是标准 DSH Session，它的通用文件/终端工具由宿主运行时直接执行，**不经过本插件的 `笔记/` 写入守卫**；本插件也没有为它安装权限插件或工具路径规则。
+- 因此「AI 不修改我的笔记」在当前版本是**教学约定，不是强制权限**。插件对话区不会写入笔记，但老师会话若被要求改写文件，宿主工具仍可能写入学习空间目录，是否被拦取决于该 Session 的审批与权限模式。
+- 真实安装验收必须分别记录：标准 Session 通用文件/终端工具的实际写权限与审批表现，以及插件专用写入路径的拒绝结果。不得用提示词或本 README 的约定替代权限证据。
 
 ## 存储与文件
 
@@ -59,3 +66,24 @@ pnpm test
 ```
 
 测试使用 `node:test` + `tsx`：Host 侧在真实临时目录上走 HTTP 与落盘断言，客户端用 jsdom 渲染主面板并注入假请求边界、假 Session 服务与假 slot 运行时。
+
+`tests/host-compatibility.test.mjs` 检查包声明能否被真实运行的宿主接受，需要 `DSH_SOURCE`
+指向已构建的官方 checkout（未设置时跳过），否则它在 `pnpm test` 中不提供证据。
+
+隔离真实宿主环境（独立 `DSH_HOME`、独立端口、独立知识库，不触碰正式 profile 与 3080）：
+
+```powershell
+pwsh -File scripts/isolated-host.ps1 -Action setup  -Root <隔离根>
+pwsh -File scripts/isolated-host.ps1 -Action provider -Root <隔离根>   # 可选：复刻正式 profile 的模型路由（无密钥）
+pwsh -File scripts/isolated-host.ps1 -Action seed   -Root <隔离根>
+pwsh -File scripts/isolated-host.ps1 -Action install -Root <隔离根>
+pwsh -File scripts/isolated-host.ps1 -Action start  -Root <隔离根>
+```
+
+`seed` 只在**全新主题**上工作：目标主题 `概率论` 已存在（含空目录）一律拒绝且不写任何文件。
+整份样例先在知识库根下的私有 staging 目录里组装，最后用一次 `rename` 发布；失败只清理私有 staging，
+不会对任何公开路径做删除，也不会覆盖既有主题。
+
+脚本**不处理凭据**：不读取、不复制、不写入任何凭据文件。需要模型时，由用户在隔离宿主的模型设置里自行配置；
+正式 profile 的凭据不得被自动搬运。隔离根在验收后应整体删除。
+步骤、版本核对与红绿记录见 `docs/evidence/2026-11-10-ticket01-isolated-host.md`。
