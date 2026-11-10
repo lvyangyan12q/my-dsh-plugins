@@ -66,6 +66,13 @@ node --check lib/index.js
   远端只读，本地仅临时目录）。上传后必须跑 verify:remote 并用 --expect-sha 比对，
   防「双资产同错」；tag 模式断言 tag==='v'+包内版本。
 
+- **宿主兼容声明（v0.10.0-rc.3.10 起）**：`engines.dsh` 用有界范围 `>=0.2.2-rc.1 <0.3.0-0`。
+  上界必须写 `-0`：`<0.3.0` 在 `includePrerelease` 下会放行 `0.3.0-alpha`。范围只承诺
+  「装得上、加载得动」；「实际验证过」由 README 的 verified matrix 与对应契约测试表达，
+  两者不再混用精确版本号。打包门禁先跑**不钉 commit** 的 `04_test/runtime-surface.test.mjs`，
+  再对已知检出追加钉 commit 的证据测试（rc.1 / alpha.2 / rc.3）。它红了表示新宿主需要改插件，
+  **不得靠放宽范围让它变绿**；旧宿主由各自的冻结归档承担。
+
 ## 领域约定（会话中必须遵守）
 
 | 实现参考 | 对应材料 |

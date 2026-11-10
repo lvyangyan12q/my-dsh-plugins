@@ -1,43 +1,58 @@
 # OpenDesign MCP 连接（DSH 配置型 bundle）
 
-把本机 OpenDesign 桌面端的 stdio MCP 服务接到当前 DSH profile（`web`）。
-安装后 Agent 会多出 `mcp__opendesign__*` 工具，以及 `od://` 资源（skills、design systems、active context）。
+把本机 OpenDesign 桌面端的 stdio MCP 服务接到 DSH profile（`web`），使**所有会话**都能直接使用
+`mcp__opendesign__*` 工具与 `od://` 资源（skills、design systems、active context）。
 
-## 文件
+## 本机实况（2026-11-07）
 
-| 文件 | 作用 |
+| 项 | 值 |
 |---|---|
-| `cordis.patch.yml` | 插入一行 `@deepseek-ai/dsh-mcp-client`，`serverName: opendesign` |
-| `package.json` | bundle 清单（`dsh.bundle.patch`）与展示资源导出 |
-| `locale/en.json`、`locale/zh.json` | 插件管理页显示的名称与说明 |
-| `icon.svg` | 自绘图标（原创，可自由分发） |
+| 安装路径 | `D:\programming\Open Design\Open Design.exe`（0.26.1，stable 通道） |
+| daemon CLI | `D:\programming\Open Design\resources\app\prebundled\daemon\daemon-cli.mjs` |
+| 数据目录 | `D:\programming\openDesignData` |
+| 安装方式 | `plugin_manager install_bundle` → profile 里是 `link:` 到本目录 |
+| profile | `web`，已加入 `dsh.profile.bundles` |
 
-安装：`plugin_manager` → `install_bundle`，target 为本目录的绝对路径。改了 patch 之后需要
-`set_bundle` 关闭再开启，才会重新加载这一行配置。
+## 管道名是算出来的，不是随机的
 
-## 配置说明
+`@open-design/sidecar` 的 `resolvePrivateIpcPath`：
 
-| 环境变量 | 值 | 作用 |
+```
+digest = sha256(`${username}\n` + `channel=..\nnamespace=..\nsource=..\nmode=..\napp=..`).hex[0:32]
+endpoint = \\.\pipe\open-design-sidecar-<digest>
+```
+
+本机 `username=pc-zzy`、`channel=stable`、`namespace=release-stable-win`、`source=packaged`：
+
+| app | mode | digest |
 |---|---|---|
-| `ELECTRON_RUN_AS_NODE` | `1` | 让 `Open Design.exe` 以 Node 方式运行 `daemon-cli.mjs` |
-| `OD_DATA_DIR` | `F:\OpenDesignData` | MCP 侧工作区/简报存储；**应用未启动时**由它拉起的 headless 实例也用它做数据根 |
-| `OD_SIDECAR_CLIENT_ENDPOINT` | `\\.\pipe\open-design-sidecar-045b8740...` | 桌面端正常运行时 daemon sidecar 的命名管道 |
-| `OD_MCP_DISCOVERY` | `{"daemon":[…],"desktop":[…]}` | managed 发现：同时接受「应用自己启动」和「MCP 拉起 headless」两种模式的管道 |
-| `OD_MCP_BOOTSTRAP_COMMAND/ARGS` | `Open Design.exe --headless --od-mcp-managed` | 应用没在运行时，由 MCP 拉起 headless 实例 |
+| daemon | runtime | `d04833fe5d36bf8226bcf2201ca36e97` |
+| daemon | headless | `384aa4a05b0c6e92b329f3a092f220af` |
+| desktop | runtime | `0da43bf1b82bcfde0fb84bce5dae821d` |
+| desktop | headless | `c64b2b11a33e4cff5686447678369d3d` |
 
-管道名不是随机值，而是
-`sha256("<用户名>\nchannel=…\nnamespace=…\nsource=…\nmode=…\napp=…")` 的前 32 位十六进制：
+用户名、通道或 namespace 变化后要重算；直接从 `%APPDATA%\Open Design\launcher\...\install.json`
+读 `launchPath` 与 `namespace` 即可确认。
 
-- `mode=runtime, app=daemon` → `045b8740d8210acc67a7c4f97f9c9975`（桌面端正常启动，当前使用的首选端点）
-- `mode=headless, app=daemon` → `aa28d0c6bdfe237f3de5abf70a9768f6`（MCP 拉起 headless 时）
-- desktop 管道同理：`runtime` = `63690268…`，`headless` = `52bd531a…`
+## 为什么用 managed discovery
 
-OpenDesign 升级后若命名空间/来源标记变化，管道名会失效：此时把这些常量重新算一遍，或直接从
-OpenDesign 重新生成的 Claude Code 注册里抄一份新管道名替换。
+`OD_MCP_BOOTSTRAP_ARGS` 里带 `--od-mcp-managed` 时，MCP 会解析 `OD_MCP_DISCOVERY`
+（`daemon` 与 `desktop` 都必须是非空数组），逐个探测端点：
 
-## 验证状态
+- OpenDesign 已在运行 → 直接连它的 app 自有管道；
+- 没在运行 → 由 `OD_MCP_BOOTSTRAP_COMMAND` 拉起 headless 实例，再连 headless 管道。
 
-- `install_bundle` 返回 `application: applied`
-- 连接成功：`list_mcp_resources(server: "opendesign")` 返回 skills / design systems 资源
-- 工具可真实执行：`mcp__opendesign__get_active_context` 返回当前活动上下文
-- 图形界面里的标题/图标渲染未在浏览器中人工确认
+所以四个端点全列上，两种状态都能连；不用再手工抄管道名。
+
+## 验证
+
+- `plugin_manager install_bundle` 返回 `application: applied`
+- 本会话已出现 `mcp__opendesign__*` 工具（22 个），`list_projects` 正常返回
+- `get_project` 返回可打开的 `previewUrl` / `studioUrl`
+- 三个原型项目 `learning-teach-a/b/c` 已写入 `index.html`
+
+## 注意
+
+- `link:` 依赖指向本仓库目录：移动或删除 `plugins/bug-solver/mcp-opendesign` 会让 profile 失效。
+- OpenDesign 升级后若 `source` 标记变化，四个 digest 会变，需要重算并重载。
+- `failOnStartupError: false`：OpenDesign 未安装时只是没有工具，不会拖垮宿主启动。

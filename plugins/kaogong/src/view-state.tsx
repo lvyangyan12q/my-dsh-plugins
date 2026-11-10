@@ -31,6 +31,7 @@ type ViewValues = {
   'lesson.list': { id: string; subject: string; objective: string; completed: boolean; updatedAt: string }[]
   'lesson.draft': { id: string; subject: string; objective: string; knowledgePoint: string; reflections: boolean; practice?:boolean; material: boolean; legacyNoteId: string }
   'lesson.form': boolean; 'lesson.notes': string; 'lesson.notesDirty': boolean; 'lesson.error': string; 'lesson.busy': boolean; 'lesson.confirmed': boolean
+  'lesson.readDone': boolean
 }
 type Cell<T> = { value: T; listeners: Set<() => void>; set: Dispatch<SetStateAction<T>> }
 

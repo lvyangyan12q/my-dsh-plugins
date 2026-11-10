@@ -7,6 +7,12 @@ import { applicationCss } from './applicationStyles'
 export const css = xtermCss + applicationCss + '\n' + [
   // 区块整体
   '.dsh-wt_section{box-sizing:border-box;display:flex;flex-direction:column;gap:6px;width:100%;padding:0}',
+  // 主区域页面：左侧停靠应用面板，右侧控制室画布
+  '.dsh-wt_pageRow{box-sizing:border-box;display:flex;height:100%;min-height:0}',
+  '.dsh-wt_pageDock{flex:none;width:320px;box-sizing:border-box;padding:14px 12px 18px;border-right:1px solid var(--dsw-alias-border-l1,#262b36);overflow:auto;background:var(--dsw-alias-bg-base,#fff)}',
+  '.dsh-wt_pageCanvas{flex:1;min-width:0;min-height:0;position:relative;overflow:hidden}',
+  // 画布原本活在分栏窗格里（有确定高度）；搬进页面后要自己贴满，不受内容高度影响
+  '.dsh-wt_pageCanvas > .dsh-wt_console{position:absolute;inset:0;height:auto;min-height:0}',
   '.dsh-wt_float{min-width:176px;max-width:264px;background:var(--dsw-alias-bg-base,#0b0e14);border:1px solid var(--dsw-alias-border-l2,#3a4150);border-radius:10px;padding:8px;box-shadow:var(--dsw-shadow-lv2,0 8px 24px rgba(0,0,0,.4))}',
   '.dsh-wt_rail{pointer-events:none}',
   '.dsh-wt_railBox{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:5px 3px;border:1px solid var(--dsw-alias-border-l2,#3a4150);border-radius:8px;background:var(--dsw-alias-bg-base,#0b0e14)}',
@@ -210,6 +216,11 @@ export const css = xtermCss + applicationCss + '\n' + [
   '@keyframes dsh-wt-busyA{0%,44%{opacity:1}50%,94%{opacity:.12}100%{opacity:1}}',
   '@keyframes dsh-wt-busyB{0%,44%{opacity:.12}50%,94%{opacity:1}100%{opacity:.12}}',
   '.dsh-wt_bindBtn[data-bound=busy] .dsh-wt_bindCircles::before{animation:dsh-wt-busyA 1s ease-in-out infinite}',
+  // 行尾删除：悬停/键盘聚焦才出现，出现时让出绑定点的位置
+  '.dsh-wt_rowDel{display:none;position:absolute;right:26px;top:50%;transform:translateY(-50%);align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;color:var(--dsw-alias-label-tertiary,#6e7683);font-size:12px;line-height:1;cursor:pointer;user-select:none}',
+  '.dsh-wt_layout:hover .dsh-wt_rowDel,.dsh-wt_layout:focus-within .dsh-wt_rowDel{display:flex}',
+  '.dsh-wt_layout:hover .dsh-wt_bindBtn,.dsh-wt_layout:focus-within .dsh-wt_bindBtn{display:none}',
+  '.dsh-wt_rowDel:hover{background:rgba(248,81,73,.14);color:#f85149}',
   '.dsh-wt_bindBtn[data-bound=busy] .dsh-wt_bindCircles::after{animation:dsh-wt-busyB 1s ease-in-out infinite}',
   '.dsh-wt_bindBtn[data-bound=done] .dsh-wt_bindCircles,.dsh-wt_bindBtn[data-bound=need] .dsh-wt_bindCircles,.dsh-wt_bindBtn[data-bound=busy] .dsh-wt_bindCircles{filter:drop-shadow(0 0 3px currentColor)}',
   // 气泡为 body 级独立元素（.dsh-wt_bindTip），此处只保留按钮本体样式

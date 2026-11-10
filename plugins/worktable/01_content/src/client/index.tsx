@@ -9,7 +9,7 @@ import { NS, zh, en, type WorktableKey } from './locales'
 import { isAbs, joinPath, parentPathOf, basenameOf } from './pathutil'
 import {applicationViews} from './applicationViews'
 import { ApplicationLauncher, type ApplicationContent } from './applicationEntry'
-import { findConversationRoot, splitStore, SplitWorkspace, setSplitT, setSplitEnv, layoutGeometryOf, cachedLayoutGeometry, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
+import { findConversationRoot, splitStore, SplitWorkspace, ConsolePane, setSplitT, setSplitEnv, layoutGeometryOf, cachedLayoutGeometry, type LayoutSpec, type SplitPane, type ConsoleCardData } from './split'
 import { ProjectLayoutClient, layoutSnapshot, resolveProjectDirectory } from './projectLayoutClient.mjs'
 import { ProjectLayoutMutations } from './projectLayoutMutations.mjs'
 import { createAnnotationInput } from './hostInput'
@@ -565,6 +565,9 @@ async function ensureSessionModel(sessionId: string): Promise<void> {
 const CONSOLE_ID = 'wt-console'
 const CONSOLE_ICON = '🖥️'
 
+/** 侧栏面板入口 id；宿主用它把该图标与下面的 main 页配对。 */
+const PANEL_ID = 'worktable'
+
 /** 控制室布局是否健全：主窗格首格存在 console 类型标签（旧版关标签的坏存档没有它） */
 function specHasConsoleTab(spec: LayoutSpec | undefined): boolean {
   return !!spec?.main?.[0]?.tabs?.some((t) => t.content?.kind === 'builtin' && t.content.type === 'console')
@@ -1053,17 +1056,27 @@ function RenameInput(props: { initial: string; placeholder: string; onCommit: (v
   )
 }
 
-function WorktableSection(props: any) {
-  const [navigationError, setNavigationError] = useState('')
-  const projectNavigation = useRef<ReturnType<typeof createProjectNavigation> | null>(null)
-  if (!projectNavigation.current) projectNavigation.current = createProjectNavigation({
+/** 导航错误落点：页面挂载时接到组件状态，卸载后只丢弃，不影响在途导航。 */
+let navigationErrorSink: ((message: string) => void) | null = null
+/** 分栏挂载必须活过页面卸载：点开项目会切走主区域，页面先卸载，浮层后挂载。 */
+let sharedProjectNavigation: ReturnType<typeof createProjectNavigation> | null = null
+function projectNavigator() {
+  if (!sharedProjectNavigation) sharedProjectNavigation = createProjectNavigation({
     getLayout: () => { try { return clientCtx?.get?.('layout') ?? clientCtx?.layout } catch { return undefined } },
     hasAnchor: () => !!findConversationRoot(),
     reveal: id => { if (id !== currentSessionOf(sessionBridge?.list?.getSnapshot?.())) markPluginSessionOpen(id); return openHostSession(clientCtx, sessionBridge?.sessions, id) },
     waitForAnchor: signal => waitForConversationAnchor(() => !!findConversationRoot(), signal),
-    report: error => setNavigationError(error.message),
+    report: error => { try { navigationErrorSink?.(error.message) } catch {} },
   })
-  useEffect(() => () => projectNavigation.current?.dispose(), [])
+  return sharedProjectNavigation
+}
+
+function WorktableSection(props: any) {
+  const [navigationError, setNavigationError] = useState('')
+  useEffect(() => {
+    navigationErrorSink = setNavigationError
+    return () => { if (navigationErrorSink === setNavigationError) navigationErrorSink = null }
+  }, [])
   // Native global navigation owns the main panel. Closing the split must not reveal a session again.
   useEffect(() => {
     let layout: any
@@ -1077,7 +1090,7 @@ function WorktableSection(props: any) {
   const revealProject = (bound: string | null | undefined, mount: () => void) => {
     setNavigationError('')
     const current = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
-    return projectNavigation.current!.open(bound ?? current, mount)
+    return projectNavigator().open(bound ?? current, mount)
   }
   const wide = props.wide !== false
   const renderProjectSlot = typeof props.renderSlot === 'function' ? props.renderSlot : null
@@ -1454,7 +1467,7 @@ function WorktableSection(props: any) {
     }
     setSplitEnv(env)
     try { (window as any).__dshCustomEnv = env } catch {}
-    return () => { setSplitEnv(null); try { (window as any).__dshCustomEnv = null } catch {} }
+    // 不随页面卸载清空：点开项目会切走主区域，页面先卸载，分栏浮层随后仍要读到这份配置。
   }, [])
   const floatRef = useRef<FloatRect | null>(null)
 
@@ -1495,7 +1508,7 @@ function WorktableSection(props: any) {
   useEffect(() => splitStore.subscribe(() => {
     setActiveSplitId(splitStore.active && splitStore.spec ? splitStore.spec.id : null)
     if (!splitStore.active) {
-      projectNavigation.current?.close({
+      sharedProjectNavigation?.close({
         restore: splitStore.restoreSessionOnClose && !suppressRestoreRef.current,
         previousSessionId: projectAttachRef.sessionId,
       })
@@ -1535,10 +1548,9 @@ function WorktableSection(props: any) {
     return () => { splitStore.onSpecMutated = null; splitStore.onPaneContentEdited = null; splitStore.onLayoutPersisted=null;splitStore.onBeforeClose=null }
   }, [])
 
-  // 分栏引擎 UI 文案（窗选择器等）
+  // 分栏引擎 UI 文案（窗选择器等）；同样不随页面卸载清空
   useEffect(() => {
     setSplitT((k, p) => t(k as WorktableKey, p as Record<string, string> | undefined))
-    return () => setSplitT(null)
   }, [t])
 
   // 侧边栏折叠/展开：保持原停靠位置（不再回弹 footer）；折叠态由项目图标框承载。
@@ -1697,8 +1709,12 @@ function buildCustomLayoutPrompt(req: string): string {
     await layoutClient.current.flushAll()
     if(sequence!==layoutOpenSequence.current || !mountedRef.current)return
     engineIdsRef.current.add(spec.id)
-    const before = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
-    const target = projectsRef.current.projects.bindings[spec.id] ?? before
+    const listSnap = sessionBridge?.list?.getSnapshot?.()
+    const before = currentSessionOf(listSnap) || null
+    // 绑定值可能指向宿主已不可 retain 的会话（实测 sessions.retain: unknown session），
+    // 所以导航目标优先用当前会话，没有再退回任意可用会话；绑定只用于归属，不用于导航。
+    const anyLoaded = Object.keys(listSnap?.byId ?? {})[0] ?? ''
+    const target = before ?? (anyLoaded || null)
     let folder = projectsRef.current.projects.folders[spec.id]
     let opened: LayoutSpec = projectsRef.current.projects.views[spec.id] ?? spec
     let initialize=false
@@ -1759,16 +1775,20 @@ function buildCustomLayoutPrompt(req: string): string {
     const spec = broken ? buildConsoleSpec((k) => t(k as WorktableKey)) : (saved as LayoutSpec)
     if (broken) persistProjects((prev) => ({ ...prev, views: { ...prev.views, [CONSOLE_ID]: spec } }))
     engineIdsRef.current.add(CONSOLE_ID)
-    const before = currentSessionOf(sessionBridge?.list?.getSnapshot?.()) || null
-    const target = explicitBound !== undefined ? explicitBound : projectsRef.current.projects.bindings[CONSOLE_ID]
-    if (!await revealProject(target ?? before, () => { splitStore.open(spec) })) return
+    const listSnap = sessionBridge?.list?.getSnapshot?.()
+    const before = currentSessionOf(listSnap) || null
+    const bind = explicitBound !== undefined ? explicitBound : projectsRef.current.projects.bindings[CONSOLE_ID]
+    // 绑定可能指向宿主已不能 retain 的会话（sessions.retain: unknown session）：
+    // 导航只用确实可用的目标，绑定值仅作为归属记录。
+    const anyLoaded = Object.keys(listSnap?.byId ?? {})[0] ?? ''
+    const target = explicitBound ?? before ?? (anyLoaded || null)
+    if (!await revealProject(target, () => { splitStore.open(spec) })) return
     if (splitStore.active && splitStore.spec?.id === CONSOLE_ID) {
       let prev: string | null = null
       try { prev = before } catch {}
       projectAttachRef.sessionId = prev
-      const bound = explicitBound !== undefined ? explicitBound : projectsRef.current.projects.bindings[CONSOLE_ID]
-      projectAttachRef.attached = bound ?? prev
-      if (bound) { try { openHostSession(clientCtx, sessionBridge?.sessions, bound) } catch {} }
+      projectAttachRef.attached = bind ?? prev
+      if (bind && bind === target) { try { openHostSession(clientCtx, sessionBridge?.sessions, bind) } catch {} }
       ackProjectNotify(CONSOLE_ID)
       try { notifyConsole() } catch {}
       // 打开即预热所有绑定会话的最近消息（新宿主临时持有，旧宿主 history）
@@ -3254,7 +3274,7 @@ function buildCustomLayoutPrompt(req: string): string {
         </button>
         {renderProjectSlot
           ? renderProjectSlot('sidebar.worktable.project', ownerProps)
-          : <div className="dsh-wt_empty">{t('empty')}</div>}
+          : (visibleLayouts.length === 0 ? <div className="dsh-wt_empty">{t('empty')}</div> : null)}
         {visibleLayouts.map((l) => (
           <button
             key={l.id}
@@ -3285,6 +3305,14 @@ function buildCustomLayoutPrompt(req: string): string {
               aria-label={projects.bindings[l.id] ? t('bind.tipBound', { name: boundSessionTitle(projects.bindings[l.id]) }) : t('bind.tipUnbound')}
               onClick={(e) => { e.stopPropagation(); openBindPick(l.id, e.currentTarget as HTMLElement) }}
             ><span className="dsh-wt_bindCircles" aria-hidden /></span>
+            <span
+              className="dsh-wt_rowDel"
+              role="button"
+              tabIndex={0}
+              title={t('confirm.delete')}
+              aria-label={t('confirm.delete') + ' ' + (projects.nameOverrides[l.id] ?? l.title)}
+              onClick={(e) => { e.stopPropagation(); askDelete('layout', l.id, projects.nameOverrides[l.id] ?? l.title) }}
+            >✕</span>
             <span className="dsh-wt_layoutArrow" aria-hidden>›</span>
           </button>
         ))}
@@ -3437,17 +3465,47 @@ export function apply(ctx: any) {
     order: 100,
   }, SplitWorkspace), 'dsh-worktable: split workspace overlay')
 
-  ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
-    name: 'sidebar.footer.action',
-    id: 'dsh-worktable',
-    order: 20,
-    children: {
-      'sidebar.worktable.project': {
-        kind: 'list',
-        scope: 'root',
-      },
-    },
-  }, WorktableSection), 'dsh-worktable: worktable section')
+  // 侧栏面板入口：与 SSH / 技能中心同一排。点击后宿主把主区域切到下面的 main 页。
+  ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
+    name: 'sidebar.panellist',
+    id: PANEL_ID,
+    order: 200,
+    label: () => '工作台',
+  }, WorktablePanelIcon), 'dsh-worktable: panellist icon')
+
+  ctx.slots.inject('main', () => ctx.slots.register({
+    name: 'main',
+    key: PANEL_ID,
+  }, WorktableMainPage), 'dsh-worktable: main page')
+}
+
+/** 面板入口图标：与宿主其他面板图标同规格的 1.7 描边四宫格。 */
+function WorktablePanelIcon({ size }: any) {
+  const s = typeof size === 'number' ? size : 16
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinejoin="round" aria-hidden>
+      <rect x="4" y="4" width="7" height="7" rx="1.6" />
+      <rect x="13" y="4" width="7" height="7" rx="1.6" />
+      <rect x="4" y="13" width="7" height="7" rx="1.6" />
+      <rect x="13" y="13" width="7" height="7" rx="1.6" />
+    </svg>
+  )
+}
+
+/** 工作台主区域：左侧停靠应用面板，右侧保留控制室画布。 */
+function WorktableMainPage() {
+  // 回到应用列表时不保留分栏浮层，否则浮层会盖住这个页面
+  useEffect(() => { if (splitStore.active) splitStore.close(false) }, [])
+  return (
+    <div className="dsh-wt_pageRow">
+      <aside className="dsh-wt_pageDock">
+        <WorktableSection />
+      </aside>
+      <div className="dsh-wt_pageCanvas">
+        <ConsolePane />
+      </div>
+    </div>
+  )
 }
 
 export { WorktableSection }

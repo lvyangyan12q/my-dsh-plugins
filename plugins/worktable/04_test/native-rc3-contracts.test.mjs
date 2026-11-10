@@ -48,12 +48,16 @@ test('fixed official rc.3 public native contracts', { skip: !root }, async t => 
     })
   })
 
-  await t.test('official target manifests pass rc.3 and unverified versions stop without exemptions', async () => {
+  await t.test('the rebuilt archive refuses rc.3 while the legacy plugins keep passing it', async () => {
     const boot = createRequire(join(root, 'packages/boot/app-boot/package.json'))
     const { evaluatePluginCompatibility } = await import(pathToFileURL(boot.resolve('@deepseek-ai/dsh-app-boot/src/plugin-compatibility.ts')).href)
-    const manifests = await Promise.all([
+    const [worktable, ...manifests] = await Promise.all([
       '../01_content/package.json', '../../project-notes/package.json', '../../reading-statistics/package.json',
     ].map(async file => JSON.parse(await readFile(new URL(file, import.meta.url), 'utf8'))))
+    // The archive rebuilt for 0.2.2-rc.1 no longer admits this frozen line; the older archives serve it.
+    const frozen = evaluatePluginCompatibility(worktable, {}, '0.2.1-rc.3')
+    assert.deepEqual(frozen?.requirements, { 'engines.dsh': worktable.engines.dsh })
+    assert.equal(frozen?.exempted, false)
     for (const manifest of manifests) {
       assert.equal(evaluatePluginCompatibility(manifest, {}, '0.2.1-rc.3'), undefined, manifest.name)
       for (const candidate of ['0.2.1-rc.4', '0.2.2', '0.2.1-alpha.2']) {

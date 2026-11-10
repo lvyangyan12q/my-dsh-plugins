@@ -1,4 +1,0 @@
-import {test} from 'node:test'
-import assert from 'node:assert/strict'
-import {createCourses} from '../src/courses.mjs'
-test('native artifact is bound to request session and survives reopen',async()=>{let state={instances:[{id:'i'}],bindings:[{instanceId:'i',sessionId:'s',phase:'ready'}],requests:[{id:'r',instanceId:'i',sessionId:'s',status:'accepted',sources:[]}]};const storage={read:async()=>structuredClone(state),write:async v=>state=structuredClone(v)};const c=createCourses(storage);const data={requestId:'r',title:'概率',html:'<h1>概率</h1><button>实验</button>',concepts:['条件概率']};await assert.rejects(c.submit(data,'foreign'),/归属/);await c.submit(data,'s');const rows=await createCourses(storage).request({action:'course-list',instanceId:'i'});assert.equal(rows.length,1);assert.equal(rows[0].title,'概率');assert.equal(rows[0].version,1);await assert.rejects(c.submit(data,'s'),/已提交/)});

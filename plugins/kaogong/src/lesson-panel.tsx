@@ -1,5 +1,10 @@
 import {LessonCloseout} from './lesson-closeout.tsx'
-import { useEffect } from 'react'
+import {HandoutView} from './lesson-handout.tsx'
+import {resolveLessonContent,LESSON_CONTENTS} from './lesson-content.ts'
+import {QuizPanel,emptyQuizAnswers} from './lesson-quiz.tsx'
+import type {QuizAnswer,QuizQuestion} from './lesson-quiz.tsx'
+import {LessonTasks} from './lesson-tasks.tsx'
+import { useEffect,useState } from 'react'
 import { BookOpen, Plus, Save, Check, Link, RefreshCw, Play } from 'lucide-react'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
 import { TAXONOMY } from './taxonomy.ts'
@@ -18,6 +23,15 @@ export async function lessonRequest<T>(action: string, body: unknown,send:(input
   return value
 }
 
+/** Restore saved in-class answers by stable question ID; a record without quiz stays all-unanswered. */
+export function lessonQuizAnswers(value: LessonView | null, questions: readonly QuizQuestion[]): QuizAnswer[] {
+  const rows = value?.lesson.quiz ?? []
+  return questions.map(question => {
+    const row = rows.find(item => item.questionId === question.id)
+    return row ? row.choice : null
+  })
+}
+
 /** Shared instance-owned lesson UI; practice starts through the existing request/draft owner. */
 export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher'] }) {
   const http=useLearningHttp()
@@ -33,12 +47,25 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const [error, setError] = useBusinessState('lesson.error', '')
   const [busy, setBusy] = useBusinessState('lesson.busy', false)
   const [confirmed, setConfirmed] = useBusinessState('lesson.confirmed', false)
+  const [tab, setTab] = useState<'handout' | 'quiz'>('handout')
+  const [jump, setJump] = useState<{ anchorId: string; token: number } | null>(null)
+  /** 「读」由讲义实际渲染这一事实决定；页签只负责去哪，不负责标记完成。 */
+  const [readDone, setReadDone] = useBusinessState('lesson.readDone', false)
+  /** 作答按课堂归属：切课后立刻回到该课记录，不拿上一课的作答渲染。 */
+  const [quizState, setQuizState] = useState<{ lessonId: string | null; answers: QuizAnswer[] }>({ lessonId: null, answers: [] })
+  /** In-class evidence save errors stay visible without blocking the next answer. */
+  const [quizError, setQuizError] = useState('')
   const [material] = useBusinessState('reader.entry', null)
   const [practice] = useBusinessState('practice', null)
   const [result] = useBusinessState('result', null)
   const [legacyRoles] = useBusinessState('roles', null)
   const services=useViewServices()
   const roles=services?services.roles:legacyRoles
+  const lessonId = view?.lesson.request.lessonId
+  /** 讲义与检测都来自内容注册表：命中哪一课就渲染哪一课，都不命中则只有空态。 */
+  const content = resolveLessonContent(view?.lesson.request)
+  const questions = content?.quiz ?? []
+  const answers = lessonId && quizState.lessonId === lessonId ? quizState.answers : lessonQuizAnswers(view, questions)
   const accept = (value: LessonView, resetNotes = false) => {
     setView(value)
     if (resetNotes || !owner.cell('lesson.notesDirty', false).value) { setNotes(value.lesson.notes); setNotesDirty(false) }
@@ -76,6 +103,50 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
   const context = view ? { subject: view.lesson.request.subject, title: view.lesson.request.objective, limit: 10,
     ...(view.lesson.request.taskId?{taskId:view.lesson.request.taskId,planRevision:view.lesson.request.planRevision}:{}),
     ...(view.lesson.request.knowledgePoint ? { knowledgePoint: view.lesson.request.knowledgePoint } : {}) } : null
+  const startPractice = () => {
+    if (!context) return
+    void onPractice(context).catch(cause => setError(String(cause)))
+  }
+  /** 「练」的证据：已关联到本课的已提交轮次，或当前页已有真实提交的练习轮次。 */
+  const practiceDone = !!view && (view.evidence.length > 0 || (!!result && !!practice && result.roundId === practice.roundId))
+  /** 回跳：先切到讲义页签，再由下面的 effect 滚动并高亮目标小节 1.6 秒。 */
+  const jumpToSection = (anchorId: string) => {
+    setTab('handout')
+    setJump(current => ({ anchorId, token: (current?.token ?? 0) + 1 }))
+  }
+  /** 内容注册表没命中时只有空态，没有讲义也没有检测。 */
+  const handoutMatched = content !== null
+  const answerQuiz = (index: number, option: number) => {
+    const question = questions[index]
+    if (!question || !lessonId || answers[index] !== null) return
+    setQuizState({ lessonId, answers: answers.map((value, at) => at === index ? option : value) })
+    setQuizError('')
+    // The local answer is already visible; a failed write is surfaced, never thrown back into the quiz.
+    void request<LessonView>('quiz', { lessonId, entry: {
+      questionId: question.id, index, choice: option, correct: option === question.answer,
+      section: question.anchorId, answeredAt: new Date().toISOString() } })
+      .catch(cause => setQuizError(`检测作答保存失败；继续答题不受影响：${cause instanceof Error ? cause.message : String(cause)}`))
+  }
+  const retakeQuiz = () => { setQuizState({ lessonId: lessonId ?? null, answers: emptyQuizAnswers(questions) }); setTab('quiz') }
+  useEffect(() => {
+    setQuizError(''); setReadDone(false); setTab('handout'); setJump(null)
+  }, [lessonId])
+  // 讲义首次渲染即视为「读」完成；页签点击本身不标记任何完成。
+  useEffect(() => {
+    if (tab === 'handout' && handoutMatched && !readDone) setReadDone(true)
+  }, [tab, handoutMatched, readDone, setReadDone])
+  useEffect(() => {
+    if (!jump || tab !== 'handout') return
+    const node = document.getElementById(jump.anchorId)
+    if (!node) return
+    node.setAttribute('data-section-highlight', 'true')
+    if (typeof node.scrollIntoView === 'function') node.scrollIntoView({ block: 'start' })
+    const timer = setTimeout(() => { node.removeAttribute('data-section-highlight') }, 1600)
+    return () => {
+      clearTimeout(timer)
+      node.removeAttribute('data-section-highlight')
+    }
+  }, [jump, tab])
   const create = () => run(async () => {
     const lessonId = draft.id || crypto.randomUUID()
     setDraft({ ...draft, id: lessonId })
@@ -87,7 +158,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
     setList(await request<typeof list>('list', {}))
   })
   return <section aria-label="课堂与课后任务" style={{ borderTop: '1px solid #ddd', padding: '16px 0', marginBottom: 16, minWidth: 0, overflowWrap: 'anywhere', fontSize: 13 }}>
-    <style>{`[aria-label="课堂与课后任务"] input:not([type=checkbox]),[aria-label="课堂与课后任务"] select{max-width:100%;box-sizing:border-box}[aria-label="课堂与课后任务"] form label{display:flex;flex-wrap:wrap;align-items:center;gap:6px}[aria-label="课堂与课后任务"] button{display:inline-flex;align-items:center;gap:4px;min-height:30px;max-width:100%;white-space:normal}`}</style>
+    <style>{`[aria-label="课堂与课后任务"] input:not([type=checkbox]),[aria-label="课堂与课后任务"] select{max-width:100%;box-sizing:border-box}[aria-label="课堂与课后任务"] form label{display:flex;flex-wrap:wrap;align-items:center;gap:6px}[aria-label="课堂与课后任务"] button{display:inline-flex;align-items:center;gap:4px;min-height:30px;max-width:100%;white-space:normal}[data-section-highlight="true"]{outline:2px solid #b8892f;outline-offset:4px;border-radius:6px;background:#fffaf0}`}</style>
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       <h2 style={{ margin: 0, fontSize: 16 }}>课堂与课后任务</h2>
       <button data-pwb-button data-variant="primary" title="新建课堂" aria-label="新建课堂" disabled={busy} onClick={() => setForm(!form)}><Plus size={16} />新建课堂</button>
@@ -97,6 +168,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       </select>}
     </header>
     {error && <p role="alert" style={{ color: '#b42318' }}>{error}</p>}
+    {quizError && <p role="alert" style={{ color: '#b42318' }}>{quizError}</p>}
     {form && <form onSubmit={event => { event.preventDefault(); void create() }} style={{ display: 'grid', gap: 8, marginTop: 12 }}>
       <label>科目 <select aria-label="课堂科目" value={draft.subject} onChange={event => setDraft({ ...draft, subject: event.target.value })}>{TAXONOMY.map(row => <option key={row.subject}>{row.subject}</option>)}</select></label>
       <label>学习目标 <input required maxLength={500} aria-label="学习目标" value={draft.objective} onChange={event => setDraft({ ...draft, objective: event.target.value })} style={{ width: '100%', boxSizing: 'border-box' }} /></label>
@@ -107,8 +179,24 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       <label>旧课堂笔记 ID <input maxLength={500} aria-label="旧课堂笔记 ID" value={draft.legacyNoteId} onChange={event => setDraft({ ...draft, legacyNoteId: event.target.value })} /></label>
       <button data-pwb-button data-variant="primary" disabled={busy} type="submit" style={{ justifySelf: 'start' }}><Save size={14} />确认目标并保存课堂</button>
     </form>}
-    {!view && !form && <p role="status">暂无选中的课堂</p>}
+    {!view && !form && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+      <p role="status">还没有选中的课堂。下面先读第 1 课；新建或选择课堂后，讲义与检测按本课目标匹配。</p>
+      <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
+      </div>
+      {tab === 'handout'
+        ? <HandoutView handout={LESSON_CONTENTS[0].handout} />
+        : <p role="status">检测要记到课堂记录上：先新建或选择一个课堂，再来做当堂检测。</p>}
+    </div>}
     {view && context && <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+      <div role="tablist" aria-label="课堂页签" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'handout'} onClick={() => setTab('handout')}>讲义</button>
+        <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
+      </div>
+      {tab === 'handout'
+        ? (content ? <HandoutView handout={content.handout} /> : <p role="status">本课暂无讲义。</p>)
+        : <QuizPanel questions={questions} provenance={content?.quizProvenance} answers={answers} onAnswer={answerQuiz} onJump={jumpToSection} onPractice={startPractice} />}
       <strong>{view.lesson.request.objective}</strong>
       <span>{view.lesson.request.subject} · {view.lesson.completion ? '学习者已确认完成' : '课后任务未完成'}</span>
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
@@ -117,7 +205,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
       <span>课后任务：{view.lesson.request.requirePractice===false?'保存本次学习总结后明确确认':'保存学习总结、提交一轮本科目真实作答'+(view.lesson.request.requireReflections?'，保存全部错题错因':'')+'，再明确确认'}；不代表长期掌握。</span>
       {view.evidence.map(row => <div key={row.roundId}>{row.roundId} · {row.correct}/{row.total} 正确 · {row.answered ? '已作答' : '存在未作答'} · {row.reflectionsComplete ? '反思齐全' : '待补反思'}{row.projection === 'pending' ? ' · 错题本同步待恢复' : ''}</div>)}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        <button data-pwb-button disabled={busy || !!view.lesson.completion} onClick={() => void onPractice(context).catch(cause => setError(String(cause)))}><Play size={14} />课后练习</button>
+        <button data-pwb-button disabled={busy || !!view.lesson.completion} onClick={startPractice}><Play size={14} />课后练习</button>
         <button data-pwb-button disabled={busy || !result || result.roundId !== practice?.roundId || !!view.lesson.completion} onClick={() => void run(async () => accept(await request<LessonView>('link', { lessonId: view.lesson.request.lessonId, roundId: practice!.roundId })))}><Link size={14} />关联当前已提交轮次</button>
         <button data-pwb-button disabled={busy || !roles} onClick={() => void run(async () => {
           const value = await request<LessonView>('prepare', { lessonId: view.lesson.request.lessonId })
@@ -136,6 +224,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onReturnToday }
         if (owner.cell('lesson.notes', '').value === notes) setNotesDirty(false)
         accept(value)
       })}><Save size={14} />保存总结</button>
+      {!view.lesson.completion && <LessonTasks questions={questions} answers={answers} readDone={readDone} practiceDone={practiceDone} onJump={jumpToSection} onPractice={startPractice} onRetake={retakeQuiz}/>}
       <LessonCloseout onOpenTeacher={onOpenTeacher} onReturnToday={onReturnToday} view={view} notes={notes} accept={accept}/>
       <details><summary>共享证据摘要</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{view.summary}</pre></details>
     </div>}

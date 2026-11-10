@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-10",
+  "sourceCommit": "5754723ca5603d6c9794fc52b445557f39ec231c",
+  "archiveSha256": "4667a63731e22b0a26a67e0686e2aba24fa49bf6ab78ef97bdb1afb702930130",
+  "installedBytesVerified": true,
+  "port": 3089,
+  "tests": {
+    "pass": 300,
+    "fail": 0,
+    "skipped": 0
+  },
+  "releaseVerdict": {
+    "officialOfflineArchiveInstall": true,
+    "dependencyMode": "existing public dependency links; products installed from exact archives",
+    "compatibilityExemptions": 0,
+    "installedBytes": true,
+    "installedConsumers": true,
+    "authenticatedLifecycle": true,
+    "installedHtmlAssets": true,
+    "coldRestart": true,
+    "readingUninstallReinstall": true,
+    "fixture": "public synthetic reading records",
+    "modelCalls": 0,
+    "archives": [
+      "4667a63731e22b0a26a67e0686e2aba24fa49bf6ab78ef97bdb1afb702930130",
+      "170e634f3ff87ecb09fd9e45daad7509b78fd1115518b35e1b935b8ccda87e2a",
+      "294d7eb2dd8af4599a80bfb5333bbcf49596ff9d6c390b75b5de3c15a62e8dfa"
+    ]
+  },
+  "images": {
+    "native-role-desktop-before.jpg": "684fa6329c41418dc4ca5588b32dd5d91cc62fd9401a26ce2b54fab3b8fbc8fb",
+    "native-role-narrow-before.jpg": "6c9b48b7b0dba763aa7004c229c76fb71a2ea04eea3899f41c4106a623c03fda",
+    "native-role-narrow-toolbar-before.jpg": "a14f93ed6c17ffa36c724e0655134421e29a9d4430834316671fe13de2755a32",
+    "native-role-narrow-header-after.jpg": "eee508476ca27eb267176820f330d069a0b76fc959820823e5e246a609da2117"
+  },
+  "protectedUserFiles": {
+    "plugins/personal-workbench/src/capability-host.ts": "8853d330de86a0e9a650d3030455d4a2db4066eba6d57cadd9210279c1c28bd6",
+    "plugins/personal-workbench/src/management-view.tsx": "403337c5c20f6645c0832ece7c4686a5df174dca628bdf2c43e0c2380c5babf0",
+    "plugins/personal-workbench/tests/capability-host.test.mjs": "44353056afa2cfc28d044a35d9eaa89822ea0c1f195a0e63690060606d0c4dd1",
+    "plugins/personal-workbench/tests/management-ui.test.mjs": "5b8279a58f5ac8a0f0c1c35ff88f7151bec8a79bedc1866f94b351e74cbd5937"
+  },
+  "observations": {
+    "beforeMeasure": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n[{\"key\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"box\":{\"x\":72,\"y\":219,\"width\":392,\"height\":485,\"bottom\":704,\"right\":464},\"buttons\":[{\"label\":\"更多操作\",\"box\":{\"x\":412,\"y\":268,\"width\":30,\"height\":30,\"bottom\":298,\"right\":442}},{\"label\":\"打开右侧边栏\",\"box\":{\"x\":450,\"y\":268,\"width\":30,\"height\":30,\"bottom\":298,\"right\":480}},{\"label\":\"访问模式，当前：工作区内修改\",\"box\":{\"x\":134,\"y\":698,\"width\":42,\"height\":30,\"bottom\":728,\"right\":176}},{\"label\":\"选择模型，当前 DeepSeek-V41-Flash，推理等级 High\",\"box\":{\"x\":231.359375,\"y\":698,\"width\":151.640625,\"height\":30,\"bottom\":728,\"right\":383}},{\"label\":\"发送消息\",\"box\":{\"x\":399,\"y\":694,\"width\":34,\"height\":34,\"bottom\":728,\"right\":433}}],\"scrollParents\":[{\"tag\":\"DIV\",\"role\":null,\"overflow\":\"hidden\",\"client\":22,\"scroll\":30,\"box\":{\"x\":342,\"y\":271,\"width\":62,\"height\":24,\"bottom\":295,\"right\":404}},{\"tag\":\"DIV\",\"role\":null,\"overflow\":\"auto\",\"client\":366,\"scroll\":406,\"box\":{\"x\":72,\"y\":338,\"width\":390,\"height\":366,\"bottom\":704,\"right\":462}},{\"tag\":\"DIV\",\"role\":null,\"overflow\":\"auto\",\"client\":336,\"scroll\":340,\"box\":{\"x\":88,\"y\":346,\"width\":349,\"height\":336,\"bottom\":682,\"right\":437}}]}]\n```"
+        }
+      ]
+    },
+    "narrowFrame": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"viewport\":{\"width\":480,\"height\":720},\"shell\":{\"x\":56,\"y\":0,\"width\":424,\"height\":720,\"right\":480,\"bottom\":720},\"header\":{\"x\":56,\"y\":0,\"width\":424,\"height\":54,\"right\":480,\"bottom\":54},\"buttons\":[{\"label\":\"最小化: 跨页角色验收\",\"box\":{\"x\":376,\"y\":8.5,\"width\":44,\"height\":36,\"right\":420,\"bottom\":44.5}},{\"label\":\"关闭工作台\",\"box\":{\"x\":428,\"y\":8.5,\"width\":44,\"height\":36,\"right\":472,\"bottom\":44.5}}],\"scrollWidth\":480,\"bodyWidth\":480,\"composers\":[{\"x\":88,\"y\":346,\"width\":344,\"height\":340,\"right\":432,\"bottom\":686}]}\n```"
+        }
+      ]
+    },
+    "narrowToolbar": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"focus\":\"添加文件或调用指令\",\"send\":[{\"x\":415,\"y\":425,\"bottom\":459,\"visibleHit\":false},{\"x\":399,\"y\":670,\"bottom\":704,\"visibleHit\":true}]}\n```"
+        }
+      ]
+    },
+    "greenBeforeFocus": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"seat\":{\"x\":72,\"y\":268,\"width\":392,\"height\":75,\"right\":464,\"bottom\":343},\"seatScrollWidth\":408,\"seatClientWidth\":392,\"scrollLeft\":0,\"overflowX\":\"auto\",\"button\":{\"x\":450,\"y\":268,\"width\":30,\"height\":30,\"right\":480,\"bottom\":298},\"buttonHit\":false,\"focus\":\"跨页角色验收 · default\",\"draft\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"]}\n```"
+        }
+      ]
+    },
+    "greenFocused": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"seat\":{\"x\":72,\"y\":268,\"width\":392,\"height\":75,\"right\":464,\"bottom\":343},\"seatScrollWidth\":408,\"seatClientWidth\":392,\"scrollLeft\":0,\"overflowX\":\"auto\",\"button\":{\"x\":450,\"y\":268,\"width\":30,\"height\":30,\"right\":480,\"bottom\":298},\"buttonHit\":false,\"focus\":\"打开右侧边栏\",\"draft\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"]}\n```"
+        }
+      ]
+    },
+    "greenArrow": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"seat\":{\"x\":72,\"y\":268,\"width\":392,\"height\":75,\"right\":464,\"bottom\":343},\"seatScrollWidth\":408,\"seatClientWidth\":392,\"scrollLeft\":16,\"overflowX\":\"auto\",\"button\":{\"x\":434,\"y\":268,\"width\":30,\"height\":30,\"right\":464,\"bottom\":298},\"buttonHit\":true,\"focus\":\"打开右侧边栏\",\"draft\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"]}\n```"
+        }
+      ]
+    },
+    "desktopAfter": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Script ran on page and returned:\n```json\n{\"roleKey\":\"[\\\"cross-page-proof\\\",\\\"default\\\",\\\"analyst\\\",null]\",\"seat\":{\"x\":296,\"y\":268,\"width\":1608,\"height\":75,\"right\":1904,\"bottom\":343},\"seatScrollWidth\":1624,\"seatClientWidth\":1608,\"scrollLeft\":16,\"overflowX\":\"auto\",\"button\":{\"x\":1874,\"y\":268,\"width\":30,\"height\":30,\"right\":1904,\"bottom\":298},\"buttonHit\":true,\"focus\":\"打开右侧边栏\",\"draft\":[\"Agent 切换保护验收：保留这段未发送草稿。📌 工作台画布标注{\\\"appId\\\":\\\"cross-page-proof\\\",\\\"instanceId\\\":\\\"default\\\",\\\"recipeVersion\\\":4,\\\"pageId\\\":\\\"lesson\\\",\\\"moduleId\\\":\\\"lesson-chat\\\",\\\"moduleTitle\\\":\\\"学习对话\\\",\\\"position\\\":{\\\"x\\\":820,\\\"y\\\":439,\\\"width\\\":0,\\\"height\\\":0},\\\"canvas\\\":{\\\"width\\\":1640,\\\"height\\\":834,\\\"scrollX\\\":0,\\\"scrollY\\\":0},\\\"visibleText\\\":\\\"\\\",\\\"embeddedContent\\\":\\\"no inaccessible frame in selection\\\",\\\"requirement\\\":\\\"历史窗口标注验收：请优化这个区域的布局，保留当前会话草稿。\\\"}请依据标注位置和要求处理；读取受限或信息不足时如实说明，不要编造页面内容。\"]}\n```"
+        }
+      ]
+    }
+  },
+  "checks": {
+    "narrowViewportNoHorizontalOverflow": true,
+    "nativeSendReachedViaKeyboardWithoutSending": true,
+    "nativeHeaderHorizontalScrollMakesFullButtonReachable": true,
+    "draftUnchanged": true,
+    "desktopButtonStillReachable": true
+  },
+  "ime": {
+    "status": "unverified",
+    "attempts": 3,
+    "result": "node_repl trusted Node process exited unexpectedly; reset retry reported windows sandbox failed: helper_unknown_error: setup refresh had errors",
+    "appInputActions": 0
+  },
+  "scope": "Actual isolated native role page at1920x945 and480x720. Screenshot-backed visual and real Tab/ArrowRight browser input; no model calls, physical IME, complete teaching matrix or all materials/instances claim. New CSS confines overflow changes to plugin-owned native-header wrapper; original DSH factories and menus remain untouched."
+}
