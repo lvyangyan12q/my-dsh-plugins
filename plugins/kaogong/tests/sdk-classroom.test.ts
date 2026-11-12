@@ -4,34 +4,41 @@ import {JSDOM} from 'jsdom'
 import React,{act} from 'react'
 import {createRoot} from 'react-dom/client'
 
-test('standalone classroom keeps learning mounted and opens the original native teacher without rendering another composer',async()=>{
-  const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'})
+function environment(markup='<div id="root"></div>'){
+  const dom=new JSDOM(markup,{url:'http://localhost'})
   const globals={React,window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
   const previous=new Map(Object.keys(globals).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))
   for(const [key,value] of Object.entries(globals))Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})
-  const oldFetch=globalThis.fetch
-  const requests:string[]=[],opened:unknown[]=[]
-  const data={today:'2026-10-24',daysToExam:100,pastDonePct:0,pastDone:0,pastDays:1,accuracyRate:0,totalQuestions:0,knowledgeTotal:0,bankTotal:0,todayPlan:{phase:'foundation',items:[]},modules:[],weakPoints:[],recentKnowledge:[]}
-  globalThis.fetch=async input=>{const url=String(input);requests.push(url);return new Response(JSON.stringify(url.includes('/dashboard')?data:url.includes('/lesson/list')?[]:url.includes('/lesson/current')?null:{entries:[]}))}
+  return {dom,restore(){for(const [key,value]of previous){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key)}dom.window.close()}}
+}
+
+const dashboard={today:'2026-10-24',daysToExam:100,pastDonePct:0,pastDone:0,pastDays:1,accuracyRate:0,totalQuestions:0,knowledgeTotal:0,bankTotal:0,todayPlan:{phase:'foundation',items:[]},modules:[],weakPoints:[],recentKnowledge:[]}
+
+test('standalone classroom keeps learning mounted without a role configurator or a second composer',async()=>{
+  const {dom,restore}=environment()
+  const oldFetch=globalThis.fetch,requests:string[]=[]
+  globalThis.fetch=async input=>{const url=String(input);requests.push(url);return new Response(JSON.stringify(url.includes('/dashboard')?dashboard:url.includes('/lesson/list')?[]:url.includes('/lesson/current')?null:{entries:[]}))}
   const root=createRoot(document.getElementById('root')!)
   try{
     const {KaogongApplicationView}=await import('../src/client.tsx')
+    const opened:unknown[]=[]
     const roles={ensure:async(id:string)=>({phase:'ready',sessionId:'original-'+id,revision:2}),open:async(...value:unknown[])=>{opened.push(value)}}
     const props={profile:{id:'learning-a',kind:'learner',title:'备考',revision:1},view:{id:'view-a',profileId:'learning-a'},roles,tasks:{prepare:async()=>({id:'prepared'})}}
     await act(async()=>root.render(React.createElement(KaogongApplicationView,props as never)))
     const content=document.querySelector('[aria-label="考公学习内容"]')
-    const teacher=[...document.querySelectorAll('button')].find(button=>button.textContent?.includes('任课老师'))!
-    assert.ok(teacher)
-    await act(async()=>teacher.click())
-    assert.deepEqual(opened,[['teacher','original-teacher',2]])
+    assert.ok(content)
+    assert.equal(document.querySelector('[aria-label="学习角色"]'),null,'不再有角色选择')
+    assert.equal(document.querySelector('[aria-label="教师科目"]'),null,'不再有教师科目下拉')
+    assert.equal([...document.querySelectorAll('button')].some(button=>button.textContent?.includes('任课老师')),false)
+    assert.doesNotMatch(document.body.textContent??'',/老师与角色设置|新建课堂|选择课堂/)
     assert.equal(document.querySelector('[aria-label="考公学习内容"]'),content)
     assert.equal(document.querySelectorAll('[contenteditable="true"]').length,0,'only native Host owns its composer')
     assert.equal(document.querySelector('aside[aria-label="角色对话"]'),null)
+    assert.deepEqual(opened,[],'页面挂载不再替学习者打开角色会话')
     assert.ok(requests.length>0)
     assert.ok(requests.every(url=>new URL(url,'http://localhost').searchParams.get('viewId')==='view-a'))
   }finally{
-    await act(async()=>root.unmount());dom.window.close();globalThis.fetch=oldFetch
-    for(const [key,value]of previous){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key)}
+    await act(async()=>root.unmount());globalThis.fetch=oldFetch;restore()
   }
 })
 
@@ -65,52 +72,21 @@ test('owned lesson opens its task Session, while a review keeps the counselor Se
   assert.deepEqual(opened,[['counselor','role-counselor',3]],'讲评仍使用辅导员角色会话')
 })
 
-test('selected role hover stays legible inside the classroom without changing native buttons outside it',async()=>{
- const dom=new JSDOM('<div id="root"></div><button id="native" data-pwb-button aria-pressed="true">Native</button>',{url:'http://localhost'})
- const globals={React,window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true},previous=new Map(Object.keys(globals).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]))
- for(const [key,value]of Object.entries(globals))Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})
- const oldFetch=globalThis.fetch;globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?{today:'2026-10-24',daysToExam:100,pastDonePct:0,pastDone:0,pastDays:1,accuracyRate:0,totalQuestions:0,knowledgeTotal:0,bankTotal:0,todayPlan:{phase:'foundation',items:[]},modules:[],weakPoints:[],recentKnowledge:[]}:String(input).includes('/lesson/current')?null:{entries:[]}))
- const root=createRoot(document.getElementById('root')!)
- try{
-  const {KaogongApplicationView}=await import('../src/client.tsx')
-  const props={profile:{id:'hover-study',kind:'learner',title:'备考',revision:1},view:{id:'hover-view',profileId:'hover-study'},roles:{ensure:async()=>({phase:'ready',sessionId:'native-advisor',revision:1}),open:async()=>{}},tasks:{prepare:async()=>({})}}
-  await act(async()=>root.render(React.createElement(KaogongApplicationView,props as never)))
-  const advisor=[...document.querySelectorAll('.kg-sdk-classroom button')].find(button=>button.textContent==='班主任')!
-  await act(async()=>advisor.click());assert.equal(advisor.getAttribute('aria-pressed'),'true');advisor.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}))
-  const nativeHover=document.createElement('style');nativeHover.textContent='button[data-pwb-button]:not(:disabled):hover{background:rgba(38,49,72,.06)}';document.head.append(nativeHover)
-  assert.equal(dom.window.getComputedStyle(advisor).backgroundColor,'rgb(47, 98, 72)');assert.equal(dom.window.getComputedStyle(advisor).color,'rgb(255, 255, 255)')
-  const outside=document.getElementById('native')!;outside.dispatchEvent(new dom.window.MouseEvent('mouseover',{bubbles:true}));nativeHover.textContent+=' ';assert.equal(dom.window.getComputedStyle(outside).backgroundColor,'rgba(38, 49, 72, 0.06)')
- }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;for(const [key,descriptor]of previous){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key)}dom.window.close()}
-})
-
-test('switching advisor and counselor returns to the profile last subject teacher and original Session',async()=>{
- const dom=new JSDOM('<div id="root"></div>',{url:'http://localhost'}),saved=new Map(),values={window:dom.window,document:dom.window.document,navigator:dom.window.navigator,HTMLElement:dom.window.HTMLElement,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true}
- for(const[key,value]of Object.entries(values)){saved.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true})}
- const prior=globalThis.fetch;globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?{todayPlan:{items:[]},weakPoints:[],modules:[],totalQuestions:0}:String(input).includes('/current')?null:[]))
- const root=createRoot(document.getElementById('root')!),opened:unknown[]=[],bindings=new Map<string,string>()
- try{
-  const{ScopedStudyView,KaogongViewStatePool}=await import('../src/client.tsx'),{Simulate}=await import('react-dom/test-utils')
-  let pool=new KaogongViewStatePool();const roles={read:async()=>null,ensure:async(id:string)=>{if(!bindings.has(id))bindings.set(id,'original-'+id);return {phase:'ready' as const,sessionId:bindings.get(id)!,revision:2}},open:async(...args:unknown[])=>{opened.push(args)}}
-  const surface=(profileId='subject-profile')=>React.createElement(ScopedStudyView,{profile:{id:profileId,kind:'learner',title:profileId,revision:1},view:{id:'view-'+profileId,profileId},roles,pool})
-  await act(async()=>root.render(surface()))
-  const select=()=>document.querySelector<HTMLSelectElement>('[aria-label="教师科目"]')!,click=async(title:string)=>act(async()=>[...document.querySelectorAll('nav[aria-label="学习角色"] button')].find(button=>button.textContent===title)!.click())
-  await act(async()=>{select().value='行测-资料分析';Simulate.change(select())})
-  await click('任课老师');await click('班主任');assert.equal(select().value,'行测-资料分析')
-  await click('辅导员');assert.equal(select().value,'行测-资料分析');await click('任课老师')
-  assert.deepEqual(opened,[['teacher.data-analysis','original-teacher.data-analysis',2],['class-advisor','original-class-advisor',2],['counselor','original-counselor',2],['teacher.data-analysis','original-teacher.data-analysis',2]])
-  assert.equal(bindings.size,3);assert.equal(bindings.has('teacher'),false)
-  await act(async()=>root.render(surface('other-profile')));assert.equal(select().value,'')
-  await act(async()=>root.render(surface()));assert.equal(select().value,'行测-资料分析')
-  pool.forView('subject-profile','view-subject-profile:native-data').cell('roles.selected',{appId:'kaogong',instanceId:'subject-profile',roleId:'class-advisor'}).set({appId:'kaogong',instanceId:'subject-profile',roleId:'class-advisor'})
-  await act(async()=>root.render(React.createElement(ScopedStudyView,{profile:{id:'subject-profile',kind:'learner',title:'备考',revision:1},view:{id:'view-subject-profile',profileId:'subject-profile'},roleId:'teacher.data-analysis',sessionId:'native-data',panel:true,roles,pool})))
-  assert.equal(select().value,'行测-资料分析');assert.equal(document.querySelector('nav[aria-label="学习角色"] button[aria-pressed=true]')?.textContent,'任课老师')
-  await click('班主任')
-  assert.equal(document.querySelector('nav[aria-label="学习角色"] button[aria-pressed=true]')?.textContent,'任课老师','Native Host role remains authoritative until its Session context changes')
-  await act(async()=>root.render(React.createElement(ScopedStudyView,{profile:{id:'subject-profile',kind:'learner',title:'备考',revision:1},view:{id:'view-subject-profile',profileId:'subject-profile'},roleId:'counselor',sessionId:'native-counselor',panel:true,roles,pool})))
-  assert.equal(select().value,'行测-资料分析');assert.equal(document.querySelector('nav[aria-label="学习角色"] button[aria-pressed=true]')?.textContent,'辅导员')
-  await click('任课老师');assert.deepEqual(opened.at(-1),['teacher.data-analysis','original-teacher.data-analysis',2])
-  pool.dispose();pool=new KaogongViewStatePool();await act(async()=>root.render(surface()));assert.equal(select().value,'行测-资料分析','profile teacher choice survives rebuilding the view owner')
-
-
- }finally{await act(async()=>root.unmount());globalThis.fetch=prior;dom.window.close();for(const[key,value]of saved)value?Object.defineProperty(globalThis,key,value):Reflect.deleteProperty(globalThis,key)}
+test('historical counselor view stays readable without becoming a role picker',async()=>{
+  const {dom,restore}=environment()
+  const oldFetch=globalThis.fetch
+  globalThis.fetch=async input=>new Response(JSON.stringify(String(input).includes('/dashboard')?dashboard:String(input).includes('/lesson/current')?null:{entries:[]}))
+  const root=createRoot(document.getElementById('root')!)
+  try{
+    const{ScopedStudyView,KaogongViewStatePool}=await import('../src/client.tsx')
+    const pool=new KaogongViewStatePool(),opened:unknown[]=[]
+    const roles={read:async()=>null,ensure:async(id:string)=>({phase:'ready' as const,sessionId:'original-'+id,revision:2}),open:async(...args:unknown[])=>{opened.push(args)}}
+    await act(async()=>root.render(React.createElement(ScopedStudyView,{profile:{id:'history-profile',kind:'learner',title:'备考',revision:1},view:{id:'view-history',profileId:'history-profile'},roleId:'counselor',sessionId:'native-counselor',panel:true,roles,pool} as never)))
+    assert.match(document.body.textContent??'',/历史辅导员会话/)
+    assert.equal(document.querySelector('[aria-label="学习角色"]'),null)
+    assert.equal(document.querySelector('[aria-label="教师科目"]'),null)
+    assert.equal([...document.querySelectorAll('button')].some(button=>['任课老师','班主任','辅导员'].includes(button.textContent??'')),false)
+    assert.deepEqual(opened,[],'历史会话只读取，不重新打开角色或创建替代会话')
+    pool.dispose()
+  }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;restore()}
 })

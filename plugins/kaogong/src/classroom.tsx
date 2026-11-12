@@ -8,7 +8,6 @@ import { KaogongView } from './kaogong-view.tsx'
 import type { KaogongViewProps, KaogongTeachingRequest } from './kaogong-view.tsx'
 import type { Entry } from './knowledge-reader.tsx'
 import { useBusinessState, useRequestOwner } from './view-state.tsx'
-import { TAXONOMY } from './taxonomy.ts'
 import { GraduationCap, BookOpen, HeartHandshake, Maximize2, X } from 'lucide-react'
 import { learningStyles } from './learning-styles.ts'
 
@@ -93,15 +92,21 @@ export function KaogongClassroom(props: Omit<KaogongViewProps, 'onOpenTeacher'> 
       onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId) }}
       onKeyDown={event => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); resize(leftWidth + (event.key === 'ArrowLeft' ? -2 : 2)) } }} />
     <aside hidden={!studyOpen} aria-label="角色对话" style={{ display: studyOpen ? 'flex' : 'none', flexDirection: 'column' }}>
-      {roles && <nav aria-label="学习角色" style={{ display: 'flex', flexWrap: 'wrap', flexShrink: 0, gap: 4, padding: 6 }}>
-        {([{ id: 'class-advisor', label: '班主任', Icon: GraduationCap }, { id: 'teacher', label: '任课老师', Icon: BookOpen }, { id: 'counselor', label: '辅导员', Icon: HeartHandshake }]).map(role => <button data-pwb-button key={role.id} title={role.label} aria-pressed={selected.roleId === role.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 30 }} onClick={() => select({ ...classroomTeacherKey, roleId: role.id, ...(role.id === 'teacher' && selected.subject ? { subject: selected.subject } : {}) })}><role.Icon size={15} />{role.label}</button>)}
-        {selected.roleId === 'teacher' && <select aria-label="教师科目" value={selected.subject ?? ''} onChange={event => select({ ...classroomTeacherKey, ...(event.target.value ? { subject: event.target.value } : {}) })}><option value="">默认老师</option>{TAXONOMY.map(row => <option key={row.subject}>{row.subject}</option>)}</select>}
-      </nav>}
+      {roles ? <>
+        <details style={{ flexShrink: 0, padding: '6px 8px', borderBottom: '1px solid #ddd' }}>
+          <summary style={{ cursor: 'pointer', fontSize: 12 }}>班主任与历史会话</summary>
+          <nav aria-label="班主任与历史会话" style={{ display: 'flex', flexWrap: 'wrap', gap: 4, padding: '4px 0' }}>
+            {([{ id: 'class-advisor', label: '班主任（规划与督学）', Icon: GraduationCap }, { id: 'counselor', label: '辅导员历史会话', Icon: HeartHandshake }]).map(role => <button data-pwb-button key={role.id} aria-pressed={selected.roleId === role.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 30 }} onClick={() => select({ ...classroomTeacherKey, roleId: role.id })}><role.Icon size={15} />{role.label}</button>)}
+            <button data-pwb-button aria-pressed={selected.roleId === 'teacher'} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 30 }} onClick={() => select(selected.roleId === 'teacher' ? selected : opened.find(key => key.roleId === 'teacher') ?? classroomTeacherKey)}><BookOpen size={15} />回到当前老师会话</button>
+          </nav>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: '#667062' }}>班主任负责整体规划与督学；日常讲课、答疑与讲评由当前任务的老师承接。辅导员仅保留历史会话，不删除、不搬运。</p>
+        </details>
       {!props.renderFactorySlot && props.ctx && tasks && PreparedTaskEditor && <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: 0, maxHeight: '50%', overflow: 'hidden', padding: '8px' }}><PreparedTaskEditor ctx={props.ctx} bindingKey={selected} label={taskRoleLabel(selected)} t={taskTranslate} /></div>}
       {roles && props.renderFactorySlot ? opened.map(key => <div key={JSON.stringify(key)} hidden={!same(key, selected)} style={{ flex: 1, minHeight: 0, minWidth: 0, display: same(key, selected) ? 'flex' : 'none', flexDirection: 'column' }}>
         {props.ctx && tasks && PreparedTaskEditor && <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, minHeight: 0, maxHeight: '50%', overflow: 'hidden', padding: '8px' }}><PreparedTaskEditor ctx={props.ctx} bindingKey={key} label={taskRoleLabel(key)} t={taskTranslate} /></div>}
         {props.renderFactorySlot!('personal-workbench.role-conversation', { bindingKey: key, label: key.subject ?? (key.roleId === 'teacher' ? '默认老师' : key.roleId === 'class-advisor' ? '班主任' : '辅导员'), active: studyOpen && (props.active ?? true) && same(key, selected) && (!narrow || studyPane === 'conversation') }, { fallback: <p role="alert">角色原生组件不可用。</p> })}
-      </div>) : <p role="status">角色服务不可用；练习和讲义仍可使用。</p>}
+      </div>) : <p role="status">角色组件不可用；练习和讲义仍可使用。</p>}
+      </> : <p role="status">角色服务不可用；练习和讲义仍可使用。</p>}
     </aside>
   </div>
   </section>
