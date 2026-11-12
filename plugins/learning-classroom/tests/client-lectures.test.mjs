@@ -352,7 +352,6 @@ test('HTML 实验在最小沙箱 iframe 中运行，CSP 禁止宿主、文件与
     assert.match(srcdoc, /Content-Security-Policy/)
     assert.match(srcdoc, /default-src 'none'/)
     assert.match(srcdoc, /connect-src 'none'/)
-    assert.match(srcdoc, /sandbox allow-scripts/)
     assert.match(srcdoc, /<canvas id="chart">/)
     assert.doesNotMatch(srcdoc, /D:\/知识库|笔记\/我的笔记\.md|沙箱外/, '实验文档里不能带宿主路径或笔记内容')
     assert.equal(reader.querySelector('script'), null, '实验脚本不能进入课堂主文档')

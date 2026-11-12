@@ -1,6 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { constants } from 'node:fs'
-import { copyFile, link, lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { link, lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
@@ -151,6 +150,8 @@ export interface ClassroomHostOptions {
   probe?: VaultProbe
   /** Same-origin gate supplied by the DSH connection service in production. */
   rejection?: (req: IncomingMessage) => number | undefined
+  /** Test seam for filesystems that reject the atomic no-overwrite link. */
+  linkFile?: (existingPath: string, newPath: string) => Promise<void>
 }
 
 export interface ClassroomHost {
@@ -189,6 +190,7 @@ function contentVersion(content: string): string {
 export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
   const { store } = options
   const probe = options.probe ?? nodeVaultProbe
+  const linkFile = options.linkFile ?? link
   let closed = false
   let tail: Promise<unknown> = Promise.resolve()
 
@@ -326,16 +328,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     if (space === undefined) {
       throw new ClassroomError('space-not-found', `学习空间不存在：${spaceId}`, 409)
     }
-    const target = await resolveVaultPath(root, space.directory, probe)
-    let info
-    try {
-      info = await stat(target)
-    } catch {
-      throw new ClassroomError('space-unavailable', `学习空间文件夹不存在：${space.directory}`, 409)
-    }
-    if (!info.isDirectory()) {
-      throw new ClassroomError('space-unavailable', `学习空间路径不是文件夹：${space.directory}`, 409)
-    }
+    await spaceFolderOf(root, space)
     const next: ClassroomState = { ...state, currentSpaceId: space.id }
     await store.write(next)
     return view(next)
@@ -349,14 +342,22 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     return space
   }
 
-  /** Require the registered space folder to still exist and be a directory. */
+  /**
+   * Require the registered space folder itself to be a real directory. `stat`
+   * would follow a junction at the space root, so a space A linked to another
+   * in-vault topic B would otherwise pass every descendant check; the root
+   * component must not be a link at all.
+   */
   const spaceFolderOf = async (root: string, space: ClassroomSpace): Promise<void> => {
     const target = await resolveVaultPath(root, space.directory, probe)
     let info
     try {
-      info = await stat(target)
+      info = await lstat(target)
     } catch {
       throw new ClassroomError('space-unavailable', `学习空间文件夹不存在：${space.directory}`, 409)
+    }
+    if (info.isSymbolicLink()) {
+      throw new ClassroomError('space-unavailable', `学习空间目录是符号链接/目录联接，已拒绝：${space.directory}`, 409)
     }
     if (!info.isDirectory()) {
       throw new ClassroomError('space-unavailable', `学习空间路径不是文件夹：${space.directory}`, 409)
@@ -674,6 +675,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     return buildLectureList(state, root, space)
   })
 
@@ -702,6 +704,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     const { relative, fileName, kind } = courseFileOf(space, inputPath)
 
     const target = await resolveSpaceFile(root, space, relative)
@@ -1121,8 +1124,9 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       throw new ClassroomError('generation-too-large', `生成文件超过 ${Math.round(lectureReadLimit / 1024)} KB 上限，未写入。`, 413)
     }
 
-    const target = await resolveVaultPath(root, `${space.directory}/${relative}`, probe)
-    const folder = dirname(target)
+    // Lexical validation first; all later filesystem work uses the canonical
+    // space root plus the validated relative segments, not the client-shaped path.
+    await resolveVaultPath(root, `${space.directory}/${relative}`, probe)
     ensureLive()
     const realSpace = await probe.realpath(await resolveVaultPath(root, space.directory, probe))
     // Refuse a symlink/junction anywhere under the lecture root before creating
@@ -1140,25 +1144,34 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
       }
     }
+    const canonicalFolder = join(realSpace, ...pathSegments.slice(0, -1))
     let directoryInfo
     try {
-      directoryInfo = await stat(folder)
+      directoryInfo = await stat(canonicalFolder)
     } catch {
       directoryInfo = undefined
     }
     if (directoryInfo === undefined) {
       // A missing chapter folder is created only after the content passed all
       // validation; an aborted/failed write never publishes a lecture file.
-      await mkdir(folder, { recursive: true })
+      await mkdir(canonicalFolder, { recursive: true })
     } else if (!directoryInfo.isDirectory()) {
       throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
     }
 
-    const realFolder = await probe.realpath(folder)
+    const realFolder = await probe.realpath(canonicalFolder)
     if (!pathInside(realSpace, realFolder)) {
       throw new ClassroomError('generation-outside', `生成路径经符号链接越出学习空间：${relative}`, 409)
     }
-    const existing = await lstat(target).catch(() => undefined)
+    const folderInfo = await stat(realFolder)
+    if (!folderInfo.isDirectory()) {
+      throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
+    }
+    const folderIdentity = `${String(folderInfo.dev)}:${String(folderInfo.ino)}`
+    const fileName = relative.split('/').pop() ?? relative
+    // All writes go through the canonical folder, never the client-shaped path.
+    const realTarget = join(realFolder, fileName)
+    const existing = await lstat(realTarget).catch(() => undefined)
     if (existing !== undefined) {
       throw new ClassroomError(
         'lecture-exists',
@@ -1167,15 +1180,28 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       )
     }
 
-    const staging = join(folder, `.${randomUUID()}${generationStagingSuffix}`)
+    const staging = join(realFolder, `.${randomUUID()}${generationStagingSuffix}`)
     try {
       ensureLive()
       await writeFile(staging, content, { encoding: 'utf8', flag: 'wx' })
       ensureLive()
+      // Directory identity checks narrow the local replacement window: the
+      // canonical folder and the canonical staging path must still be the same
+      // directory before publication. Node's fs exposes no dirfd/openat, so a
+      // local process that replaces an ancestor between this check and `link`
+      // is outside the supported boundary; static links are rejected above.
+      const current = await stat(realFolder)
+      if (`${String(current.dev)}:${String(current.ino)}` !== folderIdentity) {
+        throw new ClassroomError('generation-outside', `生成目录在写入期间被替换，已拒绝发布：${relative}`, 409)
+      }
+      const realStaging = await probe.realpath(staging)
+      if (!pathInside(realFolder, realStaging)) {
+        throw new ClassroomError('generation-outside', `生成暂存文件经符号链接离开学习空间，已拒绝：${relative}`, 409)
+      }
       try {
         // A hard link publishes the complete staging file atomically and fails
         // if the target appeared meanwhile; the existing file is never touched.
-        await link(staging, target)
+        await linkFile(staging, realTarget)
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code
         if (code === 'EEXIST') {
@@ -1185,22 +1211,14 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
             409,
           )
         }
-        if (code !== 'EPERM' && code !== 'ENOSYS' && code !== 'EXDEV' && code !== 'EACCES') throw error
-        // Some network/exFAT mounts have no hard links. The exclusive copy is
-        // still no-overwrite; a copy failure removes only the file it created.
-        try {
-          await copyFile(staging, target, constants.COPYFILE_EXCL)
-        } catch (copyError) {
-          if ((copyError as NodeJS.ErrnoException).code === 'EEXIST') {
-            throw new ClassroomError(
-              'lecture-exists',
-              `讲义目录里已存在同名文件：${relative}。没有覆盖它；请换一个文件名后重试。`,
-              409,
-            )
-          }
-          await rm(target, { force: true }).catch(() => undefined)
-          throw copyError
-        }
+        // Never fall back to a copy: a copy can expose a half-written file and
+        // its cleanup could delete a file another process created meanwhile.
+        // Filesystems without an atomic no-overwrite link fail closed.
+        throw new ClassroomError(
+          'generation-publish-unsupported',
+          `当前文件系统无法无覆盖原子发布生成文件（${code ?? '未知错误'}）；未写入任何文件，也不会退化为复制。`,
+          500,
+        )
       }
       await rm(staging, { force: true }).catch(() => undefined)
     } catch (error) {
@@ -1216,7 +1234,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     return {
       spaceId: space.id,
       path: relative,
-      fileName: relative.split('/').pop() ?? relative,
+      fileName,
       title,
       kind,
       size: Buffer.byteLength(content, 'utf8'),
@@ -1230,6 +1248,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     return { notes: await listNotes(root, space.directory, probe), defaultPath: space.notePath }
   })
 
@@ -1237,6 +1256,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     return readNote(root, space.directory, path, probe)
   })
 
@@ -1250,6 +1270,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, command.spaceId)
+    await spaceFolderOf(root, space)
     return saveNote(root, space.directory, command.path, command.content, command.version, { overwrite: command.overwrite }, probe)
   })
 
@@ -1336,6 +1357,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     const canvasVaultPath = `${space.directory}/${canvasFileName}`
     const target = await resolveVaultPath(root, canvasVaultPath, probe)
 

@@ -115,7 +115,6 @@ test('实验文件自带最小沙箱 CSP、来源与参数元数据，且可无�
   assert.match(html, /default-src 'none'/)
   assert.match(html, /script-src 'unsafe-inline'/)
   assert.match(html, /connect-src 'none'/)
-  assert.match(html, /sandbox allow-scripts/)
   assert.match(html, /<title>贝叶斯更新<\/title>/)
   assert.match(html, /<canvas id="chart"><\/canvas>/)
   assert.match(html, /<script>const prior = 0\.5<\/script>/)
@@ -141,4 +140,32 @@ test('既有或手写实验在渲染前也会补上同一份 CSP，片段 HTML �
   // policy: only the exact strong tag is accepted as already present.
   const fake = '<meta data-learning-classroom-csp="1"><p>绕过尝试</p>'
   assert.match(ensureExperimentCsp(fake), /Content-Security-Policy/)
+})
+
+test('CSP 是固定可信前缀：注释里的完整 CSP 标签和伪 <head> 都不能绕过或吞掉注入', () => {
+  const fakeCsp = '<!-- <meta http-equiv="Content-Security-Policy" data-learning-classroom-csp="1" content="default-src *"> -->'
+  const fakeHead = '<!-- <head> --><div title="<head>"><script>const fake = "<head>"</script><p>实验正文</p></div>'
+  const secured = ensureExperimentCsp(`${fakeCsp}${fakeHead}`)
+  assert.match(secured, /^<!doctype html><html><head><meta http-equiv="Content-Security-Policy"/)
+  assert.match(secured, /data-learning-classroom-csp="1"/)
+  assert.match(secured, /<p>实验正文<\/p>/)
+  // The trusted prefix is first, so the comment can never be mistaken for the
+  // document's real head or for an already-applied policy.
+  assert.ok(secured.indexOf('Content-Security-Policy') < secured.indexOf('<!-- <meta'))
+  assert.equal(ensureExperimentCsp(secured), secured)
+})
+
+test('生成实验也把可信前缀放在模型 HTML 之前，元数据仍在真实 head', () => {
+  const draft = experimentDraftSchema.parse({
+    fileName: '04-伪head实验.html',
+    title: '伪 head 实验',
+    sources,
+    parameters: [{ name: 'p', label: '概率', min: 0, max: 1, step: 0.1, default: 0.5, unit: '' }],
+    html: '<!-- <head> --><div title="<head>"><p>正文</p></div>',
+  })
+  const html = composeExperiment(draft)
+  assert.match(html, /^<!doctype html><html><head><meta http-equiv="Content-Security-Policy"/)
+  assert.ok(html.indexOf('<title>伪 head 实验</title>') < html.indexOf('<!-- <head> -->'))
+  assert.match(html, /<p>正文<\/p>/)
+  assert.deepEqual(readExperimentMeta(html).parameters, draft.parameters)
 })

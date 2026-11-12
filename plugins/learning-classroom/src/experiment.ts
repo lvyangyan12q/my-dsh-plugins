@@ -1,8 +1,14 @@
 /**
  * Browser-safe experiment rendering policy. The classroom never puts an
  * experiment's HTML into the main document; it wraps the page in an opaque-origin
- * sandbox and injects this policy before the HTML reaches an iframe. The file
- * writer applies the same policy, so opening the file elsewhere keeps the limit.
+ * sandbox iframe and prefixes this policy before the HTML reaches it.
+ *
+ * The policy is an unambiguous *trusted prefix*, never a string search for a
+ * `<head>` or an already-present tag: a comment, attribute or script containing
+ * the marker cannot suppress it or capture the insertion point. The same prefix
+ * is written by the Host, so opening the file elsewhere keeps the resource limit.
+ * The opaque-origin sandbox itself is the iframe's `sandbox="allow-scripts"`
+ * attribute; CSP `sandbox` delivered through `<meta>` is ignored by Chrome.
  */
 export const experimentCsp = [
   "default-src 'none'",
@@ -17,45 +23,31 @@ export const experimentCsp = [
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
-  'sandbox allow-scripts',
 ].join('; ')
 
-const cspMarker = 'data-learning-classroom-csp="1"'
-const cspTag = `<meta http-equiv="Content-Security-Policy" ${cspMarker} content="${experimentCsp}">`
-
-/** Insert markup at the start of a document's head, creating one when needed. */
-export function injectIntoHead(html: string, markup: string): string {
-  const head = /<head\b[^>]*>/i.exec(html)
-  if (head !== null) {
-    const index = head.index + head[0].length
-    return `${html.slice(0, index)}${markup}${html.slice(index)}`
-  }
-  const root = /<html\b[^>]*>/i.exec(html)
-  if (root !== null) {
-    const index = root.index + root[0].length
-    return `${html.slice(0, index)}<head>${markup}</head>${html.slice(index)}`
-  }
-  const doctype = /<!doctype[^>]*>/i.exec(html)
-  if (doctype !== null) {
-    const index = doctype.index + doctype[0].length
-    const rest = html.slice(index)
-    const body = /<body\b/i.test(rest)
-    return body
-      ? `${html.slice(0, index)}<html><head>${markup}</head>${rest}`
-      : `${html.slice(0, index)}<html><head>${markup}</head><body>${rest}</body></html>`
-  }
-  if (/<body\b/i.test(html)) return `<html><head>${markup}</head>${html}</html>`
-  return `<html><head>${markup}</head><body>${html}</body></html>`
-}
+const cspTag = `<meta http-equiv="Content-Security-Policy" data-learning-classroom-csp="1" content="${experimentCsp}">`
+const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1">'
 
 /**
- * Ensure the strongest classroom policy is present before rendering. A model's
- * own CSP cannot replace it: the data marker identifies our exact tag.
+ * Exact first bytes of every secured document. Nothing before this prefix is
+ * trusted, and `startsWith` on this constant is unambiguous: it is markup, not a
+ * substring that can be hidden in a comment.
  */
-export function ensureExperimentCsp(input: string): string {
+export const experimentTrustedPrefix = `<!doctype html><html><head>${cspTag}<meta charset="utf-8">${viewportTag}`
+
+/**
+ * Put the trusted prefix in front of any experiment HTML. Existing documents are
+ * kept as body content; their own `<head>`/`<html>` tokens are handled by the
+ * HTML parser as body-mode tokens and cannot move our policy out of the real
+ * head. `headMarkup` is host-owned, escaped metadata only.
+ */
+export function wrapExperimentDocument(input: string, headMarkup = ''): string {
   const html = typeof input === 'string' ? input : ''
-  // Only our exact tag counts: a stray marker or a model-authored policy must
-  // never stop the classroom from adding its own (intersecting) policy.
-  if (html.includes(cspTag)) return html
-  return injectIntoHead(html, cspTag)
+  if (html.startsWith(experimentTrustedPrefix)) return html
+  return `${experimentTrustedPrefix}${headMarkup}</head><body>${html}</body></html>`
+}
+
+/** Client-side guard for existing or hand-written experiment files. */
+export function ensureExperimentCsp(input: string): string {
+  return wrapExperimentDocument(input)
 }

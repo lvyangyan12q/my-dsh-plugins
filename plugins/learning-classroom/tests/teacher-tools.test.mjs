@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile, readdir, stat, symlink } from 'node:fs/promises'
+import { readFile, readdir, rename, stat, symlink, unlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { classroomFixture } from './support/fixture.mjs'
@@ -197,7 +197,7 @@ test('生成实验写入自包含页面；读回沙箱 HTML、来源与参数，
     const absolute = join(fixture.vault, space.directory, '讲义', '第一章', '03-贝叶斯实验.html')
     const saved = await readFile(absolute, 'utf8')
     assert.match(saved, /Content-Security-Policy/)
-    assert.match(saved, /sandbox allow-scripts/)
+    assert.match(saved, /connect-src 'none'/)
     assert.match(saved, /<title>贝叶斯更新实验<\/title>/)
     assert.doesNotMatch(saved, /https?:\/\//, '生成实验不得引用网络资源')
 
@@ -229,6 +229,63 @@ test('生成实验写入自包含页面；读回沙箱 HTML、来源与参数，
     assert.equal(await stat(join(fixture.vault, space.directory, '讲义', '第一章', '04-外链实验.html')).catch(() => null), null)
     assert.deepEqual((await readdir(join(fixture.vault, space.directory, '讲义', '第一章'))).filter(name => name.endsWith('.tmp')), [])
   } finally {
+    await fixture.close()
+  }
+})
+
+test('文件系统不能无覆盖原子发布时失败关闭，不退化为复制、不删除外部新文件', async () => {
+  let linkCalls = 0
+  const fixture = await classroomFixture({
+    linkFile: async (staging, target) => {
+      linkCalls += 1
+      // Simulate a filesystem without hard links while another process creates
+      // the target in the same window. The Host must not copy or delete it.
+      assert.match(staging, /\.learning-classroom\.tmp$/)
+      await writeFile(target, '外部新文件', { encoding: 'utf8', flag: 'wx' })
+      throw Object.assign(new Error('hard link unsupported'), { code: 'EPERM' })
+    },
+  })
+  try {
+    const space = await prepare(fixture)
+    const tools = toolsFor(fixture)
+    await assert.rejects(
+      () => toolOf(tools, 'classroom_lecture_write').definition.execute(lectureArgs, execution('session-a')),
+      /原子|发布|复制|不支持/,
+    )
+    assert.equal(linkCalls, 1)
+    const target = join(fixture.vault, space.directory, '讲义', '第一章', '02-条件概率.md')
+    assert.equal(await readFile(target, 'utf8'), '外部新文件', '不能删除或覆盖竞争出现的外部文件')
+    assert.deepEqual((await readdir(join(fixture.vault, space.directory, '讲义', '第一章'))).filter(name => name.endsWith('.tmp')), [])
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('学习空间根目录本身是目录联接时也拒绝写入，不能把 A 主题写进 Vault 内 B', async () => {
+  const fixture = await classroomFixture()
+  const a = await prepare(fixture, '概率论', 'session-a')
+  const b = await prepare(fixture, '线性代数', 'session-b')
+  const aPath = join(fixture.vault, a.directory)
+  const backup = `${aPath}-原目录`
+  await rename(aPath, backup)
+  await symlink(join(fixture.vault, b.directory), aPath, 'junction')
+  try {
+    const tools = toolsFor(fixture)
+    await assert.rejects(
+      () => toolOf(tools, 'classroom_lecture_write').definition.execute(lectureArgs, execution('session-a')),
+      /符号链接|目录联接|学习空间|拒绝/,
+    )
+    const listed = await fixture.post({ action: 'lecture-list', spaceId: a.id })
+    assert.equal(listed.status, 409)
+    assert.equal(listed.body.code, 'space-unavailable')
+    assert.match(listed.body.error, /符号链接|目录联接/)
+    const notes = await fixture.post({ action: 'note-list', spaceId: a.id })
+    assert.equal(notes.status, 409)
+    assert.equal(JSON.stringify(listed.body).includes('我的笔记'), false)
+    assert.deepEqual(await readdir(join(fixture.vault, b.directory, '讲义')), [])
+    assert.deepEqual(await readdir(join(fixture.vault, b.directory, '笔记')), ['我的笔记.md'])
+  } finally {
+    await unlink(aPath).catch(() => undefined)
     await fixture.close()
   }
 })

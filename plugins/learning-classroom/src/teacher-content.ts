@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { ensureExperimentCsp, injectIntoHead } from './experiment.ts'
+import { wrapExperimentDocument } from './experiment.ts'
 import { lectureFileKind, lectureFolder } from './lectures.ts'
 
-export { ensureExperimentCsp, experimentCsp } from './experiment.ts'
+export { ensureExperimentCsp, experimentCsp, experimentTrustedPrefix } from './experiment.ts'
 
 /** One declared experiment control, persisted with the experiment for display. */
 export interface ExperimentParameter {
@@ -248,7 +248,6 @@ export function composeLecture(input: LectureDraft): string {
   ].join('\n')
 }
 
-const viewportTag = '<meta name="viewport" content="width=device-width, initial-scale=1">'
 const orderMetaName = 'learning-classroom:order'
 const sourcesMetaName = 'learning-classroom:sources'
 const parametersMetaName = 'learning-classroom:parameters'
@@ -309,11 +308,10 @@ export function composeExperiment(input: ExperimentDraft): string {
   const draft = experimentDraftSchema.parse(input)
   assertSelfContainedExperiment(draft.html)
   const markup = [
-    viewportTag,
-    /<title\b/i.test(draft.html) ? '' : `<title>${escapeAttribute(draft.title)}</title>`,
+    `<title>${escapeAttribute(draft.title)}</title>`,
     draft.order !== undefined ? `<meta name="${orderMetaName}" content="${draft.order}">` : '',
     `<meta name="${sourcesMetaName}" content="${escapeAttribute(JSON.stringify(draft.sources))}">`,
     `<meta name="${parametersMetaName}" content="${escapeAttribute(JSON.stringify(draft.parameters))}">`,
   ].filter(Boolean).join('')
-  return ensureExperimentCsp(injectIntoHead(draft.html, markup))
+  return wrapExperimentDocument(draft.html, markup)
 }
