@@ -39,6 +39,13 @@ const keyPrefix = 'learning-classroom:note-draft:v1:'
 const revisionClocks = new Map<string, number>()
 
 /**
+ * Keys whose latest draft is not durable (sessionStorage failed and only the
+ * memory fallback holds it). This is page-scoped on purpose: switching topics
+ * or remounting NotesZone must not make the risk disappear from the UI.
+ */
+const nonDurableDrafts = new Set<string>()
+
+/**
  * A draft belongs to one space UUID plus a space-relative note path. Space ids
  * are minted with `randomUUID()` when a space is created, and choosing a
  * different vault clears the registered spaces, so a key cannot be reused by a
@@ -67,6 +74,18 @@ export function allocateDraftRevision(spaceId: string, path: string): number {
 /** Latest allocated/observed revision for a key. */
 export function draftRevisionClock(spaceId: string, path: string): number {
   return revisionClocks.get(keyOf(spaceId, path)) ?? 0
+}
+
+export function markDraftNonDurable(spaceId: string, path: string): void {
+  nonDurableDrafts.add(keyOf(spaceId, path))
+}
+
+export function clearDraftRisk(spaceId: string, path: string): void {
+  nonDurableDrafts.delete(keyOf(spaceId, path))
+}
+
+export function hasNonDurableDrafts(): boolean {
+  return nonDurableDrafts.size > 0
 }
 
 function isDraft(value: unknown): value is NoteDraft {
@@ -119,6 +138,7 @@ export function createMemoryDraftStore(): NoteDraftStore {
     },
     remove(spaceId, path) {
       files.delete(keyOf(spaceId, path))
+      clearDraftRisk(spaceId, path)
     },
   }
 }
@@ -174,6 +194,7 @@ export function createSessionDraftStore(storage: WebStorageLike | null = browser
           savedAt: draft.savedAt,
         }))
         memoryFallback.remove(spaceId, path)
+        clearDraftRisk(spaceId, path)
         return 'session'
       } catch {
         const written = memoryFallback.write(spaceId, path, draft)
@@ -187,6 +208,7 @@ export function createSessionDraftStore(storage: WebStorageLike | null = browser
         // Ignore; the in-memory copy is still removed below.
       }
       memoryFallback.remove(spaceId, path)
+      clearDraftRisk(spaceId, path)
     },
   }
 }

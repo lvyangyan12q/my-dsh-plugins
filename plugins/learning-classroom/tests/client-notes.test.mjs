@@ -130,7 +130,9 @@ function memoryDrafts() {
       const existing = files.get(storageKey)
       if (existing !== undefined && draft.revision <= (existing.revision ?? 0)) return 'stale'
       files.set(storageKey, draft)
-      return 'memory'
+      // The default test store models durable storage; memory-specific tests
+      // use createSessionDraftStore with a throwing backing store.
+      return 'session'
     },
     remove(spaceId, path) { files.delete(key(spaceId, path)) },
   }
@@ -333,6 +335,75 @@ test('可以在 笔记/ 目录下的多个 Markdown 文件之间切换', async (
     assert.equal(store.calls.filter(call => call.type === 'read').at(-1).path, '笔记/第二份.md')
     assert.match(ui.status(), /已保存/)
   } finally {
+    await ui.unmount()
+  }
+})
+
+test('编辑即同步草稿：防抖未到、未走 cleanup 也能在重建后恢复', async () => {
+  const drafts = memoryDrafts()
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n原文\n' })
+  let uiLive = true
+  const ui = await mount(store, { drafts, debounceMs: 5000 })
+  try {
+    await ui.type('# 我的笔记\n\n700ms 内刷新也不该丢\n')
+    const parked = drafts.read('space-1', '笔记/我的笔记.md')
+    assert.equal(parked?.content, '# 我的笔记\n\n700ms 内刷新也不该丢\n')
+    assert.ok(parked.revision > 0)
+    assert.equal(store.calls.filter(call => call.type === 'save').length, 0, '不应等防抖或 HTTP 才留草稿')
+
+    const unload = new dom.window.Event('beforeunload', { cancelable: true })
+    dom.window.dispatchEvent(unload)
+    assert.equal(unload.defaultPrevented, false, 'sessionStorage 草稿可跨刷新，不应误提示')
+
+    // Prevent the cleanup-triggered save from racing this simulation; the
+    // point is that the draft already exists before cleanup/debounce.
+    store.setNextSaveError(Object.assign(new Error('模拟刷新前保存未完成'), { code: 'note-save-failed' }))
+    await ui.unmount()
+    uiLive = false
+    const rebuilt = await mount(store, { drafts, debounceMs: 5000 })
+    try {
+      assert.equal(rebuilt.textarea().value, '# 我的笔记\n\n700ms 内刷新也不该丢\n')
+      assert.match(rebuilt.text(), /草稿/)
+    } finally {
+      await rebuilt.unmount()
+    }
+  } finally {
+    if (uiLive) await ui.unmount()
+  }
+})
+
+test('内存草稿风险跨主题保留：警告不消失，beforeunload 会要求确认', async () => {
+  const throwing = {
+    getItem() { return null },
+    setItem() { throw new Error('quota exceeded') },
+    removeItem() {},
+  }
+  const drafts = createSessionDraftStore(throwing)
+  const spaceA = { ...space, id: 'space-risk-a', notePath: '笔记/A.md' }
+  const spaceB = { ...space, id: 'space-risk-b', notePath: '笔记/B.md' }
+  const store = noteStore({
+    '笔记/A.md': '# A\n',
+    '笔记/B.md': '# B\n',
+  })
+  const ui = await mount(store, { drafts, space: spaceA, debounceMs: 5000 })
+  try {
+    await ui.type('# A\n\n只在内存的修改\n')
+    assert.match(ui.text(), /内存/)
+
+    // Keep the topic switch from succeeding a network save that would clear
+    // the memory-only draft and legitimately remove the risk.
+    store.setNextSaveError(Object.assign(new Error('保存失败：模拟离线'), { code: 'note-save-failed' }))
+    await ui.rerender(spaceB)
+    assert.equal(ui.textarea().value, '# B\n')
+    assert.match(ui.text(), /内存/, '切主题后风险提示仍保留')
+
+    const unload = new dom.window.Event('beforeunload', { cancelable: true })
+    const allowed = dom.window.dispatchEvent(unload)
+    assert.equal(allowed, false)
+    assert.equal(unload.defaultPrevented, true, '只在内存时离开页面要提示确认')
+  } finally {
+    drafts.remove(spaceA.id, spaceA.notePath)
+    drafts.remove(spaceB.id, spaceB.notePath)
     await ui.unmount()
   }
 })

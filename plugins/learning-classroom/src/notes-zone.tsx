@@ -4,8 +4,11 @@ import { classroomErrorCode, type ClassroomClient } from './classroom-client.ts'
 import type { ClassroomSpaceView, NoteDocumentView, NoteSaveCommand, NoteSummaryView } from './contract.ts'
 import {
   allocateDraftRevision,
+  clearDraftRisk,
   createSessionDraftStore,
   draftRevisionClock,
+  hasNonDurableDrafts,
+  markDraftNonDurable,
   observeDraftRevision,
   type DraftStorage,
   type DraftWriteResult,
@@ -110,6 +113,9 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const [diskStatus, setDiskStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle')
   const [draftNotice, setDraftNotice] = useState(false)
   const [draftWarning, setDraftWarning] = useState('')
+  // Page-level risk, not per topic: switching themes must keep warning that a
+  // draft exists only in memory.
+  const [pageRisk, setPageRisk] = useState(() => hasNonDurableDrafts())
 
   const alive = useRef(true)
   const contentRef = useRef('')
@@ -162,13 +168,18 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     revision: number,
   ): DraftWriteResult | 'failed' => {
     if (notePath === '') return 'failed'
+    let result: DraftWriteResult | 'failed'
     try {
-      return draftStore.write(spaceId, notePath, { content: body, baseVersion, revision, savedAt: new Date().toISOString() })
+      result = draftStore.write(spaceId, notePath, { content: body, baseVersion, revision, savedAt: new Date().toISOString() })
     } catch {
       // A store failure must not break editing, but it must be reported: the
       // text is only in the editor now and may be lost if the pane unmounts.
-      return 'failed'
+      result = 'failed'
     }
+    if (result === 'memory' || result === 'failed') markDraftNonDurable(spaceId, notePath)
+    if (result === 'session') clearDraftRisk(spaceId, notePath)
+    if (alive.current) setPageRisk(hasNonDurableDrafts())
+    return result
   }, [draftStore])
 
   const clearDraft = useCallback((spaceId: string, notePath: string) => {
@@ -177,17 +188,19 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     } catch {
       // Ignore storage failures here too; the visible save state is the truth.
     }
+    clearDraftRisk(spaceId, notePath)
+    if (alive.current) setPageRisk(hasNonDurableDrafts())
   }, [draftStore])
 
   /** Clear only if no newer draft was parked after this revision. */
   const clearDraftIfOlder = useCallback((spaceId: string, notePath: string, revision: number) => {
     try {
       const existing = draftStore.read(spaceId, notePath)
-      if (existing === null || existing.revision <= revision) draftStore.remove(spaceId, notePath)
+      if (existing === null || existing.revision <= revision) clearDraft(spaceId, notePath)
     } catch {
       // Ignore; the next load reconciles a draft with the disk version.
     }
-  }, [draftStore])
+  }, [clearDraft, draftStore])
 
   const applyDocument = useCallback((document: NoteDocumentView, restoreDraft = true) => {
     const storeId = spaceIdRef.current
@@ -228,7 +241,10 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       if (draft !== null && draft.content !== document.content) {
         contentRef.current = draft.content
         setContent(draft.content)
-        if (draft.storage === 'memory') setDraftWarning(memoryDraftWarning)
+        if (draft.storage === 'memory') {
+          markDraftNonDurable(storeId, document.path)
+          setPageRisk(hasNonDurableDrafts())
+        }
         if (draft.baseVersion !== document.version) {
           // The draft was authored against an older disk version. Binding it to
           // the current version would let the next save silently replace an
@@ -421,7 +437,6 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       const newerReadSucceeded = (readOkEpochs.current.get(key) ?? 0) !== 0
       if (alive.current && request.content !== '' && !newerReadSucceeded) {
         const storage = persistDraft(request.spaceId, request.path, request.content, '', request.draftRevision)
-        if (viewOwns && storage === 'memory') setDraftWarning(memoryDraftWarning)
         if (viewOwns && storage === 'failed') setDraftWarning(failedDraftWarning)
       }
       return
@@ -519,7 +534,6 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
         ? persistDraft(request.spaceId, request.path, snapshot, expectedVersion, request.draftRevision)
         : 'stale'
       if (!isCurrent(request) || !stillOwnsWrite) return
-      if (storage === 'memory') setDraftWarning(memoryDraftWarning)
       if (storage === 'failed') setDraftWarning(failedDraftWarning)
       if (classroomErrorCode(cause) === 'note-conflict') {
         conflictedKeys.current.add(key)
@@ -562,6 +576,8 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setDiskMessage('')
     setDraftNotice(false)
     setDraftWarning('')
+    // Risk is page-scoped and must survive topic switches; never clear it here.
+    setPageRisk(hasNonDurableDrafts())
     setMode('edit')
     void load(space.notePath)
     return () => {
@@ -600,15 +616,45 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
   }, [client, debouncer, draftStore, load, persistDraft, space.id, space.notePath])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const guard = (event: BeforeUnloadEvent) => {
+      // Only warn when a draft exists solely in page memory. A sessionStorage
+      // draft survives a refresh, so it must not trigger a false prompt.
+      if (!hasNonDurableDrafts()) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    const pagehide = () => {
+      // Supplementary to the per-edit synchronous park; pagehide is not the
+      // only path and is not guaranteed on every browser kill.
+      if (!alive.current) return
+      if (pathRef.current === '') return
+      if (!['dirty', 'saving', 'failed', 'conflict'].includes(statusRef.current)) return
+      if (contentRef.current === '' && versionRef.current === '') return
+      persistDraft(spaceIdRef.current, pathRef.current, contentRef.current, versionRef.current,
+        draftRevisionClock(spaceIdRef.current, pathRef.current))
+    }
+    window.addEventListener('beforeunload', guard)
+    window.addEventListener('pagehide', pagehide)
+    return () => {
+      window.removeEventListener('beforeunload', guard)
+      window.removeEventListener('pagehide', pagehide)
+    }
+  }, [persistDraft])
+
   const onChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const next = event.target.value
     contentRef.current = next
     setContent(next)
     setMessage('')
     updateStatus('dirty')
-    // Every edit earns a newer draft revision, so a late failure of an older
-    // snapshot cannot replace this text when it is parked on switch/leave.
-    allocateDraftRevision(spaceIdRef.current, pathRef.current)
+    // Synchronously park every edit before any timer or HTTP work: a browser
+    // reload within the debounce window does not run React cleanup. Every edit
+    // also earns a newer revision, so an older failure cannot replace it.
+    const revision = allocateDraftRevision(spaceIdRef.current, pathRef.current)
+    const parked = persistDraft(spaceIdRef.current, pathRef.current, next, versionRef.current, revision)
+    if (parked === 'failed') setDraftWarning(failedDraftWarning)
     if (conflictRef.current) return
     scheduleAutosave()
   }
@@ -674,9 +720,8 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setMessage('')
     updateStatus('loading')
     await load(next)
-    // Keep the non-durable warning visible in the new file too: the parked
-    // draft is still only in memory until a successful save or storage recovery.
-    if (persistence === 'memory') setDraftWarning(memoryDraftWarning)
+    // Page-level risk is global and survives this switch; only a hard failure
+    // needs the per-file warning line.
     if (persistence === 'failed') setDraftWarning(failedDraftWarning)
   }, [debouncer, enqueueSave, load, persistDraft, updateStatus])
 
@@ -776,6 +821,12 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
           {status === 'failed' && (
             <button type="button" className="lc-secondary" onClick={() => { void enqueueSave(captureRequest('explicit')) }}>重试保存</button>
           )}
+        </div>
+      )}
+
+      {pageRisk && (
+        <div className="lc-alert" role="note">
+          <p>{memoryDraftWarning}离开页面前会要求确认；请尽快保存到磁盘。</p>
         </div>
       )}
 
