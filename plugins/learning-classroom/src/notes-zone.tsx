@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } f
 import { createDebouncer, createSerialQueue } from './autosave.ts'
 import { classroomErrorCode, type ClassroomClient } from './classroom-client.ts'
 import type { ClassroomSpaceView, NoteDocumentView, NoteSaveCommand, NoteSummaryView } from './contract.ts'
-import { createSessionDraftStore, type NoteDraftStore } from './note-drafts.ts'
+import { createSessionDraftStore, type DraftStorage, type NoteDraftStore } from './note-drafts.ts'
 import { NotePreview } from './notes-preview.tsx'
 
 export type NoteSaveStatus = 'loading' | 'saved' | 'dirty' | 'saving' | 'failed' | 'conflict'
@@ -32,10 +32,19 @@ interface SaveRequest {
   content: string
   version: string
   generation: number
+  /** Per-file read epoch; a write queued before a re-read must not apply after it. */
+  readEpoch: number
   mode: SaveMode
 }
 
 const defaultDebounceMs = 700
+
+const memoryDraftWarning = '浏览器存储不可用：未保存草稿只保存在当前页面内存，关闭或刷新页面会丢失。请先保存或复制。'
+const failedDraftWarning = '草稿保存失败：请先保存到磁盘或复制内容，离开后无法恢复。'
+
+function fileKey(spaceId: string, notePath: string): string {
+  return `${spaceId}\u0000${notePath}`
+}
 
 const statusLabel: Record<NoteSaveStatus, string> = {
   loading: '正在读取笔记…',
@@ -87,7 +96,9 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const [conflict, setConflict] = useState(false)
   const [diskContent, setDiskContent] = useState<string | null>(null)
   const [diskMessage, setDiskMessage] = useState('')
+  const [diskStatus, setDiskStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle')
   const [draftNotice, setDraftNotice] = useState(false)
+  const [draftWarning, setDraftWarning] = useState('')
 
   const alive = useRef(true)
   const contentRef = useRef('')
@@ -100,6 +111,15 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   // The most recently queued write, so a completed older save does not queue a
   // duplicate of content that is already waiting behind it.
   const queuedRef = useRef<{ spaceId: string; path: string; content: string } | null>(null)
+  // Latest known on-disk version per file. A queued save must use the version
+  // produced by the save ahead of it, not the version captured at enqueue time.
+  const versions = useRef(new Map<string, string>())
+  // Files whose unresolved conflict forbids non-explicit writes. Keyed by
+  // space+path so leaving/re-entering or unmounting cannot bypass the guard.
+  const conflictedKeys = useRef(new Set<string>())
+  // Per-file read counter: re-reading a file invalidates older queued writes so
+  // they cannot be blindly rebound to the newly read version.
+  const readEpochs = useRef(new Map<string, number>())
   const generation = useRef(0)
   const loadToken = useRef(0)
   const handledOpen = useRef<number | null>(null)
@@ -113,13 +133,14 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setStatus(next)
   }, [])
 
-  const persistDraft = useCallback((spaceId: string, notePath: string, body: string, baseVersion: string) => {
-    if (notePath === '') return
+  const persistDraft = useCallback((spaceId: string, notePath: string, body: string, baseVersion: string): DraftStorage | 'failed' => {
+    if (notePath === '') return 'failed'
     try {
-      draftStore.write(spaceId, notePath, { content: body, baseVersion, savedAt: new Date().toISOString() })
+      return draftStore.write(spaceId, notePath, { content: body, baseVersion, savedAt: new Date().toISOString() })
     } catch {
-      // A full or unavailable storage must never break editing; the text stays
-      // in the editor and the save error still explains itself.
+      // A store failure must not break editing, but it must be reported: the
+      // text is only in the editor now and may be lost if the pane unmounts.
+      return 'failed'
     }
   }, [draftStore])
 
@@ -132,6 +153,14 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   }, [draftStore])
 
   const applyDocument = useCallback((document: NoteDocumentView, restoreDraft = true) => {
+    const storeId = spaceIdRef.current
+    const key = fileKey(storeId, document.path)
+    versions.current.set(key, document.version)
+    readEpochs.current.set(key, (readEpochs.current.get(key) ?? 0) + 1)
+    // Applying a freshly read document resolves any prior conflict for this
+    // file; restoring an older draft adds it back below.
+    conflictedKeys.current.delete(key)
+
     pathRef.current = document.path
     versionRef.current = document.version
     contentRef.current = document.content
@@ -140,28 +169,48 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setContent(document.content)
     setConflict(false)
     setDiskContent(null)
+    setDiskStatus('idle')
     setDiskMessage('')
     setMessage('')
     setDraftNotice(false)
+    setDraftWarning('')
 
     if (restoreDraft) {
-      let draft: { content: string } | null = null
+      let draft: { content: string; baseVersion: string; storage?: DraftStorage } | null = null
       try {
-        draft = draftStore.read(spaceIdRef.current, document.path)
+        draft = draftStore.read(storeId, document.path)
       } catch {
         draft = null
       }
       if (draft !== null && draft.content !== document.content) {
         contentRef.current = draft.content
         setContent(draft.content)
+        if (draft.storage === 'memory') setDraftWarning(memoryDraftWarning)
+        if (draft.baseVersion !== document.version) {
+          // The draft was authored against an older disk version. Binding it to
+          // the current version would let the next save silently replace an
+          // external edit, so this is an explicit conflict before any save.
+          conflictRef.current = true
+          conflictedKeys.current.add(key)
+          // Keep the draft's own base version, not the current disk version:
+          // edits made while comparing must stay an explicit conflict if the
+          // learner leaves and comes back, instead of becoming a silent save.
+          versionRef.current = draft.baseVersion
+          setConflict(true)
+          setDiskContent(document.content)
+          setDiskStatus('ready')
+          setMessage('磁盘上的笔记在草稿保存后已被外部修改；请比较后选择重新加载或用我的覆盖。')
+          updateStatus('conflict')
+          return
+        }
         setDraftNotice(true)
         setMessage('已恢复上次未保存的草稿；它还没有写回磁盘。')
         updateStatus('dirty')
         return
       }
-      if (draft !== null) clearDraft(spaceIdRef.current, document.path)
+      if (draft !== null) clearDraft(storeId, document.path)
     } else {
-      clearDraft(spaceIdRef.current, document.path)
+      clearDraft(storeId, document.path)
     }
     updateStatus('saved')
   }, [clearDraft, draftStore, updateStatus])
@@ -169,6 +218,19 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const load = useCallback(async (target?: string) => {
     const token = ++loadToken.current
     const mine = ++generation.current
+    // Invalidate writes queued for the file we are about to read. A queued
+    // save must not run against a version captured before this read.
+    const targetKey = fileKey(space.id, target ?? pathRef.current)
+    readEpochs.current.set(targetKey, (readEpochs.current.get(targetKey) ?? 0) + 1)
+    // A path that is about to change must not keep the previous file's body or
+    // version: if the read fails, saving must not write A's text into B.
+    contentRef.current = ''
+    versionRef.current = ''
+    setContent('')
+    setDiskContent(null)
+    setDiskStatus('idle')
+    setDiskMessage('')
+    setDraftWarning('')
     updateStatus('loading')
     setMessage('')
     setDraftNotice(false)
@@ -197,14 +259,19 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
   }, [applyDocument, client, space.id, updateStatus])
 
-  const captureRequest = (saveMode: SaveMode): SaveRequest => ({
-    spaceId: spaceIdRef.current,
-    path: pathRef.current,
-    content: contentRef.current,
-    version: versionRef.current,
-    generation: generation.current,
-    mode: saveMode,
-  })
+  const captureRequest = (saveMode: SaveMode): SaveRequest => {
+    const spaceId = spaceIdRef.current
+    const notePath = pathRef.current
+    return {
+      spaceId,
+      path: notePath,
+      content: contentRef.current,
+      version: versionRef.current,
+      generation: generation.current,
+      readEpoch: readEpochs.current.get(fileKey(spaceId, notePath)) ?? 0,
+      mode: saveMode,
+    }
+  }
 
   const isCurrent = (request: SaveRequest): boolean => alive.current
     && generation.current === request.generation
@@ -231,25 +298,52 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   }, [debouncer])
 
   const fetchDiskVersion = useCallback(async (spaceId: string, notePath: string, mine: number) => {
+    if (!alive.current || generation.current !== mine || spaceIdRef.current !== spaceId || pathRef.current !== notePath) return
+    setDiskContent(null)
+    setDiskStatus('loading')
+    setDiskMessage('')
     try {
       const document = await client.readNote(spaceId, notePath)
       if (!alive.current || generation.current !== mine || spaceIdRef.current !== spaceId || pathRef.current !== notePath) return
       setDiskContent(document.content)
-      setDiskMessage('')
+      setDiskStatus('ready')
     } catch (cause) {
       if (!alive.current || generation.current !== mine || spaceIdRef.current !== spaceId || pathRef.current !== notePath) return
       setDiskContent(null)
+      setDiskStatus('failed')
       setDiskMessage(`无法读取磁盘上的版本：${messageOf(cause)}`)
     }
   }, [client])
 
   const performSave = useCallback(async (request: SaveRequest) => {
     if (request.path === '') return
-    if (request.version === '' && request.mode !== 'overwrite') {
+    const key = fileKey(request.spaceId, request.path)
+    if (request.mode !== 'overwrite' && conflictedKeys.current.has(key)) {
+      // While a conflict is unresolved the local text may only replace disk
+      // through the explicit overwrite action, never through autosave/保存.
+      // The guard is keyed by file, so unmounting or leaving cannot bypass it.
+      return
+    }
+    // A newer read of this file (reload, topic/file re-entry) invalidates a
+    // write that was queued before it; applying it would bind old text to a new
+    // version and overwrite content the learner just chose to load.
+    if ((readEpochs.current.get(key) ?? 0) !== request.readEpoch) return
+    // Use the latest version this panel knows for the file at execution time.
+    // The save ahead in the queue may have advanced it since this request was
+    // captured; using the stale captured version would conflict with our own
+    // successful save.
+    const expectedVersion = versions.current.get(key) ?? request.version
+    if (expectedVersion === '' && request.mode !== 'overwrite') {
       // Without a read version we cannot prove the write is safe; say so
       // instead of pretending the edit was saved.
-      persistDraft(request.spaceId, request.path, request.content, request.version)
+      // An empty editor with no read version has nothing to park; do not create
+      // an empty draft that would later look like a conflict.
+      const storage = request.content === '' && expectedVersion === ''
+        ? null
+        : persistDraft(request.spaceId, request.path, request.content, expectedVersion)
       if (isCurrent(request)) {
+        if (storage === 'memory') setDraftWarning(memoryDraftWarning)
+        if (storage === 'failed') setDraftWarning(failedDraftWarning)
         updateStatus('failed')
         setMessage('保存失败：还没有成功读取笔记文件，无法安全保存。请先重新加载。')
       }
@@ -265,11 +359,13 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       spaceId: request.spaceId,
       path: request.path,
       content: snapshot,
-      version: request.version,
+      version: expectedVersion,
       ...(request.mode === 'overwrite' ? { overwrite: true } : {}),
     }
     try {
       const result = await client.saveNote(command)
+      versions.current.set(key, result.version)
+      if (request.mode === 'overwrite') conflictedKeys.current.delete(key)
       if (isSameFile(request)) {
         if (contentRef.current === snapshot) clearDraft(request.spaceId, request.path)
         versionRef.current = result.version
@@ -281,6 +377,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
         }
         if (contentRef.current === snapshot) {
           setDraftNotice(false)
+          setDraftWarning('')
           updateStatus('saved')
           setMessage('')
         } else {
@@ -305,12 +402,16 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
         }
       }
     } catch (cause) {
-      persistDraft(request.spaceId, request.path, snapshot, request.version)
+      const storage = persistDraft(request.spaceId, request.path, snapshot, expectedVersion)
       if (!isCurrent(request)) return
+      if (storage === 'memory') setDraftWarning(memoryDraftWarning)
+      if (storage === 'failed') setDraftWarning(failedDraftWarning)
       if (classroomErrorCode(cause) === 'note-conflict') {
+        conflictedKeys.current.add(key)
         conflictRef.current = true
         setConflict(true)
         setDiskContent(null)
+        setDiskStatus('loading')
         setDiskMessage('')
         updateStatus('conflict')
         setMessage(messageOf(cause))
@@ -342,8 +443,10 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setNotes([])
     setConflict(false)
     setDiskContent(null)
+    setDiskStatus('idle')
     setDiskMessage('')
     setDraftNotice(false)
+    setDraftWarning('')
     setMode('edit')
     void load(space.notePath)
     return () => {
@@ -357,7 +460,8 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       const leavingStatus = statusRef.current
       const leavingConflict = conflictRef.current
       const leavingGeneration = generation.current
-      if (leavingPath !== '' && ['dirty', 'saving', 'failed', 'conflict'].includes(leavingStatus)) {
+      if (leavingPath !== '' && (leavingContent !== '' || leavingVersion !== '')
+        && ['dirty', 'saving', 'failed', 'conflict'].includes(leavingStatus)) {
         persistDraft(leavingSpaceId, leavingPath, leavingContent, leavingVersion)
       }
       debouncer.cancel()
@@ -370,6 +474,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
           content: leavingContent,
           version: leavingVersion,
           generation: leavingGeneration,
+          readEpoch: readEpochs.current.get(fileKey(leavingSpaceId, leavingPath)) ?? 0,
           mode: 'auto',
         }
         if (!isAlreadyQueued(leavingRequest)) void enqueueSaveRef.current(leavingRequest)
@@ -391,9 +496,13 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const reload = useCallback(async () => {
     const token = ++loadToken.current
     const mine = ++generation.current
+    const key = fileKey(spaceIdRef.current, pathRef.current)
+    readEpochs.current.set(key, (readEpochs.current.get(key) ?? 0) + 1)
     updateStatus('loading')
     setMessage('')
     setDraftNotice(false)
+    setDiskStatus('idle')
+    setDraftWarning('')
     try {
       const document = await client.readNote(spaceIdRef.current, pathRef.current)
       if (!alive.current || token !== loadToken.current || generation.current !== mine) return
@@ -408,8 +517,10 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const switchTo = useCallback(async (next: string) => {
     if (next === pathRef.current) return
     const leaving = captureRequest('auto')
-    if (leaving.path !== '' && ['dirty', 'saving', 'failed', 'conflict'].includes(statusRef.current)) {
-      persistDraft(leaving.spaceId, leaving.path, leaving.content, leaving.version)
+    let persistence: DraftStorage | 'failed' | null = null
+    if (leaving.path !== '' && (leaving.content !== '' || leaving.version !== '')
+      && ['dirty', 'saving', 'failed', 'conflict'].includes(statusRef.current)) {
+      persistence = persistDraft(leaving.spaceId, leaving.path, leaving.content, leaving.version)
     }
     debouncer.cancel()
     if ((statusRef.current === 'dirty' || statusRef.current === 'saving') && !conflictRef.current && !isAlreadyQueued(leaving)) {
@@ -423,11 +534,16 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setConflict(false)
     conflictRef.current = false
     setDiskContent(null)
+    setDiskStatus('idle')
     setDiskMessage('')
     setDraftNotice(false)
     setMessage('')
     updateStatus('loading')
     await load(next)
+    // Keep the non-durable warning visible in the new file too: the parked
+    // draft is still only in memory until a successful save or storage recovery.
+    if (persistence === 'memory') setDraftWarning(memoryDraftWarning)
+    if (persistence === 'failed') setDraftWarning(failedDraftWarning)
   }, [debouncer, enqueueSave, load, persistDraft, updateStatus])
 
   // A request from the canvas opens that specific note once; the token keeps
@@ -460,7 +576,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
         <button
           type="button"
           className="lc-secondary"
-          disabled={status === 'loading' || status === 'saving' || path === ''}
+          disabled={status === 'loading' || status === 'saving' || status === 'conflict' || path === ''}
           onClick={() => { void enqueueSave(captureRequest('explicit')) }}
         >
           保存
@@ -479,14 +595,33 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
             </section>
             <section aria-label="磁盘上的内容">
               <h3>磁盘上的版本</h3>
-              {diskContent !== null
-                ? <pre>{diskContent}</pre>
-                : <p>{diskMessage || '正在读取磁盘上的版本…'}</p>}
+              {diskStatus === 'ready' && diskContent !== null && <pre>{diskContent}</pre>}
+              {diskStatus === 'loading' && <p>正在读取磁盘上的版本…</p>}
+              {diskStatus === 'failed' && (
+                <>
+                  <p>{diskMessage || '无法读取磁盘上的版本。'}</p>
+                  <button
+                    type="button"
+                    className="lc-secondary"
+                    onClick={() => { void fetchDiskVersion(spaceIdRef.current, pathRef.current, generation.current) }}
+                  >
+                    重试读取磁盘版本
+                  </button>
+                </>
+              )}
             </section>
           </div>
           <div className="lc-note-actions">
             <button type="button" className="lc-secondary" onClick={() => { void reload() }}>重新加载</button>
-            <button type="button" className="lc-secondary" onClick={() => { void enqueueSave(captureRequest('overwrite')) }}>用我的覆盖</button>
+            <button
+              type="button"
+              className="lc-secondary"
+              disabled={diskStatus !== 'ready'}
+              title={diskStatus === 'ready' ? undefined : '需要先读出磁盘上的版本并完成比较'}
+              onClick={() => { void enqueueSave(captureRequest('overwrite')) }}
+            >
+              用我的覆盖
+            </button>
           </div>
         </div>
       )}
@@ -507,6 +642,12 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
           {status === 'failed' && (
             <button type="button" className="lc-secondary" onClick={() => { void enqueueSave(captureRequest('explicit')) }}>重试保存</button>
           )}
+        </div>
+      )}
+
+      {draftWarning !== '' && (
+        <div className="lc-alert" role="note">
+          <p>{draftWarning}</p>
         </div>
       )}
 

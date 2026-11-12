@@ -3,16 +3,21 @@
  * second source of truth: it only bridges a failed, in-flight or interrupted
  * save, and is dropped as soon as the same text is confirmed on disk.
  */
+export type DraftStorage = 'session' | 'memory'
+
 export interface NoteDraft {
   content: string
-  /** Version the editor had read when the draft was parked (diagnostics only). */
+  /** Version the editor had read when the draft text was authored. */
   baseVersion: string
   savedAt: string
+  /** Where this copy came from when read; never persisted into the payload. */
+  storage?: DraftStorage
 }
 
 export interface NoteDraftStore {
   read(spaceId: string, path: string): NoteDraft | null
-  write(spaceId: string, path: string, draft: NoteDraft): void
+  /** Returns where the draft actually went; `memory` means it will not survive a page close. */
+  write(spaceId: string, path: string, draft: NoteDraft): DraftStorage
   remove(spaceId: string, path: string): void
 }
 
@@ -40,15 +45,25 @@ function parseDraft(raw: string | null): NoteDraft | null {
   }
 }
 
-/** In-memory store; the fallback when no web storage is available. */
+/**
+ * A shared memory fallback. It is deliberately module-scoped: when the browser
+ * refuses sessionStorage, a new NotesZone instance on the same page must still
+ * find the draft parked by the previous one. It is not durable across reloads,
+ * so the UI has to say so instead of pretending the draft is safe.
+ */
+const memoryFallback = createMemoryDraftStore()
+
+/** In-memory store; also the cross-mount fallback for the session store. */
 export function createMemoryDraftStore(): NoteDraftStore {
   const files = new Map<string, NoteDraft>()
   return {
     read(spaceId, path) {
-      return files.get(keyOf(spaceId, path)) ?? null
+      const draft = files.get(keyOf(spaceId, path))
+      return draft === undefined ? null : { ...draft, storage: 'memory' }
     },
     write(spaceId, path, draft) {
-      files.set(keyOf(spaceId, path), { ...draft })
+      files.set(keyOf(spaceId, path), { content: draft.content, baseVersion: draft.baseVersion, savedAt: draft.savedAt })
+      return 'memory'
     },
     remove(spaceId, path) {
       files.delete(keyOf(spaceId, path))
@@ -74,32 +89,46 @@ function browserSessionStorage(): WebStorageLike | null {
 
 /**
  * Session-scoped browser store: drafts survive panel/topic navigation and a
- * page refresh in the same tab, and disappear when the tab closes. Note bodies
- * are never copied into plugin state or a second persistent file.
+ * page refresh in the same tab, and disappear when the tab closes. A quota or
+ * privacy failure falls back to the shared memory store instead of dropping
+ * the text; the returned storage kind lets the UI warn that it is not durable.
  */
 export function createSessionDraftStore(storage: WebStorageLike | null = browserSessionStorage()): NoteDraftStore {
-  if (storage === null) return createMemoryDraftStore()
+  if (storage === null) return memoryFallback
+  const backing = storage
   return {
     read(spaceId, path) {
+      // A failed setItem left the newest text in the fallback; it wins.
+      const fallback = memoryFallback.read(spaceId, path)
+      if (fallback !== null) return fallback
       try {
-        return parseDraft(storage.getItem(keyOf(spaceId, path)))
+        const draft = parseDraft(backing.getItem(keyOf(spaceId, path)))
+        return draft === null ? null : { ...draft, storage: 'session' }
       } catch {
         return null
       }
     },
     write(spaceId, path, draft) {
       try {
-        storage.setItem(keyOf(spaceId, path), JSON.stringify(draft))
+        backing.setItem(keyOf(spaceId, path), JSON.stringify({
+          content: draft.content,
+          baseVersion: draft.baseVersion,
+          savedAt: draft.savedAt,
+        }))
+        memoryFallback.remove(spaceId, path)
+        return 'session'
       } catch {
-        // Quota or privacy failure: the editor still holds the text.
+        memoryFallback.write(spaceId, path, draft)
+        return 'memory'
       }
     },
     remove(spaceId, path) {
       try {
-        storage.removeItem(keyOf(spaceId, path))
+        backing.removeItem(keyOf(spaceId, path))
       } catch {
-        // Ignore; a stale draft is reconciled against disk on the next load.
+        // Ignore; the in-memory copy is still removed below.
       }
+      memoryFallback.remove(spaceId, path)
     },
   }
 }
