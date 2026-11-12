@@ -174,6 +174,7 @@ const externalResourcePatterns: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /<(?:base|form)\b/i, reason: '基地址或表单提交' },
   { pattern: /<meta\b[^>]*http-equiv\s*=\s*["']?refresh/i, reason: '自动跳转' },
   { pattern: /\b(?:src|href|action|poster|data|ping|formaction)\s*=\s*["']?\s*\/\//i, reason: '协议相对地址' },
+  { pattern: /\b(?:src|href|action|poster|data|ping|formaction)\s*=\s*["']?\s*(?:file|ftp|ws|wss|blob):/i, reason: '文件或非数据资源协议' },
   { pattern: /url\(\s*["']?\s*(?:https?:)?\/\//i, reason: '外部样式资源' },
   { pattern: /@import\b/i, reason: '外部样式导入' },
   { pattern: /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon|RTCPeerConnection|RTCDataChannel|WebTransport)\b/i, reason: '网络请求 API' },

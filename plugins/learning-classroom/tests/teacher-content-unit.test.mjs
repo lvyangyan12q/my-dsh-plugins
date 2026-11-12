@@ -90,6 +90,7 @@ test('实验参数必须有限、范围有效、默认值在范围内且名称�
     { ...base, html: '<html><body><script>localStorage.setItem("x", "1")</script></body></html>' },
     { ...base, html: '<html><body><script>new RTCPeerConnection()</script></body></html>' },
     { ...base, html: '<html><body><script>parent.postMessage("x", "*")</script></body></html>' },
+    { ...base, html: '<html><body><img src="file:///D:/notes.md"></body></html>' },
     { ...base, html: '<html><body><a href="https://example.org">外链</a></body></html>' },
     { ...base, html: '<html><body><iframe src="https://example.org"></iframe></body></html>' },
   ]) {

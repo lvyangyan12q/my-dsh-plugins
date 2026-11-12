@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile, readdir, stat } from 'node:fs/promises'
+import { readFile, readdir, stat, symlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import { classroomFixture } from './support/fixture.mjs'
@@ -224,6 +224,28 @@ test('生成实验写入自包含页面；读回沙箱 HTML、来源与参数，
     )
     assert.equal(await stat(join(fixture.vault, space.directory, '讲义', '第一章', '04-外链实验.html')).catch(() => null), null)
     assert.deepEqual((await readdir(join(fixture.vault, space.directory, '讲义', '第一章'))).filter(name => name.endsWith('.tmp')), [])
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('符号链接/目录联接不能把生成写到另一个主题，连空目录都不创建', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const a = await prepare(fixture, '概率论', 'session-a')
+    const b = await prepare(fixture, '线性代数', 'session-b')
+    const link = join(fixture.vault, a.directory, '讲义', '旁路')
+    await symlink(join(fixture.vault, b.directory, '讲义'), link, 'junction')
+    const tools = toolsFor(fixture)
+    await assert.rejects(
+      () => toolOf(tools, 'classroom_lecture_write').definition.execute(
+        { ...lectureArgs, fileName: '旁路/01-跨主题.md' },
+        execution('session-a'),
+      ),
+      /符号链接|越出|拒绝/,
+    )
+    assert.deepEqual(await readdir(join(fixture.vault, b.directory, '讲义')), [])
+    assert.deepEqual(await readdir(join(fixture.vault, a.directory, '讲义')), ['旁路'])
   } finally {
     await fixture.close()
   }

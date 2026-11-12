@@ -32,6 +32,8 @@ import { ClassroomError } from './errors.ts'
 import {
   composeExperiment,
   composeLecture,
+  experimentDraftSchema,
+  lectureDraftSchema,
   lectureRelativePath,
   readExperimentMeta,
   type ExperimentDraft,
@@ -1082,6 +1084,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
 
     let relative: string
     let content: string
+    let title: string
     let sources: string[]
     let parameters: ExperimentDraft['parameters']
     try {
@@ -1095,13 +1098,15 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         )
       }
       if (kind === 'lecture') {
-        const lecture = draft as LectureDraft
+        const lecture = lectureDraftSchema.parse(draft)
         content = composeLecture(lecture)
+        title = lecture.title
         sources = lecture.sources
         parameters = []
       } else {
-        const experiment = draft as ExperimentDraft
+        const experiment = experimentDraftSchema.parse(draft)
         content = composeExperiment(experiment)
+        title = experiment.title
         sources = experiment.sources
         parameters = experiment.parameters
       }
@@ -1119,6 +1124,22 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const target = await resolveVaultPath(root, `${space.directory}/${relative}`, probe)
     const folder = dirname(target)
     ensureLive()
+    const realSpace = await probe.realpath(await resolveVaultPath(root, space.directory, probe))
+    // Refuse a symlink/junction anywhere under the lecture root before creating
+    // any directory: a link to another topic must not even leave an empty folder.
+    let cursor = realSpace
+    const pathSegments = relative.split('/')
+    for (let index = 0; index < pathSegments.length - 1; index += 1) {
+      cursor = join(cursor, pathSegments[index])
+      const ancestor = await lstat(cursor).catch(() => undefined)
+      if (ancestor === undefined) break
+      if (ancestor.isSymbolicLink()) {
+        throw new ClassroomError('generation-outside', `生成路径经符号链接进入其他位置，已拒绝：${relative}`, 409)
+      }
+      if (!ancestor.isDirectory()) {
+        throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
+      }
+    }
     let directoryInfo
     try {
       directoryInfo = await stat(folder)
@@ -1133,7 +1154,6 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
     }
 
-    const realSpace = await probe.realpath(await resolveVaultPath(root, space.directory, probe))
     const realFolder = await probe.realpath(folder)
     if (!pathInside(realSpace, realFolder)) {
       throw new ClassroomError('generation-outside', `生成路径经符号链接越出学习空间：${relative}`, 409)
@@ -1197,7 +1217,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       spaceId: space.id,
       path: relative,
       fileName: relative.split('/').pop() ?? relative,
-      title: draft.title,
+      title,
       kind,
       size: Buffer.byteLength(content, 'utf8'),
       version: contentVersion(content),
