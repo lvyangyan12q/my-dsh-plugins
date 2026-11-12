@@ -166,6 +166,57 @@ test('关联负例：越界、笔记、目标文件、讲义内文件、隐藏�
   }
 })
 
+test('讲义根目录的符号链接必须仍在本主题内：指向其他主题时拒绝且不泄露其标题', async t => {
+  const fixture = await classroomFixture()
+  try {
+    const first = await prepare(fixture, '主题甲')
+    const second = await prepare(fixture, '主题乙')
+    const otherLecture = join(fixture.vault, second.directory, '讲义', '别人的讲义.md')
+    await writeFile(otherLecture, '---\ntitle: 别人的标题\n---\n# 秘密\n', 'utf8')
+
+    // Replace 甲/讲义 with a junction to 乙/讲义, i.e. still inside the vault.
+    await rm(join(fixture.vault, first.directory, '讲义'), { recursive: true, force: true })
+    let linked = false
+    try {
+      await symlink(
+        join(fixture.vault, second.directory, '讲义'),
+        join(fixture.vault, first.directory, '讲义'),
+        'junction',
+      )
+      linked = true
+    } catch (error) {
+      if (error.code === 'EPERM' || error.code === 'EACCES') { t.skip('当前环境不允许创建目录链接'); return }
+      throw error
+    }
+    assert.equal(linked, true)
+
+    const result = await fixture.post({ action: 'lecture-list', spaceId: first.id })
+    assert.equal(result.status, 409)
+    assert.equal(result.body.code, 'lecture-folder-outside')
+    assert.match(result.body.error, /符号链接|学习空间/)
+    assert.equal(JSON.stringify(result.body).includes('别人的标题'), false)
+
+    const read = await fixture.post({ action: 'lecture-read', spaceId: first.id, path: '讲义/别人的讲义.md' })
+    assert.equal(read.status, 400)
+    assert.equal(read.body.code, 'lecture-invalid')
+
+    // A junction that stays inside the same topic is allowed: containment, not a ban.
+    await rm(join(fixture.vault, first.directory, '讲义'), { recursive: true, force: true })
+    await mkdir(join(fixture.vault, first.directory, '真实讲义'))
+    await writeFile(join(fixture.vault, first.directory, '真实讲义', '01-本主题.md'), '# 本主题\n', 'utf8')
+    await symlink(
+      join(fixture.vault, first.directory, '真实讲义'),
+      join(fixture.vault, first.directory, '讲义'),
+      'junction',
+    )
+    const allowed = await fixture.post({ action: 'lecture-list', spaceId: first.id })
+    assert.equal(allowed.status, 200)
+    assert.deepEqual(allowed.body.lectures.map(row => row.path), ['讲义/01-本主题.md'])
+  } finally {
+    await fixture.close()
+  }
+})
+
 test('符号链接指向空间外时，关联与目录遍历都不跟随', async t => {
   const fixture = await classroomFixture()
   try {

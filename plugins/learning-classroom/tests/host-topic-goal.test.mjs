@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { readFile, readdir, mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { maxTopicBytes } from '../src/spaces.ts'
 import { classroomFixture } from './support/fixture.mjs'
@@ -99,6 +99,37 @@ test('目标文件被外部删除后可读为缺失状态，保存与重新创�
     assert.equal(recreated.body.fileMissing, false)
     assert.equal(recreated.body.goal, '重新写')
     assert.equal(await readFile(goalFile, 'utf8'), '重新写')
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('保存目标前做类型与大小限制：超大文件与目录被明确拒绝，不整份读取', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const goalFile = join(fixture.vault, space.directory, '学习目标.md')
+    const before = await fixture.post({ action: 'topic-read', spaceId: space.id })
+
+    await writeFile(goalFile, 'x'.repeat(maxTopicBytes + 1024), 'utf8')
+    const readHuge = await fixture.post({ action: 'topic-read', spaceId: space.id })
+    assert.equal(readHuge.status, 413)
+    assert.equal(readHuge.body.code, 'topic-too-large')
+
+    // The version read earlier is now stale, but size must be refused before any
+    // conflict logic or full-file read: the cap is about resource safety first.
+    const saveHuge = await fixture.post({ action: 'topic-save', spaceId: space.id, goal: '新目标', version: before.body.version })
+    assert.equal(saveHuge.status, 413)
+    assert.equal(saveHuge.body.code, 'topic-too-large')
+
+    await rm(goalFile)
+    await mkdir(goalFile)
+    const saveDirectory = await fixture.post({ action: 'topic-save', spaceId: space.id, goal: '新目标', version: before.body.version })
+    assert.equal(saveDirectory.status, 409)
+    assert.equal(saveDirectory.body.code, 'topic-unavailable')
+    assert.match(saveDirectory.body.error, /不是文件/)
+    // A refused save leaves the path untouched (still the directory the learner made).
+    assert.equal((await readdir(goalFile)).length, 0)
   } finally {
     await fixture.close()
   }

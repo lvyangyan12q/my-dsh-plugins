@@ -477,8 +477,21 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       throw new ClassroomError('lecture-list-failed', `无法访问讲义目录：${folderRelative}`, 500)
     }
     if (!info.isDirectory()) return { found: [], folderMissing: true }
+    let realFolder: string
+    try {
+      const realSpace = await probe.realpath(await resolveVaultPath(root, space.directory, probe))
+      realFolder = await probe.realpath(folder)
+      if (!pathInside(realSpace, realFolder)) {
+        throw new ClassroomError('lecture-folder-outside', `讲义目录经符号链接越出学习空间：${folderRelative}`, 409)
+      }
+    } catch (error) {
+      if (error instanceof ClassroomError) throw error
+      const code = (error as NodeJS.ErrnoException).code
+      if (code === 'ENOENT' || code === 'ENOTDIR') return { found: [], folderMissing: true }
+      throw new ClassroomError('lecture-list-failed', `无法访问讲义目录：${folderRelative}`, 500)
+    }
     const found: FoundLecture[] = []
-    await walkLectureFolder(folder, '', 0, found)
+    await walkLectureFolder(realFolder, '', 0, found)
     return { found, folderMissing: false }
   }
 
@@ -842,45 +855,74 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const relative = `${space.directory}/${topicGoalFileName}`
     const target = await resolveVaultPath(root, relative, probe)
 
-    let info
-    try {
-      info = await stat(target)
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return {
-          spaceId: space.id,
-          path: topicGoalFileName,
-          title: space.title,
-          goal: '',
-          version: null,
-          updatedAt: null,
-          fileMissing: true,
-        }
+    const file = await readBoundedTopicFile(target, relative, { code: 'topic-read-failed', label: '读取学习目标失败' })
+    if (file === undefined) {
+      return {
+        spaceId: space.id,
+        path: topicGoalFileName,
+        title: space.title,
+        goal: '',
+        version: null,
+        updatedAt: null,
+        fileMissing: true,
       }
-      throw new ClassroomError('topic-unavailable', `无法访问学习目标文件：${relative}`, 409)
-    }
-    if (!info.isFile()) {
-      throw new ClassroomError('topic-unavailable', `学习目标路径不是文件：${relative}`, 409)
-    }
-    if (info.size > maxTopicBytes) {
-      throw new ClassroomError('topic-too-large', `学习目标文件过大（超过 ${Math.round(maxTopicBytes / 1024)} KB）：${relative}`, 413)
-    }
-    let goal: string
-    try {
-      goal = await readFile(target, 'utf8')
-    } catch {
-      throw new ClassroomError('topic-read-failed', `读取学习目标失败：${relative}`, 500)
     }
     return {
       spaceId: space.id,
       path: topicGoalFileName,
       title: space.title,
-      goal,
-      version: topicVersion(goal),
-      updatedAt: info.mtime.toISOString(),
+      goal: file.content,
+      version: topicVersion(file.content),
+      updatedAt: file.updatedAt,
       fileMissing: false,
     }
   })
+
+  /**
+   * Read the goal file under an explicit type and size bound. The handle is
+   * checked with fstat before any content is read, and at most the stat size is
+   * read, so a directory, device or growing file is refused or bounded instead of
+   * being read without limit. Returns undefined when the file does not exist.
+   */
+  const readBoundedTopicFile = async (
+    target: string,
+    relative: string,
+    failure: { code: string; label: string },
+  ): Promise<{ content: string; updatedAt: string } | undefined> => {
+    let handle
+    try {
+      handle = await open(target, 'r')
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code === 'ENOENT') return undefined
+      if (code === 'EISDIR' || code === 'EPERM' || code === 'EACCES') {
+        throw new ClassroomError('topic-unavailable', `学习目标路径不是可读文件：${relative}`, 409)
+      }
+      throw new ClassroomError(failure.code, `${failure.label}：无法打开当前文件（${relative}）`, 409)
+    }
+    try {
+      const info = await handle.stat()
+      if (!info.isFile()) {
+        throw new ClassroomError('topic-unavailable', `学习目标路径不是文件：${relative}`, 409)
+      }
+      if (info.size > maxTopicBytes) {
+        throw new ClassroomError('topic-too-large', `学习目标文件过大（超过 ${Math.round(maxTopicBytes / 1024)} KB）：${relative}`, 413)
+      }
+      const buffer = Buffer.alloc(info.size)
+      let offset = 0
+      while (offset < buffer.length) {
+        const { bytesRead } = await handle.read(buffer, offset, buffer.length - offset, offset)
+        if (bytesRead === 0) break
+        offset += bytesRead
+      }
+      return { content: buffer.subarray(0, offset).toString('utf8'), updatedAt: info.mtime.toISOString() }
+    } catch (error) {
+      if (error instanceof ClassroomError) throw error
+      throw new ClassroomError(failure.code, `${failure.label}：无法读取当前文件（${relative}）`, 409)
+    } finally {
+      await handle.close()
+    }
+  }
 
   /**
    * Save the goal atomically after an explicit version check. The version is the
@@ -898,14 +940,10 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const relative = `${space.directory}/${topicGoalFileName}`
     const target = await resolveVaultPath(root, relative, probe)
 
-    let current: string | undefined
-    try {
-      current = await readFile(target, 'utf8')
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw new ClassroomError('topic-save-failed', `保存学习目标失败：无法读取当前文件（${relative}）`, 409)
-      }
-    }
+    const current = (await readBoundedTopicFile(target, relative, {
+      code: 'topic-save-failed',
+      label: '保存学习目标失败',
+    }))?.content
     if (current === undefined && version !== null) {
       throw new ClassroomError('topic-conflict', '学习目标文件已被外部删除，保存已被拒绝。请重新加载后再保存。', 409)
     }

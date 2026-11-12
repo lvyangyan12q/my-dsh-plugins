@@ -40,6 +40,15 @@ const readyView = {
   currentSpaceId: space.id,
 }
 
+const otherSpace = {
+  id: 'space-2',
+  title: '线性代数',
+  directory: '线性代数',
+  notePath: '笔记/我的笔记.md',
+  createdAt: '2026-11-10T00:00:00.000Z',
+  lecturePath: null,
+}
+
 const lectures = [
   { path: '讲义/02-后讲.md', fileName: '02-后讲.md', title: '后讲', order: 2, kind: 'markdown', chapter: '', source: 'lectures', missing: false },
   { path: '讲义/01-先讲.md', fileName: '01-先讲.md', title: '先讲', order: 10, kind: 'markdown', chapter: '', source: 'lectures', missing: false },
@@ -116,9 +125,12 @@ function fakeClient(options = {}) {
   let selectedPath = options.selectedPath ?? null
   let missingSelection = options.missingSelection ?? null
   let lectureRows = structuredClone(options.lectures ?? lectures)
-  let topic = structuredClone(options.topic ?? defaultTopic)
   let candidateFiles = structuredClone(options.candidates ?? defaultCandidates)
+  const spaces = structuredClone(options.spaces ?? [space])
+  let currentSpaceId = options.currentSpaceId ?? space.id
+  const topics = structuredClone(options.topics ?? { [space.id]: options.topic ?? defaultTopic })
   const docs = options.docs ?? docsFor()
+  const view = () => ({ ...structuredClone(readyView), spaces: structuredClone(spaces), currentSpaceId })
   const listView = () => ({
     spaceId: space.id,
     lectures: structuredClone(lectureRows),
@@ -128,8 +140,12 @@ function fakeClient(options = {}) {
   })
   return {
     calls,
-    async load() { return structuredClone(readyView) },
-    async command(input) { calls.push(input); return structuredClone(readyView) },
+    async load() { return view() },
+    async command(input) {
+      calls.push(input)
+      if (input.action === 'space-open') currentSpaceId = input.spaceId
+      return view()
+    },
     async listLectures(spaceId) {
       calls.push({ action: 'lecture-list', spaceId })
       const result = listView()
@@ -146,13 +162,17 @@ function fakeClient(options = {}) {
     async readTopic(spaceId) {
       calls.push({ action: 'topic-read', spaceId })
       if (options.topicError) throw options.topicError
+      const topic = topics[spaceId]
+      if (topic === undefined) throw new ClassroomClientError('space-not-found', `学习空间不存在：${spaceId}`, 409)
       return structuredClone(topic)
     },
     async saveTopicGoal(input) {
       calls.push(input)
       if (options.saveTopicError) throw options.saveTopicError
-      topic = { ...topic, goal: input.goal, version: 'version-goal-2', fileMissing: false }
-      return structuredClone(topic)
+      const topic = topics[input.spaceId] ?? { ...defaultTopic, spaceId: input.spaceId }
+      const next = { ...topic, goal: input.goal, version: `version-goal-${input.spaceId}-saved`, fileMissing: false }
+      topics[input.spaceId] = next
+      return structuredClone(next)
     },
     async listLectureCandidates(spaceId) {
       calls.push({ action: 'lecture-candidates', spaceId })
@@ -495,6 +515,189 @@ test('关联文件被外部删除时目录显示缺失并禁止打开，仍可�
     assert.equal(openButton.disabled, true)
     await ui.click(row.querySelector('button[aria-label="取消关联 缺失"]'))
     assert.deepEqual(client.calls.find(call => call.action === 'lecture-unlink').path, '资料/缺失.md')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+const otherTopic = {
+  ...defaultTopic,
+  spaceId: otherSpace.id,
+  title: otherSpace.title,
+  goal: '线代主题目标。',
+  version: 'version-goal-linalg',
+}
+
+function twoTopicClient(options = {}) {
+  return fakeClient({
+    spaces: [space, otherSpace],
+    topics: {
+      [space.id]: structuredClone(defaultTopic),
+      [otherSpace.id]: structuredClone(otherTopic),
+    },
+    ...options,
+  })
+}
+
+async function switchSpace(ui, title) {
+  await ui.click(findButton(ui.directory(), title))
+}
+
+test('切换主题再返回时保留未保存的目标草稿，另一个主题不串内容', async () => {
+  const client = twoTopicClient()
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    const area = ui.directory().querySelector('textarea[aria-label="学习目标内容"]')
+    await ui.setTextarea(area, '概率论未保存草稿')
+
+    await switchSpace(ui, otherSpace.title)
+    assert.match(ui.directory().textContent, /线代主题目标/)
+    assert.equal(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), null)
+
+    await switchSpace(ui, space.title)
+    const restored = ui.directory().querySelector('textarea[aria-label="学习目标内容"]')
+    assert.ok(restored, '返回原主题后应恢复编辑状态')
+    assert.equal(restored.value, '概率论未保存草稿')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('保存 pending 时切换主题：新主题目标表单可用，旧请求结束后状态不串', async () => {
+  const client = twoTopicClient()
+  let release
+  const gate = new Promise(resolve => { release = resolve })
+  const realSave = client.saveTopicGoal.bind(client)
+  client.saveTopicGoal = async input => { await gate; return realSave(input) }
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), '保存中的草稿')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+    assert.equal(ui.directory().querySelector('textarea[aria-label="学习目标内容"]').disabled, true)
+
+    await switchSpace(ui, otherSpace.title)
+    const editOther = findButton(ui.directory(), '编辑目标')
+    assert.ok(editOther)
+    assert.equal(editOther.disabled, false, '旧请求未完成不能禁用新主题的目标编辑')
+
+    release()
+    await settle()
+
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    const area = ui.directory().querySelector('textarea[aria-label="学习目标内容"]')
+    assert.ok(area)
+    assert.equal(area.disabled, false)
+    await ui.setTextarea(area, '线代新目标')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+    assert.equal(client.calls.some(call => call.action === 'topic-save' && call.spaceId === otherSpace.id), true)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('保存 pending 后失败时切换主题：新主题不被禁用，且在后续保存恢复', async () => {
+  const client = twoTopicClient()
+  let rejectGate
+  const gate = new Promise((_resolve, reject) => { rejectGate = reject })
+  const realSave = client.saveTopicGoal.bind(client)
+  let first = true
+  client.saveTopicGoal = async input => {
+    if (first) { first = false; await gate }
+    return realSave(input)
+  }
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), '会失败的草稿')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+
+    await switchSpace(ui, otherSpace.title)
+    rejectGate(new Error('保存请求失败'))
+    await settle()
+
+    const editOther = findButton(ui.directory(), '编辑目标')
+    assert.ok(editOther)
+    assert.equal(editOther.disabled, false)
+    await ui.click(editOther)
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), '失败后再保存')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+    assert.equal(client.calls.some(call => call.action === 'topic-save' && call.spaceId === otherSpace.id), true)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('保存 pending 时刷新目录不清草稿，请求结束后可以再次保存', async () => {
+  const client = twoTopicClient()
+  let release
+  const gate = new Promise(resolve => { release = resolve })
+  const realSave = client.saveTopicGoal.bind(client)
+  client.saveTopicGoal = async input => { await gate; return realSave(input) }
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), '刷新期间的草稿')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+
+    await ui.click(findButton(ui.directory(), '刷新目录'))
+    const during = ui.directory().querySelector('textarea[aria-label="学习目标内容"]')
+    assert.ok(during, '刷新不得移除正在编辑的目标表单')
+    assert.equal(during.value, '刷新期间的草稿')
+
+    release()
+    await settle()
+    // The completed save closes the editor; the same topic can be edited and saved again.
+    const edit = findButton(ui.directory(), '编辑目标')
+    assert.ok(edit)
+    assert.equal(edit.disabled, false)
+    await ui.click(edit)
+    await ui.click(findButton(ui.directory(), '保存目标'))
+    assert.equal(client.calls.filter(call => call.action === 'topic-save').length, 2)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('刷新目录时磁盘目标已更新：保留草稿并提示，不静默替换', async () => {
+  const topics = { [space.id]: structuredClone(defaultTopic) }
+  const client = fakeClient({ topics })
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), '我的本地草稿')
+    topics[space.id] = { ...defaultTopic, goal: 'Obsidian 新目标', version: 'version-goal-2' }
+
+    await ui.click(findButton(ui.directory(), '刷新目录'))
+    const area = ui.directory().querySelector('textarea[aria-label="学习目标内容"]')
+    assert.ok(area)
+    assert.equal(area.value, '我的本地草稿')
+    assert.match(ui.directory().querySelector('[aria-label="学习目标"]').textContent, /磁盘.*更新|草稿.*保留/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('目标冲突后只有显式重新加载才替换草稿，并说明会放弃修改', async () => {
+  const conflict = new ClassroomClientError('topic-conflict', '学习目标文件已被外部修改，保存已被拒绝。请重新加载后再保存。', 409)
+  const client = fakeClient({ saveTopicError: conflict })
+  const ui = await mount(client)
+  try {
+    const goal = () => ui.directory().querySelector('[aria-label="学习目标"]')
+    await ui.click(findButton(goal(), '编辑目标'))
+    await ui.setTextarea(goal().querySelector('textarea[aria-label="学习目标内容"]'), '冲突时保留的草稿')
+    await ui.click(findButton(goal(), '保存目标'))
+
+    assert.equal(goal().querySelector('textarea[aria-label="学习目标内容"]').value, '冲突时保留的草稿')
+    const reload = findButton(goal(), '重新加载目标')
+    assert.ok(reload, '冲突后必须提供显式的重新加载动作')
+    assert.match(reload.textContent, /放弃|重新加载/)
+
+    await ui.click(reload)
+    const loaded = goal().querySelector('textarea[aria-label="学习目标内容"]')
+    assert.equal(loaded.value, defaultTopic.goal)
+    assert.equal(goal().querySelector('[role="alert"]'), null)
   } finally {
     await ui.unmount()
   }

@@ -38,6 +38,12 @@ type ReaderState =
   | { status: 'ready'; doc: LectureReadView }
   | { status: 'failed'; path: string; message: string }
 
+/** Unsaved goal text, kept per learning space so a view switch cannot lose it. */
+interface GoalDraft {
+  text: string
+  editing: boolean
+}
+
 const lectureStyles = `
 .lc-lecture-head{display:flex;flex-direction:column;gap:2px}
 .lc-lecture-head h3{margin:0;font-size:16px}
@@ -177,10 +183,13 @@ export function LectureZone(props: LectureZoneProps) {
   const [notice, setNotice] = useState('')
   const [topic, setTopic] = useState<TopicView | null>(null)
   const [topicError, setTopicError] = useState('')
-  const [goalDraft, setGoalDraft] = useState('')
-  const [goalEditing, setGoalEditing] = useState(false)
-  const [goalSaving, setGoalSaving] = useState(false)
-  const [goalError, setGoalError] = useState('')
+  // Goal drafts, errors and notices are keyed by space: switching a view or
+  // refreshing must never silently drop text the learner is still writing.
+  const [drafts, setDrafts] = useState<Record<string, GoalDraft>>({})
+  const [goalErrors, setGoalErrors] = useState<Record<string, string>>({})
+  const [goalNotices, setGoalNotices] = useState<Record<string, string>>({})
+  const [savingSpaceId, setSavingSpaceId] = useState<string | null>(null)
+  const [reloadingSpaceId, setReloadingSpaceId] = useState<string | null>(null)
   const [candidatePanel, setCandidatePanel] = useState(false)
   const [candidates, setCandidates] = useState<LectureCandidatesView | null>(null)
   const [candidatesLoading, setCandidatesLoading] = useState(false)
@@ -190,6 +199,41 @@ export function LectureZone(props: LectureZoneProps) {
   const alive = useRef(true)
   const generation = useRef(0)
   const handledRequest = useRef<number | null>(null)
+  const draftsRef = useRef<Record<string, GoalDraft>>({})
+  const currentSpaceIdRef = useRef(spaceId)
+  const topicLoadToken = useRef(0)
+  currentSpaceIdRef.current = spaceId
+
+  useEffect(() => {
+    draftsRef.current = drafts
+  }, [drafts])
+
+  const draft = drafts[spaceId]
+  const goalEditing = draft?.editing ?? false
+  const goalDraft = draft?.text ?? topic?.goal ?? ''
+  const goalError = goalErrors[spaceId] ?? ''
+  const goalNotice = goalNotices[spaceId] ?? ''
+  const goalSaving = savingSpaceId === spaceId
+  const goalReloading = reloadingSpaceId === spaceId
+  const goalBusy = goalSaving || goalReloading
+
+  const clearGoalError = (id: string) => {
+    setGoalErrors(prev => {
+      if (prev[id] === undefined) return prev
+      const copy = { ...prev }
+      delete copy[id]
+      return copy
+    })
+  }
+
+  const clearGoalNotice = (id: string) => {
+    setGoalNotices(prev => {
+      if (prev[id] === undefined) return prev
+      const copy = { ...prev }
+      delete copy[id]
+      return copy
+    })
+  }
 
   useEffect(() => {
     alive.current = true
@@ -202,15 +246,14 @@ export function LectureZone(props: LectureZoneProps) {
     setNotice('')
     setTopic(null)
     setTopicError('')
-    setGoalDraft('')
-    setGoalEditing(false)
-    setGoalError('')
     setCandidatePanel(false)
     setCandidates(null)
+    setCandidatesLoading(false)
     setCandidatesError('')
     setLinkError('')
     setLinking(null)
 
+    const loadToken = ++topicLoadToken.current
     const current = () => alive.current && generation.current === mine && !controller.signal.aborted
 
     client.listLectures(spaceId, controller.signal).then(async list => {
@@ -235,11 +278,23 @@ export function LectureZone(props: LectureZoneProps) {
 
     if (canTopic) {
       client.readTopic?.(spaceId, controller.signal).then(next => {
-        if (!current()) return
+        if (!current() || topicLoadToken.current !== loadToken) return
         setTopic(next)
-        setGoalDraft(next.goal)
+        const existing = draftsRef.current[spaceId]
+        if (existing !== undefined && existing.editing) {
+          // A reload never replaces text the learner is still writing; keep the
+          // draft and say why the disk copy differs.
+          if (existing.text !== next.goal) {
+            setGoalNotices(prev => ({ ...prev, [spaceId]: '磁盘上的学习目标已更新；你的未保存草稿仍保留。' }))
+          } else {
+            clearGoalNotice(spaceId)
+          }
+          return
+        }
+        setDrafts(prev => ({ ...prev, [spaceId]: { text: next.goal, editing: false } }))
+        clearGoalNotice(spaceId)
       }).catch(error => {
-        if (current()) setTopicError(messageOf(error))
+        if (current() && topicLoadToken.current === loadToken) setTopicError(messageOf(error))
       })
     }
 
@@ -272,33 +327,80 @@ export function LectureZone(props: LectureZoneProps) {
   const retryButton = <button className="lc-secondary" onClick={reload}>重新加载目录</button>
 
   const startGoalEdit = () => {
-    setGoalDraft(topic?.goal ?? '')
-    setGoalError('')
-    setGoalEditing(true)
+    setDrafts(prev => ({
+      ...prev,
+      [spaceId]: { text: prev[spaceId]?.text ?? topic?.goal ?? '', editing: true },
+    }))
+    clearGoalError(spaceId)
   }
 
   const cancelGoalEdit = () => {
-    setGoalDraft(topic?.goal ?? '')
-    setGoalError('')
-    setGoalEditing(false)
+    setDrafts(prev => {
+      if (prev[spaceId] === undefined) return prev
+      const copy = { ...prev }
+      delete copy[spaceId]
+      return copy
+    })
+    clearGoalError(spaceId)
+    clearGoalNotice(spaceId)
   }
 
-  /** Save the goal through the versioned Host command; the draft survives a conflict. */
+  const changeGoalDraft = (text: string) => {
+    setDrafts(prev => ({ ...prev, [spaceId]: { text, editing: true } }))
+  }
+
+  /**
+   * Save the goal through the versioned Host command. The busy flag belongs to
+   * the space that started the request, so switching views or a late response
+   * can never disable (or re-enable) another topic's form.
+   */
   const saveGoal = async () => {
-    if (!canTopic || topic === null || goalSaving) return
-    const mine = generation.current
-    setGoalSaving(true)
-    setGoalError('')
+    if (!canTopic || topic === null || goalBusy) return
+    const targetSpace = spaceId
+    const text = goalDraft
+    const version = topic.version
+    setSavingSpaceId(targetSpace)
+    clearGoalError(targetSpace)
     try {
-      const next = await client.saveTopicGoal?.({ action: 'topic-save', spaceId, goal: goalDraft, version: topic.version })
-      if (next === undefined || !alive.current || generation.current !== mine) return
-      setTopic(next)
-      setGoalDraft(next.goal)
-      setGoalEditing(false)
+      const next = await client.saveTopicGoal?.({ action: 'topic-save', spaceId: targetSpace, goal: text, version })
+      if (next === undefined) return
+      // Any in-flight read of this goal file is now older than the save.
+      topicLoadToken.current += 1
+      setDrafts(prev => {
+        if (prev[targetSpace] === undefined) return prev
+        const copy = { ...prev }
+        delete copy[targetSpace]
+        return copy
+      })
+      clearGoalNotice(targetSpace)
+      if (alive.current && currentSpaceIdRef.current === targetSpace) setTopic(next)
     } catch (error) {
-      if (alive.current && generation.current === mine) setGoalError(messageOf(error))
+      // The error stays with the space that asked, even after a view switch.
+      if (alive.current) setGoalErrors(prev => ({ ...prev, [targetSpace]: messageOf(error) }))
     } finally {
-      if (alive.current && generation.current === mine) setGoalSaving(false)
+      setSavingSpaceId(current => current === targetSpace ? null : current)
+    }
+  }
+
+  /** Explicit choice after a conflict: replace the draft with the disk copy. */
+  const reloadGoal = async () => {
+    if (!canTopic || topic === null || goalBusy) return
+    const targetSpace = spaceId
+    const mine = generation.current
+    setReloadingSpaceId(targetSpace)
+    clearGoalError(targetSpace)
+    try {
+      const next = await client.readTopic?.(targetSpace)
+      if (next === undefined || !alive.current) return
+      if (generation.current !== mine || currentSpaceIdRef.current !== targetSpace) return
+      topicLoadToken.current += 1
+      setTopic(next)
+      setDrafts(prev => ({ ...prev, [targetSpace]: { text: next.goal, editing: true } }))
+      clearGoalNotice(targetSpace)
+    } catch (error) {
+      if (alive.current) setGoalErrors(prev => ({ ...prev, [targetSpace]: messageOf(error) }))
+    } finally {
+      setReloadingSpaceId(current => current === targetSpace ? null : current)
     }
   }
 
@@ -421,13 +523,17 @@ export function LectureZone(props: LectureZoneProps) {
                   aria-label="学习目标内容"
                   rows={4}
                   value={goalDraft}
-                  disabled={goalSaving}
-                  onChange={event => setGoalDraft(event.target.value)}
+                  disabled={goalBusy}
+                  onChange={event => changeGoalDraft(event.target.value)}
                 />
                 <div className="lc-goal-actions">
-                  <button type="submit" disabled={goalSaving}>{goalSaving ? '保存中…' : '保存目标'}</button>
-                  <button type="button" className="lc-secondary" disabled={goalSaving} onClick={cancelGoalEdit}>取消</button>
+                  <button type="submit" disabled={goalBusy}>{goalSaving ? '保存中…' : '保存目标'}</button>
+                  <button type="button" className="lc-secondary" disabled={goalBusy} onClick={() => void reloadGoal()}>
+                    {goalReloading ? '重新加载中…' : '重新加载目标（放弃我的修改）'}
+                  </button>
+                  <button type="button" className="lc-secondary" disabled={goalBusy} onClick={cancelGoalEdit}>取消</button>
                 </div>
+                {goalNotice !== '' && <p className="lc-hint" role="status">{goalNotice}</p>}
                 {goalError !== '' && <p className="lc-hint" role="alert">{goalError}</p>}
               </form>
             )}
