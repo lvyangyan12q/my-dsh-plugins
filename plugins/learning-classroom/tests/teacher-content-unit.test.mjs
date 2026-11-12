@@ -88,6 +88,9 @@ test('实验参数必须有限、范围有效、默认值在范围内且名称�
     { ...base, html: '<html><body><img src="https://example.org/x.png"></body></html>' },
     { ...base, html: '<html><body><script>fetch("https://example.org")</script></body></html>' },
     { ...base, html: '<html><body><script>localStorage.setItem("x", "1")</script></body></html>' },
+    { ...base, html: '<html><body><script>new RTCPeerConnection()</script></body></html>' },
+    { ...base, html: '<html><body><script>parent.postMessage("x", "*")</script></body></html>' },
+    { ...base, html: '<html><body><a href="https://example.org">外链</a></body></html>' },
     { ...base, html: '<html><body><iframe src="https://example.org"></iframe></body></html>' },
   ]) {
     assert.equal(experimentDraftSchema.safeParse(bad).success, false, JSON.stringify(bad.html ?? bad.parameters))
@@ -132,4 +135,9 @@ test('既有或手写实验在渲染前也会补上同一份 CSP，片段 HTML �
   assert.match(prepared, /Content-Security-Policy/)
   assert.match(prepared, /<p>手写实验<\/p>/)
   assert.equal(ensureExperimentCsp(prepared), prepared)
+
+  // A stray marker or a model-authored policy must not suppress the classroom
+  // policy: only the exact strong tag is accepted as already present.
+  const fake = '<meta data-learning-classroom-csp="1"><p>绕过尝试</p>'
+  assert.match(ensureExperimentCsp(fake), /Content-Security-Policy/)
 })

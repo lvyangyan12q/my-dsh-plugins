@@ -167,18 +167,21 @@ export const experimentParameterSchema = z.object({
 
 /** Patterns that would make a generated experiment depend on the network or host. */
 const externalResourcePatterns: Array<{ pattern: RegExp; reason: string }> = [
-  { pattern: /<(?:script|img|link|iframe|object|embed|source|video|audio|track)\b[^>]*\b(?:src|href|data|poster)\s*=\s*["']?\s*(?:https?:)?\/\//i, reason: '外链资源' },
+  { pattern: /<(?:script|img|link|iframe|object|embed|source|video|audio|track|input|button)\b[^>]*\b(?:src|href|srcset|data|poster|formaction)\s*=\s*["']?\s*(?:https?:)?\/\//i, reason: '外链资源' },
+  { pattern: /<a\b[^>]*\bhref\s*=\s*["']?\s*(?:https?:)?\/\//i, reason: '外部链接' },
   { pattern: /<link\b/i, reason: '外部样式或预加载' },
   { pattern: /<(?:iframe|object|embed)\b/i, reason: '嵌套文档或插件' },
   { pattern: /<(?:base|form)\b/i, reason: '基地址或表单提交' },
   { pattern: /<meta\b[^>]*http-equiv\s*=\s*["']?refresh/i, reason: '自动跳转' },
-  { pattern: /\b(?:src|href|action|poster|data)\s*=\s*["']?\s*\/\//i, reason: '协议相对地址' },
+  { pattern: /\b(?:src|href|action|poster|data|ping|formaction)\s*=\s*["']?\s*\/\//i, reason: '协议相对地址' },
   { pattern: /url\(\s*["']?\s*(?:https?:)?\/\//i, reason: '外部样式资源' },
   { pattern: /@import\b/i, reason: '外部样式导入' },
-  { pattern: /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\b/i, reason: '网络请求 API' },
+  { pattern: /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon|RTCPeerConnection|RTCDataChannel|WebTransport)\b/i, reason: '网络请求 API' },
+  { pattern: /\bnavigator\.(?:geolocation|mediaDevices|clipboard|serviceWorker|usb|bluetooth|serial)\b/i, reason: '宿主设备或网络 API' },
   { pattern: /\b(?:localStorage|sessionStorage|indexedDB|document\.cookie)\b/i, reason: '宿主存储 API' },
   { pattern: /\b(?:window|document)\.location\b|\blocation\.(?:href|assign|replace)\b/i, reason: '页面跳转 API' },
-  { pattern: /\bwindow\.(?:open|parent|top)\b|\b(?:parent|top)\.(?:location|document|postMessage)\b/i, reason: '宿主窗口 API' },
+  { pattern: /\bwindow\.(?:open|parent|top)\b|\b(?:parent|top)\.(?:location|document|postMessage)\b|\bpostMessage\s*\(/i, reason: '宿主窗口 API' },
+  { pattern: /\bnew\s+(?:Shared|Service)?Worker\b|\bserviceWorker\b/i, reason: '后台工作线程' },
   { pattern: /\bimport\s*\(/i, reason: '动态模块导入' },
 ]
 

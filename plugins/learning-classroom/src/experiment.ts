@@ -54,6 +54,8 @@ export function injectIntoHead(html: string, markup: string): string {
  */
 export function ensureExperimentCsp(input: string): string {
   const html = typeof input === 'string' ? input : ''
-  if (html.includes(cspMarker)) return html
+  // Only our exact tag counts: a stray marker or a model-authored policy must
+  // never stop the classroom from adding its own (intersecting) policy.
+  if (html.includes(cspTag)) return html
   return injectIntoHead(html, cspTag)
 }
