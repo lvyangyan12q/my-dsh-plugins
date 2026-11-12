@@ -53,7 +53,7 @@ DSH 的个人学习插件：从一个本地**知识文件库**开始，为每门
 - 老师生成工具只接受真实绑定到学习空间的 Session；主题完全由执行 Session 决定，工具参数没有 `spaceId`/`sessionId`，未绑定、一对多或跨主题路径都会被拒绝。空间根目录或讲义路径中的符号链接/目录联接同样拒绝。
 - 生成文件先写隐藏 staging，再用 hardlink 无覆盖发布；同名文件不覆盖，取消/失败只清理自己的 staging。**只支持能够 hardlink 的本地文件系统**：不支持时明确失败（`generation-publish-unsupported`），不退化复制、不产生可见半文件、不删除竞争出现的外部文件。
 - 与笔记保存一样，这**不是跨进程锁**：Host 只在单进程内串行，发布前做 canonical folder、`dev:ino` 目录身份和 staging `realpath` 检查。Node.js 的 `fs` 没有 `dirfd`/`openat`，无法承诺抵抗本机恶意进程在检查与 `link` 之间原子替换祖先目录；支持范围是**本地可信文件系统 + 非恶意外部进程**。若要求抵抗恶意文件系统替换，应另行收窄或关闭生成能力，不能仅靠再查一次掩盖。
-- 动态实验是**声明式数据**：`.html` 文件只含固定外壳、来源和惰性 `<script type="application/json">` spec，不含模型 HTML/CSS/JS。Host 只接受受 schema 约束的参数、读数、折线/柱状图与受限数学表达式，并把表达式编译成白名单 AST（数字、参数、四则/幂、括号和白名单函数；无 eval/Function、无属性访问、无字符串、无任意调用），节点/深度/采样有硬限，非有限结果明确报错。模型无法通过标题、标签或 spec 字段注入标签或脚本。
+- 动态实验是**声明式数据**：`.html` 文件只含固定外壳、来源和惰性 `<script type="application/json">` spec，不含模型 HTML/CSS/JS。Host 只接受受 schema 约束的参数、读数、折线/柱状图与受限数学表达式，并把表达式编译成白名单 AST（数字、参数、四则/幂、括号和白名单函数；无 eval/Function、无属性访问、无字符串、无任意调用），节点/深度/采样有硬限，非有限结果明确报错；参数默认值必须落在 `min + 整数×step` 的网格上，避免浏览器 range 吸附后显示值与求值不一致。模型无法通过标题、标签或 spec 字段注入标签或脚本。
 - 课堂读取 spec 后，用**固定可信 runtime** 在 `iframe sandbox="allow-scripts"`（无 same-origin、forms、popups、top-navigation）中渲染；spec 只以 `JSON.stringify` 转义后的 JS 字面量注入（`<`、U+2028/U+2029 均转义），runtime 不使用 `innerHTML`、不 postMessage、不 fetch/联网、不读 `location`。iframe 的 `allow-scripts` 只运行这段固定代码；这个边界只覆盖课堂内嵌渲染，不是对任意打开方式或整个 DSH 的通用隔离。
 - Chrome 会忽略通过 `<meta>` 声明的 CSP `sandbox` 指令，因此同源隔离来自 iframe 的 `sandbox` 属性；CSP 继续限制资源加载与网络。实验文件若在课堂外直接打开，不继承课堂 iframe 的沙箱。
 - **安全收缩（明确披露）**：旧式任意 HTML/脚本实验不再执行，原文件保留在原位置，界面显示路径和“请让老师重新生成声明式实验”。这是为关闭脚本自导航/联网而做的有意不兼容，不是静默丢失文件。真实模型生成、审批与 Chrome 注入负例由真实验收入口记录；本 README 不把源码完成、自动化替身或构建通过当作通用隔离或抗恶意文件系统的证明。

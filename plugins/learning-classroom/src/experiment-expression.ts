@@ -168,19 +168,10 @@ class Parser {
   }
 
   private parseMultiplicative(): ExperimentAst {
-    let left = this.parsePower()
+    let left = this.parseUnary()
     while (this.peek().kind === 'operator' && (this.peek().text === '*' || this.peek().text === '/')) {
       const op = this.take().text as '*' | '/'
-      left = this.node({ kind: 'binary', op, left, right: this.parsePower() })
-    }
-    return left
-  }
-
-  private parsePower(): ExperimentAst {
-    const left = this.parseUnary()
-    if (this.peek().kind === 'operator' && this.peek().text === '^') {
-      this.take()
-      return this.node({ kind: 'binary', op: '^', left, right: this.parsePower() })
+      left = this.node({ kind: 'binary', op, left, right: this.parseUnary() })
     }
     return left
   }
@@ -190,7 +181,18 @@ class Parser {
       const op = this.take().text as '+' | '-'
       return this.node({ kind: 'unary', op, arg: this.parseUnary() })
     }
-    return this.parsePrimary()
+    return this.parsePower()
+  }
+
+  private parsePower(): ExperimentAst {
+    const left = this.parsePrimary()
+    if (this.peek().kind === 'operator' && this.peek().text === '^') {
+      this.take()
+      // Power binds tighter than unary minus and is right-associative:
+      // -x^2 = -(x^2), 2^3^2 = 2^(3^2), 2^-2 = 2^(-2).
+      return this.node({ kind: 'binary', op: '^', left, right: this.parseUnary() })
+    }
+    return left
   }
 
   private parsePrimary(): ExperimentAst {
@@ -269,7 +271,7 @@ export function evaluateExperimentAst(ast: ExperimentAst, parameters: Readonly<R
 
 function evaluate(ast: ExperimentAst, parameters: Readonly<Record<string, number>>): number {
   switch (ast.kind) {
-    case 'number': return ast.value
+    case 'number': return finite(ast.value, '表达式数字')
     case 'param': {
       const value = parameters[ast.name]
       if (typeof value !== 'number' || !Number.isFinite(value)) {
@@ -279,35 +281,35 @@ function evaluate(ast: ExperimentAst, parameters: Readonly<Record<string, number
     }
     case 'unary': {
       const value = evaluate(ast.arg, parameters)
-      return ast.op === '-' ? -value : value
+      return finite(ast.op === '-' ? -value : value, '一元运算结果')
     }
     case 'binary': {
       const left = evaluate(ast.left, parameters)
       const right = evaluate(ast.right, parameters)
       switch (ast.op) {
-        case '+': return left + right
-        case '-': return left - right
-        case '*': return left * right
+        case '+': return finite(left + right, '加法结果')
+        case '-': return finite(left - right, '减法结果')
+        case '*': return finite(left * right, '乘法结果')
         case '/':
           if (right === 0) throw new ExperimentExpressionError('表达式出现除零。')
-          return left / right
-        case '^': return Math.pow(left, right)
+          return finite(left / right, '除法结果')
+        case '^': return finite(Math.pow(left, right), '幂结果')
       }
       return 0
     }
     case 'call': {
       const args = ast.args.map(arg => evaluate(arg, parameters))
       switch (ast.name) {
-        case 'min': return Math.min(args[0], args[1])
-        case 'max': return Math.max(args[0], args[1])
-        case 'abs': return Math.abs(args[0])
-        case 'sqrt': return Math.sqrt(args[0])
-        case 'exp': return Math.exp(args[0])
-        case 'log': return Math.log(args[0])
-        case 'sin': return Math.sin(args[0])
-        case 'cos': return Math.cos(args[0])
-        case 'pow': return Math.pow(args[0], args[1])
-        case 'clamp': return Math.min(Math.max(args[0], args[1]), args[2])
+        case 'min': return finite(Math.min(args[0], args[1]), 'min 结果')
+        case 'max': return finite(Math.max(args[0], args[1]), 'max 结果')
+        case 'abs': return finite(Math.abs(args[0]), 'abs 结果')
+        case 'sqrt': return finite(Math.sqrt(args[0]), 'sqrt 结果')
+        case 'exp': return finite(Math.exp(args[0]), 'exp 结果')
+        case 'log': return finite(Math.log(args[0]), 'log 结果')
+        case 'sin': return finite(Math.sin(args[0]), 'sin 结果')
+        case 'cos': return finite(Math.cos(args[0]), 'cos 结果')
+        case 'pow': return finite(Math.pow(args[0], args[1]), 'pow 结果')
+        case 'clamp': return finite(Math.min(Math.max(args[0], args[1]), args[2]), 'clamp 结果')
       }
       return 0
     }

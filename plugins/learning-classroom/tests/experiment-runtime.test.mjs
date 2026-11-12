@@ -56,3 +56,9 @@ test('iframe runtime 包含参数、读数和折线/柱状画布，不执行模�
   const bars = buildExperimentSrcdoc({ ...spec, render: { ...spec.render, kind: 'bars' } })
   assert.match(bars, /bars/)
 })
+
+test('runtime 以浏览器实际 range 值初始化参数与显示，避免 step 吸附不一致', () => {
+  assert.match(experimentRuntimeSource, /var initial = Number\(input\.value\)/)
+  assert.match(experimentRuntimeSource, /values\[parameter\.name\] = initial/)
+  assert.match(experimentRuntimeSource, /String\(initial\)/)
+})

@@ -25,7 +25,7 @@ export const experimentRuntimeSource = String.raw`
   }
 
   function finite(value, what) {
-    if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(what + '不是有限数值')
+    if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(what + '不是有限数值（NaN/Infinity）。')
     return value
   }
 
@@ -47,7 +47,7 @@ export const experimentRuntimeSource = String.raw`
         if (ast.op === '-') return finite(left - right, '减法结果')
         if (ast.op === '*') return finite(left * right, '乘法结果')
         if (ast.op === '/') {
-          if (right === 0) throw new Error('表达式出现除零')
+          if (right === 0) throw new Error('表达式出现除零。')
           return finite(left / right, '除法结果')
         }
         if (ast.op === '^') return finite(Math.pow(left, right), '幂结果')
@@ -203,7 +203,6 @@ export const experimentRuntimeSource = String.raw`
   var controls = element('div', 'experiment-controls')
   for (var pi = 0; pi < SPEC.parameters.length; pi += 1) {
     var parameter = SPEC.parameters[pi]
-    values[parameter.name] = parameter.default
     var label = element('label', 'experiment-control')
     var caption = element('span', 'experiment-control-label', parameter.label)
     var input = document.createElement('input')
@@ -213,7 +212,13 @@ export const experimentRuntimeSource = String.raw`
     input.step = String(parameter.step)
     input.value = String(parameter.default)
     input.setAttribute('aria-label', parameter.label)
-    var current = element('output', 'experiment-control-value', String(parameter.default) + (parameter.unit ? ' ' + parameter.unit : ''))
+    // Read back the browser's actual value: a range may snap to the nearest
+    // allowed step. The displayed/output value must be what is evaluated, not
+    // the un-snapped spec default.
+    var initial = Number(input.value)
+    if (!Number.isFinite(initial)) initial = parameter.default
+    values[parameter.name] = initial
+    var current = element('output', 'experiment-control-value', String(initial) + (parameter.unit ? ' ' + parameter.unit : ''))
     input.addEventListener('input', function (name, unit, output) {
       return function (event) {
         values[name] = Number(event.target.value)

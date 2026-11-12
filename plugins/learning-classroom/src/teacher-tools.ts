@@ -81,7 +81,7 @@ const experimentParameters = {
     sources: sourceSchema,
     parameters: {
       type: 'array',
-      description: '实验声明的可调参数（1–12 个）；min < max、default 在范围内、step > 0；名称只含字母、数字、下划线。',
+      description: '实验声明的可调参数（1–12 个）；min < max、default 在范围内且落在 min + 整数×step 的网格上、step > 0；名称只含字母、数字、下划线。',
       items: {
         type: 'object',
         additionalProperties: false,

@@ -86,6 +86,8 @@ export const experimentSpecLimits = {
   samplesMin: 24,
   samplesMax: 256,
   decimals: 6,
+  storedJsonNodes: 20_000,
+  storedJsonDepth: 64,
 } as const
 
 const parameterName = /^[A-Za-z][A-Za-z0-9_]{0,31}$/
@@ -124,6 +126,13 @@ export const experimentParameterSchema = z.object({
   }
   if (parameter.step > parameter.max - parameter.min) {
     ctx.addIssue({ code: 'custom', message: `参数 ${parameter.name} 的步长不能大于取值范围。` })
+  }
+  const gridSteps = (parameter.default - parameter.min) / parameter.step
+  if (Math.abs(gridSteps - Math.round(gridSteps)) > 1e-9) {
+    ctx.addIssue({
+      code: 'custom',
+      message: `参数 ${parameter.name} 的默认值必须落在 min + 整数 × step 的网格上；否则浏览器 range 会吸附到相邻值，导致显示与求值不一致。`,
+    })
   }
 })
 
@@ -377,6 +386,37 @@ export interface ReadExperimentResult {
   error: string | null
 }
 
+/**
+ * Iterative budget before the recursive Zod schema. A 100 KB spec can contain
+ * thousands of nested unary nodes; recursive validation would otherwise throw an
+ * uncatchable-looking `RangeError: Maximum call stack size exceeded` instead of a
+ * readable, fail-closed read result.
+ */
+function assertStoredJsonBudget(value: unknown): void {
+  const stack: Array<{ value: unknown; depth: number }> = [{ value, depth: 1 }]
+  let nodes = 0
+  while (stack.length > 0) {
+    const current = stack.pop()!
+    nodes += 1
+    if (nodes > experimentSpecLimits.storedJsonNodes) {
+      throw new Error(`结构节点过多（上限 ${experimentSpecLimits.storedJsonNodes}）。`)
+    }
+    if (current.depth > experimentSpecLimits.storedJsonDepth) {
+      throw new Error(`结构嵌套过深（上限 ${experimentSpecLimits.storedJsonDepth} 层）。`)
+    }
+    if (Array.isArray(current.value)) {
+      for (let index = current.value.length - 1; index >= 0; index -= 1) {
+        stack.push({ value: current.value[index], depth: current.depth + 1 })
+      }
+    } else if (current.value !== null && typeof current.value === 'object') {
+      const children = Object.values(current.value as Record<string, unknown>)
+      for (let index = children.length - 1; index >= 0; index -= 1) {
+        stack.push({ value: children[index], depth: current.depth + 1 })
+      }
+    }
+  }
+}
+
 /** Read a generated declarative file. Legacy arbitrary HTML is never executed. */
 export function readExperimentFile(html: string): ReadExperimentResult {
   if (typeof html !== 'string' || html === '') {
@@ -399,7 +439,25 @@ export function readExperimentFile(html: string): ReadExperimentResult {
   } catch {
     return { spec: null, legacy: false, error: '实验声明式文件的 JSON spec 无法解析，未执行。' }
   }
-  const result = storedExperimentSchema.safeParse(parsed)
+  try {
+    assertStoredJsonBudget(parsed)
+  } catch (error) {
+    return {
+      spec: null,
+      legacy: false,
+      error: `实验声明式文件结构过深或过大，未执行：${error instanceof Error ? error.message : '未知原因'}`,
+    }
+  }
+  let result
+  try {
+    result = storedExperimentSchema.safeParse(parsed)
+  } catch (error) {
+    return {
+      spec: null,
+      legacy: false,
+      error: `实验声明式文件结构无法安全校验，未执行：${error instanceof Error ? error.message : '未知原因'}`,
+    }
+  }
   if (!result.success) {
     return {
       spec: null,

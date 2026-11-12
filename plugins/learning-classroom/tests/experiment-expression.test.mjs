@@ -77,4 +77,19 @@ test('求值结果必须是有限数，除零和非法数学结果明确失败',
     () => evaluateExperimentAst(parseExperimentExpression('prior + 1e308 * 1e308', parameters), { prior: 0.5 }),
     /有限|无穷|数值/,
   )
+  assert.throws(
+    () => evaluateExperimentAst(parseExperimentExpression('1 / (1e308 * 1e308)', parameters), { prior: 0.5 }),
+    /有限|无穷|NaN|Infinity|数值/,
+    '中间 Infinity 不能变成 0；Host 与 runtime 都必须在每一步拒绝非有限值',
+  )
+})
+
+test('一元负号低于幂运算，幂右结合且指数可为负', () => {
+  const value = (source, scope = {}) => evaluateExperimentAst(parseExperimentExpression(source, Object.keys(scope)), scope)
+  assert.equal(value('-2^2'), -4)
+  assert.equal(value('(-2)^2'), 4)
+  assert.equal(value('2^-2'), 0.25)
+  assert.equal(value('2^3^2'), 512)
+  assert.equal(value('-prior^2', { prior: 2 }), -4)
+  assert.equal(value('2^(-2)'), 0.25)
 })

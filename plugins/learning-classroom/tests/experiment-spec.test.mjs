@@ -111,3 +111,38 @@ test('声明式实验的 schema 只接受受控字段，不接受 html/script/as
     assert.equal(experimentDraftSchema.safeParse({ ...bayes, ...extra }).success, false)
   }
 })
+
+test('超深 stored AST 在递归 schema 前被迭代预算拒绝，不抛 RangeError', () => {
+  let ast = { kind: 'number', value: 1 }
+  for (let index = 0; index < 3000; index += 1) ast = { kind: 'unary', op: '-', arg: ast }
+  const spec = compileExperimentDraft(bayes)
+  const html = composeExperimentFile({
+    ...spec,
+    readouts: [{ ...spec.readouts[0], ast }],
+  })
+  let result
+  assert.doesNotThrow(() => { result = readExperimentFile(html) })
+  assert.equal(result.spec, null)
+  assert.match(result.error, /过深|过大|结构|预算/)
+})
+
+test('参数默认值必须在 min + step 网格上，避免浏览器 range 吸附与显示/求值不一致', () => {
+  const draft = {
+    ...bayes,
+    parameters: [{ name: 'p', label: '概率', min: 0, max: 1, step: 0.3, default: 0.5, unit: '' }],
+    readouts: [{ name: 'out', label: '输出', expression: 'p', unit: '', decimals: 2 }],
+    render: {
+      ...bayes.render,
+      xParameter: 'p',
+      series: [{ label: '输出', expression: 'p' }],
+    },
+  }
+  assert.equal(experimentDraftSchema.safeParse(draft).success, false)
+  assert.throws(() => compileExperimentDraft(draft), /步长|网格|默认值|吸附/)
+
+  const aligned = {
+    ...draft,
+    parameters: [{ ...draft.parameters[0], default: 0.6 }],
+  }
+  assert.equal(compileExperimentDraft(aligned).parameters[0].default, 0.6)
+})
