@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } f
 import { createDebouncer, createSerialQueue } from './autosave.ts'
 import { classroomErrorCode, type ClassroomClient } from './classroom-client.ts'
 import type { ClassroomSpaceView, NoteDocumentView, NoteSaveCommand, NoteSummaryView } from './contract.ts'
-import { createSessionDraftStore, type DraftStorage, type NoteDraftStore } from './note-drafts.ts'
+import { createSessionDraftStore, type DraftStorage, type DraftWriteResult, type NoteDraft, type NoteDraftStore } from './note-drafts.ts'
 import { NotePreview } from './notes-preview.tsx'
 
 export type NoteSaveStatus = 'loading' | 'saved' | 'dirty' | 'saving' | 'failed' | 'conflict'
@@ -34,6 +34,8 @@ interface SaveRequest {
   generation: number
   /** Per-file read epoch; a write queued before a re-read must not apply after it. */
   readEpoch: number
+  /** Draft revision this snapshot belongs to; older failures may not replace newer drafts. */
+  draftRevision: number
   mode: SaveMode
 }
 
@@ -120,6 +122,15 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   // Per-file read counter: re-reading a file invalidates older queued writes so
   // they cannot be blindly rebound to the newly read version.
   const readEpochs = useRef(new Map<string, number>())
+  // Epoch of the last *successful* read. A request captured after a failed load
+  // has no valid read identity even if an older version remains in `versions`.
+  const readOkEpochs = useRef(new Map<string, number>())
+  // Incremented whenever a save succeeds; a load that started before that save
+  // must not apply its now-stale snapshot.
+  const ledgerSeq = useRef(new Map<string, number>())
+  // Monotonic per-file draft revision; prevents a late failure of an older
+  // snapshot from replacing a newer parked draft.
+  const draftRevisions = useRef(new Map<string, number>())
   const generation = useRef(0)
   const loadToken = useRef(0)
   const handledOpen = useRef<number | null>(null)
@@ -133,10 +144,16 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setStatus(next)
   }, [])
 
-  const persistDraft = useCallback((spaceId: string, notePath: string, body: string, baseVersion: string): DraftStorage | 'failed' => {
+  const persistDraft = useCallback((
+    spaceId: string,
+    notePath: string,
+    body: string,
+    baseVersion: string,
+    revision: number,
+  ): DraftWriteResult | 'failed' => {
     if (notePath === '') return 'failed'
     try {
-      return draftStore.write(spaceId, notePath, { content: body, baseVersion, savedAt: new Date().toISOString() })
+      return draftStore.write(spaceId, notePath, { content: body, baseVersion, revision, savedAt: new Date().toISOString() })
     } catch {
       // A store failure must not break editing, but it must be reported: the
       // text is only in the editor now and may be lost if the pane unmounts.
@@ -152,14 +169,34 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
   }, [draftStore])
 
+  /** Clear only if no newer draft was parked after this revision. */
+  const clearDraftIfOlder = useCallback((spaceId: string, notePath: string, revision: number) => {
+    try {
+      const existing = draftStore.read(spaceId, notePath)
+      if (existing === null || existing.revision <= revision) draftStore.remove(spaceId, notePath)
+    } catch {
+      // Ignore; the next load reconciles a draft with the disk version.
+    }
+  }, [draftStore])
+
+  const nextDraftRevision = (spaceId: string, notePath: string): number => {
+    const key = fileKey(spaceId, notePath)
+    const next = (draftRevisions.current.get(key) ?? 0) + 1
+    draftRevisions.current.set(key, next)
+    return next
+  }
+
   const applyDocument = useCallback((document: NoteDocumentView, restoreDraft = true) => {
     const storeId = spaceIdRef.current
     const key = fileKey(storeId, document.path)
     versions.current.set(key, document.version)
-    readEpochs.current.set(key, (readEpochs.current.get(key) ?? 0) + 1)
+    // The read attempt epoch was incremented by load/reload; this is the epoch
+    // that a request must carry to prove it is based on a successful read.
+    readOkEpochs.current.set(key, readEpochs.current.get(key) ?? 0)
     // Applying a freshly read document resolves any prior conflict for this
     // file; restoring an older draft adds it back below.
     conflictedKeys.current.delete(key)
+    draftRevisions.current.set(key, 0)
 
     pathRef.current = document.path
     versionRef.current = document.version
@@ -176,13 +213,14 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setDraftWarning('')
 
     if (restoreDraft) {
-      let draft: { content: string; baseVersion: string; storage?: DraftStorage } | null = null
+      let draft: NoteDraft | null = null
       try {
         draft = draftStore.read(storeId, document.path)
       } catch {
         draft = null
       }
       if (draft !== null && draft.content !== document.content) {
+        draftRevisions.current.set(key, draft.revision)
         contentRef.current = draft.content
         setContent(draft.content)
         if (draft.storage === 'memory') setDraftWarning(memoryDraftWarning)
@@ -218,10 +256,12 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const load = useCallback(async (target?: string) => {
     const token = ++loadToken.current
     const mine = ++generation.current
-    // Invalidate writes queued for the file we are about to read. A queued
-    // save must not run against a version captured before this read.
+    // Invalidate writes queued for the file we are about to read. This also
+    // removes the read identity while the read is unresolved, so a request
+    // captured during a failed load cannot borrow an older version from the map.
     const targetKey = fileKey(space.id, target ?? pathRef.current)
     readEpochs.current.set(targetKey, (readEpochs.current.get(targetKey) ?? 0) + 1)
+    readOkEpochs.current.delete(targetKey)
     // A path that is about to change must not keep the previous file's body or
     // version: if the read fails, saving must not write A's text into B.
     contentRef.current = ''
@@ -249,8 +289,21 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       }
       pathRef.current = chosen
       setPath(chosen)
+      const chosenKey = fileKey(space.id, chosen)
+      if (chosenKey !== targetKey) {
+        readEpochs.current.set(chosenKey, (readEpochs.current.get(chosenKey) ?? 0) + 1)
+        readOkEpochs.current.delete(chosenKey)
+      }
+      const readSeq = ledgerSeq.current.get(chosenKey) ?? 0
       const document = await client.readNote(space.id, chosen)
       if (!alive.current || token !== loadToken.current || generation.current !== mine) return
+      if ((ledgerSeq.current.get(chosenKey) ?? 0) !== readSeq) {
+        // A save for this file completed while the read was in flight; the
+        // snapshot can be older than disk. Read again instead of showing stale
+        // text that a later save could write back.
+        void load(chosen)
+        return
+      }
       applyDocument(document)
     } catch (cause) {
       if (!alive.current || token !== loadToken.current) return
@@ -269,6 +322,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       version: versionRef.current,
       generation: generation.current,
       readEpoch: readEpochs.current.get(fileKey(spaceId, notePath)) ?? 0,
+      draftRevision: draftRevisions.current.get(fileKey(spaceId, notePath)) ?? 0,
       mode: saveMode,
     }
   }
@@ -278,9 +332,13 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     && spaceIdRef.current === request.spaceId
     && pathRef.current === request.path
 
-  const isSameFile = (request: SaveRequest): boolean => alive.current
-    && spaceIdRef.current === request.spaceId
-    && pathRef.current === request.path
+  /** True only when the request was captured from a successfully read version of this file. */
+  const ownsRead = (request: SaveRequest): boolean => {
+    const key = fileKey(request.spaceId, request.path)
+    const epoch = readEpochs.current.get(key) ?? 0
+    const ok = readOkEpochs.current.get(key) ?? 0
+    return request.version !== '' && epoch !== 0 && epoch === request.readEpoch && ok === request.readEpoch
+  }
 
   const isAlreadyQueued = (request: SaveRequest): boolean => {
     const queued = queuedRef.current
@@ -324,33 +382,32 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       // The guard is keyed by file, so unmounting or leaving cannot bypass it.
       return
     }
-    // A newer read of this file (reload, topic/file re-entry) invalidates a
-    // write that was queued before it; applying it would bind old text to a new
-    // version and overwrite content the learner just chose to load.
-    if ((readEpochs.current.get(key) ?? 0) !== request.readEpoch) return
-    // Use the latest version this panel knows for the file at execution time.
-    // The save ahead in the queue may have advanced it since this request was
-    // captured; using the stale captured version would conflict with our own
-    // successful save.
-    const expectedVersion = versions.current.get(key) ?? request.version
-    if (expectedVersion === '' && request.mode !== 'overwrite') {
-      // Without a read version we cannot prove the write is safe; say so
-      // instead of pretending the edit was saved.
-      // An empty editor with no read version has nothing to park; do not create
-      // an empty draft that would later look like a conflict.
-      const storage = request.content === '' && expectedVersion === ''
-        ? null
-        : persistDraft(request.spaceId, request.path, request.content, expectedVersion)
-      if (isCurrent(request)) {
-        if (storage === 'memory') setDraftWarning(memoryDraftWarning)
-        if (storage === 'failed') setDraftWarning(failedDraftWarning)
+    const viewOwns = isCurrent(request)
+    if (!ownsRead(request)) {
+      // This request has no successful read identity of its own. Never let a
+      // stale version map revive it; a path that was read once and later failed
+      // to load must not save its empty editor over the old file.
+      if (viewOwns) {
         updateStatus('failed')
         setMessage('保存失败：还没有成功读取笔记文件，无法安全保存。请先重新加载。')
       }
+      // Park typed text only when the read itself failed. If a newer read
+      // succeeded, this queued request belongs to an explicitly replaced view;
+      // resurrecting it as a draft would undo that reload.
+      const newerReadSucceeded = (readOkEpochs.current.get(key) ?? 0) !== 0
+      if (request.content !== '' && !newerReadSucceeded) {
+        const storage = persistDraft(request.spaceId, request.path, request.content, '', request.draftRevision)
+        if (viewOwns && storage === 'memory') setDraftWarning(memoryDraftWarning)
+        if (viewOwns && storage === 'failed') setDraftWarning(failedDraftWarning)
+      }
       return
     }
+    // Use the latest version this panel knows for the file at execution time,
+    // but only because the request itself proved a successful read above. A
+    // queued save must pick up the version produced by the save ahead of it.
+    const expectedVersion = versions.current.get(key) ?? request.version
     const snapshot = request.content
-    if (isCurrent(request)) {
+    if (viewOwns) {
       updateStatus('saving')
       setMessage('')
     }
@@ -364,10 +421,15 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
     try {
       const result = await client.saveNote(command)
+      // The ledger always learns the successful write, even when an old
+      // generation no longer owns the view. Reads that started before this
+      // point use ledgerSeq to detect and re-read their stale snapshot.
       versions.current.set(key, result.version)
+      ledgerSeq.current.set(key, (ledgerSeq.current.get(key) ?? 0) + 1)
       if (request.mode === 'overwrite') conflictedKeys.current.delete(key)
-      if (isSameFile(request)) {
-        if (contentRef.current === snapshot) clearDraft(request.spaceId, request.path)
+
+      if (isCurrent(request) && ownsRead(request)) {
+        if (contentRef.current === snapshot) clearDraftIfOlder(request.spaceId, request.path, request.draftRevision)
         versionRef.current = result.version
         if (conflictRef.current) {
           conflictRef.current = false
@@ -392,18 +454,27 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
           if (!alreadyQueued) scheduleAutosave()
         }
       } else {
-        // The learner already moved on. Keep a newer draft, but this exact
-        // snapshot is now on disk, so an identical parked draft is obsolete.
+        // The learner already moved on or the view was re-read. Keep a newer
+        // draft, but this exact older snapshot is now on disk, so it is
+        // obsolete; never clear a draft with a higher revision.
         try {
           const parked = draftStore.read(request.spaceId, request.path)
-          if (parked === null || parked.content === snapshot) clearDraft(request.spaceId, request.path)
+          if (parked !== null && parked.content === snapshot && parked.revision <= request.draftRevision) {
+            clearDraft(request.spaceId, request.path)
+          }
         } catch {
           // Ignore; the next load reconciles a draft with the disk version.
         }
       }
     } catch (cause) {
-      const storage = persistDraft(request.spaceId, request.path, snapshot, expectedVersion)
-      if (!isCurrent(request)) return
+      // A late failure may only park a draft if this request still owns the
+      // file's read lineage; revision CAS prevents it from replacing a newer
+      // draft that was parked after switching away.
+      const stillOwnsRead = ownsRead(request)
+      const storage = stillOwnsRead && (snapshot !== '' || expectedVersion !== '')
+        ? persistDraft(request.spaceId, request.path, snapshot, expectedVersion, request.draftRevision)
+        : 'stale'
+      if (!isCurrent(request) || !stillOwnsRead) return
       if (storage === 'memory') setDraftWarning(memoryDraftWarning)
       if (storage === 'failed') setDraftWarning(failedDraftWarning)
       if (classroomErrorCode(cause) === 'note-conflict') {
@@ -421,7 +492,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       updateStatus('failed')
       setMessage(`保存失败：${messageOf(cause)}`)
     }
-  }, [clearDraft, client, draftStore, fetchDiskVersion, persistDraft, scheduleAutosave, updateStatus])
+  }, [clearDraft, clearDraftIfOlder, client, draftStore, fetchDiskVersion, persistDraft, scheduleAutosave, updateStatus, versions])
 
   const enqueueSave = useCallback((request: SaveRequest) => {
     queuedRef.current = { spaceId: request.spaceId, path: request.path, content: request.content }
@@ -462,7 +533,8 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       const leavingGeneration = generation.current
       if (leavingPath !== '' && (leavingContent !== '' || leavingVersion !== '')
         && ['dirty', 'saving', 'failed', 'conflict'].includes(leavingStatus)) {
-        persistDraft(leavingSpaceId, leavingPath, leavingContent, leavingVersion)
+        persistDraft(leavingSpaceId, leavingPath, leavingContent, leavingVersion,
+          draftRevisions.current.get(fileKey(leavingSpaceId, leavingPath)) ?? 0)
       }
       debouncer.cancel()
       if ((leavingStatus === 'dirty' || leavingStatus === 'saving') && !leavingConflict) {
@@ -475,6 +547,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
           version: leavingVersion,
           generation: leavingGeneration,
           readEpoch: readEpochs.current.get(fileKey(leavingSpaceId, leavingPath)) ?? 0,
+          draftRevision: draftRevisions.current.get(fileKey(leavingSpaceId, leavingPath)) ?? 0,
           mode: 'auto',
         }
         if (!isAlreadyQueued(leavingRequest)) void enqueueSaveRef.current(leavingRequest)
@@ -489,6 +562,9 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     setContent(next)
     setMessage('')
     updateStatus('dirty')
+    // Every edit earns a newer draft revision, so a late failure of an older
+    // snapshot cannot replace this text when it is parked on switch/leave.
+    nextDraftRevision(spaceIdRef.current, pathRef.current)
     if (conflictRef.current) return
     scheduleAutosave()
   }
@@ -498,6 +574,8 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     const mine = ++generation.current
     const key = fileKey(spaceIdRef.current, pathRef.current)
     readEpochs.current.set(key, (readEpochs.current.get(key) ?? 0) + 1)
+    readOkEpochs.current.delete(key)
+    const readSeq = ledgerSeq.current.get(key) ?? 0
     updateStatus('loading')
     setMessage('')
     setDraftNotice(false)
@@ -506,6 +584,12 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     try {
       const document = await client.readNote(spaceIdRef.current, pathRef.current)
       if (!alive.current || token !== loadToken.current || generation.current !== mine) return
+      if ((ledgerSeq.current.get(key) ?? 0) !== readSeq) {
+        // A save completed while reload was reading; discard the stale
+        // snapshot and read the version it wrote.
+        void reload()
+        return
+      }
       applyDocument(document, false)
     } catch (cause) {
       if (!alive.current || token !== loadToken.current) return
@@ -517,10 +601,10 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const switchTo = useCallback(async (next: string) => {
     if (next === pathRef.current) return
     const leaving = captureRequest('auto')
-    let persistence: DraftStorage | 'failed' | null = null
+    let persistence: DraftWriteResult | 'failed' | null = null
     if (leaving.path !== '' && (leaving.content !== '' || leaving.version !== '')
       && ['dirty', 'saving', 'failed', 'conflict'].includes(statusRef.current)) {
-      persistence = persistDraft(leaving.spaceId, leaving.path, leaving.content, leaving.version)
+      persistence = persistDraft(leaving.spaceId, leaving.path, leaving.content, leaving.version, leaving.draftRevision)
     }
     debouncer.cancel()
     if ((statusRef.current === 'dirty' || statusRef.current === 'saving') && !conflictRef.current && !isAlreadyQueued(leaving)) {

@@ -4,11 +4,14 @@
  * save, and is dropped as soon as the same text is confirmed on disk.
  */
 export type DraftStorage = 'session' | 'memory'
+export type DraftWriteResult = DraftStorage | 'stale'
 
 export interface NoteDraft {
   content: string
   /** Version the editor had read when the draft text was authored. */
   baseVersion: string
+  /** Monotonic per-file draft revision; an older failure may not replace a newer draft. */
+  revision: number
   savedAt: string
   /** Where this copy came from when read; never persisted into the payload. */
   storage?: DraftStorage
@@ -16,8 +19,11 @@ export interface NoteDraft {
 
 export interface NoteDraftStore {
   read(spaceId: string, path: string): NoteDraft | null
-  /** Returns where the draft actually went; `memory` means it will not survive a page close. */
-  write(spaceId: string, path: string, draft: NoteDraft): DraftStorage
+  /**
+   * Returns where the draft actually went. `memory` means it will not survive a
+   * page close; `stale` means a newer draft already exists and was kept.
+   */
+  write(spaceId: string, path: string, draft: NoteDraft): DraftWriteResult
   remove(spaceId: string, path: string): void
 }
 
@@ -35,17 +41,19 @@ function keyOf(spaceId: string, path: string): string {
 
 function isDraft(value: unknown): value is NoteDraft {
   if (value === null || typeof value !== 'object') return false
-  const draft = value as { content?: unknown; baseVersion?: unknown; savedAt?: unknown }
+  const draft = value as { content?: unknown; baseVersion?: unknown; revision?: unknown; savedAt?: unknown }
   return typeof draft.content === 'string'
     && typeof draft.baseVersion === 'string'
     && typeof draft.savedAt === 'string'
+    && (draft.revision === undefined || typeof draft.revision === 'number')
 }
 
 function parseDraft(raw: string | null): NoteDraft | null {
   if (raw === null) return null
   try {
     const parsed: unknown = JSON.parse(raw)
-    return isDraft(parsed) ? parsed : null
+    if (!isDraft(parsed)) return null
+    return { ...parsed, revision: parsed.revision ?? 0 }
   } catch {
     return null
   }
@@ -68,7 +76,15 @@ export function createMemoryDraftStore(): NoteDraftStore {
       return draft === undefined ? null : { ...draft, storage: 'memory' }
     },
     write(spaceId, path, draft) {
-      files.set(keyOf(spaceId, path), { content: draft.content, baseVersion: draft.baseVersion, savedAt: draft.savedAt })
+      const key = keyOf(spaceId, path)
+      const existing = files.get(key)
+      if (existing !== undefined && draft.revision <= (existing.revision ?? 0)) return 'stale'
+      files.set(key, {
+        content: draft.content,
+        baseVersion: draft.baseVersion,
+        revision: draft.revision,
+        savedAt: draft.savedAt,
+      })
       return 'memory'
     },
     remove(spaceId, path) {
@@ -102,30 +118,36 @@ function browserSessionStorage(): WebStorageLike | null {
 export function createSessionDraftStore(storage: WebStorageLike | null = browserSessionStorage()): NoteDraftStore {
   if (storage === null) return memoryFallback
   const backing = storage
+
+  const read = (spaceId: string, path: string): NoteDraft | null => {
+    // A failed setItem left the newest text in the fallback; it wins.
+    const fallback = memoryFallback.read(spaceId, path)
+    if (fallback !== null) return fallback
+    try {
+      const draft = parseDraft(backing.getItem(keyOf(spaceId, path)))
+      return draft === null ? null : { ...draft, storage: 'session' }
+    } catch {
+      return null
+    }
+  }
+
   return {
-    read(spaceId, path) {
-      // A failed setItem left the newest text in the fallback; it wins.
-      const fallback = memoryFallback.read(spaceId, path)
-      if (fallback !== null) return fallback
-      try {
-        const draft = parseDraft(backing.getItem(keyOf(spaceId, path)))
-        return draft === null ? null : { ...draft, storage: 'session' }
-      } catch {
-        return null
-      }
-    },
+    read,
     write(spaceId, path, draft) {
+      const existing = read(spaceId, path)
+      if (existing !== null && draft.revision <= (existing.revision ?? 0)) return 'stale'
       try {
         backing.setItem(keyOf(spaceId, path), JSON.stringify({
           content: draft.content,
           baseVersion: draft.baseVersion,
+          revision: draft.revision,
           savedAt: draft.savedAt,
         }))
         memoryFallback.remove(spaceId, path)
         return 'session'
       } catch {
-        memoryFallback.write(spaceId, path, draft)
-        return 'memory'
+        const written = memoryFallback.write(spaceId, path, draft)
+        return written === 'stale' ? 'stale' : 'memory'
       }
     },
     remove(spaceId, path) {

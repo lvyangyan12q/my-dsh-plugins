@@ -31,21 +31,26 @@ const space = { id: 'space-1', title: '线性代数', directory: '线性代数',
 function noteStore(initial) {
   const files = new Map(Object.entries(initial))
   const calls = []
-  let saveGate = null
+  const saveGates = []
+  const saveErrors = []
   let readGate = null
-  let nextSaveError = null
   let nextReadError = null
   return {
     calls,
     files,
     set(path, content) { files.set(path, content) },
-    setNextSaveError(error) { nextSaveError = error },
+    setNextSaveError(error) { saveErrors.push(error) },
     setNextReadError(error) { nextReadError = error },
     gateNextSave() {
       let release
       const promise = new Promise(resolve => { release = resolve })
-      saveGate = { promise }
-      return () => { saveGate = null; release() }
+      const gate = { promise }
+      saveGates.push(gate)
+      return () => {
+        const index = saveGates.indexOf(gate)
+        if (index >= 0) saveGates.splice(index, 1)
+        release()
+      }
     },
     gateNextRead() {
       let release
@@ -62,26 +67,35 @@ function noteStore(initial) {
       },
       async readNote(spaceId, path) {
         calls.push({ type: 'read', spaceId, path })
-        if (readGate) await readGate.promise
+        if (!files.has(path)) {
+          throw Object.assign(new Error(`笔记文件不存在：${path}`), { code: 'note-not-found' })
+        }
+        // Snapshot the disk state before the optional delay, like a real read
+        // that started before a concurrent save completed.
+        const content = files.get(path)
+        const snapshot = { path, content, version: `version:${content}`, updatedAt: '2026-11-09T00:00:00.000Z' }
+        if (readGate) {
+          const gate = readGate
+          readGate = null
+          await gate.promise
+        }
         if (nextReadError) {
           const error = nextReadError
           nextReadError = null
           throw error
         }
-        if (!files.has(path)) {
-          throw Object.assign(new Error(`笔记文件不存在：${path}`), { code: 'note-not-found' })
-        }
-        const content = files.get(path)
-        return { path, content, version: `version:${content}`, updatedAt: '2026-11-09T00:00:00.000Z' }
+        return snapshot
       },
       async saveNote(input) {
         calls.push({ type: 'save', ...input })
-        if (nextSaveError) {
-          const error = nextSaveError
-          nextSaveError = null
+        if (saveGates.length > 0) {
+          const gate = saveGates.shift()
+          await gate.promise
+        }
+        if (saveErrors.length > 0) {
+          const error = saveErrors.shift()
           throw error
         }
-        if (saveGate) await saveGate.promise
         if (input.overwrite !== true) {
           if (!files.has(input.path)) {
             throw Object.assign(new Error('笔记文件不存在'), { code: 'note-not-found' })
@@ -111,7 +125,13 @@ function memoryDrafts() {
   return {
     files,
     read(spaceId, path) { return files.get(key(spaceId, path)) ?? null },
-    write(spaceId, path, draft) { files.set(key(spaceId, path), draft); return 'memory' },
+    write(spaceId, path, draft) {
+      const storageKey = key(spaceId, path)
+      const existing = files.get(storageKey)
+      if (existing !== undefined && draft.revision <= (existing.revision ?? 0)) return 'stale'
+      files.set(storageKey, draft)
+      return 'memory'
+    },
     remove(spaceId, path) { files.delete(key(spaceId, path)) },
   }
 }
@@ -568,6 +588,115 @@ test('冲突比较尚在读取或读取失败时禁用覆盖；重试读出双�
 
     await ui.click('用我的覆盖')
     assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的想法\n')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('曾成功读 B 后再读失败：空版本请求不得用 map 里的旧版本把 B 清空', async () => {
+  const drafts = memoryDrafts()
+  const noteSpace = { ...space, id: 'space-revive', notePath: '笔记/A.md' }
+  const store = noteStore({
+    '笔记/A.md': '# A 的正文\n',
+    '笔记/B.md': '# B 的磁盘正文\n',
+  })
+  const ui = await mount(store, { drafts, space: noteSpace })
+  try {
+    // A real successful read of B puts VB in the per-file version map.
+    await ui.select('笔记/B.md')
+    assert.equal(ui.textarea().value, '# B 的磁盘正文\n')
+    await ui.select('笔记/A.md')
+    assert.equal(ui.textarea().value, '# A 的正文\n')
+
+    // Now B becomes unreadable; the editor is empty and has no version.
+    const originalRead = store.client.readNote
+    store.client.readNote = async (spaceId, path) => {
+      if (path === '笔记/B.md') throw Object.assign(new Error('无法读取 B.md'), { code: 'note-not-found' })
+      return originalRead(spaceId, path)
+    }
+    await ui.select('笔记/B.md')
+    assert.match(ui.status(), /失败/)
+    assert.equal(ui.textarea().value, '')
+
+    const savesBefore = store.calls.filter(call => call.type === 'save').length
+    await ui.click('保存')
+    assert.equal(store.calls.filter(call => call.type === 'save').length, savesBefore, '无成功读取身份的请求不得进入保存队列')
+    assert.equal(store.files.get('笔记/B.md'), '# B 的磁盘正文\n', '不得用 map 旧版本把 B 清空')
+    assert.match(ui.status(), /保存失败/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('旧 A 保存失败晚到不得覆盖切换时留下的更新草稿', async () => {
+  const drafts = memoryDrafts()
+  const noteSpace = { ...space, id: 'space-race-draft', notePath: '笔记/A.md' }
+  const store = noteStore({
+    '笔记/A.md': '# A 的正文\n',
+    '笔记/B.md': '# B 的正文\n',
+  })
+  const ui = await mount(store, { drafts, space: noteSpace })
+  try {
+    const releaseX = store.gateNextSave()
+    const releaseY = store.gateNextSave()
+    store.setNextSaveError(Object.assign(new Error('X 保存失败'), { code: 'note-save-failed' }))
+
+    await ui.type('# A 的正文\n\nX 旧内容\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /保存中/)
+
+    await ui.type('# A 的正文\n\nY 新内容\n')
+    await ui.select('笔记/B.md')
+    assert.equal(ui.textarea().value, '# B 的正文\n')
+
+    // X fails after the newer Y draft was parked. Its older snapshot must not
+    // replace Y; the queued Y write is gated so this is a draft-only race.
+    releaseX()
+    await ui.wait(30)
+
+    await ui.select('笔记/A.md')
+    assert.equal(ui.textarea().value, '# A 的正文\n\nY 新内容\n', '重进 A 恢复的是 Y 草稿而不是旧 X')
+
+    releaseY()
+    await ui.wait(40)
+    assert.equal(ui.textarea().value, '# A 的正文\n\nY 新内容\n')
+    assert.notEqual(store.files.get('笔记/A.md'), '# A 的正文\n\nX 旧内容\n', '磁盘不得留下旧 X 的快照覆盖')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('旧 A 保存成功在 A 重新读取期间不得污染新 view，并让读取重同步到新版本', async () => {
+  const drafts = memoryDrafts()
+  const noteSpace = { ...space, id: 'space-race-view', notePath: '笔记/A.md' }
+  const store = noteStore({
+    '笔记/A.md': '# A 旧正文\n',
+    '笔记/B.md': '# B 正文\n',
+  })
+  const ui = await mount(store, { drafts, space: noteSpace })
+  try {
+    const releaseSave = store.gateNextSave()
+    await ui.type('# A 旧正文\n\nX 保存内容\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /保存中/)
+
+    await ui.select('笔记/B.md')
+    const releaseRead = store.gateNextRead()
+    await ui.select('笔记/A.md')
+    assert.match(ui.status(), /读取|保存中/)
+
+    // The old save completes while A is still loading. Its callback must not
+    // write versionRef/status into the new view or schedule an empty autosave.
+    const savesBefore = store.calls.filter(call => call.type === 'save').length
+    releaseSave()
+    await ui.wait(30)
+    releaseRead()
+    await ui.wait(80)
+
+    assert.equal(store.calls.filter(call => call.type === 'save').length, savesBefore, '旧成功回调不得再排队保存空正文')
+    assert.equal(ui.textarea().value, '# A 旧正文\n\nX 保存内容\n', '读取重同步到旧保存写下的版本')
+    assert.match(ui.status(), /已保存/)
+    assert.equal(store.files.get('笔记/A.md'), '# A 旧正文\n\nX 保存内容\n')
   } finally {
     await ui.unmount()
   }
