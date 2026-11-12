@@ -32,6 +32,8 @@ export interface ComposerDraftView {
   readonly draft: string
   readonly phase: string
   readonly occurrences: number
+  /** A command chip is present (public `phase: 'claimed'` or its `claim`). */
+  readonly claimed: boolean
 }
 
 /** Structural `SessionInput` subset: state currency plus explicit draft rewrite. */
@@ -97,12 +99,15 @@ function isBinding(value: unknown): value is SessionBindingLike {
 function draftViewOf(input: SessionInputLike | undefined): ComposerDraftView | null {
   const state = input?.state?.getSnapshot?.()
   if (typeof state !== 'object' || state === null) return null
-  const candidate = state as { draft?: unknown; phase?: unknown; occurrences?: unknown }
+  const candidate = state as { draft?: unknown; phase?: unknown; occurrences?: unknown; claim?: unknown }
   if (typeof candidate.draft !== 'string' || typeof candidate.phase !== 'string') return null
   return {
     draft: candidate.draft,
     phase: candidate.phase,
     occurrences: Array.isArray(candidate.occurrences) ? candidate.occurrences.length : 0,
+    // Contract: `claim` is present exactly while claimed/submitting. Treating
+    // either signal as a command chip keeps a lagging phase from losing it.
+    claimed: candidate.phase === 'claimed' || candidate.claim !== undefined,
   }
 }
 
@@ -179,7 +184,10 @@ export function createComposerFace(options: ComposerFaceOptions): ComposerFace {
       if (target === undefined) return { ok: false, reason: '无法读取老师输入框的当前草稿，未移除。' }
       const view = draftViewOf(target)
       if (view === null) return { ok: false, reason: '无法读取老师输入框的当前草稿，未移除。' }
-      if (view.phase !== 'plain' && view.phase !== 'claimed') return { ok: false, reason: SENDING }
+      if (view.claimed) {
+        return { ok: false, reason: '草稿里还有命令 chip；整体改写会丢掉它，请先取消命令或手动删除这段上下文。' }
+      }
+      if (view.phase !== 'plain') return { ok: false, reason: SENDING }
       if (view.occurrences > 0) {
         return { ok: false, reason: '草稿里已有引用标签；整体改写会丢掉它们，请手动删除这段上下文。' }
       }
@@ -189,6 +197,17 @@ export function createComposerFace(options: ComposerFaceOptions): ComposerFace {
       }
       if (removal.status === 'ambiguous') {
         return { ok: false, reason: '草稿里有多个相同的上下文块，无法确定移除哪一个；请手动删除。' }
+      }
+      // Native quotes are absent from the public `occurrences` state and the
+      // Host exposes no local deletion; `setDraft` clears the editor root, which
+      // would flatten a quote into ordinary text. Every native quote projects as
+      // Markdown blockquote text, so a remaining blockquote line means structural
+      // loss cannot be ruled out — refuse instead of rewriting.
+      if (removal.draft.includes('> ')) {
+        return {
+          ok: false,
+          reason: '草稿里还有引用样式的内容（可能是原生引用块）；宿主没有公开的局部删除接口，整体改写会破坏引用结构。请手动删除这段上下文。',
+        }
       }
       if (typeof target.setDraft !== 'function') {
         return { ok: false, reason: '宿主没有提供改写草稿的接缝，未移除。' }

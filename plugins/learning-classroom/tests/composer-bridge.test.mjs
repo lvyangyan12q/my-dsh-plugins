@@ -111,3 +111,44 @@ test('移除只在可编辑的普通草稿上改写：发送中与含引用标�
   assert.deepEqual(setDraftCalls, ['原草稿'])
   assert.equal(state.draft, '原草稿')
 })
+
+test('命令 chip 与原生引用块存在时拒绝整体改写：公开状态无法证明结构无损', () => {
+  const block = '【提问上下文】\n主题：概率论\n摘录：\n> 条件概率'
+  const setDraftCalls = []
+  const state = { draft: `原草稿\n\n${block}`, phase: 'claimed', draftRev: 1, occurrences: [], claim: { name: 'goal', token: '/goal ' } }
+  const input = {
+    state: { getSnapshot: () => ({ ...state, occurrences: [...state.occurrences] }) },
+    setDraft(text) { setDraftCalls.push(text); state.draft = text },
+  }
+  const face = faceWith({
+    input: { requestDraftInitialization() { return 'applied' }, for() { return input } },
+  })
+
+  // A claimed command chip is public state (phase/claim); setDraft would drop it.
+  const claimed = face.remove(block)
+  assert.equal(claimed.ok, false)
+  assert.match(claimed.reason, /命令/)
+  assert.deepEqual(setDraftCalls, [])
+
+  // Even a "plain" phase with a stale claim counts as a command chip.
+  state.phase = 'plain'
+  const staleClaim = face.remove(block)
+  assert.equal(staleClaim.ok, false)
+  assert.match(staleClaim.reason, /命令/)
+  assert.deepEqual(setDraftCalls, [])
+
+  // A native quote projects as ordinary Markdown blockquote text; quotes are
+  // absent from InputState.occurrences, so the only sound rule is: a remaining
+  // blockquote line means we cannot prove the rewrite is structural-lossless.
+  state.claim = undefined
+  state.draft = `原草稿\n\n> 被引用的讲义原话\n\n${block}`
+  const quoted = face.remove(block)
+  assert.equal(quoted.ok, false)
+  assert.match(quoted.reason, /引用|手动删除/)
+  assert.deepEqual(setDraftCalls, [])
+
+  // The appended block's own quoted excerpt must not make its removal impossible.
+  state.draft = `原草稿\n\n${block}`
+  assert.deepEqual(face.remove(block), { ok: true })
+  assert.deepEqual(setDraftCalls, ['原草稿'])
+})

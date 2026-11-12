@@ -310,6 +310,73 @@ test('问老师把冻结上下文追加到已有原生草稿：不覆盖、不�
   assert.match(bar.textContent, /讲义《条件概率》/)
 })
 
+async function selectDom(startNode, startOffset, endNode, endOffset) {
+  await act(async () => {
+    const range = dom.window.document.createRange()
+    range.setStart(startNode, startOffset)
+    range.setEnd(endNode, endOffset)
+    const selection = dom.window.getSelection()
+    selection.removeAllRanges()
+    selection.addRange(range)
+  })
+}
+
+function clearDomSelection() {
+  dom.window.getSelection()?.removeAllRanges()
+}
+
+function lectureParagraph(document) {
+  return [...document.querySelectorAll('.lc-lecture-doc p')]
+    .find(paragraph => paragraph.textContent.includes('条件概率的定义'))
+}
+
+test('讲义内选段只附选段本身，并标为选段而不是整篇讲义', async t => {
+  const conversation = createConversation()
+  const { ui } = await mountedPanel(t, { conversation })
+  t.after(clearDomSelection)
+
+  const paragraph = lectureParagraph(ui.document)
+  assert.ok(paragraph, '讲义正文应已渲染')
+  await selectDom(paragraph.firstChild, 0, paragraph.firstChild, '条件概率的定义'.length)
+
+  await ui.click(buttonIn(ui.document, '讲义', '问老师'))
+
+  assert.equal(conversation.initializationCalls.length, 1)
+  const prompt = conversation.initializationCalls[0].init.prompt
+  assert.match(prompt, /讲义《条件概率》选段/)
+  assert.match(prompt, /^> 条件概率的定义/m)
+  // The rest of the lecture (heading and following prose) is not attached.
+  assert.doesNotMatch(prompt, /^> # 条件概率/m)
+  assert.doesNotMatch(prompt, /全概率公式/)
+})
+
+test('选区跨出讲义正文（anchor 在讲义、焦点在笔记，或反向）时不得当作讲义选段', async t => {
+  const conversation = createConversation()
+  const { ui } = await mountedPanel(t, { conversation })
+  t.after(clearDomSelection)
+
+  const paragraph = lectureParagraph(ui.document)
+  const notesHeading = ui.document.querySelector('[aria-label="我的笔记"] h2')?.firstChild
+  assert.ok(paragraph && notesHeading, '讲义与笔记区都应已渲染')
+
+  // Anchor inside the lecture, focus in another zone: the old anchor-only guard
+  // would label the notes text as an excerpt of the lecture.
+  await selectDom(paragraph.firstChild, 0, notesHeading, 2)
+  await ui.click(buttonIn(ui.document, '讲义', '问老师'))
+  assert.equal(conversation.initializationCalls.length, 0, '跨区选区不得追加')
+  assert.doesNotMatch(contextBar(ui.document).textContent, /提问上下文（1）/)
+  assert.match(ui.text(), /不在讲义正文内/)
+
+  // A range that starts before the lecture (the course directory) and ends
+  // inside it also carries non-body text: the start endpoint must be checked.
+  const directoryHeading = ui.document.querySelector('[aria-label="课程目录"] h2')?.firstChild
+  assert.ok(directoryHeading, '课程目录应已渲染')
+  await selectDom(directoryHeading, 0, paragraph.firstChild, '条件概率的定义'.length)
+  await ui.click(buttonIn(ui.document, '讲义', '问老师'))
+  assert.equal(conversation.initializationCalls.length, 0, '起点在讲义外的选区也不得追加')
+  assert.match(ui.text(), /不在讲义正文内/)
+})
+
 test('上下文条可查看摘录与版本，并可移除；移除精确恢复原草稿', async t => {
   const conversation = createConversation({ draft: '原有草稿' })
   const { ui } = await mountedPanel(t, { conversation })
@@ -406,6 +473,24 @@ test('发送后已发内容仍是当时的主题、版本与摘录；上下文�
   assert.deepEqual(conversation.setDraftCalls, [], '清理列表不会改写已发送的历史或草稿')
   // Sent text is untouched by the list cleanup, including the frozen excerpt.
   assert.match(sent, /条件概率的定义/)
+})
+
+test('草稿里有原生引用块时拒绝整体移除，提示手动删除且不改写草稿', async t => {
+  const conversation = createConversation()
+  const { ui } = await mountedPanel(t, { conversation })
+  await ui.click(buttonIn(ui.document, '讲义', '问老师'))
+  const appended = conversation.draft()
+
+  // The learner quoted transcript text into the native composer after appending;
+  // that quote is atomic editor structure and is absent from InputState.
+  await act(async () => { conversation.setDraftDirect(`${appended}\n\n> 被引用的讲义原话`) })
+  await settle(1)
+
+  await ui.click(buttonIn(ui.document, '提问上下文条', '移除上下文'))
+  assert.deepEqual(conversation.setDraftCalls, [], '含引用结构时不得整体改写草稿')
+  assert.match(contextBar(ui.document).textContent, /引用|手动删除/)
+  assert.match(conversation.draft(), /> 被引用的讲义原话/)
+  assert.match(conversation.draft(), /【提问上下文】/)
 })
 
 test('原生输入接缝不可用或被宿主拒绝时明确说明，不伪造追加成功', async t => {

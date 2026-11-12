@@ -157,19 +157,29 @@ function MarkdownBody({ content }: { content: string }) {
 }
 
 /**
- * The learner's current selection, only when it lives inside the rendered
- * lecture body. Text selected elsewhere (the shell, another zone) never rides
- * along with a lecture question.
+ * Classify the learner's current selection against the rendered lecture body.
+ *
+ * A selection only counts as a lecture excerpt when the whole range lives inside
+ * the body. Anchor-only checks are not enough: dragging from a lecture paragraph
+ * into the notes or the conversation keeps the anchor inside the lecture while
+ * the selection text carries unrelated content. `outside` is distinct from
+ * `none` so a real-but-invalid selection never silently falls back to the whole
+ * lecture.
  */
-function selectedLectureText(root: HTMLElement | null): string {
-  if (root === null) return ''
+type LectureSelection = { kind: 'none' } | { kind: 'inside'; text: string } | { kind: 'outside' }
+
+function lectureSelection(root: HTMLElement | null): LectureSelection {
+  if (root === null) return { kind: 'none' }
   const selection = typeof window === 'undefined' ? null : window.getSelection?.() ?? null
-  if (selection === null || selection.rangeCount === 0 || selection.isCollapsed) return ''
+  if (selection === null || selection.rangeCount === 0 || selection.isCollapsed) return { kind: 'none' }
   const text = selection.toString().trim()
-  if (text === '') return ''
-  const anchor = selection.anchorNode
-  if (anchor === null || !root.contains(anchor)) return ''
-  return text
+  if (text === '') return { kind: 'none' }
+  // One bounded range is required: multi-range selections cannot be proven to
+  // stay inside the lecture body.
+  if (selection.rangeCount !== 1) return { kind: 'outside' }
+  const range = selection.getRangeAt(0)
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return { kind: 'outside' }
+  return { kind: 'inside', text }
 }
 
 function LectureReader(props: { doc: LectureReadView; space: ClassroomSpaceView; askTeacher?: AskTeacher }) {
@@ -181,7 +191,13 @@ function LectureReader(props: { doc: LectureReadView; space: ClassroomSpaceView;
 
   const ask = async (): Promise<void> => {
     if (askTeacher === undefined || askTeacher.available === false || askBusy.current) return
-    const selected = selectedLectureText(bodyRef.current)
+    const selection = lectureSelection(bodyRef.current)
+    if (selection.kind === 'outside') {
+      setNotice('')
+      setAskError('选中的内容不在讲义正文内（可能跨到了目录、笔记或对话）；请只在讲义正文里重新选择要问的段落。')
+      return
+    }
+    const selected = selection.kind === 'inside' ? selection.text : ''
     const source = selected !== '' ? selected : doc.kind === 'markdown' ? doc.content ?? '' : ''
     if (source.trim() === '') {
       setNotice('')
