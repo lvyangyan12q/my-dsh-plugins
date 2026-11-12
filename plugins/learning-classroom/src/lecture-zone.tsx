@@ -601,8 +601,10 @@ export function LectureZone(props: LectureZoneProps) {
     const resolved = resolveLectureHref(reader.doc.path, href)
     if (resolved === null) return false
     const row = list?.lectures.find(lecture => lecture.path === resolved)
-    if (row === undefined || row.missing) return false
-    void select(row.path, undefined, { fromLink: true })
+    if (row?.missing === true) return false
+    // A just-generated target may not be in the last directory snapshot yet;
+    // the Host still validates the resolved 讲义/ path when it is opened.
+    void select(resolved, undefined, { fromLink: true })
     return true
   }
 
