@@ -19,7 +19,7 @@ async function addLectures(fixture, space, files) {
   }
 }
 
-test('目录由讲义文件夹推导：只收 .md/.html、按文件名排序，frontmatter 覆盖顺序与标题', async () => {
+test('目录由讲义文件夹递归推导：子目录是章节，只收 .md/.html，忽略隐藏项并稳定排序', async () => {
   const fixture = await classroomFixture()
   try {
     const space = await prepare(fixture)
@@ -29,22 +29,29 @@ test('目录由讲义文件夹推导：只收 .md/.html、按文件名排序，f
       '03-实验.html': '<!doctype html><h1>实验</h1>',
       'README.txt': '不是讲义',
     })
-    await mkdir(join(fixture.vault, space.directory, '讲义', '子目录'))
-    await writeFile(join(fixture.vault, space.directory, '讲义', '子目录', '04-嵌套.md'), '# 嵌套', 'utf8')
+    await mkdir(join(fixture.vault, space.directory, '讲义', '第一章'))
+    await writeFile(join(fixture.vault, space.directory, '讲义', '第一章', '02-基础.md'), '---\ntitle: 基础\norder: 1\n---\n# 基础', 'utf8')
+    await writeFile(join(fixture.vault, space.directory, '讲义', '第一章', '01-引言.md'), '# 引言', 'utf8')
+    await writeFile(join(fixture.vault, space.directory, '讲义', '第一章', '.草稿.md'), '# 草稿', 'utf8')
+    await mkdir(join(fixture.vault, space.directory, '讲义', '.隐藏章节'))
+    await writeFile(join(fixture.vault, space.directory, '讲义', '.隐藏章节', '04-隐藏.md'), '# 隐藏', 'utf8')
 
     const result = await fixture.post({ action: 'lecture-list', spaceId: space.id })
     assert.equal(result.status, 200)
     assert.deepEqual(result.body.lectures, [
-      { path: '讲义/02-后讲.md', fileName: '02-后讲.md', title: '后讲', order: 2, kind: 'markdown' },
-      { path: '讲义/01-先讲.md', fileName: '01-先讲.md', title: '01-先讲', order: 10, kind: 'markdown' },
-      { path: '讲义/03-实验.html', fileName: '03-实验.html', title: '03-实验', order: null, kind: 'experiment' },
+      { path: '讲义/02-后讲.md', fileName: '02-后讲.md', title: '后讲', order: 2, kind: 'markdown', chapter: '', source: 'lectures', missing: false },
+      { path: '讲义/01-先讲.md', fileName: '01-先讲.md', title: '01-先讲', order: 10, kind: 'markdown', chapter: '', source: 'lectures', missing: false },
+      { path: '讲义/03-实验.html', fileName: '03-实验.html', title: '03-实验', order: null, kind: 'experiment', chapter: '', source: 'lectures', missing: false },
+      { path: '讲义/第一章/02-基础.md', fileName: '02-基础.md', title: '基础', order: 1, kind: 'markdown', chapter: '第一章', source: 'lectures', missing: false },
+      { path: '讲义/第一章/01-引言.md', fileName: '01-引言.md', title: '01-引言', order: null, kind: 'markdown', chapter: '第一章', source: 'lectures', missing: false },
     ])
     assert.equal(result.body.selectedPath, null)
     assert.equal(result.body.missingSelection, null)
     assert.equal(result.body.folderMissing, false)
 
-    // The directory is derived, not stored: listing adds no manifest file.
-    assert.deepEqual((await readdir(join(fixture.vault, space.directory))).sort(), ['讲义', '笔记', '附件'].sort())
+    // The directory is derived, not stored: listing adds no manifest file, and the
+    // only template file is the goal knowledge file.
+    assert.deepEqual((await readdir(join(fixture.vault, space.directory))).sort(), ['学习目标.md', '讲义', '笔记', '附件'].sort())
   } finally {
     await fixture.close()
   }
@@ -169,12 +176,20 @@ test('讲义被外部删除后目录给出缺失提示并清空选择，直接�
   }
 })
 
-test('讲义路径被限制在该空间讲义目录内', async () => {
+test('讲义路径被限制在该空间讲义目录内，章节子目录可正常打开', async () => {
   const fixture = await classroomFixture()
   try {
     const space = await prepare(fixture)
     await writeFile(join(fixture.vault, '外部秘密.md'), '# 秘密', 'utf8')
-    for (const path of ['../外部秘密.md', '笔记/我的笔记.md', '讲义/子目录/嵌套.md', '讲义/说明.txt', `${space.directory}/笔记/我的笔记.md`]) {
+    await mkdir(join(fixture.vault, space.directory, '讲义', '第一章'))
+    await writeFile(join(fixture.vault, space.directory, '讲义', '第一章', '01-章节.md'), '# 章节\n', 'utf8')
+
+    const nested = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/第一章/01-章节.md' })
+    assert.equal(nested.status, 200)
+    assert.equal(nested.body.path, '讲义/第一章/01-章节.md')
+    assert.match(nested.body.content, /章节/)
+
+    for (const path of ['../外部秘密.md', '笔记/我的笔记.md', '讲义/说明.txt', `${space.directory}/笔记/我的笔记.md`, '讲义/.隐藏.md']) {
       const result = await fixture.post({ action: 'lecture-read', spaceId: space.id, path })
       assert.equal(result.status, 400, `${path} 应被拒绝`)
       assert.equal(result.body.code, 'lecture-invalid')

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ClassroomCommand, ClassroomSpaceView, ClassroomView } from './contract.ts'
+import type { ClassroomSpaceView, ClassroomView, ClassroomViewCommand } from './contract.ts'
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
 import { CanvasZone, type CanvasOpenTarget } from './canvas-zone.tsx'
 import { ClassroomLayoutView } from './classroom-layout.tsx'
@@ -145,6 +145,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
   const [reloadKey, setReloadKey] = useState(0)
   const [vaultInput, setVaultInput] = useState('')
   const [spaceTitle, setSpaceTitle] = useState('')
+  const [spaceGoal, setSpaceGoal] = useState('')
   const [showVaultForm, setShowVaultForm] = useState(false)
   const [mode, setMode] = useState<'classroom' | 'canvas'>('classroom')
   const [canvasMounted, setCanvasMounted] = useState(false)
@@ -169,7 +170,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
     return () => { alive.current = false; controller.abort() }
   }, [api, reloadKey])
 
-  const run = async (command: ClassroomCommand) => {
+  const run = async (command: ClassroomViewCommand) => {
     if (busy) return
     setBusy(true)
     setError('')
@@ -178,6 +179,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
       if (!alive.current) return
       setView(next)
       setSpaceTitle('')
+      setSpaceGoal('')
       setVaultInput('')
       setShowVaultForm(false)
       // Space/vault navigation always returns to the classroom; stale canvas
@@ -274,13 +276,23 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
 
       {view !== null && vaultStatus === 'ready' && !showVaultForm && (
         <>
-          <form className="lc-form" aria-label="创建学习空间" onSubmit={event => { event.preventDefault(); if (spaceTitle.trim()) void run({ action: 'space-create', title: spaceTitle.trim() }) }}>
+          <form className="lc-form" aria-label="创建学习空间" onSubmit={event => {
+            event.preventDefault()
+            const title = spaceTitle.trim()
+            if (!title) return
+            const goal = spaceGoal.trim()
+            void run(goal === '' ? { action: 'space-create', title } : { action: 'space-create', title, goal })
+          }}>
             <label>
               学习空间名称
               <input aria-label="学习空间名称" value={spaceTitle} disabled={busy} maxLength={120} onChange={event => setSpaceTitle(event.target.value)} placeholder="例如：线性代数" />
             </label>
+            <label>
+              学习目标（可选）
+              <input aria-label="学习目标（可选）" value={spaceGoal} disabled={busy} maxLength={2000} onChange={event => setSpaceGoal(event.target.value)} placeholder="例如：能独立完成条件概率题" />
+            </label>
             <button type="submit" disabled={busy || spaceTitle.trim() === ''}>创建学习空间</button>
-            <p className="lc-hint">会在知识文件库根目录下建立一个同名文件夹，包含讲义、笔记和附件。</p>
+            <p className="lc-hint">会在知识文件库根目录下建立一个同名文件夹，包含讲义、笔记、附件和学习目标文件。</p>
           </form>
 
           {space !== undefined

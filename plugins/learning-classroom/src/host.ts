@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, join } from 'node:path'
@@ -16,20 +16,40 @@ import type {
   ClassroomLectureView,
   ClassroomSpaceView,
   ClassroomView,
+  LectureCandidatesView,
+  LectureCandidateView,
   LectureListView,
   LectureReadView,
   NoteDocumentView,
   NoteListView,
   NoteSaveView,
+  TopicView,
 } from './contract.ts'
 import { ClassroomError } from './errors.ts'
-import { lectureFileKind, lectureFolder, readLectureMeta, sortLectures } from './lectures.ts'
+import {
+  isHiddenRelativePath,
+  lectureBaseName,
+  lectureChapterOf,
+  lectureFileKind,
+  lectureFolder,
+  readLectureMeta,
+  sortCourseLectures,
+  type LectureKind,
+} from './lectures.ts'
 import { defaultLayout, normalizeLayout } from './layout.ts'
 import { listNotes, readNote, saveNote } from './notes-io.ts'
 import { maxNoteBytes } from './notes.ts'
-import { defaultNoteContent, defaultNotePath, spaceCwdPath, spaceDirectoryName, spaceFolders } from './spaces.ts'
+import {
+  defaultNoteContent,
+  defaultNotePath,
+  maxTopicBytes,
+  spaceCwdPath,
+  spaceDirectoryName,
+  spaceFolders,
+  topicGoalFileName,
+} from './spaces.ts'
 import { layoutSchema, type ClassroomState, type ClassroomStateStore, type ClassroomSpace } from './state.ts'
-import { inspectVaultRoot, resolveVaultPath, vaultRelativePath, type VaultProbe } from './vault.ts'
+import { inspectVaultRoot, nodeVaultProbe, pathInside, resolveVaultPath, vaultRelativePath, type VaultProbe } from './vault.ts'
 
 export { type ClassroomSpaceView, type ClassroomVaultView, type ClassroomView } from './contract.ts'
 
@@ -40,20 +60,35 @@ export const unavailableVaultHint = '请重新选择知识文件库，或修复�
 const lectureHeadBytes = 16 * 1024
 /** Reading a lecture is bounded so a huge file cannot stall the panel. */
 const lectureReadLimit = 2 * 1024 * 1024
+/** Course folders are read recursively; a deeper tree is refused instead of silently cut. */
+const lectureDepthLimit = 8
+/** One course directory is bounded so a huge tree cannot stall the panel. */
+const lectureCountLimit = 1000
 /** JSON bodies carry note text, so the cap allows one maximal note plus framing. */
 const maxRequestBytes = 2 * 1024 * 1024
+/** The association picker is bounded: it lists real files, never walks a link. */
+const candidateDepthLimit = 6
+const candidateCountLimit = 500
+/** Reserved top-level folders that are never course content. */
+const nonCourseFolders = [lectureFolder, '笔记', '附件'] as const
 
 export const experimentPlaceholder =
   '这是一节动态实验（HTML）。隔离渲染会在后续工单中打开；现在它只出现在目录里，不会把 HTML 直接注入课堂。'
 
 const knownActions = [
   'vault-choose', 'space-create', 'space-open', 'session-open',
-  'lecture-list', 'lecture-read', 'note-list', 'note-read', 'note-save', 'canvas-read', 'layout-save',
+  'lecture-list', 'lecture-read', 'lecture-candidates', 'lecture-link', 'lecture-unlink',
+  'topic-read', 'topic-save',
+  'note-list', 'note-read', 'note-save', 'canvas-read', 'layout-save',
 ] as const
 
 const commandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('vault-choose'), path: z.string().min(1).max(4096) }).strict(),
-  z.object({ action: z.literal('space-create'), title: z.string().min(1).max(120) }).strict(),
+  z.object({
+    action: z.literal('space-create'),
+    title: z.string().min(1).max(120),
+    goal: z.string().max(maxTopicBytes).optional(),
+  }).strict(),
   z.object({ action: z.literal('space-open'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({
     action: z.literal('session-open'),
@@ -62,6 +97,16 @@ const commandSchema = z.discriminatedUnion('action', [
   }).strict(),
   z.object({ action: z.literal('lecture-list'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({ action: z.literal('lecture-read'), spaceId: z.string().min(1).max(64), path: z.string().min(1).max(400) }).strict(),
+  z.object({ action: z.literal('lecture-candidates'), spaceId: z.string().min(1).max(64) }).strict(),
+  z.object({ action: z.literal('lecture-link'), spaceId: z.string().min(1).max(64), path: z.string().min(1).max(400) }).strict(),
+  z.object({ action: z.literal('lecture-unlink'), spaceId: z.string().min(1).max(64), path: z.string().min(1).max(400) }).strict(),
+  z.object({ action: z.literal('topic-read'), spaceId: z.string().min(1).max(64) }).strict(),
+  z.object({
+    action: z.literal('topic-save'),
+    spaceId: z.string().min(1).max(64),
+    goal: z.string().max(maxTopicBytes),
+    version: z.string().min(1).max(128).nullable(),
+  }).strict(),
   z.object({ action: z.literal('layout-save'), spaceId: z.string().min(1).max(64), layout: layoutSchema }).strict(),
   z.object({ action: z.literal('note-list'), spaceId: z.string().min(1).max(64) }).strict(),
   z.object({
@@ -102,9 +147,15 @@ function errorBody(error: ClassroomError): { error: string; code: string } {
   return { error: error.message, code: error.code }
 }
 
+/** Content hash used to detect an external edit of the topic goal file. */
+function topicVersion(content: string): string {
+  return createHash('sha256').update(content, 'utf8').digest('hex')
+}
+
 /** Host-side classroom application: state, vault validation and the HTTP seam. */
 export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
-  const { store, probe } = options
+  const { store } = options
+  const probe = options.probe ?? nodeVaultProbe
   let closed = false
   let tail: Promise<unknown> = Promise.resolve()
 
@@ -121,6 +172,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       // The wire view always carries the optional bindings with defaults, even
       // when an older or hand-written state file reached the store without them.
       lecturePath: space.lecturePath ?? null,
+      linkedLectures: space.linkedLectures ?? [],
       sessionId: space.sessionId ?? null,
       layout: normalizeLayout(space.layout),
     }))
@@ -172,13 +224,15 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
   }
 
-  const createSpace = (title: string): Promise<ClassroomView> => enqueue(async () => {
+  const createSpace = (title: string, goal?: string): Promise<ClassroomView> => enqueue(async () => {
     const state = store.read()
     const root = await requireVault(state)
     const directory = spaceDirectoryName(title)
     const existing = state.spaces.find(space => space.directory === directory)
     if (existing !== undefined) return view(state)
-
+    if (goal !== undefined && Buffer.byteLength(goal, 'utf8') > maxTopicBytes) {
+      throw new ClassroomError('topic-too-large', `学习目标超过 ${Math.round(maxTopicBytes / 1024)} KB 上限。`, 413)
+    }
     const target = await resolveVaultPath(root, directory, probe)
     let occupied = false
     try {
@@ -200,6 +254,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       await mkdir(staging)
       for (const folder of spaceFolders) await mkdir(join(staging, folder))
       await writeFile(join(staging, defaultNotePath), defaultNoteContent, { encoding: 'utf8', flag: 'wx' })
+      await writeFile(join(staging, topicGoalFileName), goal ?? '', { encoding: 'utf8', flag: 'wx' })
       await rename(staging, target)
     } catch (error) {
       await rm(staging, { recursive: true, force: true }).catch(() => undefined)
@@ -218,6 +273,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       createdAt: new Date().toISOString(),
       sessionId: null,
       lecturePath: null,
+      linkedLectures: [],
       layout: defaultLayout(),
     }
     const next: ClassroomState = { ...state, spaces: [...state.spaces, space], currentSpaceId: space.id }
@@ -311,8 +367,8 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     return view(next)
   })
 
-  /** A lecture path is space-relative, restricted to `讲义/<file>.md|html`. */
-  const lecturePathOf = (input: string): { relative: string; fileName: string } => {
+  /** A lecture path is space-relative, rooted at `讲义/`; subfolders are chapters. */
+  const lecturePathOf = (input: string): LinkedFile => {
     let relative: string
     try {
       relative = vaultRelativePath(input)
@@ -320,14 +376,18 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       throw new ClassroomError('lecture-invalid', `讲义路径必须是知识文件库内的相对路径：${input}`)
     }
     const segments = relative.split('/')
-    if (segments.length !== 2 || segments[0] !== lectureFolder) {
-      throw new ClassroomError('lecture-invalid', `讲义路径必须是「${lectureFolder}/文件名.md」或「${lectureFolder}/文件名.html」：${input}`)
+    const fileName = segments[segments.length - 1] ?? ''
+    if (segments.length < 2 || segments[0] !== lectureFolder) {
+      throw new ClassroomError('lecture-invalid', `讲义路径必须在「${lectureFolder}/」目录下（可用子目录分章）：${input}`)
     }
-    const fileName = segments[1]
-    if (lectureFileKind(fileName) === null) {
+    if (isHiddenRelativePath(relative)) {
+      throw new ClassroomError('lecture-invalid', `隐藏文件不会进入课程目录：${input}`)
+    }
+    const kind = lectureFileKind(fileName)
+    if (kind === null) {
       throw new ClassroomError('lecture-invalid', `只支持 Markdown 与 HTML 讲义：${input}`)
     }
-    return { relative: `${lectureFolder}/${fileName}`, fileName }
+    return { relative, fileName, kind }
   }
 
   const readHead = async (path: string): Promise<string> => {
@@ -350,47 +410,210 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     await store.write(next)
   }
 
-  /** Derive the course directory from the filesystem; there is no separate manifest. */
-  const listLectures = (spaceId: string): Promise<LectureListView> => enqueue(async () => {
-    const state = store.read()
-    const root = await requireVault(state)
-    const space = spaceOf(state, spaceId)
-    const folderPath = `${space.directory}/${lectureFolder}`
-    const folder = await resolveVaultPath(root, folderPath, probe)
+  /** One file found under `讲义/`, relative to the space folder. */
+  interface FoundLecture {
+    relative: string
+    fileName: string
+    kind: LectureKind
+  }
 
-    let names: string[] = []
-    let folderMissing = false
+  /**
+   * Walk the `讲义/` tree. Directories are real ones only: a symlink or junction
+   * entry is never followed, so the directory can never be widened outside the
+   * authorized space by a link. Hidden names are skipped on purpose.
+   */
+  const walkLectureFolder = async (
+    folder: string,
+    relativeFolder: string,
+    depth: number,
+    found: FoundLecture[],
+  ): Promise<void> => {
+    let entries
     try {
-      const rows = await readdir(folder, { withFileTypes: true })
-      names = rows.filter(row => row.isFile()).map(row => row.name)
+      entries = await readdir(folder, { withFileTypes: true })
+    } catch (error) {
+      throw new ClassroomError(
+        'lecture-list-failed',
+        `无法读取讲义目录：${relativeFolder === '' ? lectureFolder : `${lectureFolder}/${relativeFolder}`}（${error instanceof Error ? error.message : '未知原因'}）`,
+        500,
+      )
+    }
+    entries.sort((a, b) => {
+      const left = a.name.normalize('NFC')
+      const right = b.name.normalize('NFC')
+      return left < right ? -1 : left > right ? 1 : 0
+    })
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const relative = relativeFolder === '' ? entry.name : `${relativeFolder}/${entry.name}`
+      if (entry.isDirectory()) {
+        if (depth >= lectureDepthLimit) {
+          throw new ClassroomError('lecture-list-failed', `讲义目录嵌套超过 ${lectureDepthLimit} 层：${lectureFolder}/${relative}`, 409)
+        }
+        await walkLectureFolder(join(folder, entry.name), relative, depth + 1, found)
+        continue
+      }
+      // `isFile()` is false for symlinks and junctions: never follow them here.
+      if (!entry.isFile()) continue
+      const kind = lectureFileKind(entry.name)
+      if (kind === null) continue
+      if (found.length >= lectureCountLimit) {
+        throw new ClassroomError('lecture-list-too-large', `讲义文件超过 ${lectureCountLimit} 个：${lectureFolder}`, 413)
+      }
+      found.push({ relative: `${lectureFolder}/${relative}`, fileName: entry.name, kind })
+    }
+  }
+
+  /** Read the `讲义/` tree, distinguishing a missing folder from an unreadable one. */
+  const readLectureFolder = async (root: string, space: ClassroomSpace): Promise<{ found: FoundLecture[]; folderMissing: boolean }> => {
+    const folderRelative = `${space.directory}/${lectureFolder}`
+    const folder = await resolveVaultPath(root, folderRelative, probe)
+    let info
+    try {
+      info = await stat(folder)
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
-      if (code === 'ENOENT' || code === 'ENOTDIR') {
-        folderMissing = true
-      } else {
-        throw new ClassroomError('lecture-list-failed', `无法读取讲义目录：${error instanceof Error ? error.message : '未知原因'}`, 500)
-      }
+      if (code === 'ENOENT' || code === 'ENOTDIR') return { found: [], folderMissing: true }
+      throw new ClassroomError('lecture-list-failed', `无法访问讲义目录：${folderRelative}`, 500)
     }
+    if (!info.isDirectory()) return { found: [], folderMissing: true }
+    const found: FoundLecture[] = []
+    await walkLectureFolder(folder, '', 0, found)
+    return { found, folderMissing: false }
+  }
+
+  interface LinkedFile {
+    relative: string
+    fileName: string
+    kind: LectureKind
+  }
+
+  /**
+   * Validate a file the learner wants to link into the course. The path is
+   * space-relative; the `讲义/` tree is already listed, notes and attachments stay
+   * separate, and the topic goal file is not course content.
+   */
+  const linkedPathOf = (input: string): LinkedFile => {
+    let relative: string
+    try {
+      relative = vaultRelativePath(input)
+    } catch {
+      throw new ClassroomError('lecture-invalid', `文件路径必须是学习空间内的相对路径：${input}`)
+    }
+    const segments = relative.split('/')
+    const fileName = segments[segments.length - 1] ?? ''
+    if (isHiddenRelativePath(relative)) {
+      throw new ClassroomError('lecture-invalid', `隐藏文件不能关联到课程目录：${input}`)
+    }
+    if (relative === topicGoalFileName) {
+      throw new ClassroomError('lecture-invalid', `「${topicGoalFileName}」是学习目标文件，不能当作讲义关联：${input}`)
+    }
+    if (segments[0] === lectureFolder) {
+      throw new ClassroomError('lecture-already-listed', `「${lectureFolder}/」里的文件已经出现在课程目录中，无需再关联：${input}`, 409)
+    }
+    if (segments[0] === '笔记' || segments[0] === '附件') {
+      throw new ClassroomError('lecture-invalid', `只能关联讲义类内容，不能关联「${segments[0]}/」里的文件：${input}`)
+    }
+    const kind = lectureFileKind(fileName)
+    if (kind === null) {
+      throw new ClassroomError('lecture-invalid', `只能关联 Markdown（.md）或 HTML（.html）文件：${input}`)
+    }
+    return { relative, fileName, kind }
+  }
+
+  /**
+   * Prove an existing file's real location is still inside the real space folder.
+   * A missing file is reported as `lecture-missing`; a symlink/junction that
+   * leaves the space or the vault is refused, never clamped back.
+   */
+  const resolveSpaceFile = async (root: string, space: ClassroomSpace, relative: string): Promise<string> => {
+    let target: string
+    try {
+      target = await resolveVaultPath(root, `${space.directory}/${relative}`, probe)
+    } catch {
+      throw new ClassroomError('lecture-invalid', `文件路径越出知识文件库授权范围：${relative}`)
+    }
+    let realSpace: string
+    let realTarget: string
+    try {
+      realSpace = await probe.realpath(await resolveVaultPath(root, space.directory, probe))
+      realTarget = await probe.realpath(target)
+    } catch {
+      throw new ClassroomError('lecture-missing', `文件不存在或无法访问：${relative}`, 409)
+    }
+    if (!pathInside(realSpace, realTarget)) {
+      throw new ClassroomError('lecture-invalid', `文件路径经符号链接越出学习空间：${relative}`)
+    }
+    return target
+  }
+
+  /** Linked files keep their real path; a vanished file stays visible as missing. */
+  const linkedLectureRows = async (root: string, space: ClassroomSpace): Promise<ClassroomLectureView[]> => {
+    const rows: ClassroomLectureView[] = []
+    for (const relative of space.linkedLectures ?? []) {
+      const segments = relative.replaceAll('\\', '/').split('/')
+      const fileName = segments[segments.length - 1] ?? ''
+      const kind = lectureFileKind(fileName)
+      if (kind === null || isHiddenRelativePath(relative)) continue
+      if (segments[0] === '笔记' || segments[0] === '附件') continue
+      const chapter = lectureChapterOf(relative, 'linked')
+      let row: ClassroomLectureView = {
+        path: relative,
+        fileName,
+        title: lectureBaseName(fileName),
+        order: null,
+        kind,
+        chapter,
+        source: 'linked',
+        missing: true,
+      }
+      try {
+        const target = await resolveSpaceFile(root, space, relative)
+        const info = await stat(target)
+        if (info.isFile()) {
+          const head = await readHead(target).catch(() => '')
+          const meta = readLectureMeta(fileName, head)
+          row = { ...row, title: meta?.title ?? row.title, order: meta?.order ?? null, missing: false }
+        }
+      } catch {
+        // Keep the learner's link visible with an explicit missing marker.
+      }
+      rows.push(row)
+    }
+    return rows
+  }
+
+  /** Derive the course directory from the filesystem; there is no separate manifest. */
+  const buildLectureList = async (state: ClassroomState, root: string, space: ClassroomSpace): Promise<LectureListView> => {
+    const { found, folderMissing } = await readLectureFolder(root, space)
 
     const lectures: ClassroomLectureView[] = []
-    for (const fileName of names) {
-      const kind = lectureFileKind(fileName)
-      if (kind === null) continue
-      const target = await resolveVaultPath(root, `${folderPath}/${fileName}`, probe)
+    for (const row of found) {
+      const target = join(root, space.directory, row.relative)
       let head: string
       try {
         head = await readHead(target)
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue
-        throw new ClassroomError('lecture-list-failed', `无法读取讲义文件：${fileName}`, 500)
+        throw new ClassroomError('lecture-list-failed', `无法读取讲义文件：${row.relative}`, 500)
       }
-      const meta = readLectureMeta(fileName, head)
+      const meta = readLectureMeta(row.fileName, head)
       if (meta === null) continue
-      lectures.push({ path: `${lectureFolder}/${fileName}`, fileName, title: meta.title, order: meta.order, kind })
+      lectures.push({
+        path: row.relative,
+        fileName: row.fileName,
+        title: meta.title,
+        order: meta.order,
+        kind: row.kind,
+        chapter: lectureChapterOf(row.relative, 'lectures'),
+        source: 'lectures',
+        missing: false,
+      })
     }
 
-    const sorted = sortLectures(lectures)
-    const available = new Set(sorted.map(row => row.path))
+    const sorted = sortCourseLectures([...lectures, ...await linkedLectureRows(root, space)])
+    // A missing linked file is shown for cleanup but is not an openable selection.
+    const available = new Set(sorted.filter(row => !row.missing).map(row => row.path))
     const stored = space.lecturePath ?? null
     const selectedPath = stored !== null && available.has(stored) ? stored : null
     const missingSelection = stored !== null && !available.has(stored) ? stored : null
@@ -399,17 +622,43 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     if (missingSelection !== null) await saveLectureSelection(state, space, null)
 
     return { spaceId: space.id, lectures: sorted, selectedPath, missingSelection, folderMissing }
+  }
+
+  const listLectures = (spaceId: string): Promise<LectureListView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    return buildLectureList(state, root, space)
   })
+
+  /** Resolve an openable course file: `讲义/…` or a file the learner explicitly linked. */
+  const courseFileOf = (space: ClassroomSpace, input: string): LinkedFile => {
+    let relative: string
+    try {
+      relative = vaultRelativePath(input)
+    } catch {
+      throw new ClassroomError('lecture-invalid', `讲义路径必须是知识文件库内的相对路径：${input}`)
+    }
+    const segments = relative.split('/')
+    if (segments[0] === lectureFolder) return lecturePathOf(relative)
+    if ((space.linkedLectures ?? []).includes(relative)) {
+      const fileName = segments[segments.length - 1] ?? ''
+      const kind = lectureFileKind(fileName)
+      if (kind === null || isHiddenRelativePath(relative)) {
+        throw new ClassroomError('lecture-invalid', `只支持 Markdown 与 HTML 讲义：${input}`)
+      }
+      return { relative, fileName, kind }
+    }
+    throw new ClassroomError('lecture-invalid', `该文件尚未关联到本学习空间：${input}`)
+  }
 
   const readLecture = (spaceId: string, inputPath: string): Promise<LectureReadView> => enqueue(async () => {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
-    const { relative, fileName } = lecturePathOf(inputPath)
-    const kind = lectureFileKind(fileName)
-    if (kind === null) throw new ClassroomError('lecture-invalid', `只支持 Markdown 与 HTML 讲义：${inputPath}`)
+    const { relative, fileName, kind } = courseFileOf(space, inputPath)
 
-    const target = await resolveVaultPath(root, `${space.directory}/${relative}`, probe)
+    const target = await resolveSpaceFile(root, space, relative)
     let info
     try {
       info = await stat(target)
@@ -446,6 +695,252 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       kind,
       content,
       placeholder,
+    }
+  })
+
+  /**
+   * Existing files inside the space that are not already in the course: the
+   * learner picks one and it is linked in place (never copied or moved). The walk
+   * stays on real directories and skips the reserved folders.
+   */
+  const listCandidates = (spaceId: string): Promise<LectureCandidatesView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    const folder = await resolveVaultPath(root, space.directory, probe)
+    const realFolder = await probe.realpath(folder)
+    const linked = new Set(space.linkedLectures ?? [])
+    const files: LectureCandidateView[] = []
+    const budget = { truncated: false }
+
+    const walk = async (absolute: string, relativeFolder: string, depth: number): Promise<void> => {
+      let entries
+      try {
+        entries = await readdir(absolute, { withFileTypes: true })
+      } catch (error) {
+        throw new ClassroomError(
+          'lecture-candidates-failed',
+          `无法读取学习空间目录：${relativeFolder === '' ? space.directory : relativeFolder}（${error instanceof Error ? error.message : '未知原因'}）`,
+          500,
+        )
+      }
+      entries.sort((a, b) => {
+        const left = a.name.normalize('NFC')
+        const right = b.name.normalize('NFC')
+        return left < right ? -1 : left > right ? 1 : 0
+      })
+      for (const entry of entries) {
+        if (entry.name.startsWith('.')) continue
+        const relative = relativeFolder === '' ? entry.name : `${relativeFolder}/${entry.name}`
+        if (entry.isDirectory()) {
+          if (depth === 0 && (nonCourseFolders as readonly string[]).includes(entry.name)) continue
+          if (depth >= candidateDepthLimit) continue
+          await walk(join(absolute, entry.name), relative, depth + 1)
+          continue
+        }
+        // Symlinks and junctions are never followed, so this picker cannot look
+        // outside the space the learner authorized.
+        if (!entry.isFile()) continue
+        if (relative === topicGoalFileName) continue
+        if (lectureFileKind(entry.name) === null || linked.has(relative)) continue
+        if (files.length >= candidateCountLimit) {
+          budget.truncated = true
+          return
+        }
+        let head = ''
+        try {
+          head = await readHead(join(absolute, entry.name))
+        } catch {
+          continue
+        }
+        const meta = readLectureMeta(entry.name, head)
+        files.push({
+          path: relative,
+          fileName: entry.name,
+          title: meta?.title ?? lectureBaseName(entry.name),
+          chapter: lectureChapterOf(relative, 'linked'),
+        })
+      }
+    }
+
+    await walk(realFolder, '', 0)
+    files.sort((a, b) => (a.path.normalize('NFC') < b.path.normalize('NFC') ? -1 : a.path.normalize('NFC') > b.path.normalize('NFC') ? 1 : 0))
+    return { spaceId: space.id, files, truncated: budget.truncated }
+  })
+
+  /** Link an existing space file into the course; the file itself is untouched. */
+  const linkLecture = (spaceId: string, input: string): Promise<LectureListView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    const { relative } = linkedPathOf(input)
+    const linked = space.linkedLectures ?? []
+    if (linked.includes(relative)) return buildLectureList(state, root, space)
+    if (linked.length >= 500) {
+      throw new ClassroomError('lecture-link-limit', '一个学习空间最多关联 500 个已有文件。', 409)
+    }
+    const target = await resolveSpaceFile(root, space, relative)
+    let info
+    try {
+      info = await stat(target)
+    } catch {
+      throw new ClassroomError('lecture-missing', `文件不存在或无法访问：${relative}`, 409)
+    }
+    if (!info.isFile()) {
+      throw new ClassroomError('lecture-invalid', `只能关联文件，不能关联文件夹：${relative}`)
+    }
+    const nextLinked = [...linked, relative]
+    const nextSpace: ClassroomSpace = { ...space, linkedLectures: nextLinked }
+    const next: ClassroomState = {
+      ...state,
+      spaces: state.spaces.map(row => (row.id === space.id ? nextSpace : row)),
+    }
+    await store.write(next)
+    return buildLectureList(next, root, nextSpace)
+  })
+
+  /** Remove one link. The file on disk is never deleted or moved. */
+  const unlinkLecture = (spaceId: string, input: string): Promise<LectureListView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    let relative: string
+    try {
+      relative = vaultRelativePath(input)
+    } catch {
+      throw new ClassroomError('lecture-invalid', `文件路径必须是学习空间内的相对路径：${input}`)
+    }
+    const linked = space.linkedLectures ?? []
+    if (!linked.includes(relative)) {
+      throw new ClassroomError('lecture-not-linked', `该文件没有关联到这个学习空间：${relative}`, 409)
+    }
+    const nextSpace: ClassroomSpace = {
+      ...space,
+      linkedLectures: linked.filter(path => path !== relative),
+      lecturePath: space.lecturePath === relative ? null : space.lecturePath,
+    }
+    const next: ClassroomState = {
+      ...state,
+      spaces: state.spaces.map(row => (row.id === space.id ? nextSpace : row)),
+    }
+    await store.write(next)
+    return buildLectureList(next, root, nextSpace)
+  })
+
+  /**
+   * The topic goal is a knowledge file at the space root, so Obsidian and the
+   * classroom read the same bytes. Reading a goal whose file was deleted is a
+   * recoverable state, not an error: the learner can edit and save it again.
+   */
+  const readTopic = (spaceId: string): Promise<TopicView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    const relative = `${space.directory}/${topicGoalFileName}`
+    const target = await resolveVaultPath(root, relative, probe)
+
+    let info
+    try {
+      info = await stat(target)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return {
+          spaceId: space.id,
+          path: topicGoalFileName,
+          title: space.title,
+          goal: '',
+          version: null,
+          updatedAt: null,
+          fileMissing: true,
+        }
+      }
+      throw new ClassroomError('topic-unavailable', `无法访问学习目标文件：${relative}`, 409)
+    }
+    if (!info.isFile()) {
+      throw new ClassroomError('topic-unavailable', `学习目标路径不是文件：${relative}`, 409)
+    }
+    if (info.size > maxTopicBytes) {
+      throw new ClassroomError('topic-too-large', `学习目标文件过大（超过 ${Math.round(maxTopicBytes / 1024)} KB）：${relative}`, 413)
+    }
+    let goal: string
+    try {
+      goal = await readFile(target, 'utf8')
+    } catch {
+      throw new ClassroomError('topic-read-failed', `读取学习目标失败：${relative}`, 500)
+    }
+    return {
+      spaceId: space.id,
+      path: topicGoalFileName,
+      title: space.title,
+      goal,
+      version: topicVersion(goal),
+      updatedAt: info.mtime.toISOString(),
+      fileMissing: false,
+    }
+  })
+
+  /**
+   * Save the goal atomically after an explicit version check. The version is the
+   * hash of the text the learner read, so an edit made in Obsidian is not
+   * silently overwritten; the UI keeps the draft and offers a reload.
+   */
+  const saveTopic = (spaceId: string, goal: string, version: string | null): Promise<TopicView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    if (Buffer.byteLength(goal, 'utf8') > maxTopicBytes) {
+      throw new ClassroomError('topic-too-large', `学习目标超过 ${Math.round(maxTopicBytes / 1024)} KB 上限。`, 413)
+    }
+    const relative = `${space.directory}/${topicGoalFileName}`
+    const target = await resolveVaultPath(root, relative, probe)
+
+    let current: string | undefined
+    try {
+      current = await readFile(target, 'utf8')
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw new ClassroomError('topic-save-failed', `保存学习目标失败：无法读取当前文件（${relative}）`, 409)
+      }
+    }
+    if (current === undefined && version !== null) {
+      throw new ClassroomError('topic-conflict', '学习目标文件已被外部删除，保存已被拒绝。请重新加载后再保存。', 409)
+    }
+    if (current !== undefined && (version === null || topicVersion(current) !== version)) {
+      throw new ClassroomError('topic-conflict', '学习目标文件已被外部修改，保存已被拒绝。请重新加载后再保存。', 409)
+    }
+
+    const directory = dirname(target)
+    let directoryInfo
+    try {
+      directoryInfo = await stat(directory)
+    } catch {
+      throw new ClassroomError('topic-save-failed', `保存学习目标失败：学习空间文件夹不存在（${space.directory}）。`, 409)
+    }
+    if (!directoryInfo.isDirectory()) {
+      throw new ClassroomError('topic-save-failed', `保存学习目标失败：学习空间路径不是文件夹（${space.directory}）。`, 409)
+    }
+
+    const staging = join(directory, `.${topicGoalFileName}.${randomUUID()}.tmp`)
+    try {
+      await writeFile(staging, goal, { encoding: 'utf8', flag: 'wx' })
+      await rename(staging, target)
+    } catch (error) {
+      await rm(staging, { force: true }).catch(() => undefined)
+      throw new ClassroomError('topic-save-failed', `保存学习目标失败：${relative}（${error instanceof Error ? error.message : '未知原因'}）`, 409)
+    }
+    const saved = await stat(target).catch(() => undefined)
+    return {
+      spaceId: space.id,
+      path: topicGoalFileName,
+      title: space.title,
+      goal,
+      version: topicVersion(goal),
+      updatedAt: saved?.mtime.toISOString() ?? new Date().toISOString(),
+      fileMissing: false,
     }
   })
 
@@ -631,7 +1126,15 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
   })
 
   const dispatch = async (input: unknown): Promise<
-    ClassroomView | LectureListView | LectureReadView | NoteListView | NoteDocumentView | NoteSaveView | CanvasReadView
+    | ClassroomView
+    | LectureListView
+    | LectureReadView
+    | LectureCandidatesView
+    | TopicView
+    | NoteListView
+    | NoteDocumentView
+    | NoteSaveView
+    | CanvasReadView
   > => {
     const parsed = commandSchema.safeParse(input)
     if (!parsed.success) {
@@ -644,11 +1147,16 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const command = parsed.data
     switch (command.action) {
       case 'vault-choose': return chooseVault(command.path)
-      case 'space-create': return createSpace(command.title)
+      case 'space-create': return createSpace(command.title, command.goal)
       case 'space-open': return openSpace(command.spaceId)
       case 'session-open': return bindSession(command.spaceId, command.sessionId)
       case 'lecture-list': return listLectures(command.spaceId)
       case 'lecture-read': return readLecture(command.spaceId, command.path)
+      case 'lecture-candidates': return listCandidates(command.spaceId)
+      case 'lecture-link': return linkLecture(command.spaceId, command.path)
+      case 'lecture-unlink': return unlinkLecture(command.spaceId, command.path)
+      case 'topic-read': return readTopic(command.spaceId)
+      case 'topic-save': return saveTopic(command.spaceId, command.goal, command.version)
       case 'note-list': return noteList(command.spaceId)
       case 'note-read': return noteRead(command.spaceId, command.path)
       case 'note-save': return noteSave(command)

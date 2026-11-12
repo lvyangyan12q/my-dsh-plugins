@@ -1,6 +1,13 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ClassroomClientError, type ClassroomClient } from './classroom-client.ts'
-import type { ClassroomSpaceView, LectureListView, LectureReadView } from './contract.ts'
+import type {
+  ClassroomSpaceView,
+  LectureCandidatesView,
+  LectureListView,
+  LectureReadView,
+  TopicView,
+} from './contract.ts'
+import { groupCourseLectures } from './lectures.ts'
 import { parseInline, parseMarkdown, type Block } from './markdown.ts'
 
 export interface LectureZoneProps {
@@ -159,11 +166,27 @@ function LectureReader(props: { doc: LectureReadView }) {
 export function LectureZone(props: LectureZoneProps) {
   const { client, space, spaces, currentSpaceId, busy, onOpenSpace } = props
   const spaceId = space.id
+  const canTopic = typeof client.readTopic === 'function' && typeof client.saveTopicGoal === 'function'
+  const canLink = typeof client.listLectureCandidates === 'function'
+    && typeof client.linkLecture === 'function'
+    && typeof client.unlinkLecture === 'function'
   const [reloadKey, setReloadKey] = useState(0)
   const [listState, setListState] = useState<ListState>({ status: 'loading' })
   const [reader, setReader] = useState<ReaderState>({ status: 'idle' })
   const [selected, setSelected] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
+  const [topic, setTopic] = useState<TopicView | null>(null)
+  const [topicError, setTopicError] = useState('')
+  const [goalDraft, setGoalDraft] = useState('')
+  const [goalEditing, setGoalEditing] = useState(false)
+  const [goalSaving, setGoalSaving] = useState(false)
+  const [goalError, setGoalError] = useState('')
+  const [candidatePanel, setCandidatePanel] = useState(false)
+  const [candidates, setCandidates] = useState<LectureCandidatesView | null>(null)
+  const [candidatesLoading, setCandidatesLoading] = useState(false)
+  const [candidatesError, setCandidatesError] = useState('')
+  const [linking, setLinking] = useState<string | null>(null)
+  const [linkError, setLinkError] = useState('')
   const alive = useRef(true)
   const generation = useRef(0)
   const handledRequest = useRef<number | null>(null)
@@ -177,6 +200,16 @@ export function LectureZone(props: LectureZoneProps) {
     setReader({ status: 'idle' })
     setSelected(null)
     setNotice('')
+    setTopic(null)
+    setTopicError('')
+    setGoalDraft('')
+    setGoalEditing(false)
+    setGoalError('')
+    setCandidatePanel(false)
+    setCandidates(null)
+    setCandidatesError('')
+    setLinkError('')
+    setLinking(null)
 
     const current = () => alive.current && generation.current === mine && !controller.signal.aborted
 
@@ -200,11 +233,21 @@ export function LectureZone(props: LectureZoneProps) {
       if (current()) setListState({ status: 'failed', message: messageOf(error) })
     })
 
+    if (canTopic) {
+      client.readTopic?.(spaceId, controller.signal).then(next => {
+        if (!current()) return
+        setTopic(next)
+        setGoalDraft(next.goal)
+      }).catch(error => {
+        if (current()) setTopicError(messageOf(error))
+      })
+    }
+
     return () => {
       alive.current = false
       controller.abort()
     }
-  }, [client, spaceId, reloadKey])
+  }, [client, spaceId, reloadKey, canTopic])
 
   const select = async (path: string) => {
     if (reader.status === 'loading' && reader.path === path) return
@@ -227,6 +270,103 @@ export function LectureZone(props: LectureZoneProps) {
   const reload = () => setReloadKey(key => key + 1)
   const list = listState.status === 'ready' ? listState.list : null
   const retryButton = <button className="lc-secondary" onClick={reload}>重新加载目录</button>
+
+  const startGoalEdit = () => {
+    setGoalDraft(topic?.goal ?? '')
+    setGoalError('')
+    setGoalEditing(true)
+  }
+
+  const cancelGoalEdit = () => {
+    setGoalDraft(topic?.goal ?? '')
+    setGoalError('')
+    setGoalEditing(false)
+  }
+
+  /** Save the goal through the versioned Host command; the draft survives a conflict. */
+  const saveGoal = async () => {
+    if (!canTopic || topic === null || goalSaving) return
+    const mine = generation.current
+    setGoalSaving(true)
+    setGoalError('')
+    try {
+      const next = await client.saveTopicGoal?.({ action: 'topic-save', spaceId, goal: goalDraft, version: topic.version })
+      if (next === undefined || !alive.current || generation.current !== mine) return
+      setTopic(next)
+      setGoalDraft(next.goal)
+      setGoalEditing(false)
+    } catch (error) {
+      if (alive.current && generation.current === mine) setGoalError(messageOf(error))
+    } finally {
+      if (alive.current && generation.current === mine) setGoalSaving(false)
+    }
+  }
+
+  const openCandidates = async () => {
+    if (!canLink) return
+    const mine = generation.current
+    setCandidatePanel(true)
+    setCandidates(null)
+    setCandidatesError('')
+    setLinkError('')
+    setCandidatesLoading(true)
+    try {
+      const next = await client.listLectureCandidates?.(spaceId)
+      if (next === undefined || !alive.current || generation.current !== mine) return
+      setCandidates(next)
+    } catch (error) {
+      if (alive.current && generation.current === mine) setCandidatesError(messageOf(error))
+    } finally {
+      if (alive.current && generation.current === mine) setCandidatesLoading(false)
+    }
+  }
+
+  /** Link an existing file in place; the directory refreshes from the Host response. */
+  const linkExisting = async (path: string) => {
+    if (!canLink || linking !== null) return
+    const mine = generation.current
+    setLinking(path)
+    setLinkError('')
+    try {
+      const next = await client.linkLecture?.(spaceId, path)
+      if (next === undefined || !alive.current || generation.current !== mine) return
+      setListState({ status: 'ready', list: next })
+      setCandidatePanel(false)
+      setCandidates(null)
+    } catch (error) {
+      if (alive.current && generation.current === mine) setLinkError(messageOf(error))
+    } finally {
+      if (alive.current && generation.current === mine) setLinking(null)
+    }
+  }
+
+  const unlinkExisting = async (path: string) => {
+    if (!canLink || linking !== null) return
+    const mine = generation.current
+    setLinking(path)
+    setLinkError('')
+    try {
+      const next = await client.unlinkLecture?.(spaceId, path)
+      if (next === undefined || !alive.current || generation.current !== mine) return
+      setListState({ status: 'ready', list: next })
+      if (selected === path) {
+        setSelected(null)
+        setReader({ status: 'idle' })
+      }
+      if (candidatePanel) void openCandidates()
+    } catch (error) {
+      if (alive.current && generation.current === mine) setLinkError(messageOf(error))
+    } finally {
+      if (alive.current && generation.current === mine) setLinking(null)
+    }
+  }
+
+  const lectureRows = (list?.lectures ?? []).filter(row => row.source !== 'linked')
+  const linkedRows = (list?.lectures ?? []).filter(row => row.source === 'linked')
+  // A hand-written/test client may omit the chapter field; it means the root.
+  const lectureChapters = groupCourseLectures(lectureRows.map(row => ({ ...row, chapter: row.chapter ?? '' })))
+  const linkedChapters = groupCourseLectures(linkedRows.map(row => ({ ...row, chapter: row.chapter ?? '' })))
+  const goalText = (topic?.goal ?? '').trim()
 
   // A request from another zone (the canvas) opens a lecture once the directory
   // is ready. The token makes repeated requests for the same path observable.
@@ -255,6 +395,45 @@ export function LectureZone(props: LectureZoneProps) {
           ))}
         </ul>
 
+        {canTopic && (
+          <section className="lc-topic-goal" aria-label="学习目标">
+            <div className="lc-directory-head">
+              <h3>学习目标</h3>
+              {!goalEditing && (
+                <button className="lc-secondary" disabled={busy || topic === null} onClick={startGoalEdit}>编辑目标</button>
+              )}
+            </div>
+            {topicError !== '' && <p className="lc-hint" role="alert">{topicError}</p>}
+            {topic === null && topicError === '' && <p className="lc-hint" role="status">正在读取学习目标…</p>}
+            {topic !== null && !goalEditing && (
+              <>
+                {topic.fileMissing && (
+                  <p className="lc-hint">学习目标文件「学习目标.md」不见了；点“编辑目标”保存会重新创建它。</p>
+                )}
+                <p className={goalText === '' ? 'lc-hint' : 'lc-topic-goal-text'}>
+                  {goalText === '' ? '还没有填写学习目标。' : topic.goal}
+                </p>
+              </>
+            )}
+            {topic !== null && goalEditing && (
+              <form className="lc-goal-form" aria-label="编辑学习目标" onSubmit={event => { event.preventDefault(); void saveGoal() }}>
+                <textarea
+                  aria-label="学习目标内容"
+                  rows={4}
+                  value={goalDraft}
+                  disabled={goalSaving}
+                  onChange={event => setGoalDraft(event.target.value)}
+                />
+                <div className="lc-goal-actions">
+                  <button type="submit" disabled={goalSaving}>{goalSaving ? '保存中…' : '保存目标'}</button>
+                  <button type="button" className="lc-secondary" disabled={goalSaving} onClick={cancelGoalEdit}>取消</button>
+                </div>
+                {goalError !== '' && <p className="lc-hint" role="alert">{goalError}</p>}
+              </form>
+            )}
+          </section>
+        )}
+
         <div className="lc-directory-head">
           <h3>讲义</h3>
           <button className="lc-secondary lc-lecture-refresh" aria-label="刷新讲义目录" disabled={busy} onClick={reload}>刷新目录</button>
@@ -263,19 +442,88 @@ export function LectureZone(props: LectureZoneProps) {
         {listState.status === 'failed' && <p className="lc-hint">无法读取讲义目录。</p>}
         {list !== null && list.lectures.length === 0 && <p className="lc-hint">还没有讲义。</p>}
         <ul className="lc-lecture-list">
-          {list?.lectures.map(row => (
-            <li key={row.path}>
-              <button
-                aria-current={selected === row.path ? 'true' : undefined}
-                disabled={busy}
-                title={row.path}
-                onClick={() => void select(row.path)}
-              >
-                {row.title}
-              </button>
+          {lectureChapters.map(group => (
+            <li key={`${group.chapter || '__root'}`} className="lc-chapter">
+              {group.chapter !== '' && <h4 className="lc-chapter-title">{group.chapter}</h4>}
+              <ul className="lc-chapter-list">
+                {group.entries.map(row => (
+                  <li key={row.path}>
+                    <button
+                      aria-current={selected === row.path ? 'true' : undefined}
+                      disabled={busy}
+                      title={row.path}
+                      onClick={() => void select(row.path)}
+                    >
+                      {row.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>
+
+        {(linkedRows.length > 0 || canLink) && (
+          <section className="lc-linked" aria-label="已关联文件">
+            <div className="lc-directory-head">
+              <h3>已关联文件</h3>
+              {canLink && (
+                <button className="lc-secondary" disabled={busy || linking !== null} onClick={() => void openCandidates()}>关联已有文件</button>
+              )}
+            </div>
+            {linkedRows.length === 0 && (
+              <p className="lc-hint">还没有关联本空间已有的文件。关联只登记路径，不复制、不移动原文件。</p>
+            )}
+            <ul className="lc-linked-list">
+              {linkedChapters.flatMap(group => group.entries.map(row => (
+                <li key={row.path}>
+                  <button
+                    aria-current={selected === row.path ? 'true' : undefined}
+                    disabled={busy || row.missing}
+                    title={row.path}
+                    onClick={() => void select(row.path)}
+                  >
+                    {row.title}{row.missing ? '（文件缺失）' : ''}
+                  </button>
+                  {canLink && (
+                    <button
+                      className="lc-secondary"
+                      aria-label={`取消关联 ${row.title}`}
+                      disabled={busy || linking !== null}
+                      onClick={() => void unlinkExisting(row.path)}
+                    >
+                      取消关联
+                    </button>
+                  )}
+                </li>
+              )))}
+            </ul>
+            {candidatePanel && (
+              <div className="lc-candidates" aria-label="可关联文件">
+                <p className="lc-hint">从学习空间已有文件里选一个加入目录；文件留在原处，不复制、不移动。</p>
+                {candidatesLoading && <p className="lc-hint" role="status">正在查找可关联文件…</p>}
+                {candidatesError !== '' && <p className="lc-hint" role="alert">{candidatesError}</p>}
+                {!candidatesLoading && candidatesError === '' && candidates !== null && candidates.files.length === 0 && (
+                  <p className="lc-hint">没有可关联的文件。把 .md 或 .html 放进这个学习空间的其他文件夹后再试。</p>
+                )}
+                <ul className="lc-candidate-list">
+                  {candidates?.files.map(file => (
+                    <li key={file.path}>
+                      <button className="lc-secondary" disabled={busy || linking !== null} onClick={() => void linkExisting(file.path)}>
+                        {file.title}
+                      </button>
+                      <span className="lc-lecture-path">{file.path}</span>
+                    </li>
+                  ))}
+                </ul>
+                {candidates?.truncated === true && <p className="lc-hint">文件较多，只列出前 {candidates.files.length} 个。</p>}
+                {linkError !== '' && <p className="lc-hint" role="alert">{linkError}</p>}
+                <button className="lc-secondary" onClick={() => { setCandidatePanel(false); setCandidates(null); setCandidatesError(''); setLinkError('') }}>收起</button>
+              </div>
+            )}
+            {!candidatePanel && linkError !== '' && <p className="lc-hint" role="alert">{linkError}</p>}
+          </section>
+        )}
       </aside>
 
       <section className="lc-pane lc-lectures" aria-label="讲义">
