@@ -195,7 +195,7 @@ function ExperimentFrame({ doc }: { doc: LectureReadView }) {
   return (
     <div className="lc-lecture-experiment" aria-label="动态实验">
       <p className="lc-experiment-note" role="note">
-        实验在最小的沙箱 iframe 中运行（只允许内联脚本）；CSP 禁止外部资源与网络，因此不能读取课堂、个人笔记或宿主。
+        实验在最小的沙箱 iframe 中运行（只允许内联脚本）；CSP 阻止外部资源加载并隔离宿主/笔记，但不能阻止脚本改变 iframe 自身地址。当前候选不是完整网络隔离，待收紧执行模型。
       </p>
       <iframe
         className="lc-experiment-frame"
