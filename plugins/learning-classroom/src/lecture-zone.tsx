@@ -52,6 +52,9 @@ const lectureStyles = `
 .lc-lecture-path{margin:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;color:var(--dsh-text-secondary,#59636e);word-break:break-all}
 .lc-directory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .lc-directory-head h3{margin:0;font-size:13px}
+.lc-goal-form{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lc-goal-form textarea{box-sizing:border-box;display:block;flex:none;width:100%;min-height:72px;max-height:200px;padding:6px 8px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);color:inherit;font:inherit;line-height:1.5;resize:vertical}
+.lc-goal-actions{display:flex;flex-wrap:wrap;gap:6px}
 .lc-lecture-refresh{padding:2px 8px;font-size:12px}
 .lc-lecture-doc{display:flex;flex-direction:column;gap:10px;line-height:1.75;font-size:14px}
 .lc-lecture-doc h3,.lc-lecture-doc h4,.lc-lecture-doc h5,.lc-lecture-doc h6{margin:8px 0 0;line-height:1.4}
