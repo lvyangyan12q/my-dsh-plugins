@@ -71,6 +71,8 @@ test('关联已有主题内文件：不复制不移动，重启后保留，取�
     const unlinked = await fixture.post({ action: 'lecture-unlink', spaceId: space.id, path: '资料/概率入门.md' })
     assert.equal(unlinked.status, 200)
     assert.deepEqual(unlinked.body.lectures, [])
+    // Removing the open link clears the stored selection so no dangling path remains.
+    assert.equal(unlinked.body.selectedPath, null)
     assert.equal(await exists(original), true)
   } finally {
     await fixture.close()

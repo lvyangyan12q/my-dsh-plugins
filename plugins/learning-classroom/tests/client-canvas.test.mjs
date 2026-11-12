@@ -150,7 +150,10 @@ function fakeClient(options = {}) {
       if (content === undefined) throw new ClassroomClientError('note-missing', `笔记文件不存在：${path}`, 409)
       return { path, content, version: `v-${path}`, updatedAt: '2026-11-09T00:00:00.000Z' }
     },
-    async saveNote() { throw new Error('这个测试不应保存笔记') },
+    async saveNote(input) {
+      calls.push({ action: 'note-save', path: input.path, content: input.content })
+      return { path: input.path, version: 'v-saved', savedAt: '2026-11-09T00:01:00.000Z' }
+    },
   }
 }
 
@@ -174,10 +177,30 @@ async function mount(client) {
     canvas: () => document.querySelector('[aria-label="课程脉络"]'),
     reader: () => document.querySelector('[aria-label="讲义"]'),
     notes: () => document.querySelector('[aria-label="我的笔记"]'),
+    directory: () => document.querySelector('[aria-label="课程目录"]'),
+    conversation: () => document.querySelector('[aria-label="老师对话"]'),
     async click(element) { await act(async () => { element.click() }); await settle() },
+    async type(element, value) {
+      await act(async () => {
+        const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, 'value').set
+        setter.call(element, value)
+        element.dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+      })
+      await settle()
+    },
     async openCanvas() { await this.click(this.tab('脉络')) },
     async unmount() { await act(async () => { root.unmount() }) },
   }
+}
+
+/** True when neither the element nor any ancestor is hidden by `hidden` or CSS. */
+function isShown(element) {
+  if (element === null) return false
+  for (let node = element; node !== null; node = node.parentElement) {
+    if (node.hidden === true) return false
+    if (dom.window.getComputedStyle(node).display === 'none') return false
+  }
+  return true
 }
 
 function node(ui, id) {
@@ -337,6 +360,41 @@ test('插件内没有画布编辑入口，只提供路径与在 Obsidian 中打�
     assert.equal(labels.some(label => /添加|新建|创建|编辑|连线|删除/.test(label)), false, `不应有编辑入口：${labels.join('、')}`)
     assert.match(canvas.textContent, /只读/)
     assert.match(canvas.textContent, /在 Obsidian 中编辑/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('脉络只替换讲义主区：目录、笔记与老师对话保持可见，未保存笔记不丢', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    const editor = ui.document.querySelector('[aria-label="笔记编辑器"]')
+    assert.ok(editor)
+    await ui.type(editor, '# 我的笔记\n\n看到脉络时的想法')
+    const directory = ui.directory()
+    const notes = ui.notes()
+    const conversation = ui.conversation()
+
+    await ui.openCanvas()
+
+    assert.ok(ui.canvas(), '脉络已打开')
+    assert.equal(isShown(directory), true, '课程目录在脉络视图下仍可用')
+    assert.equal(isShown(notes), true, '笔记区在脉络视图下仍可用')
+    assert.equal(isShown(conversation), true, '老师对话在脉络视图下仍可用')
+    assert.equal(ui.directory(), directory)
+    assert.equal(ui.notes(), notes)
+    assert.equal(ui.conversation(), conversation)
+    assert.equal(isShown(ui.reader()), false, '只有讲义主区被替换')
+
+    const editorOnCanvas = ui.notes().querySelector('textarea')
+    assert.equal(editorOnCanvas, editor, '切到脉络不卸载笔记编辑器')
+    assert.equal(editorOnCanvas.value, '# 我的笔记\n\n看到脉络时的想法', '未保存的输入仍在')
+
+    await ui.click(ui.tab('课堂'))
+    assert.equal(isShown(ui.reader()), true)
+    assert.equal(ui.notes().querySelector('textarea'), editor)
+    assert.equal(editor.value, '# 我的笔记\n\n看到脉络时的想法')
   } finally {
     await ui.unmount()
   }

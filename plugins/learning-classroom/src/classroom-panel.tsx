@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { ClassroomSpaceView, ClassroomView, ClassroomViewCommand } from './contract.ts'
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
 import { CanvasZone, type CanvasOpenTarget } from './canvas-zone.tsx'
-import { ClassroomLayoutView } from './classroom-layout.tsx'
+import { ClassroomLayoutView, type ClassroomMainView } from './classroom-layout.tsx'
 import { normalizeLayout, type ClassroomLayout } from './layout.ts'
 import { LectureZone, type LectureOpenRequest } from './lecture-zone.tsx'
 import { NotesZone, type NoteOpenRequest } from './notes-zone.tsx'
@@ -29,22 +29,21 @@ export interface ClassroomPanelProps {
 }
 
 const styles = `
-.lc-root{box-sizing:border-box;display:flex;flex-direction:column;gap:12px;height:100%;min-height:0;padding:16px;color:var(--dsh-text-primary,#1f2328)}
-.lc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.lc-root{box-sizing:border-box;display:flex;flex-direction:column;gap:12px;height:100%;min-height:0;max-width:100%;min-width:0;padding:16px;color:var(--dsh-text-primary,#1f2328)}
+.lc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;min-width:0}
 .lc-head h1{margin:0;font-size:20px}
-.lc-head p{margin:4px 0 0;color:var(--dsh-text-secondary,#59636e);font-size:13px}
-.lc-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;padding:12px;border:1px solid var(--dsh-border,#d8dee4);border-radius:8px}
-.lc-form label{display:flex;flex-direction:column;gap:4px;font-size:13px}
-.lc-form input{min-width:280px;padding:6px 8px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);color:inherit}
+.lc-head p{margin:4px 0 0;color:var(--dsh-text-secondary,#59636e);font-size:13px;overflow-wrap:anywhere}
+.lc-form{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;min-width:0;padding:12px;border:1px solid var(--dsh-border,#d8dee4);border-radius:8px}
+.lc-form label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px}
+.lc-form input{box-sizing:border-box;flex:1 1 240px;width:280px;max-width:100%;min-width:0;padding:6px 8px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);color:inherit}
 .lc-form button,.lc-secondary{padding:6px 12px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);color:inherit;cursor:pointer}
 .lc-form button[type="submit"]{background:var(--dsh-accent,#0969da);border-color:var(--dsh-accent,#0969da);color:#fff}
 .lc-form button:disabled{opacity:.5;cursor:default}
 .lc-hint{margin:0;font-size:12px;color:var(--dsh-text-secondary,#59636e)}
 .lc-alert{padding:10px 12px;border:1px solid #d1242f;border-radius:8px;background:#ffebe9;color:#82071e}
 .lc-empty{padding:24px;border:1px dashed var(--dsh-border,#d8dee4);border-radius:8px;text-align:center}
-.lc-main{display:flex;flex-direction:column;flex:1;min-height:0}
-.lc-main[hidden]{display:none}
-.lc-view-tabs{display:flex;gap:6px}
+.lc-main{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0}
+.lc-view-tabs{display:flex;flex-wrap:wrap;gap:6px}
 .lc-view-tab{padding:5px 14px;border:1px solid var(--dsh-border,#d8dee4);border-radius:999px;background:var(--dsh-surface,#fff);color:inherit;cursor:pointer}
 .lc-view-tab[aria-selected="true"]{background:var(--dsh-accent,#0969da);border-color:var(--dsh-accent,#0969da);color:#fff}
 .lc-pane{display:flex;flex-direction:column;gap:8px;min-width:0;overflow:auto;padding:12px;border:1px solid var(--dsh-border,#d8dee4);border-radius:8px;background:var(--dsh-surface,#fff)}
@@ -100,14 +99,20 @@ function ClassroomGrid(props: {
   sessions?: SessionsLike
   renderSlot?: RenderSlotLike
   SessionProvider?: SessionProviderLike
+  /** Main-column content: lecture/classroom or the knowledge canvas. */
+  mainView: ClassroomMainView
+  /** Mounted canvas; kept mounted while the classroom owns the main column. */
+  canvas?: ReactNode
   onView: (view: ClassroomView) => void
   onLayoutChange: (spaceId: string, layout: ClassroomLayout) => void
 }) {
-  const { client, view, space, busy, onOpen, openLecture, openNote, sessions, renderSlot, SessionProvider, onView, onLayoutChange } = props
+  const { client, view, space, busy, onOpen, openLecture, openNote, sessions, renderSlot, SessionProvider, mainView, canvas, onView, onLayoutChange } = props
   return (
     <ClassroomLayoutView
       layout={normalizeLayout(space.layout)}
       onLayoutChange={next => onLayoutChange(space.id, next)}
+      mainView={mainView}
+      main={canvas}
       lecture={(
         <LectureZone
           client={client}
@@ -183,8 +188,9 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
       setVaultInput('')
       setShowVaultForm(false)
       // Space/vault navigation always returns to the classroom; stale canvas
-      // targets from the previous space must not leak into the new one.
+      // targets and a canvas from the previous space must not leak into the new one.
       setMode('classroom')
+      setCanvasMounted(false)
       setOpenLecture(null)
       setOpenNote(null)
     } catch (cause) {
@@ -316,7 +322,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
                     onClick={() => { setCanvasMounted(true); setMode('canvas') }}
                   >脉络</button>
                 </div>
-                <div className="lc-main" hidden={mode !== 'classroom'}>
+                <div className="lc-main">
                   <ClassroomGrid
                     client={api}
                     view={view}
@@ -328,21 +334,22 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
                     sessions={sessions}
                     renderSlot={renderSlot}
                     SessionProvider={SessionProvider}
+                    mainView={mode === 'canvas' ? 'canvas' : 'lecture'}
+                    canvas={canvasMounted
+                      ? (
+                        <CanvasZone
+                          client={api}
+                          space={space}
+                          vaultPath={view.vault.path}
+                          busy={busy}
+                          onOpenTarget={openCanvasTarget}
+                        />
+                      )
+                      : undefined}
                     onView={setView}
                     onLayoutChange={persistLayout}
                   />
                 </div>
-                {canvasMounted && (
-                  <div className="lc-main" hidden={mode !== 'canvas'}>
-                    <CanvasZone
-                      client={api}
-                      space={space}
-                      vaultPath={view.vault.path}
-                      busy={busy}
-                      onOpenTarget={openCanvasTarget}
-                    />
-                  </div>
-                )}
               </>
             )
             : (
