@@ -95,18 +95,14 @@ test('课堂页按老师角色绑定挂载唯一的内嵌原生会话，离开�
   }
 })
 
-test('课堂答疑跟随当前教师科目绑定的会话，不猜全局当前会话', async () => {
+test('课堂答疑固定使用当前任务的老师，不再提供教师科目或角色选择', async () => {
   const ui = await mountStudy()
   try {
-    const select = ui.dom.window.document.querySelector<HTMLSelectElement>('[aria-label="教师科目"]')
-    assert.ok(select, '找不到教师科目选择器')
-    await act(async () => {
-      select.value = '行测-资料分析'
-      select.dispatchEvent(new ui.dom.window.Event('change', {bubbles: true}))
-    })
+    assert.equal(ui.dom.window.document.querySelector('[aria-label="教师科目"]'), null, '教师科目不由学习者选择')
+    assert.equal(ui.dom.window.document.querySelector('[aria-label="学习角色"]'), null, '角色不由学习者选择')
     await ui.click('课堂')
-    assert.deepEqual(ui.ensured, ['teacher.data-analysis'])
-    assert.deepEqual(ui.embeds(), ['native-teacher-teacher.data-analysis'])
+    assert.deepEqual(ui.ensured, ['teacher'], '没有任务时回落到固定的默认老师')
+    assert.deepEqual(ui.embeds(), ['native-teacher-teacher'])
     await ui.click('今日')
     assert.deepEqual(ui.embeds(), [])
   } finally {

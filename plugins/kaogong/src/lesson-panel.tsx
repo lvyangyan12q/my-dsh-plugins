@@ -62,6 +62,13 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
   const [, setNotesDirty] = useBusinessState('lesson.notesDirty', false)
   const [error, setError] = useBusinessState('lesson.error', '')
   const [busy, setBusy] = useBusinessState('lesson.busy', false)
+  /** 旧课堂只作为次级历史入口只读查看；当前任务课堂永远是主内容。 */
+  const [historyOpen,setHistoryOpen]=useState(false)
+  const [historyLoaded,setHistoryLoaded]=useState(false)
+  const [historyRows,setHistoryRows]=useState<typeof list>([])
+  const [historyView,setHistoryView]=useState<LessonView|null>(null)
+  const [historyError,setHistoryError]=useState('')
+  const [historyBusy,setHistoryBusy]=useState(false)
   const [confirmed, setConfirmed] = useBusinessState('lesson.confirmed', false)
   const [tab, setTab] = useState<'handout' | 'quiz'>('handout')
   const [jump, setJump] = useState<{ anchorId: string; token: number } | null>(null)
@@ -94,6 +101,22 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
     try { await command() }
     catch (cause) { setError(cause instanceof Error ? cause.message : '课堂保存失败') }
     finally { release(); setBusy(false) }
+  }
+  /** 历史课堂按需加载且只读；不主动切换当前任务课堂，也不发教学请求。 */
+  const toggleHistory = async () => {
+    if (historyOpen) { setHistoryOpen(false); return }
+    setHistoryOpen(true)
+    if (historyLoaded) return
+    setHistoryBusy(true); setHistoryError('')
+    try { setHistoryRows(await request<typeof list>('list', {})); setHistoryLoaded(true) }
+    catch (cause) { setHistoryError(cause instanceof Error ? cause.message : '历史课堂读取失败') }
+    finally { setHistoryBusy(false) }
+  }
+  const readHistory = async (historyId: string) => {
+    setHistoryBusy(true); setHistoryError('')
+    try { setHistoryView(await request<LessonView>('read', { lessonId: historyId })) }
+    catch (cause) { setHistoryError(cause instanceof Error ? cause.message : '历史课堂读取失败') }
+    finally { setHistoryBusy(false) }
   }
   useEffect(() => {
     if (!active || !taskCentered) return
@@ -212,6 +235,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
     <style>{`[aria-label="课堂与课后任务"] input:not([type=checkbox]),[aria-label="课堂与课后任务"] select{max-width:100%;box-sizing:border-box}[aria-label="课堂与课后任务"] form label{display:flex;flex-wrap:wrap;align-items:center;gap:6px}[aria-label="课堂与课后任务"] button{display:inline-flex;align-items:center;gap:4px;min-height:30px;max-width:100%;white-space:normal}[data-section-highlight="true"]{outline:2px solid #b8892f;outline-offset:4px;border-radius:6px;background:#fffaf0}`}</style>
     <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       <h2 style={{ margin: 0, fontSize: 16 }}>课堂与课后任务</h2>
+      {taskCentered && <span className="kg-role-note" data-role="task-teacher" style={{ margin: 0 }}>老师负责本任务的讲课、答疑与讲评</span>}
       {!taskCentered && <button data-pwb-button data-variant="primary" title="新建课堂" aria-label="新建课堂" disabled={busy} onClick={() => setForm(!form)}><Plus size={16} />新建课堂</button>}
       <button data-pwb-button title="刷新课堂" aria-label="刷新课堂" disabled={busy} onClick={() => void run(async () => { setList(await request<typeof list>('list', {})); if (view) setView(await request<LessonView>('read', { lessonId: view.lesson.request.lessonId })) })}><RefreshCw size={16} />刷新课堂</button>
       {!taskCentered && list.length > 0 && <select aria-label="持久课堂" value={view?.lesson.request.lessonId ?? ''} disabled={busy} style={{ maxWidth: '100%' }} onChange={event => { if (event.target.value) void run(async () => accept(await request<LessonView>('select', { lessonId: event.target.value }), true)) }}>
@@ -287,5 +311,26 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
       <LessonCloseout onOpenTeacher={onOpenTeacher} onReturnToday={onReturnToday} view={view} notes={notes} accept={accept}/>
       <details><summary>共享证据摘要</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{view.summary}</pre></details>
     </div>}
+    {taskCentered && <section className="kg-classroom-history" aria-label="历史课堂与会话">
+      <button data-pwb-button type="button" aria-expanded={historyOpen} onClick={() => void toggleHistory()}>历史课堂与会话</button>
+      {historyOpen && <>
+        <p>日常课堂只显示当前任务；旧课堂记录保留为只读，不改写、不迁移。历史角色会话仍在原生会话列表中，本页不删除、不搬运历史消息。</p>
+        {historyError && <p role="alert">{historyError}</p>}
+        {historyBusy && <p role="status">正在读取历史记录…</p>}
+        {historyLoaded && historyRows.filter(row => row.id !== lessonId).length === 0 && <p>没有更早的课堂记录。</p>}
+        {historyRows.filter(row => row.id !== lessonId).map(row => <article key={row.id}>
+          <strong>{row.completed ? '已完成' : '未完成'} · {row.subject}</strong>
+          <p>{row.objective} · {row.updatedAt}</p>
+          <button data-pwb-button type="button" disabled={historyBusy} onClick={() => void readHistory(row.id)}>查看记录</button>
+        </article>)}
+        {historyView && <article aria-label="历史课堂只读记录">
+          <strong>{historyView.lesson.request.objective}</strong>
+          <p>完成状态：{historyView.lesson.completion ? '学习者已确认完成' : '未完成'} · 记录版本 {historyView.lesson.revision}</p>
+          <p>学习者总结：{historyView.lesson.notes || '尚未保存'}</p>
+          <p>共享摘要：{historyView.summary || '无'}</p>
+          <button data-pwb-button type="button" onClick={() => setHistoryView(null)}>收起记录</button>
+        </article>}
+      </>}
+    </section>}
   </section>
 }
