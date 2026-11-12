@@ -1,4 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { AnnotationAction } from './annotation-action.tsx'
+import type { AnnotationSourceInput } from './annotation-flow.ts'
 import { ClassroomClientError, type ClassroomClient } from './classroom-client.ts'
 import type {
   ClassroomSpaceView,
@@ -9,6 +11,7 @@ import type {
 } from './contract.ts'
 import { ensureExperimentCsp } from './experiment.ts'
 import { groupCourseLectures, resolveLectureHref } from './lectures.ts'
+import { scrollToFragment, type LinkFragment } from './fragments.ts'
 import { parseInline, parseMarkdown, type Block } from './markdown.ts'
 import { excerptForQuestion, type AskTeacher } from './question-context.ts'
 
@@ -21,6 +24,8 @@ export interface LectureZoneProps {
   onOpenSpace: (spaceId: string) => void
   /** Ask the reader to open a specific lecture, e.g. from a canvas file node. */
   openRequest?: LectureOpenRequest | null
+  /** Append a selection from this lecture to the current note (real source link). */
+  onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
   /** Adds the selected passage or the current lecture to the native teacher draft. */
   askTeacher?: AskTeacher
 }
@@ -29,6 +34,9 @@ export interface LectureZoneProps {
 export interface LectureOpenRequest {
   path: string
   token: number
+  /** Real heading/block fragment resolved from a wikilink, if any. */
+  heading?: string | null
+  blockId?: string | null
 }
 
 type ListState =
@@ -39,7 +47,7 @@ type ListState =
 type ReaderState =
   | { status: 'idle' }
   | { status: 'loading'; path: string }
-  | { status: 'ready'; doc: LectureReadView }
+  | { status: 'ready'; doc: LectureReadView; fragment?: (LinkFragment & { token: number }) }
   | { status: 'failed'; path: string; message: string }
 
 /** Unsaved goal text, kept per learning space so a view switch cannot lose it. */
@@ -117,6 +125,7 @@ function InlineText({ text, onOpenHref }: { text: string; onOpenHref?: (href: st
               }}
             >{token.text}</a>
           )
+          case 'wikilink': return <span key={index} className="lc-wikilink-static" title={`双链：${token.target}`}>{token.text}</span>
           case 'text': return <Fragment key={index}>{token.text}</Fragment>
         }
       })}
@@ -130,13 +139,17 @@ function BlockView({ block, onOpenHref }: { block: Block; onOpenHref?: (href: st
   switch (block.type) {
     case 'heading': {
       const Tag = headingTags[Math.min(Math.max(block.level, 1), 6) - 1]
-      return <Tag><InlineText text={block.text} onOpenHref={onOpenHref} /></Tag>
+      return <Tag data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></Tag>
     }
     case 'paragraph':
-      return <p><InlineText text={block.text} onOpenHref={onOpenHref} /></p>
+      return <p data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></p>
     case 'list': {
-      const items = block.items.map((item, index) => <li key={index}><InlineText text={item} onOpenHref={onOpenHref} /></li>)
-      return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>
+      const items = block.items.map((item, index) => (
+        <li key={index} data-block-id={block.itemBlockIds?.[index]}><InlineText text={item} onOpenHref={onOpenHref} /></li>
+      ))
+      return block.ordered
+        ? <ol data-block-id={block.blockId}>{items}</ol>
+        : <ul data-block-id={block.blockId}>{items}</ul>
     }
     case 'table':
       return (
@@ -156,7 +169,7 @@ function BlockView({ block, onOpenHref }: { block: Block; onOpenHref?: (href: st
     case 'code':
       return <pre><code className={block.lang === '' ? undefined : `language-${block.lang}`}>{block.code}</code></pre>
     case 'quote':
-      return <blockquote><InlineText text={block.text} onOpenHref={onOpenHref} /></blockquote>
+      return <blockquote data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></blockquote>
     case 'rule':
       return <hr />
   }
@@ -254,12 +267,29 @@ function LectureReader(props: {
   /** Present only when this experiment was opened from a lecture. */
   returnTarget?: { title: string } | null
   onReturn?: () => void
+  onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
+  fragment?: (LinkFragment & { token: number }) | null
 }) {
-  const { doc, space, askTeacher, onOpenHref, returnTarget, onReturn } = props
+  const { doc, space, askTeacher, onOpenHref, returnTarget, onReturn, onAnnotate, fragment } = props
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const [notice, setNotice] = useState('')
   const [askError, setAskError] = useState('')
+  const [fragmentNotice, setFragmentNotice] = useState('')
   const askBusy = useRef(false)
+
+  // A wikilink fragment must land on the real heading/block in the rendered
+  // lecture. Opening the file without locating it is reported, not hidden.
+  useEffect(() => {
+    if (fragment === undefined || fragment === null) return
+    if (scrollToFragment(bodyRef.current, fragment)) {
+      setFragmentNotice('')
+      return
+    }
+    const where = fragment.heading !== null && fragment.heading !== undefined
+      ? `标题「${fragment.heading}」`
+      : `块 ^${fragment.blockId ?? ''}`
+    setFragmentNotice(`已打开讲义，但没有找到${where}；不会伪造锚点位置。`)
+  }, [fragment])
 
   const ask = async (): Promise<void> => {
     if (askTeacher === undefined || askTeacher.available === false || askBusy.current) return
@@ -307,8 +337,7 @@ function LectureReader(props: {
         <h3>{doc.title}</h3>
         <p className="lc-lecture-path">{doc.path}</p>
         {askTeacher !== undefined && (
-          <div className="lc-lecture-actions" aria-label="讲义提问">
-            <button
+          <div className="lc-lecture-actions" aria-label="讲义提问">            <button
               type="button"
               className="lc-secondary"
               disabled={askTeacher.available === false}
@@ -331,12 +360,15 @@ function LectureReader(props: {
             <p>回到打开实验前的讲义与阅读位置。</p>
           </div>
         )}
+        {fragmentNotice !== '' && <p className="lc-hint" role="alert">{fragmentNotice}</p>}
       </div>
-      <div ref={bodyRef}>
-        {doc.kind === 'markdown'
-          ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} />
-          : <ExperimentFrame doc={doc} />}
-      </div>
+      <AnnotationAction doc={doc} onAnnotate={onAnnotate}>
+        <div ref={bodyRef}>
+          {doc.kind === 'markdown'
+            ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} />
+            : <ExperimentFrame doc={doc} />}
+        </div>
+      </AnnotationAction>
     </>
   )
 }
@@ -520,6 +552,7 @@ export function LectureZone(props: LectureZoneProps) {
 
   const select = async (
     path: string,
+    fragment?: LinkFragment & { token: number },
     options: { fromLink?: boolean; keepScroll?: boolean } = {},
   ) => {
     if (reader.status === 'loading' && reader.path === path) return
@@ -545,7 +578,7 @@ export function LectureZone(props: LectureZoneProps) {
     try {
       const doc = await client.readLecture(spaceId, path)
       if (!alive.current || generation.current !== mine) return
-      setReader({ status: 'ready', doc })
+      setReader({ status: 'ready', doc, fragment })
     } catch (error) {
       if (!alive.current || generation.current !== mine) return
       setSelected(null)
@@ -559,7 +592,7 @@ export function LectureZone(props: LectureZoneProps) {
     if (target === null) return
     pendingScroll.current = target.scrollTop
     setReturnTo(null)
-    void select(target.path, { keepScroll: true })
+    void select(target.path, undefined, { keepScroll: true })
   }
 
   /** Open a course link inside the classroom instead of the browser tab. */
@@ -569,7 +602,7 @@ export function LectureZone(props: LectureZoneProps) {
     if (resolved === null) return false
     const row = list?.lectures.find(lecture => lecture.path === resolved)
     if (row === undefined || row.missing) return false
-    void select(row.path, { fromLink: true })
+    void select(row.path, undefined, { fromLink: true })
     return true
   }
 
@@ -743,13 +776,18 @@ export function LectureZone(props: LectureZoneProps) {
   // is ready. The token makes repeated requests for the same path observable.
   const requestToken = props.openRequest?.token ?? null
   const requestPath = props.openRequest?.path ?? null
+  const requestHeading = props.openRequest?.heading ?? null
+  const requestBlockId = props.openRequest?.blockId ?? null
   useEffect(() => {
     if (requestToken === null || requestPath === null) return
     if (handledRequest.current === requestToken) return
     if (listState.status !== 'ready') return
     handledRequest.current = requestToken
-    void select(requestPath)
-  }, [requestToken, requestPath, listState.status])
+    const fragment = requestHeading === null && requestBlockId === null
+      ? undefined
+      : { token: requestToken, heading: requestHeading, blockId: requestBlockId }
+    void select(requestPath, fragment)
+  }, [requestToken, requestPath, requestHeading, requestBlockId, listState.status])
 
   return (
     <>
@@ -931,6 +969,8 @@ export function LectureZone(props: LectureZoneProps) {
             onOpenHref={openHref}
             returnTarget={reader.doc.kind === 'experiment' ? returnTo : null}
             onReturn={returnToLecture}
+            onAnnotate={props.onAnnotate}
+            fragment={reader.fragment ?? null}
           />
         )}
 

@@ -7,6 +7,8 @@ import type {
   LectureCandidatesView,
   LectureListView,
   LectureReadView,
+  LinkResolveCommand,
+  LinkResolveView,
   NoteCommand,
   NoteDocumentView,
   NoteListView,
@@ -57,6 +59,8 @@ export interface ClassroomClient {
   saveNote(input: NoteSaveCommand, signal?: AbortSignal): Promise<NoteSaveView>
   readCanvas(spaceId: string, signal?: AbortSignal): Promise<CanvasReadView>
   saveLayout(input: LayoutSaveCommand, signal?: AbortSignal): Promise<ClassroomView>
+  /** Resolve an Obsidian-style wikilink; optional so an older client hides the affordance. */
+  resolveLink?(input: LinkResolveCommand, signal?: AbortSignal): Promise<LinkResolveView>
 }
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>
@@ -98,5 +102,6 @@ export function createClassroomClient(fetchImpl: FetchLike = (input, init) => fe
     saveNote: (input, signal) => post<NoteSaveView>(input, signal),
     readCanvas: (spaceId, signal) => post<CanvasReadView>({ action: 'canvas-read', spaceId }, signal),
     saveLayout: (input, signal) => post<ClassroomView>(input, signal),
+    resolveLink: (input, signal) => post<LinkResolveView>(input, signal),
   }
 }

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { annotationBlockFor, type AnnotationSourceInput } from './annotation-flow.ts'
 import type { ClassroomSpaceView, ClassroomView, ClassroomViewCommand } from './contract.ts'
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
 import { CanvasZone, type CanvasOpenTarget } from './canvas-zone.tsx'
 import { ClassroomLayoutView, type ClassroomMainView } from './classroom-layout.tsx'
 import type { ComposerFace, ConversationLike } from './composer.ts'
+import type { LinkFragment } from './fragments.ts'
 import { normalizeLayout, type ClassroomLayout } from './layout.ts'
 import { LectureZone, type LectureOpenRequest } from './lecture-zone.tsx'
-import { NotesZone, type NoteOpenRequest } from './notes-zone.tsx'
+import { NotesZone, type NoteAppendRequest, type NoteOpenRequest, type NoteStateView } from './notes-zone.tsx'
 import {
   createAskedContext,
   type AskQuestionResult,
@@ -120,6 +122,11 @@ function ClassroomGrid(props: {
   canvas?: ReactNode
   onView: (view: ClassroomView) => void
   onLayoutChange: (spaceId: string, layout: ClassroomLayout) => void
+  /** Append a lecture selection to the current note (Host-resolved source link). */
+  onAnnotate: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
+  appendRequest: NoteAppendRequest | null
+  onNoteState: (state: NoteStateView) => void
+  onOpenLecture: (path: string, fragment?: LinkFragment) => void
   /** "Ask the teacher" capability shared by the lecture and note zones. */
   askTeacher?: AskTeacher
   getConversation?: () => ConversationLike | undefined
@@ -130,8 +137,8 @@ function ClassroomGrid(props: {
 }) {
   const {
     client, view, space, busy, onOpen, openLecture, openNote, sessions, renderSlot, SessionProvider,
-    mainView, canvas, onView, onLayoutChange, askTeacher, getConversation, questionContexts,
-    onRemoveContext, onDismissContext, onComposer,
+    mainView, canvas, onView, onLayoutChange, onAnnotate, appendRequest, onNoteState, onOpenLecture,
+    askTeacher, getConversation, questionContexts, onRemoveContext, onDismissContext, onComposer,
   } = props
   return (
     <ClassroomLayoutView
@@ -148,10 +155,21 @@ function ClassroomGrid(props: {
           busy={busy}
           onOpenSpace={onOpen}
           openRequest={openLecture}
+          onAnnotate={onAnnotate}
           askTeacher={askTeacher}
         />
       )}
-      notes={<NotesZone client={client} space={space} openRequest={openNote} askTeacher={askTeacher} />}
+      notes={(
+        <NotesZone
+          client={client}
+          space={space}
+          openRequest={openNote}
+          appendRequest={appendRequest}
+          onNoteState={onNoteState}
+          onOpenLecture={onOpenLecture}
+          askTeacher={askTeacher}
+        />
+      )}
       conversation={(
         <TeacherSessionZone
           key={space.id}
@@ -188,6 +206,15 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
   const [canvasMounted, setCanvasMounted] = useState(false)
   const [openLecture, setOpenLecture] = useState<LectureOpenRequest | null>(null)
   const [openNote, setOpenNote] = useState<NoteOpenRequest | null>(null)
+  // Annotation append is a one-shot hand-off between the lecture and note zones.
+  // The block already carries its Host-resolved source link; the notes zone only
+  // appends it through the ordinary save path.
+  const [appendRequest, setAppendRequest] = useState<NoteAppendRequest | null>(null)
+  const appendToken = useRef(0)
+  const noteState = useRef<NoteStateView | null>(null)
+  // Navigation epoch: an annotation whose source resolution finishes after any
+  // space switch must not be delivered to the newly selected space.
+  const spaceSession = useRef(0)
   // The context strip is page state, not a chat database: the appended text
   // lives in the native draft, and the sent message lives in the native
   // Session history. Only the frozen blocks shown in this page are kept here.
@@ -218,6 +245,11 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
 
   const run = async (command: ClassroomViewCommand) => {
     if (busy) return
+    // Any navigation invalidates annotation resolutions still in flight.
+    if (command.action === 'space-open' || command.action === 'space-create'
+      || command.action === 'vault-choose' || command.action === 'session-open') {
+      spaceSession.current += 1
+    }
     setBusy(true)
     setError('')
     try {
@@ -234,6 +266,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
       setCanvasMounted(false)
       setOpenLecture(null)
       setOpenNote(null)
+      setAppendRequest(null)
     } catch (cause) {
       if (alive.current) setError(messageOf(cause))
     } finally {
@@ -340,6 +373,71 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
   const askTeacher: AskTeacher | undefined = getConversation === undefined || space === undefined
     ? undefined
     : { available: askReason === '', reason: askReason, ask: askQuestion }
+
+  /** Notes zone publishes the note it is editing, so refusals are accurate. */
+  const handleNoteState = useCallback((state: NoteStateView) => {
+    noteState.current = state
+  }, [])
+
+  /** A wikilink in the note preview opens a lecture in the main column, keeping its real fragment. */
+  const openLectureFromNote = useCallback((path: string, fragment?: LinkFragment) => {
+    requestToken.current += 1
+    setOpenLecture({
+      path,
+      token: requestToken.current,
+      heading: fragment?.heading ?? null,
+      blockId: fragment?.blockId ?? null,
+    })
+    setMode('classroom')
+  }, [])
+
+  /**
+   * Build the annotation from a real lecture selection: the Host resolves the
+   * file/heading link, and a note that is loading or has an unresolved conflict
+   * refuses the append instead of overwriting either side.
+   */
+  async function annotateLecture(input: AnnotationSourceInput): Promise<{ ok: boolean; message: string }> {
+    if (space === undefined) return { ok: false, message: '还没有打开学习空间，批注没有追加。' }
+    const current = noteState.current
+    if (current === null || current.path === '') {
+      return { ok: false, message: '笔记还没准备好，批注没有追加。' }
+    }
+    if (current.spaceId !== space.id) {
+      return { ok: false, message: '当前笔记属于另一个学习空间，批注没有追加。' }
+    }
+    if (current.status === 'loading') {
+      return { ok: false, message: '笔记还没加载完，批注没有追加。' }
+    }
+    if (current.status === 'conflict') {
+      return { ok: false, message: '笔记有未解决的保存冲突，批注没有追加。请先比较并处理冲突。' }
+    }
+    // Capture the target identity before the async Host resolution. A late
+    // response for space A must never be delivered after the reader switched to
+    // space B, even when both spaces share the same relative note path.
+    const requestSpace = space
+    const requestNote = current
+    const requestSession = spaceSession.current
+    const stillCurrent = (): boolean => alive.current
+      && spaceSession.current === requestSession
+      && spaceIdRef.current === requestSpace.id
+      && noteState.current?.spaceId === requestSpace.id
+      && noteState.current?.path === requestNote.path
+    const result = await annotationBlockFor(api, requestSpace.id, requestSpace.directory, input, stillCurrent)
+    if (!result.ok || result.block === undefined) {
+      return { ok: false, message: result.message }
+    }
+    if (!stillCurrent()) {
+      return { ok: false, message: '解析来源期间学习空间或笔记已切换，旧批注没有追加。' }
+    }
+    appendToken.current += 1
+    setAppendRequest({
+      token: appendToken.current,
+      spaceId: requestSpace.id,
+      block: result.block,
+      path: requestNote.path,
+    })
+    return { ok: true, message: result.message }
+  }
 
   return (
     <section className="lc-root" aria-label="学习课堂">
@@ -457,6 +555,10 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
                       : undefined}
                     onView={setView}
                     onLayoutChange={persistLayout}
+                    onAnnotate={annotateLecture}
+                    appendRequest={appendRequest}
+                    onNoteState={handleNoteState}
+                    onOpenLecture={openLectureFromNote}
                     askTeacher={askTeacher}
                     getConversation={getConversation}
                     questionContexts={questionContexts}
