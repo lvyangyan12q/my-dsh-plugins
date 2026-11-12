@@ -110,11 +110,25 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
   const [activeZone, setActiveZone] = useState<ClassroomZone>('lecture')
   const root = useRef<HTMLDivElement | null>(null)
   const endDrag = useRef<() => void>(() => {})
+  const resetRef = useRef<HTMLButtonElement | null>(null)
+  const lastFocus = useRef<HTMLElement | null>(null)
+  const wasNarrow = useRef<boolean | null>(null)
 
   const current = draft ?? layout
   // Decide from the committed layout, not the drag preview: a separator drag
   // must not flip the whole classroom into zone mode halfway through.
   const narrow = usesNarrowLayout(width, layout, threshold)
+
+  useEffect(() => {
+    const previous = wasNarrow.current
+    wasNarrow.current = narrow
+    if (previous === null || previous === narrow) return
+    // A separator belongs only to the wide layout. When crossing the width
+    // boundary kills the focused control, move focus to the always-present
+    // reset so keyboard learners do not land on the document body.
+    const focused = lastFocus.current
+    if (focused !== null && !focused.isConnected) resetRef.current?.focus()
+  }, [narrow])
 
   useEffect(() => {
     const element = root.current
@@ -154,6 +168,7 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
   const beginDrag = (boundary: LayoutBoundary, event: ReactMouseEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
     event.preventDefault()
+    lastFocus.current = event.currentTarget
     const startX = event.clientX
     const base = current
     let latest: ClassroomLayout | null = null
@@ -180,6 +195,7 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
   const nudge = (boundary: LayoutBoundary, event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
     event.preventDefault()
+    lastFocus.current = event.currentTarget
     const step = keyboardResizeStep * (event.shiftKey ? 3 : 1)
     commit(resizeLayout(current, boundary, event.key === 'ArrowRight' ? step : -step))
   }
@@ -206,48 +222,61 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
   const toggle = (zone: (typeof collapsibleZones)[number]) => commit(toggleCollapsed(current, zone))
 
   return (
-    <div className="lc-layout-root" ref={root}>
+    <div
+      className="lc-layout-root"
+      ref={root}
+      onFocusCapture={event => {
+        if (event.target instanceof HTMLElement) lastFocus.current = event.target
+      }}
+    >
       <style>{styles}</style>
       <div className="lc-layout-bar" role="toolbar" aria-label="课堂布局">
         <span className="lc-layout-caption">{narrow ? '分区' : '分栏'}</span>
-        {narrow
-          ? (
-            <div role="group" aria-label="课堂分区">
-              {zoneIds.map(zone => {
-                const label = zone === 'lecture' && mainView === 'canvas' ? '脉络' : zoneLabels[zone]
-                return (
-                  <button
-                    key={zone}
-                    type="button"
-                    className="lc-layout-tab"
-                    aria-pressed={activeZone === zone}
-                    tabIndex={activeZone === zone ? 0 : -1}
-                    data-narrow-zone={zone}
-                    onClick={() => setActiveZone(resolveNarrowZone(zone))}
-                    onKeyDown={event => moveNarrow(zone, event)}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-          )
-          : collapsibleZones.map(zone => (
+        {narrow && (
+          <div key="narrow-tabs" role="group" aria-label="课堂分区">
+            {zoneIds.map(zone => {
+              const label = zone === 'lecture' && mainView === 'canvas' ? '脉络' : zoneLabels[zone]
+              return (
+                <button
+                  key={zone}
+                  type="button"
+                  className="lc-layout-tab"
+                  aria-pressed={activeZone === zone}
+                  tabIndex={activeZone === zone ? 0 : -1}
+                  data-narrow-zone={zone}
+                  onClick={() => setActiveZone(resolveNarrowZone(zone))}
+                  onKeyDown={event => moveNarrow(zone, event)}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        {collapsibleZones.map(zone => {
+          const action = current.collapsed[zone] ? '显示' : '收起'
+          return (
             <button
               key={zone}
               type="button"
               className="lc-layout-toggle"
-              aria-label={`${current.collapsed[zone] ? '显示' : '收起'}${zoneLabels[zone]}`}
+              aria-label={`${action}${zoneLabels[zone]}`}
               onClick={() => toggle(zone)}
             >
-              {zoneLabels[zone]}
+              {narrow ? `${action}${zoneLabels[zone]}` : zoneLabels[zone]}
             </button>
-          ))}
-        {!narrow && (
-          <button type="button" className="lc-layout-reset" aria-label="恢复默认布局" onClick={() => commit(defaultLayout())}>
-            重置布局
-          </button>
-        )}
+          )
+        })}
+        <button
+          key="reset"
+          ref={resetRef}
+          type="button"
+          className="lc-layout-reset"
+          aria-label="恢复默认布局"
+          onClick={() => commit(defaultLayout())}
+        >
+          重置布局
+        </button>
       </div>
 
       <div

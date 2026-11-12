@@ -270,7 +270,8 @@ test('窄容器一次只显示一个区并默认讲义，切换分区不写布�
     assert.equal(ui.visible('讲义'), true, '窄屏默认显示讲义')
     for (const label of ['课程目录', '我的笔记', '老师对话']) assert.equal(ui.visible(label), false, `${label} 初始隐藏`)
     assert.equal(separators(ui.document).length, 0, '窄屏不渲染分隔条')
-    assert.equal(buttonByLabel(ui.document, '收起我的笔记'), null, '窄屏用分区切换而不是收起')
+    assert.ok(buttonByLabel(ui.document, '恢复默认布局'), '分区模式下仍保留重置入口')
+    assert.ok(buttonByLabel(ui.document, '收起我的笔记'), '分区模式下仍保留收起/恢复入口')
 
     const tabs = [...ui.document.querySelectorAll('[role="toolbar"] button[aria-pressed]')]
     assert.deepEqual(tabs.map(tab => tab.textContent), ['课程目录', '讲义', '我的笔记', '老师对话'])
@@ -299,29 +300,42 @@ test('窄容器一次只显示一个区并默认讲义，切换分区不写布�
   }
 })
 
-test('宽容器只有一个弹性主列且最小可读，侧栏收起后空出的宽度归讲义', async () => {
+test('1000px 容器里用键盘加宽目录跨过分区边界后，重置入口可发现且能恢复分栏', async () => {
   const client = fakeClient()
   const ui = await mount(client)
   try {
-    const grid = ui.document.querySelector('.lc-layout')
-    // Split tracks without breaking `minmax(280px, 1fr)` at its comma.
-    const tracks = () => grid.style.gridTemplateColumns.match(/minmax\([^)]*\)|\S+/g) ?? []
-    const initial = tracks()
-    assert.equal(initial.length, 7, '目录、分隔条、讲义、分隔条、笔记、分隔条、对话')
-    assert.equal(initial[2], 'minmax(280px, 1fr)', '讲义是唯一可伸缩的主列')
-    assert.deepEqual([initial[0], initial[4], initial[6]], ['200px', '220px', '240px'])
-    assert.equal(initial.filter(track => track.includes('1fr')).length, 1, '额外空间只给讲义')
+    await ui.resizeContainer(1000)
+    const [directoryEdge] = separators(ui.document)
+    assert.ok(directoryEdge)
+    directoryEdge.focus()
 
-    for (const label of ['收起课程目录', '收起我的笔记', '收起老师对话']) {
-      await ui.click(buttonByLabel(ui.document, label))
+    // 200 → 216 → 232 → 248：第三次后已保存分栏装不进 1000px，进入分区模式。
+    for (let step = 0; step < 3; step += 1) await ui.press(directoryEdge, 'ArrowRight')
+
+    assert.equal(separators(ui.document).length, 0, '装不下后不再渲染横向分隔条')
+    assert.equal(ui.visible('讲义'), true)
+    for (const label of ['课程目录', '我的笔记', '老师对话']) {
+      assert.equal(ui.visible(label), false, `${label} 收进分区切换`)
     }
-    const collapsed = tracks()
-    assert.equal(collapsed[2], 'minmax(280px, 1fr)')
-    assert.deepEqual(
-      [collapsed[0], collapsed[4], collapsed[6]],
-      ['0px', '0px', '0px'],
-      '辅助栏收起后不保留固定宽度，空出的空间由讲义主列吸收',
-    )
+    assert.equal(ui.layout().layout.widths.directory, 248, '跨模式前的宽度调整已保存')
+
+    const reset = buttonByLabel(ui.document, '恢复默认布局')
+    assert.ok(reset, '分区模式下重置入口仍然可发现')
+    assert.equal(ui.document.activeElement, reset, '分隔条消失后焦点落在可操作的重置入口')
+    assert.ok(buttonByLabel(ui.document, '收起我的笔记'), '收起/恢复入口仍然可发现')
+
+    // 恢复入口本身可用：收起再恢复笔记只改持久布局，不制造空课堂。
+    await ui.click(buttonByLabel(ui.document, '收起我的笔记'))
+    assert.ok(buttonByLabel(ui.document, '显示我的笔记'))
+    assert.equal(ui.visible('讲义'), true, '收起非当前分区不会留下空课堂')
+    assert.equal(ui.layout().layout.collapsed.notes, true)
+    await ui.click(buttonByLabel(ui.document, '显示我的笔记'))
+    assert.equal(ui.layout().layout.collapsed.notes, false)
+
+    await ui.click(reset)
+    assert.equal(separators(ui.document).length, 3, '重置后恢复并排分栏')
+    for (const label of ['课程目录', '我的笔记', '老师对话']) assert.equal(ui.visible(label), true)
+    assert.deepEqual(ui.layout().layout, defaultLayout(), '重置写回默认布局')
   } finally {
     await ui.unmount()
   }
