@@ -52,3 +52,26 @@ test('真实宿主 ToolsService 接受两个老师工具的输入/输出 schema�
   }
   assert.deepEqual(validateJsonSchemaValue(experiment.parameters, goodExperiment, ''), [])
 })
+
+test('真实宿主 ToolRuntime 注册两个老师工具并暴露绑定条件', { skip }, async () => {
+  const { Context } = await import('@deepseek-ai/cordis')
+  const SystemPrompt = (await import(pathToFileURL(join(source, 'packages/core/system-prompt/lib/index.js')).href)).default
+  const ToolRuntime = (await import(pathToFileURL(join(source, 'packages/core/tools/lib/index.js')).href)).ToolsService
+  const ctx = new Context()
+  await ctx.plugin(SystemPrompt)
+  await ctx.plugin(ToolRuntime)
+  const disposers = createTeacherTools(host).map(entry => ctx.tools.register(entry.definition, {
+    when: context => entry.visibleFor(context.agent.id),
+  }))
+  try {
+    const schemas = ctx.tools.schemas()
+    assert.deepEqual(schemas.map(schema => schema.name).sort(), ['classroom_experiment_write', 'classroom_lecture_write'])
+    for (const schema of schemas) {
+      assert.equal(schema.parameters.additionalProperties, false)
+      assert.equal(Object.keys(schema.parameters.properties).includes('spaceId'), false)
+    }
+  } finally {
+    for (const dispose of disposers) dispose()
+    await ctx.dispose?.()
+  }
+})
