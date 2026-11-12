@@ -98,6 +98,41 @@ test('外部修改后保存被拒绝且不静默覆盖；显式覆盖才用我�
   }
 })
 
+test('真 Host 校版本：空正文也必须在外部修改后报冲突，空版本直接拒绝', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await spaceWithVault(fixture)
+    const noteFile = join(fixture.vault, space.directory, '笔记', '我的笔记.md')
+    const read = (await fixture.post({ action: 'note-read', spaceId: space.id, path: space.notePath })).body
+    const external = '# 外部内容\n\n不能被空正文清空\n'
+    await writeFile(noteFile, external, 'utf8')
+
+    const emptyWithOldVersion = await fixture.post({
+      action: 'note-save',
+      spaceId: space.id,
+      path: space.notePath,
+      content: '',
+      version: read.version,
+    })
+    assert.equal(emptyWithOldVersion.status, 409)
+    assert.equal(emptyWithOldVersion.body.code, 'note-conflict')
+    assert.equal(await readFile(noteFile, 'utf8'), external, '外部正文不被空内容覆盖')
+
+    const emptyVersion = await fixture.post({
+      action: 'note-save',
+      spaceId: space.id,
+      path: space.notePath,
+      content: '',
+      version: '',
+    })
+    assert.equal(emptyVersion.status, 400)
+    assert.equal(emptyVersion.body.code, 'invalid-command')
+    assert.equal(await readFile(noteFile, 'utf8'), external, '空版本不得清空文件')
+  } finally {
+    await fixture.close()
+  }
+})
+
 test('笔记目录被删后读取给出可操作原因，保存失败且不在半路创建目录', async () => {
   const fixture = await classroomFixture()
   try {

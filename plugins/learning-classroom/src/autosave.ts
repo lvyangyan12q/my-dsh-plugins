@@ -1,4 +1,25 @@
 /** Injectable timer seam so debounce behavior is unit-testable without sleeping. */
+export interface SerialQueue {
+  /** Queue one task; it starts only after every earlier task settled. */
+  run<T>(task: () => Promise<T>): Promise<T>
+}
+
+/**
+ * Serial task queue for note saves. It orders writes inside this panel only;
+ * it is not a cross-process lock, so an external editor can still race between
+ * the version check and the atomic rename on the Host.
+ */
+export function createSerialQueue(): SerialQueue {
+  let tail: Promise<unknown> = Promise.resolve()
+  return {
+    run<T>(task: () => Promise<T>): Promise<T> {
+      const result = tail.then(task, task)
+      tail = result.then(() => undefined, () => undefined)
+      return result
+    },
+  }
+}
+
 export interface DebounceTimers {
   setTimeout(run: () => void, delayMs: number): unknown
   clearTimeout(handle: unknown): void
