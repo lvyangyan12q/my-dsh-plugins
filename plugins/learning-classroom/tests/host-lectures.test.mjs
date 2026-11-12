@@ -107,7 +107,7 @@ test('打开讲义返回 Markdown 正文，选择写入插件状态并跨重启�
     assert.equal(read.body.kind, 'markdown')
     assert.equal(read.body.title, '样本空间')
     assert.equal(read.body.content, '---\ntitle: 样本空间\norder: 1\n---\n\n## 定义\n\n- 随机试验\n- 样本点\n')
-    assert.equal(read.body.placeholder, null)
+    assert.equal(read.body.html, null)
 
     const listed = await fixture.post({ action: 'lecture-list', spaceId: space.id })
     assert.equal(listed.body.selectedPath, '讲义/01-样本空间.md')
@@ -127,7 +127,7 @@ test('打开讲义返回 Markdown 正文，选择写入插件状态并跨重启�
   }
 })
 
-test('HTML 讲义只登记目录并返回可理解占位，不把 HTML 当正文下发', async () => {
+test('HTML 实验只作为隔离渲染源下发，不混入 Markdown 正文，也不声称正文版本', async () => {
   const fixture = await classroomFixture()
   try {
     const space = await prepare(fixture)
@@ -139,8 +139,10 @@ test('HTML 讲义只登记目录并返回可理解占位，不把 HTML 当正文
     assert.equal(read.body.kind, 'experiment')
     assert.equal(read.body.title, '直觉实验')
     assert.equal(read.body.content, null)
-    assert.match(read.body.placeholder, /后续工单/)
-    assert.equal(JSON.stringify(read.body).includes('<script>'), false)
+    assert.match(read.body.html, /<!doctype html><script>alert\(1\)<\/script>/)
+    assert.deepEqual(read.body.sources, [])
+    assert.deepEqual(read.body.parameters, [])
+    assert.equal(read.body.version, null)
 
     const listed = await fixture.post({ action: 'lecture-list', spaceId: space.id })
     assert.equal(listed.body.selectedPath, '讲义/01-实验.html')

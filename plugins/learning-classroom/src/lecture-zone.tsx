@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ClassroomClientError, type ClassroomClient } from './classroom-client.ts'
 import type {
   ClassroomSpaceView,
@@ -7,7 +7,8 @@ import type {
   LectureReadView,
   TopicView,
 } from './contract.ts'
-import { groupCourseLectures } from './lectures.ts'
+import { ensureExperimentCsp } from './experiment.ts'
+import { groupCourseLectures, resolveLectureHref } from './lectures.ts'
 import { parseInline, parseMarkdown, type Block } from './markdown.ts'
 import { excerptForQuestion, type AskTeacher } from './question-context.ts'
 
@@ -76,7 +77,12 @@ const lectureStyles = `
 .lc-lecture-doc th,.lc-lecture-doc td{padding:6px 10px;border:1px solid var(--dsh-border,#d8dee4);text-align:left}
 .lc-lecture-doc th{background:#f6f8fa}
 .lc-lecture-doc hr{width:100%;border:0;border-top:1px solid var(--dsh-border,#d8dee4)}
-.lc-lecture-experiment{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px dashed var(--dsh-border,#d8dee4);border-radius:8px;background:#f6f8fa}
+.lc-lecture-experiment{display:flex;flex-direction:column;gap:10px}
+.lc-experiment-frame{box-sizing:border-box;width:100%;height:min(70vh,720px);min-height:480px;border:1px solid var(--dsh-border,#d8dee4);border-radius:8px;background:#fff}
+.lc-experiment-note{margin:0;padding:8px 10px;border-radius:6px;background:#f6f8fa;color:var(--dsh-text-secondary,#59636e);font-size:12px;line-height:1.6}
+.lc-experiment-meta{display:flex;flex-direction:column;gap:4px;font-size:12px}
+.lc-experiment-meta ul{margin:0;padding-left:20px}
+.lc-experiment-meta code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
 .lc-lecture-empty{padding:24px;border:1px dashed var(--dsh-border,#d8dee4);border-radius:8px;text-align:center}
 `
 
@@ -92,7 +98,7 @@ function missingNotice(path: string): string {
   return `讲义「${path}」已被删除或改名。请重新加载目录，或从左侧选择另一节。`
 }
 
-function InlineText({ text }: { text: string }) {
+function InlineText({ text, onOpenHref }: { text: string; onOpenHref?: (href: string) => boolean }) {
   return (
     <>
       {parseInline(text).map((token, index) => {
@@ -100,7 +106,17 @@ function InlineText({ text }: { text: string }) {
           case 'code': return <code key={index}>{token.text}</code>
           case 'strong': return <strong key={index}>{token.text}</strong>
           case 'em': return <em key={index}>{token.text}</em>
-          case 'link': return <a key={index} href={token.href} target="_blank" rel="noreferrer noopener">{token.text}</a>
+          case 'link': return (
+            <a
+              key={index}
+              href={token.href}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={event => {
+                if (onOpenHref?.(token.href) === true) event.preventDefault()
+              }}
+            >{token.text}</a>
+          )
           case 'text': return <Fragment key={index}>{token.text}</Fragment>
         }
       })}
@@ -110,16 +126,16 @@ function InlineText({ text }: { text: string }) {
 
 const headingTags = ['h3', 'h4', 'h5', 'h6', 'h6', 'h6'] as const
 
-function BlockView({ block }: { block: Block }): ReactNode {
+function BlockView({ block, onOpenHref }: { block: Block; onOpenHref?: (href: string) => boolean }): ReactNode {
   switch (block.type) {
     case 'heading': {
       const Tag = headingTags[Math.min(Math.max(block.level, 1), 6) - 1]
-      return <Tag><InlineText text={block.text} /></Tag>
+      return <Tag><InlineText text={block.text} onOpenHref={onOpenHref} /></Tag>
     }
     case 'paragraph':
-      return <p><InlineText text={block.text} /></p>
+      return <p><InlineText text={block.text} onOpenHref={onOpenHref} /></p>
     case 'list': {
-      const items = block.items.map((item, index) => <li key={index}><InlineText text={item} /></li>)
+      const items = block.items.map((item, index) => <li key={index}><InlineText text={item} onOpenHref={onOpenHref} /></li>)
       return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>
     }
     case 'table':
@@ -127,11 +143,11 @@ function BlockView({ block }: { block: Block }): ReactNode {
         <div className="lc-lecture-table">
           <table>
             <thead>
-              <tr>{block.header.map((cell, index) => <th key={index}><InlineText text={cell} /></th>)}</tr>
+              <tr>{block.header.map((cell, index) => <th key={index}><InlineText text={cell} onOpenHref={onOpenHref} /></th>)}</tr>
             </thead>
             <tbody>
               {block.rows.map((row, rowIndex) => (
-                <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}><InlineText text={cell} /></td>)}</tr>
+                <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}><InlineText text={cell} onOpenHref={onOpenHref} /></td>)}</tr>
               ))}
             </tbody>
           </table>
@@ -140,19 +156,67 @@ function BlockView({ block }: { block: Block }): ReactNode {
     case 'code':
       return <pre><code className={block.lang === '' ? undefined : `language-${block.lang}`}>{block.code}</code></pre>
     case 'quote':
-      return <blockquote><InlineText text={block.text} /></blockquote>
+      return <blockquote><InlineText text={block.text} onOpenHref={onOpenHref} /></blockquote>
     case 'rule':
       return <hr />
   }
 }
 
-function MarkdownBody({ content }: { content: string }) {
+function MarkdownBody({ content, onOpenHref }: { content: string; onOpenHref?: (href: string) => boolean }) {
   const blocks = parseMarkdown(content)
   if (blocks.length === 0) return <p className="lc-hint">这一节还没有正文。</p>
   return (
     <article className="lc-lecture-doc">
-      {blocks.map((block, index) => <BlockView key={index} block={block} />)}
+      {blocks.map((block, index) => <BlockView key={index} block={block} onOpenHref={onOpenHref} />)}
     </article>
+  )
+}
+
+/**
+ * The experiment runs in an opaque-origin iframe with only inline scripts. The
+ * classroom CSP is injected before the HTML reaches the frame; even a file that
+ * was edited outside the plugin cannot read this document, notes or the network.
+ */
+function ExperimentFrame({ doc }: { doc: LectureReadView }) {
+  const srcdoc = useMemo(() => ensureExperimentCsp(doc.html ?? ''), [doc.html])
+  return (
+    <div className="lc-lecture-experiment" aria-label="动态实验">
+      <p className="lc-experiment-note" role="note">
+        实验在最小的沙箱 iframe 中运行（只允许内联脚本）：不能读取课堂、个人笔记或宿主，也不能联网。
+      </p>
+      <iframe
+        className="lc-experiment-frame"
+        title={`动态实验：${doc.title}`}
+        sandbox="allow-scripts"
+        allow=""
+        referrerPolicy="no-referrer"
+        srcDoc={srcdoc}
+      />
+      {(doc.parameters.length > 0 || doc.sources.length > 0) && (
+        <div className="lc-experiment-meta">
+          {doc.parameters.length > 0 && (
+            <section aria-label="实验参数">
+              <strong>实验参数</strong>
+              <ul>
+                {doc.parameters.map(parameter => (
+                  <li key={parameter.name}>
+                    <code>{parameter.name}</code> {parameter.label}：{parameter.min}–{parameter.max}
+                    {parameter.unit === '' ? '' : ` ${parameter.unit}`}，步长 {parameter.step}，默认 {parameter.default}
+                    {parameter.unit === '' ? '' : ` ${parameter.unit}`}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {doc.sources.length > 0 && (
+            <section aria-label="实验来源">
+              <strong>来源</strong>
+              <ul>{doc.sources.map((source, index) => <li key={index}>{source}</li>)}</ul>
+            </section>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -182,8 +246,16 @@ function lectureSelection(root: HTMLElement | null): LectureSelection {
   return { kind: 'inside', text }
 }
 
-function LectureReader(props: { doc: LectureReadView; space: ClassroomSpaceView; askTeacher?: AskTeacher }) {
-  const { doc, space, askTeacher } = props
+function LectureReader(props: {
+  doc: LectureReadView
+  space: ClassroomSpaceView
+  askTeacher?: AskTeacher
+  onOpenHref?: (href: string) => boolean
+  /** Present only when this experiment was opened from a lecture. */
+  returnTarget?: { title: string } | null
+  onReturn?: () => void
+}) {
+  const { doc, space, askTeacher, onOpenHref, returnTarget, onReturn } = props
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const [notice, setNotice] = useState('')
   const [askError, setAskError] = useState('')
@@ -201,7 +273,7 @@ function LectureReader(props: { doc: LectureReadView; space: ClassroomSpaceView;
     const source = selected !== '' ? selected : doc.kind === 'markdown' ? doc.content ?? '' : ''
     if (source.trim() === '') {
       setNotice('')
-      setAskError('这一节没有可附加的正文；实验占位不会作为提问材料。')
+      setAskError('这一节没有可附加的正文；动态实验本身不会作为提问材料。')
       return
     }
     const bounded = excerptForQuestion(source)
@@ -251,16 +323,19 @@ function LectureReader(props: { doc: LectureReadView; space: ClassroomSpaceView;
             {askError !== '' && <p role="alert">{askError}</p>}
           </div>
         )}
+        {returnTarget != null && onReturn !== undefined && (
+          <div className="lc-lecture-actions" aria-label="实验返回">
+            <button type="button" className="lc-secondary" onClick={onReturn}>
+              返回讲义《{returnTarget.title}》
+            </button>
+            <p>回到打开实验前的讲义与阅读位置。</p>
+          </div>
+        )}
       </div>
       <div ref={bodyRef}>
         {doc.kind === 'markdown'
-          ? <MarkdownBody content={doc.content ?? ''} />
-          : (
-            <div className="lc-lecture-experiment" role="note">
-              <p>{doc.placeholder ?? '这是一节动态实验（HTML），隔离渲染尚未打开。'}</p>
-              <p className="lc-hint">实验内容不会直接注入课堂页面。</p>
-            </div>
-          )}
+          ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} />
+          : <ExperimentFrame doc={doc} />}
       </div>
     </>
   )
@@ -301,6 +376,10 @@ export function LectureZone(props: LectureZoneProps) {
   const [candidatesError, setCandidatesError] = useState('')
   const [linking, setLinking] = useState<string | null>(null)
   const [linkError, setLinkError] = useState('')
+  /** The lecture an experiment was opened from, including its scroll position. */
+  const [returnTo, setReturnTo] = useState<{ path: string; title: string; scrollTop: number } | null>(null)
+  const paneRef = useRef<HTMLElement | null>(null)
+  const pendingScroll = useRef<number | null>(null)
   const alive = useRef(true)
   const generation = useRef(0)
   const handledRequest = useRef<number | null>(null)
@@ -383,6 +462,8 @@ export function LectureZone(props: LectureZoneProps) {
     setCandidatesError('')
     setLinkError('')
     setLinking(null)
+    setReturnTo(null)
+    pendingScroll.current = null
 
     const loadToken = (topicLoadTokens.current[spaceId] ?? 0) + 1
     topicLoadTokens.current[spaceId] = loadToken
@@ -437,9 +518,27 @@ export function LectureZone(props: LectureZoneProps) {
     }
   }, [client, spaceId, reloadKey, canTopic])
 
-  const select = async (path: string) => {
+  const select = async (
+    path: string,
+    options: { fromLink?: boolean; keepScroll?: boolean } = {},
+  ) => {
     if (reader.status === 'loading' && reader.path === path) return
     const mine = generation.current
+    const row = list?.lectures.find(lecture => lecture.path === path)
+    const targetKind = row?.kind ?? (path.toLowerCase().endsWith('.html') ? 'experiment' : 'markdown')
+    const currentDoc = reader.status === 'ready' && reader.doc.kind === 'markdown' ? reader.doc : null
+    if (targetKind === 'experiment' && currentDoc !== null) {
+      // Capture the reading position before the experiment replaces the body;
+      // the return action restores it after the lecture is rendered again.
+      setReturnTo({
+        path: currentDoc.path,
+        title: currentDoc.title,
+        scrollTop: paneRef.current?.scrollTop ?? 0,
+      })
+    } else if (targetKind !== 'experiment') {
+      setReturnTo(null)
+      if (options.keepScroll !== true) pendingScroll.current = null
+    }
     setNotice('')
     setSelected(path)
     setReader({ status: 'loading', path })
@@ -454,6 +553,34 @@ export function LectureZone(props: LectureZoneProps) {
       if (isMissing(error)) setNotice(missingNotice(path))
     }
   }
+
+  const returnToLecture = () => {
+    const target = returnTo
+    if (target === null) return
+    pendingScroll.current = target.scrollTop
+    setReturnTo(null)
+    void select(target.path, { keepScroll: true })
+  }
+
+  /** Open a course link inside the classroom instead of the browser tab. */
+  const openHref = (href: string): boolean => {
+    if (reader.status !== 'ready' || reader.doc.kind !== 'markdown') return false
+    const resolved = resolveLectureHref(reader.doc.path, href)
+    if (resolved === null) return false
+    const row = list?.lectures.find(lecture => lecture.path === resolved)
+    if (row === undefined || row.missing) return false
+    void select(row.path, { fromLink: true })
+    return true
+  }
+
+  // Restore the captured scroll only after the returned lecture is on screen.
+  useEffect(() => {
+    if (reader.status !== 'ready' || reader.doc.kind !== 'markdown') return
+    if (pendingScroll.current === null) return
+    const top = pendingScroll.current
+    pendingScroll.current = null
+    if (paneRef.current !== null) paneRef.current.scrollTop = top
+  }, [reader])
 
   const reload = () => setReloadKey(key => key + 1)
   const list = listState.status === 'ready' ? listState.list : null
@@ -774,7 +901,7 @@ export function LectureZone(props: LectureZoneProps) {
         )}
       </aside>
 
-      <section className="lc-pane lc-lectures" aria-label="讲义">
+      <section className="lc-pane lc-lectures" aria-label="讲义" ref={paneRef}>
         <style>{lectureStyles}</style>
         <h2>讲义</h2>
 
@@ -797,7 +924,14 @@ export function LectureZone(props: LectureZoneProps) {
         {listState.status === 'ready' && reader.status === 'loading' && <p role="status">正在打开讲义…</p>}
 
         {listState.status === 'ready' && reader.status === 'ready' && (
-          <LectureReader doc={reader.doc} space={space} askTeacher={props.askTeacher} />
+          <LectureReader
+            doc={reader.doc}
+            space={space}
+            askTeacher={props.askTeacher}
+            onOpenHref={openHref}
+            returnTarget={reader.doc.kind === 'experiment' ? returnTo : null}
+            onReturn={returnToLecture}
+          />
         )}
 
         {listState.status === 'ready' && reader.status === 'failed' && (
@@ -815,7 +949,7 @@ export function LectureZone(props: LectureZoneProps) {
                 <p>
                   {list.folderMissing
                     ? '在知识文件库里恢复这个学习空间的「讲义/」文件夹后，重新加载目录。'
-                    : '把 Markdown（.md）或动态实验（.html）放进该学习空间的「讲义/」文件夹，目录会自动出现，不需要清单文件。'}
+                    : '把 Markdown（.md）或动态实验（.html）放进该学习空间的「讲义/」文件夹，目录会自动出现，不需要清单文件。也可以在右侧请老师生成一节带来源的讲义或动态实验，成功后点「刷新目录」发现新文件。'}
                 </p>
                 {list.folderMissing && retryButton}
               </div>

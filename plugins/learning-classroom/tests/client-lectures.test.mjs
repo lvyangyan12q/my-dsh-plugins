@@ -86,6 +86,8 @@ const article = [
   '```',
   '',
   '> 先定义，再计算。',
+  '',
+  '[打开实验](讲义/03-实验.html)',
 ].join('\n')
 
 function docsFor() {
@@ -97,7 +99,10 @@ function docsFor() {
       title: '后讲',
       kind: 'markdown',
       content: article,
-      placeholder: null,
+      html: null,
+      sources: [],
+      parameters: [],
+      version: 'v-article',
     },
     '讲义/01-先讲.md': {
       spaceId: space.id,
@@ -106,7 +111,10 @@ function docsFor() {
       title: '先讲',
       kind: 'markdown',
       content: '# 先讲内容\n\n第一节正文。',
-      placeholder: null,
+      html: null,
+      sources: [],
+      parameters: [],
+      version: 'v-first',
     },
     '讲义/03-实验.html': {
       spaceId: space.id,
@@ -115,7 +123,10 @@ function docsFor() {
       title: '实验',
       kind: 'experiment',
       content: null,
-      placeholder: '这是一节动态实验（HTML）。隔离渲染会在后续工单中打开。',
+      html: '<!doctype html><html><head><style>body{font-family:sans-serif}</style></head><body><canvas id="chart"></canvas><p id="readout">读数：0.80</p><script>document.getElementById("readout").textContent = "读数：0.80"</script></body></html>',
+      sources: ['《概率论》第 2 章'],
+      parameters: [{ name: 'prior', label: '先验概率', min: 0, max: 1, step: 0.01, default: 0.5, unit: '' }],
+      version: null,
     },
   }
 }
@@ -326,15 +337,79 @@ test('读取时发现讲义被删除也给出同样的可操作提示', async ()
   }
 })
 
-test('HTML 实验只显示可理解占位，不注入实验内容', async () => {
+test('HTML 实验在最小沙箱 iframe 中运行，CSP 禁止宿主、文件与网络，参数和来源可读', async () => {
   const client = fakeClient()
   const ui = await mount(client)
   try {
     await ui.click(findButton(ui.directory(), '实验'))
     const reader = ui.reader()
-    assert.match(reader.textContent, /后续工单/)
+    const frame = reader.querySelector('iframe')
+    assert.ok(frame, '实验必须用 iframe 隔离，而不是把 HTML 注入主文档')
+    assert.equal(frame.getAttribute('sandbox'), 'allow-scripts')
+    assert.doesNotMatch(frame.getAttribute('sandbox') ?? '', /allow-same-origin|allow-forms|allow-popups|allow-top-navigation/)
+    assert.equal(frame.getAttribute('referrerpolicy'), 'no-referrer')
+    const srcdoc = frame.getAttribute('srcdoc') ?? ''
+    assert.match(srcdoc, /Content-Security-Policy/)
+    assert.match(srcdoc, /default-src 'none'/)
+    assert.match(srcdoc, /connect-src 'none'/)
+    assert.match(srcdoc, /sandbox allow-scripts/)
+    assert.match(srcdoc, /<canvas id="chart">/)
+    assert.doesNotMatch(srcdoc, /D:\/知识库|笔记\/我的笔记\.md|沙箱外/, '实验文档里不能带宿主路径或笔记内容')
+    assert.equal(reader.querySelector('script'), null, '实验脚本不能进入课堂主文档')
+
+    assert.match(reader.textContent, /最小的沙箱|沙箱|不能读取宿主/)
+    assert.match(reader.textContent, /先验概率/)
+    assert.match(reader.textContent, /0.*1/)
+    assert.match(reader.textContent, /《概率论》第 2 章/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('从讲义链接进入实验后可以返回原讲义，并恢复阅读位置', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '后讲'))
+    const pane = ui.reader()
+    pane.scrollTop = 140
+
+    const link = [...pane.querySelectorAll('a')].find(anchor => anchor.textContent === '打开实验')
+    assert.ok(link, '讲义里的实验链接应可点击')
+    await ui.click(link)
+
+    assert.equal(pane.querySelector('iframe')?.getAttribute('sandbox'), 'allow-scripts')
+    assert.deepEqual(client.calls.filter(call => call.action === 'lecture-read').at(-1), {
+      action: 'lecture-read',
+      spaceId: space.id,
+      path: '讲义/03-实验.html',
+    })
+    const back = findButton(pane, '返回讲义')
+    assert.ok(back, '从讲义进入实验后必须能返回')
+    assert.match(back.textContent, /后讲/)
+
+    await ui.click(back)
+    assert.match(pane.textContent, /样本空间是/)
+    assert.equal(pane.querySelector('iframe'), null)
+    assert.equal(pane.scrollTop, 140, '返回讲义后应恢复原阅读位置')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('实验读取失败时显示可操作错误，不假装运行', async () => {
+  const docs = docsFor()
+  delete docs['讲义/03-实验.html']
+  const client = fakeClient({ docs })
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '实验'))
+    const reader = ui.reader()
     assert.equal(reader.querySelector('iframe'), null)
-    assert.equal(reader.querySelector('script'), null)
+    const alert = reader.querySelector('[role="alert"]')
+    assert.ok(alert)
+    assert.match(alert.textContent, /03-实验\.html|不存在|删除/)
+    assert.ok(findButton(alert, '重新加载目录'))
   } finally {
     await ui.unmount()
   }

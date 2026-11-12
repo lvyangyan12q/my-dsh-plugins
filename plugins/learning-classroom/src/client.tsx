@@ -39,6 +39,7 @@ export type {
   ClassroomSpaceView,
   ClassroomView,
   ClassroomVaultView,
+  GeneratedContentView,
   LectureListView,
   LectureReadView,
   NoteCommand,

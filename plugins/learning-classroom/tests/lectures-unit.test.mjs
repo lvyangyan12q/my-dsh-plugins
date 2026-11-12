@@ -12,6 +12,7 @@ const {
   lectureFileKind,
   parseFrontmatter,
   readLectureMeta,
+  resolveLectureHref,
   sortCourseLectures,
   sortLectures,
 } = await import('../src/lectures.ts')
@@ -55,6 +56,20 @@ test('讲义文件名决定类型与默认标题，未知扩展名不进目录',
   assert.equal(html.title, '03-实验')
   assert.equal(html.order, 3)
   assert.equal(readLectureMeta('忽略.txt', ''), null)
+})
+
+test('讲义链接只解析讲义目录内的相对 Markdown/HTML，外部与越界地址不猜', () => {
+  assert.equal(resolveLectureHref('讲义/第一章/01-引言.md', '02-实验.html'), '讲义/第一章/02-实验.html')
+  assert.equal(resolveLectureHref('讲义/第一章/01-引言.md', '../02-总论.md'), '讲义/02-总论.md')
+  assert.equal(resolveLectureHref('讲义/01-引言.md', './02-下一节.md#定义'), '讲义/02-下一节.md')
+  assert.equal(resolveLectureHref('讲义/第一章/01-引言.md', '讲义/03-实验.html'), '讲义/03-实验.html')
+  assert.equal(resolveLectureHref('讲义/01-引言.md', '笔记/我的笔记.md'), '讲义/笔记/我的笔记.md')
+  assert.equal(resolveLectureHref('讲义/01-引言.md', '../笔记/我的笔记.md'), null)
+  assert.equal(resolveLectureHref('讲义/01-引言.md', 'https://example.org/x.md'), null)
+  assert.equal(resolveLectureHref('讲义/01-引言.md', '/讲义/02.md'), null)
+  assert.equal(resolveLectureHref('讲义/01-引言.md', '02.txt'), null)
+  assert.equal(resolveLectureHref('讲义/01-引言.md', 'a/../../outside.md'), null)
+  assert.equal(resolveLectureHref('讲义/01-引言.md', '#片段'), null)
 })
 
 test('排序由 order 覆盖，未声明 order 的按文件名排在后面', () => {
