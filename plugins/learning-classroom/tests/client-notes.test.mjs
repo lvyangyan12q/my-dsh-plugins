@@ -82,11 +82,23 @@ async function settle(rounds = 6) {
   }
 }
 
+function memoryDrafts() {
+  const files = new Map()
+  const key = (spaceId, path) => `${spaceId}\u0000${path}`
+  return {
+    files,
+    read(spaceId, path) { return files.get(key(spaceId, path)) ?? null },
+    write(spaceId, path, draft) { files.set(key(spaceId, path), draft) },
+    remove(spaceId, path) { files.delete(key(spaceId, path)) },
+  }
+}
+
 async function mount(store, props = {}) {
   const container = dom.window.document.getElementById('root')
   container.replaceChildren()
   const root = createRoot(container)
-  await act(async () => { root.render(h(NotesZone, { client: store.client, space, debounceMs: 10, ...props })) })
+  const render = nextSpace => root.render(h(NotesZone, { client: store.client, space: nextSpace, debounceMs: 10, ...props }))
+  await act(async () => { render(space) })
   await settle()
   return {
     document: dom.window.document,
@@ -94,6 +106,10 @@ async function mount(store, props = {}) {
     text: () => container.textContent,
     status: () => container.querySelector('[role="status"]')?.textContent ?? '',
     textarea: () => container.querySelector('textarea'),
+    async rerender(nextSpace) {
+      await act(async () => { render(nextSpace) })
+      await settle()
+    },
     async type(value) {
       const editor = container.querySelector('textarea')
       await act(async () => {
@@ -172,6 +188,10 @@ test('外部修改后保存被拒绝，界面给出「重新加载」与「用�
     assert.match(alert.textContent, /外部修改/)
     assert.ok([...alert.querySelectorAll('button')].some(button => button.textContent.includes('重新加载')))
     assert.ok([...alert.querySelectorAll('button')].some(button => button.textContent.includes('用我的覆盖')))
+    const compare = ui.container.querySelector('[aria-label="保存冲突比较"]')
+    assert.ok(compare, '冲突时展示双方内容')
+    assert.match(compare.querySelector('[aria-label="我的编辑内容"]').textContent, /我的想法/)
+    assert.match(compare.querySelector('[aria-label="磁盘上的内容"]').textContent, /外部版本/)
     assert.equal(ui.textarea().value, '# 我的想法\n', '冲突时保留我的编辑内容')
     assert.equal(store.files.get('笔记/我的笔记.md'), '# 外部版本\n', '冲突时磁盘文件不被覆盖')
 
@@ -201,6 +221,30 @@ test('冲突后选择「用我的覆盖」才写入我的内容，并带上显�
     assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的想法\n')
     assert.equal(ui.textarea().value, '# 我的想法\n')
     assert.match(ui.status(), /已保存/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('显式覆盖失败时仍保留我的输入和磁盘上的原版本，可再次处理', async () => {
+  const drafts = memoryDrafts()
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n原文\n' })
+  const ui = await mount(store, { drafts })
+  try {
+    store.set('笔记/我的笔记.md', '# 外部版本\n')
+    store.setNextSaveError(Object.assign(new Error('磁盘上的笔记已被外部修改，保存已被拒绝。'), { code: 'note-conflict' }))
+    await ui.type('# 我的想法\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /冲突/)
+
+    store.setNextSaveError(Object.assign(new Error('保存失败：磁盘暂时不可写。'), { code: 'note-save-failed' }))
+    await ui.click('用我的覆盖')
+
+    assert.equal(ui.textarea().value, '# 我的想法\n', '覆盖失败不丢输入')
+    assert.match(ui.status(), /保存失败/)
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 外部版本\n', '覆盖失败不动磁盘')
+    assert.match(ui.container.textContent, /磁盘暂时不可写/)
+    assert.ok(drafts.read('space-1', '笔记/我的笔记.md'), '覆盖失败留下可恢复草稿')
   } finally {
     await ui.unmount()
   }
@@ -240,6 +284,129 @@ test('可以在 笔记/ 目录下的多个 Markdown 文件之间切换', async (
     assert.match(ui.text(), /笔记\/第二份\.md/)
     assert.equal(store.calls.filter(call => call.type === 'read').at(-1).path, '笔记/第二份.md')
     assert.match(ui.status(), /已保存/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('编辑与预览共用同一正文：预览渲染当前未保存的修改，切回编辑内容不变', async () => {
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n原文\n' })
+  const ui = await mount(store)
+  try {
+    const edited = '# 我的笔记\n\n## 新小节\n\n**加粗的理解**，还有 `代码`。\n\n- 第一点\n- 第二点\n'
+    await ui.type(edited)
+    await ui.click('预览')
+
+    const preview = ui.container.querySelector('[aria-label="笔记预览"]')
+    assert.ok(preview, '预览区应存在')
+    assert.match(preview.textContent, /新小节/)
+    assert.equal(preview.querySelector('h4')?.textContent, '新小节')
+    assert.equal(preview.querySelector('strong')?.textContent, '加粗的理解')
+    assert.equal(preview.querySelector('code')?.textContent, '代码')
+    assert.equal(preview.querySelectorAll('li').length, 2)
+    assert.doesNotMatch(preview.textContent, /## 新小节/)
+    assert.equal(ui.textarea(), null, '预览时不显示原始编辑框')
+
+    await ui.click('编辑')
+    assert.equal(ui.textarea().value, edited, '预览不改变正文')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('保存进行中继续编辑：第二个保存排队，前一个完成后才发，磁盘最终是最新正文', async () => {
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n原文\n' })
+  const ui = await mount(store)
+  try {
+    const release = store.gateNextSave()
+    await ui.type('# 第一次修改\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /保存中/)
+
+    await ui.type('# 第二次修改\n')
+    await ui.wait(30)
+    assert.equal(store.calls.filter(call => call.type === 'save').length, 1, '前一个保存未完成时不应开始第二个')
+
+    release()
+    await ui.wait(60)
+    const saves = store.calls.filter(call => call.type === 'save')
+    assert.deepEqual(saves.map(call => call.content), ['# 第一次修改\n', '# 第二次修改\n'])
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 第二次修改\n')
+    assert.match(ui.status(), /已保存/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('保存失败后切换文件：我的输入不丢，切回来恢复为可保存的草稿', async () => {
+  const drafts = memoryDrafts()
+  const store = noteStore({
+    '笔记/我的笔记.md': '# 我的笔记\n\n原文\n',
+    '笔记/第二份.md': '# 第二份\n\n另一个文件\n',
+  })
+  const ui = await mount(store, { drafts })
+  try {
+    store.setNextSaveError(Object.assign(new Error('保存失败：磁盘暂时不可写。'), { code: 'note-save-failed' }))
+    await ui.type('# 我的笔记\n\n未保存的修改\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /保存失败/)
+
+    await ui.select('笔记/第二份.md')
+    assert.equal(ui.textarea().value, '# 第二份\n\n另一个文件\n')
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的笔记\n\n原文\n', '失败时磁盘保持原样')
+
+    await ui.select('笔记/我的笔记.md')
+    assert.equal(ui.textarea().value, '# 我的笔记\n\n未保存的修改\n', '切回来恢复草稿')
+    assert.match(ui.text(), /草稿/)
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的笔记\n\n原文\n')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('离开课堂时保存失败：重新进入仍恢复未保存的输入', async () => {
+  const drafts = memoryDrafts()
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n原文\n' })
+  const first = await mount(store, { drafts })
+  store.setNextSaveError(Object.assign(new Error('保存失败：磁盘暂时不可写。'), { code: 'note-save-failed' }))
+  await first.type('# 我的笔记\n\n离开前没保存上的内容\n')
+  await first.wait(30)
+  assert.match(first.status(), /保存失败/)
+  await first.unmount()
+
+  const second = await mount(store, { drafts })
+  try {
+    assert.equal(second.textarea().value, '# 我的笔记\n\n离开前没保存上的内容\n')
+    assert.match(second.text(), /草稿/)
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的笔记\n\n原文\n')
+  } finally {
+    await second.unmount()
+  }
+})
+
+test('切换学习主题：两个主题的草稿互不串，回到原主题可恢复', async () => {
+  const drafts = memoryDrafts()
+  const otherSpace = { ...space, id: 'space-2', title: '概率论', directory: '概率论', notePath: '笔记/概率笔记.md' }
+  const store = noteStore({
+    '笔记/我的笔记.md': '# 我的笔记\n\n原文\n',
+    '笔记/概率笔记.md': '# 概率笔记\n\n主题二原文\n',
+  })
+  const ui = await mount(store, { drafts })
+  try {
+    store.setNextSaveError(Object.assign(new Error('保存失败：磁盘暂时不可写。'), { code: 'note-save-failed' }))
+    await ui.type('# 我的笔记\n\n主题一未保存\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /保存失败/)
+
+    await ui.rerender(otherSpace)
+    assert.equal(ui.textarea().value, '# 概率笔记\n\n主题二原文\n')
+    assert.doesNotMatch(ui.text(), /主题一未保存/)
+
+    await ui.rerender(space)
+    assert.equal(ui.textarea().value, '# 我的笔记\n\n主题一未保存\n')
+    assert.match(ui.text(), /草稿/)
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的笔记\n\n原文\n')
+    assert.equal(store.files.get('笔记/概率笔记.md'), '# 概率笔记\n\n主题二原文\n')
   } finally {
     await ui.unmount()
   }
