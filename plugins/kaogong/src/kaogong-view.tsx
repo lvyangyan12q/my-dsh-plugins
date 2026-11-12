@@ -430,7 +430,7 @@ export function KaogongView({ embedded = false, focusedStudy = false, taskCenter
             </header>}
             {notice && <div style={{ ...sectionStyle, marginBottom: 14, color: colors.blue, borderColor: '#bfdbfe', background: '#f8fbff' }}>{notice}</div>}
             {error && <div style={{ ...sectionStyle, color: colors.red, borderColor: '#fecaca', background: '#fff1f2' }}>{error}</div>}
-            {shown('classroom') && <div><LessonPanel taskCentered={taskCentered && shown('classroom')} onClassroomTask={onClassroomTask} onReturnToday={onReturnToday} active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {
+            {shown('classroom') && <div><LessonPanel taskCentered={taskCentered && shown('classroom')} onClassroomTask={onClassroomTask} onReturnToday={onReturnToday} active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onOpenPractice={() => onSelectPage?.('practice')} onPractice={async context => {
               await loadPractice(context, [], true)
               onSelectPage?.('practice')
             }} /></div>}

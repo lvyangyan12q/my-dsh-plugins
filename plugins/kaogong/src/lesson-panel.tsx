@@ -35,7 +35,7 @@ export function lessonQuizAnswers(value: LessonView | null, questions: readonly 
 }
 
 /** Shared instance-owned lesson UI; practice starts through the existing request/draft owner. */
-export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask, onReturnToday, taskCentered=false }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher']; onClassroomTask?: KaogongViewProps['onClassroomTask']; taskCentered?:boolean }) {
+export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask, onReturnToday, onOpenPractice, taskCentered=false }: { onReturnToday?:()=>void; active: boolean; onPractice: (context: PracticeContext) => Promise<void>; onOpenTeacher: KaogongViewProps['onOpenTeacher']; onClassroomTask?: KaogongViewProps['onClassroomTask']; onOpenPractice?:()=>void; taskCentered?:boolean }) {
   const http=useLearningHttp()
   const requestLesson=lessonRequest
   const request=<T,>(action:string,body:unknown)=>requestLesson<T>(action,body,http.fetch)
@@ -72,7 +72,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
   const [confirmed, setConfirmed] = useBusinessState('lesson.confirmed', false)
   const [tab, setTab] = useState<'handout' | 'quiz'>('handout')
   const [jump, setJump] = useState<{ anchorId: string; token: number } | null>(null)
-  /** 「读」由讲义实际渲染这一事实决定；页签只负责去哪，不负责标记完成。 */
+  /** 「读」只由学习者明确确认；渲染、浏览和切页签都不标记已读完成。 */
   const [readDone, setReadDone] = useBusinessState('lesson.readDone', false)
   /** 作答按课堂归属：切课后立刻回到该课记录，不拿上一课的作答渲染。 */
   const [quizState, setQuizState] = useState<{ lessonId: string | null; answers: QuizAnswer[] }>({ lessonId: null, answers: [] })
@@ -202,13 +202,22 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
       .catch(cause => setQuizError(`检测作答保存失败；继续答题不受影响：${cause instanceof Error ? cause.message : String(cause)}`))
   }
   const retakeQuiz = () => { setQuizState({ lessonId: lessonId ?? null, answers: emptyQuizAnswers(questions) }); setTab('quiz') }
+  /** 针对当堂检测的错题补讲：仍走本任务的课堂答疑与任务会话，不另开一套对话。 */
+  const explainQuizStep = (question: QuizQuestion, chosen: number) => {
+    if (!view || !context) return
+    const ordinal = questions.findIndex(item => item.id === question.id) + 1
+    void run(async () => {
+      await onOpenTeacher(
+        `/kaogong-teach 请针对本任务的当堂检测补讲这一步：第 ${ordinal} 题“${question.prompt}”我选了“${question.options[chosen] ?? '未作答'}”；解析是“${question.why}”，对应讲义小节 ${question.anchorId}。先定位这一步错在哪，再带我重做同类题；不要自动宣布完成。`,
+        { kind: 'lesson', context, lessonEvidence: { id: view.lesson.request.lessonId, title: context.title,
+          source: 'kaogong/' + owner.instanceId + '/lesson-summary', content: view.summary } },
+      )
+    })
+  }
+  // 渲染、浏览、切页签都不标记已读；只有学习者明确确认读完才点亮「读」。
   useEffect(() => {
     setQuizError(''); setReadDone(false); setTab('handout'); setJump(null)
   }, [lessonId])
-  // 讲义首次渲染即视为「读」完成；页签点击本身不标记任何完成。
-  useEffect(() => {
-    if (tab === 'handout' && handoutMatched && !readDone) setReadDone(true)
-  }, [tab, handoutMatched, readDone, setReadDone])
   useEffect(() => {
     if (!jump || tab !== 'handout') return
     const node = document.getElementById(jump.anchorId)
@@ -278,8 +287,12 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
         <button data-pwb-button type="button" role="tab" aria-selected={tab === 'quiz'} onClick={() => setTab('quiz')}>当堂检测</button>
       </div>
       {tab === 'handout'
-        ? (content ? <HandoutView handout={content.handout} /> : <p role="status">本课暂无讲义。</p>)
-        : <QuizPanel questions={questions} provenance={content?.quizProvenance} answers={answers} onAnswer={answerQuiz} onJump={jumpToSection} onPractice={startPractice} />}
+        ? <>{content ? <HandoutView handout={content.handout} /> : <p role="status">本课暂无讲义。</p>}
+          {handoutMatched && <div data-read-gate style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid ' + (readDone ? '#a9cdb5' : '#dbe2d8'), borderRadius: 8, background: readDone ? '#f2f8f4' : '#fff' }}>
+            <span style={{ fontSize: 12.5, color: '#667085' }}>{readDone ? '你已确认读完本节，可以去当堂检测。' : '读完后由你确认：浏览或渲染不会自动标记已读。'}</span>
+            <button data-pwb-button type="button" style={{ marginLeft: 'auto' }} onClick={() => { setReadDone(true); setTab('quiz') }}>{readDone ? '去做当堂检测' : '读完本节，开始检测'}</button>
+          </div>}</>
+        : <QuizPanel questions={questions} provenance={content?.quizProvenance} answers={answers} onAnswer={answerQuiz} onJump={jumpToSection} onPractice={startPractice} onExplain={explainQuizStep} />}
       <strong>{view.lesson.request.objective}</strong>
       <span>{view.lesson.request.subject} · {view.lesson.completion ? '学习者已确认完成' : '课后任务未完成'}</span>
       <small>课堂 {view.lesson.request.lessonId} · 目标 {view.lesson.objectiveId}</small>
@@ -301,14 +314,10 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
         })}><BookOpen size={14} />继续原课堂</button>
       </div>
       {!roles && <span role="status">角色服务不可用；课堂任务和练习仍可保存。</span>}
-      <label>学习者总结 / 未解决问题<textarea aria-label="学习者总结" maxLength={2000} value={notes} onChange={event => { setNotes(event.target.value); setNotesDirty(true) }} style={{ display: 'block', width: '100%', minHeight: 72, boxSizing: 'border-box' }} /></label>
-      <button data-pwb-button disabled={busy} style={{ justifySelf: 'start' }} onClick={() => void run(async () => {
-        const value = await request<LessonView>('summary', { lessonId: view.lesson.request.lessonId, notes })
-        if (owner.cell('lesson.notes', '').value === notes) setNotesDirty(false)
-        accept(value)
-      })}><Save size={14} />保存总结</button>
-      {!view.lesson.completion && <LessonTasks questions={questions} answers={answers} readDone={readDone} practiceDone={practiceDone} onJump={jumpToSection} onPractice={startPractice} onRetake={retakeQuiz}/>}
-      <LessonCloseout onOpenTeacher={onOpenTeacher} onReturnToday={onReturnToday} view={view} notes={notes} accept={accept}/>
+      {!view.lesson.completion && <LessonTasks questions={questions} answers={answers} readDone={readDone} practiceDone={practiceDone} onJump={jumpToSection} onPractice={startPractice} onExplain={explainQuizStep} onRetake={retakeQuiz}/>}
+      <LessonCloseout onOpenTeacher={onOpenTeacher} onReturnToday={onReturnToday} view={view} notes={notes}
+        onNotesChange={value => { setNotes(value); setNotesDirty(true) }} onPractice={startPractice} onOpenPractice={onOpenPractice}
+        accept={value => { accept(value); setNotesDirty(false) }}/>
       <details><summary>共享证据摘要</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: 12 }}>{view.summary}</pre></details>
     </div>}
     {taskCentered && <section className="kg-classroom-history" aria-label="历史课堂与会话">

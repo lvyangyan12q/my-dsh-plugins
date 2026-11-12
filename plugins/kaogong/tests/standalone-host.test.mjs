@@ -927,3 +927,39 @@ test('generated structured learning tasks join the route and confirmed coverage'
  await app.request('/api/kaogong/lesson/summary?viewId='+view,{lessonId,notes:'增长率以基期作分母'});assert.equal((await app.request('/api/kaogong/lesson/confirm?viewId='+view,{lessonId,confirmed:true})).status,200);assert.equal((await app.request('/api/kaogong/route?viewId='+view)).value.coverage.learned,1);
  }finally{await app.close()}
 });
+
+test('a task round is linked into its classroom by the Host while the in-class quiz never counts as a formal score',async()=>{
+ const app=await fixture({source:true})
+ try{
+  const create=async kind=>(await app.request('/api/kaogong/study',{action:'create',kind,title:kind,confirmed:true})).value
+  const library=await create('library'),learner=await create('learner'),view=learner.view.id
+  const imported=(await app.request('/api/kaogong/material-import',{action:'prepare',viewId:library.view.id})).value
+  await app.request('/api/kaogong/material-import',{action:'apply',viewId:library.view.id,id:imported.id,fingerprint:imported.fingerprint,confirmed:true})
+  await app.request('/api/kaogong/study',{action:'source-share',viewId:view,ownerViewId:library.view.id,resourceId:'question-bank'})
+  const proposal=(await app.request('/api/kaogong/plan?viewId='+view,{action:'preview',baseRevision:0,operation:'append',task:{subject:'行测-资料分析',title:'课堂里练习',kind:'learn',requirePractice:true,requireReflections:false}})).value
+  const saved=(await app.request('/api/kaogong/plan?viewId='+view,{action:'confirm',id:proposal.id,revision:0,confirmed:true})).value,task=saved.tasks[0]
+  const started=(await app.request('/api/kaogong/plan/start?viewId='+view,{id:task.id,revision:1})).value,lessonId=started.lesson.lesson.request.lessonId
+  const before=(await app.request('/api/kaogong/dashboard?viewId='+view)).value
+  const quiz=await app.request('/api/kaogong/lesson/quiz?viewId='+view,{lessonId,entry:{questionId:'quiz-1',index:0,choice:1,correct:true,section:'handout-s5',answeredAt:new Date().toISOString()}})
+  assert.equal(quiz.status,200)
+  const afterQuiz=(await app.request('/api/kaogong/dashboard?viewId='+view)).value
+  assert.equal(afterQuiz.totalQuestions,before.totalQuestions,'当堂检测不计入正式题量')
+  assert.equal(afterQuiz.accuracyRate,before.accuracyRate,'当堂检测不计入正式正确率')
+  assert.equal((await app.request('/api/kaogong/lesson/read?viewId='+view,{lessonId})).value.lesson.completion,null,'答对一题不等于已学完成')
+  const round=(await app.request('/api/kaogong/practice/start?viewId='+view,{subject:task.subject,title:task.title,taskId:task.id,planRevision:1})).value
+  assert.equal(round.context.taskId,task.id)
+  const forged=await app.request('/api/kaogong/practice/submit?viewId='+view,{roundId:round.roundId,answers:[{id:'first',answer:'A',correct:true}]})
+  assert.equal(forged.status,400,'客户端不能上报正确与否作为正式成绩')
+  const submitted=await app.request('/api/kaogong/practice/submit?viewId='+view,{roundId:round.roundId,answers:[{id:'first',answer:'A'}]})
+  assert.equal(submitted.status,200)
+  assert.equal(submitted.value.correctCount,0,'正式成绩只由宿主按题库快照判分')
+  assert.equal((await app.request('/api/kaogong/dashboard?viewId='+view)).value.totalQuestions-before.totalQuestions,1)
+  const preview=(await app.request('/api/kaogong/lesson/closeout-preview?viewId='+view,{lessonId})).value
+  assert.equal(preview.lesson.roundIds.length,0,'正式成绩先由宿主判定，课堂只在学习者完成时关联本次依据')
+  assert.deepEqual(preview.candidates.map(row=>row.roundId),[round.roundId],'本任务轮次自动成为该课堂的完成依据，不需要手填轮次号')
+  const closed=await app.request('/api/kaogong/lesson/closeout?viewId='+view,{lessonId,operationId:crypto.randomUUID(),notes:'课堂内练习完成',confirmed:true,joinRecall:false})
+  assert.equal(closed.status,200)
+  assert.deepEqual(closed.value.lesson.roundIds,[round.roundId],'一次确认即由 Host 把该轮次归入课堂')
+  assert.ok(closed.value.lesson.completion,'确认后课堂与任务一起完成')
+ }finally{await app.close()}
+})

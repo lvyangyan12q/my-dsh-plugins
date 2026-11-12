@@ -66,7 +66,7 @@ async function mountClassroom() {
   }
 }
 
-test('初始四步：讲义渲染即标记读完，测成为当前步，其余待开始，且没有回炉卡', async () => {
+test('初始四步：讲义渲染不标记读完，读成为当前步，其余待开始，且没有回炉卡', async () => {
   const ui = await mountClassroom()
   try {
     assert.ok(ui.task('read'), '课堂里应出现课后任务四步')
@@ -74,12 +74,15 @@ test('初始四步：讲义渲染即标记读完，测成为当前步，其余�
     assert.match(ui.task('quiz')!.textContent ?? '', /测/)
     assert.match(ui.task('practice')!.textContent ?? '', /练/)
     assert.match(ui.task('reheat')!.textContent ?? '', /回炉/)
-    assert.equal(ui.taskState('read'), 'done', '讲义已渲染，读即完成')
-    assert.equal(ui.taskState('quiz'), 'current')
+    assert.equal(ui.taskState('read'), 'current', '讲义已渲染但读未完成，浏览不等于读完')
+    assert.equal(ui.taskState('quiz'), 'pending', '学习者确认读完前，检测还不是当前步')
     assert.equal(ui.taskState('practice'), 'pending')
     assert.equal(ui.taskState('reheat'), 'pending')
     assert.equal(ui.dom.window.document.querySelector('[data-reheat-card]'), null, '没有错题时不应出现回炉卡')
     assert.doesNotMatch(ui.body(), /待回炉/)
+    await ui.click('读完本节，开始检测')
+    assert.equal(ui.taskState('read'), 'done', '学习者明确确认后才点亮读')
+    assert.equal(ui.taskState('quiz'), 'current')
   } finally {
     await ui.unmount()
   }
@@ -88,10 +91,10 @@ test('初始四步：讲义渲染即标记读完，测成为当前步，其余�
 test('打开检测：页签只切页签，读与作答进度都不因点击检测而改变', async () => {
   const ui = await mountClassroom()
   try {
-    assert.equal(ui.taskState('read'), 'done', '读在讲义渲染时已完成，不靠点检测')
+    assert.equal(ui.taskState('read'), 'current', '读要靠学习者自己确认，不靠渲染')
     await ui.click('当堂检测')
-    assert.equal(ui.taskState('read'), 'done')
-    assert.equal(ui.taskState('quiz'), 'current')
+    assert.equal(ui.taskState('read'), 'current')
+    assert.equal(ui.taskState('quiz'), 'pending', '点检测页签不推进课后任务')
 
     await ui.choose(1, 'B')
     assert.match(ui.task('quiz')!.textContent ?? '', /检测 1\/3/)
@@ -102,6 +105,11 @@ test('打开检测：页签只切页签，读与作答进度都不因点击检�
     assert.match(ui.task('quiz')!.textContent ?? '', /检测 1\/3/, '切回检测后作答不应丢失')
     assert.match(ui.body(), /检测 1\/3/)
     assert.equal(ui.dom.window.document.querySelector('button[aria-label="第 1 题 选项 B"]')?.getAttribute('data-choice-state'), 'correct')
+
+    await ui.click('讲义')
+    await ui.click('读完本节，开始检测')
+    assert.equal(ui.taskState('read'), 'done', '只有学习者的确认手势才标记读完')
+    assert.equal(ui.taskState('quiz'), 'current', '确认读完后检测成为当前步')
   } finally {
     await ui.unmount()
   }
@@ -139,7 +147,7 @@ test('三题答完：练成为当前步，专项练习入口复用面板的 onPr
 test('错两题：回炉亮起显示待回炉 2 题，可回对应小节重读或重做检测', async () => {
   const ui = await mountClassroom()
   try {
-    await ui.click('当堂检测')
+    await ui.click('读完本节，开始检测')
     await ui.choose(1, 'B')
     await ui.choose(2, 'C')
     await ui.choose(3, 'C')
