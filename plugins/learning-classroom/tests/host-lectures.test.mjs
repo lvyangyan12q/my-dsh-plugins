@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { createHash } from 'node:crypto'
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { classroomFixture } from './support/fixture.mjs'
@@ -201,6 +202,36 @@ test('讲义被外部删除后目录给出缺失提示并清空选择，直接�
     assert.equal(stale.status, 409)
     assert.equal(stale.body.code, 'lecture-missing')
     assert.match(stale.body.error, /删除|不存在/)
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('讲义正文带内容版本：同文同版本，外部改文后版本变化，实验不冒充正文版本', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const content = '---\ntitle: 版本\n---\n\n# 版本\n\n第一版正文\n'
+    await addLectures(fixture, space, { '01-版本.md': content, '02-实验.html': '<!doctype html><h1>实验</h1>' })
+
+    const first = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/01-版本.md' })
+    assert.equal(first.status, 200)
+    assert.match(first.body.version, /^[0-9a-f]{64}$/)
+    assert.equal(first.body.version, createHash('sha256').update(content, 'utf8').digest('hex'))
+
+    // Re-reading unchanged content keeps the exact same frozen version.
+    const again = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/01-版本.md' })
+    assert.equal(again.body.version, first.body.version)
+
+    await writeFile(join(fixture.vault, space.directory, '讲义', '01-版本.md'), `${content}第二版补充\n`, 'utf8')
+    const changed = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/01-版本.md' })
+    assert.equal(changed.status, 200)
+    assert.notEqual(changed.body.version, first.body.version)
+
+    // An experiment body is never inlined, so the Host does not claim a body version.
+    const experiment = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/02-实验.html' })
+    assert.equal(experiment.status, 200)
+    assert.equal(experiment.body.version, null)
   } finally {
     await fixture.close()
   }

@@ -106,6 +106,12 @@ export interface LectureReadView {
   content: string | null
   /** Understandable stand-in copy for experiments until isolated rendering ships. */
   placeholder: string | null
+  /**
+   * Content version of the body the Host actually read (SHA-256), used to freeze
+   * what a question was asked about. Null for experiments, whose body is never
+   * inlined, so no body version is claimed.
+   */
+  version: string | null
 }
 
 /** Commands that return the whole classroom view (navigation/identity state). */

@@ -11,6 +11,7 @@ import type {
 } from './contract.ts'
 import { groupCourseLectures } from './lectures.ts'
 import { parseInline, parseMarkdown, type Block } from './markdown.ts'
+import { excerptForQuestion, type AskTeacher } from './question-context.ts'
 
 export interface LectureZoneProps {
   client: ClassroomClient
@@ -23,6 +24,8 @@ export interface LectureZoneProps {
   openRequest?: LectureOpenRequest | null
   /** Append a selection from this lecture to the current note (real source link). */
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
+  /** Adds the selected passage or the current lecture to the native teacher draft. */
+  askTeacher?: AskTeacher
 }
 
 /** One-shot request to open a lecture; a new token re-opens the same path. */
@@ -53,6 +56,10 @@ interface GoalDraft {
 const lectureStyles = `
 .lc-lecture-head{display:flex;flex-direction:column;gap:2px}
 .lc-lecture-head h3{margin:0;font-size:16px}
+.lc-lecture-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.lc-lecture-actions button{padding:4px 10px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);color:inherit;cursor:pointer;font-size:12px}
+.lc-lecture-actions button:disabled{opacity:.5;cursor:default}
+.lc-lecture-actions p{margin:0;font-size:12px;color:var(--dsh-text-secondary,#59636e)}
 .lc-lecture-path{margin:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;color:var(--dsh-text-secondary,#59636e);word-break:break-all}
 .lc-directory-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .lc-directory-head h3{margin:0;font-size:13px}
@@ -154,29 +161,119 @@ function MarkdownBody({ content }: { content: string }) {
   )
 }
 
+/**
+ * Classify the learner's current selection against the rendered lecture body.
+ *
+ * A selection only counts as a lecture excerpt when the whole range lives inside
+ * the body. Anchor-only checks are not enough: dragging from a lecture paragraph
+ * into the notes or the conversation keeps the anchor inside the lecture while
+ * the selection text carries unrelated content. `outside` is distinct from
+ * `none` so a real-but-invalid selection never silently falls back to the whole
+ * lecture.
+ */
+type LectureSelection = { kind: 'none' } | { kind: 'inside'; text: string } | { kind: 'outside' }
+
+function lectureSelection(root: HTMLElement | null): LectureSelection {
+  if (root === null) return { kind: 'none' }
+  const selection = typeof window === 'undefined' ? null : window.getSelection?.() ?? null
+  if (selection === null || selection.rangeCount === 0 || selection.isCollapsed) return { kind: 'none' }
+  const text = selection.toString().trim()
+  if (text === '') return { kind: 'none' }
+  // One bounded range is required: multi-range selections cannot be proven to
+  // stay inside the lecture body.
+  if (selection.rangeCount !== 1) return { kind: 'outside' }
+  const range = selection.getRangeAt(0)
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return { kind: 'outside' }
+  return { kind: 'inside', text }
+}
+
 function LectureReader(props: {
   doc: LectureReadView
+  space: ClassroomSpaceView
+  askTeacher?: AskTeacher
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
 }) {
-  const { doc } = props
+  const { doc, space, askTeacher, onAnnotate } = props
+  const bodyRef = useRef<HTMLDivElement | null>(null)
+  const [notice, setNotice] = useState('')
+  const [askError, setAskError] = useState('')
+  const askBusy = useRef(false)
+
+  const ask = async (): Promise<void> => {
+    if (askTeacher === undefined || askTeacher.available === false || askBusy.current) return
+    const selection = lectureSelection(bodyRef.current)
+    if (selection.kind === 'outside') {
+      setNotice('')
+      setAskError('选中的内容不在讲义正文内（可能跨到了目录、笔记或对话）；请只在讲义正文里重新选择要问的段落。')
+      return
+    }
+    const selected = selection.kind === 'inside' ? selection.text : ''
+    const source = selected !== '' ? selected : doc.kind === 'markdown' ? doc.content ?? '' : ''
+    if (source.trim() === '') {
+      setNotice('')
+      setAskError('这一节没有可附加的正文；实验占位不会作为提问材料。')
+      return
+    }
+    const bounded = excerptForQuestion(source)
+    askBusy.current = true
+    try {
+      const result = await askTeacher.ask({
+        kind: selected !== '' ? 'lecture-selection' : 'lecture',
+        spaceTitle: space.title,
+        title: doc.title,
+        path: doc.path,
+        version: doc.version,
+        unsaved: false,
+        excerpt: bounded.text,
+        truncated: bounded.truncated,
+      })
+      if (result.ok) {
+        setAskError('')
+        setNotice('已追加到老师输入框，未发送。')
+      } else {
+        setNotice('')
+        setAskError(result.reason)
+      }
+    } finally {
+      askBusy.current = false
+    }
+  }
+
   return (
     <>
       <div className="lc-lecture-head">
         <h3>{doc.title}</h3>
         <p className="lc-lecture-path">{doc.path}</p>
-      </div>
-      {doc.kind === 'markdown'
-        ? (
-          <AnnotationAction doc={doc} onAnnotate={props.onAnnotate}>
-            <MarkdownBody content={doc.content ?? ''} />
-          </AnnotationAction>
-        )
-        : (
-          <div className="lc-lecture-experiment" role="note">
-            <p>{doc.placeholder ?? '这是一节动态实验（HTML），隔离渲染尚未打开。'}</p>
-            <p className="lc-hint">实验内容不会直接注入课堂页面。</p>
+        {askTeacher !== undefined && (
+          <div className="lc-lecture-actions" aria-label="讲义提问">
+            <button
+              type="button"
+              className="lc-secondary"
+              disabled={askTeacher.available === false}
+              title={askTeacher.available ? '选中文字后只附选段；未选中则附当前讲义的摘录' : askTeacher.reason}
+              onClick={() => { void ask() }}
+            >
+              问老师
+            </button>
+            <p>选中文字后只附选段；未选中则附当前讲义摘录。不会自动发送。</p>
+            {askTeacher.available === false && <p role="status">{askTeacher.reason}</p>}
+            {notice !== '' && <p role="status">{notice}</p>}
+            {askError !== '' && <p role="alert">{askError}</p>}
           </div>
         )}
+      </div>
+      <AnnotationAction doc={doc} onAnnotate={onAnnotate}>
+        <div ref={bodyRef}>
+          {doc.kind === 'markdown'
+            ? <MarkdownBody content={doc.content ?? ''} />
+            : (
+              <div className="lc-lecture-experiment" role="note">
+                <p>{doc.placeholder ?? '这是一节动态实验（HTML），隔离渲染尚未打开。'}</p>
+                <p className="lc-hint">实验内容不会直接注入课堂页面。</p>
+              </div>
+            )}
+        </div>
+      </AnnotationAction>
     </>
   )
 }
@@ -711,7 +808,14 @@ export function LectureZone(props: LectureZoneProps) {
 
         {listState.status === 'ready' && reader.status === 'loading' && <p role="status">正在打开讲义…</p>}
 
-        {listState.status === 'ready' && reader.status === 'ready' && <LectureReader doc={reader.doc} onAnnotate={props.onAnnotate} />}
+        {listState.status === 'ready' && reader.status === 'ready' && (
+          <LectureReader
+            doc={reader.doc}
+            space={space}
+            askTeacher={props.askTeacher}
+            onAnnotate={props.onAnnotate}
+          />
+        )}
 
         {listState.status === 'ready' && reader.status === 'failed' && (
           <div className="lc-alert" role="alert">

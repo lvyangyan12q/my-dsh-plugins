@@ -4,9 +4,17 @@ import type { ClassroomSpaceView, ClassroomView, ClassroomViewCommand } from './
 import { createClassroomClient, type ClassroomClient } from './classroom-client.ts'
 import { CanvasZone, type CanvasOpenTarget } from './canvas-zone.tsx'
 import { ClassroomLayoutView, type ClassroomMainView } from './classroom-layout.tsx'
+import type { ComposerFace, ConversationLike } from './composer.ts'
 import { normalizeLayout, type ClassroomLayout } from './layout.ts'
 import { LectureZone, type LectureOpenRequest } from './lecture-zone.tsx'
 import { NotesZone, type NoteAppendRequest, type NoteOpenRequest, type NoteStateView } from './notes-zone.tsx'
+import {
+  createAskedContext,
+  type AskQuestionResult,
+  type AskTeacher,
+  type AskedContext,
+  type QuestionContextInput,
+} from './question-context.ts'
 import {
   teacherSessionSeat,
   TeacherConversationSeat,
@@ -27,6 +35,12 @@ export interface ClassroomPanelProps {
   renderSlot?: RenderSlotLike
   /** Framework-injected Session area component for the declared session seat. */
   SessionProvider?: SessionProviderLike
+  /**
+   * Resolves the public `conversation` service at call time. The classroom uses
+   * only its documented input seam: append to the retained draft, read that
+   * draft, and rewrite it for an explicit context removal.
+   */
+  getConversation?: () => ConversationLike | undefined
 }
 
 const styles = `
@@ -112,10 +126,18 @@ function ClassroomGrid(props: {
   appendRequest: NoteAppendRequest | null
   onNoteState: (state: NoteStateView) => void
   onOpenLecture: (path: string) => void
+  /** "Ask the teacher" capability shared by the lecture and note zones. */
+  askTeacher?: AskTeacher
+  getConversation?: () => ConversationLike | undefined
+  questionContexts: readonly AskedContext[]
+  onRemoveContext: (id: string) => Promise<AskQuestionResult>
+  onDismissContext: (id: string) => void
+  onComposer: (face: ComposerFace | null) => void
 }) {
   const {
     client, view, space, busy, onOpen, openLecture, openNote, sessions, renderSlot, SessionProvider,
     mainView, canvas, onView, onLayoutChange, onAnnotate, appendRequest, onNoteState, onOpenLecture,
+    askTeacher, getConversation, questionContexts, onRemoveContext, onDismissContext, onComposer,
   } = props
   return (
     <ClassroomLayoutView
@@ -133,6 +155,7 @@ function ClassroomGrid(props: {
           onOpenSpace={onOpen}
           openRequest={openLecture}
           onAnnotate={onAnnotate}
+          askTeacher={askTeacher}
         />
       )}
       notes={(
@@ -143,6 +166,7 @@ function ClassroomGrid(props: {
           appendRequest={appendRequest}
           onNoteState={onNoteState}
           onOpenLecture={onOpenLecture}
+          askTeacher={askTeacher}
         />
       )}
       conversation={(
@@ -154,6 +178,11 @@ function ClassroomGrid(props: {
           renderSlot={renderSlot}
           SessionProvider={SessionProvider}
           onView={onView}
+          getConversation={getConversation}
+          onComposer={onComposer}
+          questionContexts={questionContexts}
+          onRemoveContext={onRemoveContext}
+          onDismissContext={onDismissContext}
         />
       )}
     />
@@ -161,7 +190,7 @@ function ClassroomGrid(props: {
 }
 
 /** Main panel: vault onboarding, space creation and the four-region shell. */
-export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }: ClassroomPanelProps) {
+export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, getConversation }: ClassroomPanelProps) {
   const api = useMemo(() => client ?? createClassroomClient(), [client])
   const [view, setView] = useState<ClassroomView | null>(null)
   const [loadError, setLoadError] = useState('')
@@ -182,6 +211,15 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
   const [appendRequest, setAppendRequest] = useState<NoteAppendRequest | null>(null)
   const appendToken = useRef(0)
   const noteState = useRef<NoteStateView | null>(null)
+  // The context strip is page state, not a chat database: the appended text
+  // lives in the native draft, and the sent message lives in the native
+  // Session history. Only the frozen blocks shown in this page are kept here.
+  const [asked, setAsked] = useState<Record<string, AskedContext[]>>({})
+  // The composer controls are held in a ref: the zone owns the retained Session,
+  // and a new face must not cause an extra classroom render (that would mount a
+  // second native seat render for a cosmetic state change).
+  const composerRef = useRef<ComposerFace | null>(null)
+  const questionSeq = useRef(0)
   const requestToken = useRef(0)
   const noteToken = useRef(0)
   const alive = useRef(true)
@@ -258,6 +296,74 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
 
   const space = view?.spaces.find(row => row.id === view.currentSpaceId)
   const vaultStatus = view?.vault.status ?? 'unset'
+  const currentSpaceId = space?.id ?? null
+  const spaceIdRef = useRef<string | null>(null)
+  spaceIdRef.current = currentSpaceId
+  const questionContexts = currentSpaceId === null ? [] : (asked[currentSpaceId] ?? [])
+  const serviceOf = (): ConversationLike | undefined => {
+    if (getConversation === undefined) return undefined
+    try { return getConversation() } catch { return undefined }
+  }
+  const seamAvailable = serviceOf() !== undefined
+  const askReason = getConversation === undefined || space === undefined
+    ? ''
+    : !seamAvailable
+      ? '宿主尚未提供原生输入接缝，无法追加到老师输入框。'
+      : ''
+
+  /** Append one frozen context block to the teacher's existing native draft. */
+  async function askQuestion(input: QuestionContextInput): Promise<AskQuestionResult> {
+    const target = currentSpaceId
+    const face = composerRef.current
+    if (target === null || face === null || face.spaceId !== target) {
+      return { ok: false, reason: askReason || '老师会话准备好后才能追加提问上下文。' }
+    }
+    if (input.excerpt.trim() === '') return { ok: false, reason: '没有可附加的摘录，未追加。' }
+    questionSeq.current += 1
+    const context = createAskedContext(input, `q${questionSeq.current}`)
+    const result = face.append(context.block)
+    if (!result.ok) return result
+    if (alive.current) setAsked(previous => ({ ...previous, [target]: [...(previous[target] ?? []), context] }))
+    return { ok: true }
+  }
+
+  /** Take one appended block back out of the native draft; sent messages stay untouched. */
+  async function removeContext(id: string): Promise<AskQuestionResult> {
+    const target = currentSpaceId
+    const face = composerRef.current
+    const context = questionContexts.find(row => row.id === id)
+    if (target === null || context === undefined) return { ok: false, reason: '这条上下文已经不在此学习空间。' }
+    if (face === null || face.spaceId !== target) return { ok: false, reason: '老师会话还没准备好，未移除。' }
+    // Deduct the other context blocks this page owns before the host-side
+    // unknown-quote check; they are never deleted by this removal.
+    const known = questionContexts.filter(row => row.id !== id).map(row => row.block)
+    const result = face.remove(context.block, known)
+    if (!result.ok) return result
+    if (alive.current) {
+      setAsked(previous => ({ ...previous, [target]: (previous[target] ?? []).filter(row => row.id !== id) }))
+    }
+    return { ok: true }
+  }
+
+  /** Forget a block that left the draft by other means (sent or manually edited). */
+  const dismissContext = (id: string): void => {
+    const target = currentSpaceId
+    if (target === null) return
+    setAsked(previous => ({ ...previous, [target]: (previous[target] ?? []).filter(row => row.id !== id) }))
+  }
+
+  /**
+   * The classroom's ask capability. The zone publishes its face through this
+   * stable callback; keeping it out of React state avoids a re-render that would
+   * re-mount the native conversation seat merely because it became available.
+   */
+  const publishComposer = useCallback((face: ComposerFace | null): void => {
+    composerRef.current = face !== null && face.spaceId === spaceIdRef.current ? face : null
+  }, [])
+
+  const askTeacher: AskTeacher | undefined = getConversation === undefined || space === undefined
+    ? undefined
+    : { available: askReason === '', reason: askReason, ask: askQuestion }
 
   /** Notes zone publishes the note it is editing, so refusals are accurate. */
   const handleNoteState = useCallback((state: NoteStateView) => {
@@ -420,6 +526,12 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
                     appendRequest={appendRequest}
                     onNoteState={handleNoteState}
                     onOpenLecture={openLectureFromNote}
+                    askTeacher={askTeacher}
+                    getConversation={getConversation}
+                    questionContexts={questionContexts}
+                    onRemoveContext={removeContext}
+                    onDismissContext={dismissContext}
+                    onComposer={publishComposer}
                   />
                 </div>
               </>
@@ -444,6 +556,8 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider }
 interface SlotsContext {
   /** Public Session Controller face; the classroom owns and releases its own references. */
   sessions: SessionsLike
+  /** Cordis service probe used for optional services such as `conversation`. */
+  get?: (name: string) => unknown
   slots: {
     inject(name: string, install: () => unknown): unknown
     register(spec: Record<string, unknown>, component: unknown): unknown
@@ -462,13 +576,21 @@ export const inject = ['slots', 'sessions']
  * The seat entry then renders the native `conversation.content` Factory inside
  * that explicit Session binding. Neither registration imports a private Chat
  * component or opens the native Conversation page.
+ *
+ * `conversation` is probed, not injected: a Host composition without it still
+ * renders the classroom, and the "ask the teacher" action reports the missing
+ * seam instead of sending through anything else.
  */
 export function apply(ctx: SlotsContext) {
   const sessions = ctx.sessions
+  const getConversation = (): ConversationLike | undefined => {
+    const service = typeof ctx.get === 'function' ? ctx.get('conversation') : undefined
+    return typeof service === 'object' && service !== null ? service as ConversationLike : undefined
+  }
   ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({
     name: 'main',
     key: panelId,
-    inject: () => ({ sessions }),
+    inject: () => ({ sessions, getConversation }),
     children: { [teacherSessionSeat]: { kind: 'single', scope: 'session' } },
   }, ClassroomPanel)))
   ctx.effect(() => ctx.slots.inject(teacherSessionSeat, () => ctx.slots.register(

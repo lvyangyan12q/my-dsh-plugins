@@ -1,7 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ClassroomClient } from './classroom-client.ts'
 import type { ClassroomSpaceView, ClassroomView } from './contract.ts'
+import { createComposerFace, type ComposerDraftView, type ComposerFace } from './composer.ts'
+import type { ConversationLike } from './composer.ts'
+import { QuestionContextBar } from './question-bar.tsx'
+import type { AskQuestionResult, AskedContext } from './question-context.ts'
 
 /**
  * Reference source for this plugin's own teacher Sessions. It is deliberately
@@ -25,6 +29,8 @@ export const teacherSessionSeat = 'learningClassroom.teacherSession'
 export interface SessionReferenceLike {
   readonly sessionId: string
   readonly ready: Promise<unknown>
+  /** Public Session binding handle; the composer seam is addressed through it. */
+  readonly binding?: unknown
   release(): void
 }
 
@@ -143,6 +149,16 @@ export interface TeacherSessionZoneProps {
   SessionProvider?: SessionProviderLike
   /** Applies a Host view returned by the session binding command. */
   onView?: (view: ClassroomView) => void
+  /** Resolves the public `conversation` service lazily; absent means no seam. */
+  getConversation?: () => ConversationLike | undefined
+  /** Publishes the per-space composer controls while this zone owns the Session. */
+  onComposer?: (face: ComposerFace | null) => void
+  /** Context blocks appended in this space, shown above the native composer. */
+  questionContexts?: readonly AskedContext[]
+  /** Takes one context block back out of the native draft. */
+  onRemoveContext?: (id: string) => Promise<AskQuestionResult>
+  /** Forgets one block that is no longer in the draft. */
+  onDismissContext?: (id: string) => void
 }
 
 /**
@@ -152,7 +168,7 @@ export interface TeacherSessionZoneProps {
  * the native Stop control may do that.
  */
 export function TeacherSessionZone(props: TeacherSessionZoneProps) {
-  const { space, client, sessions, renderSlot, SessionProvider, onView } = props
+  const { space, client, sessions, renderSlot, SessionProvider, onView, getConversation, onComposer } = props
   const [boundId, setBoundId] = useState<string | null>(space.sessionId)
   const [phase, setPhase] = useState<ZonePhase>(() => sessions === undefined
     ? 'unavailable'
@@ -161,6 +177,9 @@ export function TeacherSessionZone(props: TeacherSessionZoneProps) {
   const [reference, setReference] = useState<SessionReferenceLike | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [unsavedId, setUnsavedId] = useState<string | null>(null)
+  // Bumped by the native draft's own subscription. The draft itself is read
+  // during render so mounting this zone does not cause a second seat render.
+  const [, setDraftTick] = useState(0)
   const active = useRef<SessionReferenceLike | null>(null)
   const unsaved = useRef<string | null>(null)
   const creating = useRef(false)
@@ -224,6 +243,27 @@ export function TeacherSessionZone(props: TeacherSessionZoneProps) {
       if (alive.current) setReference(null)
     }
   }, [sessions, boundId, attempt])
+
+  // The composer controls are rebuilt only when the retained reference changes.
+  // A missing `conversation` service is reported by the face itself, never
+  // papered over with a second input.
+  const face = useMemo<ComposerFace | null>(() => reference === null ? null : createComposerFace({
+    spaceId: space.id,
+    reference,
+    conversation: () => getConversation?.(),
+  }), [reference, space.id, getConversation])
+
+  useEffect(() => {
+    onComposer?.(face)
+    return () => { onComposer?.(null) }
+  }, [face, onComposer])
+
+  useEffect(() => {
+    if (face === null) return
+    return face.subscribe(() => setDraftTick(tick => tick + 1))
+  }, [face])
+
+  const composerDraft: ComposerDraftView | null = face === null ? null : face.draft()
 
   const persist = async (sessionId: string): Promise<void> => {
     const next = await client.command({ action: 'session-open', spaceId: space.id, sessionId })
@@ -291,6 +331,14 @@ export function TeacherSessionZone(props: TeacherSessionZoneProps) {
 
   return (
     <div className="lc-session-zone" aria-label="老师会话">
+      {props.questionContexts !== undefined && (
+        <QuestionContextBar
+          contexts={props.questionContexts}
+          draft={composerDraft?.draft ?? null}
+          onRemove={props.onRemoveContext ?? (async () => ({ ok: false, reason: '还没有连接移除动作。' }))}
+          onDismiss={props.onDismissContext ?? (() => {})}
+        />
+      )}
       {phase === 'unavailable' && (
         <p role="alert">老师会话服务不可用。请刷新页面后重试。</p>
       )}
