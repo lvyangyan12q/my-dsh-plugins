@@ -16,6 +16,16 @@ export { CanvasZone, obsidianOpenUrl } from './canvas-zone.tsx'
 export type { CanvasOpenTarget, CanvasZoneProps } from './canvas-zone.tsx'
 export { createClassroomClient, classroomEndpoint, ClassroomClientError, classroomErrorCode } from './classroom-client.ts'
 export type { ClassroomClient } from './classroom-client.ts'
+export { createComposerFace } from './composer.ts'
+export type { ComposerDraftView, ComposerFace, ComposerResult, ConversationLike } from './composer.ts'
+export { createAskedContext, formatQuestionBlock, questionMaterialLabel } from './question-context.ts'
+export type {
+  AskQuestionResult,
+  AskTeacher,
+  AskedContext,
+  QuestionContextInput,
+  QuestionContextKind,
+} from './question-context.ts'
 export type {
   CanvasEdgeView,
   CanvasNodeView,

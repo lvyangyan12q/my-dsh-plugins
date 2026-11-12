@@ -147,8 +147,8 @@ function errorBody(error: ClassroomError): { error: string; code: string } {
   return { error: error.message, code: error.code }
 }
 
-/** Content hash used to detect an external edit of the topic goal file. */
-function topicVersion(content: string): string {
+/** Content hash used to detect an external edit of a knowledge file. */
+function contentVersion(content: string): string {
   return createHash('sha256').update(content, 'utf8').digest('hex')
 }
 
@@ -708,6 +708,9 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       kind,
       content,
       placeholder,
+      // The version belongs to the body this read returned; an experiment body
+      // is never inlined, so it carries no body version.
+      version: content === null ? null : contentVersion(content),
     }
   })
 
@@ -872,7 +875,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       path: topicGoalFileName,
       title: space.title,
       goal: file.content,
-      version: topicVersion(file.content),
+      version: contentVersion(file.content),
       updatedAt: file.updatedAt,
       fileMissing: false,
     }
@@ -947,7 +950,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     if (current === undefined && version !== null) {
       throw new ClassroomError('topic-conflict', '学习目标文件已被外部删除，保存已被拒绝。请重新加载后再保存。', 409)
     }
-    if (current !== undefined && (version === null || topicVersion(current) !== version)) {
+    if (current !== undefined && (version === null || contentVersion(current) !== version)) {
       throw new ClassroomError('topic-conflict', '学习目标文件已被外部修改，保存已被拒绝。请重新加载后再保存。', 409)
     }
 
@@ -976,7 +979,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       path: topicGoalFileName,
       title: space.title,
       goal,
-      version: topicVersion(goal),
+      version: contentVersion(goal),
       updatedAt: saved?.mtime.toISOString() ?? new Date().toISOString(),
       fileMissing: false,
     }

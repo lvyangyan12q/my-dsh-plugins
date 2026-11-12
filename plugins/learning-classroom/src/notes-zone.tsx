@@ -16,6 +16,7 @@ import {
   type NoteDraftStore,
 } from './note-drafts.ts'
 import { NotePreview } from './notes-preview.tsx'
+import { excerptForQuestion, type AskTeacher } from './question-context.ts'
 
 export type NoteSaveStatus = 'loading' | 'saved' | 'dirty' | 'saving' | 'failed' | 'conflict'
 
@@ -34,6 +35,8 @@ export interface NotesZoneProps {
   openRequest?: NoteOpenRequest | null
   /** Where unsaved input is parked when the file, topic or classroom is left. */
   drafts?: NoteDraftStore
+  /** Adds the selected current editor text to the native teacher draft. */
+  askTeacher?: AskTeacher
 }
 
 type SaveMode = 'auto' | 'explicit' | 'overwrite'
@@ -99,7 +102,7 @@ function messageOf(error: unknown): string {
  * parked as a draft when switching file/topic or leaving the classroom, so a
  * failed or in-flight save cannot silently discard it.
  */
-export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openRequest = null, drafts }: NotesZoneProps) {
+export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openRequest = null, drafts, askTeacher }: NotesZoneProps) {
   const draftStore = useMemo(() => drafts ?? createSessionDraftStore(), [drafts])
   const [notes, setNotes] = useState<NoteSummaryView[]>([])
   const [path, setPath] = useState(space.notePath)
@@ -116,8 +119,12 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   // Page-level risk, not per topic: switching themes must keep warning that a
   // draft exists only in memory.
   const [pageRisk, setPageRisk] = useState(() => hasNonDurableDrafts())
+  const [askNotice, setAskNotice] = useState('')
+  const [askError, setAskError] = useState('')
 
   const alive = useRef(true)
+  const editorRef = useRef<HTMLTextAreaElement | null>(null)
+  const askBusy = useRef(false)
   const contentRef = useRef('')
   const versionRef = useRef('')
   const pathRef = useRef(space.notePath)
@@ -636,6 +643,46 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
   }, [persistDraft])
 
+  /**
+   * Attach only the learner's current selection in the editor. A whole personal
+   * note is never attached by default, and unsaved text is labelled as unsaved
+   * rather than passed off as the disk version.
+   */
+  const askFromNote = async (): Promise<void> => {
+    if (askTeacher === undefined || askTeacher.available === false || askBusy.current) return
+    const editor = editorRef.current
+    const selected = editor === null ? '' : content.slice(editor.selectionStart, editor.selectionEnd)
+    if (selected.trim() === '') {
+      setAskNotice('')
+      setAskError('先在笔记里选中要问的片段；不会默认附加整篇笔记。')
+      return
+    }
+    const bounded = excerptForQuestion(selected)
+    const fileName = path.split('/').pop() ?? path
+    askBusy.current = true
+    try {
+      const result = await askTeacher.ask({
+        kind: 'note-selection',
+        spaceTitle: space.title,
+        title: fileName.replace(/\.md$/u, ''),
+        path,
+        version: versionRef.current === '' ? null : versionRef.current,
+        unsaved: status !== 'saved',
+        excerpt: bounded.text,
+        truncated: bounded.truncated,
+      })
+      if (result.ok) {
+        setAskError('')
+        setAskNotice('已追加到老师输入框，未发送。')
+      } else {
+        setAskNotice('')
+        setAskError(result.reason)
+      }
+    } finally {
+      askBusy.current = false
+    }
+  }
+
   const onChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const next = event.target.value
     contentRef.current = next
@@ -831,6 +878,24 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
 
       <p className="lc-note-status" role="status" aria-live="polite" data-state={status}>{statusLabel[status]}</p>
 
+      {askTeacher !== undefined && (
+        <div className="lc-note-actions" aria-label="笔记提问">
+          <button
+            type="button"
+            className="lc-secondary"
+            disabled={askTeacher.available === false || status === 'loading'}
+            title={askTeacher.available ? '只附加选中的当前编辑文字' : askTeacher.reason}
+            onClick={() => { void askFromNote() }}
+          >
+            问老师
+          </button>
+          <p className="lc-hint">先选中要问的片段；只附加选中的当前编辑文字，未保存会标注。不会自动发送。</p>
+          {askTeacher.available === false && <p className="lc-hint" role="status">{askTeacher.reason}</p>}
+          {askNotice !== '' && <p className="lc-hint" role="status">{askNotice}</p>}
+          {askError !== '' && <p className="lc-hint" role="alert">{askError}</p>}
+        </div>
+      )}
+
       <div className="lc-note-tabs" role="tablist" aria-label="笔记视图">
         <button type="button" role="tab" className="lc-note-tab" aria-selected={mode === 'edit'} onClick={() => setMode('edit')}>编辑</button>
         <button type="button" role="tab" className="lc-note-tab" aria-selected={mode === 'preview'} onClick={() => setMode('preview')}>预览</button>
@@ -842,6 +907,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
             className="lc-note-editor"
             aria-label="笔记编辑器"
             spellCheck={false}
+            ref={editorRef}
             value={content}
             disabled={status === 'loading'}
             onChange={onChange}
