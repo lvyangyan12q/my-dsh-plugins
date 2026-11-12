@@ -730,6 +730,51 @@ test('冲突后 reload 失败：比较重试成功建立覆盖身份，显式覆
     assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的想法\n', '显式覆盖必须实际写入')
     assert.match(ui.status(), /已保存/)
     assert.equal(ui.container.querySelector('[aria-label="保存冲突比较"]'), null)
+
+    // The successful overwrite must promote the current epoch to a normal read
+    // identity; further edits must save against the version it wrote.
+    await ui.type('# 我的想法\n\n覆盖后再改\n')
+    await ui.click('保存')
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的想法\n\n覆盖后再改\n')
+    assert.match(ui.status(), /已保存/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('覆盖在途继续编辑：成功覆盖提升读取身份后，排队自动保存用新版本落盘', async () => {
+  const store = noteStore({ '笔记/我的笔记.md': '# 原始\n' })
+  const ui = await mount(store)
+  try {
+    store.set('笔记/我的笔记.md', '# 外部版本\n')
+    store.setNextSaveError(Object.assign(new Error('磁盘上的笔记已被外部修改，保存已被拒绝。'), { code: 'note-conflict' }))
+    await ui.type('# 我的想法\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /冲突/)
+
+    // Force the compare-only identity path: failed reload, then successful retry.
+    store.setNextReadError(Object.assign(new Error('重新加载读取失败'), { code: 'note-read-failed' }))
+    await ui.click('重新加载')
+    await ui.click('重试读取磁盘版本')
+
+    const release = store.gateNextSave()
+    await ui.click('用我的覆盖')
+    assert.match(ui.status(), /保存中/)
+
+    // Keep typing while overwrite is in flight; the debounced save queues
+    // behind it and must run after the overwrite promotes read ownership.
+    const latest = '# 我的想法\n\n覆盖在途又改\n'
+    await ui.type(latest)
+    release()
+    await ui.wait(100)
+
+    const saves = store.calls.filter(call => call.type === 'save')
+    assert.ok(saves.length >= 3, '冲突保存、覆盖、后续自动保存都应发生')
+    const last = saves.at(-1)
+    assert.equal(last.content, latest)
+    assert.equal(last.overwrite, undefined)
+    assert.equal(store.files.get('笔记/我的笔记.md'), latest)
+    assert.match(ui.status(), /已保存/)
   } finally {
     await ui.unmount()
   }

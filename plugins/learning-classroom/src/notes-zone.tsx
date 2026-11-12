@@ -462,6 +462,12 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       if (request.mode === 'overwrite') {
         conflictedKeys.current.delete(key)
         compareOkEpochs.current.delete(key)
+        if (viewOwnedAfterWrite) {
+          // The explicit overwrite wrote a known version into the current view;
+          // promote this epoch to a normal read identity so the next autosave or
+          // explicit save does not get rejected as having no successful read.
+          readOkEpochs.current.set(key, readEpochs.current.get(key) ?? 0)
+        }
       }
 
       if (viewOwnedAfterWrite) {
