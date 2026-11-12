@@ -4,11 +4,15 @@ import {
   defaultLayout,
   isNarrowWidth,
   layoutBoundaries,
+  lectureMinWidth,
+  minimumWideWidth,
   narrowThreshold,
   normalizeLayout,
   resizeLayout,
   resolveNarrowZone,
+  separatorWidth,
   toggleCollapsed,
+  usesNarrowLayout,
   visibleZones,
   zoneWidthBounds,
 } from '../src/layout.ts'
@@ -134,4 +138,28 @@ test('窄屏判定使用容器宽度：未知宽度按宽屏处理，阈值以�
   assert.equal(resolveNarrowZone('不存在'), 'lecture')
   assert.equal(resolveNarrowZone('notes'), 'notes')
   assert.equal(resolveNarrowZone('conversation'), 'conversation')
+})
+
+test('宽屏所需最小宽度随分栏宽度与收起状态变化，装不下时改用分区模式', () => {
+  const roomy = defaultLayout()
+  // 讲义最小宽度 + 三栏 + 三条分隔条。
+  assert.equal(minimumWideWidth(roomy), lectureMinWidth + 200 + 220 + 240 + separatorWidth * 3)
+
+  const widePanes = {
+    widths: { directory: zoneWidthBounds.directory.max, notes: zoneWidthBounds.notes.max, conversation: zoneWidthBounds.conversation.max },
+    collapsed: { directory: false, notes: false, conversation: false },
+  }
+  assert.equal(minimumWideWidth(widePanes), lectureMinWidth + 360 + 480 + 520 + separatorWidth * 3)
+  assert.equal(minimumWideWidth(widePanes), 1658)
+
+  const onlyMain = normalizeLayout({ collapsed: { directory: true, notes: true, conversation: true } })
+  assert.equal(minimumWideWidth(onlyMain), lectureMinWidth)
+
+  // 未知宽度先按宽屏处理；超过固定阈值但装不下已保存的分栏时，改用分区。
+  assert.equal(usesNarrowLayout(null, widePanes), false)
+  assert.equal(usesNarrowLayout(1200, roomy), false)
+  assert.equal(usesNarrowLayout(1200, widePanes), true)
+  assert.equal(usesNarrowLayout(1700, widePanes), false)
+  assert.equal(usesNarrowLayout(narrowThreshold - 1, onlyMain), true, '固定阈值以下始终分区')
+  assert.equal(usesNarrowLayout(400, widePanes), true)
 })
