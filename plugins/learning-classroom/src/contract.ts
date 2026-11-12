@@ -1,4 +1,5 @@
 import type { CanvasNodeType, CanvasRelation } from './canvas.ts'
+import type { ExperimentSpec, ExperimentParameter } from './experiment-spec.ts'
 import type { ClassroomLayout } from './layout.ts'
 
 /** Wire contract shared by the Host service and the browser panel. */
@@ -102,16 +103,38 @@ export interface LectureReadView {
   fileName: string
   title: string
   kind: ClassroomLectureKind
-  /** Markdown body; null for experiments, which are not inlined into the DOM. */
+  /** Markdown body; null for experiments, whose declarative spec is carried in `experiment`. */
   content: string | null
-  /** Understandable stand-in copy for experiments until isolated rendering ships. */
-  placeholder: string | null
+  /** Declarative experiment spec; rendered only by the fixed trusted iframe runtime. */
+  experiment: ExperimentSpec | null
+  /** Why an experiment file cannot be rendered (legacy arbitrary HTML or malformed spec). */
+  experimentError: string | null
+  /** Sources declared by a generated experiment. Empty for hand-written files. */
+  sources: string[]
+  /** Parameters declared by a generated experiment. Empty for Markdown or undeclared files. */
+  parameters: ExperimentParameter[]
   /**
    * Content version of the body the Host actually read (SHA-256), used to freeze
-   * what a question was asked about. Null for experiments, whose body is never
-   * inlined, so no body version is claimed.
+   * what a question was asked about. Null for experiments, whose declarative
+   * spec is not treated as lecture body.
    */
   version: string | null
+}
+
+/** One successfully persisted teacher-authored file. */
+export interface GeneratedContentView {
+  spaceId: string
+  /** Space-relative path, e.g. `讲义/第一章/02-条件概率.md`. */
+  path: string
+  fileName: string
+  title: string
+  /** Teacher writes are either a Markdown lecture or an HTML experiment. */
+  kind: 'lecture' | 'experiment'
+  size: number
+  /** SHA-256 of the exact bytes written. */
+  version: string
+  sources: string[]
+  parameters: ExperimentParameter[]
 }
 
 /** Commands that return the whole classroom view (navigation/identity state). */

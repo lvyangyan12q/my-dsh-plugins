@@ -103,7 +103,6 @@ function fakeClient(options = {}) {
       title: '样本空间',
       kind: 'markdown',
       content: '# 样本空间\n\n全部可能结果的集合。',
-      placeholder: null,
     },
     '讲义/02-概率.md': {
       spaceId: space.id,
@@ -112,7 +111,6 @@ function fakeClient(options = {}) {
       title: '概率',
       kind: 'markdown',
       content: '# 概率\n\n事件的度量。',
-      placeholder: null,
     },
   }
   let canvasAttempts = 0

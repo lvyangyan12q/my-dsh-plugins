@@ -348,6 +348,11 @@ export function TeacherSessionZone(props: TeacherSessionZoneProps) {
           <p>打开老师会话后，可以在这里直接向老师提问。会话是真实 DSH 会话，带着标准预设与工具。</p>
           <button type="button" className="lc-secondary" onClick={() => void open()}>打开老师会话</button>
           <p className="lc-hint">打开会在当前学习空间里创建一个标准预设会话，并记住它的绑定。</p>
+          <p className="lc-hint">
+            边界说明：插件自己的生成工具只写当前主题的「讲义/」，不写个人笔记；但老师会话仍是标准 DSH 会话，
+            它的通用文件/终端工具由宿主执行，可能改写学习空间里的其他文件。「AI 不改我的笔记」是教学约定，
+            不是本插件能保证的全局权限隔离。
+          </p>
         </div>
       )}
 

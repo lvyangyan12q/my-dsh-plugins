@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { link, lstat, mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
@@ -16,6 +16,7 @@ import type {
   ClassroomLectureView,
   ClassroomSpaceView,
   ClassroomView,
+  GeneratedContentView,
   LectureCandidatesView,
   LectureCandidateView,
   LectureListView,
@@ -27,6 +28,18 @@ import type {
   TopicView,
 } from './contract.ts'
 import { ClassroomError } from './errors.ts'
+import {
+  compileExperimentDraft,
+  composeExperimentFile,
+  readExperimentFile,
+  type ExperimentDraft,
+} from './experiment-spec.ts'
+import {
+  composeLecture,
+  lectureDraftSchema,
+  lectureRelativePath,
+  type LectureDraft,
+} from './teacher-content.ts'
 import {
   isHiddenRelativePath,
   lectureBaseName,
@@ -74,8 +87,8 @@ const candidateCountLimit = 500
 /** Reserved top-level folders that are never course content. */
 const nonCourseFolders = [lectureFolder, '笔记', '附件'] as const
 
-export const experimentPlaceholder =
-  '这是一节动态实验（HTML）。隔离渲染会在后续工单中打开；现在它只出现在目录里，不会把 HTML 直接注入课堂。'
+/** A failed or cancelled generation cleans its private staging file and never removes an existing target. */
+const generationStagingSuffix = '.learning-classroom.tmp'
 
 const knownActions = [
   'vault-choose', 'space-create', 'space-open', 'session-open',
@@ -139,11 +152,25 @@ export interface ClassroomHostOptions {
   probe?: VaultProbe
   /** Same-origin gate supplied by the DSH connection service in production. */
   rejection?: (req: IncomingMessage) => number | undefined
+  /** Test seam for filesystems that reject the atomic no-overwrite link. */
+  linkFile?: (existingPath: string, newPath: string) => Promise<void>
 }
 
 export interface ClassroomHost {
   handle(req: IncomingMessage, res: ServerResponse): Promise<void>
   getView(): Promise<ClassroomView>
+  /** True when a classroom learning space is bound to this exact Session id. */
+  hasBoundSession(sessionId: string): boolean
+  /**
+   * Persist one teacher-authored lecture or experiment. The Session id is the
+   * real executing identity, never a model-supplied topic id.
+   */
+  writeGenerated(
+    sessionId: string,
+    kind: 'lecture' | 'experiment',
+    draft: LectureDraft | ExperimentDraft,
+    options?: { signal?: AbortSignal },
+  ): Promise<GeneratedContentView>
   close(): Promise<void>
 }
 
@@ -165,6 +192,7 @@ function contentVersion(content: string): string {
 export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
   const { store } = options
   const probe = options.probe ?? nodeVaultProbe
+  const linkFile = options.linkFile ?? link
   let closed = false
   let tail: Promise<unknown> = Promise.resolve()
 
@@ -302,16 +330,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     if (space === undefined) {
       throw new ClassroomError('space-not-found', `学习空间不存在：${spaceId}`, 409)
     }
-    const target = await resolveVaultPath(root, space.directory, probe)
-    let info
-    try {
-      info = await stat(target)
-    } catch {
-      throw new ClassroomError('space-unavailable', `学习空间文件夹不存在：${space.directory}`, 409)
-    }
-    if (!info.isDirectory()) {
-      throw new ClassroomError('space-unavailable', `学习空间路径不是文件夹：${space.directory}`, 409)
-    }
+    await spaceFolderOf(root, space)
     const next: ClassroomState = { ...state, currentSpaceId: space.id }
     await store.write(next)
     return view(next)
@@ -325,14 +344,22 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     return space
   }
 
-  /** Require the registered space folder to still exist and be a directory. */
+  /**
+   * Require the registered space folder itself to be a real directory. `stat`
+   * would follow a junction at the space root, so a space A linked to another
+   * in-vault topic B would otherwise pass every descendant check; the root
+   * component must not be a link at all.
+   */
   const spaceFolderOf = async (root: string, space: ClassroomSpace): Promise<void> => {
     const target = await resolveVaultPath(root, space.directory, probe)
     let info
     try {
-      info = await stat(target)
+      info = await lstat(target)
     } catch {
       throw new ClassroomError('space-unavailable', `学习空间文件夹不存在：${space.directory}`, 409)
+    }
+    if (info.isSymbolicLink()) {
+      throw new ClassroomError('space-unavailable', `学习空间目录是符号链接/目录联接，已拒绝：${space.directory}`, 409)
     }
     if (!info.isDirectory()) {
       throw new ClassroomError('space-unavailable', `学习空间路径不是文件夹：${space.directory}`, 409)
@@ -650,6 +677,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     return buildLectureList(state, root, space)
   })
 
@@ -678,6 +706,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     const { relative, fileName, kind } = courseFileOf(space, inputPath)
 
     const target = await resolveSpaceFile(root, space, relative)
@@ -692,7 +721,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
 
     let content: string | null = null
-    let placeholder: string | null = null
+    let rawExperiment: string | null = null
     if (kind === 'markdown') {
       if (info.size > lectureReadLimit) {
         throw new ClassroomError('lecture-too-large', `讲义文件过大（超过 ${Math.round(lectureReadLimit / 1024)} KB）：${relative}`, 413)
@@ -703,10 +732,20 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         throw new ClassroomError('lecture-read-failed', `读取讲义失败：${relative}`, 500)
       }
     } else {
-      placeholder = experimentPlaceholder
+      if (info.size > lectureReadLimit) {
+        throw new ClassroomError('lecture-too-large', `动态实验文件过大（超过 ${Math.round(lectureReadLimit / 1024)} KB）：${relative}`, 413)
+      }
+      try {
+        rawExperiment = await readFile(target, 'utf8')
+      } catch {
+        throw new ClassroomError('lecture-read-failed', `读取动态实验失败：${relative}`, 500)
+      }
     }
-    const head = content ?? await readHead(target).catch(() => '')
+    const head = content ?? rawExperiment ?? ''
     const meta = readLectureMeta(fileName, head)
+    const parsedExperiment = kind === 'experiment' ? readExperimentFile(rawExperiment ?? '') : null
+    const experiment = parsedExperiment?.spec ?? null
+    const experimentError = parsedExperiment?.error ?? null
     await saveLectureSelection(state, space, relative)
 
     return {
@@ -716,9 +755,12 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       title: meta?.title ?? fileName,
       kind,
       content,
-      placeholder,
-      // The version belongs to the body this read returned; an experiment body
-      // is never inlined, so it carries no body version.
+      experiment,
+      experimentError,
+      sources: experiment?.sources ?? [],
+      parameters: experiment?.parameters ?? [],
+      // The version belongs to the Markdown body this read returned; an
+      // experiment is a declarative spec, not lecture body.
       version: content === null ? null : contentVersion(content),
     }
   })
@@ -994,10 +1036,224 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
   })
 
+  /** Read-only identity probe used for step-time tool visibility. */
+  const hasBoundSession = (sessionId: string): boolean => {
+    if (typeof sessionId !== 'string' || sessionId.trim() === '') return false
+    try {
+      return store.read().spaces.some(space => space.sessionId === sessionId)
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Resolve the executing Session to exactly one bound learning space. The
+   * model never supplies a topic id: an unbound or ambiguous Session is refused
+   * before any path or content is considered.
+   */
+  const spaceOfSession = (state: ClassroomState, sessionId: string): ClassroomSpace => {
+    const matches = state.spaces.filter(space => space.sessionId === sessionId)
+    if (matches.length === 0) {
+      throw new ClassroomError(
+        'session-unbound',
+        '这个老师会话还没有绑定到学习空间，不能生成讲义或实验。请先在课堂里打开老师会话并保存绑定。',
+        409,
+      )
+    }
+    if (matches.length > 1) {
+      throw new ClassroomError('session-ambiguous', '同一个老师会话绑定了多个学习空间，已拒绝写入；请重新绑定后再试。', 409)
+    }
+    return matches[0]
+  }
+
+  /**
+   * Persist one teacher-authored file. Content is fully composed and validated
+   * before a hidden staging file is written; publication is a no-overwrite link
+   * (or exclusive copy on filesystems without hard links), so an existing
+   * lecture is never replaced and a failed/cancelled write leaves no visible
+   * half-file.
+   */
+  const writeGenerated = (
+    sessionId: string,
+    kind: 'lecture' | 'experiment',
+    draft: LectureDraft | ExperimentDraft,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<GeneratedContentView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOfSession(state, sessionId)
+    await spaceFolderOf(root, space)
+
+    const ensureLive = (): void => {
+      if (options.signal?.aborted === true) {
+        throw new ClassroomError('generation-cancelled', '生成已取消，没有写入任何文件。', 409)
+      }
+    }
+
+    let relative: string
+    let content: string
+    let title: string
+    let sources: string[]
+    let parameters: ExperimentDraft['parameters']
+    try {
+      relative = lectureRelativePath(draft.fileName)
+      const actualKind = lectureFileKind(relative.split('/').pop() ?? '')
+      const expectedKind = kind === 'lecture' ? 'markdown' : 'experiment'
+      if (actualKind !== expectedKind) {
+        throw new ClassroomError(
+          'generation-kind-mismatch',
+          kind === 'lecture' ? '生成讲义必须使用 .md 文件。' : '生成动态实验必须使用 .html 文件。',
+        )
+      }
+      if (kind === 'lecture') {
+        const lecture = lectureDraftSchema.parse(draft)
+        content = composeLecture(lecture)
+        title = lecture.title
+        sources = lecture.sources
+        parameters = []
+      } else {
+        const experiment = compileExperimentDraft(draft)
+        content = composeExperimentFile(experiment, draft.order)
+        title = experiment.title
+        sources = experiment.sources
+        parameters = experiment.parameters
+      }
+    } catch (error) {
+      if (error instanceof ClassroomError) throw error
+      const message = error instanceof z.ZodError
+        ? error.issues.map(issue => issue.message).join('；')
+        : error instanceof Error ? error.message : '生成内容不合法。'
+      throw new ClassroomError('generation-invalid', `生成内容不合法：${message}`)
+    }
+    if (Buffer.byteLength(content, 'utf8') > lectureReadLimit) {
+      throw new ClassroomError('generation-too-large', `生成文件超过 ${Math.round(lectureReadLimit / 1024)} KB 上限，未写入。`, 413)
+    }
+
+    // Lexical validation first; all later filesystem work uses the canonical
+    // space root plus the validated relative segments, not the client-shaped path.
+    await resolveVaultPath(root, `${space.directory}/${relative}`, probe)
+    ensureLive()
+    const realSpace = await probe.realpath(await resolveVaultPath(root, space.directory, probe))
+    // Refuse a symlink/junction anywhere under the lecture root before creating
+    // any directory: a link to another topic must not even leave an empty folder.
+    let cursor = realSpace
+    const pathSegments = relative.split('/')
+    for (let index = 0; index < pathSegments.length - 1; index += 1) {
+      cursor = join(cursor, pathSegments[index])
+      const ancestor = await lstat(cursor).catch(() => undefined)
+      if (ancestor === undefined) break
+      if (ancestor.isSymbolicLink()) {
+        throw new ClassroomError('generation-outside', `生成路径经符号链接进入其他位置，已拒绝：${relative}`, 409)
+      }
+      if (!ancestor.isDirectory()) {
+        throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
+      }
+    }
+    const canonicalFolder = join(realSpace, ...pathSegments.slice(0, -1))
+    let directoryInfo
+    try {
+      directoryInfo = await stat(canonicalFolder)
+    } catch {
+      directoryInfo = undefined
+    }
+    if (directoryInfo === undefined) {
+      // A missing chapter folder is created only after the content passed all
+      // validation; an aborted/failed write never publishes a lecture file.
+      await mkdir(canonicalFolder, { recursive: true })
+    } else if (!directoryInfo.isDirectory()) {
+      throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
+    }
+
+    const realFolder = await probe.realpath(canonicalFolder)
+    if (!pathInside(realSpace, realFolder)) {
+      throw new ClassroomError('generation-outside', `生成路径经符号链接越出学习空间：${relative}`, 409)
+    }
+    const folderInfo = await stat(realFolder)
+    if (!folderInfo.isDirectory()) {
+      throw new ClassroomError('generation-failed', `讲义路径的上级不是文件夹：${relative}`, 409)
+    }
+    const folderIdentity = `${String(folderInfo.dev)}:${String(folderInfo.ino)}`
+    const fileName = relative.split('/').pop() ?? relative
+    // All writes go through the canonical folder, never the client-shaped path.
+    const realTarget = join(realFolder, fileName)
+    const existing = await lstat(realTarget).catch(() => undefined)
+    if (existing !== undefined) {
+      throw new ClassroomError(
+        'lecture-exists',
+        `讲义目录里已存在同名文件：${relative}。没有覆盖它；请换一个文件名后重试。`,
+        409,
+      )
+    }
+
+    const staging = join(realFolder, `.${randomUUID()}${generationStagingSuffix}`)
+    try {
+      ensureLive()
+      await writeFile(staging, content, { encoding: 'utf8', flag: 'wx' })
+      ensureLive()
+      // Directory identity checks narrow the local replacement window: the
+      // canonical folder and the canonical staging path must still be the same
+      // directory before publication. Node's fs exposes no dirfd/openat, so a
+      // local process that replaces an ancestor between this check and `link`
+      // is outside the supported boundary; static links are rejected above.
+      const current = await stat(realFolder)
+      if (`${String(current.dev)}:${String(current.ino)}` !== folderIdentity) {
+        throw new ClassroomError('generation-outside', `生成目录在写入期间被替换，已拒绝发布：${relative}`, 409)
+      }
+      const realStaging = await probe.realpath(staging)
+      if (!pathInside(realFolder, realStaging)) {
+        throw new ClassroomError('generation-outside', `生成暂存文件经符号链接离开学习空间，已拒绝：${relative}`, 409)
+      }
+      try {
+        // A hard link publishes the complete staging file atomically and fails
+        // if the target appeared meanwhile; the existing file is never touched.
+        await linkFile(staging, realTarget)
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (code === 'EEXIST') {
+          throw new ClassroomError(
+            'lecture-exists',
+            `讲义目录里已存在同名文件：${relative}。没有覆盖它；请换一个文件名后重试。`,
+            409,
+          )
+        }
+        // Never fall back to a copy: a copy can expose a half-written file and
+        // its cleanup could delete a file another process created meanwhile.
+        // Filesystems without an atomic no-overwrite link fail closed.
+        throw new ClassroomError(
+          'generation-publish-unsupported',
+          `当前文件系统无法无覆盖原子发布生成文件（${code ?? '未知错误'}）；未写入任何文件，也不会退化为复制。`,
+          500,
+        )
+      }
+      await rm(staging, { force: true }).catch(() => undefined)
+    } catch (error) {
+      await rm(staging, { force: true }).catch(() => undefined)
+      if (error instanceof ClassroomError) throw error
+      throw new ClassroomError(
+        'generation-failed',
+        `写入生成文件失败：${relative}（${error instanceof Error ? error.message : '未知原因'}）。没有覆盖任何已有文件。`,
+        500,
+      )
+    }
+
+    return {
+      spaceId: space.id,
+      path: relative,
+      fileName,
+      title,
+      kind,
+      size: Buffer.byteLength(content, 'utf8'),
+      version: contentVersion(content),
+      sources,
+      parameters,
+    }
+  })
+
   const noteList = (spaceId: string) => enqueue(async () => {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     return { notes: await listNotes(root, space.directory, probe), defaultPath: space.notePath }
   })
 
@@ -1005,6 +1261,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     return readNote(root, space.directory, path, probe)
   })
 
@@ -1018,6 +1275,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, command.spaceId)
+    await spaceFolderOf(root, space)
     return saveNote(root, space.directory, command.path, command.content, command.version, { overwrite: command.overwrite }, probe)
   })
 
@@ -1104,6 +1362,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
     const canvasVaultPath = `${space.directory}/${canvasFileName}`
     const target = await resolveVaultPath(root, canvasVaultPath, probe)
 
@@ -1289,6 +1548,8 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
   return {
     handle,
     getView: () => enqueue(() => view()),
+    hasBoundSession,
+    writeGenerated,
     close: async () => {
       if (closed) return
       closed = true

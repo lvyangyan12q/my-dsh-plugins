@@ -29,7 +29,6 @@ const doc = {
   title: '第一节 缩小样本空间',
   kind: 'markdown',
   content: '# 第一节\n\n原文。',
-  placeholder: null,
 }
 
 async function settle(rounds = 4) {

@@ -79,13 +79,60 @@ function parseOrder(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function decodeHtmlText(value: string): string {
+  return value
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&')
+    .trim()
+}
+
+function htmlMeta(head: string, name: string): string | undefined {
+  for (const tag of head.match(/<meta\b[^>]*>/gi) ?? []) {
+    const attributes: Record<string, string> = {}
+    for (const match of tag.matchAll(/([a-zA-Z][a-zA-Z0-9:_-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+      attributes[match[1].toLowerCase()] = decodeHtmlText(match[2] ?? match[3] ?? '')
+    }
+    if (attributes.name === name && attributes.content !== undefined) return attributes.content
+  }
+  return undefined
+}
+
+function htmlLectureMeta(head: string): Omit<LectureMeta, 'title'> & { title: string | null } {
+  const declaredTitle = htmlMeta(head, 'learning-classroom:title')
+  const documentTitle = /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(head)?.[1]
+  const title = (declaredTitle ?? (documentTitle === undefined ? '' : decodeHtmlText(documentTitle))).trim()
+  return {
+    title: title === '' ? null : title,
+    order: parseOrder(htmlMeta(head, 'learning-classroom:order')),
+  }
+}
+
 /**
  * Derive display title and order for one lecture file from its name and the
- * head of its content. Returns null for files that are not lectures, so callers
- * never have to guess an extension.
+ * head of its content. Generated experiments carry a `<title>` and optional
+ * classroom order meta; Markdown uses frontmatter. Returns null for files that
+ * are not lectures, so callers never have to guess an extension.
  */
 export function readLectureMeta(fileName: string, head: string): LectureMeta | null {
-  if (lectureFileKind(fileName) === null) return null
+  const kind = lectureFileKind(fileName)
+  if (kind === null) return null
+  if (kind === 'experiment') {
+    // Hand-written HTML may still carry the older frontmatter convention; a
+    // generated experiment uses a real <title> and classroom meta instead.
+    const frontmatter = parseFrontmatter(head)
+    if (frontmatter.present) {
+      const title = (frontmatter.attributes.title ?? '').trim()
+      return {
+        title: title === '' ? lectureBaseName(fileName) : title,
+        order: parseOrder(frontmatter.attributes.order),
+      }
+    }
+    const html = htmlLectureMeta(head)
+    return { title: html.title ?? lectureBaseName(fileName), order: html.order }
+  }
   const frontmatter = parseFrontmatter(head)
   const title = (frontmatter.attributes.title ?? '').trim()
   return {
@@ -171,4 +218,40 @@ export function groupCourseLectures<T extends CourseLectureOrdering>(entries: re
  */
 export function isHiddenRelativePath(relativePath: string): boolean {
   return relativePath.replaceAll('\\', '/').split('/').some(segment => segment.startsWith('.') && segment !== '.' && segment !== '')
+}
+
+/**
+ * Resolve a relative Markdown link against the lecture that contains it. Only
+ * targets under the shared `讲义/` tree are returned; external URLs, absolute
+ * paths, note paths and traversal above the course root stay untouched. The
+ * caller still has to confirm the target is an existing course entry.
+ */
+export function resolveLectureHref(basePath: string, href: string): string | null {
+  if (typeof basePath !== 'string' || typeof href !== 'string') return null
+  const pathPart = href.split('#', 1)[0]?.split('?', 1)[0]?.trim() ?? ''
+  if (pathPart === '') return null
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:/.test(pathPart)) return null
+  if (pathPart.startsWith('/') || pathPart.startsWith('//') || pathPart.startsWith('\\')) return null
+  const base = basePath.replaceAll('\\', '/').split('/')
+  if (base.length < 2 || base[0] !== lectureFolder) return null
+  // Accept both a link relative to the current chapter and a course-root path
+  // such as `讲义/03-实验.html`; generated lectures commonly use the latter.
+  const link = pathPart.replaceAll('\\', '/')
+  const segments = link.startsWith(`${lectureFolder}/`)
+    ? link.split('/')
+    : [...base.slice(0, -1), ...link.split('/')]
+  const resolved: string[] = []
+  for (const segment of segments) {
+    if (segment === '' || segment === '.') continue
+    if (segment === '..') {
+      if (resolved.length === 0) return null
+      resolved.pop()
+      continue
+    }
+    if (segment.startsWith('.')) return null
+    resolved.push(segment)
+  }
+  if (resolved.length < 2 || resolved[0] !== lectureFolder) return null
+  if (lectureFileKind(resolved[resolved.length - 1] ?? '') === null) return null
+  return resolved.join('/')
 }

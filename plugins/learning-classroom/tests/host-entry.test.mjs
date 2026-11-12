@@ -12,7 +12,7 @@ test('Host 入口在公开路径注册路由，并用 learning_classroom v1 提�
   await mkdir(vault)
   let stored = { schemaVersion: 1, vaultPath: null, spaces: [], currentSpaceId: null }
   let opened
-  const routes = [], disposers = [], pending = []
+  const routes = [], disposers = [], pending = [], tools = []
   const services = {
     webServer: { register(route) { routes.push(route); return () => {} } },
     storageDomain: {
@@ -25,6 +25,12 @@ test('Host 入口在公开路径注册路由，并用 learning_classroom v1 提�
       },
     },
     connection: { requestRejection: () => undefined },
+    tools: {
+      register(definition, options) {
+        tools.push({ definition, options })
+        return () => {}
+      },
+    },
   }
   const ctx = {
     ...services,
@@ -52,6 +58,9 @@ test('Host 入口在公开路径注册路由，并用 learning_classroom v1 提�
     assert.equal(routes[0].path, classroomRoute)
     assert.equal(opened.name, 'learning_classroom')
     assert.equal(opened.version, 1)
+    assert.deepEqual(tools.map(tool => tool.definition.name).sort(), ['classroom_experiment_write', 'classroom_lecture_write'])
+    assert.equal(tools.every(tool => typeof tool.options?.when === 'function'), true)
+    assert.equal(tools[0].options.when({ agent: { id: '未绑定会话' } }), false)
 
     const empty = await request(routes[0].handler, { method: 'GET' })
     assert.equal(empty.status, 200)

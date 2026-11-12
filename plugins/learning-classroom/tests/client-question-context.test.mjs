@@ -100,7 +100,6 @@ function fakeClient(initial = view()) {
         title: path === lecturePath ? '条件概率' : '全概率公式',
         kind: 'markdown',
         content,
-        placeholder: null,
         version: lectureVersions.get(path),
       }
     },
