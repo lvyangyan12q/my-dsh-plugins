@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { classroomFixture } from './support/fixture.mjs'
 
@@ -143,6 +143,36 @@ test('HTML 讲义只登记目录并返回可理解占位，不把 HTML 当正文
 
     const listed = await fixture.post({ action: 'lecture-list', spaceId: space.id })
     assert.equal(listed.body.selectedPath, '讲义/01-实验.html')
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('讲义被外部改名后刷新：旧路径提示缺失，新文件出现在目录并可打开', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    await addLectures(fixture, space, { '01-旧课.md': '# 旧课\n' })
+    const first = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/01-旧课.md' })
+    assert.equal(first.status, 200)
+
+    await rename(
+      join(fixture.vault, space.directory, '讲义', '01-旧课.md'),
+      join(fixture.vault, space.directory, '讲义', '02-新课.md'),
+    )
+    const listed = await fixture.post({ action: 'lecture-list', spaceId: space.id })
+    assert.equal(listed.status, 200)
+    assert.equal(listed.body.selectedPath, null)
+    assert.equal(listed.body.missingSelection, '讲义/01-旧课.md')
+    assert.deepEqual(listed.body.lectures.map(row => row.path), ['讲义/02-新课.md'])
+
+    const stale = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/01-旧课.md' })
+    assert.equal(stale.status, 409)
+    assert.equal(stale.body.code, 'lecture-missing')
+
+    const renamed = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: '讲义/02-新课.md' })
+    assert.equal(renamed.status, 200)
+    assert.match(renamed.body.content, /旧课/)
   } finally {
     await fixture.close()
   }
