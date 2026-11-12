@@ -36,7 +36,23 @@ const doc = {
   fileName: '01.md',
   title: '第一节',
   kind: 'markdown',
-  content: ['# 第一节', '', '## 目标小节', '', '正文。', '', '结论 ^block-1', ''].join('\n'),
+  content: [
+    '# 第一节',
+    '',
+    '## 目标小节',
+    '',
+    '正文。',
+    '',
+    '```',
+    '结论 ^block-1',
+    '```',
+    '',
+    '真实段落 ^block-1',
+    '',
+    '另一段',
+    '',
+    '^standalone-block',
+  ].join('\n'),
   placeholder: null,
 }
 
@@ -78,7 +94,7 @@ test('打开讲义双链时按真实标题定位，不丢 fragment', async () =>
   }
 })
 
-test('打开讲义块引用时定位到含真实 ^块id 的段落', async () => {
+test('打开讲义块引用时定位到真实块，不误中前面代码里的同名 ^id', async () => {
   const container = dom.window.document.getElementById('root')
   container.replaceChildren()
   const root = createRoot(container)
@@ -91,10 +107,38 @@ test('打开讲义块引用时定位到含真实 ^块id 的段落', async () => 
     })
     await settle()
 
-    const paragraph = [...container.querySelectorAll('p')]
-      .find(element => element.textContent.trimEnd().endsWith('^block-1'))
-    assert.ok(paragraph, '讲义应渲染含块 id 的段落')
-    assert.equal(paragraph.getAttribute('data-scrolled'), '1')
+    const block = container.querySelector('[data-block-id="block-1"]')
+    assert.ok(block, '真实块应有块元数据')
+    assert.equal(block.tagName.toLowerCase(), 'p')
+    assert.equal(block.textContent.trim(), '真实段落')
+    assert.equal(block.getAttribute('data-scrolled'), '1')
+
+    const code = container.querySelector('pre code')
+    assert.ok(code.textContent.includes('^block-1'))
+    assert.equal(code.closest('[data-block-id]'), null)
+    assert.equal(container.querySelector('pre').getAttribute('data-scrolled'), null)
+  } finally {
+    await act(async () => { root.unmount() })
+  }
+})
+
+test('独立一行 ^id 定位到它所属的真实块，而不是冒出的段落', async () => {
+  const container = dom.window.document.getElementById('root')
+  container.replaceChildren()
+  const root = createRoot(container)
+  try {
+    const props = { client, space, spaces: [space], currentSpaceId: space.id, busy: false, onOpenSpace() {} }
+    await act(async () => { root.render(h(LectureZone, props)) })
+    await settle()
+    await act(async () => {
+      root.render(h(LectureZone, { ...props, openRequest: { path: '讲义/01.md', token: 3, blockId: 'standalone-block' } }))
+    })
+    await settle()
+
+    const block = container.querySelector('[data-block-id="standalone-block"]')
+    assert.ok(block, '独立 ^id 应归属前一个真实块')
+    assert.equal(block.textContent.trim(), '另一段')
+    assert.equal(block.getAttribute('data-scrolled'), '1')
   } finally {
     await act(async () => { root.unmount() })
   }

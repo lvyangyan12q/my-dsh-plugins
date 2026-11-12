@@ -56,13 +56,15 @@ function BlockView({ block, onOpenLink }: { block: Block; onOpenLink?: (target: 
   switch (block.type) {
     case 'heading': {
       const Tag = headingTags[Math.min(Math.max(block.level, 1), 6) - 1]
-      return <Tag><InlineText text={block.text} onOpenLink={onOpenLink} /></Tag>
+      return <Tag data-block-id={block.blockId}><InlineText text={block.text} onOpenLink={onOpenLink} /></Tag>
     }
     case 'paragraph':
-      return <p><InlineText text={block.text} onOpenLink={onOpenLink} /></p>
+      return <p data-block-id={block.blockId}><InlineText text={block.text} onOpenLink={onOpenLink} /></p>
     case 'list': {
       const items = block.items.map((item, index) => <li key={index}><InlineText text={item} onOpenLink={onOpenLink} /></li>)
-      return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>
+      return block.ordered
+        ? <ol data-block-id={block.blockId}>{items}</ol>
+        : <ul data-block-id={block.blockId}>{items}</ul>
     }
     case 'table':
       return (
@@ -82,7 +84,7 @@ function BlockView({ block, onOpenLink }: { block: Block; onOpenLink?: (target: 
     case 'code':
       return <pre><code className={block.lang === '' ? undefined : `language-${block.lang}`}>{block.code}</code></pre>
     case 'quote':
-      return <blockquote><InlineText text={block.text} onOpenLink={onOpenLink} /></blockquote>
+      return <blockquote data-block-id={block.blockId}><InlineText text={block.text} onOpenLink={onOpenLink} /></blockquote>
     case 'rule':
       return <hr />
   }

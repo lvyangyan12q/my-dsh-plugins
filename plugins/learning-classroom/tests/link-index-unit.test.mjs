@@ -75,6 +75,40 @@ test('真实路径无法解析时即使索引命中也不返回 ok（reviewer �
   }
 })
 
+test('别名 frontmatter 超过 32KB 但未超上限时继续有界读取，不能漏掉共享别名', async () => {
+  const padded = ['---', 'aliases: shared-alias', 'title: 长前言'].concat(Array.from({ length: 9000 }, (_, index) => `padding-${index}`)).join('\n') + '\n---\n\n# 正文\n'
+  assert.ok(Buffer.byteLength(padded, 'utf8') > 64 * 1024, '测试前言必须超过一个读取块')
+  const vault = await vaultWith({
+    'Course/笔记/甲.md': '---\naliases: shared-alias\n---\n# 甲\n',
+    'Course/笔记/乙.md': padded,
+  })
+  try {
+    const index = await buildLinkIndex(vault.root)
+    const view = await resolveVaultLink(resolveOptions(vault.root, index, 'shared-alias'))
+    assert.equal(view.status, 'ambiguous')
+    assert.deepEqual([...view.candidates].sort(), ['Course/笔记/乙.md', 'Course/笔记/甲.md'].sort())
+  } finally {
+    await vault.close()
+  }
+})
+
+test('别名 frontmatter 超过有界上限时 fail closed，不把未闭合头当成无别名', async () => {
+  const huge = ['---', 'aliases: shared-alias'].concat(Array.from({ length: 40000 }, (_, index) => `padding-${index}`)).join('\n') + '\n---\n\n# 正文\n'
+  const vault = await vaultWith({
+    'Course/笔记/甲.md': '---\naliases: shared-alias\n---\n# 甲\n',
+    'Course/笔记/乙.md': huge,
+  })
+  try {
+    const index = await buildLinkIndex(vault.root)
+    await assert.rejects(
+      resolveVaultLink(resolveOptions(vault.root, index, 'shared-alias')),
+      error => error?.code === 'link-index-incomplete' && /前言|别名|完整/.test(error.message),
+    )
+  } finally {
+    await vault.close()
+  }
+})
+
 test('别名解析遇到不可读/消失的索引文件时 fail closed，不静默当作缺失', async () => {
   const vault = await vaultWith({ 'Course/笔记/真.md': '# 真\n' })
   try {

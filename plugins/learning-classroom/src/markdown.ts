@@ -6,7 +6,12 @@ import { parseWikilink, wikilinkDisplay } from './links.ts'
  * panel renders that model with React elements. No HTML string ever crosses into
  * the DOM, and anything this reader does not understand stays literal text.
  */
-export type Block =
+interface BlockMeta {
+  /** Real Obsidian block id (`^id`) attached to this block, never code samples. */
+  blockId?: string
+}
+
+export type Block = (
   | { type: 'heading'; level: number; text: string }
   | { type: 'paragraph'; text: string }
   | { type: 'list'; ordered: boolean; items: string[] }
@@ -14,6 +19,7 @@ export type Block =
   | { type: 'code'; lang: string; code: string }
   | { type: 'quote'; text: string }
   | { type: 'rule' }
+) & BlockMeta
 
 export type InlineToken =
   | { type: 'text'; text: string }
@@ -30,6 +36,21 @@ const rulePattern = /^\s{0,3}(?:(?:\*\s*){3,}|(?:-\s*){3,}|(?:_\s*){3,})$/
 const listPattern = /^(\s*)(?:([-*+])|(\d{1,9})[.)])\s+(.+)$/
 const quotePattern = /^\s*>\s?(.*)$/
 const tableDelimiter = /^\s*\|?\s*:?-{1,}:?\s*(?:\|\s*:?-{1,}:?\s*)*\|?\s*$/
+const standaloneBlockIdPattern = /^\s*\^([A-Za-z0-9-]+)\s*$/
+const trailingBlockIdPattern = /(?:^|\s)\^([A-Za-z0-9-]+)\s*$/
+
+/** A line that is only `^id`: Obsidian attaches it to the preceding block. */
+function standaloneBlockId(line: string): string | null {
+  const match = standaloneBlockIdPattern.exec(line)
+  return match === null ? null : match[1]
+}
+
+/** Split a real `... ^id` block boundary from the visible block text. */
+function splitTrailingBlockId(line: string): { text: string; blockId: string } | null {
+  const match = trailingBlockIdPattern.exec(line)
+  if (match === null) return null
+  return { text: line.slice(0, match.index).trimEnd(), blockId: match[1] }
+}
 
 function tableCells(line: string): string[] {
   let text = line.trim()
@@ -68,6 +89,20 @@ export function parseMarkdown(source: string): Block[] {
       continue
     }
 
+    const standalone = standaloneBlockId(line)
+    if (standalone !== null) {
+      const previous = blocks.at(-1)
+      // A standalone id belongs to the preceding block; code samples never
+      // become anchors, so an id after code is left as literal text.
+      if (previous !== undefined && previous.type !== 'code' && previous.blockId === undefined) {
+        previous.blockId = standalone
+      } else {
+        blocks.push({ type: 'paragraph', text: line.trim() })
+      }
+      index += 1
+      continue
+    }
+
     const fence = fencePattern.exec(line)
     if (fence !== null) {
       const marker = fence[1][0]
@@ -93,7 +128,14 @@ export function parseMarkdown(source: string): Block[] {
 
     const heading = headingPattern.exec(line)
     if (heading !== null) {
-      blocks.push({ type: 'heading', level: heading[1].length, text: heading[2].trim() })
+      const raw = heading[2].trim()
+      const trailing = splitTrailingBlockId(raw)
+      blocks.push({
+        type: 'heading',
+        level: heading[1].length,
+        text: trailing?.text ?? raw,
+        ...(trailing === null ? {} : { blockId: trailing.blockId }),
+      })
       index += 1
       continue
     }
@@ -112,7 +154,20 @@ export function parseMarkdown(source: string): Block[] {
         quoted.push(match[1].trim())
         index += 1
       }
-      blocks.push({ type: 'quote', text: quoted.filter(Boolean).join(' ') })
+      let blockId: string | undefined
+      const last = quoted.at(-1)
+      if (last !== undefined) {
+        const trailing = splitTrailingBlockId(last)
+        if (trailing !== null) {
+          quoted[quoted.length - 1] = trailing.text
+          blockId = trailing.blockId
+        }
+      }
+      blocks.push({
+        type: 'quote',
+        text: quoted.filter(Boolean).join(' '),
+        ...(blockId === undefined ? {} : { blockId }),
+      })
       continue
     }
 
@@ -144,11 +199,26 @@ export function parseMarkdown(source: string): Block[] {
     }
 
     const paragraph: string[] = []
-    while (index < lines.length && lines[index].trim() !== '' && (paragraph.length === 0 || !startsBlock(lines, index))) {
+    while (index < lines.length && lines[index].trim() !== ''
+      && (paragraph.length === 0 || !startsBlock(lines, index))) {
+      if (standaloneBlockId(lines[index]) !== null) break
       paragraph.push(lines[index].trim())
       index += 1
     }
-    blocks.push({ type: 'paragraph', text: paragraph.join(' ') })
+    let paragraphBlockId: string | undefined
+    const lastLine = paragraph.at(-1)
+    if (lastLine !== undefined) {
+      const trailing = splitTrailingBlockId(lastLine)
+      if (trailing !== null) {
+        paragraph[paragraph.length - 1] = trailing.text
+        paragraphBlockId = trailing.blockId
+      }
+    }
+    blocks.push({
+      type: 'paragraph',
+      text: paragraph.join(' ').trim(),
+      ...(paragraphBlockId === undefined ? {} : { blockId: paragraphBlockId }),
+    })
   }
 
   return blocks

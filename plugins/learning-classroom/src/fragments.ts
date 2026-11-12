@@ -44,10 +44,12 @@ export function scrollToFragment(root: HTMLElement | null, fragment: LinkFragmen
     }
   }
   if (fragment.blockId !== undefined && fragment.blockId !== null && fragment.blockId.trim() !== '') {
-    const marker = `^${fragment.blockId.trim()}`.toLowerCase()
-    const candidates = Array.from(root.querySelectorAll('p, li, blockquote, td, th, pre, h1, h2, h3, h4, h5, h6'))
-      .filter(element => element instanceof HTMLElement) as HTMLElement[]
-    const found = candidates.find(element => (element.textContent ?? '').trimEnd().toLowerCase().endsWith(marker))
+    // Resolve only real block metadata emitted by the Markdown parser. A code
+    // sample that happens to contain `^id` never carries this attribute, and a
+    // bare text suffix is not a block boundary.
+    const wanted = fragment.blockId.trim().toLowerCase()
+    const found = (Array.from(root.querySelectorAll('[data-block-id]')) as HTMLElement[])
+      .find(element => (element.getAttribute('data-block-id') ?? '').toLowerCase() === wanted)
     if (found !== undefined) {
       reveal(found)
       return true

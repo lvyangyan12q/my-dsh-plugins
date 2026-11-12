@@ -12,7 +12,23 @@ const linkIndexCountLimit = 4000
 /** A file bigger than this cannot be inspected for headings/blocks, only linked. */
 const linkInspectBytes = 1.5 * 1024 * 1024
 /** Frontmatter aliases must fit in the head; a later body never carries them. */
-const aliasHeadBytes = 32 * 1024
+const aliasChunkBytes = 64 * 1024
+/** A frontmatter larger than this cannot be inspected safely; refuse, never guess. */
+const aliasFrontmatterBytes = 256 * 1024
+
+function hasFrontmatterOpener(text: string): boolean {
+  return /^\uFEFF?---[ \t]*\r?\n/.test(text)
+}
+
+/** True once a closing `---`/`...` line follows the opening delimiter. */
+function frontmatterClosed(text: string): boolean {
+  const lines = text.split('\n')
+  for (let index = 1; index < lines.length; index += 1) {
+    const line = lines[index].replace(/\r$/, '').trim()
+    if (line === '---' || line === '...') return true
+  }
+  return false
+}
 
 const markdownExtension = /\.md$/i
 
@@ -253,11 +269,12 @@ async function readBoundedFile(root: string, file: string, probe: VaultProbe): P
 }
 
 /**
- * Read only the head of a file for frontmatter aliases. A failure here means the
- * alias index could be incomplete, so the resolver refuses instead of silently
- * missing a collision.
+ * Read just enough of the file to close its frontmatter. A fixed-size head can
+ * end inside a long frontmatter, which would look like "no aliases" and could
+ * hide a shared alias; keep reading in bounded chunks and refuse instead of
+ * returning a false unique result.
  */
-async function readAliasHead(root: string, file: string, probe: VaultProbe): Promise<string> {
+async function readAliasFrontmatter(root: string, file: string, probe: VaultProbe): Promise<string | null> {
   let target: string
   try {
     target = await resolveVaultPath(root, file, probe)
@@ -279,10 +296,31 @@ async function readAliasHead(root: string, file: string, probe: VaultProbe): Pro
     )
   }
   try {
-    const buffer = Buffer.alloc(aliasHeadBytes)
-    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0)
-    return buffer.subarray(0, bytesRead).toString('utf8')
-  } catch {
+    const chunks: Buffer[] = []
+    let offset = 0
+    for (;;) {
+      const buffer = Buffer.alloc(aliasChunkBytes)
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, offset)
+      if (bytesRead === 0) return null
+      chunks.push(buffer.subarray(0, bytesRead))
+      offset += bytesRead
+      const text = Buffer.concat(chunks).toString('utf8')
+      if (!hasFrontmatterOpener(text)) {
+        // The opener must be at byte 0; once a full line was read it cannot appear later.
+        if (text.includes('\n')) return null
+        continue
+      }
+      if (frontmatterClosed(text)) return text
+      if (offset >= aliasFrontmatterBytes) {
+        throw new ClassroomError(
+          'link-index-incomplete',
+          `别名候选文件「${file}」的前言超过 ${Math.round(aliasFrontmatterBytes / 1024)} KB 仍未闭合；别名索引不完整，双链解析已拒绝继续。`,
+          409,
+        )
+      }
+    }
+  } catch (error) {
+    if (error instanceof ClassroomError) throw error
     throw new ClassroomError(
       'link-index-incomplete',
       `无法完整读取别名候选文件「${file}」；别名索引不完整，双链解析已拒绝继续。`,
@@ -406,8 +444,8 @@ export async function resolveVaultLink(options: ResolveLinkOptions): Promise<Lin
           // bounded by the index; two matches are reported, never guessed.
           const aliasMatches: string[] = []
           for (const candidate of index.files) {
-            const head = await readAliasHead(root, candidate, probe)
-            if (frontmatterAliases(head).some(alias => fold(alias) === fold(relative))) {
+            const prefix = await readAliasFrontmatter(root, candidate, probe)
+            if (prefix !== null && frontmatterAliases(prefix).some(alias => fold(alias) === fold(relative))) {
               aliasMatches.push(candidate)
             }
           }

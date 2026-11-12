@@ -123,13 +123,15 @@ function BlockView({ block }: { block: Block }): ReactNode {
   switch (block.type) {
     case 'heading': {
       const Tag = headingTags[Math.min(Math.max(block.level, 1), 6) - 1]
-      return <Tag><InlineText text={block.text} /></Tag>
+      return <Tag data-block-id={block.blockId}><InlineText text={block.text} /></Tag>
     }
     case 'paragraph':
-      return <p><InlineText text={block.text} /></p>
+      return <p data-block-id={block.blockId}><InlineText text={block.text} /></p>
     case 'list': {
       const items = block.items.map((item, index) => <li key={index}><InlineText text={item} /></li>)
-      return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>
+      return block.ordered
+        ? <ol data-block-id={block.blockId}>{items}</ol>
+        : <ul data-block-id={block.blockId}>{items}</ul>
     }
     case 'table':
       return (
@@ -149,7 +151,7 @@ function BlockView({ block }: { block: Block }): ReactNode {
     case 'code':
       return <pre><code className={block.lang === '' ? undefined : `language-${block.lang}`}>{block.code}</code></pre>
     case 'quote':
-      return <blockquote><InlineText text={block.text} /></blockquote>
+      return <blockquote data-block-id={block.blockId}><InlineText text={block.text} /></blockquote>
     case 'rule':
       return <hr />
   }

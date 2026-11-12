@@ -376,10 +376,10 @@ test('跨笔记块引用打开真实文件并定位到含 ^块id 的段落', asy
     await settle()
 
     assert.equal(ui.container.querySelector('select[aria-label="笔记文件"]').value, '笔记/另一篇.md')
-    const paragraph = [...ui.container.querySelectorAll('p')]
-      .find(element => element.textContent.trimEnd().endsWith('^block-1'))
-    assert.ok(paragraph, '另一篇笔记里的块段落应渲染')
-    assert.equal(paragraph.getAttribute('data-scrolled'), '1')
+    const block = ui.container.querySelector('[data-block-id="block-1"]')
+    assert.ok(block, '另一篇笔记里的真实块应有块元数据')
+    assert.equal(block.textContent.trim(), '结论')
+    assert.equal(block.getAttribute('data-scrolled'), '1')
   } finally {
     await ui.unmount()
   }
