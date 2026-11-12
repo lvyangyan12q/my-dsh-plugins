@@ -24,7 +24,7 @@ const { createRoot } = await import('react-dom/client')
 const act = React.act ?? (await import('react-dom/test-utils')).act
 const h = React.createElement
 const { NotesZone } = await import('../src/notes-zone.tsx')
-const { createSessionDraftStore } = await import('../src/note-drafts.ts')
+const { createSessionDraftStore, isDraftRiskGuardInstalled } = await import('../src/note-drafts.ts')
 
 const space = { id: 'space-1', title: '线性代数', directory: '线性代数', notePath: '笔记/我的笔记.md', createdAt: '2026-11-09T00:00:00.000Z' }
 
@@ -405,6 +405,57 @@ test('内存草稿风险跨主题保留：警告不消失，beforeunload 会要�
     drafts.remove(spaceA.id, spaceA.notePath)
     drafts.remove(spaceB.id, spaceB.notePath)
     await ui.unmount()
+  }
+})
+
+test('完全离开课堂后内存风险 guard 仍在；保存清风险后解绑', async () => {
+  const data = new Map()
+  let failing = true
+  const storage = {
+    getItem(key) { return data.get(key) ?? null },
+    setItem(key, value) {
+      if (failing) throw new Error('quota exceeded')
+      data.set(key, value)
+    },
+    removeItem(key) { data.delete(key) },
+  }
+  const drafts = createSessionDraftStore(storage)
+  const noteSpace = { ...space, id: 'space-guard', notePath: '笔记/A.md' }
+  const store = noteStore({ '笔记/A.md': '# A\n' })
+  let ui = await mount(store, { drafts, space: noteSpace, debounceMs: 5000 })
+  let live = true
+  try {
+    await ui.type('# A\n\n只在内存\n')
+    assert.equal(isDraftRiskGuardInstalled(), true)
+
+    // The cleanup-triggered save must not succeed, or the risk would rightly
+    // disappear before we exercise the post-unmount guard.
+    store.setNextSaveError(Object.assign(new Error('保存失败：模拟离线'), { code: 'note-save-failed' }))
+    await ui.unmount()
+    live = false
+    await new Promise(resolve => setTimeout(resolve, 30))
+    assert.equal(isDraftRiskGuardInstalled(), true, '风险未清除时 guard 不随组件解绑')
+
+    // Component is gone, but the page-scoped risk and guard remain.
+    const blocked = new dom.window.Event('beforeunload', { cancelable: true })
+    dom.window.dispatchEvent(blocked)
+    assert.equal(blocked.defaultPrevented, true, '离开课堂后刷新仍须确认')
+
+    failing = false
+    ui = await mount(store, { drafts, space: noteSpace, debounceMs: 5000 })
+    live = true
+    await ui.click('保存')
+    assert.equal(store.files.get('笔记/A.md'), '# A\n\n只在内存\n')
+    assert.equal(isDraftRiskGuardInstalled(), false, '保存成功并清除草稿后应解绑')
+
+    await ui.unmount()
+    live = false
+    const allowed = new dom.window.Event('beforeunload', { cancelable: true })
+    dom.window.dispatchEvent(allowed)
+    assert.equal(allowed.defaultPrevented, false)
+  } finally {
+    drafts.remove(noteSpace.id, noteSpace.notePath)
+    if (live) await ui.unmount()
   }
 })
 

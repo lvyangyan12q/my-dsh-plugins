@@ -618,13 +618,8 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const guard = (event: BeforeUnloadEvent) => {
-      // Only warn when a draft exists solely in page memory. A sessionStorage
-      // draft survives a refresh, so it must not trigger a false prompt.
-      if (!hasNonDurableDrafts()) return
-      event.preventDefault()
-      event.returnValue = ''
-    }
+    // beforeunload is owned by the page-scoped draft risk manager, so it stays
+    // active after this component unmounts while a memory-only draft exists.
     const pagehide = () => {
       // Supplementary to the per-edit synchronous park; pagehide is not the
       // only path and is not guaranteed on every browser kill.
@@ -635,10 +630,8 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       persistDraft(spaceIdRef.current, pathRef.current, contentRef.current, versionRef.current,
         draftRevisionClock(spaceIdRef.current, pathRef.current))
     }
-    window.addEventListener('beforeunload', guard)
     window.addEventListener('pagehide', pagehide)
     return () => {
-      window.removeEventListener('beforeunload', guard)
       window.removeEventListener('pagehide', pagehide)
     }
   }, [persistDraft])

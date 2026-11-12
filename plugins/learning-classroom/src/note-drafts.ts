@@ -44,6 +44,28 @@ const revisionClocks = new Map<string, number>()
  * or remounting NotesZone must not make the risk disappear from the UI.
  */
 const nonDurableDrafts = new Set<string>()
+let guardedWindow: Window | null = null
+let riskGuardInstalled = false
+
+function riskGuard(event: BeforeUnloadEvent): void {
+  if (nonDurableDrafts.size === 0) return
+  event.preventDefault()
+  event.returnValue = ''
+}
+
+function installRiskGuard(): void {
+  if (riskGuardInstalled || typeof window === 'undefined') return
+  window.addEventListener('beforeunload', riskGuard)
+  guardedWindow = window
+  riskGuardInstalled = true
+}
+
+function releaseRiskGuard(): void {
+  if (!riskGuardInstalled) return
+  if (guardedWindow !== null) guardedWindow.removeEventListener('beforeunload', riskGuard)
+  guardedWindow = null
+  riskGuardInstalled = false
+}
 
 /**
  * A draft belongs to one space UUID plus a space-relative note path. Space ids
@@ -76,16 +98,28 @@ export function draftRevisionClock(spaceId: string, path: string): number {
   return revisionClocks.get(keyOf(spaceId, path)) ?? 0
 }
 
+/**
+ * Page-scoped guard: while at least one memory-only draft exists, the browser
+ * is asked to confirm leaving, even after NotesZone unmounted. The listener is
+ * bound only while the risk set is non-empty and released when it becomes empty.
+ */
 export function markDraftNonDurable(spaceId: string, path: string): void {
   nonDurableDrafts.add(keyOf(spaceId, path))
+  installRiskGuard()
 }
 
 export function clearDraftRisk(spaceId: string, path: string): void {
   nonDurableDrafts.delete(keyOf(spaceId, path))
+  if (nonDurableDrafts.size === 0) releaseRiskGuard()
 }
 
 export function hasNonDurableDrafts(): boolean {
   return nonDurableDrafts.size > 0
+}
+
+/** Test seam: proves the guard is actually unbound when risk is cleared. */
+export function isDraftRiskGuardInstalled(): boolean {
+  return riskGuardInstalled
 }
 
 function isDraft(value: unknown): value is NoteDraft {
