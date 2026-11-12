@@ -132,6 +132,7 @@ export type ClassroomCommand =
   | { action: 'topic-read'; spaceId: string }
   | { action: 'topic-save'; spaceId: string; goal: string; version: string | null }
   | { action: 'canvas-read'; spaceId: string }
+  | LinkResolveCommand
 
 export type LayoutSaveCommand = Extract<ClassroomCommand, { action: 'layout-save' }>
 export type TopicSaveCommand = Extract<ClassroomCommand, { action: 'topic-save' }>
@@ -175,6 +176,47 @@ export type NoteCommand =
   }
 
 export type NoteSaveCommand = Extract<NoteCommand, { action: 'note-save' }>
+
+/** How a wikilink target resolves inside the knowledge vault. */
+export type LinkResolveStatus = 'ok' | 'missing' | 'ambiguous' | 'outside' | 'unsupported'
+
+/** What the resolved file means to the classroom: a note, a course file, or just a vault file. */
+export type LinkTargetKind = 'note' | 'lecture' | 'file'
+
+/**
+ * One wikilink resolved against the real vault. `link` is only set for `ok`:
+ * it is the unambiguous Vault-relative link the reader can insert or follow.
+ * Missing, ambiguous and out-of-vault targets stay explicit results instead of
+ * being guessed at.
+ */
+export interface LinkResolveView {
+  spaceId: string
+  /** The target as typed, echoed for display. */
+  target: string
+  status: LinkResolveStatus
+  /** Vault-relative path of the real file, or null when unresolved. */
+  file: string | null
+  /** Space-relative path when the target lives inside the current learning space. */
+  spacePath: string | null
+  kind: LinkTargetKind
+  heading: string | null
+  blockId: string | null
+  /** Canonical `[[Vault/relative/path#标题|别名]]`, null unless `status === 'ok'`. */
+  link: string | null
+  /** Vault-relative candidates when a bare name matches several files. */
+  candidates: string[]
+  /** Actionable explanation for every non-ok result. */
+  message: string | null
+}
+
+export type LinkResolveCommand = {
+  action: 'link-resolve'
+  spaceId: string
+  /** Obsidian-style target: `文件`, `文件#标题`, `文件#^块id`, optionally `|别名`. */
+  target: string
+  /** Space-relative note path that a `[[#标题]]` same-file link refers to. */
+  fromPath?: string
+}
 
 export type CanvasTargetKind = 'lecture' | 'note'
 export type CanvasTargetStatus = 'ok' | 'missing' | 'outside' | 'unsupported'
