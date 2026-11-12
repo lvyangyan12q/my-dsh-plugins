@@ -42,6 +42,8 @@ type ReaderState =
 interface GoalDraft {
   text: string
   editing: boolean
+  /** Bumped on every local edit; a save only clears the draft it submitted. */
+  revision: number
 }
 
 const lectureStyles = `
@@ -188,8 +190,11 @@ export function LectureZone(props: LectureZoneProps) {
   const [drafts, setDrafts] = useState<Record<string, GoalDraft>>({})
   const [goalErrors, setGoalErrors] = useState<Record<string, string>>({})
   const [goalNotices, setGoalNotices] = useState<Record<string, string>>({})
-  const [savingSpaceId, setSavingSpaceId] = useState<string | null>(null)
-  const [reloadingSpaceId, setReloadingSpaceId] = useState<string | null>(null)
+  // Request ownership is per space: a pending save/reload for topic A must not
+  // be treated as this topic's busy state, and a late A response must not clear
+  // a newer request owned by another topic.
+  const [savingRequests, setSavingRequests] = useState<Record<string, number>>({})
+  const [reloadingRequests, setReloadingRequests] = useState<Record<string, number>>({})
   const [candidatePanel, setCandidatePanel] = useState(false)
   const [candidates, setCandidates] = useState<LectureCandidatesView | null>(null)
   const [candidatesLoading, setCandidatesLoading] = useState(false)
@@ -201,7 +206,10 @@ export function LectureZone(props: LectureZoneProps) {
   const handledRequest = useRef<number | null>(null)
   const draftsRef = useRef<Record<string, GoalDraft>>({})
   const currentSpaceIdRef = useRef(spaceId)
-  const topicLoadToken = useRef(0)
+  // Per-space read tokens: a save for A only invalidates A's in-flight read.
+  const topicLoadTokens = useRef<Record<string, number>>({})
+  const requestSeq = useRef(0)
+  const draftRevisionSeq = useRef(0)
   currentSpaceIdRef.current = spaceId
 
   useEffect(() => {
@@ -213,9 +221,32 @@ export function LectureZone(props: LectureZoneProps) {
   const goalDraft = draft?.text ?? topic?.goal ?? ''
   const goalError = goalErrors[spaceId] ?? ''
   const goalNotice = goalNotices[spaceId] ?? ''
-  const goalSaving = savingSpaceId === spaceId
-  const goalReloading = reloadingSpaceId === spaceId
+  const goalSaving = savingRequests[spaceId] !== undefined
+  const goalReloading = reloadingRequests[spaceId] !== undefined
   const goalBusy = goalSaving || goalReloading
+
+  const nextDraftRevision = () => {
+    draftRevisionSeq.current += 1
+    return draftRevisionSeq.current
+  }
+
+  const beginRequest = (kind: 'save' | 'reload', id: string): number => {
+    requestSeq.current += 1
+    const requestId = requestSeq.current
+    const setter = kind === 'save' ? setSavingRequests : setReloadingRequests
+    setter(prev => ({ ...prev, [id]: requestId }))
+    return requestId
+  }
+
+  const endRequest = (kind: 'save' | 'reload', id: string, requestId: number) => {
+    const setter = kind === 'save' ? setSavingRequests : setReloadingRequests
+    setter(prev => {
+      if (prev[id] !== requestId) return prev
+      const copy = { ...prev }
+      delete copy[id]
+      return copy
+    })
+  }
 
   const clearGoalError = (id: string) => {
     setGoalErrors(prev => {
@@ -253,7 +284,8 @@ export function LectureZone(props: LectureZoneProps) {
     setLinkError('')
     setLinking(null)
 
-    const loadToken = ++topicLoadToken.current
+    const loadToken = (topicLoadTokens.current[spaceId] ?? 0) + 1
+    topicLoadTokens.current[spaceId] = loadToken
     const current = () => alive.current && generation.current === mine && !controller.signal.aborted
 
     client.listLectures(spaceId, controller.signal).then(async list => {
@@ -278,7 +310,7 @@ export function LectureZone(props: LectureZoneProps) {
 
     if (canTopic) {
       client.readTopic?.(spaceId, controller.signal).then(next => {
-        if (!current() || topicLoadToken.current !== loadToken) return
+        if (!current() || topicLoadTokens.current[spaceId] !== loadToken) return
         setTopic(next)
         const existing = draftsRef.current[spaceId]
         if (existing !== undefined && existing.editing) {
@@ -291,10 +323,11 @@ export function LectureZone(props: LectureZoneProps) {
           }
           return
         }
-        setDrafts(prev => ({ ...prev, [spaceId]: { text: next.goal, editing: false } }))
+        const revision = nextDraftRevision()
+        setDrafts(prev => ({ ...prev, [spaceId]: { text: next.goal, editing: false, revision } }))
         clearGoalNotice(spaceId)
       }).catch(error => {
-        if (current() && topicLoadToken.current === loadToken) setTopicError(messageOf(error))
+        if (current() && topicLoadTokens.current[spaceId] === loadToken) setTopicError(messageOf(error))
       })
     }
 
@@ -327,9 +360,10 @@ export function LectureZone(props: LectureZoneProps) {
   const retryButton = <button className="lc-secondary" onClick={reload}>重新加载目录</button>
 
   const startGoalEdit = () => {
+    const revision = nextDraftRevision()
     setDrafts(prev => ({
       ...prev,
-      [spaceId]: { text: prev[spaceId]?.text ?? topic?.goal ?? '', editing: true },
+      [spaceId]: { text: prev[spaceId]?.text ?? topic?.goal ?? '', editing: true, revision },
     }))
     clearGoalError(spaceId)
   }
@@ -346,39 +380,46 @@ export function LectureZone(props: LectureZoneProps) {
   }
 
   const changeGoalDraft = (text: string) => {
-    setDrafts(prev => ({ ...prev, [spaceId]: { text, editing: true } }))
+    const revision = nextDraftRevision()
+    setDrafts(prev => ({ ...prev, [spaceId]: { text, editing: true, revision } }))
   }
 
   /**
-   * Save the goal through the versioned Host command. The busy flag belongs to
-   * the space that started the request, so switching views or a late response
-   * can never disable (or re-enable) another topic's form.
+   * Save the goal through the versioned Host command. The request is owned by
+   * the space that started it: another topic's pending request never counts as
+   * this topic's busy flag, and this response never clears a newer draft.
    */
   const saveGoal = async () => {
     if (!canTopic || topic === null || goalBusy) return
     const targetSpace = spaceId
-    const text = goalDraft
+    const submitted = drafts[targetSpace]
+    const text = submitted?.text ?? goalDraft
+    const submittedRevision = submitted?.revision ?? null
     const version = topic.version
-    setSavingSpaceId(targetSpace)
+    const requestId = beginRequest('save', targetSpace)
     clearGoalError(targetSpace)
     try {
       const next = await client.saveTopicGoal?.({ action: 'topic-save', spaceId: targetSpace, goal: text, version })
       if (next === undefined) return
-      // Any in-flight read of this goal file is now older than the save.
-      topicLoadToken.current += 1
-      setDrafts(prev => {
-        if (prev[targetSpace] === undefined) return prev
-        const copy = { ...prev }
-        delete copy[targetSpace]
-        return copy
-      })
+      // Only this space's in-flight read is older than this save.
+      topicLoadTokens.current[targetSpace] = (topicLoadTokens.current[targetSpace] ?? 0) + 1
+      if (submittedRevision !== null) {
+        setDrafts(prev => {
+          const current = prev[targetSpace]
+          // A newer local revision belongs to the learner; keep it.
+          if (current === undefined || current.revision !== submittedRevision) return prev
+          const copy = { ...prev }
+          delete copy[targetSpace]
+          return copy
+        })
+      }
       clearGoalNotice(targetSpace)
       if (alive.current && currentSpaceIdRef.current === targetSpace) setTopic(next)
     } catch (error) {
       // The error stays with the space that asked, even after a view switch.
       if (alive.current) setGoalErrors(prev => ({ ...prev, [targetSpace]: messageOf(error) }))
     } finally {
-      setSavingSpaceId(current => current === targetSpace ? null : current)
+      endRequest('save', targetSpace, requestId)
     }
   }
 
@@ -387,20 +428,21 @@ export function LectureZone(props: LectureZoneProps) {
     if (!canTopic || topic === null || goalBusy) return
     const targetSpace = spaceId
     const mine = generation.current
-    setReloadingSpaceId(targetSpace)
+    const requestId = beginRequest('reload', targetSpace)
     clearGoalError(targetSpace)
     try {
       const next = await client.readTopic?.(targetSpace)
       if (next === undefined || !alive.current) return
       if (generation.current !== mine || currentSpaceIdRef.current !== targetSpace) return
-      topicLoadToken.current += 1
+      topicLoadTokens.current[targetSpace] = (topicLoadTokens.current[targetSpace] ?? 0) + 1
+      const revision = nextDraftRevision()
       setTopic(next)
-      setDrafts(prev => ({ ...prev, [targetSpace]: { text: next.goal, editing: true } }))
+      setDrafts(prev => ({ ...prev, [targetSpace]: { text: next.goal, editing: true, revision } }))
       clearGoalNotice(targetSpace)
     } catch (error) {
       if (alive.current) setGoalErrors(prev => ({ ...prev, [targetSpace]: messageOf(error) }))
     } finally {
-      setReloadingSpaceId(current => current === targetSpace ? null : current)
+      endRequest('reload', targetSpace, requestId)
     }
   }
 

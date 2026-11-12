@@ -702,3 +702,89 @@ test('目标冲突后只有显式重新加载才替换草稿，并说明会放�
     await ui.unmount()
   }
 })
+
+test('A 保存成功不会作废 B 正在读取的目标（旧主题不污染当前加载令牌）', async () => {
+  const client = twoTopicClient()
+  let releaseSave, releaseRead
+  const saveGate = new Promise(resolve => { releaseSave = resolve })
+  const readGate = new Promise(resolve => { releaseRead = resolve })
+  const realSave = client.saveTopicGoal.bind(client)
+  const realRead = client.readTopic.bind(client)
+  let firstReadOfB = true
+  client.saveTopicGoal = async input => { await saveGate; return realSave(input) }
+  client.readTopic = async spaceId => {
+    if (spaceId === otherSpace.id && firstReadOfB) {
+      firstReadOfB = false
+      await readGate
+    }
+    return realRead(spaceId)
+  }
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), 'A 主题保存中')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+
+    await switchSpace(ui, otherSpace.title)
+    assert.match(ui.directory().textContent, /正在读取学习目标/)
+
+    releaseSave()
+    await settle()
+    // A's late success must leave B's pending read alive.
+    releaseRead()
+    await settle()
+    const goalText = ui.directory().querySelector('[aria-label="学习目标"]').textContent
+    assert.match(goalText, /线代主题目标/)
+    assert.doesNotMatch(goalText, /正在读取学习目标/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('A、B 两个保存都 pending 时回 A：A 仍 busy，结束只清自己提交版本的草稿', async () => {
+  const client = twoTopicClient()
+  const gates = {}
+  const released = {
+    [space.id]: () => {},
+    [otherSpace.id]: () => {},
+  }
+  for (const id of [space.id, otherSpace.id]) {
+    gates[id] = new Promise(resolve => { released[id] = resolve })
+  }
+  const realSave = client.saveTopicGoal.bind(client)
+  client.saveTopicGoal = async input => { await gates[input.spaceId]; return realSave(input) }
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), 'A 提交草稿')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+
+    await switchSpace(ui, otherSpace.title)
+    await ui.click(findButton(ui.directory(), '编辑目标'))
+    await ui.setTextarea(ui.directory().querySelector('textarea[aria-label="学习目标内容"]'), 'B 提交草稿')
+    await ui.click(findButton(ui.directory(), '保存目标'))
+
+    // Back on A while its own request is still pending: it is still owned and busy.
+    await switchSpace(ui, space.title)
+    const areaA = ui.directory().querySelector('textarea[aria-label="学习目标内容"]')
+    assert.ok(areaA)
+    assert.equal(areaA.disabled, true, 'A 自己的保存仍 pending 时不能编辑新草稿')
+    assert.equal(areaA.value, 'A 提交草稿')
+
+    released[space.id]()
+    await settle()
+    assert.match(ui.directory().querySelector('[aria-label="学习目标"]').textContent, /A 提交草稿/)
+    assert.equal(findButton(ui.directory(), '编辑目标').disabled, false)
+
+    // B's request is still owned by B, not cleared by A's success.
+    await switchSpace(ui, otherSpace.title)
+    const areaB = ui.directory().querySelector('textarea[aria-label="学习目标内容"]')
+    assert.ok(areaB)
+    assert.equal(areaB.disabled, true)
+    released[otherSpace.id]()
+    await settle()
+    assert.match(ui.directory().querySelector('[aria-label="学习目标"]').textContent, /B 提交草稿/)
+  } finally {
+    await ui.unmount()
+  }
+})
