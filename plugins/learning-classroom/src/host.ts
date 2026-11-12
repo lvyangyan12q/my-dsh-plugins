@@ -29,13 +29,15 @@ import type {
 } from './contract.ts'
 import { ClassroomError } from './errors.ts'
 import {
-  composeExperiment,
+  compileExperimentDraft,
+  composeExperimentFile,
+  readExperimentFile,
+  type ExperimentDraft,
+} from './experiment-spec.ts'
+import {
   composeLecture,
-  experimentDraftSchema,
   lectureDraftSchema,
   lectureRelativePath,
-  readExperimentMeta,
-  type ExperimentDraft,
   type LectureDraft,
 } from './teacher-content.ts'
 import {
@@ -719,7 +721,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
 
     let content: string | null = null
-    let html: string | null = null
+    let rawExperiment: string | null = null
     if (kind === 'markdown') {
       if (info.size > lectureReadLimit) {
         throw new ClassroomError('lecture-too-large', `讲义文件过大（超过 ${Math.round(lectureReadLimit / 1024)} KB）：${relative}`, 413)
@@ -734,14 +736,16 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         throw new ClassroomError('lecture-too-large', `动态实验文件过大（超过 ${Math.round(lectureReadLimit / 1024)} KB）：${relative}`, 413)
       }
       try {
-        html = await readFile(target, 'utf8')
+        rawExperiment = await readFile(target, 'utf8')
       } catch {
         throw new ClassroomError('lecture-read-failed', `读取动态实验失败：${relative}`, 500)
       }
     }
-    const head = content ?? html ?? ''
+    const head = content ?? rawExperiment ?? ''
     const meta = readLectureMeta(fileName, head)
-    const experimentMeta = html === null ? { sources: [], parameters: [] } : readExperimentMeta(html)
+    const parsedExperiment = kind === 'experiment' ? readExperimentFile(rawExperiment ?? '') : null
+    const experiment = parsedExperiment?.spec ?? null
+    const experimentError = parsedExperiment?.error ?? null
     await saveLectureSelection(state, space, relative)
 
     return {
@@ -751,11 +755,12 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       title: meta?.title ?? fileName,
       kind,
       content,
-      html,
-      sources: experimentMeta.sources,
-      parameters: experimentMeta.parameters,
+      experiment,
+      experimentError,
+      sources: experiment?.sources ?? [],
+      parameters: experiment?.parameters ?? [],
       // The version belongs to the Markdown body this read returned; an
-      // experiment is rendered in an isolated iframe, not as lecture body.
+      // experiment is a declarative spec, not lecture body.
       version: content === null ? null : contentVersion(content),
     }
   })
@@ -1107,8 +1112,8 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         sources = lecture.sources
         parameters = []
       } else {
-        const experiment = experimentDraftSchema.parse(draft)
-        content = composeExperiment(experiment)
+        const experiment = compileExperimentDraft(draft)
+        content = composeExperimentFile(experiment, draft.order)
         title = experiment.title
         sources = experiment.sources
         parameters = experiment.parameters

@@ -51,7 +51,24 @@ const experimentArgs = {
     { name: 'prior', label: '先验概率', min: 0, max: 1, step: 0.01, default: 0.5, unit: '' },
     { name: 'likelihood', label: '似然', min: 0, max: 1, step: 0.01, default: 0.8, unit: '' },
   ],
-  html: '<!doctype html><html><head><style>body{font-family:sans-serif}</style></head><body><label>先验 <input id="prior" type="range" min="0" max="1" step="0.01" value="0.5"></label><canvas id="chart"></canvas><p id="posterior">后验：0.80</p><script>const prior = 0.5; const likelihood = 0.8; document.getElementById("posterior").textContent = "后验：" + ((prior * likelihood) / (prior * likelihood + (1 - prior) * 0.2)).toFixed(2)</script></body></html>',
+  readouts: [{
+    name: 'posterior',
+    label: '后验概率',
+    expression: 'prior * likelihood / (prior * likelihood + (1 - prior) * 0.2)',
+    unit: '',
+    decimals: 2,
+  }],
+  render: {
+    kind: 'line',
+    xParameter: 'prior',
+    samples: 40,
+    xLabel: '先验概率',
+    yLabel: '后验概率',
+    series: [{
+      label: '后验',
+      expression: 'prior * likelihood / (prior * likelihood + (1 - prior) * 0.2)',
+    }],
+  },
 }
 
 test('工具 schema 只接收内容与路径，不接受自报主题或会话身份', () => {
@@ -102,7 +119,8 @@ test('绑定会话生成讲义：成功落盘后目录可发现并可打开，�
     const read = await fixture.post({ action: 'lecture-read', spaceId: space.id, path: row.path })
     assert.equal(read.status, 200)
     assert.match(read.body.content, /## 来源/)
-    assert.equal(read.body.html, null)
+    assert.equal(read.body.experiment, null)
+    assert.equal(read.body.experimentError, null)
 
     assert.equal(await readFile(notePath, 'utf8'), noteBefore, '生成讲义不能改个人笔记')
     const leftovers = (await readdir(join(fixture.vault, space.directory, '讲义', '第一章'))).filter(name => name.endsWith('.tmp'))
@@ -184,7 +202,7 @@ test('取消发生在写入前时拒绝且不产生半成品', async () => {
   }
 })
 
-test('生成实验写入自包含页面；读回沙箱 HTML、来源与参数，实验不冒充 Markdown 正文', async () => {
+test('生成实验写入惰性声明式 spec；读回 spec、来源与参数，实验不冒充 Markdown 正文', async () => {
   const fixture = await classroomFixture()
   try {
     const space = await prepare(fixture)
@@ -196,9 +214,10 @@ test('生成实验写入自包含页面；读回沙箱 HTML、来源与参数，
 
     const absolute = join(fixture.vault, space.directory, '讲义', '第一章', '03-贝叶斯实验.html')
     const saved = await readFile(absolute, 'utf8')
-    assert.match(saved, /Content-Security-Policy/)
-    assert.match(saved, /connect-src 'none'/)
+    assert.match(saved, /name="learning-classroom:experiment" content="learning-experiment\/v1"/)
+    assert.match(saved, /<script type="application\/json" id="learning-classroom-experiment-spec">/)
     assert.match(saved, /<title>贝叶斯更新实验<\/title>/)
+    assert.doesNotMatch(saved, /<script>alert|<canvas|<input/, '生成实验不得包含模型 HTML/JS')
     assert.doesNotMatch(saved, /https?:\/\//, '生成实验不得引用网络资源')
 
     const listed = await fixture.post({ action: 'lecture-list', spaceId: space.id })
@@ -213,20 +232,21 @@ test('生成实验写入自包含页面；读回沙箱 HTML、来源与参数，
     assert.equal(read.body.kind, 'experiment')
     assert.equal(read.body.content, null)
     assert.equal(read.body.version, null)
-    assert.match(read.body.html, /<canvas id="chart">/)
-    assert.match(read.body.html, /Content-Security-Policy/)
+    assert.equal(read.body.experimentError, null)
+    assert.equal(read.body.experiment.format, 'learning-experiment/v1')
+    assert.equal(read.body.experiment.readouts[0].name, 'posterior')
     assert.deepEqual(read.body.sources, experimentArgs.sources)
     assert.deepEqual(read.body.parameters, experimentArgs.parameters)
 
     await assert.rejects(
       () => experiment.definition.execute({
         ...experimentArgs,
-        fileName: '第一章/04-外链实验.html',
-        html: '<html><body><script src="https://example.org/x.js"></script></body></html>',
+        fileName: '第一章/04-坏表达式实验.html',
+        readouts: [{ ...experimentArgs.readouts[0], expression: 'prior.value' }],
       }, execution('session-a')),
-      /外部|网络|自包含|沙箱/,
+      /表达式|不允许|未知|属性/,
     )
-    assert.equal(await stat(join(fixture.vault, space.directory, '讲义', '第一章', '04-外链实验.html')).catch(() => null), null)
+    assert.equal(await stat(join(fixture.vault, space.directory, '讲义', '第一章', '04-坏表达式实验.html')).catch(() => null), null)
     assert.deepEqual((await readdir(join(fixture.vault, space.directory, '讲义', '第一章'))).filter(name => name.endsWith('.tmp')), [])
   } finally {
     await fixture.close()

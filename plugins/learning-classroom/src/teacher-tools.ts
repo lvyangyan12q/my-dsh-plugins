@@ -2,10 +2,9 @@ import { z } from 'zod'
 import type { GeneratedContentView } from './contract.ts'
 import {
   experimentDraftSchema,
-  lectureDraftSchema,
   type ExperimentDraft,
-  type LectureDraft,
-} from './teacher-content.ts'
+} from './experiment-spec.ts'
+import { lectureDraftSchema, type LectureDraft } from './teacher-content.ts'
 
 /**
  * Structural face of the Host writer. The tool never accepts a topic or session
@@ -79,14 +78,10 @@ const experimentParameters = {
     },
     title: { type: 'string', description: '实验标题，单行，最长 120 字。' },
     order: { type: 'integer', description: '可选排序号；省略时按文件名排序。' },
-    html: {
-      type: 'string',
-      description: '完整、自包含的动态实验 HTML。禁止外链脚本/样式/图片、网络请求、iframe、表单、宿主对象或浏览器存储；只用内联样式与脚本、data: 图片。',
-    },
     sources: sourceSchema,
     parameters: {
       type: 'array',
-      description: '实验声明的可调参数（至少 1 个，最多 12 个）；min < max、default 在范围内、step > 0。',
+      description: '实验声明的可调参数（1–12 个）；min < max、default 在范围内、step > 0；名称只含字母、数字、下划线。',
       items: {
         type: 'object',
         additionalProperties: false,
@@ -102,8 +97,50 @@ const experimentParameters = {
         required: ['name', 'label', 'min', 'max', 'step', 'default', 'unit'],
       },
     },
+    readouts: {
+      type: 'array',
+      description: '1–8 个数值读数；表达式只能使用参数名、数字、+ - * / ^、括号和白名单函数（min/max/abs/sqrt/exp/log/sin/cos/pow/clamp），不得出现属性、字符串或任意函数调用。',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          name: { type: 'string', description: '读数名，例如 posterior。' },
+          label: { type: 'string', description: '给学习者看的读数说明。' },
+          expression: { type: 'string', description: '受限数学表达式，例如 prior * likelihood / (prior * likelihood + (1 - prior) * falsePositive)。' },
+          unit: { type: 'string', description: '可留空。' },
+          decimals: { type: 'integer', description: '0–6，默认 2。' },
+        },
+        required: ['name', 'label', 'expression'],
+      },
+    },
+    render: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        kind: { type: 'string', enum: ['line', 'bars'], description: '折线或柱状图。' },
+        xParameter: { type: 'string', description: '横轴使用的参数名，必须在 parameters 中。' },
+        samples: { type: 'integer', description: '采样点数 24–256。' },
+        xLabel: { type: 'string', description: '横轴说明，可留空。' },
+        yLabel: { type: 'string', description: '纵轴说明，可留空。' },
+        series: {
+          type: 'array',
+          description: '1–6 条图线；每条表达式与读数使用同一受限语法。',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              label: { type: 'string' },
+              expression: { type: 'string' },
+              color: { type: 'string', description: '可选 #rrggbb。' },
+            },
+            required: ['label', 'expression'],
+          },
+        },
+      },
+      required: ['kind', 'xParameter', 'samples', 'series'],
+    },
   },
-  required: ['fileName', 'title', 'html', 'sources', 'parameters'],
+  required: ['fileName', 'title', 'sources', 'parameters', 'readouts', 'render'],
 }
 
 const generatedOutputSchema = {
@@ -211,8 +248,10 @@ export function createTeacherTools(host: TeacherToolHost): TeacherToolEntry[] {
   const experiment: TeacherToolDefinition = {
     name: 'classroom_experiment_write',
     description:
-      '为当前学习空间写一个隔离运行的动态实验（自包含 HTML）。只写入这个老师会话已绑定的学习空间，不能选择或自报其他主题。'
-      + '实验不得联网、读宿主或笔记；参数、图形与读数必须一致。不得覆盖同名文件。生成后请让学习者刷新目录。',
+      '为当前学习空间写一个声明式动态实验（折线或柱状图 + 参数 + 读数），不写 HTML/脚本。只写入这个老师会话已绑定的学习空间，不能选择或自报其他主题。'
+      + '表达式只能用参数、数字、四则/幂/括号和白名单函数；参数、图形与读数由同一求值器计算。'
+      + '例如贝叶斯实验：参数 prior/likelihood，读数 posterior = prior * likelihood / (prior * likelihood + (1 - prior) * 0.2)，横轴 prior 画折线。'
+      + '不得覆盖同名文件。生成后请让学习者刷新目录。',
     parameters: experimentParameters,
     output: {
       schema: generatedOutputSchema,

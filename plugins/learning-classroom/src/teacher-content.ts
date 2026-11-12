@@ -1,20 +1,7 @@
 import { z } from 'zod'
-import { wrapExperimentDocument } from './experiment.ts'
 import { lectureFileKind, lectureFolder } from './lectures.ts'
 
-export { ensureExperimentCsp, experimentCsp, experimentTrustedPrefix } from './experiment.ts'
-
-/** One declared experiment control, persisted with the experiment for display. */
-export interface ExperimentParameter {
-  name: string
-  label: string
-  min: number
-  max: number
-  step: number
-  default: number
-  unit: string
-}
-
+/** Lecture path helpers and the sourced Markdown writer. */
 export interface LectureDraft {
   fileName: string
   title: string
@@ -23,41 +10,16 @@ export interface LectureDraft {
   sources: string[]
 }
 
-export interface ExperimentDraft {
-  fileName: string
-  title: string
-  order?: number
-  html: string
-  sources: string[]
-  parameters: ExperimentParameter[]
-}
-
-export interface ExperimentMeta {
-  sources: string[]
-  parameters: ExperimentParameter[]
-}
-
 /** Hard bounds shared by the Host writer and the tool argument validators. */
 export const teacherContentLimits = {
   title: 120,
   body: 200 * 1024,
-  html: 512 * 1024,
   sources: 20,
   sourceLength: 500,
-  parameters: 12,
 } as const
 
 const forbiddenPathCharacter = /[<>:"|?*\u0000-\u001f]/
-const experimentParameterName = /^[A-Za-z][A-Za-z0-9_-]{0,31}$/
 const singleLine = (value: string): boolean => !/[\r\n]/.test(value)
-
-function text(value: string, label: string, max: number): string {
-  const trimmed = value.trim()
-  if (trimmed === '') throw new Error(`${label}不能为空。`)
-  if (trimmed.length > max) throw new Error(`${label}超过 ${max} 个字符。`)
-  if (!singleLine(trimmed)) throw new Error(`${label}不能包含换行。`)
-  return trimmed
-}
 
 /**
  * Normalize a teacher-supplied file name into a space-relative path under the
@@ -67,7 +29,7 @@ function text(value: string, label: string, max: number): string {
  */
 export function lectureRelativePath(fileName: string): string {
   if (typeof fileName !== 'string') throw new Error('讲义文件名必须是字符串。')
-  let candidate = fileName.trim().replaceAll('\\', '/')
+  const candidate = fileName.trim().replaceAll('\\', '/')
   if (candidate === '') throw new Error('讲义文件名不能为空。')
   if (candidate.startsWith('/') || candidate.startsWith('//') || /^[A-Za-z]:/.test(candidate)) {
     throw new Error('讲义文件名必须是学习空间内的相对路径，不能是绝对路径。')
@@ -138,89 +100,7 @@ export const lectureDraftSchema = z.object({
   ...commonDraft,
 }).strict()
 
-export const experimentParameterSchema = z.object({
-  name: z.string().regex(experimentParameterName, '参数名须以字母开头，只含字母、数字、下划线或连字符，最长 32 个字符。'),
-  label: z.string()
-    .transform(value => value.trim())
-    .refine(value => value !== '', '参数说明不能为空。')
-    .refine(value => value.length <= 80, '参数说明不能超过 80 个字符。')
-    .refine(singleLine, '参数说明不能包含换行。'),
-  min: z.number().finite(),
-  max: z.number().finite(),
-  step: z.number().finite().positive('步长必须大于 0。'),
-  default: z.number().finite(),
-  unit: z.string()
-    .transform(value => value.trim())
-    .refine(value => value.length <= 16, '单位不能超过 16 个字符。')
-    .refine(singleLine, '单位不能包含换行。'),
-}).strict().superRefine((parameter, ctx) => {
-  if (!(parameter.min < parameter.max)) {
-    ctx.addIssue({ code: 'custom', message: `参数 ${parameter.name} 的最小值必须小于最大值。` })
-  }
-  if (parameter.default < parameter.min || parameter.default > parameter.max) {
-    ctx.addIssue({ code: 'custom', message: `参数 ${parameter.name} 的默认值必须在范围内。` })
-  }
-  if (parameter.max > parameter.min && parameter.step > parameter.max - parameter.min) {
-    ctx.addIssue({ code: 'custom', message: `参数 ${parameter.name} 的步长不能大于取值范围。` })
-  }
-})
-
-/** Patterns that would make a generated experiment depend on the network or host. */
-const externalResourcePatterns: Array<{ pattern: RegExp; reason: string }> = [
-  { pattern: /<(?:script|img|link|iframe|object|embed|source|video|audio|track|input|button)\b[^>]*\b(?:src|href|srcset|data|poster|formaction)\s*=\s*["']?\s*(?:https?:)?\/\//i, reason: '外链资源' },
-  { pattern: /<a\b[^>]*\bhref\s*=\s*["']?\s*(?:https?:)?\/\//i, reason: '外部链接' },
-  { pattern: /<link\b/i, reason: '外部样式或预加载' },
-  { pattern: /<(?:iframe|object|embed)\b/i, reason: '嵌套文档或插件' },
-  { pattern: /<(?:base|form)\b/i, reason: '基地址或表单提交' },
-  { pattern: /<meta\b[^>]*http-equiv\s*=\s*["']?refresh/i, reason: '自动跳转' },
-  { pattern: /\b(?:src|href|action|poster|data|ping|formaction)\s*=\s*["']?\s*\/\//i, reason: '协议相对地址' },
-  { pattern: /\b(?:src|href|action|poster|data|ping|formaction)\s*=\s*["']?\s*(?:file|ftp|ws|wss|blob):/i, reason: '文件或非数据资源协议' },
-  { pattern: /url\(\s*["']?\s*(?:https?:)?\/\//i, reason: '外部样式资源' },
-  { pattern: /@import\b/i, reason: '外部样式导入' },
-  { pattern: /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon|RTCPeerConnection|RTCDataChannel|WebTransport)\b/i, reason: '网络请求 API' },
-  { pattern: /\bnavigator\.(?:geolocation|mediaDevices|clipboard|serviceWorker|usb|bluetooth|serial)\b/i, reason: '宿主设备或网络 API' },
-  { pattern: /\b(?:localStorage|sessionStorage|indexedDB|document\.cookie)\b/i, reason: '宿主存储 API' },
-  { pattern: /\b(?:window|document)\.location\b|\blocation\.(?:href|assign|replace)\b/i, reason: '页面跳转 API' },
-  { pattern: /\bwindow\.(?:open|parent|top)\b|\b(?:parent|top)\.(?:location|document|postMessage)\b|\bpostMessage\s*\(/i, reason: '宿主窗口 API' },
-  { pattern: /\bnew\s+(?:Shared|Service)?Worker\b|\bserviceWorker\b/i, reason: '后台工作线程' },
-  { pattern: /\bimport\s*\(/i, reason: '动态模块导入' },
-]
-
-/** Reject an experiment body that reaches the network, the host or storage. */
-export function assertSelfContainedExperiment(html: string): void {
-  for (const { pattern, reason } of externalResourcePatterns) {
-    if (pattern.test(html)) {
-      throw new Error(`动态实验不能使用${reason}；它必须在沙箱里完全自包含，不联网、不读宿主或笔记。`)
-    }
-  }
-}
-
-export const experimentDraftSchema = z.object({
-  fileName: filePathSchema('experiment'),
-  html: z.string()
-    .refine(value => value.trim() !== '', '实验 HTML 不能为空。')
-    .refine(value => Buffer.byteLength(value, 'utf8') <= teacherContentLimits.html, `实验 HTML 不能超过 ${Math.round(teacherContentLimits.html / 1024)} KB。`)
-    .refine(value => {
-      try {
-        assertSelfContainedExperiment(value)
-        return true
-      } catch {
-        return false
-      }
-    }, '动态实验不能引用外部资源、网络 API、宿主对象或存储；必须在隔离沙箱里自包含。'),
-  parameters: z.array(experimentParameterSchema)
-    .min(1, '动态实验至少声明一个参数。')
-    .max(teacherContentLimits.parameters, `动态实验最多声明 ${teacherContentLimits.parameters} 个参数。`),
-  ...commonDraft,
-}).strict().superRefine((draft, ctx) => {
-  const names = new Set<string>()
-  for (const parameter of draft.parameters) {
-    if (names.has(parameter.name)) {
-      ctx.addIssue({ code: 'custom', message: `参数名重复：${parameter.name}` })
-    }
-    names.add(parameter.name)
-  }
-})
+export { filePathSchema }
 
 function yamlString(value: string): string {
   return JSON.stringify(value)
@@ -246,72 +126,4 @@ export function composeLecture(input: LectureDraft): string {
     sources,
     '',
   ].join('\n')
-}
-
-const orderMetaName = 'learning-classroom:order'
-const sourcesMetaName = 'learning-classroom:sources'
-const parametersMetaName = 'learning-classroom:parameters'
-
-function escapeAttribute(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('"', '&quot;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-}
-
-function unescapeAttribute(value: string): string {
-  return value
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'")
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&amp;', '&')
-}
-
-function metaTags(html: string): Array<Record<string, string>> {
-  const tags = html.match(/<meta\b[^>]*>/gi) ?? []
-  return tags.map(tag => {
-    const attributes: Record<string, string> = {}
-    for (const match of tag.matchAll(/([a-zA-Z][a-zA-Z0-9:_-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
-      attributes[match[1].toLowerCase()] = unescapeAttribute(match[2] ?? match[3] ?? '')
-    }
-    return attributes
-  })
-}
-
-function readJsonMeta<T>(html: string, name: string, schema: z.ZodType<T>): T | undefined {
-  for (const tag of metaTags(html)) {
-    if (tag.name !== name || tag.content === undefined) continue
-    try {
-      const parsed = schema.safeParse(JSON.parse(tag.content))
-      if (parsed.success) return parsed.data
-    } catch {
-      // A malformed hand-written tag degrades to "no declaration".
-    }
-  }
-  return undefined
-}
-
-/** Read the generated experiment's source and parameter declarations. */
-export function readExperimentMeta(html: string): ExperimentMeta {
-  const sources = readJsonMeta(html, sourcesMetaName, z.array(z.string())) ?? []
-  const parameters = readJsonMeta(html, parametersMetaName, z.array(experimentParameterSchema)) ?? []
-  return { sources, parameters }
-}
-
-/**
- * Compose the persisted experiment: the model's self-contained page plus the
- * classroom CSP, title and metadata used by the reader and Obsidian.
- */
-export function composeExperiment(input: ExperimentDraft): string {
-  const draft = experimentDraftSchema.parse(input)
-  assertSelfContainedExperiment(draft.html)
-  const markup = [
-    `<title>${escapeAttribute(draft.title)}</title>`,
-    draft.order !== undefined ? `<meta name="${orderMetaName}" content="${draft.order}">` : '',
-    `<meta name="${sourcesMetaName}" content="${escapeAttribute(JSON.stringify(draft.sources))}">`,
-    `<meta name="${parametersMetaName}" content="${escapeAttribute(JSON.stringify(draft.parameters))}">`,
-  ].filter(Boolean).join('')
-  return wrapExperimentDocument(draft.html, markup)
 }

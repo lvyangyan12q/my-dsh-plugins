@@ -99,7 +99,8 @@ function docsFor() {
       title: '后讲',
       kind: 'markdown',
       content: article,
-      html: null,
+      experiment: null,
+      experimentError: null,
       sources: [],
       parameters: [],
       version: 'v-article',
@@ -111,7 +112,8 @@ function docsFor() {
       title: '先讲',
       kind: 'markdown',
       content: '# 先讲内容\n\n第一节正文。',
-      html: null,
+      experiment: null,
+      experimentError: null,
       sources: [],
       parameters: [],
       version: 'v-first',
@@ -123,7 +125,22 @@ function docsFor() {
       title: '实验',
       kind: 'experiment',
       content: null,
-      html: '<!doctype html><html><head><style>body{font-family:sans-serif}</style></head><body><canvas id="chart"></canvas><p id="readout">读数：0.80</p><script>document.getElementById("readout").textContent = "读数：0.80"</script></body></html>',
+      experiment: {
+        format: 'learning-experiment/v1',
+        title: '实验',
+        sources: ['《概率论》第 2 章'],
+        parameters: [{ name: 'prior', label: '先验概率', min: 0, max: 1, step: 0.01, default: 0.5, unit: '' }],
+        readouts: [{ name: 'posterior', label: '后验概率', unit: '', decimals: 2, ast: { kind: 'param', name: 'prior' } }],
+        render: {
+          kind: 'line',
+          xParameter: 'prior',
+          samples: 32,
+          xLabel: '先验概率',
+          yLabel: '后验概率',
+          series: [{ label: '后验', color: '#0969da', ast: { kind: 'param', name: 'prior' } }],
+        },
+      },
+      experimentError: null,
       sources: ['《概率论》第 2 章'],
       parameters: [{ name: 'prior', label: '先验概率', min: 0, max: 1, step: 0.01, default: 0.5, unit: '' }],
       version: null,
@@ -352,11 +369,12 @@ test('HTML 实验在最小沙箱 iframe 中运行，CSP 禁止宿主、文件与
     assert.match(srcdoc, /Content-Security-Policy/)
     assert.match(srcdoc, /default-src 'none'/)
     assert.match(srcdoc, /connect-src 'none'/)
-    assert.match(srcdoc, /<canvas id="chart">/)
+    assert.match(srcdoc, /canvas/)
+    assert.match(srcdoc, /const SPEC = /)
     assert.doesNotMatch(srcdoc, /D:\/知识库|笔记\/我的笔记\.md|沙箱外/, '实验文档里不能带宿主路径或笔记内容')
     assert.equal(reader.querySelector('script'), null, '实验脚本不能进入课堂主文档')
 
-    assert.match(reader.textContent, /最小的沙箱|沙箱|不能读取宿主/)
+    assert.match(reader.textContent, /沙箱|可信 runtime/)
     assert.match(reader.textContent, /先验概率/)
     assert.match(reader.textContent, /0.*1/)
     assert.match(reader.textContent, /《概率论》第 2 章/)
@@ -409,6 +427,30 @@ test('实验读取失败时显示可操作错误，不假装运行', async () =>
     assert.ok(alert)
     assert.match(alert.textContent, /03-实验\.html|不存在|删除/)
     assert.ok(findButton(alert, '重新加载目录'))
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('旧式任意脚本实验只显示不执行提示与路径，不创建 iframe', async () => {
+  const docs = docsFor()
+  docs['讲义/03-实验.html'] = {
+    ...docs['讲义/03-实验.html'],
+    experiment: null,
+    experimentError: '这是旧式任意 HTML/脚本实验，当前版本不执行它；请保留原文件，并让老师重新生成声明式实验。',
+    sources: [],
+    parameters: [],
+  }
+  const ui = await mount(fakeClient({ docs }))
+  try {
+    await ui.click(findButton(ui.directory(), '实验'))
+    const reader = ui.reader()
+    assert.equal(reader.querySelector('iframe'), null)
+    const alert = reader.querySelector('[role="alert"]')
+    assert.ok(alert)
+    assert.match(alert.textContent, /旧式|任意|脚本|不执行/)
+    assert.match(alert.textContent, /03-实验\.html/)
+    assert.match(alert.textContent, /重新生成/)
   } finally {
     await ui.unmount()
   }

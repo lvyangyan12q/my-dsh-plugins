@@ -9,7 +9,8 @@ import type {
   LectureReadView,
   TopicView,
 } from './contract.ts'
-import { ensureExperimentCsp } from './experiment.ts'
+import { buildExperimentSrcdoc } from './experiment-runtime.ts'
+import type { ExperimentSpec } from './experiment-spec.ts'
 import { groupCourseLectures, resolveLectureHref } from './lectures.ts'
 import { scrollToFragment, type LinkFragment } from './fragments.ts'
 import { parseInline, parseMarkdown, type Block } from './markdown.ts'
@@ -186,32 +187,32 @@ function MarkdownBody({ content, onOpenHref }: { content: string; onOpenHref?: (
 }
 
 /**
- * The experiment runs in an opaque-origin iframe with only inline scripts. The
- * classroom CSP is injected before the HTML reaches the frame; even a file that
- * was edited outside the plugin cannot read this document, notes or the network.
+ * The experiment is a declarative spec, never model HTML/JS. The iframe document
+ * is built from a fixed trusted runtime source; only the escaped JSON spec is
+ * injected. The frame has no same-origin permission and no external data channel.
  */
-function ExperimentFrame({ doc }: { doc: LectureReadView }) {
-  const srcdoc = useMemo(() => ensureExperimentCsp(doc.html ?? ''), [doc.html])
+function ExperimentFrame({ spec }: { spec: ExperimentSpec }) {
+  const srcdoc = useMemo(() => buildExperimentSrcdoc(spec), [spec])
   return (
     <div className="lc-lecture-experiment" aria-label="动态实验">
       <p className="lc-experiment-note" role="note">
-        实验在最小的沙箱 iframe 中运行（只允许内联脚本）；CSP 阻止外部资源加载并隔离宿主/笔记，但不能阻止脚本改变 iframe 自身地址。当前候选不是完整网络隔离，待收紧执行模型。
+        实验由固定可信 runtime 渲染声明式参数与图形，不执行模型 HTML/JS；iframe 仅允许内联脚本、无同源权限，也不接收外部消息或联网。
       </p>
       <iframe
         className="lc-experiment-frame"
-        title={`动态实验：${doc.title}`}
+        title={`动态实验：${spec.title}`}
         sandbox="allow-scripts"
         allow=""
         referrerPolicy="no-referrer"
         srcDoc={srcdoc}
       />
-      {(doc.parameters.length > 0 || doc.sources.length > 0) && (
+      {(spec.parameters.length > 0 || spec.sources.length > 0) && (
         <div className="lc-experiment-meta">
-          {doc.parameters.length > 0 && (
+          {spec.parameters.length > 0 && (
             <section aria-label="实验参数">
               <strong>实验参数</strong>
               <ul>
-                {doc.parameters.map(parameter => (
+                {spec.parameters.map(parameter => (
                   <li key={parameter.name}>
                     <code>{parameter.name}</code> {parameter.label}：{parameter.min}–{parameter.max}
                     {parameter.unit === '' ? '' : ` ${parameter.unit}`}，步长 {parameter.step}，默认 {parameter.default}
@@ -221,14 +222,27 @@ function ExperimentFrame({ doc }: { doc: LectureReadView }) {
               </ul>
             </section>
           )}
-          {doc.sources.length > 0 && (
+          {spec.sources.length > 0 && (
             <section aria-label="实验来源">
               <strong>来源</strong>
-              <ul>{doc.sources.map((source, index) => <li key={index}>{source}</li>)}</ul>
+              <ul>{spec.sources.map((source, index) => <li key={index}>{source}</li>)}</ul>
             </section>
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Legacy arbitrary HTML/script experiments are never rendered. */
+function ExperimentUnsupported({ doc }: { doc: LectureReadView }) {
+  return (
+    <div className="lc-lecture-experiment" role="alert">
+      <p>{doc.experimentError ?? '这个动态实验无法读取，未执行。'}</p>
+      <p className="lc-lecture-path">{doc.path}</p>
+      <p className="lc-hint">
+        旧式任意 HTML/脚本实验不会在本版本运行；原文件保留在原位置。请让老师重新生成声明式实验（参数、读数、折线/柱状图）。
+      </p>
     </div>
   )
 }
@@ -366,7 +380,9 @@ function LectureReader(props: {
         <div ref={bodyRef}>
           {doc.kind === 'markdown'
             ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} />
-            : <ExperimentFrame doc={doc} />}
+            : doc.experiment !== null
+              ? <ExperimentFrame spec={doc.experiment} />
+              : <ExperimentUnsupported doc={doc} />}
         </div>
       </AnnotationAction>
     </>

@@ -46,9 +46,23 @@ test('真实宿主 ToolsService 接受两个老师工具的输入/输出 schema�
   const goodExperiment = {
     fileName: '第一章/02-实验.html',
     title: '实验',
-    html: '<html><body><canvas></canvas><script>1</script></body></html>',
     sources: ['课堂推导'],
     parameters: [{ name: 'p', label: '概率', min: 0, max: 1, step: 0.1, default: 0.5, unit: '' }],
+    readouts: [{
+      name: 'outcome',
+      label: '结果',
+      expression: 'p * 2',
+      unit: '',
+      decimals: 2,
+    }],
+    render: {
+      kind: 'line',
+      xParameter: 'p',
+      samples: 40,
+      xLabel: '概率',
+      yLabel: '结果',
+      series: [{ label: '结果', expression: 'p * 2', color: '#0969da' }],
+    },
   }
   assert.deepEqual(validateJsonSchemaValue(experiment.parameters, goodExperiment, ''), [])
 })

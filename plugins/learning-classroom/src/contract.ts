@@ -1,6 +1,6 @@
 import type { CanvasNodeType, CanvasRelation } from './canvas.ts'
+import type { ExperimentSpec, ExperimentParameter } from './experiment-spec.ts'
 import type { ClassroomLayout } from './layout.ts'
-import type { ExperimentParameter } from './teacher-content.ts'
 
 /** Wire contract shared by the Host service and the browser panel. */
 export interface ClassroomSpaceView {
@@ -103,18 +103,20 @@ export interface LectureReadView {
   fileName: string
   title: string
   kind: ClassroomLectureKind
-  /** Markdown body; null for experiments, whose HTML is carried in `html`. */
+  /** Markdown body; null for experiments, whose declarative spec is carried in `experiment`. */
   content: string | null
-  /** Experiment document, only ever rendered in an isolated iframe; null for Markdown. */
-  html: string | null
+  /** Declarative experiment spec; rendered only by the fixed trusted iframe runtime. */
+  experiment: ExperimentSpec | null
+  /** Why an experiment file cannot be rendered (legacy arbitrary HTML or malformed spec). */
+  experimentError: string | null
   /** Sources declared by a generated experiment. Empty for hand-written files. */
   sources: string[]
   /** Parameters declared by a generated experiment. Empty for Markdown or undeclared files. */
   parameters: ExperimentParameter[]
   /**
    * Content version of the body the Host actually read (SHA-256), used to freeze
-   * what a question was asked about. Null for experiments, whose HTML is not
-   * treated as lecture body.
+   * what a question was asked about. Null for experiments, whose declarative
+   * spec is not treated as lecture body.
    */
   version: string | null
 }
