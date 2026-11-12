@@ -23,6 +23,12 @@ export interface NoteDraftStore {
 
 const keyPrefix = 'learning-classroom:note-draft:v1:'
 
+/**
+ * A draft belongs to one space UUID plus a space-relative note path. Space ids
+ * are minted with `randomUUID()` when a space is created, and choosing a
+ * different vault clears the registered spaces, so a key cannot be reused by a
+ * space from another vault.
+ */
 function keyOf(spaceId: string, path: string): string {
   return `${keyPrefix}${encodeURIComponent(spaceId)}:${encodeURIComponent(path)}`
 }
