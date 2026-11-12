@@ -57,7 +57,6 @@ const doc = {
     '- 普通项',
     '- 真实项 ^multi-block',
   ].join('\n'),
-  placeholder: null,
 }
 
 const client = {
