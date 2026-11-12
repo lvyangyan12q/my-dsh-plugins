@@ -54,7 +54,7 @@ export interface AskTeacher {
 
 /** Build one frozen context record and the exact text appended to the draft. */
 export function createAskedContext(input: QuestionContextInput, id: string): AskedContext {
-  return { ...input, id, block: formatQuestionBlock(input) }
+  return { ...input, id, block: formatQuestionBlock(input, id) }
 }
 
 /** Material label shown in the context strip and used as its button label. */
@@ -118,10 +118,15 @@ function materialLine(input: QuestionContextInput): string {
 /**
  * Format the frozen context block. Pure text: the learner can see exactly what
  * will be sent before sending, and the block never changes after it is built.
+ *
+ * A visible per-block token (`编号`) keeps two questions about the same material
+ * distinguishable: without it a repeated ask would produce byte-identical
+ * blocks, and removing either copy would be a guess.
  */
-export function formatQuestionBlock(input: QuestionContextInput): string {
+export function formatQuestionBlock(input: QuestionContextInput, token?: string): string {
   const lines = [
     '【提问上下文】',
+    ...token === undefined || token.trim() === '' ? [] : [`编号：${token.trim()}`],
     `主题：${input.spaceTitle}`,
     materialLine(input),
     versionLine(input),
@@ -134,10 +139,11 @@ export function formatQuestionBlock(input: QuestionContextInput): string {
 
 /**
  * Append a block below the learner's existing draft. Existing text is kept
- * byte-for-byte; the returned draft is what the native composer receives.
+ * byte-for-byte (a whitespace-only draft is still learner text); only an
+ * exactly-empty draft takes the block as its whole content.
  */
 export function appendContextBlock(draft: string, block: string): string {
-  if (draft.trim() === '') return block
+  if (draft === '') return block
   return `${draft}\n\n${block}`
 }
 
@@ -149,6 +155,13 @@ export type RemoveContextResult =
 
 /**
  * Remove exactly one appended block and restore the surrounding draft.
+ *
+ * The block itself is the only text this function owns. When it sits after the
+ * learner's text, the single blank line our append introduced before it belongs
+ * to neither side and goes with the block; everything else — including blank
+ * lines the learner typed before or after — is returned untouched. There is no
+ * trimming, so the pre-append draft comes back byte-for-byte.
+ *
  * The block must occur exactly once: a repeated block would make removal a
  * guess about which question the learner meant to change.
  */
@@ -156,11 +169,6 @@ export function removeContextBlock(draft: string, block: string): RemoveContextR
   const first = draft.indexOf(block)
   if (first < 0) return { status: 'missing' }
   if (draft.indexOf(block, first + block.length) >= 0) return { status: 'ambiguous' }
-  let before = draft.slice(0, first)
-  let after = draft.slice(first + block.length)
-  // The blank line we add between the draft and the block belongs to neither.
-  if (after.startsWith('\n\n')) after = after.slice(2)
-  else if (after === '') before = before.replace(/\n\n$/u, '')
-  else if (before === '') after = after.replace(/^\n+/u, '')
-  return { status: 'removed', draft: before + after }
+  const start = first >= 2 && draft.slice(first - 2, first) === '\n\n' ? first - 2 : first
+  return { status: 'removed', draft: draft.slice(0, start) + draft.slice(first + block.length) }
 }

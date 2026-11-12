@@ -475,6 +475,36 @@ test('发送后已发内容仍是当时的主题、版本与摘录；上下文�
   assert.match(sent, /条件概率的定义/)
 })
 
+test('同一材料连问两次得到两个带编号的块，可逐条移除且另块不受影响', async t => {
+  const conversation = createConversation()
+  const { ui } = await mountedPanel(t, { conversation })
+  await ui.click(buttonIn(ui.document, '讲义', '问老师'))
+  await ui.click(buttonIn(ui.document, '讲义', '问老师'))
+
+  assert.equal(conversation.initializationCalls.length, 2)
+  const [first, second] = conversation.initializationCalls.map(call => call.init.prompt)
+  assert.notEqual(first, second, '两次追问必须得到可区分的块')
+  assert.match(first, /编号：q1/)
+  assert.match(second, /编号：q2/)
+  assert.match(contextBar(ui.document).textContent, /提问上下文（2）/)
+
+  const removals = [...contextBar(ui.document).querySelectorAll('button')]
+    .filter(button => button.textContent.includes('移除上下文'))
+  assert.equal(removals.length, 2)
+  await ui.click(removals[0])
+  assert.deepEqual(conversation.setDraftCalls, [`\n\n${second}`])
+  assert.match(contextBar(ui.document).textContent, /提问上下文（1）/)
+
+  // The remaining block still quotes its own excerpt; that must not block its
+  // own removal either.
+  const last = [...contextBar(ui.document).querySelectorAll('button')]
+    .find(button => button.textContent.includes('移除上下文'))
+  assert.ok(last)
+  await ui.click(last)
+  assert.deepEqual(conversation.setDraftCalls, [`\n\n${second}`, ''])
+  assert.match(contextBar(ui.document).textContent, /还没有待发送的提问上下文/)
+})
+
 test('草稿里有原生引用块时拒绝整体移除，提示手动删除且不改写草稿', async t => {
   const conversation = createConversation()
   const { ui } = await mountedPanel(t, { conversation })

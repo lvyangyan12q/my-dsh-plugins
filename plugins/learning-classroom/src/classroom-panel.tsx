@@ -296,7 +296,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
     }
     if (input.excerpt.trim() === '') return { ok: false, reason: '没有可附加的摘录，未追加。' }
     questionSeq.current += 1
-    const context = createAskedContext(input, `question-${questionSeq.current}`)
+    const context = createAskedContext(input, `q${questionSeq.current}`)
     const result = face.append(context.block)
     if (!result.ok) return result
     if (alive.current) setAsked(previous => ({ ...previous, [target]: [...(previous[target] ?? []), context] }))
@@ -310,7 +310,10 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
     const context = questionContexts.find(row => row.id === id)
     if (target === null || context === undefined) return { ok: false, reason: '这条上下文已经不在此学习空间。' }
     if (face === null || face.spaceId !== target) return { ok: false, reason: '老师会话还没准备好，未移除。' }
-    const result = face.remove(context.block)
+    // Deduct the other context blocks this page owns before the host-side
+    // unknown-quote check; they are never deleted by this removal.
+    const known = questionContexts.filter(row => row.id !== id).map(row => row.block)
+    const result = face.remove(context.block, known)
     if (!result.ok) return result
     if (alive.current) {
       setAsked(previous => ({ ...previous, [target]: (previous[target] ?? []).filter(row => row.id !== id) }))

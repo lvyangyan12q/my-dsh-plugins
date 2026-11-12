@@ -71,7 +71,13 @@ export interface ComposerFace {
   /** Observe draft changes; returns an unsubscribe noop when unavailable. */
   subscribe(listener: () => void): () => void
   append(block: string): ComposerResult
-  remove(block: string): ComposerResult
+  /**
+   * Remove one appended block. `knownBlocks` are the other context blocks the
+   * page still owns: they are deducted before the unknown-quote check so a
+   * second block's quoted excerpt does not make removal impossible. They are
+   * never deleted by this call.
+   */
+  remove(block: string, knownBlocks?: readonly string[]): ComposerResult
 }
 
 export interface ComposerFaceOptions {
@@ -179,7 +185,7 @@ export function createComposerFace(options: ComposerFaceOptions): ComposerFace {
       return { ok: false, reason: '宿主返回了未知结果，未确认追加；请检查老师输入框。' }
     },
 
-    remove(block: string): ComposerResult {
+    remove(block: string, knownBlocks: readonly string[] = []): ComposerResult {
       const target = input()
       if (target === undefined) return { ok: false, reason: '无法读取老师输入框的当前草稿，未移除。' }
       const view = draftViewOf(target)
@@ -201,9 +207,23 @@ export function createComposerFace(options: ComposerFaceOptions): ComposerFace {
       // Native quotes are absent from the public `occurrences` state and the
       // Host exposes no local deletion; `setDraft` clears the editor root, which
       // would flatten a quote into ordinary text. Every native quote projects as
-      // Markdown blockquote text, so a remaining blockquote line means structural
-      // loss cannot be ruled out — refuse instead of rewriting.
-      if (removal.draft.includes('> ')) {
+      // Markdown blockquote text, so any blockquote line we cannot account for
+      // means structural loss cannot be ruled out.
+      //
+      // Other context blocks this page appended are accounted for: deduct each
+      // unchanged, unique known block before looking for unknown blockquotes.
+      // They are only deducted from this analysis string, never from the draft.
+      let analysis = removal.draft
+      for (const known of knownBlocks) {
+        if (known === '' || known === block) continue
+        const at = analysis.indexOf(known)
+        if (at < 0) continue
+        if (analysis.indexOf(known, at + known.length) >= 0) {
+          return { ok: false, reason: '草稿里有重复的上下文块，无法确认其余内容未被改动；请手动删除这段上下文。' }
+        }
+        analysis = analysis.slice(0, at) + analysis.slice(at + known.length)
+      }
+      if (analysis.includes('> ')) {
         return {
           ok: false,
           reason: '草稿里还有引用样式的内容（可能是原生引用块）；宿主没有公开的局部删除接口，整体改写会破坏引用结构。请手动删除这段上下文。',

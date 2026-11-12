@@ -90,7 +90,30 @@ test('追加只接在原有草稿后面：不覆盖、不改动已有文字', ()
 
   // An empty draft simply becomes the block: no leading blank lines.
   assert.equal(appendContextBlock('', block), block)
-  assert.equal(appendContextBlock('   ', block), block)
+  // Whitespace is the learner's text, not an empty draft: it is never trimmed.
+  assert.equal(appendContextBlock('   ', block), `   \n\n${block}`)
+})
+
+test('追加/移除只拥有块和它前面的分隔符：不 trim 学习者原草稿，不删块后的空行', () => {
+  const block = formatQuestionBlock(lecture)
+
+  // A learner draft that ends with blank lines gets them back byte-for-byte.
+  const trailing = '原草稿\n\n'
+  assert.equal(appendContextBlock(trailing, block), `${trailing}\n\n${block}`)
+  assert.deepEqual(removeContextBlock(appendContextBlock(trailing, block), block), { status: 'removed', draft: trailing })
+
+  // Whitespace-only input is learner text, so it survives the round trip.
+  const spaces = '   '
+  assert.deepEqual(removeContextBlock(appendContextBlock(spaces, block), block), { status: 'removed', draft: spaces })
+
+  // The learner typed after the block: their blank lines are not ours to trim.
+  assert.deepEqual(removeContextBlock(`${block}\n\n我的补充`, block), { status: 'removed', draft: '\n\n我的补充' })
+
+  // Block between learner text: only the block and the separator we added leave.
+  assert.deepEqual(removeContextBlock(`原草稿\n\n${block}\n\n我的补充`, block), {
+    status: 'removed',
+    draft: '原草稿\n\n我的补充',
+  })
 })
 
 test('移除精确恢复原草稿；找不到或重复出现时拒绝而不是猜一个', () => {
@@ -110,6 +133,19 @@ test('移除精确恢复原草稿；找不到或重复出现时拒绝而不是�
   const other = formatQuestionBlock({ ...lecture, excerpt: '另一段摘录' })
   const both = appendContextBlock(appendContextBlock(existing, block), other)
   assert.deepEqual(removeContextBlock(both, block), { status: 'removed', draft: appendContextBlock(existing, other) })
+})
+
+test('每个块带自己的可见编号：同样的材料问两次也是两个可逐条移除的块', () => {
+  const first = formatQuestionBlock(lecture, 'q1')
+  const second = formatQuestionBlock(lecture, 'q2')
+  assert.match(first, /编号：q1/)
+  assert.match(second, /编号：q2/)
+  assert.notEqual(first, second)
+  // The unique token is visible in the block, so removal is by exact text and
+  // never leaves two indistinguishable blocks.
+  const draft = appendContextBlock(first, second)
+  assert.deepEqual(removeContextBlock(draft, first), { status: 'removed', draft: `\n\n${second}` })
+  assert.deepEqual(removeContextBlock(draft, second), { status: 'removed', draft: first })
 })
 
 test('摘录统一换行、去首尾空白，超长时截断并显式标记', () => {
