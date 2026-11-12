@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createMemoryDraftStore, createSessionDraftStore } from '../src/note-drafts.ts'
+import {
+  allocateDraftRevision,
+  createMemoryDraftStore,
+  createSessionDraftStore,
+  draftRevisionClock,
+  observeDraftRevision,
+} from '../src/note-drafts.ts'
 
 const draft = { content: '# 草稿\n', baseVersion: 'version-1', revision: 1, savedAt: '2026-11-12T00:00:00.000Z' }
 
@@ -40,6 +46,24 @@ test('草稿 revision 是 CAS：旧 revision 不能覆盖新草稿，只返回 s
   assert.equal(store.write('space-cas', '笔记/一.md', { ...draft, revision: 3, content: '更新草稿' }), 'memory')
   assert.equal(store.read('space-cas', '笔记/一.md').content, '更新草稿')
   store.remove('space-cas', '笔记/一.md')
+})
+
+test('草稿 revision 时钟跨挂载单调，清掉草稿也不回退', () => {
+  const spaceId = 'space-clock'
+  const path = '笔记/时钟.md'
+  observeDraftRevision(spaceId, path, 5)
+  assert.equal(draftRevisionClock(spaceId, path), 5)
+  assert.equal(allocateDraftRevision(spaceId, path), 6)
+  assert.equal(allocateDraftRevision(spaceId, path), 7)
+
+  // Clearing the draft (for example, because it matched disk) must not reset
+  // the clock: a later mount still allocates above the old revision.
+  const store = createMemoryDraftStore()
+  store.write(spaceId, path, { ...draft, revision: 7, content: 'Y' })
+  store.remove(spaceId, path)
+  assert.equal(draftRevisionClock(spaceId, path), 7)
+  assert.equal(allocateDraftRevision(spaceId, path), 8)
+  assert.equal(allocateDraftRevision('space-clock-other', path), 1, '不同空间独立计时')
 })
 
 test('setItem 失败时退回共享内存：不同 store 实例也能跨挂载读回并标明 memory', () => {

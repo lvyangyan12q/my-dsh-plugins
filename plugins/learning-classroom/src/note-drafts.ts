@@ -30,6 +30,15 @@ export interface NoteDraftStore {
 const keyPrefix = 'learning-classroom:note-draft:v1:'
 
 /**
+ * Module-scoped monotonic revision clock per draft key. It deliberately
+ * survives NotesZone mounts: clearing a draft after reading it must not reset
+ * the clock, or a late failure from an older mount could reuse a lower revision
+ * and replace a newer draft. The clock is page-scoped; old in-flight callbacks
+ * do not survive a page reload.
+ */
+const revisionClocks = new Map<string, number>()
+
+/**
  * A draft belongs to one space UUID plus a space-relative note path. Space ids
  * are minted with `randomUUID()` when a space is created, and choosing a
  * different vault clears the registered spaces, so a key cannot be reused by a
@@ -37,6 +46,27 @@ const keyPrefix = 'learning-classroom:note-draft:v1:'
  */
 function keyOf(spaceId: string, path: string): string {
   return `${keyPrefix}${encodeURIComponent(spaceId)}:${encodeURIComponent(path)}`
+}
+
+/** Raise the shared clock to at least the revision read from disk. */
+export function observeDraftRevision(spaceId: string, path: string, revision: number): number {
+  const key = keyOf(spaceId, path)
+  const next = Math.max(revisionClocks.get(key) ?? 0, revision, 0)
+  revisionClocks.set(key, next)
+  return next
+}
+
+/** Allocate the next revision for an edit; never regresses across mounts. */
+export function allocateDraftRevision(spaceId: string, path: string): number {
+  const key = keyOf(spaceId, path)
+  const next = (revisionClocks.get(key) ?? 0) + 1
+  revisionClocks.set(key, next)
+  return next
+}
+
+/** Latest allocated/observed revision for a key. */
+export function draftRevisionClock(spaceId: string, path: string): number {
+  return revisionClocks.get(keyOf(spaceId, path)) ?? 0
 }
 
 function isDraft(value: unknown): value is NoteDraft {

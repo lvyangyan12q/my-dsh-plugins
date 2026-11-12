@@ -702,6 +702,91 @@ test('旧 A 保存成功在 A 重新读取期间不得污染新 view，并让读
   }
 })
 
+test('冲突后 reload 失败：比较重试成功建立覆盖身份，显式覆盖实际生效', async () => {
+  const store = noteStore({ '笔记/我的笔记.md': '# 原始\n' })
+  const ui = await mount(store)
+  try {
+    store.set('笔记/我的笔记.md', '# 外部版本\n')
+    store.setNextSaveError(Object.assign(new Error('磁盘上的笔记已被外部修改，保存已被拒绝。'), { code: 'note-conflict' }))
+    await ui.type('# 我的想法\n')
+    await ui.wait(30)
+    assert.match(ui.status(), /冲突/)
+
+    store.setNextReadError(Object.assign(new Error('重新加载读取失败'), { code: 'note-read-failed' }))
+    await ui.click('重新加载')
+    assert.match(ui.status(), /冲突/)
+    assert.match(ui.container.textContent, /重新加载失败/)
+
+    const overwrite = () => [...ui.container.querySelectorAll('button')].find(button => button.textContent.includes('用我的覆盖'))
+    assert.equal(overwrite().disabled, true, 'reload 失败后不能直接覆盖')
+    const retry = [...ui.container.querySelectorAll('button')].find(button => button.textContent.includes('重试读取磁盘版本'))
+    assert.ok(retry, 'reload 失败应保留比较重试入口')
+
+    await ui.click('重试读取磁盘版本')
+    assert.equal(overwrite().disabled, false, '比较读出磁盘版本后允许显式覆盖')
+    assert.match(ui.container.querySelector('[aria-label="磁盘上的内容"]').textContent, /外部版本/)
+
+    await ui.click('用我的覆盖')
+    assert.equal(store.files.get('笔记/我的笔记.md'), '# 我的想法\n', '显式覆盖必须实际写入')
+    assert.match(ui.status(), /已保存/)
+    assert.equal(ui.container.querySelector('[aria-label="保存冲突比较"]'), null)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('跨挂载：旧 mount 的失败不得用倒退 revision 覆盖新 mount 的草稿', async () => {
+  const drafts = memoryDrafts()
+  const noteSpace = { ...space, id: 'space-cross-mount', notePath: '笔记/A.md' }
+  const x = '# A\n\nX\n'
+  const store = noteStore({ '笔记/A.md': x })
+  drafts.write(noteSpace.id, '笔记/A.md', {
+    content: x,
+    baseVersion: `version:${x}`,
+    revision: 5,
+    savedAt: '2026-11-12T00:00:00.000Z',
+  })
+
+  let firstLive = true
+  const first = await mount(store, { drafts, space: noteSpace })
+  try {
+    const release = store.gateNextSave()
+    store.setNextSaveError(Object.assign(new Error('旧 mount 保存失败'), { code: 'note-save-failed' }))
+    await first.click('保存')
+    assert.match(first.status(), /保存中/)
+    await first.unmount()
+    firstLive = false
+
+    // New mount reads X, clears the redundant draft, edits Y and leaves.
+    const second = await mount(store, { drafts, space: noteSpace })
+    try {
+      assert.equal(second.textarea().value, x)
+      await second.type('# A\n\nY\n')
+    } finally {
+      await second.unmount()
+    }
+    const parked = drafts.read(noteSpace.id, '笔记/A.md')
+    assert.equal(parked?.content, '# A\n\nY\n')
+
+    // The dead mount's deferred failure arrives now; it must not park X again.
+    release()
+    await new Promise(resolve => setTimeout(resolve, 40))
+    const afterFailure = drafts.read(noteSpace.id, '笔记/A.md')
+    assert.equal(afterFailure?.content, '# A\n\nY\n')
+    assert.ok(afterFailure.revision >= 6, '新草稿 revision 必须高于旧 mount 的 5')
+
+    const third = await mount(store, { drafts, space: noteSpace })
+    try {
+      assert.equal(third.textarea().value, '# A\n\nY\n')
+      assert.match(third.text(), /草稿/)
+    } finally {
+      await third.unmount()
+    }
+  } finally {
+    if (firstLive) await first.unmount()
+  }
+})
+
 test('浏览器存储写入失败：跨挂载仍从共享内存恢复草稿，并明确提示只在内存', async () => {
   const throwing = {
     getItem() { return null },
