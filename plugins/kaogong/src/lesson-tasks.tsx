@@ -61,17 +61,20 @@ const stepStyle = (state: LessonTaskState): CSSProperties => ({
 
 const badge: Record<LessonTaskState, string> = { done: '完成', current: '当前', ready: '亮起', pending: '未开始' }
 
-/** 课后任务面板：四步状态 + 当前步的入口；有错题时给出回炉卡（回小节重读 / 重做检测）。 */
-export function LessonTasks({ questions, answers, readDone, practiceDone, onJump, onPractice, onRetake }: LessonTaskInput & {
+/** 课后任务面板：四步状态 + 当前步的入口；有错题时给出回炉卡（回小节重读 / 重做检测 / 请老师补讲）。 */
+export function LessonTasks({ questions, answers, readDone, practiceDone, onJump, onPractice, onExplain, onRetake }: LessonTaskInput & {
   /** 回讲义对应小节重读。 */
   onJump: (anchorId: string) => void
   /** 进入专项练习：复用课堂面板已有的练习入口。 */
   onPractice: () => void
+  /** 针对某一步请老师补讲：复用课堂答疑与任务会话。 */
+  onExplain?: (question: QuizQuestion, chosen: number) => void
   /** 重做检测：清空作答并回到检测页签。 */
   onRetake: () => void
 }) {
   const { tasks, grade } = deriveLessonTasks({ questions, answers, readDone, practiceDone })
   const wrong = grade.wrongItems
+  const firstWrong = wrong[0] ? questions.find(question => question.id === wrong[0].id) : undefined
   return <section aria-label="课后任务" data-lesson-tasks style={{ display: 'grid', gap: 10, marginTop: 12 }}>
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
       <h3 style={{ margin: 0, fontSize: 14 }}>课后任务</h3>
@@ -95,6 +98,7 @@ export function LessonTasks({ questions, answers, readDone, practiceDone, onJump
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button data-pwb-button type="button" onClick={() => onJump(wrong[0].anchorId)}>回对应小节重读</button>
         <button data-pwb-button type="button" onClick={onRetake}>重做检测</button>
+        {onExplain && firstWrong && <button data-pwb-button type="button" onClick={() => onExplain(firstWrong, wrong[0].chosen as number)}>请老师补讲这一步</button>}
       </div>
     </div>}
   </section>

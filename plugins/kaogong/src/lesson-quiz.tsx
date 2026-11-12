@@ -181,7 +181,7 @@ const optionStyle = (state: 'correct' | 'wrong' | 'dim' | undefined): CSSPropert
 })
 
 /** 当堂检测页：3 道选择题，选完立即判分并锁定该题；答错可回跳，答完给小结与下一步。作答由课堂面板持有，切页签不丢。 */
-export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, onJump, onPractice, provenance }: {
+export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, onJump, onPractice, onExplain, provenance }: {
   questions?: readonly QuizQuestion[]
   /** 已作答：`null` 表示未答，作答后不可改选。 */
   answers: readonly QuizAnswer[]
@@ -191,6 +191,8 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
   onJump?: (anchorId: string) => void
   /** 全对后的专项练习入口：由课堂面板透传。 */
   onPractice?: () => void
+  /** 答错后针对该步请老师补讲：复用本任务的课堂答疑与任务会话。 */
+  onExplain?: (question: QuizQuestion, chosen: number) => void
   /** 这套题是自编还是真题：由课堂面板随题给，不冒充真题。 */
   provenance?: string
 }) {
@@ -204,6 +206,7 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
     <div aria-label="当堂检测" style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
         <strong>当堂检测</strong>
+        <small style={{ color: '#667085' }}>只记在本课，不计入正式正确率与错题本</small>
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#667085', fontVariantNumeric: 'tabular-nums' }}>检测 <b style={{ color: '#2f6b58' }}>{grade.answered}</b>/{grade.total}</span>
       </div>
       {provenance && <small style={{ color: '#667085' }}>{provenance}</small>}
@@ -234,7 +237,10 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
             {answered && <div role="status" style={{ borderTop: '1px dashed #dbe2d8', paddingTop: 8, display: 'grid', gap: 4, fontSize: 12.5, lineHeight: 1.8 }}>
               <b style={{ color: right ? '#2f6b58' : '#b42318' }}>{right ? '回答正确' : `回答错误，正确选项是 ${LETTERS[question.answer]}`}</b>
               <p style={{ margin: 0 }}>{question.why}</p>
-              {!right && onJump && <button data-pwb-button type="button" style={{ justifySelf: 'start' }} onClick={() => onJump(question.anchorId)}>回对应小节</button>}
+              {!right && (onJump || onExplain) && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {onJump && <button data-pwb-button type="button" style={{ justifySelf: 'start' }} onClick={() => onJump(question.anchorId)}>回对应小节</button>}
+                {onExplain && <button data-pwb-button type="button" style={{ justifySelf: 'start' }} onClick={() => onExplain(question, chosen as number)}>请老师补讲这一步</button>}
+              </div>}
             </div>}
           </div>
         )
