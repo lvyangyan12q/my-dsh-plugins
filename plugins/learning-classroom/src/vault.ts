@@ -81,6 +81,15 @@ function outside(root: string, candidate: string): boolean {
   return path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path)
 }
 
+/**
+ * True when two already-resolved absolute paths are the same directory or one is
+ * inside the other. `path.relative` gives the platform's case rules on Windows;
+ * callers must pass real paths, not client input.
+ */
+export function pathInside(root: string, candidate: string): boolean {
+  return !outside(root, candidate)
+}
+
 function comparisonKey(path: string): string {
   return process.platform === 'win32' ? path.toLowerCase() : path
 }

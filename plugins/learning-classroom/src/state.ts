@@ -38,10 +38,17 @@ export const spaceSchema = z.object({
   // content. Older state without the field reads as "not opened yet".
   sessionId: z.string().min(1).max(200).nullable().default(null),
   /**
-   * Last opened lecture, relative to the space folder (`讲义/…`). Optional with a
-   * default so v1 state written before this ticket still loads.
+   * Last opened lecture, relative to the space folder (`讲义/…` or an explicitly
+   * linked path). Optional with a default so v1 state written before this ticket
+   * still loads.
    */
   lecturePath: z.string().min(1).max(400).nullable().default(null),
+  /**
+   * Existing space files the learner explicitly linked into the course. Only the
+   * selection is stored; the file bodies stay in the knowledge vault and are
+   * never copied or moved.
+   */
+  linkedLectures: z.array(z.string().min(1).max(400)).max(500).default([]),
   /**
    * Pane widths and collapsed zones. Optional with a default so state written by
    * tickets 01–03 still loads and existing spaces keep working.

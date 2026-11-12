@@ -2,7 +2,9 @@ import type {
   CanvasReadView,
   ClassroomCommand,
   ClassroomView,
+  ClassroomViewCommand,
   LayoutSaveCommand,
+  LectureCandidatesView,
   LectureListView,
   LectureReadView,
   NoteCommand,
@@ -10,6 +12,8 @@ import type {
   NoteListView,
   NoteSaveCommand,
   NoteSaveView,
+  TopicSaveCommand,
+  TopicView,
 } from './contract.ts'
 
 export const classroomEndpoint = '/api/learning-classroom'
@@ -35,9 +39,19 @@ export function classroomErrorCode(error: unknown): string | undefined {
 
 export interface ClassroomClient {
   load(signal?: AbortSignal): Promise<ClassroomView>
-  command(input: ClassroomCommand, signal?: AbortSignal): Promise<ClassroomView>
+  command(input: ClassroomViewCommand, signal?: AbortSignal): Promise<ClassroomView>
   listLectures(spaceId: string, signal?: AbortSignal): Promise<LectureListView>
   readLecture(spaceId: string, path: string, signal?: AbortSignal): Promise<LectureReadView>
+  /**
+   * Topic goal and existing-file association. Optional so an injected/older
+   * client can omit them; the panel then hides those affordances instead of
+   * pretending they work.
+   */
+  readTopic?(spaceId: string, signal?: AbortSignal): Promise<TopicView>
+  saveTopicGoal?(input: TopicSaveCommand, signal?: AbortSignal): Promise<TopicView>
+  listLectureCandidates?(spaceId: string, signal?: AbortSignal): Promise<LectureCandidatesView>
+  linkLecture?(spaceId: string, path: string, signal?: AbortSignal): Promise<LectureListView>
+  unlinkLecture?(spaceId: string, path: string, signal?: AbortSignal): Promise<LectureListView>
   listNotes(spaceId: string, signal?: AbortSignal): Promise<NoteListView>
   readNote(spaceId: string, path: string, signal?: AbortSignal): Promise<NoteDocumentView>
   saveNote(input: NoteSaveCommand, signal?: AbortSignal): Promise<NoteSaveView>
@@ -74,6 +88,11 @@ export function createClassroomClient(fetchImpl: FetchLike = (input, init) => fe
     command: (input, signal) => post<ClassroomView>(input, signal),
     listLectures: (spaceId, signal) => post<LectureListView>({ action: 'lecture-list', spaceId }, signal),
     readLecture: (spaceId, path, signal) => post<LectureReadView>({ action: 'lecture-read', spaceId, path }, signal),
+    readTopic: (spaceId, signal) => post<TopicView>({ action: 'topic-read', spaceId }, signal),
+    saveTopicGoal: (input, signal) => post<TopicView>(input, signal),
+    listLectureCandidates: (spaceId, signal) => post<LectureCandidatesView>({ action: 'lecture-candidates', spaceId }, signal),
+    linkLecture: (spaceId, path, signal) => post<LectureListView>({ action: 'lecture-link', spaceId, path }, signal),
+    unlinkLecture: (spaceId, path, signal) => post<LectureListView>({ action: 'lecture-unlink', spaceId, path }, signal),
     listNotes: (spaceId, signal) => post<NoteListView>({ action: 'note-list', spaceId }, signal),
     readNote: (spaceId, path, signal) => post<NoteDocumentView>({ action: 'note-read', spaceId, path }, signal),
     saveNote: (input, signal) => post<NoteSaveView>(input, signal),

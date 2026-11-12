@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { mkdir, mkdtemp, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { resolveVaultPath, vaultRelativePath } from '../src/vault.ts'
+import { resolveVaultPath, vaultRelativePath, pathInside } from '../src/vault.ts'
 import { spaceDirectoryName } from '../src/spaces.ts'
 
 test('知识库相对路径只接受根内相对形式', () => {
@@ -25,6 +25,15 @@ test('空间目录名从标题生成，但拒绝路径分隔符、空名与系�
   for (const title of ['', '   ', '.', '..', 'a/b', 'a\\b', '../越界', 'CON', 'com1']) {
     assert.throws(() => spaceDirectoryName(title), error => error.code === 'invalid-space-name', `${JSON.stringify(title)} 应被拒绝`)
   }
+})
+
+test('真实路径包含性判断拒绝同级前缀与父目录逃逸', () => {
+  const base = resolve(tmpdir(), 'vault-base')
+  assert.equal(pathInside(base, base), true)
+  assert.equal(pathInside(base, resolve(base, '空间', '讲义', '01.md')), true)
+  assert.equal(pathInside(base, resolve(base, '..', 'vault-base-other')), false)
+  assert.equal(pathInside(base, resolve(base, '..', 'outside.md')), false)
+  assert.equal(pathInside(base, resolve(base, '..', 'vault-base2', 'x.md')), false)
 })
 
 test('真实路径校验拒绝符号链接越界', async t => {
