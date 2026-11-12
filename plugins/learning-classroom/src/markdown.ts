@@ -1,4 +1,5 @@
 import { parseFrontmatter } from './lectures.ts'
+import { parseWikilink, wikilinkDisplay } from './links.ts'
 
 /**
  * A deliberately small Markdown reader: it produces a typed block model and the
@@ -20,6 +21,8 @@ export type InlineToken =
   | { type: 'strong'; text: string }
   | { type: 'em'; text: string }
   | { type: 'link'; text: string; href: string }
+  /** Obsidian wikilink; `target` is the inner text and `text` the display label. */
+  | { type: 'wikilink'; target: string; text: string }
 
 const fencePattern = /^(`{3,}|~{3,})\s*([^`]*)$/
 const headingPattern = /^(#{1,6})\s+(.*)$/
@@ -207,6 +210,20 @@ export function parseInline(text: string): InlineToken[] {
       tokens.push({ type: 'link', text: link[1], href: link[2] })
       index += link[0].length
       continue
+    }
+
+    // Obsidian wikilink: only a syntactically valid link becomes a token, so a
+    // half-typed `[[未闭合` stays readable literal text.
+    if (rest.startsWith('[[')) {
+      const end = text.indexOf(']]', index + 2)
+      if (end !== -1) {
+        const parsed = parseWikilink(text.slice(index + 2, end))
+        if (parsed.ok) {
+          tokens.push({ type: 'wikilink', target: parsed.parts.raw, text: wikilinkDisplay(parsed.parts) })
+          index = end + 2
+          continue
+        }
+      }
     }
 
     pushText(tokens, text[index])

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { appendAnnotationBlock } from './annotations.ts'
 import { createDebouncer, createSerialQueue } from './autosave.ts'
 import { classroomErrorCode, type ClassroomClient } from './classroom-client.ts'
 import type { ClassroomSpaceView, NoteDocumentView, NoteSaveCommand, NoteSummaryView } from './contract.ts'
+import { LinkInsert } from './link-insert.tsx'
 import {
   allocateDraftRevision,
   clearDraftRisk,
@@ -25,6 +27,27 @@ export interface NoteOpenRequest {
   token: number
 }
 
+/**
+ * One-shot request to append a ready annotation block to the current note.
+ * A new token applies it again; re-rendering the same token must not duplicate
+ * the block.
+ */
+export interface NoteAppendRequest {
+  token: number
+  /** Markdown block built by `buildAnnotationBlock`; already contains its real source link. */
+  block: string
+  /** Note the block was built for; a later switch refuses the append. */
+  path?: string
+}
+
+/** The note the panel is editing, reported upward so annotation targets are honest. */
+export interface NoteStateView {
+  spaceId: string
+  path: string
+  version: string
+  status: NoteSaveStatus
+}
+
 export interface NotesZoneProps {
   client: ClassroomClient
   space: ClassroomSpaceView
@@ -34,6 +57,12 @@ export interface NotesZoneProps {
   openRequest?: NoteOpenRequest | null
   /** Where unsaved input is parked when the file, topic or classroom is left. */
   drafts?: NoteDraftStore
+  /** Append a lecture annotation to the current note (never overwrites text). */
+  appendRequest?: NoteAppendRequest | null
+  /** Report the current note identity/status so other zones can explain refusals. */
+  onNoteState?: (state: NoteStateView) => void
+  /** Open a lecture or linked course file from a wikilink in the note preview. */
+  onOpenLecture?: (path: string) => void
 }
 
 type SaveMode = 'auto' | 'explicit' | 'overwrite'
@@ -99,7 +128,7 @@ function messageOf(error: unknown): string {
  * parked as a draft when switching file/topic or leaving the classroom, so a
  * failed or in-flight save cannot silently discard it.
  */
-export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openRequest = null, drafts }: NotesZoneProps) {
+export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openRequest = null, drafts, appendRequest = null, onNoteState, onOpenLecture }: NotesZoneProps) {
   const draftStore = useMemo(() => drafts ?? createSessionDraftStore(), [drafts])
   const [notes, setNotes] = useState<NoteSummaryView[]>([])
   const [path, setPath] = useState(space.notePath)
@@ -124,6 +153,10 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const spaceIdRef = useRef(space.id)
   const statusRef = useRef<NoteSaveStatus>('loading')
   const conflictRef = useRef(false)
+  const editorRef = useRef<HTMLTextAreaElement | null>(null)
+  const handledAppend = useRef<number | null>(null)
+  const [appendNotice, setAppendNotice] = useState('')
+  const [linkNotice, setLinkNotice] = useState('')
   const saveQueue = useMemo(() => createSerialQueue(), [])
   // The most recently queued write, so a completed older save does not queue a
   // duplicate of content that is already waiting behind it.
@@ -388,6 +421,33 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       void enqueueSaveRef.current(captureRequest('auto'))
     })
   }, [debouncer])
+
+  /**
+   * Apply an in-memory edit through the exact same path as typing: content ref,
+   * dirty status, draft parking and autosave. Annotation append and link insert
+   * therefore inherit the existing conflict protection instead of bypassing it.
+   */
+  const applyLocalEdit = useCallback((next: string, caret?: number) => {
+    const spaceId = spaceIdRef.current
+    const notePath = pathRef.current
+    contentRef.current = next
+    setContent(next)
+    setMessage('')
+    updateStatus('dirty')
+    const revision = allocateDraftRevision(spaceId, notePath)
+    const parked = persistDraft(spaceId, notePath, next, versionRef.current, revision)
+    if (parked === 'failed') setDraftWarning(failedDraftWarning)
+    if (!conflictRef.current) scheduleAutosave()
+    if (caret !== undefined) {
+      // The textarea value lands on the next commit; place the caret afterwards.
+      setTimeout(() => {
+        const editor = editorRef.current
+        if (editor === null) return
+        editor.focus()
+        editor.setSelectionRange(caret, caret)
+      }, 0)
+    }
+  }, [persistDraft, scheduleAutosave, updateStatus])
 
   const fetchDiskVersion = useCallback(async (spaceId: string, notePath: string, mine: number) => {
     if (!alive.current || generation.current !== mine || spaceIdRef.current !== spaceId || pathRef.current !== notePath) return
@@ -728,6 +788,90 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     void switchTo(openRequest.path)
   }, [openRequest, switchTo])
 
+  /**
+   * Insert a resolved wikilink on its own line at the editor caret. It is a
+   * normal local edit: autosave persists it, and an unresolved conflict blocks
+   * the insert instead of silently overwriting either side.
+   */
+  const insertLinkAtCursor = (link: string): { ok: boolean; message: string } => {
+    if (statusRef.current === 'loading') {
+      return { ok: false, message: '笔记还没加载完，双链没有插入。' }
+    }
+    if (conflictRef.current) {
+      return { ok: false, message: '笔记有未解决的保存冲突，双链没有插入。请先比较并处理冲突。' }
+    }
+    const editor = editorRef.current
+    const start = editor === null ? contentRef.current.length : editor.selectionStart
+    const end = editor === null ? start : editor.selectionEnd
+    const before = contentRef.current.slice(0, start)
+    const after = contentRef.current.slice(end)
+    const prefix = before === '' || before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n'
+    const suffix = after === '' ? '\n' : after.startsWith('\n') ? '' : '\n'
+    const next = `${before}${prefix}${link}${suffix}${after}`
+    applyLocalEdit(next, before.length + prefix.length + link.length)
+    return { ok: true, message: '已把双链插入到笔记光标处，正在保存。' }
+  }
+
+  /** Follow one wikilink from the preview: open a note, a course file, or explain why not. */
+  const openWikiLink = useCallback(async (target: string): Promise<void> => {
+    setLinkNotice('')
+    if (typeof client.resolveLink !== 'function') {
+      setLinkNotice('当前客户端不支持双链解析，无法在课堂里回跳；请在 Obsidian 中打开。')
+      return
+    }
+    try {
+      const resolved = await client.resolveLink({
+        action: 'link-resolve',
+        spaceId: space.id,
+        target,
+        fromPath: pathRef.current,
+      })
+      if (!alive.current) return
+      if (resolved.status !== 'ok') {
+        setLinkNotice(resolved.message ?? '这条双链无法解析。')
+        return
+      }
+      if (resolved.kind === 'note' && resolved.spacePath !== null) {
+        await switchTo(resolved.spacePath)
+        return
+      }
+      if (resolved.kind === 'lecture' && resolved.spacePath !== null && onOpenLecture !== undefined) {
+        onOpenLecture(resolved.spacePath)
+        return
+      }
+      setLinkNotice(`这条双链指向 ${resolved.file ?? target}；它不在当前学习空间，请在 Obsidian 中打开。`)
+    } catch (error) {
+      if (alive.current) setLinkNotice(messageOf(error))
+    }
+  }, [client, onOpenLecture, space.id, switchTo])
+
+  // Append one annotation block to the end of the current note. The block was
+  // built from a real host-resolved source link; a conflict or unloaded note is
+  // refused instead of overwriting anything.
+  useEffect(() => {
+    if (appendRequest === null) return
+    if (handledAppend.current === appendRequest.token) return
+    handledAppend.current = appendRequest.token
+    if (statusRef.current === 'loading') {
+      setAppendNotice('笔记还没加载完，批注没有追加。')
+      return
+    }
+    if (appendRequest.path !== undefined && appendRequest.path !== pathRef.current) {
+      setAppendNotice('当前笔记已经切换，批注没有追加到另一篇笔记。')
+      return
+    }
+    if (conflictRef.current) {
+      setAppendNotice('笔记有未解决的保存冲突，批注没有追加。请先处理冲突。')
+      return
+    }
+    applyLocalEdit(appendAnnotationBlock(contentRef.current, appendRequest.block))
+    setAppendNotice('已把带来源的批注追加到笔记末尾，正在保存。')
+  }, [appendRequest, applyLocalEdit])
+
+  useEffect(() => {
+    onNoteState?.({ spaceId: space.id, path, version: versionRef.current, status })
+  }, [onNoteState, path, space.id, status])
+
   const knownOption = notes.some(note => note.path === path)
   return (
     <div className="lc-notes-root">
@@ -831,6 +975,16 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
 
       <p className="lc-note-status" role="status" aria-live="polite" data-state={status}>{statusLabel[status]}</p>
 
+      {appendNotice !== '' && <p className="lc-hint" role="status">{appendNotice}</p>}
+      {linkNotice !== '' && <p className="lc-hint" role="alert">{linkNotice}</p>}
+
+      <LinkInsert
+        client={client}
+        spaceId={space.id}
+        fromPath={path}
+        onInsert={insertLinkAtCursor}
+      />
+
       <div className="lc-note-tabs" role="tablist" aria-label="笔记视图">
         <button type="button" role="tab" className="lc-note-tab" aria-selected={mode === 'edit'} onClick={() => setMode('edit')}>编辑</button>
         <button type="button" role="tab" className="lc-note-tab" aria-selected={mode === 'preview'} onClick={() => setMode('preview')}>预览</button>
@@ -842,12 +996,13 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
             className="lc-note-editor"
             aria-label="笔记编辑器"
             spellCheck={false}
+            ref={editorRef}
             value={content}
             disabled={status === 'loading'}
             onChange={onChange}
           />
         )
-        : <NotePreview content={content} />}
+        : <NotePreview content={content} onOpenLink={target => { void openWikiLink(target) }} />}
     </div>
   )
 }

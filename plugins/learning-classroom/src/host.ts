@@ -20,6 +20,7 @@ import type {
   LectureCandidateView,
   LectureListView,
   LectureReadView,
+  LinkResolveView,
   NoteDocumentView,
   NoteListView,
   NoteSaveView,
@@ -37,6 +38,7 @@ import {
   type LectureKind,
 } from './lectures.ts'
 import { defaultLayout, normalizeLayout } from './layout.ts'
+import { buildLinkIndex, resolveVaultLink } from './link-index.ts'
 import { listNotes, readNote, saveNote } from './notes-io.ts'
 import { maxNoteBytes } from './notes.ts'
 import {
@@ -80,6 +82,7 @@ const knownActions = [
   'lecture-list', 'lecture-read', 'lecture-candidates', 'lecture-link', 'lecture-unlink',
   'topic-read', 'topic-save',
   'note-list', 'note-read', 'note-save', 'canvas-read', 'layout-save',
+  'link-resolve',
 ] as const
 
 const commandSchema = z.discriminatedUnion('action', [
@@ -123,6 +126,12 @@ const commandSchema = z.discriminatedUnion('action', [
     overwrite: z.boolean().optional(),
   }).strict(),
   z.object({ action: z.literal('canvas-read'), spaceId: z.string().min(1).max(64) }).strict(),
+  z.object({
+    action: z.literal('link-resolve'),
+    spaceId: z.string().min(1).max(64),
+    target: z.string().min(1).max(500),
+    fromPath: z.string().min(1).max(1024).optional(),
+  }).strict(),
 ])
 
 export interface ClassroomHostOptions {
@@ -1163,6 +1172,24 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
   })
 
+  /** Resolve one Obsidian-style wikilink against the real vault, read-only. */
+  const resolveLink = (spaceId: string, target: string, fromPath?: string): Promise<LinkResolveView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    const index = await buildLinkIndex(root, probe)
+    return resolveVaultLink({
+      root,
+      index,
+      space: { directory: space.directory, linkedLectures: space.linkedLectures ?? [] },
+      spaceId: space.id,
+      target,
+      fromPath,
+      probe,
+    })
+  })
+
   const dispatch = async (input: unknown): Promise<
     | ClassroomView
     | LectureListView
@@ -1173,6 +1200,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     | NoteDocumentView
     | NoteSaveView
     | CanvasReadView
+    | LinkResolveView
   > => {
     const parsed = commandSchema.safeParse(input)
     if (!parsed.success) {
@@ -1199,6 +1227,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       case 'note-read': return noteRead(command.spaceId, command.path)
       case 'note-save': return noteSave(command)
       case 'canvas-read': return readCanvas(command.spaceId)
+      case 'link-resolve': return resolveLink(command.spaceId, command.target, command.fromPath)
       case 'layout-save': return saveLayout(command.spaceId, command.layout)
     }
   }

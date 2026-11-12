@@ -74,6 +74,9 @@ test('行内解析只把安全链接变成链接，未知语法保持文本', ()
   assert.deepEqual(parseInline('[危险](javascript:alert(1))'), [
     { type: 'text', text: '[危险](javascript:alert(1))' },
   ])
-  assert.deepEqual(parseInline('[[讲义/01.md]]'), [{ type: 'text', text: '[[讲义/01.md]]' }])
+  // Obsidian 双链是已支持的语法，不再是未知文本；未知语法仍保持字面。
+  assert.deepEqual(parseInline('[[讲义/01.md]]'), [
+    { type: 'wikilink', target: '讲义/01.md', text: '讲义/01.md' },
+  ])
   assert.deepEqual(parseInline('**未闭合'), [{ type: 'text', text: '**未闭合' }])
 })

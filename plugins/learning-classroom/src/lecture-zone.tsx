@@ -1,4 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
+import { AnnotationAction } from './annotation-action.tsx'
+import type { AnnotationSourceInput } from './annotation-flow.ts'
 import { ClassroomClientError, type ClassroomClient } from './classroom-client.ts'
 import type {
   ClassroomSpaceView,
@@ -19,6 +21,8 @@ export interface LectureZoneProps {
   onOpenSpace: (spaceId: string) => void
   /** Ask the reader to open a specific lecture, e.g. from a canvas file node. */
   openRequest?: LectureOpenRequest | null
+  /** Append a selection from this lecture to the current note (real source link). */
+  onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
 }
 
 /** One-shot request to open a lecture; a new token re-opens the same path. */
@@ -94,6 +98,7 @@ function InlineText({ text }: { text: string }) {
           case 'strong': return <strong key={index}>{token.text}</strong>
           case 'em': return <em key={index}>{token.text}</em>
           case 'link': return <a key={index} href={token.href} target="_blank" rel="noreferrer noopener">{token.text}</a>
+          case 'wikilink': return <span key={index} className="lc-wikilink-static" title={`双链：${token.target}`}>{token.text}</span>
           case 'text': return <Fragment key={index}>{token.text}</Fragment>
         }
       })}
@@ -149,7 +154,10 @@ function MarkdownBody({ content }: { content: string }) {
   )
 }
 
-function LectureReader(props: { doc: LectureReadView }) {
+function LectureReader(props: {
+  doc: LectureReadView
+  onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
+}) {
   const { doc } = props
   return (
     <>
@@ -158,7 +166,11 @@ function LectureReader(props: { doc: LectureReadView }) {
         <p className="lc-lecture-path">{doc.path}</p>
       </div>
       {doc.kind === 'markdown'
-        ? <MarkdownBody content={doc.content ?? ''} />
+        ? (
+          <AnnotationAction doc={doc} onAnnotate={props.onAnnotate}>
+            <MarkdownBody content={doc.content ?? ''} />
+          </AnnotationAction>
+        )
         : (
           <div className="lc-lecture-experiment" role="note">
             <p>{doc.placeholder ?? '这是一节动态实验（HTML），隔离渲染尚未打开。'}</p>
@@ -699,7 +711,7 @@ export function LectureZone(props: LectureZoneProps) {
 
         {listState.status === 'ready' && reader.status === 'loading' && <p role="status">正在打开讲义…</p>}
 
-        {listState.status === 'ready' && reader.status === 'ready' && <LectureReader doc={reader.doc} />}
+        {listState.status === 'ready' && reader.status === 'ready' && <LectureReader doc={reader.doc} onAnnotate={props.onAnnotate} />}
 
         {listState.status === 'ready' && reader.status === 'failed' && (
           <div className="lc-alert" role="alert">
