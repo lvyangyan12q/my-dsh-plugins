@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboa
 import {
   collapsibleZones,
   defaultLayout,
-  isNarrowWidth,
   keyboardResizeStep,
   layoutBoundaries,
   lectureMinWidth,
@@ -11,6 +10,7 @@ import {
   resizeLayout,
   separatorWidth,
   toggleCollapsed,
+  usesNarrowLayout,
   zoneIds,
   zoneLabels,
   zoneWidthBounds,
@@ -40,11 +40,21 @@ export interface ClassroomLayoutViewProps {
   onLayoutChange(next: ClassroomLayout): void
   /** The course directory and the lecture reader are rendered by `LectureZone`. */
   lecture: ReactNode
+  /**
+   * Optional content that can take over the reading column, e.g. the knowledge
+   * canvas. It stays mounted while hidden so its own view state survives.
+   */
+  main?: ReactNode
+  /** Which content owns the reading column; defaults to the lecture. */
+  mainView?: ClassroomMainView
   notes: ReactNode
   conversation: ReactNode
   observeWidth?: WidthObserver
   threshold?: number
 }
+
+/** The reading column shows either the lecture/spaces or the knowledge canvas. */
+export type ClassroomMainView = 'lecture' | 'canvas'
 
 const styles = `
 .lc-layout-root{display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
@@ -59,6 +69,9 @@ const styles = `
 .lc-layout [aria-label="讲义"]{grid-column:3;grid-row:1}
 .lc-layout .lc-zone-notes{grid-column:5;grid-row:1}
 .lc-layout .lc-zone-conversation{grid-column:7;grid-row:1}
+.lc-layout .lc-main-slot{display:flex;flex-direction:column;grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:hidden;padding:12px;border:1px solid var(--dsh-border,#d8dee4);border-radius:8px;background:var(--dsh-surface,#fff)}
+.lc-layout[data-main="canvas"] [aria-label="讲义"]{display:none}
+.lc-layout[data-main="lecture"] .lc-main-slot{display:none}
 .lc-layout[data-collapsed-directory="true"] [aria-label="课程目录"]{display:none}
 .lc-layout[data-collapsed-notes="true"] .lc-zone-notes{display:none}
 .lc-layout[data-collapsed-conversation="true"] .lc-zone-conversation{display:none}
@@ -71,10 +84,13 @@ const styles = `
 .lc-layout[data-narrow="true"] [aria-label="讲义"],
 .lc-layout[data-narrow="true"] .lc-zone-notes,
 .lc-layout[data-narrow="true"] .lc-zone-conversation{display:none;grid-column:1;grid-row:1}
+.lc-layout[data-narrow="true"] .lc-main-slot{display:none;grid-column:1;grid-row:1}
 .lc-layout[data-narrow="true"][data-active-zone="directory"] [aria-label="课程目录"]{display:flex}
 .lc-layout[data-narrow="true"][data-active-zone="lecture"] [aria-label="讲义"]{display:flex}
 .lc-layout[data-narrow="true"][data-active-zone="notes"] .lc-zone-notes{display:flex}
 .lc-layout[data-narrow="true"][data-active-zone="conversation"] .lc-zone-conversation{display:flex}
+.lc-layout[data-narrow="true"][data-main="canvas"][data-active-zone="lecture"] [aria-label="讲义"]{display:none}
+.lc-layout[data-narrow="true"][data-main="canvas"][data-active-zone="lecture"] .lc-main-slot{display:flex}
 `
 
 /**
@@ -88,7 +104,7 @@ const styles = `
  * APIs.
  */
 export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
-  const { layout, onLayoutChange, lecture, notes, conversation, observeWidth = observeContainerWidth, threshold = narrowThreshold } = props
+  const { layout, onLayoutChange, lecture, main, mainView = 'lecture', notes, conversation, observeWidth = observeContainerWidth, threshold = narrowThreshold } = props
   const [draft, setDraft] = useState<ClassroomLayout | null>(null)
   const [width, setWidth] = useState<number | null>(null)
   const [activeZone, setActiveZone] = useState<ClassroomZone>('lecture')
@@ -96,7 +112,9 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
   const endDrag = useRef<() => void>(() => {})
 
   const current = draft ?? layout
-  const narrow = isNarrowWidth(width, threshold)
+  // Decide from the committed layout, not the drag preview: a separator drag
+  // must not flip the whole classroom into zone mode halfway through.
+  const narrow = usesNarrowLayout(width, layout, threshold)
 
   useEffect(() => {
     const element = root.current
@@ -111,6 +129,12 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
   useEffect(() => {
     if (narrow) setActiveZone('lecture')
   }, [narrow])
+
+  // Opening the canvas replaces the reading column; in narrow mode that column
+  // must be the visible one, otherwise the click appears to do nothing.
+  useEffect(() => {
+    if (narrow && mainView === 'canvas') setActiveZone('lecture')
+  }, [narrow, mainView])
 
   const template = useMemo(() => {
     if (narrow) return 'minmax(0, 1fr)'
@@ -160,6 +184,25 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
     commit(resizeLayout(current, boundary, event.key === 'ArrowRight' ? step : -step))
   }
 
+  /**
+   * Narrow mode is a single visible zone, so its segmented control behaves like
+   * a radio group: arrows move and activate, Home/End jump to the ends, and only
+   * the active zone stays in the Tab order.
+   */
+  const moveNarrow = (zone: ClassroomZone, event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    let next: number | null = null
+    const index = zoneIds.indexOf(zone)
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % zoneIds.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + zoneIds.length) % zoneIds.length
+    else if (event.key === 'Home') next = 0
+    else if (event.key === 'End') next = zoneIds.length - 1
+    if (next === null) return
+    event.preventDefault()
+    const target = zoneIds[next]
+    setActiveZone(target)
+    root.current?.querySelector<HTMLButtonElement>(`[data-narrow-zone="${target}"]`)?.focus()
+  }
+
   const toggle = (zone: (typeof collapsibleZones)[number]) => commit(toggleCollapsed(current, zone))
 
   return (
@@ -168,17 +211,27 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
       <div className="lc-layout-bar" role="toolbar" aria-label="课堂布局">
         <span className="lc-layout-caption">{narrow ? '分区' : '分栏'}</span>
         {narrow
-          ? zoneIds.map(zone => (
-            <button
-              key={zone}
-              type="button"
-              className="lc-layout-tab"
-              aria-pressed={activeZone === zone}
-              onClick={() => setActiveZone(resolveNarrowZone(zone))}
-            >
-              {zoneLabels[zone]}
-            </button>
-          ))
+          ? (
+            <div role="group" aria-label="课堂分区">
+              {zoneIds.map(zone => {
+                const label = zone === 'lecture' && mainView === 'canvas' ? '脉络' : zoneLabels[zone]
+                return (
+                  <button
+                    key={zone}
+                    type="button"
+                    className="lc-layout-tab"
+                    aria-pressed={activeZone === zone}
+                    tabIndex={activeZone === zone ? 0 : -1}
+                    data-narrow-zone={zone}
+                    onClick={() => setActiveZone(resolveNarrowZone(zone))}
+                    onKeyDown={event => moveNarrow(zone, event)}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          )
           : collapsibleZones.map(zone => (
             <button
               key={zone}
@@ -200,6 +253,7 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
       <div
         className="lc-layout"
         data-narrow={narrow ? 'true' : 'false'}
+        data-main={mainView}
         data-active-zone={activeZone}
         data-collapsed-directory={current.collapsed.directory ? 'true' : 'false'}
         data-collapsed-notes={current.collapsed.notes ? 'true' : 'false'}
@@ -207,6 +261,7 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
         style={{ gridTemplateColumns: template }}
       >
         <div className="lc-lecture-mount" style={{ display: 'contents' }}>{lecture}</div>
+        {main !== undefined && <div className="lc-main-slot">{main}</div>}
 
         {!narrow && layoutBoundaries(current).map(boundary => (
           <div

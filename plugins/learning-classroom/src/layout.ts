@@ -180,6 +180,27 @@ export function isNarrowWidth(width: number | null | undefined, threshold: numbe
   return typeof width === 'number' && Number.isFinite(width) && width > 0 && width < threshold
 }
 
+/**
+ * Narrowest wide layout that still shows every visible zone: the lecture at its
+ * readable minimum, the fixed panes at their saved widths and the separators.
+ */
+export function minimumWideWidth(layout: ClassroomLayout): number {
+  const visible = visibleZones(layout)
+  const fixed = visible.reduce((sum, zone) => (zone === 'lecture' ? sum : sum + layout.widths[zone]), 0)
+  return lectureMinWidth + fixed + Math.max(0, visible.length - 1) * separatorWidth
+}
+
+/**
+ * Whether to show one zone at a time. Saved pane widths count: a container wide
+ * enough for the threshold can still be too narrow for deliberately widened
+ * panes, and switching to zones avoids a horizontal scrollbar.
+ */
+export function usesNarrowLayout(width: number | null | undefined, layout: ClassroomLayout, threshold: number = narrowThreshold): boolean {
+  if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0) return false
+  if (width < threshold) return true
+  return width < minimumWideWidth(layout)
+}
+
 /** Narrow mode opens on the lecture; an unknown remembered zone falls back to it. */
 export function resolveNarrowZone(zone: unknown): ClassroomZone {
   return (zoneIds as readonly unknown[]).includes(zone) ? zone as ClassroomZone : 'lecture'

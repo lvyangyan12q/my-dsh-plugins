@@ -45,11 +45,13 @@ const first = { id: 'space-1', title: '线性代数', directory: '线性代数',
 const second = { id: 'space-2', title: '概率论', directory: '概率论', notePath: '笔记/我的笔记.md', createdAt: '2026-11-10T00:00:00.000Z', lecturePath: null, layout: structuredClone(defaultLayout()) }
 second.layout.collapsed.notes = true
 
-function fakeClient() {
+function fakeClient(options = {}) {
   const calls = []
+  const spaces = [structuredClone(first), structuredClone(second)]
+  if (options.layout !== undefined) spaces[0].layout = structuredClone(options.layout)
   let view = {
     vault: { path: 'D:/知识库', status: 'ready', reason: null, hint: '' },
-    spaces: [structuredClone(first), structuredClone(second)],
+    spaces,
     currentSpaceId: first.id,
   }
   const withLayout = (spaceId, layout) => {
@@ -292,6 +294,90 @@ test('窄容器一次只显示一个区并默认讲义，切换分区不写布�
     assert.equal(separators(ui.document).length, 3)
     await ui.resizeContainer(500)
     assert.equal(ui.visible('讲义'), true, '再次变窄时回到讲义')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('宽容器只有一个弹性主列且最小可读，侧栏收起后空出的宽度归讲义', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    const grid = ui.document.querySelector('.lc-layout')
+    // Split tracks without breaking `minmax(280px, 1fr)` at its comma.
+    const tracks = () => grid.style.gridTemplateColumns.match(/minmax\([^)]*\)|\S+/g) ?? []
+    const initial = tracks()
+    assert.equal(initial.length, 7, '目录、分隔条、讲义、分隔条、笔记、分隔条、对话')
+    assert.equal(initial[2], 'minmax(280px, 1fr)', '讲义是唯一可伸缩的主列')
+    assert.deepEqual([initial[0], initial[4], initial[6]], ['200px', '220px', '240px'])
+    assert.equal(initial.filter(track => track.includes('1fr')).length, 1, '额外空间只给讲义')
+
+    for (const label of ['收起课程目录', '收起我的笔记', '收起老师对话']) {
+      await ui.click(buttonByLabel(ui.document, label))
+    }
+    const collapsed = tracks()
+    assert.equal(collapsed[2], 'minmax(280px, 1fr)')
+    assert.deepEqual(
+      [collapsed[0], collapsed[4], collapsed[6]],
+      ['0px', '0px', '0px'],
+      '辅助栏收起后不保留固定宽度，空出的空间由讲义主列吸收',
+    )
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('窄容器里用方向键和 Home/End 切换分区，焦点跟随当前分区', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.resizeContainer(720)
+    const tabs = () => [...ui.document.querySelectorAll('[role="toolbar"] button[aria-pressed]')]
+    const byText = text => tabs().find(tab => tab.textContent === text)
+    const activeText = () => tabs().find(tab => tab.getAttribute('aria-pressed') === 'true').textContent
+
+    assert.equal(activeText(), '讲义')
+    await ui.press(byText('讲义'), 'ArrowRight')
+    assert.equal(activeText(), '我的笔记', '方向键切到下一个分区')
+    assert.equal(ui.visible('我的笔记'), true, '键盘切区真的换掉可见分区')
+    assert.equal(ui.document.activeElement, byText('我的笔记'), '焦点跟随当前分区')
+
+    await ui.press(byText('我的笔记'), 'End')
+    assert.equal(activeText(), '老师对话')
+    await ui.press(byText('老师对话'), 'Home')
+    assert.equal(activeText(), '课程目录')
+    await ui.press(byText('课程目录'), 'ArrowLeft')
+    assert.equal(activeText(), '老师对话', '方向键在两端循环')
+
+    assert.equal(byText('老师对话').tabIndex, 0)
+    assert.equal(byText('课程目录').tabIndex, -1, '只有当前分区在 Tab 顺序里')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('宽阈值以上但装不下已加宽的侧栏时改用分区，不挤出横向滚动', async () => {
+  const widePanes = {
+    widths: { directory: 360, notes: 480, conversation: 520 },
+    collapsed: { directory: false, notes: false, conversation: false },
+  }
+  const client = fakeClient({ layout: widePanes })
+  const ui = await mount(client)
+  try {
+    await ui.resizeContainer(1200)
+    assert.equal(separators(ui.document).length, 0, '装不下时不再渲染横向分隔条')
+    assert.equal(ui.visible('讲义'), true)
+    for (const label of ['课程目录', '我的笔记', '老师对话']) {
+      assert.equal(ui.visible(label), false, `${label} 收进分区切换`)
+    }
+    const tabs = [...ui.document.querySelectorAll('[role="toolbar"] button[aria-pressed]')]
+    assert.equal(tabs.length, 4, '四个分区仍都可到达')
+
+    await ui.resizeContainer(1700)
+    assert.equal(separators(ui.document).length, 3, '加宽到装得下后恢复并排分栏')
+    assert.equal(ui.visible('课程目录'), true)
+    assert.equal(ui.visible('我的笔记'), true)
+    assert.equal(ui.visible('老师对话'), true)
   } finally {
     await ui.unmount()
   }
