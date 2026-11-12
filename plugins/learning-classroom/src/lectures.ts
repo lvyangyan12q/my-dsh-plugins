@@ -172,4 +172,3 @@ export function groupCourseLectures<T extends CourseLectureOrdering>(entries: re
 export function isHiddenRelativePath(relativePath: string): boolean {
   return relativePath.replaceAll('\\', '/').split('/').some(segment => segment.startsWith('.') && segment !== '.' && segment !== '')
 }
-
