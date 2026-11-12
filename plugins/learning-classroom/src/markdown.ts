@@ -14,7 +14,7 @@ interface BlockMeta {
 export type Block = (
   | { type: 'heading'; level: number; text: string }
   | { type: 'paragraph'; text: string }
-  | { type: 'list'; ordered: boolean; items: string[] }
+  | { type: 'list'; ordered: boolean; items: string[]; itemBlockIds?: Array<string | undefined> }
   | { type: 'table'; header: string[]; rows: string[][] }
   | { type: 'code'; lang: string; code: string }
   | { type: 'quote'; text: string }
@@ -175,14 +175,24 @@ export function parseMarkdown(source: string): Block[] {
     if (list !== null) {
       const ordered = list[3] !== undefined
       const items: string[] = []
+      const itemBlockIds: Array<string | undefined> = []
       while (index < lines.length) {
         const match = listPattern.exec(lines[index])
         if (match === null) break
         if ((match[3] !== undefined) !== ordered) break
-        items.push(match[4].trim())
+        const raw = match[4].trim()
+        const trailing = splitTrailingBlockId(raw)
+        // The block id belongs to this list item, never to the whole list.
+        items.push(trailing === null ? raw : trailing.text)
+        itemBlockIds.push(trailing?.blockId)
         index += 1
       }
-      blocks.push({ type: 'list', ordered, items })
+      blocks.push({
+        type: 'list',
+        ordered,
+        items,
+        ...(itemBlockIds.some(id => id !== undefined) ? { itemBlockIds } : {}),
+      })
       continue
     }
 

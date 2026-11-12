@@ -52,6 +52,10 @@ const doc = {
     '另一段',
     '',
     '^standalone-block',
+    '',
+    '- 列表真实项 ^list-block',
+    '- 普通项',
+    '- 真实项 ^multi-block',
   ].join('\n'),
   placeholder: null,
 }
@@ -122,6 +126,29 @@ test('打开讲义块引用时定位到真实块，不误中前面代码里的�
   }
 })
 
+test('列表项里的真实块 id 渲染到对应 li 并可定位，不丢失为普通文本', async () => {
+  const container = dom.window.document.getElementById('root')
+  container.replaceChildren()
+  const root = createRoot(container)
+  try {
+    const props = { client, space, spaces: [space], currentSpaceId: space.id, busy: false, onOpenSpace() {} }
+    await act(async () => { root.render(h(LectureZone, props)) })
+    await settle()
+    await act(async () => {
+      root.render(h(LectureZone, { ...props, openRequest: { path: '讲义/01.md', token: 4, blockId: 'list-block' } }))
+    })
+    await settle()
+
+    const item = container.querySelector('li[data-block-id="list-block"]')
+    assert.ok(item, '列表项应带自己的块元数据')
+    assert.equal(item.textContent.trim(), '列表真实项')
+    assert.equal(item.getAttribute('data-scrolled'), '1')
+    assert.equal(container.querySelector('ul').getAttribute('data-block-id'), null)
+  } finally {
+    await act(async () => { root.unmount() })
+  }
+})
+
 test('独立一行 ^id 定位到它所属的真实块，而不是冒出的段落', async () => {
   const container = dom.window.document.getElementById('root')
   container.replaceChildren()
@@ -139,6 +166,32 @@ test('独立一行 ^id 定位到它所属的真实块，而不是冒出的段落
     assert.ok(block, '独立 ^id 应归属前一个真实块')
     assert.equal(block.textContent.trim(), '另一段')
     assert.equal(block.getAttribute('data-scrolled'), '1')
+  } finally {
+    await act(async () => { root.unmount() })
+  }
+})
+
+test('多列表项时只给带块 id 的那一项加元数据并准确定位', async () => {
+  const container = dom.window.document.getElementById('root')
+  container.replaceChildren()
+  const root = createRoot(container)
+  try {
+    const props = { client, space, spaces: [space], currentSpaceId: space.id, busy: false, onOpenSpace() {} }
+    await act(async () => { root.render(h(LectureZone, props)) })
+    await settle()
+    await act(async () => {
+      root.render(h(LectureZone, { ...props, openRequest: { path: '讲义/01.md', token: 5, blockId: 'multi-block' } }))
+    })
+    await settle()
+
+    const target = container.querySelector('li[data-block-id="multi-block"]')
+    assert.ok(target, '带块 id 的列表项应有自己的元数据')
+    assert.equal(target.textContent.trim(), '真实项')
+    assert.equal(target.getAttribute('data-scrolled'), '1')
+    const plain = [...container.querySelectorAll('li')].find(item => item.textContent.trim() === '普通项')
+    assert.equal(plain.hasAttribute('data-block-id'), false)
+    // 列表项块 id 不能绑到整个 ul 上。
+    assert.equal(container.querySelector('ul').getAttribute('data-block-id'), null)
   } finally {
     await act(async () => { root.unmount() })
   }

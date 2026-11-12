@@ -61,7 +61,9 @@ function BlockView({ block, onOpenLink }: { block: Block; onOpenLink?: (target: 
     case 'paragraph':
       return <p data-block-id={block.blockId}><InlineText text={block.text} onOpenLink={onOpenLink} /></p>
     case 'list': {
-      const items = block.items.map((item, index) => <li key={index}><InlineText text={item} onOpenLink={onOpenLink} /></li>)
+      const items = block.items.map((item, index) => (
+        <li key={index} data-block-id={block.itemBlockIds?.[index]}><InlineText text={item} onOpenLink={onOpenLink} /></li>
+      ))
       return block.ordered
         ? <ol data-block-id={block.blockId}>{items}</ol>
         : <ul data-block-id={block.blockId}>{items}</ul>

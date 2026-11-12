@@ -128,7 +128,9 @@ function BlockView({ block }: { block: Block }): ReactNode {
     case 'paragraph':
       return <p data-block-id={block.blockId}><InlineText text={block.text} /></p>
     case 'list': {
-      const items = block.items.map((item, index) => <li key={index}><InlineText text={item} /></li>)
+      const items = block.items.map((item, index) => (
+        <li key={index} data-block-id={block.itemBlockIds?.[index]}><InlineText text={item} /></li>
+      ))
       return block.ordered
         ? <ol data-block-id={block.blockId}>{items}</ol>
         : <ul data-block-id={block.blockId}>{items}</ul>

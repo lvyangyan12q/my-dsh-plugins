@@ -22,6 +22,21 @@ test('代码块里的 ^fake 不产生块元数据，且代码内容保持原样'
   assert.deepEqual(blocks[1], { type: 'paragraph', text: '真段落', blockId: 'real-block' })
 })
 
+test('列表项尾部的真实块 id 归属对应 li，不绑到整个列表', () => {
+  assert.deepEqual(parseMarkdown('- 第一项\n- 第二项 ^second-block\n'), [
+    {
+      type: 'list',
+      ordered: false,
+      items: ['第一项', '第二项'],
+      itemBlockIds: [undefined, 'second-block'],
+    },
+  ])
+  // Host 的块扫描与解析器对同一真实块给出一致结果。
+  assert.deepEqual(parseMarkdown('- actual item ^real\n'), [
+    { type: 'list', ordered: false, items: ['actual item'], itemBlockIds: ['real'] },
+  ])
+})
+
 test('没有块边界的 abc^real 不是块 id；标题的 ^id 同样归属标题', () => {
   assert.deepEqual(parseMarkdown('abc^real\n'), [
     { type: 'paragraph', text: 'abc^real' },
