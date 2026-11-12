@@ -64,6 +64,10 @@ test('工具 schema 只接收内容与路径，不接受自报主题或会话身
     assert.equal(Object.hasOwn(properties, 'sessionId'), false)
     assert.equal(tool.definition.parameters.additionalProperties, false)
   }
+  const card = tools.find(tool => tool.definition.name === 'classroom_lecture_write').definition.presentCall(lectureArgs)
+  assert.equal(card.title, '生成讲义：条件概率')
+  assert.deepEqual(card.rawInput, { fileName: lectureArgs.fileName, title: lectureArgs.title })
+  assert.doesNotMatch(JSON.stringify(card), /P\(A\|B\)/, '待执行工具卡片不应把整篇正文倒进界面')
 })
 
 test('绑定会话生成讲义：成功落盘后目录可发现并可打开，来源与解释一起保存', async () => {

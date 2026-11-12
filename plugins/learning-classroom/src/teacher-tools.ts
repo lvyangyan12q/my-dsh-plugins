@@ -36,6 +36,8 @@ export interface TeacherToolDefinition {
     schema: Record<string, unknown>
     render(args: unknown, value: GeneratedContentView): Array<{ type: 'text'; text: string }>
   }
+  /** Compact native card for the pending call; the raw body/HTML is not shown. */
+  presentCall?(args: unknown): Record<string, unknown>
   execute(args: unknown, exec: TeacherToolExecution): Promise<GeneratedContentView>
 }
 
@@ -168,6 +170,19 @@ function renderGenerated(action: string, value: GeneratedContentView): Array<{ t
   }]
 }
 
+/** A concise pending card: file name and title, never the full body or HTML. */
+function presentGenerated(kindLabel: string, args: unknown): Record<string, unknown> {
+  const row = args !== null && typeof args === 'object' ? args as { fileName?: unknown; title?: unknown } : {}
+  const title = typeof row.title === 'string' && row.title.trim() !== '' ? row.title.trim() : '未命名'
+  const fileName = typeof row.fileName === 'string' ? row.fileName : ''
+  return {
+    card: 'generic',
+    title: `生成${kindLabel}：${title}`,
+    kind: 'other',
+    rawInput: { fileName, title },
+  }
+}
+
 /**
  * Build the two model-facing writing tools. The Host is the only writer; these
  * definitions add the model-facing schema, argument bounds, real-session
@@ -184,6 +199,7 @@ export function createTeacherTools(host: TeacherToolHost): TeacherToolEntry[] {
       schema: generatedOutputSchema,
       render: (_args, value) => renderGenerated('写入讲义', value),
     },
+    presentCall: args => presentGenerated('讲义', args),
     async execute(args, exec) {
       const draft = parse(lectureDraftSchema, args, '讲义')
       assertLive(exec)
@@ -202,6 +218,7 @@ export function createTeacherTools(host: TeacherToolHost): TeacherToolEntry[] {
       schema: generatedOutputSchema,
       render: (_args, value) => renderGenerated('写入实验', value),
     },
+    presentCall: args => presentGenerated('动态实验', args),
     async execute(args, exec) {
       const draft = parse(experimentDraftSchema, args, '动态实验')
       assertLive(exec)
