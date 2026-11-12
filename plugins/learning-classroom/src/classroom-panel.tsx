@@ -5,6 +5,7 @@ import { createClassroomClient, type ClassroomClient } from './classroom-client.
 import { CanvasZone, type CanvasOpenTarget } from './canvas-zone.tsx'
 import { ClassroomLayoutView, type ClassroomMainView } from './classroom-layout.tsx'
 import type { ComposerFace, ConversationLike } from './composer.ts'
+import type { LinkFragment } from './fragments.ts'
 import { normalizeLayout, type ClassroomLayout } from './layout.ts'
 import { LectureZone, type LectureOpenRequest } from './lecture-zone.tsx'
 import { NotesZone, type NoteAppendRequest, type NoteOpenRequest, type NoteStateView } from './notes-zone.tsx'
@@ -125,7 +126,7 @@ function ClassroomGrid(props: {
   onAnnotate: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
   appendRequest: NoteAppendRequest | null
   onNoteState: (state: NoteStateView) => void
-  onOpenLecture: (path: string) => void
+  onOpenLecture: (path: string, fragment?: LinkFragment) => void
   /** "Ask the teacher" capability shared by the lecture and note zones. */
   askTeacher?: AskTeacher
   getConversation?: () => ConversationLike | undefined
@@ -211,6 +212,9 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
   const [appendRequest, setAppendRequest] = useState<NoteAppendRequest | null>(null)
   const appendToken = useRef(0)
   const noteState = useRef<NoteStateView | null>(null)
+  // Navigation epoch: an annotation whose source resolution finishes after any
+  // space switch must not be delivered to the newly selected space.
+  const spaceSession = useRef(0)
   // The context strip is page state, not a chat database: the appended text
   // lives in the native draft, and the sent message lives in the native
   // Session history. Only the frozen blocks shown in this page are kept here.
@@ -241,6 +245,11 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
 
   const run = async (command: ClassroomViewCommand) => {
     if (busy) return
+    // Any navigation invalidates annotation resolutions still in flight.
+    if (command.action === 'space-open' || command.action === 'space-create'
+      || command.action === 'vault-choose' || command.action === 'session-open') {
+      spaceSession.current += 1
+    }
     setBusy(true)
     setError('')
     try {
@@ -370,10 +379,15 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
     noteState.current = state
   }, [])
 
-  /** A wikilink in the note preview opens a lecture in the main column. */
-  const openLectureFromNote = useCallback((path: string) => {
+  /** A wikilink in the note preview opens a lecture in the main column, keeping its real fragment. */
+  const openLectureFromNote = useCallback((path: string, fragment?: LinkFragment) => {
     requestToken.current += 1
-    setOpenLecture({ path, token: requestToken.current })
+    setOpenLecture({
+      path,
+      token: requestToken.current,
+      heading: fragment?.heading ?? null,
+      blockId: fragment?.blockId ?? null,
+    })
     setMode('classroom')
   }, [])
 
@@ -397,12 +411,31 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
     if (current.status === 'conflict') {
       return { ok: false, message: '笔记有未解决的保存冲突，批注没有追加。请先比较并处理冲突。' }
     }
-    const result = await annotationBlockFor(api, space.id, space.directory, input)
+    // Capture the target identity before the async Host resolution. A late
+    // response for space A must never be delivered after the reader switched to
+    // space B, even when both spaces share the same relative note path.
+    const requestSpace = space
+    const requestNote = current
+    const requestSession = spaceSession.current
+    const stillCurrent = (): boolean => alive.current
+      && spaceSession.current === requestSession
+      && spaceIdRef.current === requestSpace.id
+      && noteState.current?.spaceId === requestSpace.id
+      && noteState.current?.path === requestNote.path
+    const result = await annotationBlockFor(api, requestSpace.id, requestSpace.directory, input, stillCurrent)
     if (!result.ok || result.block === undefined) {
       return { ok: false, message: result.message }
     }
+    if (!stillCurrent()) {
+      return { ok: false, message: '解析来源期间学习空间或笔记已切换，旧批注没有追加。' }
+    }
     appendToken.current += 1
-    setAppendRequest({ token: appendToken.current, block: result.block, path: current.path })
+    setAppendRequest({
+      token: appendToken.current,
+      spaceId: requestSpace.id,
+      block: result.block,
+      path: requestNote.path,
+    })
     return { ok: true, message: result.message }
   }
 

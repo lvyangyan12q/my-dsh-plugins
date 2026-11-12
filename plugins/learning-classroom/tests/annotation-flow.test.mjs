@@ -87,6 +87,24 @@ test('讲义缺失或无法解析时明确失败，不生成没有来源的批�
   assert.match(result.message, /找不到|无法/)
 })
 
+test('解析来源期间学习空间或笔记切换后拒绝旧结果，不把 A 的批注写进 B', async () => {
+  let current = true
+  const fake = {
+    calls: [],
+    client: {
+      async resolveLink(input) {
+        fake.calls.push(input.target)
+        current = false
+        return ok(base, { link: `[[${base}]]` })
+      },
+    },
+  }
+  const result = await annotationBlockFor(fake.client, 'space-1', spaceDirectory, { ...input, heading: null }, () => current)
+  assert.equal(result.ok, false)
+  assert.equal(result.block, undefined)
+  assert.match(result.message, /切换|过期|当前/)
+})
+
 test('来源路径越出当前学习空间时拒绝，不接受客户端拼出的假路径', async () => {
   const fake = fakeClient({})
   const result = await annotationBlockFor(fake.client, 'space-1', spaceDirectory, {

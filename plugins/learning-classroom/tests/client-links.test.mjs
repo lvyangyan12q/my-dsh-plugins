@@ -18,6 +18,11 @@ const globals = {
 for (const [key, value] of Object.entries(globals)) {
   try { Object.defineProperty(globalThis, key, { configurable: true, writable: true, value }) } catch { /* Node may own navigator. */ }
 }
+// jsdom does not implement scrolling; record the target so tests can prove the
+// link actually navigated to the real heading/block anchor.
+dom.window.HTMLElement.prototype.scrollIntoView = function scrollIntoView() {
+  this.setAttribute('data-scrolled', '1')
+}
 
 const React = await import('react')
 const { createRoot } = await import('react-dom/client')
@@ -93,14 +98,16 @@ async function mount(store, props = {}) {
   container.replaceChildren()
   const root = createRoot(container)
   const draftStore = memoryDrafts()
-  const render = extra => root.render(h(NotesZone, {
-    client: store.client,
-    space,
-    debounceMs: 10,
-    drafts: draftStore,
-    ...props,
-    ...extra,
-  }))
+  const render = extra => {
+    root.render(h(NotesZone, {
+      client: store.client,
+      space,
+      debounceMs: 10,
+      drafts: draftStore,
+      ...props,
+      ...extra,
+    }))
+  }
   await act(async () => { render({}) })
   await settle()
   return {
@@ -136,7 +143,7 @@ test('讲义选段批注追加到当前笔记末尾：保留原文、写真实�
   const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n已有内容\n' })
   const ui = await mount(store)
   try {
-    await ui.rerender({ appendRequest: { token: 1, block: blockOne } })
+    await ui.rerender({ appendRequest: { token: 1, spaceId: 'space-1', block: blockOne } })
 
     const expected = `# 我的笔记\n\n已有内容\n\n${blockOne}\n`
     assert.equal(ui.textarea().value, expected)
@@ -166,7 +173,7 @@ test('笔记存在未解决的保存冲突时拒绝追加批注，不覆盖任�
     assert.match(ui.text(), /外部修改|冲突/)
 
     const before = ui.textarea().value
-    await ui.rerender({ appendRequest: { token: 2, block: blockOne } })
+    await ui.rerender({ appendRequest: { token: 2, spaceId: 'space-1', block: blockOne } })
     assert.equal(ui.textarea().value, before)
     assert.equal(ui.textarea().value.includes('样本空间可以缩小'), false)
     assert.match(ui.text(), /冲突/)
@@ -176,13 +183,12 @@ test('笔记存在未解决的保存冲突时拒绝追加批注，不覆盖任�
   }
 })
 
-test('同一 token 的追加请求只应用一次，重复渲染不会重复写入', async () => {
-  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n' })
+test('同一 token 的追加请求只应用一次，重复渲染不会重复写入', async () => {  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n' })
   const ui = await mount(store)
   try {
-    await ui.rerender({ appendRequest: { token: 3, block: blockOne } })
+    await ui.rerender({ appendRequest: { token: 3, spaceId: 'space-1', block: blockOne } })
     const once = ui.textarea().value
-    await ui.rerender({ appendRequest: { token: 3, block: blockOne } })
+    await ui.rerender({ appendRequest: { token: 3, spaceId: 'space-1', block: blockOne } })
     assert.equal(ui.textarea().value, once)
   } finally {
     await ui.unmount()
@@ -296,6 +302,84 @@ test('解析并插入双链：歧义列候选且不插入，解析成功才在�
     const save = store.calls.filter(call => call.type === 'save').at(-1)
     assert.ok(save, '插入双链后应走既有保存')
     assert.match(save.content, /\[\[概率论\/讲义\/第一章\/01\.md\]\]/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('两个学习空间共用同一相对笔记路径时，旧空间的批注不会写进新空间', async () => {
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n已有内容\n' })
+  const ui = await mount(store)
+  try {
+    const otherSpace = { ...space, id: 'space-2', title: '线性代数', directory: '线性代数' }
+    await ui.rerender({ space: otherSpace })
+    const before = ui.textarea().value
+
+    await ui.rerender({
+      space: otherSpace,
+      appendRequest: {
+        token: 7,
+        block: blockOne,
+        spaceId: 'space-1',
+        path: '笔记/我的笔记.md',
+      },
+    })
+    assert.equal(ui.textarea().value, before)
+    assert.equal(store.files.get('笔记/我的笔记.md'), before)
+    assert.match(ui.text(), /学习空间|空间/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('同文件标题双链定位到真实标题，不把 fragment 丢掉', async () => {
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n[[#小结]]\n\n## 小结\n\n正文\n' })
+  store.resolve('#小结', {
+    spaceId: 'space-1', target: '#小结', status: 'ok',
+    file: '概率论/笔记/我的笔记.md', spacePath: '笔记/我的笔记.md', kind: 'note',
+    heading: '小结', blockId: null, link: '[[概率论/笔记/我的笔记.md#小结]]', candidates: [], message: null,
+  })
+  const ui = await mount(store)
+  try {
+    await ui.click('预览')
+    const link = ui.container.querySelector('[data-wikilink="#小结"]')
+    assert.ok(link, '同文件双链应渲染')
+    await act(async () => { link.click() })
+    await settle()
+
+    assert.equal(ui.container.querySelector('select[aria-label="笔记文件"]').value, '笔记/我的笔记.md')
+    const heading = [...ui.container.querySelectorAll('h3, h4, h5, h6')]
+      .find(element => element.textContent.trim() === '小结')
+    assert.ok(heading, '预览里应有真实标题')
+    assert.equal(heading.getAttribute('data-scrolled'), '1')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('跨笔记块引用打开真实文件并定位到含 ^块id 的段落', async () => {
+  const store = noteStore({
+    '笔记/我的笔记.md': '# 我的笔记\n\n[[笔记/另一篇.md#^block-1]]\n',
+    '笔记/另一篇.md': '# 另一篇\n\n结论 ^block-1\n',
+  })
+  store.resolve('笔记/另一篇.md#^block-1', {
+    spaceId: 'space-1', target: '笔记/另一篇.md#^block-1', status: 'ok',
+    file: '概率论/笔记/另一篇.md', spacePath: '笔记/另一篇.md', kind: 'note',
+    heading: null, blockId: 'block-1', link: '[[概率论/笔记/另一篇.md#^block-1]]', candidates: [], message: null,
+  })
+  const ui = await mount(store)
+  try {
+    await ui.click('预览')
+    const link = ui.container.querySelector('[data-wikilink="笔记/另一篇.md#^block-1"]')
+    assert.ok(link, '块引用双链应渲染')
+    await act(async () => { link.click() })
+    await settle()
+
+    assert.equal(ui.container.querySelector('select[aria-label="笔记文件"]').value, '笔记/另一篇.md')
+    const paragraph = [...ui.container.querySelectorAll('p')]
+      .find(element => element.textContent.trimEnd().endsWith('^block-1'))
+    assert.ok(paragraph, '另一篇笔记里的块段落应渲染')
+    assert.equal(paragraph.getAttribute('data-scrolled'), '1')
   } finally {
     await ui.unmount()
   }

@@ -43,7 +43,14 @@ export async function annotationBlockFor(
   spaceId: string,
   spaceDirectory: string,
   input: AnnotationSourceInput,
+  /** Re-checked after each await: the space/note may have changed while resolving. */
+  isCurrent?: () => boolean,
 ): Promise<AnnotationFlowResult> {
+  const stale = (): AnnotationFlowResult => ({
+    ok: false,
+    message: '解析来源期间学习空间或笔记已切换，旧批注没有追加。',
+  })
+  if (isCurrent !== undefined && !isCurrent()) return stale()
   let relative: string
   try {
     relative = vaultRelativePath(input.path)
@@ -68,6 +75,7 @@ export async function annotationBlockFor(
     target: heading === null ? target : `${target}#${heading}`,
     // No fromPath: the lecture path is already Vault-relative.
   })
+  if (isCurrent !== undefined && !isCurrent()) return stale()
 
   let warning = ''
   if (resolved.status !== 'ok' && heading !== null) {
@@ -76,6 +84,7 @@ export async function annotationBlockFor(
     // guessed anchor is exactly what this ticket forbids.
     const withHeadingMessage = resolved.message ?? ''
     resolved = await resolve({ action: 'link-resolve', spaceId, target })
+    if (isCurrent !== undefined && !isCurrent()) return stale()
     if (resolved.status === 'ok') {
       warning = `标题没有在讲义里确认（${withHeadingMessage}）；已改用真实文件链接，摘录仍保留。`
     }

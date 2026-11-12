@@ -1,4 +1,4 @@
-import { readFile, readdir, stat } from 'node:fs/promises'
+import { open, readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { LinkResolveStatus, LinkResolveView, LinkTargetKind } from './contract.ts'
 import { lectureFileKind, parseFrontmatter } from './lectures.ts'
@@ -11,6 +11,8 @@ const linkIndexDepthLimit = 16
 const linkIndexCountLimit = 4000
 /** A file bigger than this cannot be inspected for headings/blocks, only linked. */
 const linkInspectBytes = 1.5 * 1024 * 1024
+/** Frontmatter aliases must fit in the head; a later body never carries them. */
+const aliasHeadBytes = 32 * 1024
 
 const markdownExtension = /\.md$/i
 
@@ -39,12 +41,15 @@ export async function buildLinkIndex(root: string, probe: VaultProbe = nodeVault
   const walk = async (directory: string, relative: string, depth: number): Promise<void> => {
     let entries
     try {
-      entries = await readdir(directory, { withFileTypes: true })
+      entries = await (probe.readdir ?? ((path, options) => readdir(path, options)))(directory, { withFileTypes: true })
     } catch (error) {
-      if (depth === 0) {
-        throw new ClassroomError('link-index-failed', `无法读取知识文件库：${error instanceof Error ? error.message : '未知原因'}`, 500)
-      }
-      return
+      // A skipped directory could hide a same-name file or an alias collision.
+      // Refuse the whole index instead of pretending the vault is complete.
+      throw new ClassroomError(
+        'link-index-incomplete',
+        `无法完整读取知识文件库目录「${relative === '' ? '根目录' : relative}」（${error instanceof Error ? error.message : '未知原因'}）；为避免隐藏同名歧义，双链索引已拒绝建立。`,
+        409,
+      )
     }
     entries.sort((a, b) => (a.name.normalize('NFC') < b.name.normalize('NFC') ? -1 : a.name.normalize('NFC') > b.name.normalize('NFC') ? 1 : 0))
     for (const entry of entries) {
@@ -103,22 +108,42 @@ function kindOf(space: LinkSpaceScope, file: string, spacePath: string | null): 
   return 'file'
 }
 
+interface FenceMarker {
+  char: string
+  length: number
+}
+
+/** Opening fence: a run of 3+ backticks/tildes at line start (info string allowed). */
+function fenceOpen(line: string): FenceMarker | null {
+  const match = /^\s{0,3}(`{3,}|~{3,})/.exec(line)
+  if (match === null) return null
+  return { char: match[1][0], length: match[1].length }
+}
+
+/** A fence closes only with the same character and at least the opening length. */
+function fenceCloses(line: string, fence: FenceMarker): boolean {
+  const match = /^\s{0,3}(`{3,}|~{3,})\s*$/.exec(line)
+  return match !== null && match[1][0] === fence.char && match[1].length >= fence.length
+}
+
 /** Extract ATX/setext headings outside fenced code, keeping raw heading text. */
 export function markdownHeadings(source: string): string[] {
   const body = parseFrontmatter(source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')).body
   const lines = body.split('\n')
   const headings: string[] = []
-  let fence: string | null = null
+  let fence: FenceMarker | null = null
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
-    const fenceMatch = /^\s*(`{3,}|~{3,})/.exec(line)
-    if (fenceMatch !== null) {
-      const marker = fenceMatch[1][0]
-      if (fence === null) fence = marker
-      else if (fence === marker) fence = null
+    if (fence === null) {
+      const opened = fenceOpen(line)
+      if (opened !== null) {
+        fence = opened
+        continue
+      }
+    } else {
+      if (fenceCloses(line, fence)) fence = null
       continue
     }
-    if (fence !== null) continue
     const atx = /^\s{0,3}(#{1,6})[ \t]+(.*?)[ \t]*#*[ \t]*$/.exec(line)
     if (atx !== null) {
       const text = atx[2].trim()
@@ -135,21 +160,23 @@ export function markdownHeadings(source: string): string[] {
   return headings
 }
 
-/** Existing block ids (`^id` at the end of a block line) outside fenced code. */
+/** Existing block ids (`^id` ending a block line, including a standalone line). */
 export function markdownBlockIds(source: string): string[] {
   const body = parseFrontmatter(source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n')).body
   const ids: string[] = []
-  let fence: string | null = null
+  let fence: FenceMarker | null = null
   for (const line of body.split('\n')) {
-    const fenceMatch = /^\s*(`{3,}|~{3,})/.exec(line)
-    if (fenceMatch !== null) {
-      const marker = fenceMatch[1][0]
-      if (fence === null) fence = marker
-      else if (fence === marker) fence = null
+    if (fence === null) {
+      const opened = fenceOpen(line)
+      if (opened !== null) {
+        fence = opened
+        continue
+      }
+    } else {
+      if (fenceCloses(line, fence)) fence = null
       continue
     }
-    if (fence !== null) continue
-    const match = /\s\^([A-Za-z0-9-]+)\s*$/.exec(line)
+    const match = /(?:^|\s)\^([A-Za-z0-9-]+)[ \t]*$/.exec(line)
     if (match !== null) ids.push(match[1])
   }
   return ids
@@ -222,6 +249,67 @@ async function readBoundedFile(root: string, file: string, probe: VaultProbe): P
     return { content: await readFile(target, 'utf8') }
   } catch {
     return null
+  }
+}
+
+/**
+ * Read only the head of a file for frontmatter aliases. A failure here means the
+ * alias index could be incomplete, so the resolver refuses instead of silently
+ * missing a collision.
+ */
+async function readAliasHead(root: string, file: string, probe: VaultProbe): Promise<string> {
+  let target: string
+  try {
+    target = await resolveVaultPath(root, file, probe)
+  } catch {
+    throw new ClassroomError(
+      'link-index-incomplete',
+      `无法访问别名候选文件「${file}」；为避免隐藏同名别名歧义，双链解析已拒绝继续。`,
+      409,
+    )
+  }
+  let handle
+  try {
+    handle = await open(target, 'r')
+  } catch {
+    throw new ClassroomError(
+      'link-index-incomplete',
+      `无法读取别名候选文件「${file}」；别名索引不完整，双链解析已拒绝继续。`,
+      409,
+    )
+  }
+  try {
+    const buffer = Buffer.alloc(aliasHeadBytes)
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0)
+    return buffer.subarray(0, bytesRead).toString('utf8')
+  } catch {
+    throw new ClassroomError(
+      'link-index-incomplete',
+      `无法完整读取别名候选文件「${file}」；别名索引不完整，双链解析已拒绝继续。`,
+      409,
+    )
+  } finally {
+    await handle.close().catch(() => undefined)
+  }
+}
+
+/** Final on-disk check: an index hit alone is not proof the file still exists. */
+async function verifyVaultFile(
+  root: string,
+  file: string,
+  probe: VaultProbe,
+): Promise<'ok' | 'missing' | 'outside'> {
+  let target: string
+  try {
+    target = await resolveVaultPath(root, file, probe)
+  } catch {
+    return 'outside'
+  }
+  try {
+    const info = await stat(target)
+    return info.isFile() ? 'ok' : 'missing'
+  } catch {
+    return 'missing'
   }
 }
 
@@ -318,9 +406,8 @@ export async function resolveVaultLink(options: ResolveLinkOptions): Promise<Lin
           // bounded by the index; two matches are reported, never guessed.
           const aliasMatches: string[] = []
           for (const candidate of index.files) {
-            const read = await readBoundedFile(root, candidate, probe)
-            if (read === null || 'tooLarge' in read) continue
-            if (frontmatterAliases(read.content).some(alias => fold(alias) === fold(relative))) {
+            const head = await readAliasHead(root, candidate, probe)
+            if (frontmatterAliases(head).some(alias => fold(alias) === fold(relative))) {
               aliasMatches.push(candidate)
             }
           }
@@ -340,6 +427,14 @@ export async function resolveVaultLink(options: ResolveLinkOptions): Promise<Lin
   }
 
   const resolved = file as string
+  const verified = await verifyVaultFile(root, resolved, probe)
+  if (verified === 'outside') {
+    return emptyView(spaceId, target, 'outside', `目标文件经符号链接越出知识文件库：${resolved}`)
+  }
+  if (verified === 'missing') {
+    return emptyView(spaceId, target, 'missing', `目标文件不存在、已被删除或无法读取：${resolved}`)
+  }
+
   const prefix = `${space.directory.normalize('NFC')}/`
   const spacePath = resolved.normalize('NFC').startsWith(prefix)
     ? resolved.slice(space.directory.length + 1)

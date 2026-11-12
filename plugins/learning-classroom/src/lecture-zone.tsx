@@ -10,6 +10,7 @@ import type {
   TopicView,
 } from './contract.ts'
 import { groupCourseLectures } from './lectures.ts'
+import { scrollToFragment, type LinkFragment } from './fragments.ts'
 import { parseInline, parseMarkdown, type Block } from './markdown.ts'
 import { excerptForQuestion, type AskTeacher } from './question-context.ts'
 
@@ -32,6 +33,9 @@ export interface LectureZoneProps {
 export interface LectureOpenRequest {
   path: string
   token: number
+  /** Real heading/block fragment resolved from a wikilink, if any. */
+  heading?: string | null
+  blockId?: string | null
 }
 
 type ListState =
@@ -42,7 +46,7 @@ type ListState =
 type ReaderState =
   | { status: 'idle' }
   | { status: 'loading'; path: string }
-  | { status: 'ready'; doc: LectureReadView }
+  | { status: 'ready'; doc: LectureReadView; fragment?: (LinkFragment & { token: number }) }
   | { status: 'failed'; path: string; message: string }
 
 /** Unsaved goal text, kept per learning space so a view switch cannot lose it. */
@@ -192,12 +196,28 @@ function LectureReader(props: {
   space: ClassroomSpaceView
   askTeacher?: AskTeacher
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
+  fragment?: (LinkFragment & { token: number }) | null
 }) {
-  const { doc, space, askTeacher, onAnnotate } = props
+  const { doc, space, askTeacher, onAnnotate, fragment } = props
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const [notice, setNotice] = useState('')
   const [askError, setAskError] = useState('')
+  const [fragmentNotice, setFragmentNotice] = useState('')
   const askBusy = useRef(false)
+
+  // A wikilink fragment must land on the real heading/block in the rendered
+  // lecture. Opening the file without locating it is reported, not hidden.
+  useEffect(() => {
+    if (fragment === undefined || fragment === null) return
+    if (scrollToFragment(bodyRef.current, fragment)) {
+      setFragmentNotice('')
+      return
+    }
+    const where = fragment.heading !== null && fragment.heading !== undefined
+      ? `标题「${fragment.heading}」`
+      : `块 ^${fragment.blockId ?? ''}`
+    setFragmentNotice(`已打开讲义，但没有找到${where}；不会伪造锚点位置。`)
+  }, [fragment])
 
   const ask = async (): Promise<void> => {
     if (askTeacher === undefined || askTeacher.available === false || askBusy.current) return
@@ -245,8 +265,7 @@ function LectureReader(props: {
         <h3>{doc.title}</h3>
         <p className="lc-lecture-path">{doc.path}</p>
         {askTeacher !== undefined && (
-          <div className="lc-lecture-actions" aria-label="讲义提问">
-            <button
+          <div className="lc-lecture-actions" aria-label="讲义提问">            <button
               type="button"
               className="lc-secondary"
               disabled={askTeacher.available === false}
@@ -261,6 +280,7 @@ function LectureReader(props: {
             {askError !== '' && <p role="alert">{askError}</p>}
           </div>
         )}
+        {fragmentNotice !== '' && <p className="lc-hint" role="alert">{fragmentNotice}</p>}
       </div>
       <AnnotationAction doc={doc} onAnnotate={onAnnotate}>
         <div ref={bodyRef}>
@@ -449,7 +469,7 @@ export function LectureZone(props: LectureZoneProps) {
     }
   }, [client, spaceId, reloadKey, canTopic])
 
-  const select = async (path: string) => {
+  const select = async (path: string, fragment?: LinkFragment & { token: number }) => {
     if (reader.status === 'loading' && reader.path === path) return
     const mine = generation.current
     setNotice('')
@@ -458,7 +478,7 @@ export function LectureZone(props: LectureZoneProps) {
     try {
       const doc = await client.readLecture(spaceId, path)
       if (!alive.current || generation.current !== mine) return
-      setReader({ status: 'ready', doc })
+      setReader({ status: 'ready', doc, fragment })
     } catch (error) {
       if (!alive.current || generation.current !== mine) return
       setSelected(null)
@@ -628,13 +648,18 @@ export function LectureZone(props: LectureZoneProps) {
   // is ready. The token makes repeated requests for the same path observable.
   const requestToken = props.openRequest?.token ?? null
   const requestPath = props.openRequest?.path ?? null
+  const requestHeading = props.openRequest?.heading ?? null
+  const requestBlockId = props.openRequest?.blockId ?? null
   useEffect(() => {
     if (requestToken === null || requestPath === null) return
     if (handledRequest.current === requestToken) return
     if (listState.status !== 'ready') return
     handledRequest.current = requestToken
-    void select(requestPath)
-  }, [requestToken, requestPath, listState.status])
+    const fragment = requestHeading === null && requestBlockId === null
+      ? undefined
+      : { token: requestToken, heading: requestHeading, blockId: requestBlockId }
+    void select(requestPath, fragment)
+  }, [requestToken, requestPath, requestHeading, requestBlockId, listState.status])
 
   return (
     <>
@@ -814,6 +839,7 @@ export function LectureZone(props: LectureZoneProps) {
             space={space}
             askTeacher={props.askTeacher}
             onAnnotate={props.onAnnotate}
+            fragment={reader.fragment ?? null}
           />
         )}
 

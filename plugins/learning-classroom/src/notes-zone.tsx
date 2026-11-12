@@ -3,6 +3,7 @@ import { appendAnnotationBlock } from './annotations.ts'
 import { createDebouncer, createSerialQueue } from './autosave.ts'
 import { classroomErrorCode, type ClassroomClient } from './classroom-client.ts'
 import type { ClassroomSpaceView, NoteDocumentView, NoteSaveCommand, NoteSummaryView } from './contract.ts'
+import { scrollToFragment, type LinkFragment } from './fragments.ts'
 import { LinkInsert } from './link-insert.tsx'
 import {
   allocateDraftRevision,
@@ -35,6 +36,8 @@ export interface NoteOpenRequest {
  */
 export interface NoteAppendRequest {
   token: number
+  /** Space that built this block; a different space must refuse it. */
+  spaceId: string
   /** Markdown block built by `buildAnnotationBlock`; already contains its real source link. */
   block: string
   /** Note the block was built for; a later switch refuses the append. */
@@ -63,7 +66,7 @@ export interface NotesZoneProps {
   /** Report the current note identity/status so other zones can explain refusals. */
   onNoteState?: (state: NoteStateView) => void
   /** Open a lecture or linked course file from a wikilink in the note preview. */
-  onOpenLecture?: (path: string) => void
+  onOpenLecture?: (path: string, fragment?: LinkFragment) => void
   /** Adds the selected current editor text to the native teacher draft. */
   askTeacher?: AskTeacher
 }
@@ -161,6 +164,10 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const statusRef = useRef<NoteSaveStatus>('loading')
   const conflictRef = useRef(false)
   const handledAppend = useRef<number | null>(null)
+  const previewRef = useRef<HTMLDivElement | null>(null)
+  const handledScroll = useRef<number | null>(null)
+  const scrollSeq = useRef(0)
+  const [scrollRequest, setScrollRequest] = useState<(LinkFragment & { token: number }) | null>(null)
   const [appendNotice, setAppendNotice] = useState('')
   const [linkNotice, setLinkNotice] = useState('')
   const saveQueue = useMemo(() => createSerialQueue(), [])
@@ -877,12 +884,21 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
         setLinkNotice(resolved.message ?? '这条双链无法解析。')
         return
       }
+      const fragment: LinkFragment = { heading: resolved.heading, blockId: resolved.blockId }
+      const hasFragment = resolved.heading !== null || resolved.blockId !== null
       if (resolved.kind === 'note' && resolved.spacePath !== null) {
-        await switchTo(resolved.spacePath)
+        // Same-file links must still navigate to the real heading/block instead
+        // of returning early and dropping the fragment.
+        if (resolved.spacePath !== pathRef.current) await switchTo(resolved.spacePath)
+        if (hasFragment) {
+          setMode('preview')
+          scrollSeq.current += 1
+          setScrollRequest({ token: scrollSeq.current, ...fragment })
+        }
         return
       }
       if (resolved.kind === 'lecture' && resolved.spacePath !== null && onOpenLecture !== undefined) {
-        onOpenLecture(resolved.spacePath)
+        onOpenLecture(resolved.spacePath, hasFragment ? fragment : undefined)
         return
       }
       setLinkNotice(`这条双链指向 ${resolved.file ?? target}；它不在当前学习空间，请在 Obsidian 中打开。`)
@@ -891,13 +907,30 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
   }, [client, onOpenLecture, space.id, switchTo])
 
+  // Follow a real heading/block inside the rendered preview. Opening the file
+  // without locating the fragment is not reported as success.
+  useEffect(() => {
+    if (scrollRequest === null || handledScroll.current === scrollRequest.token) return
+    if (mode !== 'preview') return
+    handledScroll.current = scrollRequest.token
+    if (scrollToFragment(previewRef.current, scrollRequest)) return
+    const where = scrollRequest.heading !== null
+      ? `标题「${scrollRequest.heading}」`
+      : `块 ^${scrollRequest.blockId ?? ''}`
+    setLinkNotice(`已打开目标文件，但在当前内容里没有找到${where}；不会伪造锚点位置。`)
+  }, [scrollRequest, mode, content, path])
+
   // Append one annotation block to the end of the current note. The block was
-  // built from a real host-resolved source link; a conflict or unloaded note is
-  // refused instead of overwriting anything.
+  // built from a real host-resolved source link; a conflict, unloaded note or a
+  // request from another learning space is refused instead of overwriting anything.
   useEffect(() => {
     if (appendRequest === null) return
     if (handledAppend.current === appendRequest.token) return
     handledAppend.current = appendRequest.token
+    if (appendRequest.spaceId !== space.id) {
+      setAppendNotice('这条批注属于另一个学习空间，已拒绝追加。')
+      return
+    }
     if (statusRef.current === 'loading') {
       setAppendNotice('笔记还没加载完，批注没有追加。')
       return
@@ -912,7 +945,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
     applyLocalEdit(appendAnnotationBlock(contentRef.current, appendRequest.block))
     setAppendNotice('已把带来源的批注追加到笔记末尾，正在保存。')
-  }, [appendRequest, applyLocalEdit])
+  }, [appendRequest, applyLocalEdit, space.id])
 
   useEffect(() => {
     onNoteState?.({ spaceId: space.id, path, version: versionRef.current, status })
@@ -1066,7 +1099,11 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
             onChange={onChange}
           />
         )
-        : <NotePreview content={content} onOpenLink={target => { void openWikiLink(target) }} />}
+        : (
+          <div ref={previewRef}>
+            <NotePreview content={content} onOpenLink={target => { void openWikiLink(target) }} />
+          </div>
+        )}
     </div>
   )
 }

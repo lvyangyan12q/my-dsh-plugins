@@ -1,5 +1,6 @@
 import { constants } from 'node:fs'
-import { access, realpath, stat } from 'node:fs/promises'
+import type { Dirent } from 'node:fs'
+import { access, readdir, realpath, stat } from 'node:fs/promises'
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { ClassroomError } from './errors.ts'
 import { vaultRelativePath } from './vault-paths.ts'
@@ -10,12 +11,15 @@ export interface VaultProbe {
   stat(path: string): Promise<{ isDirectory(): boolean }>
   access(path: string, mode: number): Promise<void>
   realpath(path: string): Promise<string>
+  /** Optional directory reader so tests can inject unreadable-tree failures. */
+  readdir?(path: string, options: { withFileTypes: true }): Promise<Dirent[]>
 }
 
 export const nodeVaultProbe: VaultProbe = {
   stat: path => stat(path),
   access: (path, mode) => access(path, mode),
   realpath: path => realpath(path),
+  readdir: (path, options) => readdir(path, options),
 }
 
 /**
