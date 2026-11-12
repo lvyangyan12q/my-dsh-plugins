@@ -15,6 +15,19 @@ test('存储身份是 learning_classroom v1，状态只含导航与绑定', asyn
   assert.equal(classroomStateSchema.safeParse({ ...emptyClassroomState(), spaces: [{ id: 'a', title: 't', directory: 'd', notePath: 'n', createdAt: 'c', content: '正文' }] }).success, false)
 })
 
+test('旧状态缺少关联/目标字段时按默认读取，不丢已有导航', () => {
+  const legacy = {
+    schemaVersion: 1,
+    vaultPath: '/vault',
+    currentSpaceId: 'space-1',
+    spaces: [{ id: 'space-1', title: '概率论', directory: '概率论', notePath: '笔记/我的笔记.md', createdAt: '2026-11-09T00:00:00.000Z' }],
+  }
+  const parsed = classroomStateSchema.parse(legacy)
+  assert.equal(parsed.spaces[0].linkedLectures.length, 0)
+  assert.equal(parsed.spaces[0].lecturePath, null)
+  assert.equal(parsed.spaces[0].layout.widths.directory > 0, true)
+})
+
 test('插件可执行源码不引用旧存储域 personal_learning', async () => {
   const stripComments = source => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
   const files = await readdir(sourceDir)

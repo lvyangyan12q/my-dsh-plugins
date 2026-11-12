@@ -5,7 +5,16 @@ import { test } from 'node:test'
  * Pure lecture-directory logic: the course directory is derived from file names
  * and frontmatter, never from a separate manifest.
  */
-const { compareLectures, lectureFileKind, parseFrontmatter, readLectureMeta, sortLectures } = await import('../src/lectures.ts')
+const {
+  compareLectures,
+  groupCourseLectures,
+  lectureChapterOf,
+  lectureFileKind,
+  parseFrontmatter,
+  readLectureMeta,
+  sortCourseLectures,
+  sortLectures,
+} = await import('../src/lectures.ts')
 
 test('frontmatter 解析出 title 与 order，并从正文中剥离', () => {
   const source = '---\ntitle: 缩小样本空间\norder: 2\n---\n\n# 第一节\n\n正文。\n'
@@ -55,4 +64,37 @@ test('排序由 order 覆盖，未声明 order 的按文件名排在后面', () 
   assert.deepEqual(sortLectures([unordered, late, early]).map(row => row.fileName), ['03-最先.md', '02-后讲的.md', '01-先讲的.md'])
   assert.deepEqual(sortLectures([unordered, { fileName: '02-并列.md', order: null }]).map(row => row.fileName), ['01-先讲的.md', '02-并列.md'])
   assert.ok(compareLectures(early, late) < 0)
+})
+
+test('章节由文件夹推导：讲义内子目录是章节，关联文件按其所在文件夹归章', () => {
+  assert.equal(lectureChapterOf('讲义/01-总论.md', 'lectures'), '')
+  assert.equal(lectureChapterOf('讲义/第一章/01-样本空间.md', 'lectures'), '第一章')
+  assert.equal(lectureChapterOf('讲义/第一章/补充/02-概率.md', 'lectures'), '第一章/补充')
+  assert.equal(lectureChapterOf('资料/概率.md', 'linked'), '资料')
+  assert.equal(lectureChapterOf('资料/概率/基础.md', 'linked'), '资料/概率')
+  assert.equal(lectureChapterOf('零散.md', 'linked'), '')
+})
+
+test('课程目录先按章节再按 order/文件名排序，章节按名称稳定分组', () => {
+  const rows = [
+    { path: '讲义/第二章/01.md', fileName: '01.md', order: null, chapter: '第二章', source: 'lectures' },
+    { path: '讲义/01.md', fileName: '01.md', order: 9, chapter: '', source: 'lectures' },
+    { path: '讲义/第一章/02.md', fileName: '02.md', order: 2, chapter: '第一章', source: 'lectures' },
+    { path: '讲义/第一章/01.md', fileName: '01.md', order: 5, chapter: '第一章', source: 'lectures' },
+    { path: '资料/旧笔记.md', fileName: '旧笔记.md', order: null, chapter: '资料', source: 'linked' },
+  ]
+  const sorted = sortCourseLectures(rows)
+  assert.deepEqual(sorted.map(row => row.path), [
+    '讲义/01.md',
+    '讲义/第一章/02.md',
+    '讲义/第一章/01.md',
+    '讲义/第二章/01.md',
+    '资料/旧笔记.md',
+  ])
+  assert.deepEqual(groupCourseLectures(sorted).map(group => [group.chapter, group.entries.map(row => row.path)]), [
+    ['', ['讲义/01.md']],
+    ['第一章', ['讲义/第一章/02.md', '讲义/第一章/01.md']],
+    ['第二章', ['讲义/第二章/01.md']],
+    ['资料', ['资料/旧笔记.md']],
+  ])
 })

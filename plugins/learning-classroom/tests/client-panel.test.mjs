@@ -153,6 +153,19 @@ test('创建学习空间后显示四区骨架，会话服务缺失时是真实�
   }
 })
 
+test('创建学习空间时可填写学习目标并随创建命令保存', async () => {
+  const client = fakeClient(readyView)
+  const ui = await mount(client)
+  try {
+    await ui.type(ui.document.querySelector('input[aria-label="学习空间名称"]'), '线性代数')
+    await ui.type(ui.document.querySelector('input[aria-label="学习目标（可选）"]'), '会算行列式')
+    await ui.submit(ui.document.querySelector('form[aria-label="创建学习空间"]'))
+    assert.deepEqual(client.calls[0], { action: 'space-create', title: '线性代数', goal: '会算行列式' })
+  } finally {
+    await ui.unmount()
+  }
+})
+
 test('操作失败时显示可操作错误而不是裸异常', async () => {
   const client = fakeClient(readyView)
   client.command = async () => { throw new Error('知识文件库目录不可写：D:/知识库') }

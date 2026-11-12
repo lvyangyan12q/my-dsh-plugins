@@ -4,6 +4,12 @@ import { ClassroomError } from './errors.ts'
 export const defaultNotePath = '笔记/我的笔记.md'
 export const spaceFolders = ['讲义', '笔记', '附件'] as const
 export const defaultNoteContent = '# 我的笔记\n\n'
+/**
+ * The topic goal lives in a knowledge file at the space root, so Obsidian and the
+ * classroom read the same bytes. The plugin stores only navigation metadata.
+ */
+export const topicGoalFileName = '学习目标.md'
+export const maxTopicBytes = 64 * 1024
 
 const illegal = /[<>:"|?*\u0000-\u001f]/g
 const windowsReserved = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])$/i
