@@ -219,7 +219,21 @@ export function ClassroomLayoutView(props: ClassroomLayoutViewProps) {
     root.current?.querySelector<HTMLButtonElement>(`[data-narrow-zone="${target}"]`)?.focus()
   }
 
-  const toggle = (zone: (typeof collapsibleZones)[number]) => commit(toggleCollapsed(current, zone))
+  const toggle = (zone: (typeof collapsibleZones)[number]) => {
+    const next = toggleCollapsed(current, zone)
+    if (next === current) return
+    // Zone mode shows one pane at a time, so a collapse/restore action must also
+    // move the visible pane: hiding the current zone returns to the lecture,
+    // restoring another zone brings it on screen.
+    if (narrow) {
+      if (next.collapsed[zone]) {
+        if (activeZone === zone) setActiveZone('lecture')
+      } else {
+        setActiveZone(zone)
+      }
+    }
+    commit(next)
+  }
 
   return (
     <div

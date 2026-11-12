@@ -397,6 +397,37 @@ test('宽阈值以上但装不下已加宽的侧栏时改用分区，不挤出�
   }
 })
 
+test('720px 窄模式收起当前分区切回讲义，显示其他分区直接切过去且焦点留在按钮', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.resizeContainer(720)
+    const tabs = () => [...ui.document.querySelectorAll('[role="toolbar"] button[aria-pressed]')]
+    await ui.click(tabs().find(tab => tab.textContent === '我的笔记'))
+    assert.equal(ui.visible('我的笔记'), true)
+    assert.equal(ui.visible('讲义'), false)
+
+    const collapseNotes = buttonByLabel(ui.document, '收起我的笔记')
+    assert.ok(collapseNotes)
+    collapseNotes.focus()
+    await ui.click(collapseNotes)
+    assert.equal(ui.layout().layout.collapsed.notes, true, '收起状态已写入持久布局')
+    assert.equal(ui.visible('我的笔记'), false, '收起当前分区后不再显示它')
+    assert.equal(ui.visible('讲义'), true, '收起当前分区后回到讲义')
+    assert.equal(ui.document.activeElement, buttonByLabel(ui.document, '显示我的笔记'), '焦点留在同一个恢复按钮上')
+
+    // 从讲义点“显示我的笔记”，应直接切到笔记区，而不是只改持久状态。
+    const showNotes = buttonByLabel(ui.document, '显示我的笔记')
+    await ui.click(showNotes)
+    assert.equal(ui.layout().layout.collapsed.notes, false)
+    assert.equal(ui.visible('我的笔记'), true, '显示其他分区后直接切到该区')
+    assert.equal(ui.visible('讲义'), false)
+    assert.equal(ui.document.activeElement, showNotes, '切换分区后焦点仍在操作按钮上')
+  } finally {
+    await ui.unmount()
+  }
+})
+
 test('布局按学习空间读取与保存，切换空间后互不影响', async () => {
   const client = fakeClient()
   const ui = await mount(client)
