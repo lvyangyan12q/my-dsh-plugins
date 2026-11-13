@@ -121,3 +121,78 @@ test('用户在标记外追加与章节同名的标题时，后出现的那个�
   const reparsed = parseSummary(composeSummary({ summary: '新正文。', nextStep: '', extra: parsed.extra }))
   assert.match(reparsed.extra, /用户自己追加的同名小节。/)
 })
+
+test('用户在文件前放置同名小节标题时，只保留用户标题并剥离框架标题', () => {
+  const base = composeSummary({ summary: '正文。', nextStep: '下一步。' })
+  const prefixed = `## 本次小结\n\n这是用户写在前面的前言。\n\n${base}`
+  const parsed = parseSummary(prefixed)
+  assert.equal(parsed.summary, '正文。')
+  assert.equal(parsed.nextStep, '下一步。')
+  assert.match(parsed.extra, /^## 本次小结\n\n这是用户写在前面的前言。/)
+  // The framework heading belongs to the structure, not to the user's prefix.
+  assert.equal((parsed.extra.match(/## 本次小结/g) ?? []).length, 1)
+  assert.doesNotMatch(parsed.extra, /^# 学习小结/m)
+})
+
+test('用户写入与插件标记相似的注释行时原样保留，只剥离真实的框架标记', () => {
+  const base = composeSummary({ summary: '正文。', nextStep: '' })
+  const suffix = `${base}\n<!-- learning-classroom:next:mine -->\n\n用户自己的注释。\n`
+  const parsed = parseSummary(suffix)
+  assert.match(parsed.extra, /<!-- learning-classroom:next:mine -->/)
+  assert.match(parsed.extra, /用户自己的注释。/)
+  const reparsed = parseSummary(composeSummary({ summary: '新正文。', nextStep: '', extra: parsed.extra }))
+  assert.match(reparsed.extra, /<!-- learning-classroom:next:mine -->/)
+})
+
+test('用户前缀里的标记行和标题都保留，不会被全局 replace 删除', () => {
+  const base = composeSummary({ summary: '正文。', nextStep: '' })
+  const prefix = '<!-- learning-classroom:summary:mine -->\n\n## 我自己的标题\n\n用户前缀。\n\n'
+  const parsed = parseSummary(`${prefix}${base}`)
+  assert.equal(parsed.summary, '正文。')
+  assert.match(parsed.extra, /<!-- learning-classroom:summary:mine -->/)
+  assert.match(parsed.extra, /## 我自己的标题/)
+  assert.match(parsed.extra, /用户前缀。/)
+})
+
+function markerOf(markdown, kind, side) {
+  const pattern = side === 'start'
+    ? new RegExp(`<!-- learning-classroom:${kind}:[A-Za-z0-9-]+ -->`)
+    : new RegExp(`<!-- /learning-classroom:${kind}:[A-Za-z0-9-]+ -->`)
+  const match = pattern.exec(markdown)
+  assert.ok(match, `应有 ${kind} ${side} marker`)
+  return match[0]
+}
+
+test('四个 marker 同行两侧的用户文字与 emoji 都保留，不整行删除', () => {
+  const base = composeSummary({ summary: '小结正文。', nextStep: '下一步正文。' })
+  let edited = base
+  edited = edited.replace(markerOf(base, 'summary', 'start'), '前言😀' + markerOf(base, 'summary', 'start'))
+  edited = edited.replace(markerOf(base, 'summary', 'end'), markerOf(base, 'summary', 'end') + '后记🙂')
+  edited = edited.replace(markerOf(base, 'next', 'start'), '下一步前🚀' + markerOf(base, 'next', 'start'))
+  edited = edited.replace(markerOf(base, 'next', 'end'), markerOf(base, 'next', 'end') + '下一步后🎯')
+
+  const parsed = parseSummary(edited)
+  assert.equal(parsed.summary, '小结正文。')
+  assert.equal(parsed.nextStep, '下一步正文。')
+  for (const text of ['前言😀', '后记🙂', '下一步前🚀', '下一步后🎯']) {
+    assert.ok(parsed.extra.includes(text), `额外文本应保留 ${text}：${parsed.extra}`)
+  }
+})
+
+test('CRLF 文件中四个 marker 同行文字与 emoji roundtrip 不丢', () => {
+  const base = composeSummary({ summary: '小结正文。', nextStep: '下一步正文。' })
+  let edited = base.replaceAll('\n', '\r\n')
+  edited = edited.replace(markerOf(edited, 'summary', 'start'), '前言😀' + markerOf(edited, 'summary', 'start'))
+  edited = edited.replace(markerOf(edited, 'summary', 'end'), markerOf(edited, 'summary', 'end') + '后记🙂')
+  edited = edited.replace(markerOf(edited, 'next', 'start'), '下一步前🚀' + markerOf(edited, 'next', 'start'))
+  edited = edited.replace(markerOf(edited, 'next', 'end'), markerOf(edited, 'next', 'end') + '下一步后🎯')
+
+  const parsed = parseSummary(edited)
+  assert.equal(parsed.summary, '小结正文。')
+  assert.equal(parsed.nextStep, '下一步正文。')
+  const rewritten = composeSummary({ summary: parsed.summary, nextStep: parsed.nextStep, extra: parsed.extra })
+  const reparsed = parseSummary(rewritten)
+  for (const text of ['前言😀', '后记🙂', '下一步前🚀', '下一步后🎯']) {
+    assert.ok(reparsed.extra.includes(text), `roundtrip 后应保留 ${text}：${reparsed.extra}`)
+  }
+})

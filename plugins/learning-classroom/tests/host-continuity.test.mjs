@@ -454,6 +454,106 @@ test('手写旧文件在下一步后追加的其他标题与后文，读回仍�
   }
 })
 
+test('用户前缀的同名标题与用户自己的标记行在保存后字节保留', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const summaryFile = join(fixture.vault, space.directory, '学习小结.md')
+    const first = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '正文小结',
+      nextStep: '正文下一步',
+      version: null,
+    })
+    assert.equal(first.status, 200)
+
+    const base = await readFile(summaryFile, 'utf8')
+    const userPrefix = '## 本次小结\n\n这是用户写在前面的前言。\n\n<!-- learning-classroom:summary:mine -->\n\n'
+    const userSuffix = '\n<!-- learning-classroom:next:mine -->\n\n用户自己的注释。\n'
+    await writeFile(summaryFile, `${userPrefix}${base}${userSuffix}`, 'utf8')
+
+    const read = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(read.body.summary, '正文小结')
+    assert.equal(read.body.nextStep, '正文下一步')
+    assert.match(read.body.extra, /^## 本次小结\n\n这是用户写在前面的前言。/)
+    assert.match(read.body.extra, /<!-- learning-classroom:summary:mine -->/)
+    assert.match(read.body.extra, /<!-- learning-classroom:next:mine -->/)
+    assert.match(read.body.extra, /用户自己的注释。/)
+    assert.equal((read.body.extra.match(/## 本次小结/g) ?? []).length, 1, '框架标题不混入额外文本')
+
+    const saved = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '新正文小结',
+      nextStep: read.body.nextStep,
+      version: read.body.version,
+    })
+    assert.equal(saved.status, 200)
+    const disk = await readFile(summaryFile, 'utf8')
+    assert.match(disk, /这是用户写在前面的前言。/)
+    assert.match(disk, /<!-- learning-classroom:summary:mine -->/)
+    assert.match(disk, /<!-- learning-classroom:next:mine -->/)
+    assert.match(disk, /用户自己的注释。/)
+    assert.match(disk, /新正文小结/)
+  } finally {
+    await fixture.close()
+  }
+})
+
+function markerText(markdown, kind, side) {
+  const pattern = side === 'start'
+    ? new RegExp(`<!-- learning-classroom:${kind}:[A-Za-z0-9-]+ -->`)
+    : new RegExp(`<!-- /learning-classroom:${kind}:[A-Za-z0-9-]+ -->`)
+  return pattern.exec(markdown)[0]
+}
+
+test('四个 marker 同行文字、emoji 与 CRLF 经 Host 保存仍完整保留', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const summaryFile = join(fixture.vault, space.directory, '学习小结.md')
+    const first = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '小结正文',
+      nextStep: '下一步正文',
+      version: null,
+    })
+    assert.equal(first.status, 200)
+
+    let edited = (await readFile(summaryFile, 'utf8')).replaceAll('\n', '\r\n')
+    edited = edited.replace(markerText(edited, 'summary', 'start'), '前言😀' + markerText(edited, 'summary', 'start'))
+    edited = edited.replace(markerText(edited, 'summary', 'end'), markerText(edited, 'summary', 'end') + '后记🙂')
+    edited = edited.replace(markerText(edited, 'next', 'start'), '下一步前🚀' + markerText(edited, 'next', 'start'))
+    edited = edited.replace(markerText(edited, 'next', 'end'), markerText(edited, 'next', 'end') + '下一步后🎯')
+    await writeFile(summaryFile, edited, 'utf8')
+
+    const read = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(read.body.summary, '小结正文')
+    assert.equal(read.body.nextStep, '下一步正文')
+    for (const text of ['前言😀', '后记🙂', '下一步前🚀', '下一步后🎯']) {
+      assert.ok(read.body.extra.includes(text), `读回应保留 ${text}：${read.body.extra}`)
+    }
+
+    const saved = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '新小结正文',
+      nextStep: read.body.nextStep,
+      version: read.body.version,
+    })
+    assert.equal(saved.status, 200)
+    const disk = await readFile(summaryFile, 'utf8')
+    assert.match(disk, /新小结正文/)
+    for (const text of ['前言😀', '后记🙂', '下一步前🚀', '下一步后🎯']) {
+      assert.ok(disk.includes(text), `保存后应保留 ${text}`)
+    }
+  } finally {
+    await fixture.close()
+  }
+})
+
 test('小结保存沿用 HTTP 边界：未知字段、超长内容与不可用空间都被明确拒绝', async () => {
   const fixture = await classroomFixture()
   try {
