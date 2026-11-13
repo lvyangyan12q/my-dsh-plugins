@@ -19,6 +19,19 @@ export interface ClassroomSpaceView {
   linkedLectures: string[]
   /** Pane widths and collapsed zones, saved per learning space. */
   layout: ClassroomLayout
+  /**
+   * Last known reading position inside the selected course file. It is
+   * navigation state, not lecture content; a restored lecture only scrolls when
+   * its path still matches, so a renamed file never jumps to a stale offset.
+   */
+  readingPosition: ReadingPositionView
+}
+
+/** Last known scroll offset in one course file. */
+export interface ReadingPositionView {
+  /** Space-relative lecture path, or null before a readable lecture was open. */
+  path: string | null
+  scrollTop: number
 }
 
 export interface ClassroomVaultView {
@@ -97,6 +110,26 @@ export interface TopicView {
   fileMissing: boolean
 }
 
+/**
+ * The learner's explicit end-of-session summary and next step, stored as one
+ * readable Markdown knowledge file. The plugin never derives mastery or a
+ * review schedule from it.
+ */
+export interface SummaryView {
+  spaceId: string
+  /** Space-relative path of the summary file, e.g. `学习小结.md`. */
+  path: string
+  /** `本次小结` section text; '' before the learner writes one. */
+  summary: string
+  /** `下一步` section text; '' when the learner only wrote a summary. */
+  nextStep: string
+  /** SHA-256 of the file bytes read from disk, or null when the file is missing. */
+  version: string | null
+  updatedAt: string | null
+  /** The summary file itself is gone (deleted or renamed outside the plugin). */
+  fileMissing: boolean
+}
+
 export interface LectureReadView {
   spaceId: string
   path: string
@@ -154,11 +187,18 @@ export type ClassroomCommand =
   | { action: 'lecture-unlink'; spaceId: string; path: string }
   | { action: 'topic-read'; spaceId: string }
   | { action: 'topic-save'; spaceId: string; goal: string; version: string | null }
+  | { action: 'summary-read'; spaceId: string }
+  | { action: 'summary-save'; spaceId: string; summary: string; nextStep: string; version: string | null }
+  | { action: 'position-save'; spaceId: string; path: string; scrollTop: number }
+  | { action: 'note-select'; spaceId: string; path: string }
   | { action: 'canvas-read'; spaceId: string }
   | LinkResolveCommand
 
 export type LayoutSaveCommand = Extract<ClassroomCommand, { action: 'layout-save' }>
 export type TopicSaveCommand = Extract<ClassroomCommand, { action: 'topic-save' }>
+export type SummarySaveCommand = Extract<ClassroomCommand, { action: 'summary-save' }>
+export type PositionSaveCommand = Extract<ClassroomCommand, { action: 'position-save' }>
+export type NoteSelectCommand = Extract<ClassroomCommand, { action: 'note-select' }>
 
 /** One Markdown note, addressed relative to its learning-space folder. */
 export interface NoteSummaryView {
