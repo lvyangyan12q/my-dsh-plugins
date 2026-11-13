@@ -123,6 +123,12 @@ export interface SummaryView {
   summary: string
   /** `下一步` section text; '' when the learner only wrote a summary. */
   nextStep: string
+  /**
+   * Markdown outside the two plugin-owned sections (for example a section the
+   * learner appended in Obsidian). The Host re-emits it verbatim on the next
+   * save, so it is never silently discarded.
+   */
+  extra: string
   /** SHA-256 of the file bytes read from disk, or null when the file is missing. */
   version: string | null
   updatedAt: string | null

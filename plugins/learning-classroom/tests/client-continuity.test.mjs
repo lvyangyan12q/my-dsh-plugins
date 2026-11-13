@@ -89,6 +89,7 @@ function summaryView(spaceId, summary, nextStep, version = 'summary-v1') {
     path: '学习小结.md',
     summary,
     nextStep,
+    extra: '',
     version,
     updatedAt: '2026-11-10T00:00:00.000Z',
     fileMissing: false,
@@ -118,6 +119,7 @@ function fakeClient(options = {}) {
     [second.id, summaryView(second.id, 'B 的小结。', 'B 的下一步。', 'summary-b')],
   ])
   const saveDeferred = options.deferSummarySave === true ? [] : null
+  const readDeferred = options.deferSummaryRead === true ? [] : null
   const positionDeferred = options.deferPosition === true ? [] : null
   const updateSpace = (spaceId, patch) => {
     view = { ...view, spaces: view.spaces.map(row => (row.id === spaceId ? { ...row, ...patch } : row)) }
@@ -127,6 +129,7 @@ function fakeClient(options = {}) {
     calls,
     summaries,
     saveDeferred,
+    readDeferred,
     positionDeferred,
     get view() { return view },
     async load() { return structuredClone(view) },
@@ -182,6 +185,17 @@ function fakeClient(options = {}) {
     },
     async readSummary(spaceId) {
       calls.push({ type: 'summary-read', spaceId })
+      if (readDeferred !== null) {
+        let resolve
+        let reject
+        const promise = new Promise((res, rej) => { resolve = res; reject = rej })
+        readDeferred.push({
+          spaceId,
+          resolve: value => resolve(value ?? structuredClone(summaries.get(spaceId))),
+          reject,
+        })
+        return promise
+      }
       return structuredClone(summaries.get(spaceId))
     },
     saveSummary(input) {
@@ -523,6 +537,116 @@ test('A 的阅读位置迟到回包只更新 A，不污染 B 的卡片与恢复�
 
     await ui.click([...ui.document.querySelectorAll('button')].find(button => button.textContent === '线性代数'))
     assert.match(zone(ui.document, '学习接续').textContent, /约 500 像素/, 'A 自己拿到更新后的位置')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('重新加载在途时继续输入：迟到回包不删新草稿、不覆盖新文字', async () => {
+  const client = fakeClient({ deferSummaryRead: true })
+  const ui = await mount(client)
+  try {
+    await act(async () => { client.readDeferred[0].resolve() })
+    await settle()
+    await ui.click(findButton(ui.document, '编辑小结'))
+    await ui.click(findButton(ui.document, '重新加载小结（放弃我的修改）'))
+    assert.equal(client.readDeferred.length, 2, '重新加载请求仍在途')
+
+    await ui.type(ui.document.querySelector('textarea[aria-label="本次小结"]'), 'reload 期间的新输入')
+    assert.equal(summaryDrafts.read('space-1').summary, 'reload 期间的新输入')
+
+    await act(async () => { client.readDeferred[1].resolve() })
+    await settle()
+
+    const editor = ui.document.querySelector('textarea[aria-label="本次小结"]')
+    assert.ok(editor, '迟到的 reload 不能关掉编辑')
+    assert.equal(editor.value, 'reload 期间的新输入', '迟到回包不能覆盖新文字')
+    assert.equal(summaryDrafts.read('space-1').summary, 'reload 期间的新输入', '迟到 reload 不能删掉新草稿')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('取消编辑后迟到的重新加载不得重新打开编辑或写回草稿', async () => {
+  const client = fakeClient({ deferSummaryRead: true })
+  const ui = await mount(client)
+  try {
+    await act(async () => { client.readDeferred[0].resolve() })
+    await settle()
+    await ui.click(findButton(ui.document, '编辑小结'))
+    await ui.click(findButton(ui.document, '重新加载小结（放弃我的修改）'))
+    await ui.click(findButton(ui.document, '取消'))
+    assert.equal(summaryDrafts.read('space-1'), null)
+
+    await act(async () => { client.readDeferred[1].resolve() })
+    await settle()
+
+    assert.equal(ui.document.querySelector('textarea[aria-label="本次小结"]'), null, '取消后旧 reload 不能重开编辑')
+    assert.ok(findButton(ui.document, '编辑小结'), '仍是只读展示')
+    assert.equal(summaryDrafts.read('space-1'), null, '旧 reload 不能写回已放弃的草稿')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('保存在途时继续输入：迟到成功不清掉新草稿，编辑框保留新文字', async () => {
+  const client = fakeClient({ deferSummarySave: true })
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.document, '编辑小结'))
+    await ui.type(ui.document.querySelector('textarea[aria-label="本次小结"]'), '第一次输入')
+    await ui.click(findButton(ui.document, '保存小结'))
+    assert.equal(client.saveDeferred.length, 1, '保存请求仍在途')
+
+    await ui.type(ui.document.querySelector('textarea[aria-label="本次小结"]'), '第二次输入')
+    await act(async () => { client.saveDeferred[0].resolve() })
+    await settle()
+
+    const editor = ui.document.querySelector('textarea[aria-label="本次小结"]')
+    assert.ok(editor, '迟到成功不能关掉正在编辑的表单')
+    assert.equal(editor.value, '第二次输入', '迟到的保存结果不能覆盖后输入的文字')
+    assert.equal(summaryDrafts.read('space-1').summary, '第二次输入', '新草稿仍在可靠存储里')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('保存在途时取消：迟到成功不得重新打开编辑或复活草稿', async () => {
+  const client = fakeClient({ deferSummarySave: true })
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.document, '编辑小结'))
+    await ui.type(ui.document.querySelector('textarea[aria-label="本次小结"]'), '要取消的输入')
+    await ui.click(findButton(ui.document, '保存小结'))
+    await ui.click(findButton(ui.document, '取消'))
+
+    await act(async () => { client.saveDeferred[0].resolve() })
+    await settle()
+
+    assert.equal(ui.document.querySelector('textarea[aria-label="本次小结"]'), null, '取消后迟到成功不能重开编辑')
+    assert.equal(summaryDrafts.read('space-1'), null)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('同一主题的阅读位置旧回包不能覆盖新回包', async () => {
+  const client = fakeClient({ deferPosition: true })
+  const ui = await mount(client)
+  try {
+    const pane = zone(ui.document, '讲义')
+    await ui.scroll(pane, 300)
+    await wait(600)
+    await ui.scroll(pane, 600)
+    await wait(600)
+    assert.equal(client.positionDeferred.length, 2, '两个位置请求都在途')
+
+    await act(async () => { client.positionDeferred[1].resolve() })
+    await settle()
+    await act(async () => { client.positionDeferred[0].resolve() })
+    await settle()
+
+    assert.match(zone(ui.document, '学习接续').textContent, /约 600 像素/, '旧回包不能把位置退回 300')
   } finally {
     await ui.unmount()
   }

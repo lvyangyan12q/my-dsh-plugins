@@ -1129,6 +1129,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         path: summaryFileName,
         summary: '',
         nextStep: '',
+        extra: '',
         version: null,
         updatedAt: null,
         fileMissing: true,
@@ -1140,6 +1141,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       path: summaryFileName,
       summary: parsed.summary,
       nextStep: parsed.nextStep,
+      extra: parsed.extra ?? '',
       version: contentVersion(file.content),
       updatedAt: file.updatedAt,
       fileMissing: false,
@@ -1151,13 +1153,21 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
     await spaceFolderOf(root, space)
-    const content = composeSummary({ summary, nextStep })
+    // Text outside the two plugin-owned sections belongs to the learner. Read it
+    // from the version being replaced and re-emit it, so saving the summary can
+    // never delete an appendix the learner added in Obsidian.
+    const relative = `${space.directory}/${summaryFileName}`
+    const target = await resolveVaultPath(root, relative, probe)
+    const current = await readKnowledgeFile(target, relative, summaryFileCodes, maxSummaryFileBytes)
+    const extra = current === undefined ? '' : parseSummary(current.content).extra ?? ''
+    const content = composeSummary({ summary, nextStep, extra })
     const saved = await saveKnowledgeFile(root, space, summaryFileName, content, version, summaryFileCodes, maxSummaryFileBytes)
     return {
       spaceId: space.id,
       path: summaryFileName,
       summary: summary.trim(),
       nextStep: nextStep.trim(),
+      extra,
       version: contentVersion(content),
       updatedAt: saved.updatedAt,
       fileMissing: false,

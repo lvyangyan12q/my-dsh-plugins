@@ -442,6 +442,10 @@ export function LectureZone(props: LectureZoneProps) {
   readingPositionRef.current = effectivePosition
   const positionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedPosition = useRef('')
+  // Per-space request sequence: two debounced writes can resolve out of order,
+  // and an older response must not move the card/restore offset backwards.
+  const positionSeq = useRef<Record<string, number>>({})
+  const positionApplied = useRef<Record<string, number>>({})
   const alive = useRef(true)
   const generation = useRef(0)
   const handledRequest = useRef<number | null>(null)
@@ -693,9 +697,13 @@ export function LectureZone(props: LectureZoneProps) {
       const key = `${requestSpaceId}:${path}:${scrollTop}`
       if (savedPosition.current === key) return
       savedPosition.current = key
+      const seq = (positionSeq.current[requestSpaceId] ?? 0) + 1
+      positionSeq.current[requestSpaceId] = seq
       void client.saveReadingPosition?.({ action: 'position-save', spaceId: requestSpaceId, path, scrollTop })
         ?.then(next => {
           if (!alive.current || next === undefined || next.readingPosition === undefined) return
+          if (seq < (positionApplied.current[requestSpaceId] ?? 0)) return
+          positionApplied.current[requestSpaceId] = seq
           // Attribute by the space that asked: a late A response must not move B.
           setPositions(prev => ({ ...prev, [requestSpaceId]: next.readingPosition }))
         })

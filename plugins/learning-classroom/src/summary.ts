@@ -7,14 +7,19 @@
  * The two sections are delimited by paired HTML comments whose nonce is chosen
  * not to occur in the text. HTML comments render as nothing in Obsidian, while
  * any Markdown headings, lists or code fences inside a section stay verbatim —
- * a user's own `## 标题` is never a structural boundary. A hand-written file
- * without markers is still read by the older heading rule.
+ * a user's own `## 标题` is never a structural boundary.
+ *
+ * Anything outside the two sections is not discarded: it is returned as `extra`
+ * and re-emitted verbatim by the next compose, so a learner's appendix (or a
+ * hand-written file that does not use our framing) survives later saves. A file
+ * without markers is read with the older heading rule; other headings inside a
+ * section are kept as section text rather than truncating it.
  */
 export const summaryFileName = '学习小结.md'
 
 /** Per-section authoring cap; the Host enforces it before composing or writing. */
 export const maxSummaryBytes = 64 * 1024
-/** File cap, including the two sections and their structural markers. */
+/** File cap, including the two sections, their markers and preserved extra text. */
 export const maxSummaryFileBytes = maxSummaryBytes * 2 + 8 * 1024
 
 export const summaryTitle = '学习小结'
@@ -24,6 +29,8 @@ export const nextStepSectionTitle = '下一步'
 export interface SummaryContent {
   summary: string
   nextStep: string
+  /** Non-section Markdown found in the file, preserved verbatim on the next save. */
+  extra?: string
 }
 
 const summaryKind = 'learning-classroom:summary'
@@ -70,8 +77,9 @@ function sectionNonce(summary: string, nextStep: string): string {
 export function composeSummary(input: SummaryContent): string {
   const summary = input.summary.trim()
   const nextStep = input.nextStep.trim()
+  const extra = (input.extra ?? '').trim()
   const nonce = sectionNonce(summary, nextStep)
-  return [
+  const lines = [
     `# ${summaryTitle}`,
     '',
     `## ${summarySectionTitle}`,
@@ -85,61 +93,110 @@ export function composeSummary(input: SummaryContent): string {
     startMarker(nextKind, nonce),
     nextStep,
     endMarker(nextKind, nonce),
-    '',
-  ].join('\n')
+  ]
+  if (extra !== '') lines.push('', extra)
+  lines.push('')
+  return lines.join('\n')
 }
 
-function sectionPattern(kind: string): RegExp {
-  return new RegExp(
-    `<!-- ${kind}:([A-Za-z0-9-]+) -->\\r?\\n([\\s\\S]*?)\\r?\\n<!-- /${kind}:\\1 -->`,
-  )
+function isMarkerLine(line: string): boolean {
+  return /^<!--\s*\/?learning-classroom:(summary|next):[A-Za-z0-9-]+\s*-->$/.test(line.trim())
 }
 
 /**
- * Read the two sections back. Marker-framed files round-trip arbitrary
- * Markdown. A hand-written file without markers falls back to the known
- * headings, and a file with neither is treated as one summary rather than
- * being rejected.
+ * Drop the known framing lines but keep every other line, including blanks.
+ * Only the first occurrence of each structural heading is ours; a learner who
+ * appended a section with the same title keeps that later heading verbatim.
+ */
+function withoutFraming(text: string): string {
+  let titleSeen = false
+  let summarySeen = false
+  let nextSeen = false
+  const kept: string[] = []
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim()
+    if (!titleSeen && trimmed === `# ${summaryTitle}`) {
+      titleSeen = true
+      continue
+    }
+    if (!summarySeen && trimmed === `## ${summarySectionTitle}`) {
+      summarySeen = true
+      continue
+    }
+    if (!nextSeen && trimmed === `## ${nextStepSectionTitle}`) {
+      nextSeen = true
+      continue
+    }
+    if (isMarkerLine(line)) continue
+    kept.push(line)
+  }
+  return kept.join('\n').trim()
+}
+
+function sectionPattern(kind: string, nonce: string): RegExp {
+  const safe = nonce.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`<!-- ${kind}:${safe} -->\\r?\\n([\\s\\S]*?)\\r?\\n<!-- /${kind}:${safe} -->`)
+}
+
+function anySummaryMarkerPattern(): RegExp {
+  return /<!-- learning-classroom:summary:([A-Za-z0-9-]+) -->\r?\n([\s\S]*?)\r?\n<!-- \/learning-classroom:summary:\1 -->/
+}
+
+/**
+ * Read the two sections back plus any text the plugin does not own. A
+ * marker-framed file round-trips arbitrary Markdown and keeps appended text in
+ * `extra`; a hand-written file without markers falls back to the known headings
+ * (other headings stay inside their section instead of truncating it).
  */
 export function parseSummary(content: string): SummaryContent {
   const normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n')
-  const summarySection = sectionPattern(summaryKind).exec(normalized)
-  const nextSection = sectionPattern(nextKind).exec(normalized)
-  if (summarySection !== null || nextSection !== null) {
+  const summaryMatch = anySummaryMarkerPattern().exec(normalized)
+  if (summaryMatch !== null) {
+    const nonce = summaryMatch[1]
+    const nextMatch = sectionPattern(nextKind, nonce).exec(normalized)
+    let outside = normalized
+    const ranges: Array<[number, number]> = [[summaryMatch.index, summaryMatch.index + summaryMatch[0].length]]
+    if (nextMatch !== null) ranges.push([nextMatch.index, nextMatch.index + nextMatch[0].length])
+    ranges.sort((a, b) => a[0] - b[0])
+    let cursor = 0
+    const kept: string[] = []
+    for (const [start, end] of ranges) {
+      kept.push(outside.slice(cursor, start))
+      cursor = end
+    }
+    kept.push(outside.slice(cursor))
+    outside = kept.join('')
     return {
-      summary: (summarySection?.[2] ?? '').trim(),
-      nextStep: (nextSection?.[2] ?? '').trim(),
+      summary: (summaryMatch[2] ?? '').trim(),
+      nextStep: (nextMatch?.[1] ?? '').trim(),
+      extra: withoutFraming(outside),
     }
   }
 
   const lines = normalized.split('\n')
+  const summaryHeading = `## ${summarySectionTitle}`
+  const nextStepHeading = `## ${nextStepSectionTitle}`
+  const indices = lines
+    .map((line, index) => ({ trimmed: line.trim(), index }))
+    .filter(row => row.trimmed === summaryHeading || row.trimmed === nextStepHeading)
+  if (indices.length === 0) return { summary: normalized.trim(), nextStep: '', extra: '' }
+
+  const sections: Array<{ kind: 'summary' | 'nextStep'; start: number; end: number }> = indices.map((row, position) => ({
+    kind: row.trimmed === summaryHeading ? 'summary' : 'nextStep',
+    start: row.index + 1,
+    end: position + 1 < indices.length ? indices[position + 1].index : lines.length,
+  }))
   const summaryLines: string[] = []
   const nextStepLines: string[] = []
-  let current: 'summary' | 'nextStep' | null = null
-  let sawHeading = false
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed === `## ${summarySectionTitle}`) {
-      current = 'summary'
-      sawHeading = true
-      continue
-    }
-    if (trimmed === `## ${nextStepSectionTitle}`) {
-      current = 'nextStep'
-      sawHeading = true
-      continue
-    }
-    // Legacy framing: a heading ends the current section. New writes always use
-    // paired markers, so a heading the learner adds inside a section survives.
-    if (/^#{1,6}\s/.test(trimmed)) {
-      current = null
-      continue
-    }
-    if (current === 'summary') summaryLines.push(line)
-    else if (current === 'nextStep') nextStepLines.push(line)
+  for (const section of sections) {
+    const target = section.kind === 'summary' ? summaryLines : nextStepLines
+    target.push(...lines.slice(section.start, section.end))
   }
-
-  if (!sawHeading) return { summary: normalized.trim(), nextStep: '' }
-  return { summary: summaryLines.join('\n').trim(), nextStep: nextStepLines.join('\n').trim() }
+  const firstStart = indices[0].index
+  const before = lines.slice(0, firstStart).join('\n')
+  return {
+    summary: summaryLines.join('\n').trim(),
+    nextStep: nextStepLines.join('\n').trim(),
+    extra: withoutFraming(before),
+  }
 }

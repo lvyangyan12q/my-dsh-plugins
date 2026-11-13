@@ -368,6 +368,92 @@ test('小结两段各按 64KB 上限保存，编码标记不挤占正文容量',
   }
 })
 
+test('标记外追加的文字在保存时原样保留，不被下一次保存删掉', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const summaryFile = join(fixture.vault, space.directory, '学习小结.md')
+    const first = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '第一版小结',
+      nextStep: '第一版下一步',
+      version: null,
+    })
+    assert.equal(first.status, 200)
+
+    // The learner appends their own section in Obsidian, outside our markers.
+    const base = await readFile(summaryFile, 'utf8')
+    await writeFile(summaryFile, `${base}\n## 我后来加的\n\n这段不是插件写的，不能丢。\n`, 'utf8')
+
+    const read = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(read.body.summary, '第一版小结')
+    assert.equal(read.body.nextStep, '第一版下一步')
+    assert.match(read.body.extra, /## 我后来加的/)
+    assert.match(read.body.extra, /这段不是插件写的，不能丢。/)
+
+    const saved = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '第二版小结',
+      nextStep: '第二版下一步',
+      version: read.body.version,
+    })
+    assert.equal(saved.status, 200)
+    const disk = await readFile(summaryFile, 'utf8')
+    assert.match(disk, /第二版小结/)
+    assert.match(disk, /## 我后来加的/)
+    assert.match(disk, /这段不是插件写的，不能丢。/)
+
+    const reread = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(reread.body.summary, '第二版小结')
+    assert.match(reread.body.extra, /这段不是插件写的，不能丢。/)
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('手写旧文件在下一步后追加的其他标题与后文，读回仍完整保留', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const summaryFile = join(fixture.vault, space.directory, '学习小结.md')
+    await writeFile(summaryFile, [
+      '# 学习小结',
+      '',
+      '## 本次小结',
+      '旧小结。',
+      '',
+      '## 下一步',
+      '旧下一步。',
+      '',
+      '## 我的补充',
+      '',
+      '这段是手写的，不能丢。',
+      '',
+    ].join('\n'), 'utf8')
+
+    const read = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(read.body.summary, '旧小结。')
+    assert.match(read.body.nextStep, /## 我的补充/)
+    assert.match(read.body.nextStep, /这段是手写的，不能丢。/)
+
+    const saved = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '新小结',
+      nextStep: read.body.nextStep,
+      version: read.body.version,
+    })
+    assert.equal(saved.status, 200)
+    const disk = await readFile(summaryFile, 'utf8')
+    assert.match(disk, /## 我的补充/)
+    assert.match(disk, /这段是手写的，不能丢。/)
+  } finally {
+    await fixture.close()
+  }
+})
+
 test('小结保存沿用 HTTP 边界：未知字段、超长内容与不可用空间都被明确拒绝', async () => {
   const fixture = await classroomFixture()
   try {

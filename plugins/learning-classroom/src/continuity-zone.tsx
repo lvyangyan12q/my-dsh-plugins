@@ -97,6 +97,17 @@ export function ContinuityZone(props: ContinuityZoneProps) {
   const spaceIdRef = useRef(space.id)
   spaceIdRef.current = space.id
   const generation = useRef(0)
+  // Per-space operation epoch. Every learner action (edit, cancel, save,
+  // reload) bumps it; a late reload/save response only applies when its epoch
+  // is still current, so an old request can never reopen editing, clear a newer
+  // draft, or overwrite text typed after it started.
+  const ops = useRef<Record<string, number>>({})
+  const bumpOp = (spaceId: string): number => {
+    const next = (ops.current[spaceId] ?? 0) + 1
+    ops.current[spaceId] = next
+    return next
+  }
+  const opOf = (spaceId: string): number => ops.current[spaceId] ?? 0
 
   useEffect(() => {
     alive.current = true
@@ -105,6 +116,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
     const controller = new AbortController()
     setSummary(null)
     setLoadError('')
+    const loadOp = opOf(space.id)
     const current = () => alive.current && generation.current === mine && !controller.signal.aborted
 
     // Drafts survive a reload; restore the text and its baseline before the
@@ -136,6 +148,9 @@ export function ContinuityZone(props: ContinuityZoneProps) {
     client.readSummary?.(space.id, controller.signal).then(next => {
       if (!current()) return
       setSummary(next)
+      // A learner action after this load started owns the form; do not close an
+      // editor they just opened or replace text they are writing.
+      if (opOf(space.id) !== loadOp) return
       const draft = draftStore.read(space.id)
       if (draft !== null) {
         if (draft.baseVersion !== next.version) {
@@ -220,6 +235,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
 
   const startEdit = (): void => {
     const target = space.id
+    bumpOp(target)
     const revision = allocateDraftRevision(target, summaryFileName)
     const baseVersion = summary?.version ?? null
     setEdits(prev => ({
@@ -237,6 +253,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
 
   const cancelEdit = (): void => {
     const target = space.id
+    bumpOp(target)
     draftStore.remove(target)
     clearDraftRisk(target, summaryFileName)
     setPageRisk(hasNonDurableDrafts())
@@ -252,6 +269,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
 
   const change = (field: 'summary' | 'nextStep', value: string): void => {
     const target = space.id
+    bumpOp(target)
     const current = edits[target] ?? {
       summary: summary?.summary ?? '',
       nextStep: summary?.nextStep ?? '',
@@ -277,6 +295,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
     if (!canSave || edit === undefined || isSaving) return
     const target = space.id
     const submitted = edit
+    const myOp = bumpOp(target)
     setSaving(prev => ({ ...prev, [target]: true }))
     clearError(target)
     try {
@@ -288,6 +307,10 @@ export function ContinuityZone(props: ContinuityZoneProps) {
         version: submitted.baseVersion,
       })
       if (next === undefined || !alive.current) return
+      if (spaceIdRef.current === target) setSummary(next)
+      // A newer edit/cancel/save owns the form now. Never delete its text or
+      // draft merely because this older write reached the Host.
+      if (opOf(target) !== myOp) return
       const stored = draftStore.read(target)
       if (stored === null || stored.revision <= submitted.revision) {
         draftStore.remove(target)
@@ -300,7 +323,6 @@ export function ContinuityZone(props: ContinuityZoneProps) {
         return copy
       })
       clearNotice(target)
-      if (spaceIdRef.current === target) setSummary(next)
     } catch (cause) {
       if (alive.current) setErrors(prev => ({ ...prev, [target]: `保存小结失败：${messageOf(cause)}` }))
     } finally {
@@ -320,11 +342,18 @@ export function ContinuityZone(props: ContinuityZoneProps) {
     if (!canRead) return
     const target = space.id
     const mine = generation.current
+    const myOp = bumpOp(target)
+    const beforeRevision = draftStore.read(target)?.revision ?? null
     clearError(target)
     try {
       const next = await client.readSummary?.(target)
       if (next === undefined || !alive.current || generation.current !== mine) return
       if (spaceIdRef.current !== target) return
+      // The learner typed, cancelled, saved or started another reload while this
+      // read was in flight; its snapshot is no longer allowed to touch anything.
+      if (opOf(target) !== myOp) return
+      const afterRevision = draftStore.read(target)?.revision ?? null
+      if (afterRevision !== beforeRevision) return
       draftStore.remove(target)
       clearDraftRisk(target, summaryFileName)
       setPageRisk(hasNonDurableDrafts())
@@ -395,6 +424,13 @@ export function ContinuityZone(props: ContinuityZoneProps) {
           <p className={summary.nextStep === '' ? 'lc-continuity-hint' : 'lc-continuity-text'}>
             {summary.nextStep === '' ? '还没有写下一步。' : summary.nextStep}
           </p>
+        </>
+      )}
+
+      {summary !== null && (summary.extra ?? '') !== '' && (
+        <>
+          <p className="lc-continuity-hint">文件中的其他内容（保存时原样保留，可在 Obsidian 中编辑）：</p>
+          <p className="lc-continuity-text">{summary.extra}</p>
         </>
       )}
 
