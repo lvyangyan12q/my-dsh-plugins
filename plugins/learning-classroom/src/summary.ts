@@ -99,38 +99,63 @@ export function composeSummary(input: SummaryContent): string {
   return lines.join('\n')
 }
 
-function isMarkerLine(line: string): boolean {
-  return /^<!--\s*\/?learning-classroom:(summary|next):[A-Za-z0-9-]+\s*-->$/.test(line.trim())
+function lineIndexOf(text: string, offset: number): number {
+  let line = 0
+  const end = Math.max(0, Math.min(offset, text.length))
+  for (let index = 0; index < end; index += 1) {
+    if (text.charCodeAt(index) === 10) line += 1
+  }
+  return line
 }
 
 /**
- * Drop the known framing lines but keep every other line, including blanks.
- * Only the first occurrence of each structural heading is ours; a learner who
- * appended a section with the same title keeps that later heading verbatim.
+ * Extra text around the framing markers. Exclusion is positional: only the
+ * exact marker lines and the five-line frame that compose emits
+ * (`# 学习小结`, blank, `## 本次小结`, blank, marker) are removed. Everything
+ * else — a user's prefix heading with the same name, a marker-looking comment,
+ * appended sections — keeps its bytes.
  */
-function withoutFraming(text: string): string {
-  let titleSeen = false
-  let summarySeen = false
-  let nextSeen = false
-  const kept: string[] = []
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim()
-    if (!titleSeen && trimmed === `# ${summaryTitle}`) {
-      titleSeen = true
-      continue
-    }
-    if (!summarySeen && trimmed === `## ${summarySectionTitle}`) {
-      summarySeen = true
-      continue
-    }
-    if (!nextSeen && trimmed === `## ${nextStepSectionTitle}`) {
-      nextSeen = true
-      continue
-    }
-    if (isMarkerLine(line)) continue
-    kept.push(line)
+function extraAroundMarkers(
+  normalized: string,
+  summaryMatch: RegExpExecArray,
+  nextMatch: RegExpExecArray | null,
+): string {
+  const lines = normalized.split('\n')
+  const excluded = new Set<number>()
+  const excludeRange = (match: RegExpExecArray): void => {
+    const start = lineIndexOf(normalized, match.index)
+    const end = lineIndexOf(normalized, match.index + match[0].length - 1)
+    for (let index = start; index <= end; index += 1) excluded.add(index)
   }
-  return kept.join('\n').trim()
+  excludeRange(summaryMatch)
+  if (nextMatch !== null) excludeRange(nextMatch)
+
+  const summaryStart = lineIndexOf(normalized, summaryMatch.index)
+  if (lines[summaryStart - 1]?.trim() === ''
+    && lines[summaryStart - 2]?.trim() === `## ${summarySectionTitle}`
+    && lines[summaryStart - 3]?.trim() === ''
+    && lines[summaryStart - 4]?.trim() === `# ${summaryTitle}`) {
+    excluded.add(summaryStart - 2)
+    excluded.add(summaryStart - 4)
+  }
+  if (nextMatch !== null) {
+    const nextStart = lineIndexOf(normalized, nextMatch.index)
+    if (lines[nextStart - 1]?.trim() === ''
+      && lines[nextStart - 2]?.trim() === `## ${nextStepSectionTitle}`
+      && lines[nextStart - 3]?.trim() === '') {
+      excluded.add(nextStart - 2)
+    }
+  }
+
+  return lines.filter((_, index) => !excluded.has(index)).join('\n').trim()
+}
+
+/** Legacy files have no markers; only a leading framework title is ours. */
+function extraFromLegacyPrefix(text: string): string {
+  const lines = text.split('\n')
+  const firstContent = lines.findIndex(line => line.trim() !== '')
+  if (firstContent >= 0 && lines[firstContent].trim() === `# ${summaryTitle}`) lines.splice(firstContent, 1)
+  return lines.join('\n').trim()
 }
 
 function sectionPattern(kind: string, nonce: string): RegExp {
@@ -154,22 +179,10 @@ export function parseSummary(content: string): SummaryContent {
   if (summaryMatch !== null) {
     const nonce = summaryMatch[1]
     const nextMatch = sectionPattern(nextKind, nonce).exec(normalized)
-    let outside = normalized
-    const ranges: Array<[number, number]> = [[summaryMatch.index, summaryMatch.index + summaryMatch[0].length]]
-    if (nextMatch !== null) ranges.push([nextMatch.index, nextMatch.index + nextMatch[0].length])
-    ranges.sort((a, b) => a[0] - b[0])
-    let cursor = 0
-    const kept: string[] = []
-    for (const [start, end] of ranges) {
-      kept.push(outside.slice(cursor, start))
-      cursor = end
-    }
-    kept.push(outside.slice(cursor))
-    outside = kept.join('')
     return {
       summary: (summaryMatch[2] ?? '').trim(),
       nextStep: (nextMatch?.[1] ?? '').trim(),
-      extra: withoutFraming(outside),
+      extra: extraAroundMarkers(normalized, summaryMatch, nextMatch),
     }
   }
 
@@ -197,6 +210,6 @@ export function parseSummary(content: string): SummaryContent {
   return {
     summary: summaryLines.join('\n').trim(),
     nextStep: nextStepLines.join('\n').trim(),
-    extra: withoutFraming(before),
+    extra: extraFromLegacyPrefix(before),
   }
 }
