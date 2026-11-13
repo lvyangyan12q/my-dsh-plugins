@@ -37,11 +37,24 @@ function noteStore(initial) {
   const calls = []
   const resolveResults = new Map()
   const resolveGates = new Map()
+  const readGates = new Map()
   return {
     calls,
     files,
     set(path, content) { files.set(path, content) },
     resolve(target, result) { resolveResults.set(target, result) },
+    gateRead(path) {
+      let release
+      const promise = new Promise(resolve => { release = resolve })
+      const gates = readGates.get(path) ?? []
+      gates.push(promise)
+      readGates.set(path, gates)
+      return () => {
+        release()
+        const remaining = (readGates.get(path) ?? []).filter(gate => gate !== promise)
+        readGates.set(path, remaining)
+      }
+    },
     gateResolve(target) {
       let release
       const promise = new Promise(resolve => { release = resolve })
@@ -64,6 +77,11 @@ function noteStore(initial) {
         calls.push({ type: 'read', spaceId, path })
         if (!files.has(path)) throw Object.assign(new Error(`笔记文件不存在：${path}`), { code: 'note-not-found' })
         const content = files.get(path)
+        const gates = readGates.get(path)
+        if (gates !== undefined && gates.length > 0) {
+          const gate = gates.shift()
+          await gate
+        }
         return { path, content, version: `version:${content}`, updatedAt: '2026-11-09T00:00:00.000Z' }
       },
       async saveNote(input) {
@@ -494,6 +512,40 @@ test('切走再切回同一笔记后，旧双链因导航代次变化仍被拒�
     await settle()
 
     assert.deepEqual(opens, [])
+    assert.match(ui.text(), /切换|旧双链|没有打开/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('打开 B 期间手动切到 C：B 的标题 fragment 不得作用到 C，也不强制预览', async () => {
+  const store = noteStore({
+    '笔记/我的笔记.md': '# 我的笔记\n\n[[笔记/另一篇.md#小结]]\n',
+    '笔记/另一篇.md': '# 另一篇\n\n## 小结\n\nB 正文\n',
+    '笔记/第三篇.md': '# 第三篇\n\n## 小结\n\nC 正文\n',
+  })
+  store.resolve('笔记/另一篇.md#小结', {
+    spaceId: 'space-1', target: '笔记/另一篇.md#小结', status: 'ok',
+    file: '概率论/笔记/另一篇.md', spacePath: '笔记/另一篇.md', kind: 'note',
+    heading: '小结', blockId: null, link: '[[概率论/笔记/另一篇.md#小结]]', candidates: [], message: null,
+  })
+  const releaseRead = store.gateRead('笔记/另一篇.md')
+  const ui = await mount(store)
+  try {
+    await ui.click('预览')
+    await ui.clickWiki('笔记/另一篇.md#小结')
+
+    // B 的读取还没完成时，学习者自己回到编辑并切换到 C。
+    await ui.click('编辑')
+    await ui.select('笔记/第三篇.md')
+    releaseRead()
+    await settle()
+
+    assert.equal(ui.container.querySelector('select[aria-label="笔记文件"]').value, '笔记/第三篇.md')
+    const editTab = [...ui.container.querySelectorAll('[role="tab"]')].find(tab => tab.textContent === '编辑')
+    assert.equal(editTab.getAttribute('aria-selected'), 'true', '用户选择的编辑模式不能被旧 B 强制切回预览')
+    assert.equal(ui.container.querySelectorAll('[data-scrolled]').length, 0)
+    assert.equal(ui.textarea().value, '# 第三篇\n\n## 小结\n\nC 正文\n')
     assert.match(ui.text(), /切换|旧双链|没有打开/)
   } finally {
     await ui.unmount()

@@ -176,6 +176,9 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const linkRequestSeq = useRef(0)
   const spaceIdViewRef = useRef(space.id)
   spaceIdViewRef.current = space.id
+  // Monotonic id for view switches; a fragment may only be applied by the
+  // switch that is still the newest when its read completes.
+  const switchEpoch = useRef(0)
   const [scrollRequest, setScrollRequest] = useState<(LinkFragment & { token: number }) | null>(null)
   const [appendNotice, setAppendNotice] = useState('')
   const [linkNotice, setLinkNotice] = useState('')
@@ -809,8 +812,9 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     }
   }, [applyDocument, client, updateStatus])
 
-  const switchTo = useCallback(async (next: string) => {
-    if (next === pathRef.current) return
+  const switchTo = useCallback(async (next: string): Promise<{ epoch: number; path: string; generation: number } | null> => {
+    if (next === pathRef.current) return null
+    const epoch = ++switchEpoch.current
     const leaving = captureRequest('auto')
     let persistence: DraftWriteResult | 'failed' | null = null
     if (leaving.path !== '' && (leaving.content !== '' || leaving.version !== '')
@@ -841,6 +845,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     // Page-level risk is global and survives this switch; only a hard failure
     // needs the per-file warning line.
     if (persistence === 'failed') setDraftWarning(failedDraftWarning)
+    return { epoch, path: next, generation: generation.current }
   }, [client, debouncer, enqueueSave, load, persistDraft, space.id, updateStatus])
 
   // A request from the canvas opens that specific note once; the token keeps
@@ -940,11 +945,22 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       if (resolved.kind === 'note' && resolved.spacePath !== null) {
         // Same-file links must still navigate to the real heading/block instead
         // of returning early and dropping the fragment.
-        if (resolved.spacePath !== pathRef.current) {
-          await switchTo(resolved.spacePath)
-          // A newer click during the switch owns navigation; this request only
-          // continues when it is still the newest and the space did not change.
+        const targetPath = resolved.spacePath
+        if (targetPath !== pathRef.current) {
+          const receipt = await switchTo(targetPath)
+          // A newer click or manual selector switch during the read owns the
+          // view. The old B read returning later must not force preview or
+          // scroll a same-named heading in C.
           if (!alive.current || superseded() || spaceIdViewRef.current !== requestSpaceId) return
+          if (pathRef.current !== targetPath) {
+            refuseStale()
+            return
+          }
+          if (receipt !== null
+            && (receipt.epoch !== switchEpoch.current || receipt.generation !== generation.current)) {
+            refuseStale()
+            return
+          }
         }
         if (hasFragment) {
           setMode('preview')
