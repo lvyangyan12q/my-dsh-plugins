@@ -8,6 +8,7 @@ import type { ComposerFace, ConversationLike } from './composer.ts'
 import type { LinkFragment } from './fragments.ts'
 import { normalizeLayout, type ClassroomLayout } from './layout.ts'
 import { LectureZone, type LectureOpenRequest } from './lecture-zone.tsx'
+import { createNativeOpenSeam, type NativeOpenSeam } from './native-open.ts'
 import { NotesZone, type NoteAppendRequest, type NoteOpenRequest, type NoteStateView } from './notes-zone.tsx'
 import {
   createAskedContext,
@@ -42,6 +43,8 @@ export interface ClassroomPanelProps {
    * draft, and rewrite it for an explicit context removal.
    */
   getConversation?: () => ConversationLike | undefined
+  /** Public DSH native open seam; probed by the canvas before it shows a control. */
+  nativeOpen?: NativeOpenSeam
 }
 
 const styles = `
@@ -191,7 +194,7 @@ function ClassroomGrid(props: {
 }
 
 /** Main panel: vault onboarding, space creation and the four-region shell. */
-export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, getConversation }: ClassroomPanelProps) {
+export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, getConversation, nativeOpen }: ClassroomPanelProps) {
   const api = useMemo(() => client ?? createClassroomClient(), [client])
   const [view, setView] = useState<ClassroomView | null>(null)
   const [loadError, setLoadError] = useState('')
@@ -279,12 +282,22 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
     setError('')
     if (target.kind === 'note') {
       noteToken.current += 1
-      setOpenNote({ path: target.path, token: noteToken.current })
+      setOpenNote({
+        path: target.path,
+        token: noteToken.current,
+        heading: target.heading ?? null,
+        blockId: target.blockId ?? null,
+      })
       setMode('classroom')
       return
     }
     requestToken.current += 1
-    setOpenLecture({ path: target.path, token: requestToken.current })
+    setOpenLecture({
+      path: target.path,
+      token: requestToken.current,
+      heading: target.heading ?? null,
+      blockId: target.blockId ?? null,
+    })
     setMode('classroom')
   }
 
@@ -550,6 +563,7 @@ export function ClassroomPanel({ client, sessions, renderSlot, SessionProvider, 
                           vaultPath={view.vault.path}
                           busy={busy}
                           onOpenTarget={openCanvasTarget}
+                          nativeOpen={nativeOpen}
                         />
                       )
                       : undefined}
@@ -620,10 +634,15 @@ export function apply(ctx: SlotsContext) {
     const service = typeof ctx.get === 'function' ? ctx.get('conversation') : undefined
     return typeof service === 'object' && service !== null ? service as ConversationLike : undefined
   }
+  // `remote` is probed lazily: a Host composition without the public Session
+  // Remote still renders the canvas with an honest native-open fallback.
+  const nativeOpen = createNativeOpenSeam(
+    () => (typeof ctx.get === 'function' ? ctx.get('remote') : undefined),
+  )
   ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({
     name: 'main',
     key: panelId,
-    inject: () => ({ sessions, getConversation }),
+    inject: () => ({ sessions, getConversation, nativeOpen }),
     children: { [teacherSessionSeat]: { kind: 'single', scope: 'session' } },
   }, ClassroomPanel)))
   ctx.effect(() => ctx.slots.inject(teacherSessionSeat, () => ctx.slots.register(

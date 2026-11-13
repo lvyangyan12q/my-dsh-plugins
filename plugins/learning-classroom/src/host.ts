@@ -51,7 +51,8 @@ import {
   type LectureKind,
 } from './lectures.ts'
 import { defaultLayout, normalizeLayout } from './layout.ts'
-import { buildLinkIndex, resolveVaultLink } from './link-index.ts'
+import { buildLinkIndex, markdownBlockIds, markdownHeadings, resolveVaultLink } from './link-index.ts'
+import { headingKey } from './links.ts'
 import { listNotes, readNote, saveNote } from './notes-io.ts'
 import { maxNoteBytes } from './notes.ts'
 import {
@@ -1284,6 +1285,10 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
    * vault validation is re-done here (never trusting the browser or the file):
    * traversal, absolute paths and links that escape the vault become `outside`,
    * while a missing or non-openable file keeps its node visible with a reason.
+   *
+   * Nested chapters, explicitly linked course files and `#标题`/`#^块id`
+   * fragments are supported; a requested fragment is only reported as ok after
+   * the real Markdown heading or block id was found in the target file.
    */
   const canvasTargetOf = async (root: string, space: ClassroomSpace, file: string): Promise<CanvasTargetView> => {
     let relative: string
@@ -1295,18 +1300,24 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         vaultPath: null,
         kind: null,
         status: 'outside',
+        heading: null,
+        blockId: null,
         message: `文件节点路径越出知识文件库，无法打开：${file}`,
       }
     }
 
-    const classified = classifyCanvasTarget(relative, space.directory)
+    const classified = classifyCanvasTarget(relative, space.directory, {
+      linkedLectures: space.linkedLectures ?? [],
+    })
     if (classified === null) {
       return {
         path: null,
         vaultPath: relative,
         kind: null,
         status: 'unsupported',
-        message: `脉络里的文件节点只能打开本空间的讲义（.md/.html）或笔记（.md）：${relative}`,
+        heading: null,
+        blockId: null,
+        message: `脉络里的文件节点只能打开本空间的讲义（.md/.html，可含子目录）、已关联的讲义或笔记（.md）：${relative}`,
       }
     }
 
@@ -1320,6 +1331,8 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         vaultPath,
         kind: classified.kind,
         status: 'outside',
+        heading: null,
+        blockId: null,
         message: `文件节点路径经符号链接越出知识文件库，无法打开：${relative}`,
       }
     }
@@ -1334,6 +1347,8 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
           vaultPath,
           kind: classified.kind,
           status: 'missing',
+          heading: null,
+          blockId: null,
           message: `无法访问文件节点目标：${vaultPath}`,
         }
       }
@@ -1342,6 +1357,8 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         vaultPath,
         kind: classified.kind,
         status: 'missing',
+        heading: null,
+        blockId: null,
         message: `文件不存在或已被外部删除：${vaultPath}`,
       }
     }
@@ -1351,10 +1368,92 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         vaultPath,
         kind: classified.kind,
         status: 'missing',
+        heading: null,
+        blockId: null,
         message: `文件节点目标不是文件：${vaultPath}`,
       }
     }
-    return { path: classified.path, vaultPath, kind: classified.kind, status: 'ok', message: null }
+
+    const requestedHeading = classified.heading
+    const requestedBlock = classified.blockId
+    if (requestedHeading === null && requestedBlock === null) {
+      return { path: classified.path, vaultPath, kind: classified.kind, status: 'ok', heading: null, blockId: null, message: null }
+    }
+
+    if (classified.kind === 'lecture' && /\.html$/i.test(classified.path)) {
+      return {
+        path: classified.path,
+        vaultPath,
+        kind: classified.kind,
+        status: 'unsupported',
+        heading: null,
+        blockId: null,
+        message: `HTML 讲义的标题或块无法在课堂里定位，不能跳到假锚点：${vaultPath}`,
+      }
+    }
+    const fragmentLimit = classified.kind === 'note' ? maxNoteBytes : canvasReadLimit
+    if (info.size > fragmentLimit) {
+      return {
+        path: classified.path,
+        vaultPath,
+        kind: classified.kind,
+        status: 'unsupported',
+        heading: null,
+        blockId: null,
+        message: `文件超过 ${Math.round(fragmentLimit / 1024)} KB，无法核对标题或块：${vaultPath}`,
+      }
+    }
+
+    let body: string
+    try {
+      body = await readFile(target, 'utf8')
+    } catch {
+      return {
+        path: classified.path,
+        vaultPath,
+        kind: classified.kind,
+        status: 'missing',
+        heading: null,
+        blockId: null,
+        message: `无法读取文件，不能确认标题或块：${vaultPath}`,
+      }
+    }
+
+    let heading: string | null = null
+    let blockId: string | null = null
+    if (requestedHeading !== null) {
+      const wanted = headingKey(requestedHeading)
+      const found = markdownHeadings(body).find(text => headingKey(text) === wanted)
+      if (found === undefined) {
+        return {
+          path: classified.path,
+          vaultPath,
+          kind: classified.kind,
+          status: 'missing-fragment',
+          heading: null,
+          blockId: null,
+          message: `目标文件里没有标题「${requestedHeading}」；不会跳到假锚点：${vaultPath}`,
+        }
+      }
+      heading = found
+    } else if (requestedBlock !== null) {
+      const wanted = requestedBlock.toLowerCase()
+      const found = markdownBlockIds(body).find(id => id.toLowerCase() === wanted)
+      if (found === undefined) {
+        return {
+          path: classified.path,
+          vaultPath,
+          kind: classified.kind,
+          status: 'missing-fragment',
+          heading: null,
+          blockId: null,
+          message: `目标文件里没有块 ^${requestedBlock}；不会跳到假锚点：${vaultPath}`,
+        }
+      }
+      blockId = found
+    }
+
+    return { path: classified.path, vaultPath, kind: classified.kind, status: 'ok', heading, blockId, message: null }
   }
 
   /** Read `脉络.canvas` read-only; an illegal canvas never yields a partial graph. */
@@ -1429,6 +1528,10 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
         toNode: edge.toNode,
         label: edge.label,
         relation: edge.relation,
+        fromEnd: edge.fromEnd,
+        toEnd: edge.toEnd,
+        fromSide: edge.fromSide,
+        toSide: edge.toSide,
         selfLoop: edge.selfLoop,
       })),
     }

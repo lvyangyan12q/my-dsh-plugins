@@ -27,6 +27,10 @@ export type NoteSaveStatus = 'loading' | 'saved' | 'dirty' | 'saving' | 'failed'
 export interface NoteOpenRequest {
   path: string
   token: number
+  /** Real heading from a canvas/wikilink target; switched to preview and revealed. */
+  heading?: string | null
+  /** Real block id from a canvas/wikilink target. */
+  blockId?: string | null
 }
 
 /**
@@ -833,12 +837,32 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
 
   // A request from the canvas opens that specific note once; the token keeps
   // repeated opens of the same path observable without resetting manual edits.
+  // A real heading/block target switches to preview and reveals that anchor;
+  // opening the file alone is never presented as exact fragment navigation.
   useEffect(() => {
     if (openRequest === null) return
     if (handledOpen.current === openRequest.token) return
     handledOpen.current = openRequest.token
-    if (openRequest.path === pathRef.current) return
-    void switchTo(openRequest.path)
+    const walking = openRequest.heading !== undefined && openRequest.heading !== null
+      ? { heading: openRequest.heading, blockId: null }
+      : openRequest.blockId !== undefined && openRequest.blockId !== null
+        ? { heading: null, blockId: openRequest.blockId }
+        : null
+    const reveal = () => {
+      if (walking === null) return
+      scrollSeq.current += 1
+      setMode('preview')
+      setScrollRequest({ token: scrollSeq.current, ...walking })
+    }
+    if (openRequest.path === pathRef.current) {
+      reveal()
+      return
+    }
+    void switchTo(openRequest.path).then(() => {
+      // A failed read leaves the previous path in place; never point the
+      // requested fragment at content that is not the requested note.
+      if (pathRef.current === openRequest.path) reveal()
+    })
   }, [openRequest, switchTo])
 
   /**

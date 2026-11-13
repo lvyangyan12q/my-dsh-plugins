@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { canvasReadLimit } from '../src/canvas.ts'
 import { classroomFixture } from './support/fixture.mjs'
@@ -59,6 +59,8 @@ test('读取真实脉络.canvas：四种节点、带标签的有向边与可打�
       vaultPath: '概率论/讲义/01-样本空间.md',
       kind: 'lecture',
       status: 'ok',
+      heading: null,
+      blockId: null,
       message: null,
     })
     assert.deepEqual(byId.get('note').target, {
@@ -66,6 +68,8 @@ test('读取真实脉络.canvas：四种节点、带标签的有向边与可打�
       vaultPath: '概率论/笔记/我的笔记.md',
       kind: 'note',
       status: 'ok',
+      heading: null,
+      blockId: null,
       message: null,
     })
     // Only file nodes carry an open target.
@@ -76,6 +80,12 @@ test('读取真实脉络.canvas：四种节点、带标签的有向边与可打�
     assert.deepEqual(
       result.body.edges.map(edge => [edge.fromNode, edge.toNode, edge.label, edge.relation, edge.selfLoop]),
       [['text', 'lecture', '先修', 'prerequisite', false], ['note', 'link', '应用', 'application', false], ['text', 'text', '组成', 'composition', true]],
+    )
+    // Arrow direction is carried from JSON Canvas: an omitted end is "none",
+    // never an implied arrow invented by the renderer.
+    assert.deepEqual(
+      result.body.edges.map(edge => [edge.fromEnd, edge.toEnd, edge.fromSide, edge.toSide]),
+      [['none', 'none', null, null], ['none', 'arrow', null, null], ['none', 'none', null, null]],
     )
   } finally {
     await fixture.close()
@@ -110,6 +120,88 @@ test('文件节点越界、缺失或不支持时逐节点给出明确提示，�
     assert.equal(byId.get('unsupported').target.status, 'unsupported')
     assert.match(byId.get('unsupported').target.message, /讲义|笔记/)
     assert.equal(result.body.edges.length, 1)
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('真实第二主题结构：嵌套章节、已关联讲义与真实标题/块都能打开，缺失锚点明确', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture, '第二主题验收')
+    await mkdir(join(fixture.vault, space.directory, '讲义', '第一章'), { recursive: true })
+    await mkdir(join(fixture.vault, space.directory, '笔记', '复习'), { recursive: true })
+    await mkdir(join(fixture.vault, space.directory, '资料'), { recursive: true })
+    await writeFile(join(fixture.vault, space.directory, '讲义', '第一章', '01-条件概率.md'),
+      '# 条件概率\n\n条件概率正文。 ^cond-def\n\n## 乘法公式\n', 'utf8')
+    await writeFile(join(fixture.vault, space.directory, '笔记', '复习', '第一章.md'),
+      '# 复习\n\n## 第一章要点\n', 'utf8')
+    await writeFile(join(fixture.vault, space.directory, '资料', '改名资料.md'),
+      '# 改名资料\n\n## 关联小节\n', 'utf8')
+    const linked = await fixture.post({ action: 'lecture-link', spaceId: space.id, path: '资料/改名资料.md' })
+    assert.equal(linked.status, 200)
+
+    await writeCanvas(fixture, space, {
+      nodes: [
+        { id: 'nested-lecture', type: 'file', file: '第二主题验收/讲义/第一章/01-条件概率.md', x: 0, y: 0, width: 200, height: 80 },
+        { id: 'linked-lecture', type: 'file', file: '第二主题验收/资料/改名资料.md', x: 220, y: 0, width: 200, height: 80 },
+        { id: 'nested-note', type: 'file', file: '第二主题验收/笔记/复习/第一章.md', x: 0, y: 100, width: 200, height: 80 },
+        { id: 'heading', type: 'file', file: '第二主题验收/讲义/第一章/01-条件概率.md#条件概率', x: 220, y: 100, width: 200, height: 80 },
+        { id: 'block', type: 'file', file: '讲义/第一章/01-条件概率.md#^cond-def', x: 440, y: 100, width: 200, height: 80 },
+        { id: 'missing-fragment', type: 'file', file: '第二主题验收/讲义/第一章/01-条件概率.md#不存在的标题', x: 0, y: 200, width: 200, height: 80 },
+        { id: 'unlinked', type: 'file', file: '资料/未关联.md', x: 220, y: 200, width: 200, height: 80 },
+      ],
+      edges: [
+        { id: 'e1', fromNode: 'nested-lecture', toNode: 'heading', label: '先修', toEnd: 'arrow', fromSide: 'right', toSide: 'left' },
+        { id: 'e2', fromNode: 'linked-lecture', toNode: 'nested-note', label: '组成', fromEnd: 'arrow' },
+      ],
+    })
+
+    const result = await fixture.post({ action: 'canvas-read', spaceId: space.id })
+    assert.equal(result.status, 200)
+    const byId = new Map(result.body.nodes.map(node => [node.id, node]))
+
+    assert.deepEqual(byId.get('nested-lecture').target, {
+      path: '讲义/第一章/01-条件概率.md',
+      vaultPath: '第二主题验收/讲义/第一章/01-条件概率.md',
+      kind: 'lecture',
+      status: 'ok',
+      heading: null,
+      blockId: null,
+      message: null,
+    })
+    assert.deepEqual(byId.get('linked-lecture').target, {
+      path: '资料/改名资料.md',
+      vaultPath: '第二主题验收/资料/改名资料.md',
+      kind: 'lecture',
+      status: 'ok',
+      heading: null,
+      blockId: null,
+      message: null,
+    })
+    assert.deepEqual(byId.get('nested-note').target, {
+      path: '笔记/复习/第一章.md',
+      vaultPath: '第二主题验收/笔记/复习/第一章.md',
+      kind: 'note',
+      status: 'ok',
+      heading: null,
+      blockId: null,
+      message: null,
+    })
+    assert.equal(byId.get('heading').target.status, 'ok')
+    assert.equal(byId.get('heading').target.heading, '条件概率')
+    assert.equal(byId.get('heading').target.blockId, null)
+    assert.equal(byId.get('block').target.status, 'ok')
+    assert.equal(byId.get('block').target.blockId, 'cond-def')
+    assert.equal(byId.get('missing-fragment').target.status, 'missing-fragment')
+    assert.match(byId.get('missing-fragment').target.message, /没有标题/)
+    assert.equal(byId.get('unlinked').target.status, 'unsupported')
+    assert.match(byId.get('unlinked').target.message, /已关联|讲义|笔记/)
+
+    assert.deepEqual(
+      result.body.edges.map(edge => [edge.id, edge.fromEnd, edge.toEnd, edge.fromSide, edge.toSide]),
+      [['e1', 'none', 'arrow', 'right', 'left'], ['e2', 'arrow', 'none', null, null]],
+    )
   } finally {
     await fixture.close()
   }

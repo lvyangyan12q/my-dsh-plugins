@@ -262,34 +262,85 @@ export function relationName(relation: CanvasRelation): string {
   return relationNames[relation]
 }
 
+/** One canvas file node resolved to a space-relative lecture or note target. */
+export interface CanvasFileTarget {
+  kind: 'lecture' | 'note'
+  /** Space-relative path with nested folders preserved, e.g. `讲义/第一章/01.md`. */
+  path: string
+  /** Real fragment to reveal after opening; both null when the node has none. */
+  heading: string | null
+  blockId: string | null
+}
+
+export interface CanvasTargetOptions {
+  /** Existing course files the learner explicitly linked, space-relative. */
+  linkedLectures?: readonly string[]
+}
+
+/**
+ * Split a canvas file reference into its path and optional fragment. Obsidian
+ * writes the file field vault-relative, so both the vault form
+ * (`概率论/讲义/第一章/01.md`) and the space form (`讲义/第一章/01.md`) are
+ * accepted. A fragment (`#标题`, `#^块id`) is kept for real anchor navigation;
+ * the Host checks that the heading/block actually exists before calling it ok.
+ */
+function canvasFileRef(file: string): { path: string; heading: string | null; blockId: string | null } | null {
+  if (typeof file !== 'string') return null
+  const hash = file.indexOf('#')
+  const rawPath = (hash === -1 ? file : file.slice(0, hash)).trim()
+  const rawFragment = hash === -1 ? '' : file.slice(hash + 1).trim()
+  if (rawPath === '') return null
+  if (hash !== -1 && rawFragment === '') return null
+  if (rawPath.includes('|') || rawPath.includes('\u0000')) return null
+
+  const normalized = rawPath.replaceAll('\\', '/').replace(/^\.\/+/, '')
+  if (normalized.startsWith('/') || /^[A-Za-z]:/.test(normalized)) return null
+  const segments = normalized.split('/')
+  if (segments.some(segment => segment === '' || segment === '.' || segment === '..')) return null
+  if (segments.some(segment => segment.startsWith('.'))) return null
+
+  let heading: string | null = null
+  let blockId: string | null = null
+  if (rawFragment !== '') {
+    if (rawFragment.startsWith('^')) {
+      blockId = rawFragment.slice(1).trim()
+      if (blockId === '' || blockId.includes('#')) return null
+    } else {
+      heading = rawFragment
+      if (heading.includes('#')) return null
+    }
+  }
+  return { path: segments.join('/'), heading, blockId }
+}
+
 /**
  * Classify a canvas file reference as an openable classroom target. The caller
  * must already have proven the reference is a vault-relative path; this function
- * only decides whether it points at this space's 讲义/ or 笔记/ file. Anything
- * else returns null so the Host can explain why it cannot be opened.
- *
- * Obsidian stores canvas file references vault-relative, so both
- * `概率论/讲义/01.md` and the space-relative `讲义/01.md` are accepted.
+ * only decides whether it points at this space's `讲义/` (including nested
+ * chapters), one of its explicitly linked course files, or a nested `笔记/` file.
+ * Anything else returns null so the Host can explain why it cannot be opened.
  */
 export function classifyCanvasTarget(
   file: string,
   spaceDirectory: string,
-): { kind: 'lecture' | 'note'; path: string } | null {
-  if (typeof file !== 'string') return null
-  const normalized = file.trim().replaceAll('\\', '/').replace(/^\.\/+/, '')
-  if (normalized === '') return null
-  if (/^[A-Za-z]:/.test(normalized) || normalized.startsWith('/') || normalized.startsWith('//')) return null
-  const prefix = `${spaceDirectory}/`
-  const relative = normalized.startsWith(prefix) ? normalized.slice(prefix.length) : normalized
+  options: CanvasTargetOptions = {},
+): CanvasFileTarget | null {
+  const ref = canvasFileRef(file)
+  if (ref === null) return null
+  const prefix = `${spaceDirectory.replaceAll('\\', '/')}/`
+  const relative = ref.path.startsWith(prefix) ? ref.path.slice(prefix.length) : ref.path
   const segments = relative.split('/')
-  if (segments.length !== 2) return null
-  if (segments.some(segment => segment === '' || segment === '.' || segment === '..')) return null
-  const [folder, fileName] = segments
-  if (folder === '讲义' && /\.(md|html)$/i.test(fileName)) {
-    return { kind: 'lecture', path: `讲义/${fileName}` }
+  if (segments.length < 2) return null
+
+  const fileName = segments[segments.length - 1]
+  if (segments[0] === '讲义' && /\.(md|html)$/i.test(fileName)) {
+    return { kind: 'lecture', path: relative, heading: ref.heading, blockId: ref.blockId }
   }
-  if (folder === '笔记' && /\.md$/i.test(fileName)) {
-    return { kind: 'note', path: `笔记/${fileName}` }
+  if (segments[0] === '笔记' && /\.md$/i.test(fileName)) {
+    return { kind: 'note', path: relative, heading: ref.heading, blockId: ref.blockId }
+  }
+  if ((options.linkedLectures ?? []).includes(relative) && /\.(md|html)$/i.test(fileName)) {
+    return { kind: 'lecture', path: relative, heading: ref.heading, blockId: ref.blockId }
   }
   return null
 }

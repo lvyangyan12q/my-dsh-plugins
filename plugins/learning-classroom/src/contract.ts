@@ -1,4 +1,4 @@
-import type { CanvasNodeType, CanvasRelation } from './canvas.ts'
+import type { CanvasEnd, CanvasNodeType, CanvasRelation, CanvasSide } from './canvas.ts'
 import type { ExperimentSpec, ExperimentParameter } from './experiment-spec.ts'
 import type { ClassroomLayout } from './layout.ts'
 
@@ -242,16 +242,20 @@ export type LinkResolveCommand = {
 }
 
 export type CanvasTargetKind = 'lecture' | 'note'
-export type CanvasTargetStatus = 'ok' | 'missing' | 'outside' | 'unsupported'
+export type CanvasTargetStatus = 'ok' | 'missing' | 'missing-fragment' | 'outside' | 'unsupported'
 
 /** How one canvas file node resolves inside the knowledge vault. */
 export interface CanvasTargetView {
-  /** Space-relative path used by classroom commands, e.g. `讲义/01.md`. */
+  /** Space-relative path used by classroom commands, e.g. `讲义/第一章/01.md`. */
   path: string | null
-  /** Vault-relative path shown to the reader, e.g. `概率论/讲义/01.md`. */
+  /** Vault-relative path shown to the reader, e.g. `概率论/讲义/第一章/01.md`. */
   vaultPath: string | null
   kind: CanvasTargetKind | null
   status: CanvasTargetStatus
+  /** Real heading requested by `文件.md#标题`; null when absent or unverified. */
+  heading: string | null
+  /** Real block id requested by `文件.md#^块id`; null when absent or unverified. */
+  blockId: string | null
   /** Actionable explanation when the target cannot be opened. */
   message: string | null
 }
@@ -278,6 +282,11 @@ export interface CanvasEdgeView {
   toNode: string
   label: string | null
   relation: CanvasRelation
+  /** JSON Canvas end markers; an omitted end means "none", never an implied arrow. */
+  fromEnd: CanvasEnd
+  toEnd: CanvasEnd
+  fromSide: CanvasSide | null
+  toSide: CanvasSide | null
   /** A relation from a concept to itself; rendered explicitly, never guessed at. */
   selfLoop: boolean
 }

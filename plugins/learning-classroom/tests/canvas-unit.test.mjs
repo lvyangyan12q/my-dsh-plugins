@@ -186,25 +186,68 @@ test('未知的扩展字段被容忍，未知的枚举字段不被容忍', () =>
   assert.throws(() => parseCanvasDocument(sideEnum), CanvasFormatError)
 })
 
+test('文件节点目标接受嵌套章节、已关联讲义与真实标题/块片段', () => {
+  assert.deepEqual(classifyCanvasTarget('第二主题验收/讲义/第一章/01-条件概率.md', '第二主题验收'), {
+    kind: 'lecture',
+    path: '讲义/第一章/01-条件概率.md',
+    heading: null,
+    blockId: null,
+  })
+  assert.deepEqual(classifyCanvasTarget('第二主题验收/笔记/复习/第一章.md', '第二主题验收'), {
+    kind: 'note',
+    path: '笔记/复习/第一章.md',
+    heading: null,
+    blockId: null,
+  })
+  assert.deepEqual(
+    classifyCanvasTarget('资料/概率/改名资料.md', '第二主题验收', { linkedLectures: ['资料/概率/改名资料.md'] }),
+    { kind: 'lecture', path: '资料/概率/改名资料.md', heading: null, blockId: null },
+  )
+  assert.deepEqual(
+    classifyCanvasTarget('第二主题验收/讲义/第一章/01-条件概率.md#条件概率', '第二主题验收'),
+    { kind: 'lecture', path: '讲义/第一章/01-条件概率.md', heading: '条件概率', blockId: null },
+  )
+  assert.deepEqual(
+    classifyCanvasTarget('讲义/第二章/02-独立性.md#^独立定义', '第二主题验收'),
+    { kind: 'lecture', path: '讲义/第二章/02-独立性.md', heading: null, blockId: '独立定义' },
+  )
+  // A space file is only openable when it is an explicitly linked course file.
+  assert.equal(classifyCanvasTarget('资料/未关联.md', '第二主题验收'), null)
+  assert.equal(classifyCanvasTarget('别的课/讲义/01.md', '第二主题验收'), null)
+})
+
 test('文件节点目标只接受本空间讲义或笔记，其他路径返回 null 交给调用方提示', () => {
   assert.deepEqual(classifyCanvasTarget('概率论/讲义/01-样本空间.md', '概率论'), {
     kind: 'lecture',
     path: '讲义/01-样本空间.md',
+    heading: null,
+    blockId: null,
   })
   assert.deepEqual(classifyCanvasTarget('讲义/02-实验.html', '概率论'), {
     kind: 'lecture',
     path: '讲义/02-实验.html',
+    heading: null,
+    blockId: null,
   })
   assert.deepEqual(classifyCanvasTarget('概率论/笔记/我的笔记.md', '概率论'), {
     kind: 'note',
     path: '笔记/我的笔记.md',
+    heading: null,
+    blockId: null,
   })
   assert.equal(classifyCanvasTarget('附件/图表.png', '概率论'), null)
   assert.equal(classifyCanvasTarget('别的课/讲义/01.md', '概率论'), null)
-  assert.equal(classifyCanvasTarget('笔记/子目录/深层.md', '概率论'), null)
+  assert.deepEqual(classifyCanvasTarget('笔记/子目录/深层.md', '概率论'), {
+    kind: 'note',
+    path: '笔记/子目录/深层.md',
+    heading: null,
+    blockId: null,
+  })
   assert.equal(classifyCanvasTarget('讲义/说明.txt', '概率论'), null)
   assert.equal(classifyCanvasTarget('../外面.md', '概率论'), null)
   assert.equal(classifyCanvasTarget('D:\\外面.md', '概率论'), null)
+  assert.equal(classifyCanvasTarget('讲义/01.md#', '概率论'), null)
+  assert.equal(classifyCanvasTarget('讲义/01.md#^', '概率论'), null)
 })
 
 test('链接节点只把 http(s)/mailto 当作可点击链接', () => {
