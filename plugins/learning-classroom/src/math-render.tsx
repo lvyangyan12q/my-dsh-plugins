@@ -30,8 +30,8 @@ type HostRequire = (specifier: string) => unknown
  * `packages/client/web/src/seed.ts` and `dsh.client.inject` asks the module
  * loader to arrive it before this bundle; its `MarkdownText` is the supported
  * KaTeX-backed renderer for untrusted Markdown. The lookup stays lazy so unit
- * tests can inject a renderer and a host without the package never crashes the
- * classroom on activation.
+ * tests can inject a renderer or a host, and a host without the package cannot
+ * crash classroom activation.
  */
 const HOST_MODULE = '@deepseek-ai/dsh-client-ui-primitives'
 const HOST_LABELS = {

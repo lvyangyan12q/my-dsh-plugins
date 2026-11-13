@@ -58,6 +58,13 @@ test('未闭合、空内容与货币写法安全降级为普通文字', () => {
   assert.deepEqual(parseMarkdown('$$\n没有结束\n'), [{ type: 'paragraph', text: '$$ 没有结束' }])
 })
 
+test('美元符号可用反斜杠转义，转义后的 $ 不打开公式', () => {
+  assert.deepEqual(parseInline('\\$5 与 $x$'), [
+    { type: 'text', text: '$5 与 ' },
+    { type: 'math', tex: 'x', display: false },
+  ])
+})
+
 test('HTML 标签不能被数学解析或 TeX 注入变成 DOM 结构', () => {
   const tokens = parseInline('<img src=x onerror=alert(1)> $<script>alert(2)</script>$')
   assert.deepEqual(tokens[0], { type: 'text', text: '<img src=x onerror=alert(1)> ' })
