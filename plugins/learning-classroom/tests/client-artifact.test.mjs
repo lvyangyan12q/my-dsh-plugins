@@ -36,7 +36,14 @@ test('客户端产物用公开 module loader 注册，并导出侧栏与主面�
 
 test('数学渲染复用宿主公开 client primitives，并声明注入而非另装 KaTeX 依赖', async () => {
   const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-  assert.deepEqual(pkg.dsh.client.inject, ['@deepseek-ai/dsh-client-ui-primitives'])
+  // Math rendering needs the host primitives row; native opening needs the
+  // public Remote + session namespace rows loaded before this client package.
+  assert.deepEqual(pkg.dsh.client.inject, [
+    '@deepseek-ai/dsh-client-ui-primitives',
+    '@deepseek-ai/dsh-api-gateway',
+    '@deepseek-ai/dsh-api-remotes',
+    '@deepseek-ai/dsh-api-session-controller',
+  ])
   assert.equal(pkg.dependencies.katex, undefined)
   assert.equal(pkg.dependencies.mathjax, undefined)
 

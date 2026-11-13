@@ -613,7 +613,7 @@ interface SlotsContext {
 }
 
 /** Waits for the client services this entry composes with. */
-export const inject = ['slots', 'sessions']
+export const inject = ['slots', 'sessions', 'remote', 'remote.session']
 
 /**
  * Public sidebar entry and main panel registration, same id for both.
@@ -634,10 +634,13 @@ export function apply(ctx: SlotsContext) {
     const service = typeof ctx.get === 'function' ? ctx.get('conversation') : undefined
     return typeof service === 'object' && service !== null ? service as ConversationLike : undefined
   }
-  // `remote` is probed lazily: a Host composition without the public Session
-  // Remote still renders the canvas with an honest native-open fallback.
+  // `remote.session` is a public namespace service, not a property of the
+  // `remote` object: reading `ctx.remote.session` is gated by the caller's
+  // inject, while `ctx.get('remote.session')` is the documented optional
+  // service lookup. The declared inject above also makes the plugin wait for
+  // the public session namespace before it mounts.
   const nativeOpen = createNativeOpenSeam(
-    () => (typeof ctx.get === 'function' ? ctx.get('remote') : undefined),
+    () => (typeof ctx.get === 'function' ? ctx.get('remote.session') : undefined),
   )
   ctx.effect(() => ctx.slots.inject('main', () => ctx.slots.register({
     name: 'main',

@@ -43,10 +43,6 @@ interface SessionOpenRemoteLike {
   ) => Promise<RemoteResultLike<{ opened?: unknown }>>
 }
 
-interface RemoteLike {
-  session?: SessionOpenRemoteLike
-}
-
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -60,31 +56,40 @@ function remoteFailure(error: RemoteFailureLike | undefined): string {
   return code === '' ? message : `${message}（${code}）`
 }
 
-function sessionOf(remote: unknown): SessionOpenRemoteLike | undefined {
-  if (typeof remote !== 'object' || remote === null) return undefined
-  const session = (remote as RemoteLike).session
-  return typeof session === 'object' && session !== null ? session : undefined
+/**
+ * The public `remote.session` namespace service itself. `ctx.remote.session`
+ * must not be reached through the parent `remote` proxy: that property requires
+ * `remote.session` in the calling plugin's inject, so the classroom resolves the
+ * namespace service directly with `ctx.get('remote.session')`.
+ */
+function sessionNamespace(value: unknown): SessionOpenRemoteLike | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+  const session = value as SessionOpenRemoteLike
+  if (typeof session.canOpenWorkspacePath !== 'function' && typeof session.openWorkspacePath !== 'function') {
+    return undefined
+  }
+  return session
 }
 
 /**
- * Build the capability seam over a lazily resolved `ctx.remote`-like object.
+ * Build the capability seam over a public `remote.session` service source.
  * Resolution happens on every call so a plugin that started before the Remote
- * gateway became ready can still discover the capability later.
+ * namespace became ready can still discover the capability later.
  */
-export function createNativeOpenSeam(remoteOf: () => unknown): NativeOpenSeam {
+export function createNativeOpenSeam(sessionSource: () => unknown): NativeOpenSeam {
   const capability = (): { session: SessionOpenRemoteLike } | { reason: string } => {
-    let remote: unknown
+    let source: unknown
     try {
-      remote = remoteOf()
+      source = sessionSource()
     } catch (error) {
-      return { reason: `无法访问 DSH Remote 服务：${messageOf(error)}` }
+      return { reason: `无法访问 DSH Session Remote 服务：${messageOf(error)}` }
     }
-    if (remote === undefined || remote === null) {
-      return { reason: '当前宿主没有提供 DSH Remote 服务，无法使用原生文件打开。' }
+    if (source === undefined || source === null) {
+      return { reason: '当前宿主没有提供公开的 Session Remote（remote.session），无法使用原生文件打开。' }
     }
-    const session = sessionOf(remote)
+    const session = sessionNamespace(source)
     if (session === undefined) {
-      return { reason: '当前宿主没有提供公开的 Session Remote，无法使用原生文件打开。' }
+      return { reason: '当前宿主没有提供公开的 Session Remote（remote.session），无法使用原生文件打开。' }
     }
     if (typeof session.canOpenWorkspacePath !== 'function') {
       return { reason: '当前宿主没有公开的原生打开能力探测（canOpenWorkspacePath）。' }
