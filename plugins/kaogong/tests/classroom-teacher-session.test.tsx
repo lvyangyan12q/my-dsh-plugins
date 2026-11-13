@@ -139,6 +139,23 @@ test('内容答疑切换保留同一原生宿主和输入草稿',async()=>{
  try{await ui.click('课堂');const node=document.querySelector('textarea[data-native-session]');assert.ok(document.querySelector('[role="tablist"][aria-label="课堂视图"]'));await ui.click('答疑');assert.equal(document.querySelector('textarea[data-native-session]'),node);await ui.click('内容');assert.equal(document.querySelector('textarea[data-native-session]'),node);assert.equal((node as HTMLTextAreaElement).value,'原生草稿')}finally{await ui.unmount()}
 })
 
+test('收起答疑后键盘切换答疑会展开并保留原生草稿与宿主',async()=>{
+ const ui=await mountStudy({renderTeacherSession:id=><textarea data-native-session={id} defaultValue="未发送草稿"/>})
+ try{
+  await ui.click('课堂')
+  const node=document.querySelector<HTMLTextAreaElement>('textarea[data-native-session]')!
+  for(const key of ['ArrowRight','End']){
+   await ui.click('答疑');await ui.click('收起答疑');await ui.click('内容')
+   const tab=document.querySelector<HTMLButtonElement>('[role="tab"][aria-controls="kg-pane-content"]')!
+   await act(async()=>{tab.focus();tab.dispatchEvent(new ui.dom.window.KeyboardEvent('keydown',{key,bubbles:true}))})
+   assert.equal(document.querySelector('[role="tab"][aria-selected="true"]')?.textContent,'答疑')
+   assert.equal(document.querySelector<HTMLElement>('#kg-teacher-session-body')!.hidden,false,key+' must expand the native body')
+   assert.equal(document.querySelector('textarea[data-native-session]'),node)
+   assert.equal(node.value,'未发送草稿')
+  }
+ }finally{await ui.unmount()}
+})
+
 test('班主任讨论在插件挂载真实原生宿主',async()=>{
  const ui=await mountStudy()
  try{await ui.click('找班主任讨论安排');assert.deepEqual(ui.embeds(),['native-teacher-class-advisor']);assert.deepEqual(ui.opened,[]);await ui.click('查看完整对话');assert.deepEqual(ui.opened,[['class-advisor','native-teacher-class-advisor',2]])}finally{await ui.unmount()}
