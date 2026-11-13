@@ -4,18 +4,24 @@ import {
   isSafeCanvasUrl,
   relationName,
   type CanvasRelation,
+  type CanvasSide,
 } from './canvas.ts'
 import type { ClassroomClient } from './classroom-client.ts'
 import type { CanvasEdgeView, CanvasNodeView, CanvasReadView, ClassroomSpaceView } from './contract.ts'
+import { absoluteVaultPath, type NativeOpenSeam } from './native-open.ts'
 
 /** What the canvas asks the classroom to open when a file node is clicked. */
 export interface CanvasOpenTarget {
   kind: 'lecture' | 'note'
-  /** Space-relative path used by classroom commands, e.g. `讲义/01.md`. */
+  /** Space-relative path used by classroom commands, e.g. `讲义/第一章/01.md`. */
   path: string
   /** Vault-relative path shown to the reader and handed to Obsidian. */
   vaultPath: string
   label: string
+  /** Real heading requested by the node; null when the node has none. */
+  heading?: string | null
+  /** Real block id requested by the node; null when the node has none. */
+  blockId?: string | null
 }
 
 export interface CanvasZoneProps {
@@ -25,12 +31,19 @@ export interface CanvasZoneProps {
   vaultPath: string | null
   busy: boolean
   onOpenTarget: (target: CanvasOpenTarget) => void
+  /** Public DSH native open seam; absent when this Host exposes no Remote. */
+  nativeOpen?: NativeOpenSeam
 }
 
 type LoadState =
   | { status: 'loading' }
   | { status: 'ready'; canvas: CanvasReadView }
   | { status: 'failed'; message: string }
+
+type NativeState =
+  | { status: 'probing' }
+  | { status: 'available' }
+  | { status: 'unavailable'; reason: string }
 
 const relationOrder: readonly CanvasRelation[] = ['prerequisite', 'composition', 'application']
 
@@ -56,6 +69,7 @@ const relationMeaning: Record<'prerequisite' | 'composition' | 'application', st
 
 const targetBadges: Record<string, string> = {
   missing: '文件不存在',
+  'missing-fragment': '锚点不存在',
   outside: '路径越界',
   unsupported: '不可打开',
 }
@@ -68,8 +82,10 @@ const canvasStyles = `
 .lc-canvas-path code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
 .lc-canvas-tools{display:flex;flex-wrap:wrap;gap:6px}
 .lc-canvas-tools button{padding:4px 10px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);color:inherit;cursor:pointer;font-size:12px}
+.lc-canvas-zoom{display:inline-flex;align-items:center;padding:0 6px;font-size:12px;color:var(--dsh-text-secondary,#59636e);font-variant-numeric:tabular-nums}
 .lc-canvas-handoff{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.lc-canvas-handoff a{padding:4px 10px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);text-decoration:none;font-size:12px}
+.lc-canvas-handoff a,.lc-canvas-native{padding:4px 10px;border:1px solid var(--dsh-border,#d8dee4);border-radius:6px;background:var(--dsh-surface,#fff);text-decoration:none;font-size:12px;color:inherit;cursor:pointer}
+.lc-canvas-native:disabled{opacity:.6;cursor:default}
 .lc-canvas-legend{display:flex;flex-wrap:wrap;gap:12px;margin:0;padding:0;list-style:none;font-size:12px;color:var(--dsh-text-secondary,#59636e)}
 .lc-canvas-legend-item{display:flex;align-items:center;gap:6px}
 .lc-canvas-legend-swatch{display:inline-block;width:22px;height:0;border-top:2px solid currentColor}
@@ -142,8 +158,69 @@ function borderPoint(center: { x: number; y: number }, ux: number, uy: number, r
   return { x: center.x + ux * t, y: center.y + uy * t }
 }
 
-function edgeGeometry(from: Rect, to: Rect, selfLoop: boolean): { d: string; labelX: number; labelY: number } {
+/** Midpoint of the side JSON Canvas names, relative to the node's rendered rect. */
+function sidePoint(rect: Rect, side: CanvasSide): { x: number; y: number } {
+  switch (side) {
+    case 'top': return { x: rect.left + rect.width / 2, y: rect.top }
+    case 'right': return { x: rect.left + rect.width, y: rect.top + rect.height / 2 }
+    case 'bottom': return { x: rect.left + rect.width / 2, y: rect.top + rect.height }
+    case 'left': return { x: rect.left, y: rect.top + rect.height / 2 }
+  }
+}
+
+/** A point on the named side; `fraction` runs left→right or top→bottom. */
+function sideAnchor(rect: Rect, side: CanvasSide, fraction: number): { x: number; y: number } {
+  switch (side) {
+    case 'top': return { x: rect.left + rect.width * fraction, y: rect.top }
+    case 'right': return { x: rect.left + rect.width, y: rect.top + rect.height * fraction }
+    case 'bottom': return { x: rect.left + rect.width * fraction, y: rect.top + rect.height }
+    case 'left': return { x: rect.left, y: rect.top + rect.height * fraction }
+  }
+}
+
+/** Unit normal pointing away from the node on the named side. */
+function outwardUnit(side: CanvasSide): { x: number; y: number } {
+  switch (side) {
+    case 'top': return { x: 0, y: -1 }
+    case 'right': return { x: 1, y: 0 }
+    case 'bottom': return { x: 0, y: 1 }
+    case 'left': return { x: -1, y: 0 }
+  }
+}
+
+function unit(from: { x: number; y: number }, to: { x: number; y: number }): { x: number; y: number } {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const length = Math.hypot(dx, dy) || 1
+  return { x: dx / length, y: dy / length }
+}
+
+function edgeGeometry(
+  from: Rect,
+  to: Rect,
+  selfLoop: boolean,
+  fromSide: CanvasSide | null,
+  toSide: CanvasSide | null,
+): { d: string; labelX: number; labelY: number } {
   if (selfLoop) {
+    if (fromSide !== null || toSide !== null) {
+      // Honour the declared sides: a right→bottom self loop leaves the right side
+      // and enters the bottom side, instead of always drawing over the top.
+      const startSide = fromSide ?? toSide ?? 'top'
+      const endSide = toSide ?? fromSide ?? 'top'
+      const sameSide = startSide === endSide
+      const start = sideAnchor(from, startSide, sameSide ? 0.7 : 0.5)
+      const end = sideAnchor(from, endSide, sameSide ? 0.3 : 0.5)
+      const startNormal = outwardUnit(startSide)
+      const endNormal = outwardUnit(endSide)
+      const c1 = { x: start.x + startNormal.x * 64, y: start.y + startNormal.y * 64 }
+      const c2 = { x: end.x + endNormal.x * 64, y: end.y + endNormal.y * 64 }
+      return {
+        d: `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`,
+        labelX: (start.x + 3 * c1.x + 3 * c2.x + end.x) / 8,
+        labelY: (start.y + 3 * c1.y + 3 * c2.y + end.y) / 8 - 6,
+      }
+    }
     const x1 = from.left + from.width * 0.72
     const y1 = from.top
     const x2 = from.left + from.width * 0.28
@@ -155,13 +232,24 @@ function edgeGeometry(from: Rect, to: Rect, selfLoop: boolean): { d: string; lab
   }
   const fromCenter = centerOf(from)
   const toCenter = centerOf(to)
-  const dx = toCenter.x - fromCenter.x
-  const dy = toCenter.y - fromCenter.y
-  const length = Math.hypot(dx, dy) || 1
-  const ux = dx / length
-  const uy = dy / length
-  const start = borderPoint(fromCenter, ux, uy, from)
-  const end = borderPoint(toCenter, -ux, -uy, to)
+  let start: { x: number; y: number }
+  let end: { x: number; y: number }
+  if (fromSide !== null && toSide !== null) {
+    start = sidePoint(from, fromSide)
+    end = sidePoint(to, toSide)
+  } else if (fromSide !== null) {
+    start = sidePoint(from, fromSide)
+    const direction = unit(start, toCenter)
+    end = borderPoint(toCenter, -direction.x, -direction.y, to)
+  } else if (toSide !== null) {
+    end = sidePoint(to, toSide)
+    const direction = unit(fromCenter, end)
+    start = borderPoint(fromCenter, direction.x, direction.y, from)
+  } else {
+    const direction = unit(fromCenter, toCenter)
+    start = borderPoint(fromCenter, direction.x, direction.y, from)
+    end = borderPoint(toCenter, -direction.x, -direction.y, to)
+  }
   return {
     d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
     labelX: (start.x + end.x) / 2,
@@ -181,13 +269,17 @@ function edgeText(edge: CanvasEdgeView): string {
  * are always visible.
  */
 export function CanvasZone(props: CanvasZoneProps) {
-  const { client, space, vaultPath, busy, onOpenTarget } = props
+  const { client, space, vaultPath, busy, onOpenTarget, nativeOpen } = props
   const spaceId = space.id
   const [load, setLoad] = useState<LoadState>({ status: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
   const [notice, setNotice] = useState('')
   const [zoom, setZoom] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [native, setNative] = useState<NativeState>(() => nativeOpen === undefined
+    ? { status: 'unavailable', reason: '当前宿主没有接入公开的原生文件打开服务。' }
+    : { status: 'probing' })
+  const [openingNative, setOpeningNative] = useState(false)
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null)
   const alive = useRef(true)
   const generation = useRef(0)
@@ -213,14 +305,55 @@ export function CanvasZone(props: CanvasZoneProps) {
     }
   }, [client, spaceId, reloadKey])
 
+  // Probe the public native-open capability before rendering any control. An
+  // unavailable Host gets an explanation and a path/Obsidian fallback, never a
+  // disabled or inert "open" button.
+  useEffect(() => {
+    if (nativeOpen === undefined) {
+      setNative({ status: 'unavailable', reason: '当前宿主没有接入公开的原生文件打开服务。' })
+      return
+    }
+    let active = true
+    setNative({ status: 'probing' })
+    nativeOpen.probe().then(probe => {
+      if (!active) return
+      setNative(probe.available
+        ? { status: 'available' }
+        : { status: 'unavailable', reason: probe.reason ?? '宿主未说明原因。' })
+    }).catch(error => {
+      if (active) setNative({ status: 'unavailable', reason: messageOf(error) })
+    })
+    return () => { active = false }
+  }, [nativeOpen])
+
   const canvas = load.status === 'ready' ? load.canvas : null
   const expectedPath = canvas?.path ?? `${space.directory}/${canvasFileName}`
+  const absolutePath = absoluteVaultPath(vaultPath, expectedPath)
   const obsidianUrl = obsidianOpenUrl(vaultPath, expectedPath)
+  const nativeBlockedReason = native.status === 'unavailable'
+    ? native.reason
+    : native.status === 'available' && absolutePath === null
+      ? '没有可用的知识文件库绝对路径。'
+      : null
 
   const reload = () => {
     setZoom(1)
     setOffset({ x: 0, y: 0 })
     setReloadKey(key => key + 1)
+  }
+
+  const zoomBy = (delta: number) => {
+    setZoom(value => Math.min(2, Math.max(0.4, Number((value + delta).toFixed(2)))))
+  }
+
+  const openNative = async () => {
+    if (nativeOpen === undefined || native.status !== 'available' || absolutePath === null) return
+    setOpeningNative(true)
+    setNotice('')
+    const result = await nativeOpen.open(absolutePath)
+    if (!alive.current) return
+    setOpeningNative(false)
+    if (!result.ok) setNotice(result.reason ?? '原生文件打开失败。')
   }
 
   const openNode = (node: CanvasNodeView) => {
@@ -236,6 +369,8 @@ export function CanvasZone(props: CanvasZoneProps) {
       path: target.path,
       vaultPath: target.vaultPath ?? node.file ?? target.path,
       label: fileLabel(node),
+      heading: target.heading,
+      blockId: target.blockId,
     })
   }
 
@@ -252,13 +387,14 @@ export function CanvasZone(props: CanvasZoneProps) {
       <div className="lc-canvas-head">
         <div>
           <h2>课程脉络</h2>
-          <p className="lc-canvas-path">脉络文件：<code>{expectedPath}</code></p>
+          <p className="lc-canvas-path">脉络文件：<code>{absolutePath ?? expectedPath}</code></p>
         </div>
         <div className="lc-canvas-tools">
-          <button type="button" disabled={busy} onClick={() => setZoom(value => Math.min(2, Number((value + 0.1).toFixed(2))))}>放大</button>
-          <button type="button" disabled={busy} onClick={() => setZoom(value => Math.max(0.4, Number((value - 0.1).toFixed(2))))}>缩小</button>
+          <button type="button" disabled={busy} onClick={() => zoomBy(0.1)}>放大</button>
+          <button type="button" disabled={busy} onClick={() => zoomBy(-0.1)}>缩小</button>
           <button type="button" disabled={busy} onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }) }}>重置</button>
           <button type="button" disabled={busy} onClick={reload}>刷新脉络</button>
+          <span className="lc-canvas-zoom" aria-live="polite">{Math.round(zoom * 100)}%</span>
         </div>
       </div>
 
@@ -266,6 +402,17 @@ export function CanvasZone(props: CanvasZoneProps) {
         {obsidianUrl !== null
           ? <a href={obsidianUrl}>在 Obsidian 中打开</a>
           : <span className="lc-hint">未选择知识文件库，无法生成 Obsidian 打开链接。</span>}
+        {native.status === 'probing' && <span className="lc-hint" role="status">正在探测 DSH 原生文件打开…</span>}
+        {native.status === 'available' && absolutePath !== null && (
+          <button type="button" className="lc-canvas-native" disabled={busy || openingNative} onClick={() => void openNative()}>
+            {openingNative ? '正在用系统应用打开…' : '用系统默认应用打开画布'}
+          </button>
+        )}
+        {nativeBlockedReason !== null && (
+          <span className="lc-hint" data-native-open="unavailable">
+            DSH 原生文件打开不可用：{nativeBlockedReason} 可复制上方绝对路径，或在 Obsidian 中编辑；这里不提供无效按钮。
+          </span>
+        )}
         <p className="lc-hint">脉络在这里只读显示；新增节点或连线请在 Obsidian 中编辑，插件内不提供画布编辑。</p>
       </div>
 
@@ -304,9 +451,12 @@ export function CanvasZone(props: CanvasZoneProps) {
             offset={offset}
             rectOf={rectOf}
             onOpenNode={openNode}
+            onWheelDelta={delta => zoomBy(delta)}
             onPanStart={event => {
+              if (event.button !== 0) return
               const target = event.target as { closest?: (selector: string) => unknown } | null
               if (typeof target?.closest === 'function' && target.closest('button, a') != null) return
+              event.currentTarget.setPointerCapture?.(event.pointerId)
               drag.current = { x: event.clientX, y: event.clientY, ox: offset.x, oy: offset.y }
             }}
             onPanMove={event => {
@@ -327,11 +477,13 @@ function CanvasViewport(props: {
   offset: { x: number; y: number }
   rectOf: (node: CanvasNodeView, minX: number, minY: number) => Rect
   onOpenNode: (node: CanvasNodeView) => void
+  onWheelDelta: (delta: number) => void
   onPanStart: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPanMove: (event: ReactPointerEvent<HTMLDivElement>) => void
   onPanEnd: () => void
 }) {
   const { canvas, zoom, offset, rectOf, onOpenNode } = props
+  const viewportRef = useRef<HTMLDivElement | null>(null)
   const minX = Math.min(...canvas.nodes.map(node => node.x))
   const minY = Math.min(...canvas.nodes.map(node => node.y))
   const stageWidth = canvas.width + 80
@@ -339,16 +491,33 @@ function CanvasViewport(props: {
   const rects = new Map(canvas.nodes.map(node => [node.id, rectOf(node, minX, minY)]))
   const ordered = [...canvas.nodes].sort((a, b) => (a.type === 'group' ? 0 : 1) - (b.type === 'group' ? 0 : 1))
 
+  // Native non-passive wheel listener: the viewport zooms instead of scrolling
+  // a second document, and preventDefault is legal here.
+  useEffect(() => {
+    const element = viewportRef.current
+    if (element === null) return
+    const onWheel = (event: WheelEvent): void => {
+      event.preventDefault()
+      props.onWheelDelta(event.deltaY < 0 ? 0.1 : -0.1)
+    }
+    element.addEventListener('wheel', onWheel, { passive: false })
+    return () => { element.removeEventListener('wheel', onWheel) }
+  }, [props.onWheelDelta])
+
   return (
     <div
+      ref={viewportRef}
       className="lc-canvas-viewport"
+      style={{ touchAction: 'none' }}
       onPointerDown={props.onPanStart}
       onPointerMove={props.onPanMove}
       onPointerUp={props.onPanEnd}
       onPointerLeave={props.onPanEnd}
+      onPointerCancel={props.onPanEnd}
     >
       <div
         className="lc-canvas-stage"
+        data-zoom={zoom}
         style={{ width: stageWidth, height: stageHeight, transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})` }}
       >
         <svg className="lc-canvas-edges" width={stageWidth} height={stageHeight}>
@@ -372,7 +541,8 @@ function CanvasViewport(props: {
             const from = rects.get(edge.fromNode)
             const to = rects.get(edge.toNode)
             if (from === undefined || to === undefined) return null
-            const geometry = edgeGeometry(from, to, edge.selfLoop)
+            const geometry = edgeGeometry(from, to, edge.selfLoop, edge.fromSide ?? null, edge.toSide ?? null)
+            const marker = `url(#lc-canvas-arrow-${edge.relation})`
             return (
               <g
                 key={edge.id}
@@ -380,6 +550,8 @@ function CanvasViewport(props: {
                 data-edge-id={edge.id}
                 data-relation={edge.relation}
                 data-self={edge.selfLoop ? 'true' : 'false'}
+                data-from-end={edge.fromEnd}
+                data-to-end={edge.toEnd}
               >
                 <path
                   d={geometry.d}
@@ -387,7 +559,8 @@ function CanvasViewport(props: {
                   stroke={relationColors[edge.relation]}
                   strokeWidth={1.6}
                   strokeDasharray={relationDashes[edge.relation]}
-                  markerEnd={`url(#lc-canvas-arrow-${edge.relation})`}
+                  markerStart={edge.fromEnd === 'arrow' ? marker : undefined}
+                  markerEnd={edge.toEnd === 'arrow' ? marker : undefined}
                 />
                 <text x={geometry.labelX} y={geometry.labelY} textAnchor="middle" fill={relationColors[edge.relation]} className="lc-canvas-edge-label">
                   {edgeText(edge)}

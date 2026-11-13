@@ -33,6 +33,8 @@ export interface ParsedCanvasNode {
   color: string | null
   text: string | null
   file: string | null
+  /** JSON Canvas `subpath` (`#标题` or `#^块id`) for a file node. */
+  subpath: string | null
   url: string | null
   label: string | null
 }
@@ -131,6 +133,7 @@ function parseNode(raw: unknown, index: number): ParsedCanvasNode {
 
   let text: string | null = null
   let file: string | null = null
+  let subpath: string | null = null
   let url: string | null = null
   let label: string | null = null
   switch (type) {
@@ -140,6 +143,11 @@ function parseNode(raw: unknown, index: number): ParsedCanvasNode {
       break
     case 'file':
       file = requiredString(raw.file, `${where} 的文件路径`, 1024)
+      subpath = optionalString(raw.subpath, `${where} 的 subpath`, 1024)
+      if (subpath !== null) {
+        if (!subpath.startsWith('#')) fail(`${where} 的 subpath 必须以 # 开头。`)
+        if (subpath.trim() === '#') fail(`${where} 的 subpath 不能为空。`)
+      }
       break
     case 'link':
       url = requiredString(raw.url, `${where} 的链接`, 2048)
@@ -149,7 +157,7 @@ function parseNode(raw: unknown, index: number): ParsedCanvasNode {
       break
   }
 
-  return { id, type, x, y, width, height, color, text, file, url, label }
+  return { id, type, x, y, width, height, color, text, file, subpath, url, label }
 }
 
 function parseEdge(raw: unknown, index: number, nodeIds: ReadonlySet<string>): ParsedCanvasEdge {
@@ -168,7 +176,8 @@ function parseEdge(raw: unknown, index: number, nodeIds: ReadonlySet<string>): P
     label,
     relation: classifyRelation(label),
     fromEnd: optionalEnum<CanvasEnd>(raw.fromEnd, `${where} 的 fromEnd`, ends) ?? 'none',
-    toEnd: optionalEnum<CanvasEnd>(raw.toEnd, `${where} 的 toEnd`, ends) ?? 'none',
+    // JSON Canvas 1.0: fromEnd defaults to none but toEnd defaults to arrow.
+    toEnd: optionalEnum<CanvasEnd>(raw.toEnd, `${where} 的 toEnd`, ends) ?? 'arrow',
     fromSide: optionalEnum<CanvasSide>(raw.fromSide, `${where} 的 fromSide`, sides),
     toSide: optionalEnum<CanvasSide>(raw.toSide, `${where} 的 toSide`, sides),
     color: optionalString(raw.color, `${where} 的 color`, 32),
@@ -262,34 +271,114 @@ export function relationName(relation: CanvasRelation): string {
   return relationNames[relation]
 }
 
+/** One canvas file node resolved to a space-relative lecture or note target. */
+export interface CanvasFileTarget {
+  kind: 'lecture' | 'note'
+  /** Space-relative path with nested folders preserved, e.g. `讲义/第一章/01.md`. */
+  path: string
+  /** Real fragment to reveal after opening; both null when the node has none. */
+  heading: string | null
+  blockId: string | null
+}
+
+export interface CanvasTargetOptions {
+  /** Existing course files the learner explicitly linked, space-relative. */
+  linkedLectures?: readonly string[]
+  /** Standard JSON Canvas file-node `subpath`; independent of the `file` string. */
+  subpath?: string | null
+}
+
+interface CanvasRefFragment {
+  heading: string | null
+  blockId: string | null
+}
+
+/** Parse the fragment text after `#`; null means malformed/empty. */
+function fragmentText(raw: string): CanvasRefFragment | null {
+  const text = raw.trim()
+  if (text === '') return null
+  if (text.startsWith('^')) {
+    const blockId = text.slice(1).trim()
+    if (blockId === '' || blockId.includes('#')) return null
+    return { heading: null, blockId }
+  }
+  if (text.includes('#')) return null
+  return { heading: text, blockId: null }
+}
+
+function sameFragment(left: CanvasRefFragment, right: CanvasRefFragment): boolean {
+  return left.heading === right.heading && left.blockId === right.blockId
+}
+
+/**
+ * Split a canvas file reference into its path and optional fragment. JSON
+ * Canvas 1.0 stores the anchor in `subpath`; `file#anchor` stays accepted for
+ * hand-written/legacy canvases. Obsidian writes the file field vault-relative,
+ * so both the vault form (`概率论/讲义/第一章/01.md`) and the space form
+ * (`讲义/第一章/01.md`) are accepted.
+ */
+function canvasFileRef(file: string, subpath?: string | null): { path: string; heading: string | null; blockId: string | null } | null {
+  if (typeof file !== 'string') return null
+  const hash = file.indexOf('#')
+  const rawPath = (hash === -1 ? file : file.slice(0, hash)).trim()
+  if (rawPath === '') return null
+  if (rawPath.includes('|') || rawPath.includes('\u0000')) return null
+
+  const inline = hash === -1 ? null : fragmentText(file.slice(hash + 1))
+  if (hash !== -1 && inline === null) return null
+
+  let standard: CanvasRefFragment | null = null
+  if (subpath !== undefined && subpath !== null) {
+    if (typeof subpath !== 'string') return null
+    const trimmed = subpath.trim()
+    if (!trimmed.startsWith('#')) return null
+    standard = fragmentText(trimmed.slice(1))
+    if (standard === null) return null
+  }
+  if (inline !== null && standard !== null && !sameFragment(inline, standard)) return null
+  const fragment = standard ?? inline
+
+  const normalized = rawPath.replaceAll('\\', '/').replace(/^\.\/+/, '')
+  if (normalized.startsWith('/') || /^[A-Za-z]:/.test(normalized)) return null
+  const segments = normalized.split('/')
+  if (segments.some(segment => segment === '' || segment === '.' || segment === '..')) return null
+  if (segments.some(segment => segment.startsWith('.'))) return null
+
+  return {
+    path: segments.join('/'),
+    heading: fragment?.heading ?? null,
+    blockId: fragment?.blockId ?? null,
+  }
+}
+
 /**
  * Classify a canvas file reference as an openable classroom target. The caller
  * must already have proven the reference is a vault-relative path; this function
- * only decides whether it points at this space's 讲义/ or 笔记/ file. Anything
- * else returns null so the Host can explain why it cannot be opened.
- *
- * Obsidian stores canvas file references vault-relative, so both
- * `概率论/讲义/01.md` and the space-relative `讲义/01.md` are accepted.
+ * only decides whether it points at this space's `讲义/` (including nested
+ * chapters), one of its explicitly linked course files, or a nested `笔记/` file.
+ * Anything else returns null so the Host can explain why it cannot be opened.
  */
 export function classifyCanvasTarget(
   file: string,
   spaceDirectory: string,
-): { kind: 'lecture' | 'note'; path: string } | null {
-  if (typeof file !== 'string') return null
-  const normalized = file.trim().replaceAll('\\', '/').replace(/^\.\/+/, '')
-  if (normalized === '') return null
-  if (/^[A-Za-z]:/.test(normalized) || normalized.startsWith('/') || normalized.startsWith('//')) return null
-  const prefix = `${spaceDirectory}/`
-  const relative = normalized.startsWith(prefix) ? normalized.slice(prefix.length) : normalized
+  options: CanvasTargetOptions = {},
+): CanvasFileTarget | null {
+  const ref = canvasFileRef(file, options.subpath)
+  if (ref === null) return null
+  const prefix = `${spaceDirectory.replaceAll('\\', '/')}/`
+  const relative = ref.path.startsWith(prefix) ? ref.path.slice(prefix.length) : ref.path
   const segments = relative.split('/')
-  if (segments.length !== 2) return null
-  if (segments.some(segment => segment === '' || segment === '.' || segment === '..')) return null
-  const [folder, fileName] = segments
-  if (folder === '讲义' && /\.(md|html)$/i.test(fileName)) {
-    return { kind: 'lecture', path: `讲义/${fileName}` }
+  if (segments.length < 2) return null
+
+  const fileName = segments[segments.length - 1]
+  if (segments[0] === '讲义' && /\.(md|html)$/i.test(fileName)) {
+    return { kind: 'lecture', path: relative, heading: ref.heading, blockId: ref.blockId }
   }
-  if (folder === '笔记' && /\.md$/i.test(fileName)) {
-    return { kind: 'note', path: `笔记/${fileName}` }
+  if (segments[0] === '笔记' && /\.md$/i.test(fileName)) {
+    return { kind: 'note', path: relative, heading: ref.heading, blockId: ref.blockId }
+  }
+  if ((options.linkedLectures ?? []).includes(relative) && /\.(md|html)$/i.test(fileName)) {
+    return { kind: 'lecture', path: relative, heading: ref.heading, blockId: ref.blockId }
   }
   return null
 }
