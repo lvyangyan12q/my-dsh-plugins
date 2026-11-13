@@ -46,10 +46,37 @@ test('合法画布解析出文本、文件、链接、分组节点与带标签�
     canvas.edges.map(edge => [edge.fromNode, edge.toNode, edge.label, edge.relation]),
     [['n1', 'n2', '先修', 'prerequisite'], ['n3', 'n4', '应用', 'application']],
   )
+  // JSON Canvas defaults: fromEnd none, toEnd arrow. An omitted toEnd keeps the
+  // standard arrow; an explicit `none` removes it.
+  assert.equal(canvas.edges[0].fromEnd, 'none')
+  assert.equal(canvas.edges[0].toEnd, 'arrow')
+  assert.equal(canvas.edges[1].fromEnd, 'none')
+  assert.equal(canvas.edges[1].toEnd, 'arrow')
   assert.equal(canvas.edges[0].selfLoop, false)
   // Bounds cover every node, including the group that starts at negative coordinates.
   assert.equal(canvas.width, 600)
   assert.equal(canvas.height, 400)
+})
+
+test('文件节点读取标准 subpath 字段，非法 subpath 让整张画布不合法', () => {
+  const source = JSON.stringify({
+    nodes: [
+      { id: 'n1', type: 'file', file: '概率论/讲义/01.md', subpath: '#条件概率', x: 0, y: 0, width: 10, height: 10 },
+      { id: 'n2', type: 'file', file: '概率论/笔记/我的笔记.md', x: 20, y: 0, width: 10, height: 10 },
+    ],
+  })
+  const canvas = parseCanvasDocument(source)
+  assert.equal(canvas.nodes[0].subpath, '#条件概率')
+  assert.equal(canvas.nodes[1].subpath, null)
+
+  const malformed = JSON.stringify({
+    nodes: [{ id: 'n1', type: 'file', file: '概率论/讲义/01.md', subpath: '条件概率', x: 0, y: 0, width: 10, height: 10 }],
+  })
+  assert.throws(() => parseCanvasDocument(malformed), CanvasFormatError)
+  const empty = JSON.stringify({
+    nodes: [{ id: 'n1', type: 'file', file: '概率论/讲义/01.md', subpath: '#', x: 0, y: 0, width: 10, height: 10 }],
+  })
+  assert.throws(() => parseCanvasDocument(empty), CanvasFormatError)
 })
 
 test('关系类型从边标签区分：先修、组成、应用，其余归为相关', () => {
@@ -193,6 +220,23 @@ test('文件节点目标接受嵌套章节、已关联讲义与真实标题/块�
     heading: null,
     blockId: null,
   })
+  // JSON Canvas file nodes carry the anchor in a separate standard `subpath`
+  // field; `file#anchor` stays accepted for hand-written/legacy canvases.
+  assert.deepEqual(
+    classifyCanvasTarget('讲义/第一章/01-条件概率.md', '第二主题验收', { subpath: '#条件概率' }),
+    { kind: 'lecture', path: '讲义/第一章/01-条件概率.md', heading: '条件概率', blockId: null },
+  )
+  assert.deepEqual(
+    classifyCanvasTarget('讲义/第二章/02-独立性.md', '第二主题验收', { subpath: '#^独立定义' }),
+    { kind: 'lecture', path: '讲义/第二章/02-独立性.md', heading: null, blockId: '独立定义' },
+  )
+  assert.equal(classifyCanvasTarget('讲义/01.md', '第二主题验收', { subpath: '条件概率' }), null)
+  assert.equal(classifyCanvasTarget('讲义/01.md', '第二主题验收', { subpath: '#' }), null)
+  // Conflicting inline and standard anchors are refused, never guessed.
+  assert.equal(
+    classifyCanvasTarget('讲义/01.md#条件概率', '第二主题验收', { subpath: '#其他标题' }),
+    null,
+  )
   assert.deepEqual(classifyCanvasTarget('第二主题验收/笔记/复习/第一章.md', '第二主题验收'), {
     kind: 'note',
     path: '笔记/复习/第一章.md',

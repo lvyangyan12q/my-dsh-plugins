@@ -270,6 +270,8 @@ export interface CanvasNodeView {
   color: string | null
   text: string | null
   file: string | null
+  /** Standard JSON Canvas file-node anchor (`#标题` / `#^块id`), or null. */
+  subpath: string | null
   url: string | null
   label: string | null
   /** Only file nodes carry an open target; it is null when they cannot. */
@@ -282,7 +284,7 @@ export interface CanvasEdgeView {
   toNode: string
   label: string | null
   relation: CanvasRelation
-  /** JSON Canvas end markers; an omitted end means "none", never an implied arrow. */
+  /** JSON Canvas end markers; fromEnd defaults to none, toEnd defaults to arrow. */
   fromEnd: CanvasEnd
   toEnd: CanvasEnd
   fromSide: CanvasSide | null

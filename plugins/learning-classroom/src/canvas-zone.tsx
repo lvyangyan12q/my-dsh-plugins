@@ -168,6 +168,26 @@ function sidePoint(rect: Rect, side: CanvasSide): { x: number; y: number } {
   }
 }
 
+/** A point on the named side; `fraction` runs left→right or top→bottom. */
+function sideAnchor(rect: Rect, side: CanvasSide, fraction: number): { x: number; y: number } {
+  switch (side) {
+    case 'top': return { x: rect.left + rect.width * fraction, y: rect.top }
+    case 'right': return { x: rect.left + rect.width, y: rect.top + rect.height * fraction }
+    case 'bottom': return { x: rect.left + rect.width * fraction, y: rect.top + rect.height }
+    case 'left': return { x: rect.left, y: rect.top + rect.height * fraction }
+  }
+}
+
+/** Unit normal pointing away from the node on the named side. */
+function outwardUnit(side: CanvasSide): { x: number; y: number } {
+  switch (side) {
+    case 'top': return { x: 0, y: -1 }
+    case 'right': return { x: 1, y: 0 }
+    case 'bottom': return { x: 0, y: 1 }
+    case 'left': return { x: -1, y: 0 }
+  }
+}
+
 function unit(from: { x: number; y: number }, to: { x: number; y: number }): { x: number; y: number } {
   const dx = to.x - from.x
   const dy = to.y - from.y
@@ -183,6 +203,24 @@ function edgeGeometry(
   toSide: CanvasSide | null,
 ): { d: string; labelX: number; labelY: number } {
   if (selfLoop) {
+    if (fromSide !== null || toSide !== null) {
+      // Honour the declared sides: a right→bottom self loop leaves the right side
+      // and enters the bottom side, instead of always drawing over the top.
+      const startSide = fromSide ?? toSide ?? 'top'
+      const endSide = toSide ?? fromSide ?? 'top'
+      const sameSide = startSide === endSide
+      const start = sideAnchor(from, startSide, sameSide ? 0.7 : 0.5)
+      const end = sideAnchor(from, endSide, sameSide ? 0.3 : 0.5)
+      const startNormal = outwardUnit(startSide)
+      const endNormal = outwardUnit(endSide)
+      const c1 = { x: start.x + startNormal.x * 64, y: start.y + startNormal.y * 64 }
+      const c2 = { x: end.x + endNormal.x * 64, y: end.y + endNormal.y * 64 }
+      return {
+        d: `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`,
+        labelX: (start.x + 3 * c1.x + 3 * c2.x + end.x) / 8,
+        labelY: (start.y + 3 * c1.y + 3 * c2.y + end.y) / 8 - 6,
+      }
+    }
     const x1 = from.left + from.width * 0.72
     const y1 = from.top
     const x2 = from.left + from.width * 0.28

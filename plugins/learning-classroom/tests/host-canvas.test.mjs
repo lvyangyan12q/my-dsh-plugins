@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, symlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { canvasReadLimit } from '../src/canvas.ts'
 import { classroomFixture } from './support/fixture.mjs'
@@ -81,11 +81,11 @@ test('读取真实脉络.canvas：四种节点、带标签的有向边与可打�
       result.body.edges.map(edge => [edge.fromNode, edge.toNode, edge.label, edge.relation, edge.selfLoop]),
       [['text', 'lecture', '先修', 'prerequisite', false], ['note', 'link', '应用', 'application', false], ['text', 'text', '组成', 'composition', true]],
     )
-    // Arrow direction is carried from JSON Canvas: an omitted end is "none",
-    // never an implied arrow invented by the renderer.
+    // Arrow direction is carried from JSON Canvas: fromEnd defaults to none,
+    // while toEnd defaults to arrow (an explicit none removes the arrow).
     assert.deepEqual(
       result.body.edges.map(edge => [edge.fromEnd, edge.toEnd, edge.fromSide, edge.toSide]),
-      [['none', 'none', null, null], ['none', 'arrow', null, null], ['none', 'none', null, null]],
+      [['none', 'arrow', null, null], ['none', 'arrow', null, null], ['none', 'arrow', null, null]],
     )
   } finally {
     await fixture.close()
@@ -147,6 +147,7 @@ test('真实第二主题结构：嵌套章节、已关联讲义与真实标题/�
         { id: 'linked-lecture', type: 'file', file: '第二主题验收/资料/改名资料.md', x: 220, y: 0, width: 200, height: 80 },
         { id: 'nested-note', type: 'file', file: '第二主题验收/笔记/复习/第一章.md', x: 0, y: 100, width: 200, height: 80 },
         { id: 'heading', type: 'file', file: '第二主题验收/讲义/第一章/01-条件概率.md#条件概率', x: 220, y: 100, width: 200, height: 80 },
+        { id: 'subpath-heading', type: 'file', file: '第二主题验收/讲义/第一章/01-条件概率.md', subpath: '#条件概率', x: 330, y: 100, width: 200, height: 80 },
         { id: 'block', type: 'file', file: '讲义/第一章/01-条件概率.md#^cond-def', x: 440, y: 100, width: 200, height: 80 },
         { id: 'missing-fragment', type: 'file', file: '第二主题验收/讲义/第一章/01-条件概率.md#不存在的标题', x: 0, y: 200, width: 200, height: 80 },
         { id: 'unlinked', type: 'file', file: '资料/未关联.md', x: 220, y: 200, width: 200, height: 80 },
@@ -191,6 +192,10 @@ test('真实第二主题结构：嵌套章节、已关联讲义与真实标题/�
     assert.equal(byId.get('heading').target.status, 'ok')
     assert.equal(byId.get('heading').target.heading, '条件概率')
     assert.equal(byId.get('heading').target.blockId, null)
+    // Standard JSON Canvas stores the anchor in `subpath`, not in `file`.
+    assert.equal(byId.get('subpath-heading').target.status, 'ok')
+    assert.equal(byId.get('subpath-heading').target.heading, '条件概率')
+    assert.equal(byId.get('subpath-heading').target.blockId, null)
     assert.equal(byId.get('block').target.status, 'ok')
     assert.equal(byId.get('block').target.blockId, 'cond-def')
     assert.equal(byId.get('missing-fragment').target.status, 'missing-fragment')
@@ -200,8 +205,55 @@ test('真实第二主题结构：嵌套章节、已关联讲义与真实标题/�
 
     assert.deepEqual(
       result.body.edges.map(edge => [edge.id, edge.fromEnd, edge.toEnd, edge.fromSide, edge.toSide]),
-      [['e1', 'none', 'arrow', 'right', 'left'], ['e2', 'arrow', 'none', null, null]],
+      [['e1', 'none', 'arrow', 'right', 'left'], ['e2', 'arrow', 'arrow', null, null]],
     )
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('片段读取使用主题真实路径：主题外符号链接不能借画布泄漏标题或块', async t => {
+  const fixture = await classroomFixture()
+  try {
+    const first = await prepare(fixture, '甲主题')
+    const second = await prepare(fixture, '乙主题')
+    await mkdir(join(fixture.vault, first.directory, '讲义'), { recursive: true })
+    await writeFile(join(fixture.vault, second.directory, '讲义', '乙的秘密.md'),
+      '# 乙的秘密\n\n只属于乙主题的正文。 ^乙块\n', 'utf8')
+    try {
+      await symlink(
+        join(fixture.vault, second.directory, '讲义'),
+        join(fixture.vault, first.directory, '讲义', '引用'),
+        'junction',
+      )
+    } catch (error) {
+      if (error.code === 'EPERM' || error.code === 'EACCES') {
+        t.skip('当前环境不允许创建目录链接')
+        return
+      }
+      throw error
+    }
+
+    await writeCanvas(fixture, first, {
+      nodes: [{
+        id: 'leak', type: 'file', file: '甲主题/讲义/引用/乙的秘密.md', subpath: '#乙的秘密',
+        x: 0, y: 0, width: 200, height: 80,
+      }],
+    })
+
+    const result = await fixture.post({ action: 'canvas-read', spaceId: first.id })
+    assert.equal(result.status, 200)
+    const target = result.body.nodes[0].target
+    assert.equal(target.status, 'outside')
+    assert.equal(target.heading, null)
+    assert.equal(target.blockId, null)
+    assert.match(target.message, /学习空间|越界/)
+    assert.doesNotMatch(target.message, /乙的秘密的正文/)
+
+    // The actual open path must agree: the same link cannot read the other
+    // theme's lecture through `lecture-read` either.
+    const read = await fixture.post({ action: 'lecture-read', spaceId: first.id, path: '讲义/引用/乙的秘密.md' })
+    assert.notEqual(read.status, 200)
   } finally {
     await fixture.close()
   }

@@ -107,7 +107,7 @@ function canvasDocument() {
       { id: 'e1', fromNode: 'text', toNode: 'lecture', label: '先修', relation: 'prerequisite', selfLoop: false, fromEnd: 'none', toEnd: 'arrow', fromSide: 'right', toSide: 'left' },
       { id: 'e2', fromNode: 'note', toNode: 'link', label: '应用', relation: 'application', selfLoop: false, fromEnd: 'arrow', toEnd: 'none', fromSide: null, toSide: null },
       { id: 'e3', fromNode: 'text', toNode: 'note', label: '组成', relation: 'composition', selfLoop: false, fromEnd: 'none', toEnd: 'none', fromSide: null, toSide: null },
-      { id: 'e4', fromNode: 'text', toNode: 'text', label: '先修', relation: 'prerequisite', selfLoop: true, fromEnd: 'none', toEnd: 'arrow', fromSide: null, toSide: null },
+      { id: 'e4', fromNode: 'text', toNode: 'text', label: '先修', relation: 'prerequisite', selfLoop: true, fromEnd: 'none', toEnd: 'arrow', fromSide: 'right', toSide: 'bottom' },
     ],
   }
 }
@@ -449,9 +449,16 @@ test('箭头只在 JSON Canvas 声明的端出现，方向与 from/to 节点一�
     assert.match(pathOf('e2').getAttribute('marker-start'), /lc-canvas-arrow-application/)
     assert.equal(pathOf('e2').getAttribute('marker-end'), null)
 
-    // An unspecified/`none` end must not gain an invented arrow.
+    // An explicit `none` end must not gain an arrow.
     assert.equal(pathOf('e3').getAttribute('marker-start'), null)
     assert.equal(pathOf('e3').getAttribute('marker-end'), null)
+
+    // A self relation with right→bottom sides leaves the right side and enters
+    // the bottom side; it must not fall back to a fixed top arc. The group node
+    // starts at (-50,-50), so the text rect is at (90,90).
+    const selfPath = pathOf('e4').getAttribute('d')
+    assert.match(selfPath, /^M 290 130 /)
+    assert.match(selfPath, /190 170$/)
   } finally {
     await ui.unmount()
   }

@@ -1286,11 +1286,16 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
    * traversal, absolute paths and links that escape the vault become `outside`,
    * while a missing or non-openable file keeps its node visible with a reason.
    *
-   * Nested chapters, explicitly linked course files and `#标题`/`#^块id`
-   * fragments are supported; a requested fragment is only reported as ok after
-   * the real Markdown heading or block id was found in the target file.
+   * Nested chapters, explicitly linked course files and `subpath`/`#标题`/
+   * `#^块id` fragments are supported; a requested fragment is only reported as
+   * ok after the real Markdown heading or block id was found in the target file.
    */
-  const canvasTargetOf = async (root: string, space: ClassroomSpace, file: string): Promise<CanvasTargetView> => {
+  const canvasTargetOf = async (
+    root: string,
+    space: ClassroomSpace,
+    file: string,
+    subpath: string | null,
+  ): Promise<CanvasTargetView> => {
     let relative: string
     try {
       relative = vaultRelativePath(file)
@@ -1308,6 +1313,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
 
     const classified = classifyCanvasTarget(relative, space.directory, {
       linkedLectures: space.linkedLectures ?? [],
+      subpath,
     })
     if (classified === null) {
       return {
@@ -1324,16 +1330,23 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const vaultPath = `${space.directory}/${classified.path}`
     let target: string
     try {
-      target = await resolveVaultPath(root, vaultPath, probe)
-    } catch {
+      // Reuse the same real-space containment as lecture-read: a link inside
+      // this theme may not expose another theme's lecture/note body or anchors.
+      // This is stricter than note-read's vault-only check, so a canvas `ok`
+      // never grants a read the final zones would refuse.
+      target = await resolveSpaceFile(root, space, classified.path)
+    } catch (error) {
+      const missing = error instanceof ClassroomError && error.code === 'lecture-missing'
       return {
         path: classified.path,
         vaultPath,
         kind: classified.kind,
-        status: 'outside',
+        status: missing ? 'missing' : 'outside',
         heading: null,
         blockId: null,
-        message: `文件节点路径经符号链接越出知识文件库，无法打开：${relative}`,
+        message: missing
+          ? `文件不存在或无法访问：${vaultPath}`
+          : `文件节点路径经符号链接越出学习空间，无法打开：${relative}`,
       }
     }
 
@@ -1510,9 +1523,12 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       color: node.color,
       text: node.text,
       file: node.file,
+      subpath: node.subpath,
       url: node.url,
       label: node.label,
-      target: node.type === 'file' && node.file !== null ? await canvasTargetOf(root, space, node.file) : null,
+      target: node.type === 'file' && node.file !== null
+        ? await canvasTargetOf(root, space, node.file, node.subpath)
+        : null,
     })))
 
     return {
