@@ -81,4 +81,3 @@ test('数学块沿用真实块 id 元数据，代码围栏后的 ^id 仍不冒�
   assert.equal(fenced[0].type, 'code')
   assert.equal(fenced[0].blockId, undefined)
 })
-
