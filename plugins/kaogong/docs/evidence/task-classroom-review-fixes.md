@@ -25,6 +25,15 @@
 - 运行中存在既有LearningRoutePanel act警告，不视为浏览器验收通过。
 - 提交前执行 `git merge --no-edit feat/kaogong-task-classroom`，结果Already up to date（859d1b9）。
 
+## 合并后键盘切换补修
+
+- 先合并最新集成tip `9b046e1`（fast-forward）。
+- 复核发现：收起答疑后，鼠标选择答疑会展开，但Arrow/End仅切pane而不展开。
+- 新增页面行为回归：收起答疑→内容→ArrowRight/End选择答疑，断言body展开、同一textarea节点及未发送草稿保留。RED明确失败于 `ArrowRight must expand the native body`（hidden仍true）。
+- 鼠标和键盘统一通过selectPane选择helper，选择conversation同时展开，其他布局/会话生命周期不变。
+- GREEN相关回归：classroom-teacher-session、sdk-classroom、task-session-binding共14/14通过；client官方公开声明typecheck通过。本补修未重跑全量，不把此前160项结果改记为本补修后的全量结果。
+- 不安装、不操作3080或浏览器；真实验收限制仍如下。
+
 ## 仍待真实验收
 
 本次仅源码自动化，不安装、不运行真实模型、不操作3080或浏览器。真实模型流式、审批/问题/Stop、中文输入、真实窄屏尺寸/容器布局与键盘、准确发行包安装、冷启动/多视图仍待做；jsdom与类型检查不替代这些门槛。不宣称规格全部验收或已发布。
