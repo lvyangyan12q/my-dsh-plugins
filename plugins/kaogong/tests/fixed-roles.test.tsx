@@ -187,7 +187,8 @@ test('规划与督学有固定的班主任入口，不暴露角色选择', async
     await ui.click('找班主任讨论安排')
     await ui.settle(undefined, 10)
     assert.deepEqual(ui.ensured, ['class-advisor'], '规划入口固定使用班主任')
-    assert.deepEqual(ui.opened, [['class-advisor', 'role-class-advisor', 1]], '打开的是班主任自己的原生会话')
+    assert.deepEqual(ui.opened, [], '正常讨论不得强制导航原生会话页')
+    assert.ok(document.querySelector('[aria-label="班主任讨论"]'),'班主任讨论保留在插件内')
     assert.deepEqual(roleConfigurators(), [], '固定入口不是角色配置器')
   } finally {
     await ui.unmount()

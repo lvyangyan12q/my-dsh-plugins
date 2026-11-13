@@ -48,7 +48,7 @@ test('owned teaching prepares only persistent references and never calls browser
   const roles={ensure:async(id:string)=>({phase:'ready',sessionId:'same-'+id,revision:3}),open:async(...args:unknown[])=>{calls.push(['open',...args])}}
   const tasks={prepare:async(input:unknown)=>{calls.push(['ordinary',input])},prepareOwned:async(input:unknown)=>{calls.push(['owned',input]);return {id:'prepared'}}}
   await prepareLearningTask({instanceId:'learning-a',roles,tasks} as never,{kind:'lesson',context:{subject:'行测-资料分析',title:'学习目标',limit:5},lessonEvidence:{id:'lesson-a',title:'课堂',source:'browser',content:'untrusted'}} as never,null)
-  assert.deepEqual(calls,[['owned',{roleId:'teacher.data-analysis',kind:'lesson',payload:{lessonId:'lesson-a'}}],['open','teacher.data-analysis','same-teacher.data-analysis',3]])
+  assert.deepEqual(calls,[['owned',{roleId:'teacher.data-analysis',kind:'lesson',payload:{lessonId:'lesson-a'}}]])
   calls.length=0
   await assert.rejects(()=>prepareLearningTask({instanceId:'learning-a',roles,tasks:{prepare:tasks.prepare}} as never,{kind:'review',context:{},result:{roundId:'round-a'}} as never,null),/接口/)
   assert.deepEqual(calls,[],'missing owned lifecycle fails before creating or opening a Session')
@@ -66,10 +66,10 @@ test('owned lesson opens its task Session, while a review keeps the counselor Se
     open:async(taskId:string)=>{taskOpened.push(taskId)},
   }
   await prepareLearningTask({instanceId:'learning-a',roles,tasks} as never,{kind:'lesson',context:{subject:'行测-资料分析',title:'学习目标',limit:5},lessonEvidence:{id:'lesson-a',title:'课堂',source:'browser',content:'untrusted'}} as never,null)
-  assert.deepEqual(taskOpened,['task-a'],'准备课堂任务后打开该任务自己的会话')
+  assert.deepEqual(taskOpened,[],'准备和提交课堂任务不得触发导航')
   assert.deepEqual(opened,[],'不能把角色会话当作任务会话打开')
   await prepareLearningTask({instanceId:'learning-a',roles,tasks:{...tasks,prepareOwned:async()=>({id:'review',sessionId:'role-counselor'})}} as never,{kind:'review',context:{},result:{roundId:'round-a'}} as never,null)
-  assert.deepEqual(opened,[['counselor','role-counselor',3]],'讲评仍使用辅导员角色会话')
+  assert.deepEqual(opened,[],'讲评同样不触发导航')
 })
 
 test('historical counselor view stays readable without becoming a role picker',async()=>{
@@ -89,4 +89,18 @@ test('historical counselor view stays readable without becoming a role picker',a
     assert.deepEqual(opened,[],'历史会话只读取，不重新打开角色或创建替代会话')
     pool.dispose()
   }finally{await act(async()=>root.unmount());globalThis.fetch=oldFetch;restore()}
+})
+
+test('显式教学动作一次准备提交且不导航，unknown重试不提交',async()=>{
+ const {prepareLearningTask}=await import('../src/sdk-classroom.tsx')
+ const calls:string[]=[]
+ const roles={ensure:async()=>({phase:'ready',sessionId:'role',revision:1}),open:async()=>{calls.push('navigate-role')}}
+ let status='prepared'
+ const prepared:unknown[]=[]
+ const tasks={prepareOwned:async(input:unknown)=>{prepared.push(input);return{id:'a',revision:1,status}},submit:async()=>{calls.push('submit');return{id:'a',status:'accepted'}},open:async()=>{calls.push('navigate-task')}}
+ const request={kind:'lesson',context:{subject:'行测-资料分析'},lessonEvidence:{id:'l'},actionId:'click-1'}
+ await prepareLearningTask({roles,tasks,instanceId:'p'} as never,request as never,null,()=>true,'请针对错题补讲')
+ assert.deepEqual(calls,['submit'])
+ assert.deepEqual(prepared,[{roleId:'teacher.data-analysis',kind:'lesson',payload:{lessonId:'l',intent:'请针对错题补讲'},actionId:'click-1'}])
+ status='unknown';await prepareLearningTask({roles,tasks,instanceId:'p'} as never,request as never,null,()=>true,'请针对错题补讲');assert.deepEqual(calls,['submit'])
 })

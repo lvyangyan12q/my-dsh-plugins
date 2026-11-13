@@ -85,13 +85,14 @@ function createServer(options: {tasks: Task[]; delay?: Record<string, number>; c
   return {state, lessons, starts, fetch, created: () => created}
 }
 
-async function mount(options: {tasks: Task[]; delay?: Record<string, number>; current?: unknown; recent?: string[]}) {
+async function mount(options: {tasks: Task[]; delay?: Record<string, number>; current?: unknown; recent?: string[]; notesDraft?: {lessonId:string;notes:string}}) {
   const {dom, restore} = environment()
   const original = globalThis.fetch
   const server = createServer(options)
   globalThis.fetch = server.fetch as typeof fetch
   const profile = 'task-profile-' + (++profileSequence)
   if (options.recent) dom.window.localStorage.setItem('kaogong/recent-task/' + encodeURIComponent(profile), JSON.stringify(options.recent))
+  if(options.notesDraft){const {writeLearnerDraft}=await import('../src/learner-draft.ts');writeLearnerDraft(profile,{version:1,form:false,...options.notesDraft,notesDirty:true})}
   const root = createRoot(document.getElementById('root')!)
   const {SdkClassroom} = await import('../src/sdk-classroom.tsx')
   const {KaogongStateContext, KaogongPresentationContext, KaogongViewStatePool} = await import('../src/view-state.tsx')
@@ -230,4 +231,10 @@ test('过期任务响应不覆盖切换后进入的课堂', async () => {
   } finally {
     await ui.unmount()
   }
+})
+
+test('刷新后的新owner恢复同课dirty总结，不被start返回的服务端笔记覆盖',async()=>{
+ const row=task({id:'dirty-task',title:'增长量比较',status:'in-progress',startedFromRevision:0,lessonId:'dirty-lesson',knowledgePoint:'增长量比较'})
+ const ui=await mount({tasks:[row],notesDraft:{lessonId:'dirty-lesson',notes:'尚未保存的本课总结'}})
+ try{await ui.nav('课堂');assert.equal(ui.pool.forInstance(ui.profile).cell('lesson.notes','').value,'尚未保存的本课总结');assert.equal(ui.pool.forInstance(ui.profile).cell('lesson.notesDirty',false).value,true)}finally{await ui.unmount()}
 })
