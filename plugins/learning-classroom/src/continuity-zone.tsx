@@ -108,6 +108,9 @@ export function ContinuityZone(props: ContinuityZoneProps) {
     return next
   }
   const opOf = (spaceId: string): number => ops.current[spaceId] ?? 0
+  // Epoch of the last summary value applied by a save/reload. A load issued
+  // before that write must not overwrite it with the older version it read.
+  const summarySetOp = useRef<Record<string, number>>({})
 
   useEffect(() => {
     alive.current = true
@@ -147,6 +150,10 @@ export function ContinuityZone(props: ContinuityZoneProps) {
 
     client.readSummary?.(space.id, controller.signal).then(next => {
       if (!current()) return
+      // A save/reload that started after this load already applied a newer
+      // version; the stale read must not roll the summary (and the next edit's
+      // baseline) back to the version it happened to read.
+      if ((summarySetOp.current[space.id] ?? 0) > loadOp) return
       setSummary(next)
       // A learner action after this load started owns the form; do not close an
       // editor they just opened or replace text they are writing.
@@ -307,6 +314,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
         version: submitted.baseVersion,
       })
       if (next === undefined || !alive.current) return
+      summarySetOp.current[target] = myOp
       if (spaceIdRef.current === target) setSummary(next)
       // A newer edit/cancel/save owns the form now. Never delete its text or
       // draft merely because this older write reached the Host.
@@ -357,6 +365,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
       draftStore.remove(target)
       clearDraftRisk(target, summaryFileName)
       setPageRisk(hasNonDurableDrafts())
+      summarySetOp.current[target] = myOp
       setSummary(next)
       const revision = allocateDraftRevision(target, summaryFileName)
       setEdits(prev => ({

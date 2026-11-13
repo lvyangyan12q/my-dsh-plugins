@@ -652,6 +652,42 @@ test('同一主题的阅读位置旧回包不能覆盖新回包', async () => {
   }
 })
 
+test('初始 load 的旧版本回包在草稿保存成功后到达，不回退 summary 版本', async () => {
+  const client = fakeClient({ deferSummaryRead: true })
+  client.summaries.set('space-1', summaryView('space-1', '磁盘 v2 小结', '磁盘 v2 下一步', 'summary-v2'))
+  summaryDrafts.write('space-1', {
+    summary: '恢复的草稿',
+    nextStep: '',
+    baseVersion: 'summary-v2',
+    revision: 5,
+    savedAt: '2026-11-13T00:00:00.000Z',
+  })
+  const ui = await mount(client)
+  try {
+    const editor = ui.document.querySelector('textarea[aria-label="本次小结"]')
+    assert.ok(editor, '草稿在初始 load 完成前就可编辑')
+    assert.equal(editor.value, '恢复的草稿')
+
+    await ui.click(findButton(ui.document, '保存小结'))
+    assert.match(zone(ui.document, '学习接续').textContent, /恢复的草稿/)
+
+    // The initial read was issued before the save and carries the old version.
+    await act(async () => {
+      client.readDeferred[0].resolve(summaryView('space-1', '旧 v1 小结', '旧 v1 下一步', 'summary-v1'))
+    })
+    await settle()
+    assert.doesNotMatch(zone(ui.document, '学习接续').textContent, /旧 v1 小结/, '旧 load 不能回退已保存的新版本')
+
+    await ui.click(findButton(ui.document, '编辑小结'))
+    await ui.click(findButton(ui.document, '保存小结'))
+    const saves = client.calls.filter(call => call.type === 'summary-save')
+    assert.equal(saves.at(-1).version, 'summary:恢复的草稿', '后续编辑使用保存后的新版本')
+    assert.doesNotMatch(ui.text(), /保存小结失败/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
 test('没有实现小结命令的旧客户端仍渲染课堂，不显示假装可保存的接续卡', async () => {
   const client = fakeClient()
   delete client.readSummary
