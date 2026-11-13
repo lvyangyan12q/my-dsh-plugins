@@ -501,6 +501,59 @@ test('用户前缀的同名标题与用户自己的标记行在保存后字节�
   }
 })
 
+function markerText(markdown, kind, side) {
+  const pattern = side === 'start'
+    ? new RegExp(`<!-- learning-classroom:${kind}:[A-Za-z0-9-]+ -->`)
+    : new RegExp(`<!-- /learning-classroom:${kind}:[A-Za-z0-9-]+ -->`)
+  return pattern.exec(markdown)[0]
+}
+
+test('四个 marker 同行文字、emoji 与 CRLF 经 Host 保存仍完整保留', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const summaryFile = join(fixture.vault, space.directory, '学习小结.md')
+    const first = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '小结正文',
+      nextStep: '下一步正文',
+      version: null,
+    })
+    assert.equal(first.status, 200)
+
+    let edited = (await readFile(summaryFile, 'utf8')).replaceAll('\n', '\r\n')
+    edited = edited.replace(markerText(edited, 'summary', 'start'), '前言😀' + markerText(edited, 'summary', 'start'))
+    edited = edited.replace(markerText(edited, 'summary', 'end'), markerText(edited, 'summary', 'end') + '后记🙂')
+    edited = edited.replace(markerText(edited, 'next', 'start'), '下一步前🚀' + markerText(edited, 'next', 'start'))
+    edited = edited.replace(markerText(edited, 'next', 'end'), markerText(edited, 'next', 'end') + '下一步后🎯')
+    await writeFile(summaryFile, edited, 'utf8')
+
+    const read = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(read.body.summary, '小结正文')
+    assert.equal(read.body.nextStep, '下一步正文')
+    for (const text of ['前言😀', '后记🙂', '下一步前🚀', '下一步后🎯']) {
+      assert.ok(read.body.extra.includes(text), `读回应保留 ${text}：${read.body.extra}`)
+    }
+
+    const saved = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: '新小结正文',
+      nextStep: read.body.nextStep,
+      version: read.body.version,
+    })
+    assert.equal(saved.status, 200)
+    const disk = await readFile(summaryFile, 'utf8')
+    assert.match(disk, /新小结正文/)
+    for (const text of ['前言😀', '后记🙂', '下一步前🚀', '下一步后🎯']) {
+      assert.ok(disk.includes(text), `保存后应保留 ${text}`)
+    }
+  } finally {
+    await fixture.close()
+  }
+})
+
 test('小结保存沿用 HTTP 边界：未知字段、超长内容与不可用空间都被明确拒绝', async () => {
   const fixture = await classroomFixture()
   try {

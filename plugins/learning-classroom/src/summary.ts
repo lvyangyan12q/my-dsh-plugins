@@ -99,55 +99,40 @@ export function composeSummary(input: SummaryContent): string {
   return lines.join('\n')
 }
 
-function lineIndexOf(text: string, offset: number): number {
-  let line = 0
-  const end = Math.max(0, Math.min(offset, text.length))
-  for (let index = 0; index < end; index += 1) {
-    if (text.charCodeAt(index) === 10) line += 1
-  }
-  return line
-}
-
 /**
- * Extra text around the framing markers. Exclusion is positional: only the
- * exact marker lines and the five-line frame that compose emits
- * (`# 学习小结`, blank, `## 本次小结`, blank, marker) are removed. Everything
- * else — a user's prefix heading with the same name, a marker-looking comment,
- * appended sections — keeps its bytes.
+ * Extra text around the framing markers. Exclusion is by character span, never
+ * by whole line: the marker/body ranges are cut exactly, and the two frame
+ * headings are removed only when they sit immediately before their start marker
+ * (the layout compose emits). User text on the same line as any marker, emoji
+ * included, keeps its bytes; a malformed layout simply leaves the headings in
+ * `extra` rather than deleting neighbouring text.
  */
 function extraAroundMarkers(
   normalized: string,
   summaryMatch: RegExpExecArray,
   nextMatch: RegExpExecArray | null,
 ): string {
-  const lines = normalized.split('\n')
-  const excluded = new Set<number>()
-  const excludeRange = (match: RegExpExecArray): void => {
-    const start = lineIndexOf(normalized, match.index)
-    const end = lineIndexOf(normalized, match.index + match[0].length - 1)
-    for (let index = start; index <= end; index += 1) excluded.add(index)
-  }
-  excludeRange(summaryMatch)
-  if (nextMatch !== null) excludeRange(nextMatch)
+  const excluded: Array<[number, number]> = [
+    [summaryMatch.index, summaryMatch.index + summaryMatch[0].length],
+  ]
+  if (nextMatch !== null) excluded.push([nextMatch.index, nextMatch.index + nextMatch[0].length])
 
-  const summaryStart = lineIndexOf(normalized, summaryMatch.index)
-  if (lines[summaryStart - 1]?.trim() === ''
-    && lines[summaryStart - 2]?.trim() === `## ${summarySectionTitle}`
-    && lines[summaryStart - 3]?.trim() === ''
-    && lines[summaryStart - 4]?.trim() === `# ${summaryTitle}`) {
-    excluded.add(summaryStart - 2)
-    excluded.add(summaryStart - 4)
+  const frameBefore = (end: number, frame: string): void => {
+    const start = end - frame.length
+    if (start >= 0 && normalized.slice(start, end) === frame) excluded.push([start, end])
   }
-  if (nextMatch !== null) {
-    const nextStart = lineIndexOf(normalized, nextMatch.index)
-    if (lines[nextStart - 1]?.trim() === ''
-      && lines[nextStart - 2]?.trim() === `## ${nextStepSectionTitle}`
-      && lines[nextStart - 3]?.trim() === '') {
-      excluded.add(nextStart - 2)
-    }
-  }
+  frameBefore(summaryMatch.index, `# ${summaryTitle}\n\n## ${summarySectionTitle}\n\n`)
+  if (nextMatch !== null) frameBefore(nextMatch.index, `## ${nextStepSectionTitle}\n\n`)
 
-  return lines.filter((_, index) => !excluded.has(index)).join('\n').trim()
+  excluded.sort((left, right) => left[0] - right[0])
+  let result = ''
+  let cursor = 0
+  for (const [start, end] of excluded) {
+    if (start > cursor) result += normalized.slice(cursor, start)
+    cursor = Math.max(cursor, end)
+  }
+  result += normalized.slice(cursor)
+  return result.trim()
 }
 
 /** Legacy files have no markers; only a leading framework title is ours. */
