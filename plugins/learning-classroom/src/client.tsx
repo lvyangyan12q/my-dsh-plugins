@@ -10,6 +10,8 @@ export type {
 } from './session-zone.tsx'
 export { LectureZone } from './lecture-zone.tsx'
 export type { LectureZoneProps } from './lecture-zone.tsx'
+export { ContinuityZone } from './continuity-zone.tsx'
+export type { ContinuityZoneProps } from './continuity-zone.tsx'
 export { NotesZone } from './notes-zone.tsx'
 export type { NotesZoneProps, NoteOpenRequest, NoteSaveStatus } from './notes-zone.tsx'
 export { CanvasZone, obsidianOpenUrl } from './canvas-zone.tsx'
@@ -51,4 +53,7 @@ export type {
   NoteSaveCommand,
   NoteSaveView,
   NoteSummaryView,
+  ReadingPositionView,
+  SummarySaveCommand,
+  SummaryView,
 } from './contract.ts'

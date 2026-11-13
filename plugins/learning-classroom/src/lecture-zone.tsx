@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent as ReactUIEvent } from 'react'
 import { AnnotationAction } from './annotation-action.tsx'
 import type { AnnotationSourceInput } from './annotation-flow.ts'
 import { ClassroomClientError, type ClassroomClient } from './classroom-client.ts'
@@ -7,10 +7,12 @@ import type {
   LectureCandidatesView,
   LectureListView,
   LectureReadView,
+  ReadingPositionView,
   TopicView,
 } from './contract.ts'
 import { buildExperimentSrcdoc } from './experiment-runtime.ts'
 import type { ExperimentSpec } from './experiment-spec.ts'
+import { ContinuityZone } from './continuity-zone.tsx'
 import { groupCourseLectures, resolveLectureHref } from './lectures.ts'
 import { scrollToFragment, type LinkFragment } from './fragments.ts'
 import { parseInline, parseMarkdown, type Block } from './markdown.ts'
@@ -29,6 +31,8 @@ export interface LectureZoneProps {
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
   /** Adds the selected passage or the current lecture to the native teacher draft. */
   askTeacher?: AskTeacher
+  /** Debounce before a scroll offset is written as navigation state; tests shorten it. */
+  positionDebounceMs?: number
 }
 
 /** One-shot request to open a lecture; a new token re-opens the same path. */
@@ -395,7 +399,7 @@ function LectureReader(props: {
  * with React elements, so lecture HTML never reaches the DOM.
  */
 export function LectureZone(props: LectureZoneProps) {
-  const { client, space, spaces, currentSpaceId, busy, onOpenSpace } = props
+  const { client, space, spaces, currentSpaceId, busy, onOpenSpace, positionDebounceMs = 500 } = props
   const spaceId = space.id
   const canTopic = typeof client.readTopic === 'function' && typeof client.saveTopicGoal === 'function'
   const canLink = typeof client.listLectureCandidates === 'function'
@@ -428,6 +432,20 @@ export function LectureZone(props: LectureZoneProps) {
   const [returnTo, setReturnTo] = useState<{ path: string; title: string; scrollTop: number } | null>(null)
   const paneRef = useRef<HTMLElement | null>(null)
   const pendingScroll = useRef<number | null>(null)
+  // Positions saved by this reader, keyed by space: a late response for the
+  // previous theme can update only that theme's entry. The latest saved value is
+  // newer than the space prop until the whole view is re-read, so it also drives
+  // the continuity card and the restore action immediately.
+  const [positions, setPositions] = useState<Record<string, ReadingPositionView>>({})
+  const effectivePosition = positions[spaceId] ?? space.readingPosition ?? { path: null, scrollTop: 0 }
+  const readingPositionRef = useRef(effectivePosition)
+  readingPositionRef.current = effectivePosition
+  const positionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedPosition = useRef('')
+  // Per-space request sequence: two debounced writes can resolve out of order,
+  // and an older response must not move the card/restore offset backwards.
+  const positionSeq = useRef<Record<string, number>>({})
+  const positionApplied = useRef<Record<string, number>>({})
   const alive = useRef(true)
   const generation = useRef(0)
   const handledRequest = useRef<number | null>(null)
@@ -512,6 +530,10 @@ export function LectureZone(props: LectureZoneProps) {
     setLinking(null)
     setReturnTo(null)
     pendingScroll.current = null
+    if (positionTimer.current !== null) {
+      clearTimeout(positionTimer.current)
+      positionTimer.current = null
+    }
 
     const loadToken = (topicLoadTokens.current[spaceId] ?? 0) + 1
     topicLoadTokens.current[spaceId] = loadToken
@@ -526,7 +548,12 @@ export function LectureZone(props: LectureZoneProps) {
       setReader({ status: 'loading', path: list.selectedPath })
       try {
         const doc = await client.readLecture(spaceId, list.selectedPath, controller.signal)
-        if (current()) setReader({ status: 'ready', doc })
+        if (!current()) return
+        // Cold start restores the saved offset only when the same course file is
+        // opened again; a renamed or replaced lecture starts at the top.
+        const stored = readingPositionRef.current
+        if (stored.path === doc.path && stored.scrollTop > 0) pendingScroll.current = stored.scrollTop
+        setReader({ status: 'ready', doc })
       } catch (error) {
         if (!current()) return
         setSelected(null)
@@ -626,12 +653,68 @@ export function LectureZone(props: LectureZoneProps) {
 
   // Restore the captured scroll only after the returned lecture is on screen.
   useEffect(() => {
-    if (reader.status !== 'ready' || reader.doc.kind !== 'markdown') return
+    if (reader.status !== 'ready') return
     if (pendingScroll.current === null) return
     const top = pendingScroll.current
     pendingScroll.current = null
     if (paneRef.current !== null) paneRef.current.scrollTop = top
+    // Restoring the same offset must not immediately write it back.
+    savedPosition.current = `${spaceId}:${reader.doc.path}:${Math.round(top)}`
   }, [reader])
+
+  // A pending debounce must not fire after leaving the zone.
+  useEffect(() => () => {
+    if (positionTimer.current !== null) {
+      clearTimeout(positionTimer.current)
+      positionTimer.current = null
+    }
+  }, [])
+
+  /**
+   * "Back to where I was": scroll an already-open lecture, or reopen the stored
+   * file and restore its offset once it renders. A stored path that no longer
+   * opens is reported by the normal lecture error path.
+   */
+  const restoreReadingPosition = (path: string): void => {
+    const top = readingPositionRef.current.path === path ? readingPositionRef.current.scrollTop : 0
+    if (reader.status === 'ready' && reader.doc.path === path) {
+      if (paneRef.current !== null) paneRef.current.scrollTop = top
+      savedPosition.current = `${spaceId}:${path}:${Math.round(top)}`
+      return
+    }
+    pendingScroll.current = top
+    void select(path, undefined, { keepScroll: true })
+  }
+
+  /** Persist a debounced reading offset for the current course file. */
+  const savePositionSoon = (path: string, scrollTop: number): void => {
+    if (typeof client.saveReadingPosition !== 'function') return
+    if (positionTimer.current !== null) clearTimeout(positionTimer.current)
+    const requestSpaceId = spaceId
+    positionTimer.current = setTimeout(() => {
+      positionTimer.current = null
+      if (!alive.current) return
+      const key = `${requestSpaceId}:${path}:${scrollTop}`
+      if (savedPosition.current === key) return
+      savedPosition.current = key
+      const seq = (positionSeq.current[requestSpaceId] ?? 0) + 1
+      positionSeq.current[requestSpaceId] = seq
+      void client.saveReadingPosition?.({ action: 'position-save', spaceId: requestSpaceId, path, scrollTop })
+        ?.then(next => {
+          if (!alive.current || next === undefined || next.readingPosition === undefined) return
+          if (seq < (positionApplied.current[requestSpaceId] ?? 0)) return
+          positionApplied.current[requestSpaceId] = seq
+          // Attribute by the space that asked: a late A response must not move B.
+          setPositions(prev => ({ ...prev, [requestSpaceId]: next.readingPosition }))
+        })
+        ?.catch(() => undefined)
+    }, positionDebounceMs)
+  }
+
+  const onPaneScroll = (event: ReactUIEvent<HTMLElement>): void => {
+    if (reader.status !== 'ready') return
+    savePositionSoon(reader.doc.path, Math.round(event.currentTarget.scrollTop))
+  }
 
   const reload = () => setReloadKey(key => key + 1)
   const list = listState.status === 'ready' ? listState.list : null
@@ -957,9 +1040,20 @@ export function LectureZone(props: LectureZoneProps) {
         )}
       </aside>
 
-      <section className="lc-pane lc-lectures" aria-label="讲义" ref={paneRef}>
+      <section className="lc-pane lc-lectures" aria-label="讲义" ref={paneRef} onScroll={onPaneScroll}>
         <style>{lectureStyles}</style>
         <h2>讲义</h2>
+
+        <ContinuityZone
+          client={client}
+          space={space}
+          busy={busy}
+          goal={topic?.goal ?? ''}
+          lectures={list?.lectures ?? []}
+          currentPath={reader.status === 'ready' ? reader.doc.path : null}
+          readingPosition={effectivePosition}
+          onRestorePosition={restoreReadingPosition}
+        />
 
         {notice !== '' && (
           <div className="lc-alert" role="alert">

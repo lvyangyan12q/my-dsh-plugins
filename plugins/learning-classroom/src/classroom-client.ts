@@ -1,6 +1,7 @@
 import type {
   CanvasReadView,
   ClassroomCommand,
+  ClassroomSpaceView,
   ClassroomView,
   ClassroomViewCommand,
   LayoutSaveCommand,
@@ -14,6 +15,10 @@ import type {
   NoteListView,
   NoteSaveCommand,
   NoteSaveView,
+  NoteSelectCommand,
+  PositionSaveCommand,
+  SummarySaveCommand,
+  SummaryView,
   TopicSaveCommand,
   TopicView,
 } from './contract.ts'
@@ -51,6 +56,16 @@ export interface ClassroomClient {
    */
   readTopic?(spaceId: string, signal?: AbortSignal): Promise<TopicView>
   saveTopicGoal?(input: TopicSaveCommand, signal?: AbortSignal): Promise<TopicView>
+  /**
+   * Explicit learning summary and next step. Optional so an older injected
+   * client simply hides the continuity card instead of pretending it saved.
+   */
+  readSummary?(spaceId: string, signal?: AbortSignal): Promise<SummaryView>
+  saveSummary?(input: SummarySaveCommand, signal?: AbortSignal): Promise<SummaryView>
+  /** Persist the last reading offset for one course file (navigation state only). */
+  saveReadingPosition?(input: PositionSaveCommand, signal?: AbortSignal): Promise<ClassroomSpaceView>
+  /** Remember the note file the learner opened last (navigation state only). */
+  selectNote?(input: NoteSelectCommand, signal?: AbortSignal): Promise<ClassroomSpaceView>
   listLectureCandidates?(spaceId: string, signal?: AbortSignal): Promise<LectureCandidatesView>
   linkLecture?(spaceId: string, path: string, signal?: AbortSignal): Promise<LectureListView>
   unlinkLecture?(spaceId: string, path: string, signal?: AbortSignal): Promise<LectureListView>
@@ -94,6 +109,10 @@ export function createClassroomClient(fetchImpl: FetchLike = (input, init) => fe
     readLecture: (spaceId, path, signal) => post<LectureReadView>({ action: 'lecture-read', spaceId, path }, signal),
     readTopic: (spaceId, signal) => post<TopicView>({ action: 'topic-read', spaceId }, signal),
     saveTopicGoal: (input, signal) => post<TopicView>(input, signal),
+    readSummary: (spaceId, signal) => post<SummaryView>({ action: 'summary-read', spaceId }, signal),
+    saveSummary: (input, signal) => post<SummaryView>(input, signal),
+    saveReadingPosition: (input, signal) => post<ClassroomSpaceView>(input, signal),
+    selectNote: (input, signal) => post<ClassroomSpaceView>(input, signal),
     listLectureCandidates: (spaceId, signal) => post<LectureCandidatesView>({ action: 'lecture-candidates', spaceId }, signal),
     linkLecture: (spaceId, path, signal) => post<LectureListView>({ action: 'lecture-link', spaceId, path }, signal),
     unlinkLecture: (spaceId, path, signal) => post<LectureListView>({ action: 'lecture-unlink', spaceId, path }, signal),

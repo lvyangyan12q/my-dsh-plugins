@@ -25,6 +25,7 @@ import type {
   NoteDocumentView,
   NoteListView,
   NoteSaveView,
+  SummaryView,
   TopicView,
 } from './contract.ts'
 import { ClassroomError } from './errors.ts'
@@ -54,7 +55,7 @@ import { defaultLayout, normalizeLayout } from './layout.ts'
 import { buildLinkIndex, markdownBlockIds, markdownHeadings, resolveVaultLink } from './link-index.ts'
 import { headingKey } from './links.ts'
 import { listNotes, readNote, saveNote } from './notes-io.ts'
-import { maxNoteBytes } from './notes.ts'
+import { maxNoteBytes, noteRelativePath } from './notes.ts'
 import {
   defaultNoteContent,
   defaultNotePath,
@@ -65,6 +66,13 @@ import {
   topicGoalFileName,
 } from './spaces.ts'
 import { layoutSchema, type ClassroomState, type ClassroomStateStore, type ClassroomSpace } from './state.ts'
+import {
+  composeSummary,
+  maxSummaryBytes,
+  maxSummaryFileBytes,
+  parseSummary,
+  summaryFileName,
+} from './summary.ts'
 import { inspectVaultRoot, nodeVaultProbe, pathInside, resolveVaultPath, vaultRelativePath, type VaultProbe } from './vault.ts'
 
 export { type ClassroomSpaceView, type ClassroomVaultView, type ClassroomView } from './contract.ts'
@@ -94,7 +102,8 @@ const generationStagingSuffix = '.learning-classroom.tmp'
 const knownActions = [
   'vault-choose', 'space-create', 'space-open', 'session-open',
   'lecture-list', 'lecture-read', 'lecture-candidates', 'lecture-link', 'lecture-unlink',
-  'topic-read', 'topic-save',
+  'topic-read', 'topic-save', 'summary-read', 'summary-save',
+  'position-save', 'note-select',
   'note-list', 'note-read', 'note-save', 'canvas-read', 'layout-save',
   'link-resolve',
 ] as const
@@ -123,6 +132,25 @@ const commandSchema = z.discriminatedUnion('action', [
     spaceId: z.string().min(1).max(64),
     goal: z.string().max(maxTopicBytes),
     version: z.string().min(1).max(128).nullable(),
+  }).strict(),
+  z.object({ action: z.literal('summary-read'), spaceId: z.string().min(1).max(64) }).strict(),
+  z.object({
+    action: z.literal('summary-save'),
+    spaceId: z.string().min(1).max(64),
+    summary: z.string().max(maxSummaryBytes),
+    nextStep: z.string().max(maxSummaryBytes),
+    version: z.string().min(1).max(128).nullable(),
+  }).strict(),
+  z.object({
+    action: z.literal('position-save'),
+    spaceId: z.string().min(1).max(64),
+    path: z.string().min(1).max(400),
+    scrollTop: z.number().finite().min(0).max(10_000_000),
+  }).strict(),
+  z.object({
+    action: z.literal('note-select'),
+    spaceId: z.string().min(1).max(64),
+    path: z.string().min(1).max(1024),
   }).strict(),
   z.object({ action: z.literal('layout-save'), spaceId: z.string().min(1).max(64), layout: layoutSchema }).strict(),
   z.object({ action: z.literal('note-list'), spaceId: z.string().min(1).max(64) }).strict(),
@@ -213,6 +241,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       linkedLectures: space.linkedLectures ?? [],
       sessionId: space.sessionId ?? null,
       layout: normalizeLayout(space.layout),
+      readingPosition: space.readingPosition ?? { path: null, scrollTop: 0 },
     }))
 
   const view = async (state: ClassroomState = store.read()): Promise<ClassroomView> => {
@@ -313,6 +342,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       lecturePath: null,
       linkedLectures: [],
       layout: defaultLayout(),
+      readingPosition: { path: null, scrollTop: 0 },
     }
     const next: ClassroomState = { ...state, spaces: [...state.spaces, space], currentSpaceId: space.id }
     try {
@@ -902,6 +932,136 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
    * classroom read the same bytes. Reading a goal whose file was deleted is a
    * recoverable state, not an error: the learner can edit and save it again.
    */
+  /**
+   * Error identity of one learner-authored Markdown knowledge file (the topic
+   * goal and the session summary share the same read/version/atomic-write
+   * boundary, but report their own codes).
+   */
+  interface KnowledgeFileCodes {
+    unavailable: string
+    readFailed: string
+    tooLarge: string
+    saveFailed: string
+    conflict: string
+    label: string
+  }
+
+  const topicFileCodes: KnowledgeFileCodes = {
+    unavailable: 'topic-unavailable',
+    readFailed: 'topic-read-failed',
+    tooLarge: 'topic-too-large',
+    saveFailed: 'topic-save-failed',
+    conflict: 'topic-conflict',
+    label: '学习目标',
+  }
+
+  const summaryFileCodes: KnowledgeFileCodes = {
+    unavailable: 'summary-unavailable',
+    readFailed: 'summary-read-failed',
+    tooLarge: 'summary-too-large',
+    saveFailed: 'summary-save-failed',
+    conflict: 'summary-conflict',
+    label: '学习小结',
+  }
+
+  /**
+   * Read one knowledge file under an explicit type and size bound. The handle is
+   * checked with fstat before any content is read, and at most the stat size is
+   * read, so a directory, device or growing file is refused or bounded instead of
+   * being read without limit. Returns undefined when the file does not exist.
+   */
+  const readKnowledgeFile = async (
+    target: string,
+    relative: string,
+    codes: KnowledgeFileCodes,
+    limit: number,
+  ): Promise<{ content: string; updatedAt: string } | undefined> => {
+    let handle
+    try {
+      handle = await open(target, 'r')
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code === 'ENOENT') return undefined
+      if (code === 'EISDIR' || code === 'EPERM' || code === 'EACCES') {
+        throw new ClassroomError(codes.unavailable, `${codes.label}路径不是可读文件：${relative}`, 409)
+      }
+      throw new ClassroomError(codes.readFailed, `${codes.label}：无法打开当前文件（${relative}）`, 409)
+    }
+    try {
+      const info = await handle.stat()
+      if (!info.isFile()) {
+        throw new ClassroomError(codes.unavailable, `${codes.label}路径不是文件：${relative}`, 409)
+      }
+      if (info.size > limit) {
+        throw new ClassroomError(codes.tooLarge, `${codes.label}文件过大（超过 ${Math.round(limit / 1024)} KB）：${relative}`, 413)
+      }
+      const buffer = Buffer.alloc(info.size)
+      let offset = 0
+      while (offset < buffer.length) {
+        const { bytesRead } = await handle.read(buffer, offset, buffer.length - offset, offset)
+        if (bytesRead === 0) break
+        offset += bytesRead
+      }
+      return { content: buffer.subarray(0, offset).toString('utf8'), updatedAt: info.mtime.toISOString() }
+    } catch (error) {
+      if (error instanceof ClassroomError) throw error
+      throw new ClassroomError(codes.readFailed, `${codes.label}：无法读取当前文件（${relative}）`, 409)
+    } finally {
+      await handle.close()
+    }
+  }
+
+  /**
+   * Save a knowledge file atomically after an explicit version check. The
+   * version is the hash of the bytes the learner read, so an edit made in
+   * Obsidian is not silently overwritten; the UI keeps the draft and offers a
+   * reload. The target path is re-resolved through the vault boundary first.
+   */
+  const saveKnowledgeFile = async (
+    root: string,
+    space: ClassroomSpace,
+    fileName: string,
+    content: string,
+    version: string | null,
+    codes: KnowledgeFileCodes,
+    limit: number,
+  ): Promise<{ updatedAt: string }> => {
+    if (Buffer.byteLength(content, 'utf8') > limit) {
+      throw new ClassroomError(codes.tooLarge, `${codes.label}超过 ${Math.round(limit / 1024)} KB 上限。`, 413)
+    }
+    const relative = `${space.directory}/${fileName}`
+    const target = await resolveVaultPath(root, relative, probe)
+    const current = (await readKnowledgeFile(target, relative, codes, limit))?.content
+    if (current === undefined && version !== null) {
+      throw new ClassroomError(codes.conflict, `${codes.label}文件已被外部删除，保存已被拒绝。请重新加载后再保存。`, 409)
+    }
+    if (current !== undefined && (version === null || contentVersion(current) !== version)) {
+      throw new ClassroomError(codes.conflict, `${codes.label}文件已被外部修改，保存已被拒绝。请重新加载后再保存。`, 409)
+    }
+
+    const directory = dirname(target)
+    let directoryInfo
+    try {
+      directoryInfo = await stat(directory)
+    } catch {
+      throw new ClassroomError(codes.saveFailed, `保存${codes.label}失败：学习空间文件夹不存在（${space.directory}）。`, 409)
+    }
+    if (!directoryInfo.isDirectory()) {
+      throw new ClassroomError(codes.saveFailed, `保存${codes.label}失败：学习空间路径不是文件夹（${space.directory}）。`, 409)
+    }
+
+    const staging = join(directory, `.${fileName}.${randomUUID()}.tmp`)
+    try {
+      await writeFile(staging, content, { encoding: 'utf8', flag: 'wx' })
+      await rename(staging, target)
+    } catch (error) {
+      await rm(staging, { force: true }).catch(() => undefined)
+      throw new ClassroomError(codes.saveFailed, `保存${codes.label}失败：${relative}（${error instanceof Error ? error.message : '未知原因'}）`, 409)
+    }
+    const saved = await stat(target).catch(() => undefined)
+    return { updatedAt: saved?.mtime.toISOString() ?? new Date().toISOString() }
+  }
+
   const readTopic = (spaceId: string): Promise<TopicView> => enqueue(async () => {
     const state = store.read()
     const root = await requireVault(state)
@@ -910,7 +1070,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const relative = `${space.directory}/${topicGoalFileName}`
     const target = await resolveVaultPath(root, relative, probe)
 
-    const file = await readBoundedTopicFile(target, relative, { code: 'topic-read-failed', label: '读取学习目标失败' })
+    const file = await readKnowledgeFile(target, relative, topicFileCodes, maxTopicBytes)
     if (file === undefined) {
       return {
         spaceId: space.id,
@@ -933,108 +1093,147 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     }
   })
 
-  /**
-   * Read the goal file under an explicit type and size bound. The handle is
-   * checked with fstat before any content is read, and at most the stat size is
-   * read, so a directory, device or growing file is refused or bounded instead of
-   * being read without limit. Returns undefined when the file does not exist.
-   */
-  const readBoundedTopicFile = async (
-    target: string,
-    relative: string,
-    failure: { code: string; label: string },
-  ): Promise<{ content: string; updatedAt: string } | undefined> => {
-    let handle
-    try {
-      handle = await open(target, 'r')
-    } catch (error) {
-      const code = (error as NodeJS.ErrnoException).code
-      if (code === 'ENOENT') return undefined
-      if (code === 'EISDIR' || code === 'EPERM' || code === 'EACCES') {
-        throw new ClassroomError('topic-unavailable', `学习目标路径不是可读文件：${relative}`, 409)
-      }
-      throw new ClassroomError(failure.code, `${failure.label}：无法打开当前文件（${relative}）`, 409)
-    }
-    try {
-      const info = await handle.stat()
-      if (!info.isFile()) {
-        throw new ClassroomError('topic-unavailable', `学习目标路径不是文件：${relative}`, 409)
-      }
-      if (info.size > maxTopicBytes) {
-        throw new ClassroomError('topic-too-large', `学习目标文件过大（超过 ${Math.round(maxTopicBytes / 1024)} KB）：${relative}`, 413)
-      }
-      const buffer = Buffer.alloc(info.size)
-      let offset = 0
-      while (offset < buffer.length) {
-        const { bytesRead } = await handle.read(buffer, offset, buffer.length - offset, offset)
-        if (bytesRead === 0) break
-        offset += bytesRead
-      }
-      return { content: buffer.subarray(0, offset).toString('utf8'), updatedAt: info.mtime.toISOString() }
-    } catch (error) {
-      if (error instanceof ClassroomError) throw error
-      throw new ClassroomError(failure.code, `${failure.label}：无法读取当前文件（${relative}）`, 409)
-    } finally {
-      await handle.close()
-    }
-  }
-
-  /**
-   * Save the goal atomically after an explicit version check. The version is the
-   * hash of the text the learner read, so an edit made in Obsidian is not
-   * silently overwritten; the UI keeps the draft and offers a reload.
-   */
   const saveTopic = (spaceId: string, goal: string, version: string | null): Promise<TopicView> => enqueue(async () => {
     const state = store.read()
     const root = await requireVault(state)
     const space = spaceOf(state, spaceId)
     await spaceFolderOf(root, space)
-    if (Buffer.byteLength(goal, 'utf8') > maxTopicBytes) {
-      throw new ClassroomError('topic-too-large', `学习目标超过 ${Math.round(maxTopicBytes / 1024)} KB 上限。`, 413)
-    }
-    const relative = `${space.directory}/${topicGoalFileName}`
-    const target = await resolveVaultPath(root, relative, probe)
-
-    const current = (await readBoundedTopicFile(target, relative, {
-      code: 'topic-save-failed',
-      label: '保存学习目标失败',
-    }))?.content
-    if (current === undefined && version !== null) {
-      throw new ClassroomError('topic-conflict', '学习目标文件已被外部删除，保存已被拒绝。请重新加载后再保存。', 409)
-    }
-    if (current !== undefined && (version === null || contentVersion(current) !== version)) {
-      throw new ClassroomError('topic-conflict', '学习目标文件已被外部修改，保存已被拒绝。请重新加载后再保存。', 409)
-    }
-
-    const directory = dirname(target)
-    let directoryInfo
-    try {
-      directoryInfo = await stat(directory)
-    } catch {
-      throw new ClassroomError('topic-save-failed', `保存学习目标失败：学习空间文件夹不存在（${space.directory}）。`, 409)
-    }
-    if (!directoryInfo.isDirectory()) {
-      throw new ClassroomError('topic-save-failed', `保存学习目标失败：学习空间路径不是文件夹（${space.directory}）。`, 409)
-    }
-
-    const staging = join(directory, `.${topicGoalFileName}.${randomUUID()}.tmp`)
-    try {
-      await writeFile(staging, goal, { encoding: 'utf8', flag: 'wx' })
-      await rename(staging, target)
-    } catch (error) {
-      await rm(staging, { force: true }).catch(() => undefined)
-      throw new ClassroomError('topic-save-failed', `保存学习目标失败：${relative}（${error instanceof Error ? error.message : '未知原因'}）`, 409)
-    }
-    const saved = await stat(target).catch(() => undefined)
+    const saved = await saveKnowledgeFile(root, space, topicGoalFileName, goal, version, topicFileCodes, maxTopicBytes)
     return {
       spaceId: space.id,
       path: topicGoalFileName,
       title: space.title,
       goal,
       version: contentVersion(goal),
-      updatedAt: saved?.mtime.toISOString() ?? new Date().toISOString(),
+      updatedAt: saved.updatedAt,
       fileMissing: false,
     }
+  })
+
+  /**
+   * The learner's explicit summary and next step. Both are sections of one
+   * ordinary Markdown file; the classroom never turns them into a mastery
+   * judgement or a review schedule.
+   */
+  const readSummary = (spaceId: string): Promise<SummaryView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    const relative = `${space.directory}/${summaryFileName}`
+    const target = await resolveVaultPath(root, relative, probe)
+
+    const file = await readKnowledgeFile(target, relative, summaryFileCodes, maxSummaryFileBytes)
+    if (file === undefined) {
+      return {
+        spaceId: space.id,
+        path: summaryFileName,
+        summary: '',
+        nextStep: '',
+        extra: '',
+        version: null,
+        updatedAt: null,
+        fileMissing: true,
+      }
+    }
+    const parsed = parseSummary(file.content)
+    return {
+      spaceId: space.id,
+      path: summaryFileName,
+      summary: parsed.summary,
+      nextStep: parsed.nextStep,
+      extra: parsed.extra ?? '',
+      version: contentVersion(file.content),
+      updatedAt: file.updatedAt,
+      fileMissing: false,
+    }
+  })
+
+  const saveSummary = (spaceId: string, summary: string, nextStep: string, version: string | null): Promise<SummaryView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    // Text outside the two plugin-owned sections belongs to the learner. Read it
+    // from the version being replaced and re-emit it, so saving the summary can
+    // never delete an appendix the learner added in Obsidian.
+    const relative = `${space.directory}/${summaryFileName}`
+    const target = await resolveVaultPath(root, relative, probe)
+    const current = await readKnowledgeFile(target, relative, summaryFileCodes, maxSummaryFileBytes)
+    const extra = current === undefined ? '' : parseSummary(current.content).extra ?? ''
+    const content = composeSummary({ summary, nextStep, extra })
+    const saved = await saveKnowledgeFile(root, space, summaryFileName, content, version, summaryFileCodes, maxSummaryFileBytes)
+    return {
+      spaceId: space.id,
+      path: summaryFileName,
+      summary: summary.trim(),
+      nextStep: nextStep.trim(),
+      extra,
+      version: contentVersion(content),
+      updatedAt: saved.updatedAt,
+      fileMissing: false,
+    }
+  })
+
+  /**
+   * Persist the last reading position of one course file. This is navigation
+   * state only: the lecture body stays in the vault. The path is validated as an
+   * openable course file so a stale or forged path cannot enter the state.
+   */
+  const saveReadingPosition = (spaceId: string, inputPath: string, scrollTop: number): Promise<ClassroomSpaceView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    const { relative } = courseFileOf(space, inputPath)
+    const top = Math.min(10_000_000, Math.max(0, Math.round(scrollTop)))
+    if (space.readingPosition.path === relative && space.readingPosition.scrollTop === top) {
+      return spaceViews(root, [space])[0]
+    }
+    const nextSpace: ClassroomSpace = { ...space, readingPosition: { path: relative, scrollTop: top } }
+    const next: ClassroomState = {
+      ...state,
+      spaces: state.spaces.map(row => (row.id === space.id ? nextSpace : row)),
+    }
+    await store.write(next)
+    return spaceViews(root, [nextSpace])[0]
+  })
+
+  /**
+   * Remember which note file the learner opened last. The note body stays in the
+   * vault; only the selection is navigation state. The file must exist inside
+   * the space's `笔记/` folder, so a deleted note is never restored silently.
+   */
+  const selectNote = (spaceId: string, inputPath: string): Promise<ClassroomSpaceView> => enqueue(async () => {
+    const state = store.read()
+    const root = await requireVault(state)
+    const space = spaceOf(state, spaceId)
+    await spaceFolderOf(root, space)
+    let relative: string
+    try {
+      relative = noteRelativePath(inputPath)
+    } catch (error) {
+      if (error instanceof ClassroomError) throw error
+      throw new ClassroomError('note-path-invalid', `笔记路径不合法：${inputPath}`)
+    }
+    const target = await resolveVaultPath(root, `${space.directory}/${relative}`, probe)
+    let info
+    try {
+      info = await stat(target)
+    } catch {
+      throw new ClassroomError('note-not-found', `笔记文件不存在或无法访问：${relative}`, 404)
+    }
+    if (!info.isFile()) {
+      throw new ClassroomError('note-not-found', `笔记路径不是文件：${relative}`, 404)
+    }
+    if (space.notePath === relative) return spaceViews(root, [space])[0]
+    const nextSpace: ClassroomSpace = { ...space, notePath: relative }
+    const next: ClassroomState = {
+      ...state,
+      spaces: state.spaces.map(row => (row.id === space.id ? nextSpace : row)),
+    }
+    await store.write(next)
+    return spaceViews(root, [nextSpace])[0]
   })
 
   /** Read-only identity probe used for step-time tool visibility. */
@@ -1573,10 +1772,12 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
 
   const dispatch = async (input: unknown): Promise<
     | ClassroomView
+    | ClassroomSpaceView
     | LectureListView
     | LectureReadView
     | LectureCandidatesView
     | TopicView
+    | SummaryView
     | NoteListView
     | NoteDocumentView
     | NoteSaveView
@@ -1604,6 +1805,10 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
       case 'lecture-unlink': return unlinkLecture(command.spaceId, command.path)
       case 'topic-read': return readTopic(command.spaceId)
       case 'topic-save': return saveTopic(command.spaceId, command.goal, command.version)
+      case 'summary-read': return readSummary(command.spaceId)
+      case 'summary-save': return saveSummary(command.spaceId, command.summary, command.nextStep, command.version)
+      case 'position-save': return saveReadingPosition(command.spaceId, command.path, command.scrollTop)
+      case 'note-select': return selectNote(command.spaceId, command.path)
       case 'note-list': return noteList(command.spaceId)
       case 'note-read': return noteRead(command.spaceId, command.path)
       case 'note-save': return noteSave(command)

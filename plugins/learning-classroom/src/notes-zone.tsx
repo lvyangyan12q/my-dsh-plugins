@@ -821,6 +821,9 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     generation.current += 1
     pathRef.current = next
     setPath(next)
+    // Remember the selection as navigation state for the next visit. Failure to
+    // record it never blocks opening the file; the note body is unaffected.
+    void client.selectNote?.({ action: 'note-select', spaceId: space.id, path: next })?.catch(() => undefined)
     setConflict(false)
     conflictRef.current = false
     setDiskContent(null)
@@ -833,7 +836,7 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
     // Page-level risk is global and survives this switch; only a hard failure
     // needs the per-file warning line.
     if (persistence === 'failed') setDraftWarning(failedDraftWarning)
-  }, [debouncer, enqueueSave, load, persistDraft, updateStatus])
+  }, [client, debouncer, enqueueSave, load, persistDraft, space.id, updateStatus])
 
   // A request from the canvas opens that specific note once; the token keeps
   // repeated opens of the same path observable without resetting manual edits.

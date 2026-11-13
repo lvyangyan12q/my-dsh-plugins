@@ -27,6 +27,12 @@ export const layoutSchema = z.object({
   }).strict(),
 }).strict()
 
+/** Last scroll offset in one course file; navigation state only. */
+export const readingPositionSchema = z.object({
+  path: z.string().min(1).max(400).nullable().default(null),
+  scrollTop: z.number().finite().min(0).max(10_000_000).default(0),
+}).strict()
+
 /** One learning space as stored: navigation identity plus its vault folder binding. */
 export const spaceSchema = z.object({
   id: z.string().min(1).max(64),
@@ -54,6 +60,11 @@ export const spaceSchema = z.object({
    * tickets 01–03 still loads and existing spaces keep working.
    */
   layout: layoutSchema.default(defaultLayout()),
+  /**
+   * Last reading position per space. Optional with a default so state written
+   * before this ticket still loads and the reader simply starts at the top.
+   */
+  readingPosition: readingPositionSchema.default({ path: null, scrollTop: 0 }),
 }).strict()
 
 /**

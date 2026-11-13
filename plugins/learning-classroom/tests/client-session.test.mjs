@@ -65,6 +65,10 @@ function fakeClient(initial) {
     async listNotes() { return { notes: [], defaultPath: '笔记/我的笔记.md' } },
     async readNote() { throw new Error('本测试不使用笔记读取') },
     async saveNote() { throw new Error('本测试不使用笔记保存') },
+    async saveLayout(input) {
+      calls.push(structuredClone(input))
+      return structuredClone(view)
+    },
     async command(input) {
       calls.push(structuredClone(input))
       if (input.action === 'space-open') {
@@ -260,6 +264,36 @@ test('离开课堂只释放引用而不取消回合，回来重新取得同一�
     assert.equal(chatComposers(second.document).length, 1)
   } finally {
     await second.unmount()
+  }
+})
+
+test('收起老师对话只隐藏、不释放引用也不停止回合，展开后仍是同一个真实会话', async () => {
+  const sessions = createSessionService()
+  const runtime = createSlotRuntime(sessions)
+  sessions.turn('session-1').running = true
+  const client = fakeClient(readyView([space({ sessionId: 'session-1' })], 'space-1'))
+  const ui = await mount({ client, sessions: sessions.service, renderSlot: runtime.renderSlot, SessionProvider: runtime.SessionProvider })
+  try {
+    const before = ui.document.querySelector('[data-fake-session="session-1"]')
+    assert.ok(before)
+    const hide = ui.document.querySelector('button[aria-label="收起老师对话"]')
+    assert.ok(hide)
+    await ui.click(hide)
+    assert.deepEqual(sessions.releases, [], '隐藏对话不释放会话引用')
+    assert.deepEqual(sessions.cancels, [], '隐藏对话不取消正在进行的回合')
+    assert.equal(ui.document.querySelector('[data-fake-session="session-1"]'), before, '隐藏用 CSS，不卸载会话')
+    assert.equal(chatComposers(ui.document).length, 1, '原生输入根仍在')
+    assert.equal(runtime.factoryCalls.at(-1).input.phase, 'active', '恢复时保持真实回合状态')
+
+    const show = ui.document.querySelector('button[aria-label="显示老师对话"]')
+    assert.ok(show)
+    await ui.click(show)
+    assert.equal(ui.document.querySelector('[data-fake-session="session-1"]'), before, '展开复用同一挂载，不新建会话')
+    assert.equal(sessions.retains.length, 1, '隐藏/展开不重复 retain')
+    assert.deepEqual(sessions.releases, [])
+    assert.deepEqual(sessions.cancels, [])
+  } finally {
+    await ui.unmount()
   }
 })
 
