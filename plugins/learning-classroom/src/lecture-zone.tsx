@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode, type UIEvent as ReactUIEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type UIEvent as ReactUIEvent } from 'react'
 import { AnnotationAction } from './annotation-action.tsx'
 import type { AnnotationSourceInput } from './annotation-flow.ts'
 import { ClassroomClientError, type ClassroomClient } from './classroom-client.ts'
@@ -15,7 +15,8 @@ import type { ExperimentSpec } from './experiment-spec.ts'
 import { ContinuityZone } from './continuity-zone.tsx'
 import { groupCourseLectures, resolveLectureHref } from './lectures.ts'
 import { scrollToFragment, type LinkFragment } from './fragments.ts'
-import { parseInline, parseMarkdown, type Block } from './markdown.ts'
+import { parseMarkdown } from './markdown.ts'
+import { markdownMathStyles, MarkdownBlocks, selectionTextWithMath, type MathRenderer } from './markdown-view.tsx'
 import { excerptForQuestion, type AskTeacher } from './question-context.ts'
 
 export interface LectureZoneProps {
@@ -31,6 +32,8 @@ export interface LectureZoneProps {
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
   /** Adds the selected passage or the current lecture to the native teacher draft. */
   askTeacher?: AskTeacher
+  /** Inject a math renderer (tests or an alternate host); production uses KaTeX. */
+  mathRenderer?: MathRenderer
   /** Debounce before a scroll offset is written as navigation state; tests shorten it. */
   positionDebounceMs?: number
 }
@@ -79,7 +82,7 @@ const lectureStyles = `
 .lc-lecture-refresh{padding:2px 8px;font-size:12px}
 .lc-lecture-doc{display:flex;flex-direction:column;gap:10px;line-height:1.75;font-size:14px}
 .lc-lecture-doc h3,.lc-lecture-doc h4,.lc-lecture-doc h5,.lc-lecture-doc h6{margin:8px 0 0;line-height:1.4}
-.lc-lecture-doc p,.lc-lecture-doc ul,.lc-lecture-doc ol,.lc-lecture-doc blockquote,.lc-lecture-doc pre,.lc-lecture-doc table{margin:0}
+.lc-lecture-doc p,.lc-lecture-doc .lc-md-p,.lc-lecture-doc ul,.lc-lecture-doc ol,.lc-lecture-doc blockquote,.lc-lecture-doc pre,.lc-lecture-doc table{margin:0}
 .lc-lecture-doc ul,.lc-lecture-doc ol{padding-left:22px}
 .lc-lecture-doc blockquote{padding:4px 12px;border-left:3px solid var(--dsh-border,#d8dee4);color:var(--dsh-text-secondary,#59636e)}
 .lc-lecture-doc pre{padding:10px 12px;border-radius:6px;background:#f6f8fa;overflow:auto}
@@ -97,6 +100,7 @@ const lectureStyles = `
 .lc-experiment-meta ul{margin:0;padding-left:20px}
 .lc-experiment-meta code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
 .lc-lecture-empty{padding:24px;border:1px dashed var(--dsh-border,#d8dee4);border-radius:8px;text-align:center}
+${markdownMathStyles}
 `
 
 function messageOf(error: unknown): string {
@@ -111,81 +115,25 @@ function missingNotice(path: string): string {
   return `讲义「${path}」已被删除或改名。请重新加载目录，或从左侧选择另一节。`
 }
 
-function InlineText({ text, onOpenHref }: { text: string; onOpenHref?: (href: string) => boolean }) {
-  return (
-    <>
-      {parseInline(text).map((token, index) => {
-        switch (token.type) {
-          case 'code': return <code key={index}>{token.text}</code>
-          case 'strong': return <strong key={index}>{token.text}</strong>
-          case 'em': return <em key={index}>{token.text}</em>
-          case 'link': return (
-            <a
-              key={index}
-              href={token.href}
-              target="_blank"
-              rel="noreferrer noopener"
-              onClick={event => {
-                if (onOpenHref?.(token.href) === true) event.preventDefault()
-              }}
-            >{token.text}</a>
-          )
-          case 'wikilink': return <span key={index} className="lc-wikilink-static" title={`双链：${token.target}`}>{token.text}</span>
-          case 'text': return <Fragment key={index}>{token.text}</Fragment>
-        }
-      })}
-    </>
-  )
-}
-
-const headingTags = ['h3', 'h4', 'h5', 'h6', 'h6', 'h6'] as const
-
-function BlockView({ block, onOpenHref }: { block: Block; onOpenHref?: (href: string) => boolean }): ReactNode {
-  switch (block.type) {
-    case 'heading': {
-      const Tag = headingTags[Math.min(Math.max(block.level, 1), 6) - 1]
-      return <Tag data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></Tag>
-    }
-    case 'paragraph':
-      return <p data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></p>
-    case 'list': {
-      const items = block.items.map((item, index) => (
-        <li key={index} data-block-id={block.itemBlockIds?.[index]}><InlineText text={item} onOpenHref={onOpenHref} /></li>
-      ))
-      return block.ordered
-        ? <ol data-block-id={block.blockId}>{items}</ol>
-        : <ul data-block-id={block.blockId}>{items}</ul>
-    }
-    case 'table':
-      return (
-        <div className="lc-lecture-table">
-          <table>
-            <thead>
-              <tr>{block.header.map((cell, index) => <th key={index}><InlineText text={cell} onOpenHref={onOpenHref} /></th>)}</tr>
-            </thead>
-            <tbody>
-              {block.rows.map((row, rowIndex) => (
-                <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}><InlineText text={cell} onOpenHref={onOpenHref} /></td>)}</tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    case 'code':
-      return <pre><code className={block.lang === '' ? undefined : `language-${block.lang}`}>{block.code}</code></pre>
-    case 'quote':
-      return <blockquote data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></blockquote>
-    case 'rule':
-      return <hr />
-  }
-}
-
-function MarkdownBody({ content, onOpenHref }: { content: string; onOpenHref?: (href: string) => boolean }) {
+function MarkdownBody({
+  content,
+  onOpenHref,
+  mathRenderer,
+}: {
+  content: string
+  onOpenHref?: (href: string) => boolean
+  mathRenderer?: MathRenderer
+}) {
   const blocks = parseMarkdown(content)
   if (blocks.length === 0) return <p className="lc-hint">这一节还没有正文。</p>
   return (
     <article className="lc-lecture-doc">
-      {blocks.map((block, index) => <BlockView key={index} block={block} onOpenHref={onOpenHref} />)}
+      <MarkdownBlocks
+        blocks={blocks}
+        tableClassName="lc-lecture-table"
+        onOpenHref={onOpenHref}
+        mathRenderer={mathRenderer}
+      />
     </article>
   )
 }
@@ -267,13 +215,14 @@ function lectureSelection(root: HTMLElement | null): LectureSelection {
   if (root === null) return { kind: 'none' }
   const selection = typeof window === 'undefined' ? null : window.getSelection?.() ?? null
   if (selection === null || selection.rangeCount === 0 || selection.isCollapsed) return { kind: 'none' }
-  const text = selection.toString().trim()
-  if (text === '') return { kind: 'none' }
   // One bounded range is required: multi-range selections cannot be proven to
   // stay inside the lecture body.
   if (selection.rangeCount !== 1) return { kind: 'outside' }
   const range = selection.getRangeAt(0)
   if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return { kind: 'outside' }
+  // Restore formulas to their Markdown source instead of KaTeX's two DOM arms.
+  const text = selectionTextWithMath(range).trim()
+  if (text === '') return { kind: 'none' }
   return { kind: 'inside', text }
 }
 
@@ -282,13 +231,14 @@ function LectureReader(props: {
   space: ClassroomSpaceView
   askTeacher?: AskTeacher
   onOpenHref?: (href: string) => boolean
+  mathRenderer?: MathRenderer
   /** Present only when this experiment was opened from a lecture. */
   returnTarget?: { title: string } | null
   onReturn?: () => void
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
   fragment?: (LinkFragment & { token: number }) | null
 }) {
-  const { doc, space, askTeacher, onOpenHref, returnTarget, onReturn, onAnnotate, fragment } = props
+  const { doc, space, askTeacher, onOpenHref, returnTarget, onReturn, onAnnotate, fragment, mathRenderer } = props
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const [notice, setNotice] = useState('')
   const [askError, setAskError] = useState('')
@@ -383,7 +333,7 @@ function LectureReader(props: {
       <AnnotationAction doc={doc} onAnnotate={onAnnotate}>
         <div ref={bodyRef}>
           {doc.kind === 'markdown'
-            ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} />
+            ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} mathRenderer={mathRenderer} />
             : doc.experiment !== null
               ? <ExperimentFrame spec={doc.experiment} />
               : <ExperimentUnsupported doc={doc} />}
@@ -1079,6 +1029,7 @@ export function LectureZone(props: LectureZoneProps) {
             space={space}
             askTeacher={props.askTeacher}
             onOpenHref={openHref}
+            mathRenderer={props.mathRenderer}
             returnTarget={reader.doc.kind === 'experiment' ? returnTo : null}
             onReturn={returnToLecture}
             onAnnotate={props.onAnnotate}

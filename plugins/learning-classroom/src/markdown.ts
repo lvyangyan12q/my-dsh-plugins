@@ -1,5 +1,6 @@
 import { parseFrontmatter } from './lectures.ts'
 import { parseWikilink, wikilinkDisplay } from './links.ts'
+import { matchDisplayMathBlock, matchInlineMath } from './math.ts'
 
 /**
  * A deliberately small Markdown reader: it produces a typed block model and the
@@ -17,6 +18,7 @@ export type Block = (
   | { type: 'list'; ordered: boolean; items: string[]; itemBlockIds?: Array<string | undefined> }
   | { type: 'table'; header: string[]; rows: string[][] }
   | { type: 'code'; lang: string; code: string }
+  | { type: 'math'; tex: string; display: true }
   | { type: 'quote'; text: string }
   | { type: 'rule' }
 ) & BlockMeta
@@ -27,6 +29,8 @@ export type InlineToken =
   | { type: 'strong'; text: string }
   | { type: 'em'; text: string }
   | { type: 'link'; text: string; href: string }
+  /** Recognised TeX; rendering is delegated to the host's KaTeX renderer. */
+  | { type: 'math'; tex: string; display: boolean }
   /** Obsidian wikilink; `target` is the inner text and `text` the display label. */
   | { type: 'wikilink'; target: string; text: string }
 
@@ -68,6 +72,7 @@ function wasTable(lines: string[], index: number): boolean {
 function startsBlock(lines: string[], index: number): boolean {
   const line = lines[index]
   return fencePattern.test(line)
+    || matchDisplayMathBlock(lines, index) !== null
     || headingPattern.test(line)
     || rulePattern.test(line)
     || quotePattern.test(line)
@@ -123,6 +128,15 @@ export function parseMarkdown(source: string): Block[] {
         }
       }
       blocks.push({ type: 'code', lang: fence[2].trim(), code: body.join('\n') })
+      continue
+    }
+
+    // Display math is recognised before headings/paragraphs; a code fence above
+    // already consumed its body, so `$` inside a fence is never math here.
+    const displayMath = matchDisplayMathBlock(lines, index)
+    if (displayMath !== null) {
+      blocks.push({ type: 'math', tex: displayMath.tex, display: true })
+      index = displayMath.next
       continue
     }
 
@@ -258,11 +272,29 @@ export function parseInline(text: string): InlineToken[] {
   while (index < text.length) {
     const rest = text.slice(index)
 
+    // An escaped dollar is literal text (and never opens math).
+    if (text[index] === '\\' && text[index + 1] === '$') {
+      pushText(tokens, '$')
+      index += 2
+      continue
+    }
+
     if (text[index] === '`') {
       const end = text.indexOf('`', index + 1)
       if (end !== -1) {
         tokens.push({ type: 'code', text: text.slice(index + 1, end) })
         index = end + 1
+        continue
+      }
+    }
+
+    // Math is checked after code so `` `$x$` `` stays code and before emphasis
+    // so a formula may legitimately contain `*` or `_`.
+    if (text[index] === '$') {
+      const math = matchInlineMath(text, index)
+      if (math !== null) {
+        tokens.push({ type: 'math', tex: math.tex, display: math.display })
+        index = math.end
         continue
       }
     }
