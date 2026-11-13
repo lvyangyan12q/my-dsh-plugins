@@ -169,6 +169,54 @@ test('选段问老师时公式还原为原始 TeX，不把 KaTeX 两套 DOM 文�
   }
 })
 
+test('选中 display 公式（含部分选区）问老师时附完整 $$...$$，不复制 KaTeX 双 DOM', async () => {
+  const asked = []
+  const askTeacher = {
+    available: true,
+    reason: '',
+    async ask(input) { asked.push(input); return { ok: true } },
+  }
+  const ui = await mount(h(LectureZone, {
+    client: fakeClient(),
+    space,
+    spaces: [space],
+    currentSpaceId: space.id,
+    busy: false,
+    onOpenSpace() {},
+    askTeacher,
+    mathRenderer: fakeMath([]),
+  }))
+  try {
+    await settle()
+    const block = ui.container.querySelector('.lc-math-block')
+    assert.ok(block, 'display 公式块应存在')
+    const rendered = [...block.querySelectorAll('[data-display="true"]')][0]
+    assert.ok(rendered)
+    // Start inside the rendered arm; the selection helper must expand to the
+    // display block's real TeX metadata instead of copying this arm alone.
+    const text = rendered.firstChild
+    await act(async () => {
+      const range = dom.window.document.createRange()
+      range.setStart(text, 1)
+      range.setEnd(text, text.textContent.length)
+      const selection = dom.window.getSelection()
+      selection.removeAllRanges()
+      selection.addRange(range)
+    })
+    const ask = [...ui.container.querySelectorAll('button')].find(button => button.textContent === '问老师')
+    assert.ok(ask)
+    await act(async () => { ask.click() })
+    await settle()
+
+    assert.equal(asked.length, 1)
+    assert.equal(asked[0].excerpt, '$$P(A \\mid B) = \\frac{P(A \\cap B)}{P(B)}$$')
+    assert.doesNotMatch(asked[0].excerpt, /katex/)
+  } finally {
+    dom.window.getSelection()?.removeAllRanges()
+    await ui.unmount()
+  }
+})
+
 test('笔记预览同样渲染公式且双链仍是可点击的真实目标', async () => {
   const calls = []
   const opened = []

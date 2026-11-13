@@ -179,7 +179,12 @@ function BlockView({
       return <pre><code className={block.lang === '' ? undefined : `language-${block.lang}`}>{block.code}</code></pre>
     case 'math':
       return (
-        <div className="lc-math-block" data-block-id={block.blockId}>
+        <div
+          className="lc-math-block"
+          data-block-id={block.blockId}
+          data-math-tex={block.tex}
+          data-math-display="true"
+        >
           <MathNode tex={block.tex} display={block.display} renderer={mathRenderer} />
         </div>
       )
@@ -216,28 +221,101 @@ export type { MathRenderer, MathRendererProps } from './math-render.tsx'
  * mangle a formula; replacing each math wrapper with its original TeX keeps the
  * learner's excerpt faithful to the Markdown source (`$…$` / `$$…$$`).
  *
+ * Selections without any formula are returned exactly as the browser's
+ * `Range.toString()` reports them, so ordinary paragraph/code excerpts keep
+ * their original line breaks and indentation. When a formula is present the
+ * DOM is serialized with block boundaries and `<pre>` text preserved instead of
+ * using `textContent`, which would flatten them.
+ *
  * @param range - A selection range from the rendered document.
  * @returns Plain text with each formula restored to its TeX delimiters.
  */
 export function selectionTextWithMath(range: Range): string {
-  const expanded = range.cloneRange()
   const start = range.startContainer.nodeType === 1
     ? range.startContainer as Element
     : range.startContainer.parentElement
   const end = range.endContainer.nodeType === 1
     ? range.endContainer as Element
     : range.endContainer.parentElement
-  const startMath = start?.closest('[data-math-tex]')
-  const endMath = end?.closest('[data-math-tex]')
-  if (startMath !== null && startMath !== undefined) expanded.setStartBefore(startMath)
-  if (endMath !== null && endMath !== undefined) expanded.setEndAfter(endMath)
 
-  const holder = document.createElement('div')
-  holder.append(expanded.cloneContents())
-  for (const math of Array.from(holder.querySelectorAll('[data-math-tex]'))) {
-    const tex = math.getAttribute('data-math-tex') ?? ''
-    const display = math.getAttribute('data-math-display') === 'true'
-    math.replaceWith(document.createTextNode(display ? `$$${tex}$$` : `$${tex}$`))
+  // Detect a formula before deciding the path. A selection with no math is
+  // returned by the browser's own `Range.toString()` and is never re-serialized.
+  const startMath = start?.closest('[data-math-tex]') ?? null
+  const endMath = end?.closest('[data-math-tex]') ?? null
+  const common = range.commonAncestorContainer
+  const scope = common.nodeType === 1 ? common as Element : common.parentElement
+  let hasMath = startMath !== null || endMath !== null
+  if (!hasMath && scope !== null) {
+    for (const candidate of Array.from(scope.querySelectorAll('[data-math-tex]'))) {
+      if (range.intersectsNode(candidate)) {
+        hasMath = true
+        break
+      }
+    }
   }
-  return holder.textContent ?? ''
+  if (!hasMath) return range.toString()
+
+  const expanded = range.cloneRange()
+  if (startMath !== null) expanded.setStartBefore(startMath)
+  if (endMath !== null) expanded.setEndAfter(endMath)
+
+  return serializeSelection(expanded.cloneContents())
+}
+
+const blockTags = new Set([
+  'ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DIV', 'DL', 'DT', 'DD', 'FIGCAPTION',
+  'FIGURE', 'FOOTER', 'FORM', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'HR',
+  'LI', 'MAIN', 'NAV', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'TBODY', 'THEAD', 'TR', 'UL',
+])
+
+/**
+ * Serialize a selected fragment without `innerText` (which jsdom lacks and
+ * browsers implement differently). Block elements get one boundary newline;
+ * `<pre>` keeps its text verbatim so code indentation survives.
+ */
+function serializeSelection(fragment: DocumentFragment): string {
+  let output = ''
+  const append = (text: string): void => { output += text }
+  const boundary = (): void => {
+    if (output !== '' && !output.endsWith('\n')) output += '\n'
+  }
+
+  const walk = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      append((node as Text).data)
+      return
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return
+    const element = node as Element
+    if (element.tagName === 'STYLE' || element.tagName === 'SCRIPT') return
+
+    const tex = element.getAttribute('data-math-tex')
+    if (tex !== null) {
+      const display = element.getAttribute('data-math-display') === 'true'
+      if (display) boundary()
+      append(display ? `$$${tex}$$` : `$${tex}$`)
+      if (display) boundary()
+      return
+    }
+    if (element.tagName === 'BR') {
+      append('\n')
+      return
+    }
+    if (element.tagName === 'PRE') {
+      boundary()
+      append(element.textContent ?? '')
+      boundary()
+      return
+    }
+    if (blockTags.has(element.tagName)) {
+      boundary()
+      for (const child of Array.from(element.childNodes)) walk(child)
+      boundary()
+      return
+    }
+    for (const child of Array.from(element.childNodes)) walk(child)
+  }
+
+  for (const child of Array.from(fragment.childNodes)) walk(child)
+  return output
 }
