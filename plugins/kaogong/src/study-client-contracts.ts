@@ -14,7 +14,7 @@ export type TeachingContext={id:string;title:string;text:string}
 export type StudyTask={id:string;revision:number;status:string;text:string;contexts:TeachingContext[];sessionId:string;roleId:string;notice?:string;ownerFinalization?:string;preparation?:{kind:string;id:string};taskSession?:{taskId:string;lessonId:string;roleId:string;revision:number}}
 export interface TaskFacade {
   prepare(input:{roleId:string;text:string;contexts?:{resourceId:string;selection?:unknown}[]}):Promise<StudyTask>
-  prepareOwned(input:{roleId:string;kind:'lesson'|'review';payload:{roundId:string}|{lessonId:string}}):Promise<StudyTask>
+  prepareOwned(input:{roleId:string;kind:'lesson'|'review';actionId?:string;payload:{roundId:string}|{lessonId:string;intent?:string;quizIntent?:{questionId:string;section:string;choice:number}}}):Promise<StudyTask>
   list():Promise<StudyTask[]>
   edit(input:{id:string;revision:number;text:string;contexts:TeachingContext[]}):Promise<StudyTask>
   submit(id:string,revision:number):Promise<StudyTask>

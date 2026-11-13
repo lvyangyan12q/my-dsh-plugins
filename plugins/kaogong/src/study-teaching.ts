@@ -28,16 +28,16 @@ export class StudyTeaching {
   /** The same task/round is one durable teaching action. A failed attempt never
    * reached Native admission, so it may be prepared again; every other state is
    * returned unchanged and never duplicated or resent. */
-  private ownedDraft(instanceId: string, kind: string, businessId: string) {
+  private ownedDraft(instanceId: string, kind: string, businessId: string, actionId?: string) {
     return [...this.table().entries()].map(([, row]) => row as Draft).find(row => row.instanceId === instanceId &&
-      row.preparation?.kind === kind && row.preparation.id === businessId &&
-      (row.status === 'prepared' || row.status === 'submitting' || row.status === 'accepted' || row.status === 'unknown'))
+      row.preparation?.kind === kind && row.preparation.id === businessId && row.actionId === actionId &&
+      ((row.status === 'prepared' && !row.historicalHandoff) || row.status === 'submitting' || row.status === 'accepted' || row.status === 'unknown'))
   }
   private async put(row: Draft) { await this.table().put(row.id, row); return structuredClone(row) }
   private present(row: Draft) { return structuredClone(row.status === 'submitting' ? { ...row, status: 'unknown', notice: '准入结果未确认，请查看原生会话；不会自动重发。' } : row.historicalHandoff&&row.status==='prepared'?{...row,notice:'保留的旧准备上下文仅供查看；请根据当前授权重新准备，不会重发旧请求。'}:row) }
   private owner(row: Draft) { const owner = row.preparation && this.owners.get(row.preparation.kind); if (!owner || owner.version !== row.preparation?.ownerVersion) throw Error('教学记录的可信所有者不可用'); return owner }
   async list(viewId: string) { const context = await this.workspace.resolveView(viewId); return [...this.table().entries()].map(([, row]) => row as Draft).filter(row => row.instanceId === context.instance.id).map(row => this.present(row)) }
-  private async create(viewId: string, roleId: string, text: unknown, references: Reference[], preparation?: Draft['preparation']) {
+  private async create(viewId: string, roleId: string, text: unknown, references: Reference[], preparation?: Draft['preparation'], actionId?:string) {
     const context = await this.workspace.resolveView(viewId)
     if (context.profile.kind !== 'learner') throw Error('资料库不能准备学习任务')
     const { binding } = await this.roles.read(context.instance.id, roleId)
@@ -48,24 +48,25 @@ export class StudyTeaching {
       ? await this.taskSessions.forLesson(viewId, preparation.id, roleId)
       : null
     const contexts = await this.sources.capture(viewId, references)
-    return this.put({ id: randomUUID(), revision: 1, status: 'prepared', appId: 'kaogong', instanceId: context.instance.id, instanceRevision: context.instance.revision, roleId, sessionId: taskSession?.sessionId ?? binding.sessionId, bindingRevision: taskSession?.revision ?? binding.revision, ...(taskSession ? { taskSession: { taskId: taskSession.taskId, lessonId: taskSession.lessonId, roleId: taskSession.roleId, revision: taskSession.revision } } : {}), source: { viewId }, text: textOf(text), contexts, ...(preparation ? { preparation } : {}), createdAt: Date.now() })
+    return this.put({ id: randomUUID(), revision: 1, status: 'prepared', appId: 'kaogong', instanceId: context.instance.id, instanceRevision: context.instance.revision, roleId, sessionId: taskSession?.sessionId ?? binding.sessionId, bindingRevision: taskSession?.revision ?? binding.revision, ...(taskSession ? { taskSession: { taskId: taskSession.taskId, lessonId: taskSession.lessonId, roleId: taskSession.roleId, revision: taskSession.revision } } : {}), source: { viewId }, text: textOf(text), contexts, ...(preparation ? { preparation } : {}), ...(actionId?{actionId}:{}), createdAt: Date.now() })
   }
   prepare(viewId: string, input: { roleId: string; text: unknown; contexts?: Reference[] }) { return this.serial(() => this.create(viewId, input.roleId, input.text, input.contexts ?? [])) }
-  prepareOwned(viewId: string, input: { roleId: string; kind: 'lesson' | 'review'; payload: unknown }) {
+  prepareOwned(viewId: string, input: { roleId: string; kind: 'lesson' | 'review'; payload: unknown; actionId?: string }) {
     return this.serial(async () => {
+      if(input.actionId!==undefined&&(typeof input.actionId!=='string'||!input.actionId.trim()||input.actionId.length>200))throw Error('无效的教学动作身份')
       const context = await this.workspace.resolveView(viewId), owner = this.owners.get(input.kind)
       if (!owner) throw Error('课堂或讲评记录不可用')
       // Query the original operation by its stable business identity before any
       // owner work, so an already-sent task is never prepared or sent twice.
       const known = owner.identify?.(input.payload)
       if (typeof known === 'string' && known) {
-        const existing = this.ownedDraft(context.instance.id, input.kind, known)
+        const existing = this.ownedDraft(context.instance.id, input.kind, known, input.actionId)
         if (existing) return this.present(existing)
       }
       const plan = await owner.prepare({ appId: 'kaogong', instanceId: context.instance.id, viewId, roleId: input.roleId }, input.payload)
-      const existing = this.ownedDraft(context.instance.id, input.kind, plan.id)
+      const existing = this.ownedDraft(context.instance.id, input.kind, plan.id, input.actionId)
       if (existing) return this.present(existing)
-      return this.create(viewId, input.roleId, plan.text, plan.contexts ?? [], { kind: input.kind, id: plan.id, ownerAppId: 'kaogong', ownerVersion: owner.version, token: plan.token })
+      return this.create(viewId, input.roleId, plan.text, plan.contexts ?? [], { kind: input.kind, id: plan.id, ownerAppId: 'kaogong', ownerVersion: owner.version, token: plan.token },input.actionId)
     })
   }
   private async owned(viewId: string, id: string) { const context = await this.workspace.resolveView(viewId), row = this.row(id); if (row.instanceId !== context.instance.id) throw Error('教学任务不属于当前备考档案'); return row }

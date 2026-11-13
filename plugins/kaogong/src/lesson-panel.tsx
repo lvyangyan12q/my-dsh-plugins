@@ -1,3 +1,4 @@
+import {readLessonNotesDraft} from './learner-draft.ts'
 import {LessonCloseout} from './lesson-closeout.tsx'
 import {HandoutView} from './lesson-handout.tsx'
 import {resolveLessonContent,LESSON_CONTENTS} from './lesson-content.ts'
@@ -142,7 +143,10 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
         const entered = owner.cell('lesson.view', null).value
         if (entered?.lesson.request.taskId && entered.lesson.request.taskId !== task.id) { setTaskStatus('idle'); return }
         if (value.lesson) {
-          owner.resumeLesson(value.lesson, value.lesson.lesson.notes, false)
+          const id=value.lesson.lesson.request.lessonId
+          const same=(entered?.lesson.request.lessonId??owner.cell('lesson.resumeId',null).value)===id
+          const saved=readLessonNotesDraft(owner.instanceId,id)
+          owner.resumeLesson(value.lesson,same?owner.cell('lesson.notes','').value:saved?.notes??value.lesson.lesson.notes,same?owner.cell('lesson.notesDirty',false).value:saved?.notesDirty??false)
           rememberRecentTask(owner.instanceId, task.id)
           setTaskStatus('idle')
         } else setTaskStatus('empty')
@@ -209,7 +213,7 @@ export function LessonPanel({ active, onPractice, onOpenTeacher, onClassroomTask
     void run(async () => {
       await onOpenTeacher(
         `/kaogong-teach 请针对本任务的当堂检测补讲这一步：第 ${ordinal} 题“${question.prompt}”我选了“${question.options[chosen] ?? '未作答'}”；解析是“${question.why}”，对应讲义小节 ${question.anchorId}。先定位这一步错在哪，再带我重做同类题；不要自动宣布完成。`,
-        { kind: 'lesson', context, lessonEvidence: { id: view.lesson.request.lessonId, title: context.title,
+        { kind: 'lesson', context, quizIntent:{questionId:question.id,section:question.anchorId,choice:chosen}, lessonEvidence: { id: view.lesson.request.lessonId, title: context.title,
           source: 'kaogong/' + owner.instanceId + '/lesson-summary', content: view.summary } },
       )
     })

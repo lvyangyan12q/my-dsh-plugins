@@ -31,14 +31,14 @@ async function mountStudy(options: {panel?: boolean; ensure?: (roleId: string) =
   const http = installFetch()
   const root = createRoot(window.document.getElementById('root')!)
   const ensured: string[] = []
-  const embedded: string[] = []
+  const embedded: string[] = [],opened:unknown[][]=[]
   const roles = {
     read: async () => null,
     ensure: async (roleId: string) => {
       ensured.push(roleId)
       return options.ensure ? options.ensure(roleId) : {phase: 'ready' as const, sessionId: 'native-teacher-' + roleId, revision: 2}
     },
-    open: async () => {},
+    open: async (...args:unknown[]) => {opened.push(args)},
   }
   const renderTeacherSession = (sessionId: string) => {
     embedded.push(sessionId)
@@ -64,6 +64,7 @@ async function mountStudy(options: {panel?: boolean; ensure?: (roleId: string) =
     dom,
     ensured,
     embedded,
+    opened,
     click,
     body: () => dom.window.document.body.textContent ?? '',
     embeds: () => [...dom.window.document.querySelectorAll('[data-teacher-embed]')].map(node => node.getAttribute('data-teacher-embed')),
@@ -131,4 +132,14 @@ test('老师会话绑定失败时显示真实错误，不挂载模拟对话', as
   } finally {
     await ui.unmount()
   }
+})
+
+test('内容答疑切换保留同一原生宿主和输入草稿',async()=>{
+ const ui=await mountStudy({renderTeacherSession:id=><textarea data-native-session={id} defaultValue="原生草稿"/>})
+ try{await ui.click('课堂');const node=document.querySelector('textarea[data-native-session]');assert.ok(document.querySelector('[role="tablist"][aria-label="课堂视图"]'));await ui.click('答疑');assert.equal(document.querySelector('textarea[data-native-session]'),node);await ui.click('内容');assert.equal(document.querySelector('textarea[data-native-session]'),node);assert.equal((node as HTMLTextAreaElement).value,'原生草稿')}finally{await ui.unmount()}
+})
+
+test('班主任讨论在插件挂载真实原生宿主',async()=>{
+ const ui=await mountStudy()
+ try{await ui.click('找班主任讨论安排');assert.deepEqual(ui.embeds(),['native-teacher-class-advisor']);assert.deepEqual(ui.opened,[]);await ui.click('查看完整对话');assert.deepEqual(ui.opened,[['class-advisor','native-teacher-class-advisor',2]])}finally{await ui.unmount()}
 })

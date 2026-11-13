@@ -150,6 +150,18 @@ test('任务课堂的教学草稿绑定该任务自己的会话，发送也落�
   assert.equal(openCalls.length, 1, '发送前按任务绑定复核会话')
 })
 
+test('历史prepared保留但重新准备必须生成当前授权的新草稿', async () => {
+  const {teaching,table,viewId,prepareCalls}=harness()
+  const old=await teaching.prepareOwned(viewId,{roleId:'teacher',kind:'lesson',payload:{lessonId:'lesson-1'}})
+  await table.put(old.id,{...old,historicalHandoff:true})
+  const fresh=await teaching.prepareOwned(viewId,{roleId:'teacher',kind:'lesson',payload:{lessonId:'lesson-1'}})
+  assert.notEqual(fresh.id,old.id)
+  assert.equal(fresh.status,'prepared')
+  assert.equal(prepareCalls(),2)
+  assert.equal(table.get(old.id)?.historicalHandoff,true)
+  assert.equal((await teaching.submit(viewId,fresh.id,fresh.revision)).status,'accepted')
+})
+
 test('升级前的旧草稿没有任务字段时仍按角色会话发送，不被破坏', async () => {
   const {viewId, table, prompts, teaching} = harness({taskSessions: {
     async forLesson() { return {taskId: 'task-1', lessonId: 'lesson-old', roleId: 'teacher', sessionId: 'task-session-1', revision: 1} },
@@ -162,4 +174,13 @@ test('升级前的旧草稿没有任务字段时仍按角色会话发送，不�
   const sent = await teaching.submit(viewId, 'legacy-draft', 1)
   assert.equal(sent.status, 'accepted')
   assert.equal(prompts[0].sessionId, 'role-session', '没有任务字段的旧记录回落到原角色会话')
+})
+
+test('同课堂不同主动动作可以新发，同动作重试复用且unknown保持保护',async()=>{
+ const {teaching,prompts,viewId}=harness()
+ const prepare=(actionId:string)=>teaching.prepareOwned(viewId,{roleId:'teacher',kind:'lesson',payload:{lessonId:'lesson-1'},actionId})
+ const first=await prepare('click-1');await teaching.submit(viewId,first.id,first.revision)
+ assert.equal((await prepare('click-1')).id,first.id)
+ const next=await prepare('click-2');assert.notEqual(next.id,first.id);await teaching.submit(viewId,next.id,next.revision)
+ assert.equal(prompts.length,2)
 })

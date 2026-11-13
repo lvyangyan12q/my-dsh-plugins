@@ -67,9 +67,9 @@ export type PracticeResult = {
 }
 export type PracticeContext = { subject: string; title: string; knowledgePoint?: string; limit: number; planIndex?: number;taskId?:string;planRevision?:number }
 /** Ticket 06 can resolve a role binding from this evidence without parsing the legacy prompt. */
-export type KaogongTeachingRequest =
+export type KaogongTeachingRequest = {actionId?:string;quizIntent?:{questionId:string;section:string;choice:number}} & (
   | { kind: 'lesson'; context: Readonly<PracticeContext>; lessonEvidence?: { id: string; title: string; source: string; content: string } }
-  | { kind: 'review'; context: Readonly<PracticeContext>; result: Readonly<PracticeResult> }
+  | { kind: 'review'; context: Readonly<PracticeContext>; result: Readonly<PracticeResult> })
 export type ModuleSummary = {
   totalQuestions: number
   totalCorrect: number

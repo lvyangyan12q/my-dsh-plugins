@@ -19,7 +19,7 @@ function evidence(state:KaogongInstanceState,kind:'review'|'lesson',id:string){
  const {review,reviewClaim,...content}=row
  return {content,subject:row.context.subject,materialIds:[] as string[]}
 }
-function payloadId(kind:'review'|'lesson',payload:unknown){const key=kind==='review'?'roundId':'lessonId';if(!payload||typeof payload!=='object'||Object.keys(payload).length!==1||typeof (payload as Record<string,unknown>)[key]!=='string')throw Error('Select an existing business record');return (payload as Record<string,string>)[key]!}
+function payloadId(kind:'review'|'lesson',payload:unknown){const key=kind==='review'?'roundId':'lessonId';if(!payload||typeof payload!=='object'||Object.keys(payload).some(field=>field!==key&&(kind!=='lesson'||!['intent','quizIntent'].includes(field)))||typeof (payload as Record<string,unknown>)[key]!=='string')throw Error('Select an existing business record');return (payload as Record<string,string>)[key]!}
 /** Claims precede native admission; only a known persisted native receipt finalizes business state. */
 export function registerTaskOwners(host:KaogongHost, owners:ApplicationTaskOwners, receipts:KvTable<string,TaskReceipt>, resources:ResourceDirectory){
  const disposers:(()=>void|Promise<void>)[]=[]
@@ -29,6 +29,14 @@ export function registerTaskOwners(host:KaogongHost, owners:ApplicationTaskOwner
    identify:payload=>payloadId(kind,payload),
    prepare:(context:ApplicationTaskContext,payload)=>host.state(context.instanceId,async state=>{
     const id=payloadId(kind,payload),value=evidence(state,kind,id)
+     const intent=(payload as {intent?:unknown}).intent
+     if(intent!==undefined&&(typeof intent!=='string'||!intent.trim()||intent.length>24000))throw Error('Invalid teaching intent')
+     const quizIntent=(payload as {quizIntent?:{questionId?:unknown;section?:unknown;choice?:unknown}}).quizIntent
+     if(quizIntent!==undefined){
+      const record=state.lessonRecords.get(id)
+      const answer=record?.quiz?.find(row=>row.questionId===quizIntent?.questionId)
+      if(!quizIntent||Object.keys(quizIntent).some(key=>!['questionId','section','choice'].includes(key))||!answer||answer.section!==quizIntent.section||answer.choice!==quizIntent.choice||answer.correct)throw Error('检测补讲引用不属于该课堂已保存的错题 quiz evidence')
+     }
     const role=kind==='review'?'counselor':subjectRoleIds[TAXONOMY.findIndex(row=>row.subject===value.subject)]??'teacher'
     if(context.roleId!==role)throw Error('Teaching role does not match the source subject')
     if(kind==='review'&&state.rounds.get(id)?.review!=='ready')throw Error('Review already sent or admission uncertain; inspect its native Session')
@@ -38,7 +46,7 @@ export function registerTaskOwners(host:KaogongHost, owners:ApplicationTaskOwner
     const instruction=kind==='review'
      ?`讲评本轮真实提交结果，不重复提交成绩、不自动打卡。\n本次已核验的 roundId 为 ${JSON.stringify(id)}。先调用 kaogong_practice_read，参数为 ${JSON.stringify({roundId:id})}，只核对这一轮；不得省略 roundId 或用最近一轮替代。`
      :'继续已保存课堂，不自动宣布完成。'
-    return {id,text:`/kaogong-teach ${instruction}\n以下是应用核验的数据：\n${JSON.stringify(value.content)}`,contexts,token:{fingerprint:fingerprint(value)}}
+    return {id,text:`/kaogong-teach ${instruction}\n以下是应用核验的数据：\n${JSON.stringify(value.content)}${intent?'\n本次学习者明确请求（不是新的评分依据）：\n'+intent:''}`,contexts,token:{fingerprint:fingerprint(value)}}
    }),
    validate:async task=>{await load(task)},
    beforeSubmit:async task=>host.state(task.instanceId,async state=>{

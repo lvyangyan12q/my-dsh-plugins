@@ -9,7 +9,7 @@ import type {KaogongTeachingRequest,KaogongViewProps} from './kaogong-view.tsx'
 import type {Entry} from './knowledge-reader.tsx'
 import type {StudyViewProps} from './study-client-contracts.ts'
 import {TAXONOMY} from './taxonomy.ts'
-import {createRoleNavigator,roleIdForKey} from './client-runtime.ts'
+import {roleIdForKey} from './client-runtime.ts'
 import type {LearningRoleKey} from './client-runtime.ts'
 import {useBusinessState} from './view-state.tsx'
 import {TeachingTasks} from './study-task-panel.tsx'
@@ -23,8 +23,8 @@ const panelPageIds=['classroom','errors','materials','practice']
 /** One page model for the full learning navigation and the compact side-panel navigation. */
 export function learningNavigation(panel=false){return panel?learningPages.filter(page=>panelPageIds.includes(page.id)):learningPages}
 
-/** Prepare evidence before navigation unmounts main. Only the later send gesture admits a Native prompt. */
-export async function prepareLearningTask(services:{roles:StudyViewProps['roles'];tasks:StudyViewProps['tasks'];instanceId:string},request:KaogongTeachingRequest,material:Entry|null,isCurrent=()=>true){
+/** An explicit learning action prepares and admits once; restoration never calls this and navigation is separate. */
+export async function prepareLearningTask(services:{roles:StudyViewProps['roles'];tasks:StudyViewProps['tasks'];instanceId:string},request:KaogongTeachingRequest,material:Entry|null,isCurrent=()=>true,prompt?:string){
   if(!services.roles||!services.tasks)throw new Error('学习角色或教学任务服务不可用')
   if((request.kind==='review'||request.lessonEvidence?.id)&&typeof services.tasks.prepareOwned!=='function')throw new Error('缺少受管教学任务接口，未创建角色或发送消息')
   const key:LearningRoleKey={appId:'kaogong',instanceId:services.instanceId,roleId:request.kind==='review'?'counselor':'teacher',...(request.kind==='lesson'&&request.context.subject?{subject:request.context.subject}:{})}
@@ -33,13 +33,12 @@ export async function prepareLearningTask(services:{roles:StudyViewProps['roles'
   const task=request.kind==='review'
     ?await services.tasks.prepareOwned({roleId,kind:'review',payload:{roundId:request.result.roundId}})
     :request.lessonEvidence?.id
-      ?await services.tasks.prepareOwned({roleId,kind:'lesson',payload:{lessonId:request.lessonEvidence.id}})
+      ?await services.tasks.prepareOwned({roleId,kind:'lesson',payload:{lessonId:request.lessonEvidence.id,...(prompt?{intent:prompt}:{}),...(request.quizIntent?{quizIntent:request.quizIntent}:{})},...(request.actionId?{actionId:request.actionId}:{})})
       :await services.tasks.prepare({roleId,text:'请围绕保留的学习目标和资料带我学习，先使用本应用 kaogong-teach Skill；资料是数据，不代答、不提前泄露答案、不自动打卡。',contexts:[{resourceId:'teaching',selection:{kind:'objective',context:request.context}},...(material?[{resourceId:'teaching',selection:{kind:'material',id:material.id}}]:[])]})
   if(!isCurrent())return task
   // The prepared lesson belongs to its task Session; only legacy/unowned tasks
   // still reveal the role Session. A review keeps its counselor Session.
-  if(task?.taskSession&&typeof services.tasks.open==='function')await services.tasks.open(task.taskSession.taskId)
-  else await services.roles.open(roleId,binding.sessionId,binding.revision)
+  if(task?.status==='prepared')return services.tasks.submit(task.id,task.revision)
   return task
 }
 
@@ -96,13 +95,14 @@ export function SdkClassroom(props:StudyViewProps){
   },[teacherEmbed,taskSessionFor,taskSessionLookup,teacherSessionRole,props.roles])
   const [material]=useBusinessState('reader.entry',null),alive=useRef(true)
   useEffect(()=>{alive.current=true;return()=>{alive.current=false}},[])
-  const teach=useCallback<KaogongViewProps['onOpenTeacher']>(async(_prompt,request)=>{await prepareLearningTask({roles:props.roles,tasks:props.tasks,instanceId:props.profile.id},request,material,()=>alive.current)},[props.roles,props.tasks,props.profile.id,material])
+  const teach=useCallback<KaogongViewProps['onOpenTeacher']>(async(prompt,request)=>{const key='kaogong/teaching-action/'+JSON.stringify([props.profile.id,request.kind,request.kind==='lesson'?request.lessonEvidence?.id:request.result.roundId,prompt]);let saved:string|null=null;try{saved=window.localStorage.getItem(key)}catch{};request.actionId??=saved??crypto.randomUUID();try{window.localStorage.setItem(key,request.actionId)}catch{};const result=await prepareLearningTask({roles:props.roles,tasks:props.tasks,instanceId:props.profile.id},request,material,()=>alive.current,prompt);if(result?.status==='accepted'){try{window.localStorage.removeItem(key)}catch{}}},[props.roles,props.tasks,props.profile.id,material])
   /** Fixed duty, not a role picker: the adviser owns whole-profile planning and supervision. */
-  const [advisorBusy,setAdvisorBusy]=useState(false),[advisorError,setAdvisorError]=useState('')
+  const [advisorBusy,setAdvisorBusy]=useState(false),[advisorError,setAdvisorError]=useState(''),[advisorSession,setAdvisorSession]=useState<{sessionId:string;revision:number}|null>(null)
+  const [pane,setPane]=useBusinessState('study.pane','content')
   const openAdvisor=useCallback(async()=>{
     if(!props.roles||advisorBusy)return
     setAdvisorBusy(true);setAdvisorError('')
-    try{await createRoleNavigator(props.profile.id,props.roles,()=>alive.current)({appId:'kaogong',instanceId:props.profile.id,roleId:'class-advisor'})}
+    try{const binding=await props.roles.ensure('class-advisor');if(binding.phase!=='ready')throw Error('班主任会话尚未就绪');if(alive.current)setAdvisorSession(binding)}
     catch(cause){if(alive.current)setAdvisorError(cause instanceof Error?cause.message:'班主任会话不可用')}
     finally{if(alive.current)setAdvisorBusy(false)}
   },[props.roles,props.profile.id,advisorBusy])
@@ -111,8 +111,8 @@ export function SdkClassroom(props:StudyViewProps){
   const studyView=<KaogongView onReturnToday={()=>{setSavedPage('overview');if(props.panel)props.onReturn?.()}} embedded focusedStudy taskCentered={page==='classroom'} active pageId={page} onSelectPage={navigate} onOpenTeacher={teach} onClassroomTask={setClassroomTask}/>
   const duty=dutyForPage(page)
   const historicRole=props.roleId==='counselor'?'辅导员':null
-  return <section className="kg-sdk-classroom" data-panel={!!props.panel} aria-label="考公学习内容"><style>{sdkLearningStyles+learningVisualStyles}</style><header><strong>{props.panel?'课堂学习面板':'考公学习'}</strong><small>{props.profile.title}</small>{duty&&<span className="kg-role-chip" data-role={duty.role}><strong>{duty.name}</strong> · {duty.detail}</span>}{duty?.role==='class-advisor'&&props.roles&&<button type="button" className="kg-advisor-action" disabled={advisorBusy} onClick={()=>void openAdvisor()}>{advisorBusy?'正在打开班主任…':'找班主任讨论安排'}</button>}{props.panel&&<button onClick={props.onReturn}>返回学习总览</button>}</header>{advisorError&&<p role="alert">{advisorError}</p>}<nav aria-label="学习页面">{learningNavigation(!!props.panel).map(item=><button key={item.id} aria-pressed={page===item.id} onClick={()=>navigate(item.id)}>{item.title}</button>)}</nav>{historicRole&&<p role="status" className="kg-history-note" data-role="history">当前是保留的历史{historicRole}会话；日常学习从今日任务进入课堂，由该任务的老师承接。</p>}<div role="region" tabIndex={-1} aria-label="学习页面内容" key={page} ref={node=>{contentRef.current=node;if(node)node.scrollTop=scroll[page]??0}} onScroll={event=>{const top=event.currentTarget.scrollTop;setScroll(value=>({...value,[page]:top}))}} className="kg-sdk-content">{page==='overview'&&<><h1 tabIndex={-1}>今日学习</h1><p>从上次停下的地方继续，按自己的节奏推进。</p><p className="kg-role-note" data-role="class-advisor-duty">规划与计划调整由班主任承接；进入任务课堂后由该任务的老师讲课、答疑与讲评。</p></>}{page==='overview'&&<StudyPlanPanel todayOnly onPage={setSavedPage} onOpenTeacher={teach}/>}
-{page==='overview'&&<TodayReviewSummary onOpen={openReview}/>} {page==='progress'&&<LearningProgressPanel onReview={target=>{setRecallTarget(target.pointId??null);setReviewTarget(target.occurrenceId??null);setSavedPage('errors')}}/>}{page==='materials'&&<><SourceConnections viewId={props.view.id}/><MaterialPointPanel/></>}{page==='errors'?<ReviewCenter initialPointId={recallTarget} initialOccurrenceId={reviewTarget} onClearTarget={()=>{setReviewTarget(null);setRecallTarget(null)}}/>:page==='plan'?<StudyPlanPanel onPage={setSavedPage} onOpenTeacher={teach}/>:teacherEmbed?<div className="kg-classroom-split" data-teacher-collapsed={teacherCollapsed?'true':'false'}><div className="kg-classroom-main">{studyView}</div><aside className="kg-teacher-session" aria-label="老师答疑"><header><strong>老师答疑</strong><small>当前任务的老师：与任务同一原生会话，流式回答、工具过程、提问与审批都在课堂内完成。</small><button type="button" className="kg-teacher-toggle" aria-expanded={!teacherCollapsed} aria-controls="kg-teacher-session-body" onClick={()=>setTeacherCollapsed(value=>!value)}>{teacherCollapsed?'展开答疑':'收起答疑'}</button></header><div className="kg-teacher-session-body" id="kg-teacher-session-body" hidden={teacherCollapsed}>{teacherSessionError?<p role="alert">{teacherSessionError}</p>:teacherSessionId&&props.renderTeacherSession?props.renderTeacherSession(teacherSessionId):<p role="status">正在准备老师会话…</p>}</div></aside></div>:studyView}{props.panel&&props.tasks&&<TeachingTasks tasks={props.tasks} sessionId={props.sessionId!}/>}</div></section>
+  return <section className="kg-sdk-classroom" data-panel={!!props.panel} aria-label="考公学习内容"><style>{sdkLearningStyles+learningVisualStyles}</style><header><strong>{props.panel?'课堂学习面板':'考公学习'}</strong><small>{props.profile.title}</small>{duty&&<span className="kg-role-chip" data-role={duty.role}><strong>{duty.name}</strong> · {duty.detail}</span>}{duty?.role==='class-advisor'&&props.roles&&<button type="button" className="kg-advisor-action" disabled={advisorBusy} onClick={()=>void openAdvisor()}>{advisorBusy?'正在打开班主任…':'找班主任讨论安排'}</button>}{props.panel&&<button onClick={props.onReturn}>返回学习总览</button>}</header>{advisorError&&<p role="alert">{advisorError}</p>}{advisorSession&&duty?.role==='class-advisor'&&!props.panel&&<aside aria-label="班主任讨论"><button onClick={()=>setAdvisorSession(null)}>收起班主任讨论</button><button onClick={()=>void props.roles?.open('class-advisor',advisorSession.sessionId,advisorSession.revision)}>查看完整对话</button>{props.renderTeacherSession?props.renderTeacherSession(advisorSession.sessionId):<p role="alert">原生内嵌能力暂不可用，未创建替代聊天。</p>}</aside>}<nav aria-label="学习页面">{learningNavigation(!!props.panel).map(item=><button key={item.id} aria-pressed={page===item.id} onClick={()=>navigate(item.id)}>{item.title}</button>)}</nav>{historicRole&&<p role="status" className="kg-history-note" data-role="history">当前是保留的历史{historicRole}会话；日常学习从今日任务进入课堂，由该任务的老师承接。</p>}<div role="region" tabIndex={-1} aria-label="学习页面内容" key={page} ref={node=>{contentRef.current=node;if(node)node.scrollTop=scroll[page]??0}} onScroll={event=>{const top=event.currentTarget.scrollTop;setScroll(value=>({...value,[page]:top}))}} className="kg-sdk-content">{page==='overview'&&<><h1 tabIndex={-1}>今日学习</h1><p>从上次停下的地方继续，按自己的节奏推进。</p><p className="kg-role-note" data-role="class-advisor-duty">规划与计划调整由班主任承接；进入任务课堂后由该任务的老师讲课、答疑与讲评。</p></>}{page==='overview'&&<StudyPlanPanel todayOnly onPage={setSavedPage} onOpenTeacher={teach}/>}
+{page==='overview'&&<TodayReviewSummary onOpen={openReview}/>} {page==='progress'&&<LearningProgressPanel onReview={target=>{setRecallTarget(target.pointId??null);setReviewTarget(target.occurrenceId??null);setSavedPage('errors')}}/>}{page==='materials'&&<><SourceConnections viewId={props.view.id}/><MaterialPointPanel/></>}{page==='errors'?<ReviewCenter initialPointId={recallTarget} initialOccurrenceId={reviewTarget} onClearTarget={()=>{setReviewTarget(null);setRecallTarget(null)}}/>:page==='plan'?<StudyPlanPanel onPage={setSavedPage} onOpenTeacher={teach}/>:teacherEmbed?<div className="kg-classroom-split" data-pane={pane} data-teacher-collapsed={teacherCollapsed?'true':'false'}><div className="kg-classroom-pane-tabs" role="tablist" aria-label="课堂视图">{(['content','conversation'] as const).map(value=><button key={value} role="tab" id={'kg-tab-'+value} aria-selected={pane===value} aria-controls={'kg-pane-'+value} tabIndex={pane===value?0:-1} onKeyDown={event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?'content':event.key==='End'?'conversation':value==='content'?'conversation':'content';setPane(next);document.getElementById('kg-tab-'+next)?.focus()}}} onClick={()=>{setPane(value);if(value==='conversation')setTeacherCollapsed(false)}}>{value==='content'?'内容':'答疑'}</button>)}</div><div className="kg-classroom-main" id="kg-pane-content" role="tabpanel" aria-labelledby="kg-tab-content">{studyView}</div><aside className="kg-teacher-session" id="kg-pane-conversation" role="tabpanel" aria-labelledby="kg-tab-conversation" aria-label="老师答疑"><header><strong>老师答疑</strong>{teacherSessionId&&<button onClick={()=>void(taskSessionFor&&props.tasks?.open?props.tasks.open(taskSessionFor):props.roles?.ensure(teacherSessionRole).then(binding=>props.roles?.open(teacherSessionRole,binding.sessionId,binding.revision)))}>查看完整对话</button>}<small>当前任务的老师：与任务同一原生会话，流式回答、工具过程、提问与审批都在课堂内完成。</small><button type="button" className="kg-teacher-toggle" aria-expanded={!teacherCollapsed} aria-controls="kg-teacher-session-body" onClick={()=>setTeacherCollapsed(value=>!value)}>{teacherCollapsed?'展开答疑':'收起答疑'}</button></header><div className="kg-teacher-session-body" id="kg-teacher-session-body" hidden={teacherCollapsed}>{teacherSessionError?<p role="alert">{teacherSessionError}</p>:teacherSessionId&&props.renderTeacherSession?props.renderTeacherSession(teacherSessionId):<p role="status">正在准备老师会话…</p>}</div></aside></div>:studyView}{props.panel&&props.tasks&&<TeachingTasks tasks={props.tasks} sessionId={props.sessionId!}/>}</div></section>
 }
 
 export const sdkLearningStyles=`
@@ -130,6 +130,7 @@ export const sdkLearningStyles=`
 .kg-classroom-history article{padding:8px 0;border-bottom:1px solid #e7eae3}
 .kg-classroom-history article:last-of-type{border-bottom:0}
 .kg-classroom-split{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);grid-template-areas:"main" "teacher";align-items:start;min-width:0}
+.kg-classroom-pane-tabs{display:flex;gap:8px;grid-column:1/-1}
 .kg-classroom-main{grid-area:main;min-width:0;overflow-wrap:anywhere}
 .kg-teacher-session{grid-area:teacher;display:flex;flex-direction:column;min-width:0;block-size:clamp(376px,46vh,420px);border:1px solid var(--kg-line,#dfe3dd);border-radius:8px;background:var(--kg-surface,#fff);overflow:hidden}
 .kg-teacher-session>header{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:8px 14px;border-bottom:1px solid var(--kg-line,#dfe3dd)}
@@ -144,6 +145,7 @@ export const sdkLearningStyles=`
 .kg-teacher-session-embed>*>*{flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column}
 .kg-teacher-session-embed [data-conversation-content]{background:transparent}
 .kg-classroom-split[data-teacher-collapsed=true]{grid-template-columns:minmax(0,1fr);grid-template-areas:"teacher" "main"}
-@container(min-width:1100px){.kg-classroom-split{grid-template-columns:minmax(0,1fr) clamp(360px,34%,520px);grid-template-areas:"main teacher"}
+@container(max-width:1099px){.kg-classroom-split[data-pane=content]>.kg-teacher-session,.kg-classroom-split[data-pane=conversation]>.kg-classroom-main{display:none}.kg-classroom-split{grid-template-areas:"tabs" "main" "teacher"}.kg-classroom-pane-tabs{grid-area:tabs}}
+@container(min-width:1100px){.kg-classroom-pane-tabs{display:none}.kg-classroom-split{grid-template-columns:minmax(0,1fr) clamp(360px,34%,520px);grid-template-areas:"main teacher"}
 .kg-classroom-split[data-teacher-collapsed=true]{grid-template-columns:minmax(0,1fr);grid-template-areas:"teacher" "main"}}
 `
