@@ -36,11 +36,24 @@ function noteStore(initial) {
   const files = new Map(Object.entries(initial))
   const calls = []
   const resolveResults = new Map()
+  const resolveGates = new Map()
   return {
     calls,
     files,
     set(path, content) { files.set(path, content) },
     resolve(target, result) { resolveResults.set(target, result) },
+    gateResolve(target) {
+      let release
+      const promise = new Promise(resolve => { release = resolve })
+      const gates = resolveGates.get(target) ?? []
+      gates.push(promise)
+      resolveGates.set(target, gates)
+      return () => {
+        release()
+        const remaining = (resolveGates.get(target) ?? []).filter(gate => gate !== promise)
+        resolveGates.set(target, remaining)
+      }
+    },
     client: {
       async load() { return { vault: { path: 'D:/知识库', status: 'ready', reason: null, hint: '' }, spaces: [space], currentSpaceId: space.id } },
       async command() { throw new Error('not used') },
@@ -63,6 +76,11 @@ function noteStore(initial) {
       },
       async resolveLink(input) {
         calls.push({ type: 'resolve', ...input })
+        const gates = resolveGates.get(input.target)
+        if (gates !== undefined && gates.length > 0) {
+          const gate = gates.shift()
+          await gate
+        }
         const result = resolveResults.get(input.target)
         if (result === undefined) throw new Error(`测试没有准备解析结果：${input.target}`)
         return result
@@ -132,6 +150,22 @@ async function mount(store, props = {}) {
       assert.ok(button, `找不到按钮：${label}`)
       await act(async () => { button.click() })
       await settle()
+    },
+    async select(path) {
+      const select = container.querySelector('select[aria-label="笔记文件"]')
+      assert.ok(select, '找不到笔记文件选择器')
+      await act(async () => {
+        const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, 'value').set
+        setter.call(select, path)
+        select.dispatchEvent(new dom.window.Event('change', { bubbles: true }))
+      })
+      await settle()
+    },
+    async clickWiki(target) {
+      const link = container.querySelector(`[data-wikilink="${target}"]`)
+      assert.ok(link, `找不到双链：${target}`)
+      await act(async () => { link.click() })
+      await settle(2)
     },
     async unmount() { await act(async () => { root.unmount() }) },
   }
@@ -380,6 +414,114 @@ test('跨笔记块引用打开真实文件并定位到含 ^块id 的段落', asy
     assert.ok(block, '另一篇笔记里的真实块应有块元数据')
     assert.equal(block.textContent.trim(), '结论')
     assert.equal(block.getAttribute('data-scrolled'), '1')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('同一相对路径的两个学习空间：A 的双链晚到时不得在 B 打开 A 的相对路径', async () => {
+  const store = noteStore({ '笔记/我的笔记.md': '# 我的笔记\n\n[[概率论/讲义/01.md]]\n' })
+  store.resolve('概率论/讲义/01.md', {
+    spaceId: 'space-1', target: '概率论/讲义/01.md', status: 'ok',
+    file: '概率论/讲义/01.md', spacePath: '讲义/01.md', kind: 'lecture',
+    heading: null, blockId: null, link: '[[概率论/讲义/01.md]]', candidates: [], message: null,
+  })
+  const release = store.gateResolve('概率论/讲义/01.md')
+  const opens = []
+  const ui = await mount(store, { onOpenLecture: (path, fragment) => opens.push([path, fragment]) })
+  try {
+    await ui.click('预览')
+    await ui.clickWiki('概率论/讲义/01.md')
+
+    const otherSpace = { ...space, id: 'space-2', title: '线性代数', directory: '线性代数' }
+    await ui.rerender({ space: otherSpace })
+    release()
+    await settle()
+
+    assert.deepEqual(opens, [])
+    assert.match(ui.text(), /切换|旧双链|没有打开/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('解析期间切换笔记：旧双链响应不得在新笔记里导航', async () => {
+  const store = noteStore({
+    '笔记/我的笔记.md': '# 我的笔记\n\n[[概率论/讲义/01.md]]\n',
+    '笔记/另一篇.md': '# 另一篇\n\n没有双链。\n',
+  })
+  store.resolve('概率论/讲义/01.md', {
+    spaceId: 'space-1', target: '概率论/讲义/01.md', status: 'ok',
+    file: '概率论/讲义/01.md', spacePath: '讲义/01.md', kind: 'lecture',
+    heading: null, blockId: null, link: '[[概率论/讲义/01.md]]', candidates: [], message: null,
+  })
+  const release = store.gateResolve('概率论/讲义/01.md')
+  const opens = []
+  const ui = await mount(store, { onOpenLecture: path => opens.push(path) })
+  try {
+    await ui.click('预览')
+    await ui.clickWiki('概率论/讲义/01.md')
+    await ui.select('笔记/另一篇.md')
+    release()
+    await settle()
+
+    assert.deepEqual(opens, [])
+    assert.match(ui.text(), /切换|旧双链|没有打开/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('切走再切回同一笔记后，旧双链因导航代次变化仍被拒绝', async () => {
+  const store = noteStore({
+    '笔记/我的笔记.md': '# 我的笔记\n\n[[概率论/讲义/01.md]]\n',
+    '笔记/另一篇.md': '# 另一篇\n\n没有双链。\n',
+  })
+  store.resolve('概率论/讲义/01.md', {
+    spaceId: 'space-1', target: '概率论/讲义/01.md', status: 'ok',
+    file: '概率论/讲义/01.md', spacePath: '讲义/01.md', kind: 'lecture',
+    heading: null, blockId: null, link: '[[概率论/讲义/01.md]]', candidates: [], message: null,
+  })
+  const release = store.gateResolve('概率论/讲义/01.md')
+  const opens = []
+  const ui = await mount(store, { onOpenLecture: path => opens.push(path) })
+  try {
+    await ui.click('预览')
+    await ui.clickWiki('概率论/讲义/01.md')
+    await ui.select('笔记/另一篇.md')
+    await ui.select('笔记/我的笔记.md')
+    release()
+    await settle()
+
+    assert.deepEqual(opens, [])
+    assert.match(ui.text(), /切换|旧双链|没有打开/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('再次点击另一条双链后，先前的慢响应被拒绝且不覆盖新导航', async () => {
+  const store = noteStore({
+    '笔记/我的笔记.md': '# 我的笔记\n\n[[概率论/讲义/01.md]]\n\n[[概率论/讲义/02.md]]\n',
+  })
+  for (const [target, path] of [['概率论/讲义/01.md', '讲义/01.md'], ['概率论/讲义/02.md', '讲义/02.md']]) {
+    store.resolve(target, {
+      spaceId: 'space-1', target, status: 'ok',
+      file: target, spacePath: path, kind: 'lecture',
+      heading: null, blockId: null, link: `[[${target}]]`, candidates: [], message: null,
+    })
+  }
+  const releaseOld = store.gateResolve('概率论/讲义/01.md')
+  const opens = []
+  const ui = await mount(store, { onOpenLecture: path => opens.push(path) })
+  try {
+    await ui.click('预览')
+    await ui.clickWiki('概率论/讲义/01.md')
+    await ui.clickWiki('概率论/讲义/02.md')
+    releaseOld()
+    await settle()
+
+    assert.deepEqual(opens, ['讲义/02.md'])
   } finally {
     await ui.unmount()
   }

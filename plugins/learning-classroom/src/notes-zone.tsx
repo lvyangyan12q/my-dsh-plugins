@@ -171,6 +171,11 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
   const previewRef = useRef<HTMLDivElement | null>(null)
   const handledScroll = useRef<number | null>(null)
   const scrollSeq = useRef(0)
+  // Every link click freezes the navigation identity (space, note, generation)
+  // before the Host round-trip; a late response for another context is refused.
+  const linkRequestSeq = useRef(0)
+  const spaceIdViewRef = useRef(space.id)
+  spaceIdViewRef.current = space.id
   const [scrollRequest, setScrollRequest] = useState<(LinkFragment & { token: number }) | null>(null)
   const [appendNotice, setAppendNotice] = useState('')
   const [linkNotice, setLinkNotice] = useState('')
@@ -899,14 +904,33 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       setLinkNotice('当前客户端不支持双链解析，无法在课堂里回跳；请在 Obsidian 中打开。')
       return
     }
+    // Freeze the navigation context before awaiting the Host. A response that
+    // arrives after a space/note switch or a newer link click must not navigate
+    // the new context with an old relative path.
+    const requestId = ++linkRequestSeq.current
+    const requestSpaceId = space.id
+    const requestNotePath = pathRef.current
+    const requestGeneration = generation.current
+    const superseded = (): boolean => requestId !== linkRequestSeq.current
+    const staleTarget = (): boolean => spaceIdViewRef.current !== requestSpaceId
+      || pathRef.current !== requestNotePath
+      || generation.current !== requestGeneration
+    const refuseStale = (): void => {
+      if (!superseded()) setLinkNotice('学习空间或笔记已经切换，旧双链没有打开。')
+    }
     try {
       const resolved = await client.resolveLink({
         action: 'link-resolve',
-        spaceId: space.id,
+        spaceId: requestSpaceId,
         target,
-        fromPath: pathRef.current,
+        fromPath: requestNotePath,
       })
       if (!alive.current) return
+      if (superseded()) return
+      if (staleTarget()) {
+        refuseStale()
+        return
+      }
       if (resolved.status !== 'ok') {
         setLinkNotice(resolved.message ?? '这条双链无法解析。')
         return
@@ -916,7 +940,12 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       if (resolved.kind === 'note' && resolved.spacePath !== null) {
         // Same-file links must still navigate to the real heading/block instead
         // of returning early and dropping the fragment.
-        if (resolved.spacePath !== pathRef.current) await switchTo(resolved.spacePath)
+        if (resolved.spacePath !== pathRef.current) {
+          await switchTo(resolved.spacePath)
+          // A newer click during the switch owns navigation; this request only
+          // continues when it is still the newest and the space did not change.
+          if (!alive.current || superseded() || spaceIdViewRef.current !== requestSpaceId) return
+        }
         if (hasFragment) {
           setMode('preview')
           scrollSeq.current += 1
@@ -930,7 +959,13 @@ export function NotesZone({ client, space, debounceMs = defaultDebounceMs, openR
       }
       setLinkNotice(`这条双链指向 ${resolved.file ?? target}；它不在当前学习空间，请在 Obsidian 中打开。`)
     } catch (error) {
-      if (alive.current) setLinkNotice(messageOf(error))
+      if (!alive.current) return
+      if (superseded()) return
+      if (staleTarget()) {
+        refuseStale()
+        return
+      }
+      setLinkNotice(messageOf(error))
     }
   }, [client, onOpenLecture, space.id, switchTo])
 
