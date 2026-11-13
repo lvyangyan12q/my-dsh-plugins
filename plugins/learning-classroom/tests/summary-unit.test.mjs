@@ -47,3 +47,30 @@ test('小节标题后的内容按标题边界截断，不会把小节后面的�
   ].join('\n')
   assert.deepEqual(parseSummary(handEdited), { summary: '看完了第一章。', nextStep: '做练习 1-3。' })
 })
+
+test('任意 Markdown 标题与代码块原样 roundtrip，不会被当成小节边界', () => {
+  const summary = '先复习定义。\n\n## 我自己的小节\n\n这里有 **重点**。\n\n### 更深的标题\n\n- 列表一\n- 列表二\n\n```js\nconst x = 1\n```\n\n最后一行。'
+  const nextStep = '## 我的计划\n\n1. 做练习\n2. 复盘'
+  const markdown = composeSummary({ summary, nextStep })
+  assert.deepEqual(parseSummary(markdown), { summary, nextStep })
+})
+
+test('正文里出现与章节同名的标题也原样保留，不被截断', () => {
+  const summary = '开头。\n\n## 本次小结\n\n这是用户自己写的一个同名标题，不是结构分隔。\n\n结尾。'
+  const nextStep = '下一步正文。\n\n## 下一步\n\n用户自己写的另一个同名标题。'
+  assert.deepEqual(parseSummary(composeSummary({ summary, nextStep })), { summary, nextStep })
+})
+
+test('小节编码使用成对标记，手写文件缺少标记时仍按旧标题规则读取', () => {
+  const markdown = composeSummary({ summary: '有标记的小结。', nextStep: '有标记的下一步。' })
+  assert.match(markdown, /<!-- learning-classroom:summary:/)
+  assert.match(markdown, /<!-- \/learning-classroom:summary:/)
+  assert.match(markdown, /<!-- learning-classroom:next:/)
+  assert.match(markdown, /<!-- \/learning-classroom:next:/)
+  // Legacy file without our markers still reads by the known section headings.
+  assert.deepEqual(
+    parseSummary('# 学习小结\n\n## 本次小结\n\n旧文件。\n\n## 下一步\n\n旧下一步。\n'),
+    { summary: '旧文件。', nextStep: '旧下一步。' },
+  )
+})
+

@@ -1,6 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ClassroomClient } from './classroom-client.ts'
-import type { ClassroomLectureView, ClassroomSpaceView, SummaryView } from './contract.ts'
+import type { ClassroomLectureView, ClassroomSpaceView, ReadingPositionView, SummaryView } from './contract.ts'
+import {
+  allocateDraftRevision,
+  clearDraftRisk,
+  createSessionDraftStore,
+  hasNonDurableDrafts,
+  markDraftNonDurable,
+  observeDraftRevision,
+} from './note-drafts.ts'
+import { createSummaryDraftStore, type SummaryDraftStore } from './summary-drafts.ts'
+import { summaryFileName } from './summary.ts'
 
 export interface ContinuityZoneProps {
   client: ClassroomClient
@@ -13,18 +23,25 @@ export interface ContinuityZoneProps {
   lectures: readonly ClassroomLectureView[]
   /** Lecture currently open in the reader, if any. */
   currentPath: string | null
+  /** Latest position known to the reader (may be newer than the saved space prop). */
+  readingPosition?: ReadingPositionView
   /** Reopen the stored course file (or scroll to its saved offset). */
   onRestorePosition: (path: string) => void
+  /** Recoverable draft store; defaults to the same session/memory store the notes use. */
+  drafts?: SummaryDraftStore
 }
 
-/** Unsaved summary text, kept per learning space so a theme switch cannot lose it. */
-interface SummaryDraft {
+/** Editing state for one learning space; text is also parked in the durable store. */
+interface SummaryEdit {
   summary: string
   nextStep: string
-  editing: boolean
-  /** Bumped on every local edit; a save only clears the draft it submitted. */
+  /** File version this text was authored against; null when no file existed. */
+  baseVersion: string | null
   revision: number
+  editing: boolean
 }
+
+const memoryDraftWarning = '浏览器存储不可用：未保存的小结草稿只在当前页面内存，关闭或刷新页面会丢失。请先保存或复制。'
 
 const styles = `
 .lc-continuity{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border:1px solid var(--dsh-border,#d8dee4);border-radius:8px;background:var(--dsh-surface,#fff)}
@@ -52,35 +69,37 @@ function messageOf(error: unknown): string {
  * Markdown knowledge file; saving it is always an explicit action, and the
  * component never infers mastery or schedules review.
  *
- * Drafts and errors are keyed by learning space so a late response for the
- * previous theme cannot write into the current one, and an unfinished edit
- * survives switching themes.
+ * Drafts reuse the note editor's recoverable store: every edit is parked
+ * synchronously under the current space, records the file version it was based
+ * on, and is restored on a refresh/remount. A late response for the previous
+ * theme can only touch that theme's entry.
  */
 export function ContinuityZone(props: ContinuityZoneProps) {
   const { client, space, busy = false, goal, lectures, currentPath, onRestorePosition } = props
   const canRead = typeof client.readSummary === 'function'
   const canSave = typeof client.saveSummary === 'function'
 
+  const draftStore = useMemo(
+    () => props.drafts ?? createSummaryDraftStore(createSessionDraftStore()),
+    [props.drafts],
+  )
+
   const [summary, setSummary] = useState<SummaryView | null>(null)
   const [loadError, setLoadError] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
-  const [drafts, setDrafts] = useState<Record<string, SummaryDraft>>({})
+  const [edits, setEdits] = useState<Record<string, SummaryEdit>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notices, setNotices] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState<Record<string, boolean>>({})
+  const [pageRisk, setPageRisk] = useState(() => hasNonDurableDrafts())
 
   const alive = useRef(true)
   const spaceIdRef = useRef(space.id)
   spaceIdRef.current = space.id
-  const draftsRef = useRef(drafts)
   const generation = useRef(0)
-  const revisionSeq = useRef(0)
-
-  useEffect(() => { draftsRef.current = drafts }, [drafts])
 
   useEffect(() => {
     alive.current = true
-    if (!canRead) return () => { alive.current = false }
     const mine = generation.current + 1
     generation.current = mine
     const controller = new AbortController()
@@ -88,26 +107,57 @@ export function ContinuityZone(props: ContinuityZoneProps) {
     setLoadError('')
     const current = () => alive.current && generation.current === mine && !controller.signal.aborted
 
+    // Drafts survive a reload; restore the text and its baseline before the
+    // disk read finishes so the learner can keep typing immediately.
+    const stored = draftStore.read(space.id)
+    if (stored !== null) {
+      observeDraftRevision(space.id, summaryFileName, stored.revision)
+      setEdits(prev => ({
+        ...prev,
+        [space.id]: {
+          summary: stored.summary,
+          nextStep: stored.nextStep,
+          baseVersion: stored.baseVersion,
+          revision: stored.revision,
+          editing: true,
+        },
+      }))
+      setPageRisk(hasNonDurableDrafts() || stored.storage === 'memory')
+    } else {
+      setEdits(prev => {
+        const existing = prev[space.id]
+        if (existing === undefined || !existing.editing) return prev
+        return { ...prev, [space.id]: { ...existing, editing: false } }
+      })
+    }
+
+    if (!canRead) return () => { alive.current = false }
+
     client.readSummary?.(space.id, controller.signal).then(next => {
       if (!current()) return
       setSummary(next)
-      const draft = draftsRef.current[space.id]
-      if (draft !== undefined && draft.editing) {
-        // A reload never replaces text the learner is still writing.
-        if (draft.summary !== next.summary || draft.nextStep !== next.nextStep) {
-          setNotices(prev => ({ ...prev, [space.id]: '磁盘上的小结已更新；你的未保存草稿仍保留。' }))
+      const draft = draftStore.read(space.id)
+      if (draft !== null) {
+        if (draft.baseVersion !== next.version) {
+          setNotices(prev => ({
+            ...prev,
+            [space.id]: '磁盘上的小结已更新；你的草稿基于旧版本，保存会被拒绝。请先重新加载或核对后再决定。',
+          }))
+        } else {
+          setNotices(prev => ({ ...prev, [space.id]: '已恢复上次未保存的小结草稿；它还没有写回磁盘。' }))
         }
         return
       }
-      const revision = revisionSeq.current + 1
-      revisionSeq.current = revision
-      setDrafts(prev => ({ ...prev, [space.id]: { summary: next.summary, nextStep: next.nextStep, editing: false, revision } }))
-      setNotices(prev => {
-        if (prev[space.id] === undefined) return prev
-        const copy = { ...prev }
-        delete copy[space.id]
-        return copy
-      })
+      setEdits(prev => ({
+        ...prev,
+        [space.id]: {
+          summary: next.summary,
+          nextStep: next.nextStep,
+          baseVersion: next.version,
+          revision: prev[space.id]?.revision ?? 0,
+          editing: false,
+        },
+      }))
     }).catch(cause => {
       if (current()) setLoadError(messageOf(cause))
     })
@@ -116,24 +166,19 @@ export function ContinuityZone(props: ContinuityZoneProps) {
       alive.current = false
       controller.abort()
     }
-  }, [canRead, client, space.id, reloadKey])
+  }, [canRead, client, draftStore, space.id, reloadKey])
 
-  const draft = drafts[space.id]
-  const editing = draft?.editing ?? false
+  const edit = edits[space.id]
+  const editing = edit?.editing ?? false
   const error = errors[space.id] ?? ''
   const notice = notices[space.id] ?? ''
   const isSaving = saving[space.id] === true
-  // Injected/older views may omit the optional continuity fields; an unknown
-  // position is simply "no reading record", never a crash.
-  const position = space.readingPosition ?? { path: null, scrollTop: 0 }
+  // A new position saved by the reader is newer than the space prop until the
+  // whole view is re-read; prefer the reader's copy for this theme only.
+  const position = props.readingPosition ?? space.readingPosition ?? { path: null, scrollTop: 0 }
   const positionTitle = position.path === null
     ? ''
     : lectures.find(row => row.path === position.path)?.title ?? position.path
-
-  const nextRevision = (): number => {
-    revisionSeq.current += 1
-    return revisionSeq.current
-  }
 
   const clearError = (spaceId: string): void => {
     setErrors(prev => {
@@ -153,77 +198,107 @@ export function ContinuityZone(props: ContinuityZoneProps) {
     })
   }
 
+  /** Park the current text immediately; the browser refresh must not depend on React cleanup. */
+  const park = (target: string, next: { summary: string; nextStep: string; baseVersion: string | null }): number => {
+    const revision = allocateDraftRevision(target, summaryFileName)
+    const result = draftStore.write(target, {
+      summary: next.summary,
+      nextStep: next.nextStep,
+      baseVersion: next.baseVersion,
+      revision,
+      savedAt: new Date().toISOString(),
+    })
+    if (result === 'memory') {
+      markDraftNonDurable(target, summaryFileName)
+      setPageRisk(true)
+    } else if (result === 'session') {
+      clearDraftRisk(target, summaryFileName)
+      setPageRisk(hasNonDurableDrafts())
+    }
+    return revision
+  }
+
   const startEdit = (): void => {
-    const revision = nextRevision()
-    setDrafts(prev => ({
+    const target = space.id
+    const revision = allocateDraftRevision(target, summaryFileName)
+    const baseVersion = summary?.version ?? null
+    setEdits(prev => ({
       ...prev,
-      [space.id]: {
-        summary: prev[space.id]?.summary ?? summary?.summary ?? '',
-        nextStep: prev[space.id]?.nextStep ?? summary?.nextStep ?? '',
-        editing: true,
+      [target]: {
+        summary: prev[target]?.summary ?? summary?.summary ?? '',
+        nextStep: prev[target]?.nextStep ?? summary?.nextStep ?? '',
+        baseVersion: prev[target]?.baseVersion ?? baseVersion,
         revision,
+        editing: true,
       },
     }))
-    clearError(space.id)
+    clearError(target)
   }
 
   const cancelEdit = (): void => {
-    setDrafts(prev => {
-      if (prev[space.id] === undefined) return prev
+    const target = space.id
+    draftStore.remove(target)
+    clearDraftRisk(target, summaryFileName)
+    setPageRisk(hasNonDurableDrafts())
+    setEdits(prev => {
+      if (prev[target] === undefined) return prev
       const copy = { ...prev }
-      delete copy[space.id]
+      delete copy[target]
       return copy
     })
-    clearError(space.id)
-    clearNotice(space.id)
+    clearError(target)
+    clearNotice(target)
   }
 
   const change = (field: 'summary' | 'nextStep', value: string): void => {
-    const revision = nextRevision()
-    setDrafts(prev => {
-      const current = prev[space.id] ?? { summary: '', nextStep: '', editing: true, revision }
-      return {
-        ...prev,
-        [space.id]: { ...current, [field]: value, editing: true, revision },
-      }
+    const target = space.id
+    const current = edits[target] ?? {
+      summary: summary?.summary ?? '',
+      nextStep: summary?.nextStep ?? '',
+      baseVersion: summary?.version ?? null,
+      revision: 0,
+      editing: true,
+    }
+    const nextText = { ...current, [field]: value, editing: true }
+    const revision = park(target, {
+      summary: nextText.summary,
+      nextStep: nextText.nextStep,
+      baseVersion: nextText.baseVersion,
     })
+    setEdits(prev => ({ ...prev, [target]: { ...nextText, revision } }))
   }
 
   /**
-   * Save explicitly through the versioned Host command. The request belongs to
-   * the space that started it: a late success only updates that space's view,
-   * and a late failure only lands in that space's error line.
+   * Save explicitly through the versioned Host command, always using the draft's
+   * own baseline version. A version re-read after the draft was written must not
+   * become the overwrite guard: that would silently replace an external edit.
    */
   const save = async (): Promise<void> => {
-    if (!canSave || summary === null || isSaving) return
+    if (!canSave || edit === undefined || isSaving) return
     const target = space.id
-    const submitted = drafts[target]
-    const text = {
-      summary: submitted?.summary ?? summary.summary,
-      nextStep: submitted?.nextStep ?? summary.nextStep,
-    }
-    const submittedRevision = submitted?.revision ?? null
+    const submitted = edit
     setSaving(prev => ({ ...prev, [target]: true }))
     clearError(target)
     try {
       const next = await client.saveSummary?.({
         action: 'summary-save',
         spaceId: target,
-        summary: text.summary,
-        nextStep: text.nextStep,
-        version: summary.version,
+        summary: submitted.summary,
+        nextStep: submitted.nextStep,
+        version: submitted.baseVersion,
       })
       if (next === undefined || !alive.current) return
-      if (submittedRevision !== null) {
-        setDrafts(prev => {
-          const current = prev[target]
-          // A newer local revision belongs to the learner; keep it.
-          if (current === undefined || current.revision !== submittedRevision) return prev
-          const copy = { ...prev }
-          delete copy[target]
-          return copy
-        })
+      const stored = draftStore.read(target)
+      if (stored === null || stored.revision <= submitted.revision) {
+        draftStore.remove(target)
+        clearDraftRisk(target, summaryFileName)
+        setPageRisk(hasNonDurableDrafts())
       }
+      setEdits(prev => {
+        const copy = { ...prev }
+        delete copy[target]
+        return copy
+      })
       clearNotice(target)
       if (spaceIdRef.current === target) setSummary(next)
     } catch (cause) {
@@ -242,7 +317,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
 
   /** Explicit choice after a conflict: drop the draft and read the disk copy. */
   const reload = async (): Promise<void> => {
-    if (!canRead || summary === null) return
+    if (!canRead) return
     const target = space.id
     const mine = generation.current
     clearError(target)
@@ -250,9 +325,21 @@ export function ContinuityZone(props: ContinuityZoneProps) {
       const next = await client.readSummary?.(target)
       if (next === undefined || !alive.current || generation.current !== mine) return
       if (spaceIdRef.current !== target) return
+      draftStore.remove(target)
+      clearDraftRisk(target, summaryFileName)
+      setPageRisk(hasNonDurableDrafts())
       setSummary(next)
-      const revision = nextRevision()
-      setDrafts(prev => ({ ...prev, [target]: { summary: next.summary, nextStep: next.nextStep, editing: true, revision } }))
+      const revision = allocateDraftRevision(target, summaryFileName)
+      setEdits(prev => ({
+        ...prev,
+        [target]: {
+          summary: next.summary,
+          nextStep: next.nextStep,
+          baseVersion: next.version,
+          revision,
+          editing: true,
+        },
+      }))
       clearNotice(target)
     } catch (cause) {
       if (alive.current) setErrors(prev => ({ ...prev, [target]: `重新加载小结失败：${messageOf(cause)}` }))
@@ -318,7 +405,7 @@ export function ContinuityZone(props: ContinuityZoneProps) {
             <textarea
               aria-label="本次小结"
               rows={3}
-              value={draft?.summary ?? ''}
+              value={edit?.summary ?? ''}
               disabled={isSaving}
               onChange={event => change('summary', event.target.value)}
             />
@@ -328,22 +415,25 @@ export function ContinuityZone(props: ContinuityZoneProps) {
             <textarea
               aria-label="下一步"
               rows={2}
-              value={draft?.nextStep ?? ''}
+              value={edit?.nextStep ?? ''}
               disabled={isSaving}
               onChange={event => change('nextStep', event.target.value)}
             />
           </label>
           <div className="lc-continuity-actions">
-            <button type="submit" disabled={isSaving || summary === null}>{isSaving ? '保存中…' : '保存小结'}</button>
+            <button type="submit" disabled={isSaving}>{isSaving ? '保存中…' : '保存小结'}</button>
             <button type="button" className="lc-secondary" disabled={isSaving} onClick={() => { void reload() }}>
               重新加载小结（放弃我的修改）
             </button>
             <button type="button" className="lc-secondary" disabled={isSaving} onClick={cancelEdit}>取消</button>
           </div>
-          <p className="lc-continuity-hint">保存会写入知识文件「{summary?.path ?? '学习小结.md'}」；不会自动生成或判断掌握。</p>
+          <p className="lc-continuity-hint">保存会写入知识文件「{summary?.path ?? summaryFileName}」；不会自动生成或判断掌握。</p>
         </form>
       )}
 
+      {pageRisk && (
+        <p className="lc-continuity-hint" role="note">{memoryDraftWarning}离开页面前会要求确认。</p>
+      )}
       {error !== '' && <p className="lc-continuity-error" role="alert">{error}</p>}
       {notice !== '' && <p className="lc-continuity-hint" role="status">{notice}</p>}
     </section>

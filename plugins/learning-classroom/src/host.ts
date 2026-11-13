@@ -68,6 +68,7 @@ import { layoutSchema, type ClassroomState, type ClassroomStateStore, type Class
 import {
   composeSummary,
   maxSummaryBytes,
+  maxSummaryFileBytes,
   parseSummary,
   summaryFileName,
 } from './summary.ts'
@@ -1121,7 +1122,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const relative = `${space.directory}/${summaryFileName}`
     const target = await resolveVaultPath(root, relative, probe)
 
-    const file = await readKnowledgeFile(target, relative, summaryFileCodes, maxSummaryBytes)
+    const file = await readKnowledgeFile(target, relative, summaryFileCodes, maxSummaryFileBytes)
     if (file === undefined) {
       return {
         spaceId: space.id,
@@ -1151,7 +1152,7 @@ export function installClassroom(options: ClassroomHostOptions): ClassroomHost {
     const space = spaceOf(state, spaceId)
     await spaceFolderOf(root, space)
     const content = composeSummary({ summary, nextStep })
-    const saved = await saveKnowledgeFile(root, space, summaryFileName, content, version, summaryFileCodes, maxSummaryBytes)
+    const saved = await saveKnowledgeFile(root, space, summaryFileName, content, version, summaryFileCodes, maxSummaryFileBytes)
     return {
       spaceId: space.id,
       path: summaryFileName,

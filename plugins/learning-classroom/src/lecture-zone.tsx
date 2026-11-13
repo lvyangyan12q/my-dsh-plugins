@@ -7,6 +7,7 @@ import type {
   LectureCandidatesView,
   LectureListView,
   LectureReadView,
+  ReadingPositionView,
   TopicView,
 } from './contract.ts'
 import { buildExperimentSrcdoc } from './experiment-runtime.ts'
@@ -431,10 +432,14 @@ export function LectureZone(props: LectureZoneProps) {
   const [returnTo, setReturnTo] = useState<{ path: string; title: string; scrollTop: number } | null>(null)
   const paneRef = useRef<HTMLElement | null>(null)
   const pendingScroll = useRef<number | null>(null)
-  // Reading position is navigation state written on a debounce; the ref keeps
-  // the load effect from re-running whenever that state changes.
-  const readingPositionRef = useRef(space.readingPosition ?? { path: null, scrollTop: 0 })
-  readingPositionRef.current = space.readingPosition ?? { path: null, scrollTop: 0 }
+  // Positions saved by this reader, keyed by space: a late response for the
+  // previous theme can update only that theme's entry. The latest saved value is
+  // newer than the space prop until the whole view is re-read, so it also drives
+  // the continuity card and the restore action immediately.
+  const [positions, setPositions] = useState<Record<string, ReadingPositionView>>({})
+  const effectivePosition = positions[spaceId] ?? space.readingPosition ?? { path: null, scrollTop: 0 }
+  const readingPositionRef = useRef(effectivePosition)
+  readingPositionRef.current = effectivePosition
   const positionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedPosition = useRef('')
   const alive = useRef(true)
@@ -650,7 +655,7 @@ export function LectureZone(props: LectureZoneProps) {
     pendingScroll.current = null
     if (paneRef.current !== null) paneRef.current.scrollTop = top
     // Restoring the same offset must not immediately write it back.
-    savedPosition.current = `${reader.doc.path}:${Math.round(top)}`
+    savedPosition.current = `${spaceId}:${reader.doc.path}:${Math.round(top)}`
   }, [reader])
 
   // A pending debounce must not fire after leaving the zone.
@@ -670,7 +675,7 @@ export function LectureZone(props: LectureZoneProps) {
     const top = readingPositionRef.current.path === path ? readingPositionRef.current.scrollTop : 0
     if (reader.status === 'ready' && reader.doc.path === path) {
       if (paneRef.current !== null) paneRef.current.scrollTop = top
-      savedPosition.current = `${path}:${Math.round(top)}`
+      savedPosition.current = `${spaceId}:${path}:${Math.round(top)}`
       return
     }
     pendingScroll.current = top
@@ -681,13 +686,20 @@ export function LectureZone(props: LectureZoneProps) {
   const savePositionSoon = (path: string, scrollTop: number): void => {
     if (typeof client.saveReadingPosition !== 'function') return
     if (positionTimer.current !== null) clearTimeout(positionTimer.current)
+    const requestSpaceId = spaceId
     positionTimer.current = setTimeout(() => {
       positionTimer.current = null
       if (!alive.current) return
-      const key = `${path}:${scrollTop}`
+      const key = `${requestSpaceId}:${path}:${scrollTop}`
       if (savedPosition.current === key) return
       savedPosition.current = key
-      void client.saveReadingPosition?.({ action: 'position-save', spaceId, path, scrollTop })?.catch(() => undefined)
+      void client.saveReadingPosition?.({ action: 'position-save', spaceId: requestSpaceId, path, scrollTop })
+        ?.then(next => {
+          if (!alive.current || next === undefined || next.readingPosition === undefined) return
+          // Attribute by the space that asked: a late A response must not move B.
+          setPositions(prev => ({ ...prev, [requestSpaceId]: next.readingPosition }))
+        })
+        ?.catch(() => undefined)
     }, positionDebounceMs)
   }
 
@@ -1031,6 +1043,7 @@ export function LectureZone(props: LectureZoneProps) {
           goal={topic?.goal ?? ''}
           lectures={list?.lectures ?? []}
           currentPath={reader.status === 'ready' ? reader.doc.path : null}
+          readingPosition={effectivePosition}
           onRestorePosition={restoreReadingPosition}
         />
 

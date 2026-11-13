@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { test } from 'node:test'
+import { beforeEach, test } from 'node:test'
 import { JSDOM } from 'jsdom'
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'http://localhost' })
@@ -40,6 +40,16 @@ const act = React.act ?? (await import('react-dom/test-utils')).act
 const h = React.createElement
 const { ClassroomPanel } = await import('../src/classroom-panel.tsx')
 const { defaultLayout } = await import('../src/layout.ts')
+const { createSessionDraftStore } = await import('../src/note-drafts.ts')
+const { createSummaryDraftStore } = await import('../src/summary-drafts.ts')
+
+// Drafts are page/session scoped on purpose; tests in this file share the same
+// jsdom page, so clear the fixture spaces between tests.
+const summaryDrafts = createSummaryDraftStore(createSessionDraftStore())
+beforeEach(() => {
+  summaryDrafts.remove('space-1')
+  summaryDrafts.remove('space-2')
+})
 
 const lectureBody = '# 第一节 矩阵\n\n' + Array.from({ length: 40 }, (_, index) => `第 ${index + 1} 段正文。`).join('\n\n')
 
@@ -108,6 +118,7 @@ function fakeClient(options = {}) {
     [second.id, summaryView(second.id, 'B 的小结。', 'B 的下一步。', 'summary-b')],
   ])
   const saveDeferred = options.deferSummarySave === true ? [] : null
+  const positionDeferred = options.deferPosition === true ? [] : null
   const updateSpace = (spaceId, patch) => {
     view = { ...view, spaces: view.spaces.map(row => (row.id === spaceId ? { ...row, ...patch } : row)) }
     return structuredClone(view.spaces.find(row => row.id === spaceId))
@@ -116,6 +127,7 @@ function fakeClient(options = {}) {
     calls,
     summaries,
     saveDeferred,
+    positionDeferred,
     get view() { return view },
     async load() { return structuredClone(view) },
     async command(input) {
@@ -174,6 +186,12 @@ function fakeClient(options = {}) {
     },
     saveSummary(input) {
       calls.push({ type: 'summary-save', ...structuredClone(input) })
+      const current = summaries.get(input.spaceId)
+      if ((current.version ?? null) !== input.version) {
+        const error = new Error('学习小结文件已被外部修改，保存已被拒绝。请重新加载后再保存。')
+        error.code = 'summary-conflict'
+        return Promise.reject(error)
+      }
       const next = summaryView(input.spaceId, input.summary, input.nextStep, `summary:${input.summary}`)
       if (saveDeferred !== null) {
         let resolve
@@ -187,7 +205,22 @@ function fakeClient(options = {}) {
     },
     async saveReadingPosition(input) {
       calls.push({ type: 'position-save', ...structuredClone(input) })
-      return updateSpace(input.spaceId, { readingPosition: { path: input.path, scrollTop: input.scrollTop } })
+      const nextPosition = { path: input.path, scrollTop: input.scrollTop }
+      if (positionDeferred !== null) {
+        let resolve
+        let reject
+        const promise = new Promise((res, rej) => { resolve = res; reject = rej })
+        positionDeferred.push({
+          input,
+          resolve: value => {
+            const spaceView = updateSpace(input.spaceId, { readingPosition: nextPosition })
+            resolve(value ?? spaceView)
+          },
+          reject,
+        })
+        return promise
+      }
+      return updateSpace(input.spaceId, { readingPosition: nextPosition })
     },
     async selectNote(input) {
       calls.push({ type: 'note-select', ...structuredClone(input) })
@@ -400,6 +433,98 @@ test('滚动讲义后防抖保存阅读位置，重新挂载按该位置恢复',
     assert.equal(zone(second.document, '讲义').scrollTop, 360, '重新进入恢复到保存的阅读位置')
   } finally {
     await second.unmount()
+  }
+})
+
+test('A 编辑、切到 B、A 被外部修改、回到 A 保存：用草稿基线版本拒绝覆盖', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.click(findButton(ui.document, '编辑小结'))
+    await ui.type(ui.document.querySelector('textarea[aria-label="本次小结"]'), 'A 的旧基线草稿')
+
+    await ui.click([...ui.document.querySelectorAll('button')].find(button => button.textContent === '概率论'))
+    // Another editor changes A while the learner is away.
+    client.summaries.set('space-1', summaryView('space-1', '外部新小结', '外部新一步', 'summary-v2'))
+    await ui.click([...ui.document.querySelectorAll('button')].find(button => button.textContent === '线性代数'))
+
+    const editor = ui.document.querySelector('textarea[aria-label="本次小结"]')
+    assert.equal(editor.value, 'A 的旧基线草稿', '回到 A 时草稿仍在编辑框里')
+    await ui.click(findButton(ui.document, '保存小结'))
+
+    const save = client.calls.filter(call => call.type === 'summary-save').at(-1)
+    assert.equal(save.version, 'summary-v1', '保存必须使用草稿基线版本，而不是刚读到的 v2')
+    assert.equal(client.summaries.get('space-1').summary, '外部新小结', '外部修改没有被静默覆盖')
+    assert.match(ui.text(), /外部修改|拒绝/)
+    assert.equal(ui.document.querySelector('textarea[aria-label="本次小结"]').value, 'A 的旧基线草稿', '冲突后草稿仍在')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('未保存的小结草稿在重新挂载后恢复，并且不会自动写盘', async () => {
+  const client = fakeClient()
+  const first = await mount(client)
+  try {
+    await first.click(findButton(first.document, '编辑小结'))
+    await first.type(first.document.querySelector('textarea[aria-label="本次小结"]'), '刷新前还没保存的小结')
+    assert.equal(client.calls.filter(call => call.type === 'summary-save').length, 0, '输入不会自动保存')
+  } finally {
+    await first.unmount()
+  }
+
+  const second = await mount(client)
+  try {
+    const editor = second.document.querySelector('textarea[aria-label="本次小结"]')
+    assert.ok(editor, '重新挂载后应恢复可继续编辑的草稿')
+    assert.equal(editor.value, '刷新前还没保存的小结')
+    assert.match(zone(second.document, '学习接续').textContent, /恢复|草稿/)
+    assert.equal(client.calls.filter(call => call.type === 'summary-save').length, 0, '恢复草稿不等于自动保存')
+  } finally {
+    await second.unmount()
+  }
+})
+
+test('阅读位置保存成功后卡片与回到位置立即使用最新偏移，无需整页重读', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    const pane = zone(ui.document, '讲义')
+    await ui.scroll(pane, 360)
+    await wait(600)
+    assert.match(zone(ui.document, '学习接续').textContent, /约 360 像素/, '保存成功后卡片立即显示新位置')
+
+    // Move without firing a scroll event, so only the stored position can drive restore.
+    await act(async () => { pane.scrollTop = 0 })
+    await ui.click(findButton(ui.document, '回到上次阅读位置'))
+    assert.equal(pane.scrollTop, 360, '回到位置使用刚保存的最新偏移，而不是旧的 view 值')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('A 的阅读位置迟到回包只更新 A，不污染 B 的卡片与恢复位置', async () => {
+  const client = fakeClient({ deferPosition: true })
+  const ui = await mount(client)
+  try {
+    const paneA = zone(ui.document, '讲义')
+    await ui.scroll(paneA, 500)
+    await wait(600)
+    assert.equal(client.positionDeferred.length, 1, 'A 的位置保存请求仍在途')
+
+    await ui.click([...ui.document.querySelectorAll('button')].find(button => button.textContent === '概率论'))
+    await act(async () => { client.positionDeferred[0].resolve() })
+    await settle()
+
+    const bCard = zone(ui.document, '学习接续').textContent
+    assert.match(bCard, /约 30 像素/, 'B 保持自己的阅读位置')
+    assert.doesNotMatch(bCard, /500 像素/, 'A 的迟到回包没有写进 B')
+    assert.equal(zone(ui.document, '讲义').scrollTop, 30, 'B 的恢复位置不被 A 的回包改写')
+
+    await ui.click([...ui.document.querySelectorAll('button')].find(button => button.textContent === '线性代数'))
+    assert.match(zone(ui.document, '学习接续').textContent, /约 500 像素/, 'A 自己拿到更新后的位置')
+  } finally {
+    await ui.unmount()
   }
 })
 

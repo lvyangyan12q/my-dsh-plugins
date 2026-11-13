@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { maxSummaryBytes } from '../src/summary.ts'
 import { classroomFixture } from './support/fixture.mjs'
 
 async function prepare(fixture, title = '概率论', goal = '') {
@@ -298,6 +299,70 @@ test('阅读位置与笔记选择只接受真实可打开的目标，伪造路�
     const missing = await fixture.post({ action: 'note-select', spaceId: space.id, path: '笔记/不存在.md' })
     assert.equal(missing.status, 404)
     assert.equal(missing.body.code, 'note-not-found')
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('小结正文含任意 Markdown 标题时保存/读回/再保存都不截断或删内容', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const summary = '开头。\n\n## 我自己的小节\n\n这里有 **重点**。\n\n### 更深的标题\n\n- 列表一\n- 列表二\n\n```js\nconst x = 1\n```\n\n结尾。'
+    const nextStep = '## 我的计划\n\n1. 做练习\n2. 复盘'
+    const first = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary,
+      nextStep,
+      version: null,
+    })
+    assert.equal(first.status, 200)
+
+    const reread = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.deepEqual({ summary: reread.body.summary, nextStep: reread.body.nextStep }, { summary, nextStep })
+
+    const disk = await readFile(join(fixture.vault, space.directory, '学习小结.md'), 'utf8')
+    assert.ok(disk.includes('## 我自己的小节'))
+    assert.ok(disk.includes('### 更深的标题'))
+    assert.ok(disk.includes('```js'))
+    assert.ok(disk.includes('## 我的计划'))
+
+    // Saving again from the read version keeps every line: the old framing
+    // stopped at the learner's own heading and deleted everything after it.
+    const second = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary: `${summary}\n\n补充一行。`,
+      nextStep,
+      version: reread.body.version,
+    })
+    assert.equal(second.status, 200)
+    const afterSecond = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(afterSecond.body.summary, `${summary}\n\n补充一行。`)
+    assert.equal(afterSecond.body.nextStep, nextStep)
+  } finally {
+    await fixture.close()
+  }
+})
+
+test('小结两段各按 64KB 上限保存，编码标记不挤占正文容量', async () => {
+  const fixture = await classroomFixture()
+  try {
+    const space = await prepare(fixture)
+    const summary = 'a'.repeat(maxSummaryBytes)
+    const nextStep = 'b'.repeat(maxSummaryBytes)
+    const saved = await fixture.post({
+      action: 'summary-save',
+      spaceId: space.id,
+      summary,
+      nextStep,
+      version: null,
+    })
+    assert.equal(saved.status, 200)
+    const reread = await fixture.post({ action: 'summary-read', spaceId: space.id })
+    assert.equal(reread.body.summary.length, maxSummaryBytes)
+    assert.equal(reread.body.nextStep.length, maxSummaryBytes)
   } finally {
     await fixture.close()
   }
