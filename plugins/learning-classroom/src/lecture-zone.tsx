@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type UIEvent as ReactUIEvent } from 'react'
 import { AnnotationAction } from './annotation-action.tsx'
 import type { AnnotationSourceInput } from './annotation-flow.ts'
 import { ClassroomClientError, type ClassroomClient } from './classroom-client.ts'
@@ -7,13 +7,16 @@ import type {
   LectureCandidatesView,
   LectureListView,
   LectureReadView,
+  ReadingPositionView,
   TopicView,
 } from './contract.ts'
 import { buildExperimentSrcdoc } from './experiment-runtime.ts'
 import type { ExperimentSpec } from './experiment-spec.ts'
+import { ContinuityZone } from './continuity-zone.tsx'
 import { groupCourseLectures, resolveLectureHref } from './lectures.ts'
 import { scrollToFragment, type LinkFragment } from './fragments.ts'
-import { parseInline, parseMarkdown, type Block } from './markdown.ts'
+import { parseMarkdown } from './markdown.ts'
+import { markdownMathStyles, MarkdownBlocks, selectionTextWithMath, type MathRenderer } from './markdown-view.tsx'
 import { excerptForQuestion, type AskTeacher } from './question-context.ts'
 
 export interface LectureZoneProps {
@@ -29,6 +32,10 @@ export interface LectureZoneProps {
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
   /** Adds the selected passage or the current lecture to the native teacher draft. */
   askTeacher?: AskTeacher
+  /** Inject a math renderer (tests or an alternate host); production uses KaTeX. */
+  mathRenderer?: MathRenderer
+  /** Debounce before a scroll offset is written as navigation state; tests shorten it. */
+  positionDebounceMs?: number
 }
 
 /** One-shot request to open a lecture; a new token re-opens the same path. */
@@ -75,7 +82,7 @@ const lectureStyles = `
 .lc-lecture-refresh{padding:2px 8px;font-size:12px}
 .lc-lecture-doc{display:flex;flex-direction:column;gap:10px;line-height:1.75;font-size:14px}
 .lc-lecture-doc h3,.lc-lecture-doc h4,.lc-lecture-doc h5,.lc-lecture-doc h6{margin:8px 0 0;line-height:1.4}
-.lc-lecture-doc p,.lc-lecture-doc ul,.lc-lecture-doc ol,.lc-lecture-doc blockquote,.lc-lecture-doc pre,.lc-lecture-doc table{margin:0}
+.lc-lecture-doc p,.lc-lecture-doc .lc-md-p,.lc-lecture-doc ul,.lc-lecture-doc ol,.lc-lecture-doc blockquote,.lc-lecture-doc pre,.lc-lecture-doc table{margin:0}
 .lc-lecture-doc ul,.lc-lecture-doc ol{padding-left:22px}
 .lc-lecture-doc blockquote{padding:4px 12px;border-left:3px solid var(--dsh-border,#d8dee4);color:var(--dsh-text-secondary,#59636e)}
 .lc-lecture-doc pre{padding:10px 12px;border-radius:6px;background:#f6f8fa;overflow:auto}
@@ -93,6 +100,7 @@ const lectureStyles = `
 .lc-experiment-meta ul{margin:0;padding-left:20px}
 .lc-experiment-meta code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
 .lc-lecture-empty{padding:24px;border:1px dashed var(--dsh-border,#d8dee4);border-radius:8px;text-align:center}
+${markdownMathStyles}
 `
 
 function messageOf(error: unknown): string {
@@ -107,81 +115,25 @@ function missingNotice(path: string): string {
   return `讲义「${path}」已被删除或改名。请重新加载目录，或从左侧选择另一节。`
 }
 
-function InlineText({ text, onOpenHref }: { text: string; onOpenHref?: (href: string) => boolean }) {
-  return (
-    <>
-      {parseInline(text).map((token, index) => {
-        switch (token.type) {
-          case 'code': return <code key={index}>{token.text}</code>
-          case 'strong': return <strong key={index}>{token.text}</strong>
-          case 'em': return <em key={index}>{token.text}</em>
-          case 'link': return (
-            <a
-              key={index}
-              href={token.href}
-              target="_blank"
-              rel="noreferrer noopener"
-              onClick={event => {
-                if (onOpenHref?.(token.href) === true) event.preventDefault()
-              }}
-            >{token.text}</a>
-          )
-          case 'wikilink': return <span key={index} className="lc-wikilink-static" title={`双链：${token.target}`}>{token.text}</span>
-          case 'text': return <Fragment key={index}>{token.text}</Fragment>
-        }
-      })}
-    </>
-  )
-}
-
-const headingTags = ['h3', 'h4', 'h5', 'h6', 'h6', 'h6'] as const
-
-function BlockView({ block, onOpenHref }: { block: Block; onOpenHref?: (href: string) => boolean }): ReactNode {
-  switch (block.type) {
-    case 'heading': {
-      const Tag = headingTags[Math.min(Math.max(block.level, 1), 6) - 1]
-      return <Tag data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></Tag>
-    }
-    case 'paragraph':
-      return <p data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></p>
-    case 'list': {
-      const items = block.items.map((item, index) => (
-        <li key={index} data-block-id={block.itemBlockIds?.[index]}><InlineText text={item} onOpenHref={onOpenHref} /></li>
-      ))
-      return block.ordered
-        ? <ol data-block-id={block.blockId}>{items}</ol>
-        : <ul data-block-id={block.blockId}>{items}</ul>
-    }
-    case 'table':
-      return (
-        <div className="lc-lecture-table">
-          <table>
-            <thead>
-              <tr>{block.header.map((cell, index) => <th key={index}><InlineText text={cell} onOpenHref={onOpenHref} /></th>)}</tr>
-            </thead>
-            <tbody>
-              {block.rows.map((row, rowIndex) => (
-                <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}><InlineText text={cell} onOpenHref={onOpenHref} /></td>)}</tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )
-    case 'code':
-      return <pre><code className={block.lang === '' ? undefined : `language-${block.lang}`}>{block.code}</code></pre>
-    case 'quote':
-      return <blockquote data-block-id={block.blockId}><InlineText text={block.text} onOpenHref={onOpenHref} /></blockquote>
-    case 'rule':
-      return <hr />
-  }
-}
-
-function MarkdownBody({ content, onOpenHref }: { content: string; onOpenHref?: (href: string) => boolean }) {
+function MarkdownBody({
+  content,
+  onOpenHref,
+  mathRenderer,
+}: {
+  content: string
+  onOpenHref?: (href: string) => boolean
+  mathRenderer?: MathRenderer
+}) {
   const blocks = parseMarkdown(content)
   if (blocks.length === 0) return <p className="lc-hint">这一节还没有正文。</p>
   return (
     <article className="lc-lecture-doc">
-      {blocks.map((block, index) => <BlockView key={index} block={block} onOpenHref={onOpenHref} />)}
+      <MarkdownBlocks
+        blocks={blocks}
+        tableClassName="lc-lecture-table"
+        onOpenHref={onOpenHref}
+        mathRenderer={mathRenderer}
+      />
     </article>
   )
 }
@@ -263,13 +215,15 @@ function lectureSelection(root: HTMLElement | null): LectureSelection {
   if (root === null) return { kind: 'none' }
   const selection = typeof window === 'undefined' ? null : window.getSelection?.() ?? null
   if (selection === null || selection.rangeCount === 0 || selection.isCollapsed) return { kind: 'none' }
-  const text = selection.toString().trim()
-  if (text === '') return { kind: 'none' }
   // One bounded range is required: multi-range selections cannot be proven to
   // stay inside the lecture body.
   if (selection.rangeCount !== 1) return { kind: 'outside' }
   const range = selection.getRangeAt(0)
   if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return { kind: 'outside' }
+  // Restore formulas to their Markdown source instead of KaTeX's two DOM arms;
+  // non-formula text keeps the browser's own selection string.
+  const text = selectionTextWithMath(range, selection.toString()).trim()
+  if (text === '') return { kind: 'none' }
   return { kind: 'inside', text }
 }
 
@@ -278,13 +232,14 @@ function LectureReader(props: {
   space: ClassroomSpaceView
   askTeacher?: AskTeacher
   onOpenHref?: (href: string) => boolean
+  mathRenderer?: MathRenderer
   /** Present only when this experiment was opened from a lecture. */
   returnTarget?: { title: string } | null
   onReturn?: () => void
   onAnnotate?: (request: AnnotationSourceInput) => Promise<{ ok: boolean; message: string }>
   fragment?: (LinkFragment & { token: number }) | null
 }) {
-  const { doc, space, askTeacher, onOpenHref, returnTarget, onReturn, onAnnotate, fragment } = props
+  const { doc, space, askTeacher, onOpenHref, returnTarget, onReturn, onAnnotate, fragment, mathRenderer } = props
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const [notice, setNotice] = useState('')
   const [askError, setAskError] = useState('')
@@ -379,7 +334,7 @@ function LectureReader(props: {
       <AnnotationAction doc={doc} onAnnotate={onAnnotate}>
         <div ref={bodyRef}>
           {doc.kind === 'markdown'
-            ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} />
+            ? <MarkdownBody content={doc.content ?? ''} onOpenHref={onOpenHref} mathRenderer={mathRenderer} />
             : doc.experiment !== null
               ? <ExperimentFrame spec={doc.experiment} />
               : <ExperimentUnsupported doc={doc} />}
@@ -395,7 +350,7 @@ function LectureReader(props: {
  * with React elements, so lecture HTML never reaches the DOM.
  */
 export function LectureZone(props: LectureZoneProps) {
-  const { client, space, spaces, currentSpaceId, busy, onOpenSpace } = props
+  const { client, space, spaces, currentSpaceId, busy, onOpenSpace, positionDebounceMs = 500 } = props
   const spaceId = space.id
   const canTopic = typeof client.readTopic === 'function' && typeof client.saveTopicGoal === 'function'
   const canLink = typeof client.listLectureCandidates === 'function'
@@ -428,6 +383,20 @@ export function LectureZone(props: LectureZoneProps) {
   const [returnTo, setReturnTo] = useState<{ path: string; title: string; scrollTop: number } | null>(null)
   const paneRef = useRef<HTMLElement | null>(null)
   const pendingScroll = useRef<number | null>(null)
+  // Positions saved by this reader, keyed by space: a late response for the
+  // previous theme can update only that theme's entry. The latest saved value is
+  // newer than the space prop until the whole view is re-read, so it also drives
+  // the continuity card and the restore action immediately.
+  const [positions, setPositions] = useState<Record<string, ReadingPositionView>>({})
+  const effectivePosition = positions[spaceId] ?? space.readingPosition ?? { path: null, scrollTop: 0 }
+  const readingPositionRef = useRef(effectivePosition)
+  readingPositionRef.current = effectivePosition
+  const positionTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedPosition = useRef('')
+  // Per-space request sequence: two debounced writes can resolve out of order,
+  // and an older response must not move the card/restore offset backwards.
+  const positionSeq = useRef<Record<string, number>>({})
+  const positionApplied = useRef<Record<string, number>>({})
   const alive = useRef(true)
   const generation = useRef(0)
   const handledRequest = useRef<number | null>(null)
@@ -512,6 +481,10 @@ export function LectureZone(props: LectureZoneProps) {
     setLinking(null)
     setReturnTo(null)
     pendingScroll.current = null
+    if (positionTimer.current !== null) {
+      clearTimeout(positionTimer.current)
+      positionTimer.current = null
+    }
 
     const loadToken = (topicLoadTokens.current[spaceId] ?? 0) + 1
     topicLoadTokens.current[spaceId] = loadToken
@@ -526,7 +499,12 @@ export function LectureZone(props: LectureZoneProps) {
       setReader({ status: 'loading', path: list.selectedPath })
       try {
         const doc = await client.readLecture(spaceId, list.selectedPath, controller.signal)
-        if (current()) setReader({ status: 'ready', doc })
+        if (!current()) return
+        // Cold start restores the saved offset only when the same course file is
+        // opened again; a renamed or replaced lecture starts at the top.
+        const stored = readingPositionRef.current
+        if (stored.path === doc.path && stored.scrollTop > 0) pendingScroll.current = stored.scrollTop
+        setReader({ status: 'ready', doc })
       } catch (error) {
         if (!current()) return
         setSelected(null)
@@ -626,12 +604,68 @@ export function LectureZone(props: LectureZoneProps) {
 
   // Restore the captured scroll only after the returned lecture is on screen.
   useEffect(() => {
-    if (reader.status !== 'ready' || reader.doc.kind !== 'markdown') return
+    if (reader.status !== 'ready') return
     if (pendingScroll.current === null) return
     const top = pendingScroll.current
     pendingScroll.current = null
     if (paneRef.current !== null) paneRef.current.scrollTop = top
+    // Restoring the same offset must not immediately write it back.
+    savedPosition.current = `${spaceId}:${reader.doc.path}:${Math.round(top)}`
   }, [reader])
+
+  // A pending debounce must not fire after leaving the zone.
+  useEffect(() => () => {
+    if (positionTimer.current !== null) {
+      clearTimeout(positionTimer.current)
+      positionTimer.current = null
+    }
+  }, [])
+
+  /**
+   * "Back to where I was": scroll an already-open lecture, or reopen the stored
+   * file and restore its offset once it renders. A stored path that no longer
+   * opens is reported by the normal lecture error path.
+   */
+  const restoreReadingPosition = (path: string): void => {
+    const top = readingPositionRef.current.path === path ? readingPositionRef.current.scrollTop : 0
+    if (reader.status === 'ready' && reader.doc.path === path) {
+      if (paneRef.current !== null) paneRef.current.scrollTop = top
+      savedPosition.current = `${spaceId}:${path}:${Math.round(top)}`
+      return
+    }
+    pendingScroll.current = top
+    void select(path, undefined, { keepScroll: true })
+  }
+
+  /** Persist a debounced reading offset for the current course file. */
+  const savePositionSoon = (path: string, scrollTop: number): void => {
+    if (typeof client.saveReadingPosition !== 'function') return
+    if (positionTimer.current !== null) clearTimeout(positionTimer.current)
+    const requestSpaceId = spaceId
+    positionTimer.current = setTimeout(() => {
+      positionTimer.current = null
+      if (!alive.current) return
+      const key = `${requestSpaceId}:${path}:${scrollTop}`
+      if (savedPosition.current === key) return
+      savedPosition.current = key
+      const seq = (positionSeq.current[requestSpaceId] ?? 0) + 1
+      positionSeq.current[requestSpaceId] = seq
+      void client.saveReadingPosition?.({ action: 'position-save', spaceId: requestSpaceId, path, scrollTop })
+        ?.then(next => {
+          if (!alive.current || next === undefined || next.readingPosition === undefined) return
+          if (seq < (positionApplied.current[requestSpaceId] ?? 0)) return
+          positionApplied.current[requestSpaceId] = seq
+          // Attribute by the space that asked: a late A response must not move B.
+          setPositions(prev => ({ ...prev, [requestSpaceId]: next.readingPosition }))
+        })
+        ?.catch(() => undefined)
+    }, positionDebounceMs)
+  }
+
+  const onPaneScroll = (event: ReactUIEvent<HTMLElement>): void => {
+    if (reader.status !== 'ready') return
+    savePositionSoon(reader.doc.path, Math.round(event.currentTarget.scrollTop))
+  }
 
   const reload = () => setReloadKey(key => key + 1)
   const list = listState.status === 'ready' ? listState.list : null
@@ -957,9 +991,20 @@ export function LectureZone(props: LectureZoneProps) {
         )}
       </aside>
 
-      <section className="lc-pane lc-lectures" aria-label="讲义" ref={paneRef}>
+      <section className="lc-pane lc-lectures" aria-label="讲义" ref={paneRef} onScroll={onPaneScroll}>
         <style>{lectureStyles}</style>
         <h2>讲义</h2>
+
+        <ContinuityZone
+          client={client}
+          space={space}
+          busy={busy}
+          goal={topic?.goal ?? ''}
+          lectures={list?.lectures ?? []}
+          currentPath={reader.status === 'ready' ? reader.doc.path : null}
+          readingPosition={effectivePosition}
+          onRestorePosition={restoreReadingPosition}
+        />
 
         {notice !== '' && (
           <div className="lc-alert" role="alert">
@@ -985,6 +1030,7 @@ export function LectureZone(props: LectureZoneProps) {
             space={space}
             askTeacher={props.askTeacher}
             onOpenHref={openHref}
+            mathRenderer={props.mathRenderer}
             returnTarget={reader.doc.kind === 'experiment' ? returnTo : null}
             onReturn={returnToLecture}
             onAnnotate={props.onAnnotate}

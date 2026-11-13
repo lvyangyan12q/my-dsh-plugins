@@ -62,7 +62,7 @@ const lectureParameters = {
     },
     title: { type: 'string', description: '讲义标题，单行，最长 120 字。' },
     order: { type: 'integer', description: '可选排序号；省略时按文件名排序。' },
-    body: { type: 'string', description: '老师解释的 Markdown 正文，不含标题和来源节；公式与代码用可读的 Markdown 代码块。' },
+    body: { type: 'string', description: '老师解释的 Markdown 正文，不含标题和来源节。公式写成 LaTeX：行内用 $...$，独立成行用 $$...$$；代码才放进带语言标记的围栏代码块，不要把公式一律包进代码块。' },
     sources: sourceSchema,
   },
   required: ['fileName', 'title', 'body', 'sources'],
