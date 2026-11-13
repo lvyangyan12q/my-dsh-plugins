@@ -77,4 +77,3 @@ test('绝对知识库路径拼接不产生重复分隔符或穿越', () => {
   assert.equal(absoluteVaultPath('', '概率论/脉络.canvas'), null)
   assert.equal(absoluteVaultPath('D:/知识库', '../外面.canvas'), null)
 })
-
