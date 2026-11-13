@@ -199,8 +199,15 @@ test('读取状态失败时可重试', async () => {
 
 test('侧栏登记「学习课堂」，主面板使用同名 key 并声明自有 session 子 seat', async () => {
   const registrations = [], disposers = []
+  const remote = {
+    session: {
+      async canOpenWorkspacePath() { return { ok: true, value: true } },
+      async openWorkspacePath() { return { ok: true, value: { opened: true } } },
+    },
+  }
   const ctx = {
     sessions: { async create() { return 'session-1' }, retain() { throw new Error('测试不应取得引用') } },
+    get: name => (name === 'remote' ? remote : undefined),
     slots: {
       inject: (_name, install) => install(),
       register: (spec, component) => { registrations.push({ spec, component }); return () => {} },
@@ -216,5 +223,9 @@ test('侧栏登记「学习课堂」，主面板使用同名 key 并声明自有
   assert.ok(main)
   assert.equal(main.spec.key, panelId)
   assert.equal(main.component, ClassroomPanel)
+  // The main panel receives the public Remote-backed native-open seam, and its
+  // capability probe reaches the documented Session Remote method.
+  const injected = main.spec.inject()
+  assert.deepEqual(await injected.nativeOpen.probe(), { available: true, reason: null })
   for (const dispose of disposers.reverse()) dispose()
 })
