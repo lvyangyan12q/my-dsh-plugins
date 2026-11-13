@@ -220,8 +220,9 @@ function lectureSelection(root: HTMLElement | null): LectureSelection {
   if (selection.rangeCount !== 1) return { kind: 'outside' }
   const range = selection.getRangeAt(0)
   if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) return { kind: 'outside' }
-  // Restore formulas to their Markdown source instead of KaTeX's two DOM arms.
-  const text = selectionTextWithMath(range).trim()
+  // Restore formulas to their Markdown source instead of KaTeX's two DOM arms;
+  // non-formula text keeps the browser's own selection string.
+  const text = selectionTextWithMath(range, selection.toString()).trim()
   if (text === '') return { kind: 'none' }
   return { kind: 'inside', text }
 }

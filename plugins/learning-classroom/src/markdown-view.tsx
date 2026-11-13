@@ -221,16 +221,18 @@ export type { MathRenderer, MathRendererProps } from './math-render.tsx'
  * mangle a formula; replacing each math wrapper with its original TeX keeps the
  * learner's excerpt faithful to the Markdown source (`$…$` / `$$…$$`).
  *
- * Selections without any formula are returned exactly as the browser's
- * `Range.toString()` reports them, so ordinary paragraph/code excerpts keep
- * their original line breaks and indentation. When a formula is present the
- * DOM is serialized with block boundaries and `<pre>` text preserved instead of
- * using `textContent`, which would flatten them.
+ * Selections without any formula are returned as the caller-supplied
+ * `selection.toString()` text, so ordinary paragraph/code excerpts keep the
+ * browser's original line breaks and indentation (`Range.toString()` collapses
+ * them). When a formula is present the DOM is serialized with block boundaries,
+ * table cell separators and `<pre>` text preserved instead of using
+ * `textContent`, which would flatten them.
  *
  * @param range - A selection range from the rendered document.
+ * @param visibleText - The caller's `selection.toString()` for this range.
  * @returns Plain text with each formula restored to its TeX delimiters.
  */
-export function selectionTextWithMath(range: Range): string {
+export function selectionTextWithMath(range: Range, visibleText: string): string {
   const start = range.startContainer.nodeType === 1
     ? range.startContainer as Element
     : range.startContainer.parentElement
@@ -253,7 +255,7 @@ export function selectionTextWithMath(range: Range): string {
       }
     }
   }
-  if (!hasMath) return range.toString()
+  if (!hasMath) return visibleText
 
   const expanded = range.cloneRange()
   if (startMath !== null) expanded.setStartBefore(startMath)
@@ -299,6 +301,11 @@ function serializeSelection(fragment: DocumentFragment): string {
     }
     if (element.tagName === 'BR') {
       append('\n')
+      return
+    }
+    if (element.tagName === 'TD' || element.tagName === 'TH') {
+      if (output !== '' && !output.endsWith('\t') && !output.endsWith('\n')) append('\t')
+      for (const child of Array.from(element.childNodes)) walk(child)
       return
     }
     if (element.tagName === 'PRE') {

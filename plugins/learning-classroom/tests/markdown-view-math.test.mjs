@@ -103,7 +103,7 @@ test('display 数学块携带真实 TeX 元数据，完整与部分选区都还�
 
     const full = dom.window.document.createRange()
     full.selectNodeContents(block)
-    assert.equal(selectionTextWithMath(full).trim(), '$$P(A \\mid B) = \\frac{1}{2}$$')
+    assert.equal(selectionTextWithMath(full, full.toString()).trim(), '$$P(A \\mid B) = \\frac{1}{2}$$')
 
     // A selection that begins inside KaTeX's rendered arm must expand to the
     // whole formula rather than returning one duplicated arm.
@@ -114,7 +114,7 @@ test('display 数学块携带真实 TeX 元数据，完整与部分选区都还�
     const partial = dom.window.document.createRange()
     partial.setStart(text, 1)
     partial.setEnd(text, text.textContent.length)
-    assert.equal(selectionTextWithMath(partial).trim(), '$$P(A \\mid B) = \\frac{1}{2}$$')
+    assert.equal(selectionTextWithMath(partial, partial.toString()).trim(), '$$P(A \\mid B) = \\frac{1}{2}$$')
   } finally {
     await view.unmount()
   }
@@ -129,7 +129,7 @@ test('行内公式的完整与部分选区仍还原为 $...$，不与 display �
     assert.ok(inline)
     const full = dom.window.document.createRange()
     full.selectNodeContents(inline)
-    assert.equal(selectionTextWithMath(full), '$x^2$')
+    assert.equal(selectionTextWithMath(full, full.toString()), '$x^2$')
     assert.equal(inline.getAttribute('data-math-tex'), 'x^2')
     assert.equal(inline.getAttribute('data-math-display'), null)
 
@@ -139,13 +139,13 @@ test('行内公式的完整与部分选区仍还原为 $...$，不与 display �
     const partial = dom.window.document.createRange()
     partial.setStart(text, 1)
     partial.setEnd(text, text.textContent.length)
-    assert.equal(selectionTextWithMath(partial), '$x^2$')
+    assert.equal(selectionTextWithMath(partial, partial.toString()), '$x^2$')
   } finally {
     await view.unmount()
   }
 })
 
-test('无公式选区完全沿用 Range.toString，不重排段落或代码缩进', async () => {
+test('无公式选区使用浏览器 selection.toString，不用 Range.toString 压掉段落换行', async () => {
   const calls = []
   const blocks = parseMarkdown('第一段\n\n第二段\n\n```python\n  x = 1\n```\n')
   const view = await render(h(MarkdownBlocks, { blocks, mathRenderer: fakeMath(calls) }))
@@ -156,11 +156,12 @@ test('无公式选区完全沿用 Range.toString，不重排段落或代码缩�
     const range = dom.window.document.createRange()
     range.setStart(paragraphs[0].firstChild, 0)
     range.setEnd(pre, pre.childNodes.length)
-    const expected = range.toString()
-    assert.equal(selectionTextWithMath(range), expected, '无公式时不得改走 DOM 序列化')
-    assert.match(expected, /第一段/)
-    assert.match(expected, /第二段/)
-    assert.match(expected, /  x = 1/)
+    // Real Chrome keeps paragraph breaks in Selection.toString(); Range.toString()
+    // collapses them. The caller passes the browser-visible string verbatim.
+    const browserVisible = '第一段\n\n第二段\n\n  x = 1\n'
+    assert.equal(selectionTextWithMath(range, browserVisible), browserVisible, '无公式时必须原样返回 selection.toString')
+    assert.match(browserVisible, /第一段\n\n第二段/)
+    assert.match(browserVisible, /\n\n  x = 1/)
   } finally {
     await view.unmount()
   }
@@ -177,7 +178,7 @@ test('含公式的跨段落/代码选区保留块换行与 pre 缩进，不复�
     const range = dom.window.document.createRange()
     range.setStart(paragraph.firstChild, 0)
     range.setEnd(pre, pre.childNodes.length)
-    const text = selectionTextWithMath(range).trim()
+    const text = selectionTextWithMath(range, range.toString()).trim()
     assert.match(text, /前文 \$a\$。/)
     assert.match(text, /\n\$\$y\$\$\n/)
     assert.match(text, /\n  z = 2/)
@@ -187,7 +188,33 @@ test('含公式的跨段落/代码选区保留块换行与 pre 缩进，不复�
   }
 })
 
-test('原始 HTML 只作文字出现；双链和链接回调仍按原契约工作', async () => {  const calls = []
+test('含公式表格按真实表格合同分隔 td/th，不把相邻单元格粘在一起', async () => {
+  const calls = []
+  const blocks = parseMarkdown([
+    '| 记号 | 含义 |',
+    '| --- | --- |',
+    '| $A$ | 至少一个 |',
+    '| $B$ | 同时两个 |',
+  ].join('\n'))
+  const view = await render(h(MarkdownBlocks, { blocks, mathRenderer: fakeMath(calls) }))
+  try {
+    const table = view.container.querySelector('table')
+    assert.ok(table)
+    const range = dom.window.document.createRange()
+    range.selectNodeContents(table)
+    const text = selectionTextWithMath(range, range.toString()).trim()
+    assert.match(text, /记号\t含义/)
+    assert.match(text, /\$A\$\t至少一个/)
+    assert.match(text, /\$B\$\t同时两个/)
+    assert.match(text, /含义\n\$A\$/)
+    assert.doesNotMatch(text, /记号含义|至少一个\$A\$/)
+  } finally {
+    await view.unmount()
+  }
+})
+
+test('原始 HTML 只作文字出现；双链和链接回调仍按原契约工作', async () => {
+  const calls = []
   const opened = []
   const links = []
   const blocks = parseMarkdown('<img src=x onerror="alert(1)"> 和 [[笔记/另一篇.md]]\n')
