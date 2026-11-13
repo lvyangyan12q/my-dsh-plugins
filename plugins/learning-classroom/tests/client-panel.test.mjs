@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { readFile } from 'node:fs/promises'
 import { JSDOM } from 'jsdom'
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'http://localhost' })
@@ -21,7 +22,7 @@ const React = await import('react')
 const { createRoot } = await import('react-dom/client')
 const act = React.act ?? (await import('react-dom/test-utils')).act
 const h = React.createElement
-const { ClassroomPanel, apply, panelId } = await import('../src/classroom-panel.tsx')
+const { ClassroomPanel, apply, inject, panelId } = await import('../src/classroom-panel.tsx')
 
 const unsetView = { vault: { path: null, status: 'unset', reason: null, hint: '请选择一个已存在的本地目录作为知识文件库。' }, spaces: [], currentSpaceId: null }
 const readyView = { vault: { path: 'D:/知识库', status: 'ready', reason: null, hint: '' }, spaces: [], currentSpaceId: null }
@@ -199,15 +200,13 @@ test('读取状态失败时可重试', async () => {
 
 test('侧栏登记「学习课堂」，主面板使用同名 key 并声明自有 session 子 seat', async () => {
   const registrations = [], disposers = []
-  const remote = {
-    session: {
-      async canOpenWorkspacePath() { return { ok: true, value: true } },
-      async openWorkspacePath() { return { ok: true, value: { opened: true } } },
-    },
+  const remoteSession = {
+    async canOpenWorkspacePath() { return { ok: true, value: true } },
+    async openWorkspacePath() { return { ok: true, value: { opened: true } } },
   }
   const ctx = {
     sessions: { async create() { return 'session-1' }, retain() { throw new Error('测试不应取得引用') } },
-    get: name => (name === 'remote' ? remote : undefined),
+    get: name => (name === 'remote.session' ? remoteSession : undefined),
     slots: {
       inject: (_name, install) => install(),
       register: (spec, component) => { registrations.push({ spec, component }); return () => {} },
@@ -223,6 +222,20 @@ test('侧栏登记「学习课堂」，主面板使用同名 key 并声明自有
   assert.ok(main)
   assert.equal(main.spec.key, panelId)
   assert.equal(main.component, ClassroomPanel)
+  // The public Client composition contract: a package that reads
+  // `ctx.remote.session` must declare both `remote` and `remote.session`, and
+  // its client bundle must load the Gateway/Remote/Session-controller rows first.
+  assert.ok(inject.includes('remote'), `inject 缺少 remote：${inject.join('、')}`)
+  assert.ok(inject.includes('remote.session'), `inject 缺少 remote.session：${inject.join('、')}`)
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+  const clientInject = manifest.dsh?.client?.inject ?? []
+  for (const packageName of [
+    '@deepseek-ai/dsh-api-gateway',
+    '@deepseek-ai/dsh-api-remotes',
+    '@deepseek-ai/dsh-api-session-controller',
+  ]) {
+    assert.ok(clientInject.includes(packageName), `dsh.client.inject 缺少 ${packageName}：${clientInject.join('、')}`)
+  }
   // The main panel receives the public Remote-backed native-open seam, and its
   // capability probe reaches the documented Session Remote method.
   const injected = main.spec.inject()

@@ -21,7 +21,11 @@
     },
     "client": {
       "platform": "web",
-      "inject": []
+      "inject": [
+        "@deepseek-ai/dsh-api-gateway",
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-api-session-controller"
+      ]
     }
   },
   "scripts": {
