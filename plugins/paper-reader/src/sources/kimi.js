@@ -21,6 +21,7 @@ import {
   slugToTitle,
 } from './blog.js'
 import { classifyDirection } from '../shared/direction.js'
+import { dropSeen } from '../shared/url.js'
 import {
   assertPositive,
   assertUrl,
@@ -131,7 +132,7 @@ function toCandidate(card, settings) {
 }
 
 /** List recent Kimi blog posts, newest first. */
-export async function listKimi({ config, date, fetch: fetchImpl } = {}) {
+export async function listKimi({ config, date, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults(config)
   let response
   let html
@@ -157,7 +158,10 @@ export async function listKimi({ config, date, fetch: fetchImpl } = {}) {
     .slice(0, Math.max(0, settings.maxCandidates))
     .map(card => toCandidate(card, settings))
 
-  return { candidates, discovered: candidates.map(candidate => candidate.url) }
+  return {
+    candidates: dropSeen(candidates, knownUrls),
+    discovered: candidates.map(candidate => candidate.url),
+  }
 }
 
 function findMain(tree) {

@@ -119,7 +119,8 @@ test('fix completion creates a read-only review session in the same workspace an
   assert.equal(h.gateway.calls.create.length, 2)
   const reviewCreate = h.gateway.calls.create[1]
   assert.equal(reviewCreate.sessionId, after.reviewSessionId)
-  assert.equal(reviewCreate.cwd, realpathSync(h.root))
+  assert.ok(reviewCreate.cwd.startsWith(realpathSync(h.root)), '审核会话应在同一条 run 的工作区里：' + reviewCreate.cwd)
+  assert.ok(reviewCreate.cwd.includes('.bug-solver'), '审核会话工作区路径：' + reviewCreate.cwd)
   assert.equal(h.gateway.calls.rename[1].title, 'BUG-3083 审核')
   assert.deepEqual(h.gateway.calls.sandbox, [{ sessionId: after.reviewSessionId, mode: 'read-only' }])
 

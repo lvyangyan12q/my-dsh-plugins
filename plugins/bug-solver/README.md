@@ -1,5 +1,9 @@
 # bug-solver · TB 缺陷雷达 + 窗口3 调度台
 
+## DSH 宿主版本
+
+调度桥保留原 `0.2.1-rc.3`、`0.2.2-alpha.2`、`0.2.2-rc.1` 声明，并增加 `0.2.2-rc.2`，不自动放行未知版本。rc.2 准入与 Host 构建入口检查见仓库根目录 `scripts/dsh-rc2-compat.test.mjs`；`bridge` 的回归使用测试服务，不代表真实模型会话调度验收。本次适配不迁移数据、不授予版本豁免、不修改或重启正式 profile。
+
 本轮后续开发入口：[可靠性修复、同步优化与窗口4收集复盘规格](docs/specs/bug-solver-next/spec.md)（本地任务 `bug-solver-next-spec`，`ready-for-agent`）。规格内含任务顺序、依赖、测试边界与已完成/待实施/待决策状态；窗口4本期只收集、复盘和知识沉淀，不做评分或流程比较。
 
 三个窗口（`grid` 布局：顶行 2 窗 + 主行 1 窗，对话在右）：
@@ -8,7 +12,7 @@
 |---|---|
 | 窗口1 | 缺陷列表（占满窗口）：编号 / 标题 / 状态 / 优先级 / 更新时间 / 派发 — `tb-bugs.html` |
 | 窗口2 | SSH 连接管理（项目配置已移除）— `ssh-config.html` |
-| 窗口3 | **调度台**：确认页 + run 看板 + 轮次时间线 + 只读对话 + 产物 — `window3-dispatch.html`（数据来自 `bridge/` Host 插件） |
+| 窗口3 | **调度台**：确认页 + run 看板 + 轮次时间线 + 只读对话 + 产物 — `window3-dispatch.html`（数据来自 `bridge/` Host 插件）；**支持缺陷派发与自由输入问题两种入口** |
 
 窗口1 行为：**列表占满窗口**；点某条打开**整页详情浮层**（可返回、可关闭、Esc 关闭）；**「派发」把缺陷送到窗口3**（写本机草稿 + 广播 + 队列文件，见下节），点缺陷标题仍打开原详情；详情里保留「派发到窗口3」和「处理信息」复制面板。
 
@@ -38,6 +42,111 @@
 - `DispatchDraft` 字段见 [窗口3 规格](docs/wayfinder/window3-dispatch/spec.md)（bug / connection / project / specRef / container / timeWindow / notes / source）。
 
 ## 窗口3：调度台（Host 桥插件）
+
+### 两条入口：缺陷派发 / 自由输入
+
+1. **缺陷派发**（原路径）：窗口1 点「派发到窗口3」→ 草稿 → 确认页 → 派发。
+2. **自由输入分析**（新增）：窗口3 顶栏「分析问题」或空态「分析一个问题」→ 直接填*问题标题 / 问题描述*
+   （现象、影响范围、报错原文、可疑服务）→ 确认并派发。不需要缺陷单。
+
+实现上没有扩展桥契约：自由输入会合成一条 `DispatchDraft`，其中
+
+```
+bug = { id: 'manual-<YYYYMMDD-HHMMSS>', uid: null, source: 'manual',
+        title: <用户填的标题，留空则取描述首行>, description: <用户填的描述>,
+        status: '自由输入', services: [], hosts: [], hints: [], repos: [] }
+```
+
+桥侧只校验 `bug.id` 非空，`bug.title` / `bug.description` 会经 `prompts.js` 的 `contextBlock`
+进入分析会话，因此「方案 → 批准 → 实现 → 审核」整条状态机与缺陷派发完全一致（`bugUid` 为 `null`，
+分支名为 `bugfix/manual-<时间>-<runId>`，会话标题显示 `BUG-manual-…`，属已知显示瑕疵）。
+
+配套细节：
+
+- 连接与仓库候选取自窗口2 的 `data/ssh-config.json`（`key → keyPath`）；仓库路径、基线分支、spec
+  仍在确认页填写，受桥的 `allowedRoots` + 干净 git 仓库校验约束。
+- 自由输入草稿**边打字边自动落盘**（600 ms 节流，写入 `bug-solver.dispatch.draft.v1` 的按 id 幂等 map），
+  刷新或关窗后原样恢复；「放弃草稿」只删自己那条。
+- 校验放宽：自由输入只要求问题描述 ≥ 10 字，标题可留空。
+- 页面回归：`scripts/window3-manual.test.mjs`（表单 + 派发载荷）与
+  `scripts/window3-manual-persist.test.mjs`（自动落盘 + 刷新恢复）。
+- 生成式补丁（幂等，可重复执行）：`scripts/add-manual-analysis.cjs`、`scripts/add-manual-autosave.cjs`；
+  改动前备份为 `window3-dispatch.html.bak-manual` / `.bak-autosave`。
+
+### 派发是慢操作（十几秒正常）
+
+`POST /start` 会**建 DSH 会话**（工作区已改为按需创建，见上一节），大仓库仍可能要几秒到十几秒。页面为此做了三件事：
+
+- `/start` 单独用 180s 超时（其它请求仍 15s），不会像以前那样 15s 就报「请求超时」；
+- 派发期间顶栏显示 `处理中… 已等待 12s`，按钮置灰，重复点会被忽略；
+- 若请求超时/断连但服务端其实已建出 run，页面会**自动刷新并接管那条 run**；没建出来就保留草稿并提示稍后刷新，不会重复派发。
+
+回归：`scripts/window3-dispatch-feedback.test.mjs`。
+
+### 并行会话管理
+
+多条问题可以同时跑，每条 run 自带「修复 + 审核」两个原生会话，互不干扰。窗口3 提供：
+
+- **「并行会话」页签**：带「待你处理」数量角标；会话板按 `待你处理 / 进行中 / 已结束` 分组，
+  每条 run 一张卡（状态、仓库名、轮次、多久前更新），卡上可直接打开该 run 的修复/审核会话，不必先切过去。
+- **右栏运行队列**：排序改为「待处理 → 进行中 → 其余」，并显示仓库名与待处理标记。
+- **确认页同仓库说明**：所选仓库已有活跃 run 时提示「这条会另开独立工作区与分支，两条并行互不影响」，
+  并给「先看那条」跳转（不阻断派发）。同一缺陷重复派发仍是幂等返回。
+- **连续确认**：一次派发成功后，若窗口1 还有未确认草稿，顶部提示「确认下一条」，可直接接手。
+- **删除已结束的 run**：终态（approved / stopped / unknown / fix_failed / review_failed）的卡片上有「删除」，
+  点一次变「确认删除 / 取消」，再点才真的删记录（`POST /api/bug-solver/remove`）。
+  活跃 run 不能删，先 Stop。删除只删记录，**git 工作区默认保留**并在通知里给出路径；
+  手工清理用 `git worktree remove <path>`。
+- **轮询**：看板视图下只要任意 run 在跑就 1.5s 刷新；停在 `needs_attention` 的 run 上取 10s 空闲间隔。
+- 回归：`scripts/window3-parallel.test.mjs`（4 条 run：分组、卡片、切换、排序、同仓库说明、工作区）。
+- 生成式补丁：`scripts/add-parallel-sessions.cjs`、`scripts/patch-window3-worktree.cjs`（均幂等）；
+  备份 `window3-dispatch.html.bak-parallel` / `.bak-worktree`。
+
+### 连服务器：走 ssh-connect 技能（prompt 硬性约束）
+
+桥**自己不发 ssh**；连服务器的是窗口3 起的原生会话。为避免会话自由发挥，prompt 现在写死：
+
+1. **先调用 skill 工具加载 `ssh-connect`**，再执行命令；不许凭记忆拼参数、不许走别的通道；
+2. 固定命令形态（参数直接从确认页带出，可照抄）：
+   `ssh -o BatchMode=yes -o ConnectTimeout=10 -p <port> -i "<私钥>" <user>@<host> "<只读命令>"`；
+3. **只读白名单**：`docker ps / docker logs --since … --tail N / docker inspect / docker stats --no-stream /
+   systemctl status / cat / tail / head / grep / ls / df / free / uptime / ps`；
+4. **禁止**：restart/stop/kill/rm/rmi/prune/exec 等写操作、docker cp、改配置/权限、安装卸载、清空日志；
+   需要变更服务器时只写进 plan.md 的「建议」，交给用户执行；
+5. 私钥只用于认证，**不读取、不打印、不复制**其内容。
+
+> 这是**约定式**约束（prompt + ssh-connect 技能自身规则），桥不做命令级拦截。要硬保证需要桥侧加只读包装（未实现）。
+
+### 工作区按需创建（分析阶段不建）
+
+- **派发只做分析**：不建 worktree，只读分析原始仓库（prompt 明确「只读、不要提交」）；
+- **批准方案后**才建该 run 的 git worktree，并把 `localPath` 切到工作区，实现/审核都在里面；
+- 建工作区失败 → `422 worktree-create-failed`，**状态仍停在「待确认方案」**，不会推进、不发实现 prompt；
+- 因此派发快很多（省掉整树检出）；代价是「批准方案」这一步会多花几秒。
+
+### 同一仓库并行：每条 run 一个 worktree
+
+桥在 `start()` 里为每条 run 建出独立工作区，不再按仓库独占：
+
+- 工作区：`<repo>/.bug-solver/worktrees/<runId 前 8 位>`，分支 `bugfix/<uid|bugId>-<runId>`；
+- **会话 cwd = bug-solver 工作区**（插件配置的 `projectDir`），复用已有 DSH workspace，不再为每条 run 新建 workspace；
+- 代码仍在本 run 的 worktree 里：prompt 给出绝对路径，会话显式 `cd` 过去改代码；
+- 因为会话目录 ≠ 代码目录，修复会话的 sandbox 会放宽到 `danger-full-access`（可用插件配置 `fixSandboxMode` 收紧）；审核会话仍是 `read-only`；
+- 审核会话在同一会话目录里只读 `git diff`（代码路径由 prompt 指定）。
+- 产物仍在**原始仓库** `<repo>/.bug-solver/runs/<runId>/`，删掉工作区不丢产物；
+- `.bug-solver/` 会自动写进 `.git/info/exclude`，工作区不会把仓库弄脏；
+- 同一仓库的**工作区创建**在进程内串行，避开 git 索引锁；工作区**不会自动清理**，
+  手工清用 `git worktree list` / `git worktree remove <path>`；
+- 失败语义：建工作区失败 → `422 worktree-create-failed`，不落 run、不建会话；
+  建了工作区但会话创建失败 → run 记 `unknown`，工作区保留。
+
+**语义变化**：分析阶段看到的是工作区（基线分支的干净检出），不是当前工作区里未提交的改动；
+分析上下文里会给出原始仓库路径供只读 `git diff` 参考。当前部署 `dirtyCheck:false`（允许脏仓库派发）。
+
+> 一次性改造脚本（已执行完，勿重复跑）归档在 ；可重复执行的补丁留在 。
+
+规格：[docs/wayfinder/window3-parallel-worktrees/spec.md](docs/wayfinder/window3-parallel-worktrees/spec.md)；
+回归：`cd bridge && npm test`（154 例，含真 git 集成用例）。
 
 窗口3 是单文件 HTML（`window3-dispatch.html`），数据来自本地 Host 插件 `bridge/`（ESM、无构建）。
 它不直接驱动 LLM：桥的状态机预生成 sessionId，用 Host `sessionController/workspaceRegistry/sessionPersistence`
@@ -198,6 +307,18 @@ pwsh -NoProfile -File scripts\tb-diagnose.ps1 -Container docker-dcim-web-1 -Line
 - `repo` 为空表示还没映射本地代码库，面板显示“仓库未配置”；
 - 目前只有 `visitor-management2` 映射到了本地仓库，其它服务按需补。
 
+### 默认只显示窗口3
+
+窗口1/窗口2 默认**收起**（引擎的 `minimized`），标题栏右侧会出现「收起的窗口」按钮，点一下即可展开；
+窗口3 默认展开并占满内容区。改完布局文件后重新打开项目或刷新页面即生效。
+
+```bash
+node scripts/worktable-layout-v3.cjs show      # 看当前窗格状态
+node scripts/worktable-layout-v3.cjs only p3   # 只展开窗口3（其余收起）
+node scripts/worktable-layout-v3.cjs all       # 全部展开
+node scripts/worktable-layout-v3.cjs toggle p1 # 收起/展开某个窗格
+```
+
 ## 布局落盘（B 方案：布局跟着项目文件夹走）
 
 原版 dsh-worktable 把「项目 / 布局 / 窗格」只存在浏览器 localStorage。本次给插件打了补丁，让**布局也能落盘到项目文件夹**：
@@ -252,6 +373,33 @@ node scripts/tb-relay.cjs        # 启动（后台运行；工作台「任务」
 - 只监听 `127.0.0.1:47821`，只响应本机请求。
 
 ## 使用
+
+### 不依赖缺陷单：直接问一个问题
+
+窗口3 顶栏 **「分析问题」**（或空态里的「分析一个问题」）→ 确认页填三件事 → 派发：
+
+1. **问题描述**（必填，≥10 字）：现象、影响范围、复现步骤、报错原文、可疑服务/接口；
+2. **SSH 连接**：从窗口2 的 `data/ssh-config.json` 自动带出，可换；
+3. **代码仓库本地路径**（绝对路径，必须在 `allowedRoots` 内、是 git 仓库）。会话需要 cwd，所以这一项必填；
+   **基线分支可选**：留空 = 用仓库当前分支（HEAD），不再默认 `master`；填了但分支不存在会自动回退到当前分支，
+   并在 run 的 warnings 里记一条 `base-branch-missing`（不阻断派发）。
+   容器名、spec 也可留空。
+
+**日志时间窗**：默认「最近 3 天」是**滚动窗口**——派发那一刻才计算起止，草稿放多久都不会带出过期时间；
+也能选最近 1 天 / 最近 12 小时，或选「自定义」手填起止（手填后按填写值派发）。
+
+点 **确认并派发** 之后，桥会：
+
+1. 在仓库下建独立工作区 `<repo>/.bug-solver/worktrees/<runId 前 8 位>` + 分支；
+2. 起「分析修复」原生会话 → **第 1 轮先只出方案**（`round-1/plan.md`：诊断 / 改什么 / 怎么改 / 怎么测 / 风险）；
+3. 方案出现在窗口3 时间线，你 **批准方案** 才开始改代码；也可以「退回意见」让它重做方案；
+4. 改完自动进审核会话（只读 `git diff`），结论是 approve / request_changes / needs_info；
+5. 你「通过」后 run 结束（`approved`）；之后可在面板删除记录。
+
+想看细节：「任务」页签是时间线与产物，「对话（只读）」是两条原生会话的镜像。
+审批、追问、Stop 都在 DSH 原生会话里做，窗口3 只是控制面。
+
+### 缺陷派发（窗口1 → 窗口3）
 
 1. 项目下拉选项目（默认 S1867_中联泰国DCOM）→ 负责人下拉选人（默认周泽宇）；
 2. 点 **立即拉取**：读 TB（只读）→ 刷新列表；

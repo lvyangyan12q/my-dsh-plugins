@@ -11,7 +11,7 @@ import { test } from 'node:test'
 import { DispatchService } from '../lib/dispatch-service.js'
 import { createRedactor } from '../lib/redact.js'
 import { readAllowedRootsFromConfig, readSshConfig, resolveSshConfigPath } from '../lib/ssh-config.js'
-import { createFakeClock, createFakeGateway, createMemoryStore, makeDraft } from './helpers.mjs'
+import { createFakeGit, createFakeClock, createFakeGateway, createMemoryStore, makeDraft } from './helpers.mjs'
 
 function setup(t, { config, allowedRoots = [], sshConfig = true } = {}) {
   const base = mkdtempSync(join(tmpdir(), 'bs-config-'))
@@ -35,6 +35,7 @@ function setup(t, { config, allowedRoots = [], sshConfig = true } = {}) {
   const gateway = createFakeGateway()
   const store = createMemoryStore()
   const service = new DispatchService({
+    git: createFakeGit(),
     gateway,
     store,
     clock: createFakeClock(),
@@ -65,7 +66,9 @@ test('start accepts a repository configured only in window2 ssh-config', async (
   const h = setup(t, { allowedRoots: [] })
   const { run } = await h.service.start(h.draft())
   assert.equal(run.state, 'fix_planning')
-  assert.equal(h.gateway.calls.create[0].cwd, realpathSync(h.repo))
+  // 仓库来自窗口2 配置；会话 cwd 是该仓库下的 run 工作区。
+  assert.equal(run.repoPath, realpathSync(h.repo))
+  assert.ok(h.gateway.calls.create[0].cwd.startsWith(realpathSync(h.repo)), '会话应在该仓库的工作区里')
 })
 
 test('start still rejects a path that is in neither plugin config nor ssh-config', async (t) => {

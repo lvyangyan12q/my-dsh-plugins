@@ -34,6 +34,20 @@ export const BUILTIN_GLOSSARY = [
   { source: 'retrieval-augmented generation', target: '检索增强生成' },
   { source: 'token', target: 'token' },
   { source: 'transformer', target: 'Transformer' },
+  // Model and product names stay as-is. Without these, a literal translator
+  // turns "Gemini ... Flash" into 闪光灯 and "Argon" into 氩气, which reads as a
+  // hardware post instead of a model release.
+  { source: 'flash', target: 'Flash' },
+  { source: 'argon', target: 'Argon' },
+  { source: 'gemini', target: 'Gemini' },
+  { source: 'gpt', target: 'GPT' },
+  { source: 'claude', target: 'Claude' },
+  { source: 'kimi', target: 'Kimi' },
+  { source: 'deepseek', target: 'DeepSeek' },
+  { source: 'qwen', target: 'Qwen' },
+  { source: 'llama', target: 'Llama' },
+  { source: 'grok', target: 'Grok' },
+  { source: 'codex', target: 'Codex' },
 ]
 
 /** Merge built-ins with user terms; user entries win on the same source. */

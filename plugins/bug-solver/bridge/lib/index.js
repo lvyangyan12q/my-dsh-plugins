@@ -51,6 +51,10 @@ export function createService(config = {}) {
     store,
     clock,
     redactor,
+    git: config.git ?? deps.git ?? null,
+    // DSH 会话统一归到 bug-solver 自己的工作区（projectDir），不为每条 run 新建 workspace。
+    sessionCwd: config.sessionCwd ?? config.projectDir ?? deps.sessionCwd ?? deps.projectDir ?? null,
+    fixSandboxMode: config.fixSandboxMode ?? deps.fixSandboxMode ?? null,
     allowedRoots: config.allowedRoots ?? deps.allowedRoots ?? [],
     allowedRootsProvider,
     sshConfigPath,

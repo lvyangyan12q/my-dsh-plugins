@@ -20,6 +20,13 @@ import { canonicalUrl } from '../shared/url.js'
 
 export const DEFAULT_QUOTA = { total: 10, papers: 6, blogs: 4 }
 
+export const DEFAULT_IMPORTANCE = Object.freeze({
+  enabled: false,
+  minScore: 6,
+  strongScore: 9,
+  maxOverflow: 3,
+})
+
 function count(value, fallback) {
   const number = Number(value)
   return Number.isInteger(number) && number >= 0 ? number : fallback
@@ -303,12 +310,68 @@ export function selectDaily(candidates, options = {}) {
   const { kept: filtered, filtered: filteredCount, reasons } = filterCandidates(deduped, filterOptions)
   const ranked = [...filtered].sort(compareByRank(rankOptions))
 
-  const papers = ranked.filter(candidate => kindOf(candidate) === 'paper')
-  const blogs = ranked.filter(candidate => kindOf(candidate) === 'blog')
+  // The importance gate: a candidate the model rated below the bar is dropped,
+  // an unrated one is kept (the gate is advisory), and a strong one may exceed
+  // the day's quota because a genuinely important item is worth the extra read.
+  const importanceOptions = { ...DEFAULT_IMPORTANCE, ...(isObject(options.importance) ? options.importance : {}) }
+  const required = importanceOptions.enabled === true ? Number(importanceOptions.minScore) : null
+  const strong = importanceOptions.enabled === true ? Number(importanceOptions.strongScore) : null
+  const maxOverflow = Number.isInteger(importanceOptions.maxOverflow) && importanceOptions.maxOverflow >= 0
+    ? importanceOptions.maxOverflow
+    : DEFAULT_IMPORTANCE.maxOverflow
+  const scoreOf = candidate => (Number.isFinite(candidate?.importance) ? Number(candidate.importance) : null)
+  const passes = candidate => {
+    if (required === null) return true
+    const score = scoreOf(candidate)
+    return score === null || score >= required
+  }
+  const gated = ranked.filter(passes)
+  const droppedByImportance = ranked.length - gated.length
+  const strongOnes = Number.isFinite(strong) ? gated.filter(candidate => (scoreOf(candidate) ?? 0) >= strong) : []
+
+  const papers = gated.filter(candidate => kindOf(candidate) === 'paper')
+  const blogs = gated.filter(candidate => kindOf(candidate) === 'blog')
   const paperLimit = Math.min(quota.papers, quota.total)
   const selectedPapers = papers.slice(0, paperLimit)
   const blogLimit = Math.min(quota.blogs, Math.max(0, quota.total - selectedPapers.length))
-  const selectedBlogs = selectBlogs(blogs, blogLimit)
+  let selectedBlogs = selectBlogs(blogs, blogLimit)
+  let overflow = []
+
+  // A strong item that lost the quota race still earns a slot; the overflow is
+  // capped so "important enough to exceed the limit" cannot rebuild a long list.
+  if (maxOverflow > 0 && strongOnes.length > 0) {
+    const chosen = new Set([...selectedPapers, ...selectedBlogs].map(candidate => candidate.id))
+    overflow = strongOnes
+      .filter(candidate => !chosen.has(candidate.id))
+      .slice(0, maxOverflow)
+    if (overflow.length > 0) {
+      const overflowIds = new Set(overflow.map(candidate => candidate.id))
+      const rankedAgain = [...selectedPapers, ...selectedBlogs, ...overflow].sort(compareByRank(rankOptions))
+      selectedBlogs = rankedAgain.filter(candidate => kindOf(candidate) === 'blog')
+      return {
+        selected: rankedAgain,
+        stats: {
+          candidates: list.length,
+          duplicates: duplicates.length,
+          filtered: filteredCount,
+          filterReasons: reasons,
+          sourceWeights: rankOptions.sourceWeights,
+          institutions: filterOptions.institutions,
+          ranked: ranked.length,
+          selected: rankedAgain.length,
+          droppedByQuota: ranked.length - (rankedAgain.length - overflowIds.size),
+          droppedByImportance,
+          importanceMinScore: required,
+          importanceStrongScore: strong,
+          importanceOverflow: overflow.length,
+          quota,
+          paperLimit: rankedAgain.filter(candidate => kindOf(candidate) === 'paper').length,
+          blogLimit: rankedAgain.filter(candidate => kindOf(candidate) === 'blog').length,
+        },
+      }
+    }
+  }
+
   const selected = [...selectedPapers, ...selectedBlogs]
 
   return {
@@ -323,6 +386,10 @@ export function selectDaily(candidates, options = {}) {
       ranked: ranked.length,
       selected: selected.length,
       droppedByQuota: ranked.length - selected.length,
+      droppedByImportance,
+      importanceMinScore: required,
+      importanceStrongScore: strong,
+      importanceOverflow: 0,
       quota,
       paperLimit: selectedPapers.length,
       blogLimit: Math.max(0, selected.length - selectedPapers.length),

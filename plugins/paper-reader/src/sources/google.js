@@ -16,6 +16,7 @@ import {
   parseJsonLd,
   timeDate,
 } from './blog.js'
+import { dropSeen } from '../shared/url.js'
 import { parseRssFeed } from './openai.js'
 import { assertPositive, assertUrl, configError, isPlainObject } from './validation.js'
 
@@ -84,7 +85,7 @@ function byPublishedDesc(left, right) {
 }
 
 /** List the newest Google AI blog posts as blog candidates. */
-export async function listGoogle({ config, fetch: fetchImpl } = {}) {
+export async function listGoogle({ config, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults(config)
   let response
   let text
@@ -101,7 +102,10 @@ export async function listGoogle({ config, fetch: fetchImpl } = {}) {
   if (!/<rss[\s>]/i.test(text)) throw sourceError('google_invalid', 'Google RSS did not return an RSS feed')
 
   const limit = Number.isInteger(settings.maxItems) && settings.maxItems > 0 ? settings.maxItems : DEFAULT_GOOGLE_CONFIG.maxItems
-  return parseRssFeed(text).map(toCandidate).filter(candidate => candidate.title).sort(byPublishedDesc).slice(0, limit)
+  return dropSeen(
+    parseRssFeed(text).map(toCandidate).filter(candidate => candidate.title).sort(byPublishedDesc),
+    knownUrls,
+  ).slice(0, limit)
 }
 
 /** Extract one Google AI blog article. */

@@ -1,3 +1,4 @@
+import { createFakeGit } from './helpers.mjs'
 /**
  * 接缝：插件壳 + 真实 Host 适配的装配。
  * 验证 apply() 在有 Host 服务时用真实网关服务化路由、没有 Host 服务时仍返回 503，
@@ -63,9 +64,9 @@ test('with real host services the bridge routes serve a start request end to end
   const { root, dataDir } = makeWorkspace(t)
   const host = createFakeHost()
   const { ctx, routes } = createCtx(host)
-  apply(ctx, { dataDir, allowedRoots: [root], dirtyCheck: false })
+  apply(ctx, { dataDir, allowedRoots: [root], dirtyCheck: false, git: createFakeGit() })
 
-  assert.equal(routes.length, 12)
+  assert.equal(routes.length, 13)
   assert.equal(host.listenerCount('session/event'), 1, 'host gateway subscribes to session/event')
 
   const draft = {
@@ -101,7 +102,7 @@ test('disposing the plugin removes the routes and the session/event listener', a
   const host = createFakeHost()
   const { ctx, routes, disposers } = createCtx(host)
   apply(ctx, { dataDir, allowedRoots: [root] })
-  assert.equal(routes.length, 12)
+  assert.equal(routes.length, 13)
   assert.equal(host.listenerCount('session/event'), 1)
 
   for (const dispose of [...disposers].reverse()) dispose()
@@ -116,7 +117,7 @@ test('a missing host service still loads the plugin and answers 503', async (t) 
   const { ctx, routes } = createCtx(host)
   apply(ctx, { dataDir, allowedRoots: [root] })
 
-  assert.equal(routes.length, 12, 'routes are registered even without host services')
+  assert.equal(routes.length, 13, 'routes are registered even without host services')
   const response = await routes.find((route) => route.path.endsWith('/runs')).fetch(
     new Request('http://localhost/api/bug-solver/runs'),
   )

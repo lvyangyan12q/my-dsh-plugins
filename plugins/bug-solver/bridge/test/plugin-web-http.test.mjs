@@ -20,13 +20,14 @@ test('apply prefers webServer exact routes over connection.fetch for plain ifram
     on() { return () => {} },
   }
   apply(ctx, {})
-  assert.equal(routes.length, 12)
+  assert.equal(routes.length, 13)
   assert.deepEqual(routes.map((route) => route.path).sort(), [
     '/api/bug-solver/approve',
     '/api/bug-solver/approve-plan',
     '/api/bug-solver/artifact',
     '/api/bug-solver/messages',
     '/api/bug-solver/plan-feedback',
+    '/api/bug-solver/remove',
     '/api/bug-solver/request-changes',
     '/api/bug-solver/resume',
     '/api/bug-solver/run',

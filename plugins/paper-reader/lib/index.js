@@ -1,7 +1,7 @@
 // src/index.js
-import { readFile as readFile2 } from "node:fs/promises";
+import { readFile as readFile3 } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname as dirname3, isAbsolute, join as join3 } from "node:path";
+import { dirname as dirname3, isAbsolute, join as join4 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // src/storage.js
@@ -813,6 +813,40 @@ async function fetchText(fetchImpl, url, {
   }
 }
 
+// src/shared/url.js
+function normalizeUrl(value) {
+  try {
+    const url = new URL(String(value));
+    url.hash = "";
+    return url.toString().replace(/\/+$/, "");
+  } catch {
+    return String(value ?? "").trim().replace(/\/+$/, "");
+  }
+}
+function slugFromUrl(value) {
+  const text3 = String(value ?? "").trim();
+  if (!text3) return "";
+  try {
+    const url = new URL(text3);
+    const segments = url.pathname.split("/").filter(Boolean);
+    return segments.length > 0 ? segments[segments.length - 1] : "";
+  } catch {
+    return "";
+  }
+}
+function dropSeen(candidates, knownUrls = []) {
+  if (!Array.isArray(knownUrls) || knownUrls.length === 0) return candidates;
+  const known = new Set(knownUrls.map(normalizeUrl));
+  const knownSlugs = new Set(knownUrls.map(slugFromUrl).filter((slug) => slug.length >= 6));
+  return candidates.filter((candidate) => {
+    const url = candidate?.url;
+    if (!url) return true;
+    if (known.has(normalizeUrl(url))) return false;
+    const slug = slugFromUrl(url);
+    return !(slug.length >= 6 && knownSlugs.has(slug));
+  });
+}
+
 // src/sources/validation.js
 function configError(message) {
   return Object.assign(new Error(message), { code: "config_invalid", exitCode: 2, status: 400 });
@@ -845,6 +879,10 @@ var DEFAULT_ARXIV_CONFIG = {
   keywords: [],
   excludeKeywords: [],
   maxResults: 100,
+  // Days the window reaches back, counting the digest date. One day is not
+  // enough: arXiv publishes a day's listing only after its announcement
+  // (roughly 01:00 UTC), and nothing is announced on weekends.
+  lookbackDays: 3,
   timeoutMs: 2e4,
   baseUrl: "https://export.arxiv.org/api/query",
   htmlBaseUrl: "https://arxiv.org/html",
@@ -910,11 +948,13 @@ function parseAtomFeed(xml) {
     };
   });
 }
-function buildArxivQueryUrl({ baseUrl, categories = [], date, maxResults = 100 }) {
-  const compact = String(date).replace(/-/g, "");
+function buildArxivQueryUrl({ baseUrl, categories = [], date, lookbackDays = 1, maxResults = 100 }) {
+  const to = String(date).replace(/-/g, "");
+  const reach = (Number.isInteger(lookbackDays) && lookbackDays > 0 ? lookbackDays : 1) - 1;
+  const from = reach > 0 ? shiftDate(String(date), -reach).replace(/-/g, "") : to;
   const categoryQuery = categories.length > 0 ? categories.map((category) => `cat:${category}`).join(" OR ") : "all";
   const url = new URL(baseUrl || DEFAULT_ARXIV_CONFIG.baseUrl);
-  url.searchParams.set("search_query", `(${categoryQuery}) AND submittedDate:[${compact}0000 TO ${compact}2359]`);
+  url.searchParams.set("search_query", `(${categoryQuery}) AND submittedDate:[${from}0000 TO ${to}2359]`);
   url.searchParams.set("start", "0");
   url.searchParams.set("max_results", String(maxResults));
   url.searchParams.set("sortBy", "submittedDate");
@@ -947,12 +987,13 @@ function byPublishedDesc(left, right) {
   if (a !== b) return b - a;
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
-async function listArxiv({ config, date, fetch: fetchImpl }) {
+async function listArxiv({ config, date, fetch: fetchImpl, knownUrls = [] }) {
   const settings = withDefaults(config);
   const url = buildArxivQueryUrl({
     baseUrl: settings.baseUrl,
     categories: settings.categories,
     date,
+    lookbackDays: settings.lookbackDays,
     maxResults: settings.maxResults
   });
   let response;
@@ -972,7 +1013,7 @@ async function listArxiv({ config, date, fetch: fetchImpl }) {
   if (!/<feed[\s>]/i.test(text3)) {
     throw sourceError("arxiv_invalid", "arXiv API did not return an Atom feed");
   }
-  return parseAtomFeed(text3).filter((entry) => entry.arxivId).map(toCandidate).sort(byPublishedDesc);
+  return dropSeen(parseAtomFeed(text3).filter((entry) => entry.arxivId).map(toCandidate), knownUrls).sort(byPublishedDesc);
 }
 function inlineText(node) {
   if (typeof node === "string") return node;
@@ -1170,6 +1211,9 @@ function validateArxivConfig(config, path) {
   if (!Number.isInteger(config.maxResults) || config.maxResults <= 0) {
     throw configError(`${path}: sources.arxiv.maxResults must be a positive integer`);
   }
+  if (!Number.isInteger(config.lookbackDays) || config.lookbackDays < 1 || config.lookbackDays > 14) {
+    throw configError(`${path}: sources.arxiv.lookbackDays must be an integer between 1 and 14`);
+  }
   if (typeof config.extractFullText !== "boolean") {
     throw configError(`${path}: sources.arxiv.extractFullText must be true or false`);
   }
@@ -1283,7 +1327,7 @@ function toCandidate2(entry) {
     tags: [SOURCE_ID2, "news"]
   };
 }
-async function listDeepSeek({ config, date, fetch: fetchImpl }) {
+async function listDeepSeek({ config, date, fetch: fetchImpl, knownUrls = [] }) {
   const settings = withDefaults2(config);
   const url = settings.sitemapUrl;
   if (typeof fetchImpl !== "function") {
@@ -1307,7 +1351,8 @@ async function listDeepSeek({ config, date, fetch: fetchImpl }) {
     throw sourceError2("deepseek_invalid", "DeepSeek sitemap did not return a urlset");
   }
   const from = shiftDate2(date, -Math.max(0, Number(settings.lookbackDays) || 0));
-  return parseDeepSeekSitemap(text3, settings).filter((entry) => entry.published >= from && entry.published <= date).sort((left, right) => left.published === right.published ? left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0 : left.published < right.published ? 1 : -1).slice(0, Math.max(0, Number(settings.maxItems) || 0)).map(toCandidate2);
+  const fresh = parseDeepSeekSitemap(text3, settings).filter((entry) => entry.published >= from && entry.published <= date).sort((left, right) => left.published === right.published ? left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0 : left.published < right.published ? 1 : -1).map(toCandidate2);
+  return dropSeen(fresh, knownUrls).slice(0, Math.max(0, Number(settings.maxItems) || 0));
 }
 var CJK = /[\u2e80-\u9fff\uac00-\ud7af\uff00-\uffef]/;
 function resolveImage2(src, baseUrl = DEFAULT_DEEPSEEK_CONFIG.baseUrl) {
@@ -1674,6 +1719,10 @@ var DEFAULT_HF_CONFIG = {
   useProxy: true,
   baseUrl: "https://huggingface.co/api/daily_papers",
   maxItems: 50,
+  // The daily board is populated over the UTC day and is often empty at the
+  // local morning run, so the adapter reads the digest date and the days
+  // before it and merges them.
+  lookbackDays: 2,
   timeoutMs: 2e4,
   userAgent: "dsh-paper-reader/0.1 (+https://huggingface.co)"
 };
@@ -1760,28 +1809,42 @@ function parseDailyPapers(payload) {
   }
   return parsed.map(toCandidate3).filter(Boolean).sort(byUpvotesDesc);
 }
-async function listHf({ config, date, fetch: fetchImpl } = {}) {
+async function listHf({ config, date, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults3(config);
-  const url = buildDailyPapersUrl({ baseUrl: settings.baseUrl, date, limit: settings.maxItems });
   if (typeof fetchImpl !== "function") {
     throw sourceError3("hf_fetch_missing", "no fetch implementation was provided");
   }
-  let response;
-  let text3;
-  try {
-    ({ response, text: text3 } = await fetchText(fetchImpl, url, {
-      timeoutMs: settings.timeoutMs,
-      userAgent: settings.userAgent,
-      accept: "application/json, text/plain;q=0.9, */*;q=0.1"
-    }));
-  } catch (error) {
-    if (error?.code === "hf_date_required") throw error;
-    throw sourceError3("hf_network", `the HF daily list request failed: ${error?.message ?? error}`, { cause: error });
+  const reach = Number.isInteger(settings.lookbackDays) && settings.lookbackDays > 0 ? settings.lookbackDays : 1;
+  const days = Array.from({ length: reach }, (unused, back) => shiftDate(date, -back));
+  const merged = /* @__PURE__ */ new Map();
+  for (const [index, day] of days.entries()) {
+    const url = buildDailyPapersUrl({ baseUrl: settings.baseUrl, date: day, limit: settings.maxItems });
+    let response;
+    let text3;
+    try {
+      ({ response, text: text3 } = await fetchText(fetchImpl, url, {
+        timeoutMs: settings.timeoutMs,
+        userAgent: settings.userAgent,
+        accept: "application/json, text/plain;q=0.9, */*;q=0.1"
+      }));
+    } catch (error) {
+      if (error?.code === "hf_date_required") throw error;
+      if (index === 0) {
+        throw sourceError3("hf_network", `the HF daily list request failed: ${error?.message ?? error}`, { cause: error });
+      }
+      continue;
+    }
+    if (!response.ok) {
+      if (index === 0) {
+        throw sourceError3("hf_http", `the HF daily list answered HTTP ${response.status}`, { status: response.status });
+      }
+      continue;
+    }
+    for (const candidate of parseDailyPapers(text3)) {
+      if (!merged.has(candidate.id)) merged.set(candidate.id, candidate);
+    }
   }
-  if (!response.ok) {
-    throw sourceError3("hf_http", `the HF daily list answered HTTP ${response.status}`, { status: response.status });
-  }
-  return parseDailyPapers(text3);
+  return dropSeen([...merged.values()], knownUrls).sort(byUpvotesDesc).slice(0, Math.max(0, Number(settings.maxItems) || 0));
 }
 function validateHfConfig(config, path) {
   if (!isPlainObject(config)) throw configError(`${path}: sources.hf must be an object`);
@@ -1789,29 +1852,10 @@ function validateHfConfig(config, path) {
   if (!Number.isInteger(config.maxItems) || config.maxItems <= 0) {
     throw configError(`${path}: sources.hf.maxItems must be a positive integer`);
   }
+  if (!Number.isInteger(config.lookbackDays) || config.lookbackDays < 1 || config.lookbackDays > 14) {
+    throw configError(`${path}: sources.hf.lookbackDays must be an integer between 1 and 14`);
+  }
   assertPositive(config.timeoutMs, "sources.hf.timeoutMs", path);
-}
-
-// src/shared/url.js
-function normalizeUrl(value) {
-  try {
-    const url = new URL(String(value));
-    url.hash = "";
-    return url.toString().replace(/\/+$/, "");
-  } catch {
-    return String(value ?? "").trim().replace(/\/+$/, "");
-  }
-}
-function slugFromUrl(value) {
-  const text3 = String(value ?? "").trim();
-  if (!text3) return "";
-  try {
-    const url = new URL(text3);
-    const segments = url.pathname.split("/").filter(Boolean);
-    return segments.length > 0 ? segments[segments.length - 1] : "";
-  } catch {
-    return "";
-  }
 }
 
 // src/sources/blog.js
@@ -2274,7 +2318,7 @@ function toCandidate5(card, settings) {
     tags: []
   };
 }
-async function listKimi({ config, date, fetch: fetchImpl } = {}) {
+async function listKimi({ config, date, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults5(config);
   let response;
   let html;
@@ -2294,7 +2338,10 @@ async function listKimi({ config, date, fetch: fetchImpl } = {}) {
     if (left.date !== right.date) return String(right.date ?? "").localeCompare(String(left.date ?? ""));
     return left.slug.localeCompare(right.slug);
   }).slice(0, Math.max(0, settings.maxCandidates)).map((card) => toCandidate5(card, settings));
-  return { candidates, discovered: candidates.map((candidate) => candidate.url) };
+  return {
+    candidates: dropSeen(candidates, knownUrls),
+    discovered: candidates.map((candidate) => candidate.url)
+  };
 }
 function findMain2(tree) {
   return findAll(tree, (node) => localName(node.name) === "main" && hasClass(node, "layout-content"))[0] ?? null;
@@ -2388,6 +2435,9 @@ var DEFAULT_OPENAI_CONFIG = {
   // skipping the source.
   useProxy: true,
   extractViaProxy: true,
+  // Opt-in: a base URL such as `https://r.jina.ai/` that renders blocked pages
+  // into Markdown. Empty means "no third party", and the RSS dek stands in.
+  readerProxy: "",
   rssUrl: "https://openai.com/news/rss.xml",
   timeoutMs: 2e4,
   maxItems: 40,
@@ -2469,7 +2519,7 @@ function byPublishedDesc2(left, right) {
   if (a !== b) return b - a;
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
-async function listOpenAi({ config, fetch: fetchImpl } = {}) {
+async function listOpenAi({ config, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults6(config);
   const url = settings.rssUrl || DEFAULT_OPENAI_CONFIG.rssUrl;
   let response;
@@ -2490,7 +2540,10 @@ async function listOpenAi({ config, fetch: fetchImpl } = {}) {
     throw sourceError6("openai_invalid", "OpenAI RSS did not return an RSS feed");
   }
   const limit = Number.isInteger(settings.maxItems) && settings.maxItems > 0 ? settings.maxItems : DEFAULT_OPENAI_CONFIG.maxItems;
-  return parseRssFeed(text3).map(toCandidate6).filter((candidate) => candidate.title).sort(byPublishedDesc2).slice(0, limit);
+  return dropSeen(
+    parseRssFeed(text3).map(toCandidate6).filter((candidate) => candidate.title).sort(byPublishedDesc2),
+    knownUrls
+  ).slice(0, limit);
 }
 function textBlocksOf3(blocks) {
   return blocks.filter((block) => block.type === "heading" || block.type === "paragraph");
@@ -2549,6 +2602,40 @@ function openAiExcerptBlocks(candidate) {
   const dek = collapse(candidate?.summary ?? "");
   return dek ? [{ type: "paragraph", original: dek }] : [];
 }
+async function extractViaReader(candidate, settings, fetchImpl) {
+  const base = typeof settings.readerProxy === "string" ? settings.readerProxy.trim() : "";
+  if (!base) return null;
+  const url = `${base.replace(/\/+$/, "/")}${candidate.url}`;
+  let response;
+  let markdown;
+  try {
+    ({ response, text: markdown } = await fetchText(fetchImpl, url, {
+      timeoutMs: Math.max(settings.timeoutMs, 45e3),
+      userAgent: settings.userAgent,
+      accept: "text/plain, text/markdown;q=0.9, */*;q=0.1"
+    }));
+  } catch {
+    return null;
+  }
+  if (!response.ok) return null;
+  const body = markdown.replace(/^Title:[^\n]*\n(?:URL Source:[^\n]*\n)?(?:Published Time:[^\n]*\n)?(?:Markdown Content:\s*\n)?/, "");
+  const blocks = parseMarkdownBlocks(body, { maxBlocks: settings.maxBlocks, baseUrl: candidate.url });
+  if (!blocks.some((block) => block.type === "paragraph")) return null;
+  return {
+    blocks,
+    excerpt: false,
+    warnings: [],
+    meta: {
+      title: candidate.title,
+      summary: candidate.summary ?? "",
+      authors: Array.isArray(candidate.authors) ? candidate.authors : [],
+      publishedAt: candidate.publishedAt ?? null,
+      url: candidate.url,
+      sourceLanguage: "en",
+      viaReaderProxy: true
+    }
+  };
+}
 function degraded(candidate, code, detail = null) {
   const message = EXCERPT_REASONS[code] ?? EXCERPT_REASONS.extract_failed;
   return {
@@ -2579,7 +2666,11 @@ async function extractOpenAiArticle({ candidate, config, fetch: fetchImpl, proxy
     return degraded(candidate, "network", error?.message ?? error);
   }
   if (!response.ok) {
-    if (response.status === 403) return degraded(candidate, "http_403");
+    if (response.status === 403) {
+      const viaReader = await extractViaReader(candidate, settings, fetchImpl);
+      if (viaReader) return viaReader;
+      return degraded(candidate, "http_403");
+    }
     return degraded(candidate, "http_error", `HTTP ${response.status}`);
   }
   let page;
@@ -2611,6 +2702,9 @@ function validateOpenAiConfig(config, path) {
     throw configError(`${path}: sources.openai.extractFullText must be true or false`);
   }
   assertUrl(config.rssUrl, "sources.openai.rssUrl", path);
+  if (config.readerProxy !== void 0 && config.readerProxy !== null && typeof config.readerProxy !== "string") {
+    throw configError(`${path}: sources.openai.readerProxy must be a string (a reader-proxy base URL)`);
+  }
   assertPositive(config.timeoutMs, "sources.openai.timeoutMs", path);
   if (!Number.isInteger(config.maxItems) || config.maxItems <= 0) {
     throw configError(`${path}: sources.openai.maxItems must be a positive integer`);
@@ -2677,7 +2771,7 @@ function byPublishedDesc3(left, right) {
   if (a !== b) return b - a;
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
 }
-async function listGoogle({ config, fetch: fetchImpl } = {}) {
+async function listGoogle({ config, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults7(config);
   let response;
   let text3;
@@ -2693,7 +2787,10 @@ async function listGoogle({ config, fetch: fetchImpl } = {}) {
   if (!response.ok) throw sourceError7("google_http", `Google RSS answered HTTP ${response.status}`, { status: response.status });
   if (!/<rss[\s>]/i.test(text3)) throw sourceError7("google_invalid", "Google RSS did not return an RSS feed");
   const limit = Number.isInteger(settings.maxItems) && settings.maxItems > 0 ? settings.maxItems : DEFAULT_GOOGLE_CONFIG.maxItems;
-  return parseRssFeed(text3).map(toCandidate7).filter((candidate) => candidate.title).sort(byPublishedDesc3).slice(0, limit);
+  return dropSeen(
+    parseRssFeed(text3).map(toCandidate7).filter((candidate) => candidate.title).sort(byPublishedDesc3),
+    knownUrls
+  ).slice(0, limit);
 }
 async function extractGoogleArticle({ candidate, config, fetch: fetchImpl } = {}) {
   const settings = withDefaults7(config);
@@ -2754,7 +2851,7 @@ var SOURCES = {
     label: "arXiv",
     short: "A",
     defaults: DEFAULT_ARXIV_CONFIG,
-    tracksSeen: false,
+    tracksSeen: true,
     onExtractFailure: "excerpt",
     list: listArxiv,
     extract: extractArxivPaper,
@@ -2766,7 +2863,7 @@ var SOURCES = {
     label: "DeepSeek",
     short: "D",
     defaults: DEFAULT_DEEPSEEK_CONFIG,
-    tracksSeen: false,
+    tracksSeen: true,
     onExtractFailure: "skip",
     list: listDeepSeek,
     extract: extractDeepSeekArticle,
@@ -2778,7 +2875,7 @@ var SOURCES = {
     label: "Hugging Face",
     short: "H",
     defaults: DEFAULT_HF_CONFIG,
-    tracksSeen: false,
+    tracksSeen: true,
     onExtractFailure: "excerpt",
     list: listHf,
     validateConfig: validateHfConfig
@@ -2801,7 +2898,7 @@ var SOURCES = {
     label: "Kimi",
     short: "K",
     defaults: DEFAULT_KIMI_CONFIG,
-    tracksSeen: false,
+    tracksSeen: true,
     onExtractFailure: "skip",
     list: listKimi,
     extract: extractKimiArticle,
@@ -2813,7 +2910,7 @@ var SOURCES = {
     label: "Google",
     short: "G",
     defaults: DEFAULT_GOOGLE_CONFIG,
-    tracksSeen: false,
+    tracksSeen: true,
     onExtractFailure: "skip",
     list: listGoogle,
     extract: extractGoogleArticle,
@@ -2825,7 +2922,7 @@ var SOURCES = {
     label: "OpenAI",
     short: "O",
     defaults: DEFAULT_OPENAI_CONFIG,
-    tracksSeen: false,
+    tracksSeen: true,
     onExtractFailure: "excerpt",
     list: listOpenAi,
     extract: extractOpenAiArticle,
@@ -2928,6 +3025,117 @@ async function readRunStatus({ root }) {
   };
 }
 
+// src/hidden.js
+import { readFile as readFile2, rename as rename2, writeFile as writeFile2 } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { join as join3 } from "node:path";
+var HIDDEN_FILE = "hidden.json";
+function isDate(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+function emptyList() {
+  return { schemaVersion: 1, dates: {} };
+}
+async function readHidden({ root }) {
+  const path = join3(root, HIDDEN_FILE);
+  if (!existsSync(path)) return { hidden: emptyList(), path, missing: true };
+  try {
+    const parsed = JSON.parse(await readFile2(path, "utf8"));
+    const dates = {};
+    for (const [date, urls] of Object.entries(parsed?.dates ?? {})) {
+      if (!isDate(date) || !Array.isArray(urls)) continue;
+      dates[date] = urls.filter((url) => typeof url === "string" && url.length > 0);
+    }
+    return { hidden: { schemaVersion: 1, dates }, path, missing: false };
+  } catch {
+    return { hidden: emptyList(), path, missing: false, corrupt: true };
+  }
+}
+async function hiddenFor({ root, date }) {
+  const { hidden } = await readHidden({ root });
+  return hidden.dates?.[date] ?? [];
+}
+async function hideItem({ root, date, url }) {
+  if (!isDate(date)) {
+    throw Object.assign(new Error("a date is required: YYYY-MM-DD"), { status: 400, code: "hidden_invalid_date" });
+  }
+  if (typeof url !== "string" || url.length === 0) {
+    throw Object.assign(new Error("a url is required"), { status: 400, code: "hidden_invalid_url" });
+  }
+  const { hidden, path } = await readHidden({ root });
+  const current = Array.isArray(hidden.dates[date]) ? hidden.dates[date] : [];
+  if (!current.includes(url)) current.push(url);
+  const next = { schemaVersion: 1, dates: { ...hidden.dates, [date]: current } };
+  const temp = `${path}.tmp`;
+  await writeFile2(temp, JSON.stringify(next), "utf8");
+  await rename2(temp, path);
+  return next;
+}
+async function unhideItem({ root, date, url }) {
+  if (!isDate(date)) {
+    throw Object.assign(new Error("a date is required: YYYY-MM-DD"), { status: 400, code: "hidden_invalid_date" });
+  }
+  const { hidden, path } = await readHidden({ root });
+  const current = Array.isArray(hidden.dates[date]) ? hidden.dates[date] : [];
+  const next = { schemaVersion: 1, dates: { ...hidden.dates, [date]: current.filter((entry) => entry !== url) } };
+  if (next.dates[date].length === 0) delete next.dates[date];
+  const temp = `${path}.tmp`;
+  await writeFile2(temp, JSON.stringify(next), "utf8");
+  await rename2(temp, path);
+  return next;
+}
+function applyHidden(items, urls) {
+  if (!Array.isArray(items) || !Array.isArray(urls) || urls.length === 0) return items;
+  const hidden = new Set(urls);
+  return items.filter((item) => !hidden.has(item?.url));
+}
+
+// src/run-trigger.js
+import { spawn } from "node:child_process";
+function createRunTrigger({
+  scriptPath,
+  cwd,
+  spawnImpl = spawn,
+  execPath = process.execPath,
+  now = () => /* @__PURE__ */ new Date()
+} = {}) {
+  let current = null;
+  const state = () => current ? { ...current } : { running: false, pid: null, startedAt: null, finishedAt: null, exitCode: null };
+  return {
+    /** Start a run; `started` is false when one is already going. */
+    start() {
+      if (current?.running) return { started: false, run: state() };
+      const child = spawnImpl(execPath, [scriptPath], {
+        cwd,
+        stdio: "ignore",
+        detached: true
+      });
+      if (typeof child.unref === "function") child.unref();
+      current = {
+        running: true,
+        pid: typeof child.pid === "number" ? child.pid : null,
+        startedAt: now().toISOString(),
+        finishedAt: null,
+        exitCode: null
+      };
+      if (typeof child.on === "function") {
+        child.on("exit", (code) => {
+          if (current?.running) {
+            current = { ...current, running: false, finishedAt: now().toISOString(), exitCode: code ?? null };
+          }
+        });
+        child.on("error", () => {
+          if (current?.running) {
+            current = { ...current, running: false, finishedAt: now().toISOString(), exitCode: null };
+          }
+        });
+      }
+      return { started: true, run: state() };
+    },
+    state
+  };
+}
+
 // src/index.js
 var name = "dsh-paper-reader";
 var inject = ["webServer"];
@@ -2936,7 +3144,15 @@ var STATUS_ROUTE = "/api/paper-reader/status";
 var DIGEST_ROUTE = "/api/paper-reader/digest";
 var DIGEST_DATE_PREFIX = DIGEST_ROUTE;
 var HEALTH_ROUTE = "/api/paper-reader/health";
+var RUN_ROUTE = "/api/paper-reader/run";
+var RUN_STATE_ROUTE = "/api/paper-reader/run/state";
+var HIDE_ROUTE = "/api/paper-reader/hide";
 var SAMPLE_PATH = fileURLToPath(new URL("../sample/digest.json", import.meta.url));
+var PLUGIN_ROOT = join4(dirname3(fileURLToPath(import.meta.url)), "..");
+var runTrigger = createRunTrigger({
+  scriptPath: join4(PLUGIN_ROOT, "scripts", "backfill-days.mjs"),
+  cwd: PLUGIN_ROOT
+});
 function json(res, status, value) {
   const body = JSON.stringify(value);
   res.writeHead(status, {
@@ -2954,13 +3170,13 @@ function resolveDshHome(ctx) {
     if (typeof dir === "string" && isAbsolute(dir)) return dirname3(dirname3(dir));
   } catch {
   }
-  return process.env.DSH_HOME || join3(homedir(), ".dsh");
+  return process.env.DSH_HOME || join4(homedir(), ".dsh");
 }
 function resolveDataRoot(ctx) {
-  return join3(resolveDshHome(ctx), "paper-reader");
+  return join4(resolveDshHome(ctx), "paper-reader");
 }
 function resolveDigestPath(ctx) {
-  return join3(resolveDataRoot(ctx), "digest.json");
+  return join4(resolveDataRoot(ctx), "digest.json");
 }
 function digestProblem(value) {
   const problems = validateDigest(value);
@@ -2970,10 +3186,10 @@ async function readLegacyDigest(ctx) {
   const path = resolveDigestPath(ctx);
   let text3;
   try {
-    text3 = await readFile2(path, "utf8");
+    text3 = await readFile3(path, "utf8");
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
-    const sample = JSON.parse(await readFile2(SAMPLE_PATH, "utf8"));
+    const sample = JSON.parse(await readFile3(SAMPLE_PATH, "utf8"));
     return { ...sample, demo: true, digestPath: path };
   }
   if (Buffer.byteLength(text3, "utf8") > MAX_DAY_BYTES) {
@@ -2991,14 +3207,14 @@ async function readLegacyDigest(ctx) {
   }
   return { ...parsed, demo: false, digestPath: path };
 }
-function admissionStatus(ctx, req) {
+function admissionStatus(ctx, req, { required = false } = {}) {
   let connection;
   try {
     connection = ctx.get?.("connection");
   } catch {
     connection = void 0;
   }
-  if (!connection || typeof connection.admit !== "function") return null;
+  if (!connection || typeof connection.admit !== "function") return required ? 403 : null;
   const result = connection.admit(req);
   if (result && typeof result === "object" && "rejection" in result) return result.rejection || 403;
   return null;
@@ -3027,6 +3243,37 @@ async function guard(ctx, req, res, run) {
       message: String(error?.message ?? error)
     });
   }
+}
+function readJsonBody(req, limitBytes = 64 * 1024) {
+  return new Promise((resolve) => {
+    let size = 0;
+    const chunks = [];
+    req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > limitBytes) {
+        req.destroy();
+        resolve({});
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      const text3 = Buffer.concat(chunks).toString("utf8").trim();
+      if (!text3) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(text3));
+      } catch {
+        resolve({});
+      }
+    });
+    req.on("error", () => resolve({}));
+  });
+}
+function normalizeDate(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 function requestedDate(req) {
   let pathname;
@@ -3072,7 +3319,7 @@ function apply(ctx) {
           days: index?.days ?? [],
           missing,
           demo: false,
-          indexPath: join3(dataRoot(), "index.json")
+          indexPath: join4(dataRoot(), "index.json")
         };
       })
     }),
@@ -3108,10 +3355,85 @@ function apply(ctx) {
           });
         }
         const { digest, path, bytes } = await readDayDigest({ root: dataRoot(), date });
-        return { ...digest, demo: false, digestPath: path, bytes };
+        const hidden = await hiddenFor({ root: dataRoot(), date });
+        const visible = hidden.length > 0 ? { ...digest, items: applyHidden(digest.items, hidden) } : digest;
+        return { ...visible, demo: false, digestPath: path, bytes, hidden: hidden.length };
       })
     }),
     "dsh-paper-reader: by-date digest route"
+  );
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: "exact",
+      path: HIDE_ROUTE,
+      handler: (req, res) => {
+        if (req.method !== "POST") {
+          json(res, 405, { error: "method_not_allowed" });
+          return;
+        }
+        const rejected = admissionStatus(ctx, req);
+        if (rejected) {
+          json(res, rejected, { error: "forbidden" });
+          return;
+        }
+        void (async () => {
+          try {
+            const body = await readJsonBody(req);
+            const date = normalizeDate(body?.date);
+            const url = typeof body?.url === "string" ? body.url : "";
+            if (!date) {
+              json(res, 400, { error: "hidden_invalid_date", message: "a date is required: YYYY-MM-DD" });
+              return;
+            }
+            if (!url) {
+              json(res, 400, { error: "hidden_invalid_url", message: "a url is required" });
+              return;
+            }
+            if (body?.undo === true) {
+              const next2 = await unhideItem({ root: dataRoot(), date, url });
+              json(res, 200, { ok: true, date, hidden: next2.dates[date] ?? [] });
+              return;
+            }
+            const next = await hideItem({ root: dataRoot(), date, url });
+            json(res, 200, { ok: true, date, hidden: next.dates[date] ?? [] });
+          } catch (error) {
+            json(res, error?.status ?? 500, {
+              error: error?.code ?? "hidden_failed",
+              message: String(error?.message ?? error)
+            });
+          }
+        })();
+      }
+    }),
+    "dsh-paper-reader: hide item route"
+  );
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: "exact",
+      path: RUN_ROUTE,
+      handler: (req, res) => {
+        if (req.method !== "POST") {
+          json(res, 405, { error: "method_not_allowed" });
+          return;
+        }
+        const rejected = admissionStatus(ctx, req, { required: true });
+        if (rejected) {
+          json(res, rejected, { error: "forbidden" });
+          return;
+        }
+        const { started, run } = runTrigger.start();
+        json(res, started ? 202 : 409, { started, run });
+      }
+    }),
+    "dsh-paper-reader: manual run route"
+  );
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: "exact",
+      path: RUN_STATE_ROUTE,
+      handler: (req, res) => guard(ctx, req, res, () => runTrigger.state())
+    }),
+    "dsh-paper-reader: manual run state route"
   );
   ctx.effect(
     () => ctx.webServer.register({

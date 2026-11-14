@@ -11,7 +11,7 @@ import { test } from 'node:test'
 import { DispatchService } from '../lib/dispatch-service.js'
 import { createHostGateway } from '../lib/host.js'
 import { createRedactor } from '../lib/redact.js'
-import { createFakeClock, createMemoryStore, makeDraft, verdictText } from './helpers.mjs'
+import { createFakeGit, createFakeClock, createMemoryStore, makeDraft, verdictText } from './helpers.mjs'
 import { createFakeHost } from './fake-host.mjs'
 
 function setup(t) {
@@ -30,7 +30,7 @@ function setup(t) {
   const store = createMemoryStore()
   const clock = createFakeClock()
   const redactor = createRedactor()
-  const service = new DispatchService({ gateway, store, clock, redactor, allowedRoots: [root] })
+  const service = new DispatchService({ gateway, store, clock, redactor, git: createFakeGit(), allowedRoots: [root] })
   gateway.onTurnEnd = (sessionId, payload) => service.onTurnEnd(sessionId, payload)
   const draft = (overrides = {}) => {
     const base = makeDraft()

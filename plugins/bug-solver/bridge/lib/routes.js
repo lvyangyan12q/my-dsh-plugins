@@ -17,6 +17,8 @@ export const ROUTES = [
   { name: 'messages', method: 'GET' },
   { name: 'artifact', method: 'GET' },
   { name: 'writeback', method: 'POST' },
+  { name: 'remove', method: 'POST' },
+
 ]
 
 const POST_ROUTES = new Set([
@@ -28,6 +30,8 @@ const POST_ROUTES = new Set([
   'approve',
   'resume',
   'writeback',
+  'remove',
+
 ])
 
 const DEFAULT_UNAVAILABLE = 'bug-solver 桥未配置（缺少 SessionGateway/RunStore）'
@@ -147,6 +151,14 @@ export async function handleRoute(name, service, request, unavailableReason) {
         case 'resume': {
           const result = await service.resume(requireRunId(body), { note: body.note })
           return json(200, { run: result.run })
+        }
+        case 'remove': {
+          const result = await service.remove(requireRunId(body), { deleteWorktree: body.deleteWorktree === true })
+          return json(200, result)
+        }
+        case 'remove': {
+          const result = await service.remove(requireRunId(body), { deleteWorktree: body.deleteWorktree === true })
+          return json(200, result)
         }
         case 'writeback': {
           const result = await service.writeBack({

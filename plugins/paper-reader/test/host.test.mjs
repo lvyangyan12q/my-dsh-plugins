@@ -42,18 +42,34 @@ after(() => {
   rmSync(home, { recursive: true, force: true })
 })
 
-function call(path, method = 'GET') {
+function call(path, method = 'GET', body = null) {
   const route = routes.get(path) ?? prefixes
     .filter(entry => path === entry.path || path.startsWith(`${entry.path}/`))
     .sort((left, right) => right.path.length - left.path.length)[0]
   assert.ok(route, `route ${path} should be registered`)
   return new Promise((resolve, reject) => {
     const result = { status: 0, headers: undefined, body: '' }
+    const listeners = {}
+    const payload = body === null ? '' : JSON.stringify(body)
+    const req = {
+      method,
+      url: path,
+      headers: {},
+      on(event, handler) {
+        listeners[event] = handler
+        if (event === 'end') {
+          if (payload) listeners.data?.(Buffer.from(payload, 'utf8'))
+          handler()
+        }
+        return req
+      },
+      destroy() {},
+    }
     const res = {
       writeHead(status, headers) { result.status = status; result.headers = headers },
-      end(body) { result.body = body ?? ''; resolve(result) },
+      end(value) { result.body = value ?? ''; resolve(result) },
     }
-    Promise.resolve(route.handler({ method, url: path, headers: {} }, res)).catch(reject)
+    Promise.resolve(route.handler(req, res)).catch(reject)
   })
 }
 
@@ -83,6 +99,64 @@ test('registers both routes with GET handlers', () => {
   assert.ok(routes.has('/api/paper-reader/digest'))
   assert.ok(routes.has('/api/paper-reader/health'))
   assert.ok(routes.has('/api/paper-reader/status'))
+})
+
+test('the hide route records a deletion and the by-date route stops serving it', async () => {
+  assert.ok(routes.has('/api/paper-reader/hide'))
+
+  // seed a day with one item
+  mkdirSync(join(home, 'paper-reader', 'digest'), { recursive: true })
+  const day = {
+    schemaVersion: 2,
+    date: '2026-11-10',
+    generatedAt: '2026-11-10T01:00:00.000Z',
+    items: [{
+      id: 'x:1', sourceId: 'openai', sourceLanguage: 'en', kind: 'blog',
+      title: { original: 'Keep me', translation: null },
+      authors: [], venue: 'OpenAI', publishedAt: '2026-11-10T00:00:00Z',
+      collectedAt: '2026-11-10T01:00:00.000Z', direction: 'agent', tags: [],
+      readingMinutes: 1, excerpt: false, url: 'https://example.test/keep',
+      translationState: 'complete', blocks: [{ type: 'paragraph', original: 'Body.', translation: '正文。' }],
+    }],
+  }
+  writeFileSync(join(home, 'paper-reader', 'digest', '2026-11-10.json'), JSON.stringify(day))
+
+  const before = await call('/api/paper-reader/digest/2026-11-10')
+  assert.equal(JSON.parse(before.body).items.length, 1)
+
+  const hidden = await call('/api/paper-reader/hide', 'POST', {
+    date: '2026-11-10', url: 'https://example.test/keep',
+  })
+  assert.equal(hidden.status, 200)
+  assert.equal(JSON.parse(hidden.body).ok, true)
+
+  const after = await call('/api/paper-reader/digest/2026-11-10')
+  const body = JSON.parse(after.body)
+  assert.equal(body.items.length, 0, 'the hidden item is filtered out')
+  assert.equal(body.hidden, 1)
+
+  const missingUrl = await call('/api/paper-reader/hide', 'POST', { date: '2026-11-10' })
+  assert.equal(missingUrl.status, 400)
+})
+
+test('the manual run route refuses GET and passes admission through', async () => {
+  assert.ok(routes.has('/api/paper-reader/run'))
+  assert.ok(routes.has('/api/paper-reader/run/state'))
+
+  const state = await call('/api/paper-reader/run/state')
+  assert.equal(state.status, 200)
+  assert.equal(JSON.parse(state.body).running, false)
+
+  const wrongMethod = await call('/api/paper-reader/run')
+  assert.equal(wrongMethod.status, 405)
+
+  const noAdmissionService = await call('/api/paper-reader/run', 'POST')
+  assert.equal(noAdmissionService.status, 403)
+
+  connection = { admit: () => ({ rejection: 403 }) }
+  const rejected = await call('/api/paper-reader/run', 'POST')
+  assert.equal(rejected.status, 403)
+  connection = null
 })
 
 test('missing user digest falls back to the bundled sample marked demo', async () => {

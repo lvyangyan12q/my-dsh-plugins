@@ -21,8 +21,7 @@ export function normalizeUrl(value) {
   }
 }
 
-/** A dedupe key that ignores scheme, `www.`, version suffix, case and query case. */
-export function canonicalUrl(value) {
+/** A dedupe key that ignores scheme, `www.`, version suffix, case and query case. */export function canonicalUrl(value) {
   const text = String(value ?? '').trim()
   if (!text) return ''
   try {
@@ -45,4 +44,29 @@ export function slugFromUrl(value) {
   } catch {
     return ''
   }
+}
+
+/**
+ * Drop candidates whose URL an earlier day already offered.
+ *
+ * Discovery memory is what stops a blog post from being "the newest post" on
+ * five consecutive days: the list adapters see the same feed every run, so a
+ * source that never filters `knownUrls` repeats itself until something newer
+ * appears.
+ */
+export function dropSeen(candidates, knownUrls = []) {
+  if (!Array.isArray(knownUrls) || knownUrls.length === 0) return candidates
+  const known = new Set(knownUrls.map(normalizeUrl))
+  // A source may canonicalise links after extraction (Kimi lists
+  // `kimi.com/en/blog/x` and the article declares `kimi.ai/blog/x`), so the
+  // slug is the fallback identity. Slugs are compared per source, and dropSeen
+  // is always called with one source's memory.
+  const knownSlugs = new Set(knownUrls.map(slugFromUrl).filter(slug => slug.length >= 6))
+  return candidates.filter(candidate => {
+    const url = candidate?.url
+    if (!url) return true
+    if (known.has(normalizeUrl(url))) return false
+    const slug = slugFromUrl(url)
+    return !(slug.length >= 6 && knownSlugs.has(slug))
+  })
 }

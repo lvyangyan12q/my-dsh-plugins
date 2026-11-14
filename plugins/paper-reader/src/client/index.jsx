@@ -315,6 +315,7 @@ export function PaperReaderPage() {
   const [runStatus, setRunStatus] = useState(null)
   const [runStatusError, setRunStatusError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [fetching, setFetching] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [query, setQuery] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -528,6 +529,81 @@ export function PaperReaderPage() {
   }, [applyResults, fetchDay, fetchJson, loadRunStatus, showToast])
 
   useEffect(() => { void load(false) }, [load])
+
+  /* Manual backfill: POST once, then poll the trigger state until it ends. */
+  const fetchPollRef = useRef(0)
+  useEffect(() => () => window.clearInterval(fetchPollRef.current), [])
+  const pollRunState = useCallback(() => {
+    setFetching(true)
+    window.clearInterval(fetchPollRef.current)
+    let ticks = 0
+    fetchPollRef.current = window.setInterval(async () => {
+      ticks += 1
+      try {
+        const response = await fetch('/api/paper-reader/run/state', { cache: 'no-store' })
+        const state = response.ok ? await response.json() : null
+        if (state && !state.running) {
+          window.clearInterval(fetchPollRef.current)
+          setFetching(false)
+          showToast('抓取结束，正在刷新列表')
+          void load(true)
+          return
+        }
+      } catch { /* keep polling; the host may be restarting */ }
+      if (ticks >= 240) {
+        window.clearInterval(fetchPollRef.current)
+        setFetching(false)
+        showToast('抓取仍在进行，稍后点“刷新”查看')
+      }
+    }, 10_000)
+  }, [load, showToast])
+  const triggerRun = useCallback(async () => {
+    try {
+      const response = await fetch('/api/paper-reader/run', { method: 'POST', headers: { accept: 'application/json' } })
+      if (response.status === 409) {
+        showToast('已有抓取在进行，等待完成')
+        pollRunState()
+        return
+      }
+      if (!response.ok) {
+        showToast(`启动抓取失败（HTTP ${response.status}）`)
+        return
+      }
+      showToast('已在后台抓取近 3 天，完成后自动刷新')
+      pollRunState()
+    } catch (error) {
+      showToast(`启动抓取失败：${errorMessage(error)}`)
+    }
+  }, [pollRunState, showToast])
+
+  /**
+   * Delete one item from the list.
+   *
+   * The host records the URL in `hidden.json` for that day, so the item stays
+   * gone after a re-fetch; the digest file itself is untouched.
+   */
+  const deleteItem = useCallback(async (date, item) => {
+    if (!date || !item?.url) {
+      showToast('这一条没有链接，无法删除')
+      return
+    }
+    try {
+      const response = await fetch('/api/paper-reader/hide', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ date, url: item.url }),
+      })
+      if (!response.ok) {
+        showToast(`删除失败（HTTP ${response.status}）`)
+        return
+      }
+      showToast('已从列表删除')
+      void load(true)
+    } catch (error) {
+      showToast(`删除失败：${errorMessage(error)}`)
+    }
+  }, [load, showToast])
+
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)) } catch { /* storage may be unavailable */ }
   }, [prefs])
@@ -961,6 +1037,16 @@ export function PaperReaderPage() {
           <button
             type="button"
             className="pr-ghost-btn"
+            onClick={() => void triggerRun()}
+            disabled={fetching || refreshing}
+            title="手动抓取最近 3 天（缺哪天补哪天，今天总是刷新）"
+          >
+            <span className={fetching ? 'pr-spin' : undefined}><IconSpark /></span>
+            {fetching ? '抓取中' : '抓取近3天'}
+          </button>
+          <button
+            type="button"
+            className="pr-ghost-btn"
             onClick={() => void load(true)}
             disabled={refreshing}
             title="重新读取 digest.json"
@@ -1214,6 +1300,18 @@ export function PaperReaderPage() {
                               {item.translationState !== 'complete' && <span className="pr-pill">翻译中</span>}
                               {bookmarked && <span className="pr-item-mark" title="已收藏">★</span>}
                               {!read && <UnreadDot />}
+                              <button
+                                type="button"
+                                className="pr-item-delete"
+                                title="从列表删除（不再显示，重抓也不会回来）"
+                                aria-label="删除这一条"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  void deleteItem(group.date, item)
+                                }}
+                              >
+                                <IconClose />
+                              </button>
                             </div>
                             <div className="pr-item-title-zh">{itemTitleZh.text}</div>
                             <div className="pr-item-title-en">{itemTitleEn.text}</div>

@@ -10,7 +10,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { DispatchService } from '../lib/dispatch-service.js'
 import { createRedactor } from '../lib/redact.js'
-import { createFakeClock, createFakeGateway, createMemoryStore, makeDraft, promptText } from './helpers.mjs'
+import { createFakeGit, createFakeClock, createFakeGateway, createMemoryStore, makeDraft, promptText } from './helpers.mjs'
 
 function harness(t, options = {}) {
   const root = mkdtempSync(join(tmpdir(), 'bs-svc-'))
@@ -19,7 +19,9 @@ function harness(t, options = {}) {
   const store = createMemoryStore()
   const clock = createFakeClock()
   const redactor = createRedactor()
+  const git = createFakeGit()
   const service = new DispatchService({
+    git,
     gateway,
     store,
     clock,
@@ -37,7 +39,7 @@ function harness(t, options = {}) {
       specRef: overrides.specRef === undefined ? base.specRef : overrides.specRef,
     }
   }
-  return { root, gateway, store, clock, redactor, service, draft }
+  return { root, git, gateway, store, clock, redactor, service, draft }
 }
 
 const expectInvalid = async (promise, code) => {
@@ -72,7 +74,9 @@ test('start creates one fix session, renames it, and sends the round-1 plan prom
   assert.equal(h.gateway.calls.create.length, 1)
   const create = h.gateway.calls.create[0]
   assert.equal(create.sessionId, run.fixSessionId)
-  assert.equal(create.cwd, realpathSync(h.root))
+  // 会话 cwd 是本 run 的独立工作区（<repo>/.bug-solver/worktrees/<runId 前 8 位>），不是原始仓库。
+  assert.ok(create.cwd.startsWith(realpathSync(h.root)), '工作区必须在原始仓库内：' + create.cwd)
+  assert.ok(create.cwd.includes('.bug-solver'), '工作区应在 .bug-solver/worktrees 下：' + create.cwd)
   assert.equal(h.gateway.calls.rename.length, 1)
   assert.equal(h.gateway.calls.rename[0].sessionId, run.fixSessionId)
   assert.equal(h.gateway.calls.rename[0].title, 'BUG-3083 分析修复')
@@ -107,6 +111,7 @@ test('start rejects relative paths and paths outside allowedRoots', async (t) =>
   mkdirSync(allowed)
   mkdirSync(outside)
   const restricted = new DispatchService({
+    git: createFakeGit(),
     gateway: h.gateway,
     store: h.store,
     clock: h.clock,
@@ -161,15 +166,19 @@ test('repeated dispatch of the same active bug returns the existing run', async 
   assert.equal(h.gateway.calls.create.length, 1)
 })
 
-test('a second bug in the same repository is rejected while the first run is active', async (t) => {
+test('a second bug in the same repository starts in parallel with its own worktree', async (t) => {
   const h = harness(t)
   const first = await h.service.start(h.draft())
-  await assert.rejects(h.service.start(h.draft({ bug: { id: 'BUG-2', uid: 2 } })), (error) => {
-    assert.equal(error.code, 'repo-busy')
-    assert.equal(error.status, 409)
-    assert.equal(error.details.runId, first.run.id)
-    return true
-  })
+  const second = await h.service.start(h.draft({ bug: { id: 'BUG-2', uid: 2 } }))
+
+  assert.notEqual(second.run.id, first.run.id, '同一仓库的第二条必须是新 run')
+  assert.equal(second.idempotent, false)
+  assert.equal(h.git.calls.worktreeAdd.length, 2, '每条 run 各建一次工作区')
+  const [a, b] = h.git.calls.worktreeAdd
+  assert.equal(a.repoPath, b.repoPath, '两条 run 的原始仓库相同')
+  assert.notEqual(a.worktreePath, b.worktreePath, '两条 run 的工作区必须不同')
+  assert.notEqual(a.branch, b.branch, '两条 run 的分支必须不同')
+  assert.equal(second.run.state, 'fix_planning')
 })
 
 test('a second bug in another repository starts in parallel', async (t) => {

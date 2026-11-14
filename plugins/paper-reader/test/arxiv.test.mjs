@@ -71,6 +71,39 @@ test('builds the submittedDate query from the categories and the date', () => {
   assert.equal(url.searchParams.get('start'), '0')
 })
 
+test('a lookback window reaches back across already-announced days', () => {
+  const url = new URL(buildArxivQueryUrl({
+    baseUrl: ARXIV_CONFIG.baseUrl,
+    categories: ARXIV_CONFIG.categories,
+    date: '2026-11-04',
+    lookbackDays: 3,
+    maxResults: 25,
+  }))
+  assert.equal(
+    url.searchParams.get('search_query'),
+    '(cat:cs.AI OR cat:cs.CL) AND submittedDate:[202611020000 TO 202611042359]',
+    'a same-day window is always empty, so the query spans the announced days',
+  )
+})
+
+test('listArxiv queries the configured window and drops what an earlier day offered', async () => {
+  const urls = []
+  const candidates = await listArxiv({
+    config: { ...ARXIV_CONFIG, lookbackDays: 3 },
+    date: '2026-11-04',
+    fetch: async (url) => {
+      urls.push(String(url))
+      return feedResponse()
+    },
+    knownUrls: ['https://arxiv.org/abs/2611.05377'],
+  })
+  assert.equal(urls.length, 1)
+  const query = new URL(urls[0]).searchParams.get('search_query')
+  assert.match(query, /submittedDate:\[202611020000 TO 202611042359\]/)
+  assert.ok(!candidates.some(candidate => candidate.arxivId === '2611.05377'), 'a seen paper is not re-offered')
+  assert.equal(candidates.length, 2)
+})
+
 test('listArxiv turns the feed into source-tagged candidates', async () => {
   const candidates = await listArxiv({
     config: ARXIV_CONFIG,

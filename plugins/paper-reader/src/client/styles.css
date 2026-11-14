@@ -712,6 +712,33 @@ body.pr-resizing {
   background: color-mix(in srgb, #7a6a52 12%, transparent);
 }
 
+.pr-item-delete {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--pr-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s ease, background .12s ease, color .12s ease;
+}
+
+.pr-item:hover .pr-item-delete,
+.pr-item-delete:focus-visible {
+  opacity: 1;
+}
+
+.pr-item-delete:hover {
+  background: color-mix(in srgb, #d9534f 18%, transparent);
+  color: #e06a66;
+}
+
 .pr-item-mark {
   margin-left: auto;
   color: #c9a227;
