@@ -1,5 +1,7 @@
 # 工作台进度与待办
 
+2026-11-14：本地分支集成与清理。`feat/kaogong-task-classroom`、`feature/learning-classroom` 及全部工单分支已并入 `main`，同时合并 `origin/main` 的三条上游提交；30 个工单工作树已移除，除 `research/personal-learning-rebuild-host-contracts`（按研究约定不合并）外的本地分支已删除，`main` 尚未推送远端。合并只表示代码到位：[学习课堂09冷启动与真实验收](wayfinder/personal-learning-rebuild/implementation/09-restart-acceptance.md)仍待做，考公任务课堂的既有未验边界不因合并提升为验收完成。此前各日期段落保留为历史。
+
 2026-10-24：旧spec与实施工单已回写rc.3升级范围，详细要求集中在[框架规格HU01—HU08](wayfinder/worktable-platform/framework-spec.md#host-upgrade-requirements)，[原票升级映射](wayfinder/worktable-platform/implementation/README.md#host-upgrade-followups)记录待实施/复验。考公旧资料/学习票取消过期暂停，19索引校正为原限定范围closed；原故事、历史勾选及验收计数保持。四项路线决策仍open，新宿主增量不因本次文档更新变为可执行或已通过；未改代码、进程或数据。
 
 2026-10-24 wayfinder 研究检查点：两份只读研究已发布独立 research 分支并关闭研究票；当前共六张决策票，前沿为升级规则与考公旧学习归属。新增后置课堂原生嵌入原型验证，随后再确定验收/切换门槛。未实现或迁移，未操作用户实例。[地图与研究结论](wayfinder/harness-upgrade/map.md)。
