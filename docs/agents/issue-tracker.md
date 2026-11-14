@@ -95,7 +95,9 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 
 用户明确放弃旧个人学习插件作为基线，允许删除，不要求兼容、迁移或运行回退。新版规划以[基于本地知识文件的 DSH 学习课堂重建路线](../wayfinder/personal-learning-rebuild/map.md)为准；旧个人学习实现、专属规格与实验台工单已按授权删除，不再作为新版任务来源。
 
-本地地图及子票沿用 parent、labels、status、assignee、blocked_by 的 frontmatter 约定，仅使用 wayfinder 标签；结论写各票 Resolution，地图只作索引。首版方向为 DSH 四区课堂、Obsidian 兼容本地知识文件和真实内嵌会话。当前为规划，不代表新版已实现。
+本地地图及子票沿用 parent、labels、status、assignee、blocked_by 的 frontmatter 约定，仅使用 wayfinder 标签；结论写各票 Resolution，地图只作索引。首版方向为 DSH 四区课堂、Obsidian 兼容本地知识文件和真实内嵌会话。本轮规格入口为[学习课堂：B 阅读优先](../wayfinder/personal-learning-rebuild/spec.md)，身份 `learning-classroom-spec`，唯一 triage 标签 `ready-for-agent`。2026-11-10 用户选定 B 原型；第二版记录文件、会话与上下文边界及 G01—G14 交付验收。集成分支已有部分实现但未完成真实验收；本轮只修订文档，不继续开发或安装。现有实施图须对照新版补覆盖，不能以旧工单勾选宣称新版完成。
+
+2026-11-10 用户已批准[第二版十张增量工单](../../.scratch/learning-classroom-b-v2/issues/README.md)，按本地一票一文件及 Blocked by 表达依赖；当前执行前沿为「真实宿主最小课堂」。最终验收覆盖 G01—G14，包含双链批注，不包含 AI 自动生成 Canvas。用户指定 OpenCode Go DeepSeek Flash 子代理开发、6.1sol 监工审查，并用 DevTools 确认页面；模型路由须获本 Session 授权，不使用未批准替代。
 
 旧包已从当前 web profile 卸载；旧源码、构建产物、发行包及专属规划目录已在正确工作目录内删除，原先的删除保护阻碍已解除。未清除 DSH Session 或共享存储。实际范围与验证见已关闭的[旧个人学习插件安全退场](../wayfinder/personal-learning-rebuild/issues/05-legacy-retirement.md)。
 
