@@ -7,6 +7,27 @@ export const name = 'learning-classroom'
 export const inject = ['webServer']
 export const classroomRoute = '/api/learning-classroom'
 
+/** The `connection` surface this route consults across supported host versions. */
+export interface ConnectionService {
+  /**
+   * dsh 0.2.2-rc.1: returns the refusal status for an untrusted request.
+   * Removed in 0.2.2-rc.3 in favour of {@link ConnectionService.admit}.
+   */
+  requestRejection?(req: IncomingMessage): number | undefined
+  /**
+   * dsh 0.2.2-rc.3: admits a request against the Web carrier's trust and
+   * authentication fence, returning the peer it speaks for or a refusal.
+   */
+  admit?(req: IncomingMessage): { readonly rejection: 401 | 403 | 503 } | { readonly peer: unknown } | undefined
+}
+
+/** Translate either host rejection API into the status this route answers. */
+export function requestRejection(connection: ConnectionService, req: IncomingMessage): number | undefined {
+  if (typeof connection.requestRejection === 'function') return connection.requestRejection(req)
+  const admission = connection.admit?.(req)
+  return admission !== undefined && 'rejection' in admission ? admission.rejection : undefined
+}
+
 /**
  * Host entry. The vault file operations and navigation state live on the Host
  * side; the browser only talks to this one HTTP endpoint.
@@ -22,13 +43,15 @@ export function apply(ctx: Context) {
       res.end(JSON.stringify({ error: '学习课堂暂不可用。', code: 'unavailable' }))
     },
   }), 'learning classroom route')
-  ctx.inject(['storageDomain', 'connection', 'tools'], child => child.effect(async function* () {
+  // `connection.admit` (dsh 0.2.2-rc.3) resolves its authentication provider
+  // through the calling Context, so the sub-service must be injected here too.
+  ctx.inject(['storageDomain', 'connection', 'connection.authentication', 'tools'], child => child.effect(async function* () {
     const { openClassroomStateStore } = await import('./state.ts')
     const { installClassroom } = await import('./host.ts')
     const { createTeacherTools } = await import('./teacher-tools.ts')
     const store = await openClassroomStateStore(child)
-    const connection = (child as unknown as { connection: { requestRejection(req: IncomingMessage): number | undefined } }).connection
-    const app = installClassroom({ store, rejection: req => connection.requestRejection(req) })
+    const connection = (child as unknown as { connection: ConnectionService }).connection
+    const app = installClassroom({ store, rejection: req => requestRejection(connection, req) })
     const tools = (child as unknown as {
       tools: {
         register(
