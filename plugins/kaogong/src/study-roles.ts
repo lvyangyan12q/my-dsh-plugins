@@ -12,8 +12,9 @@ import { kaogongRoleDefinitions, kaogongRolePresets, teachingSkillProvider } fro
 import { kaogongRoleScopeOwner } from './role-session-scope.ts'
 import type { StudyRoleScopeOwner } from './study-contracts.ts'
 
-type RoleBinding = { instanceId: string; roleId: string; sessionId: string; presetId: string; phase: 'intent' | 'ready'; revision: number; creation: { cwd: string }; previousSessionIds: string[]; creationAttempt?: string; [key: string]: unknown }
+type RoleBinding = { instanceId: string; roleId: string; sessionId: string; presetId: string; phase: 'intent' | 'ready'; revision: number; creation: { cwd: string }; previousSessionIds: string[]; creationAttempt?: string; /** A task classroom owns its own native Session; a role binding has no taskId. */ kind?: 'task'; taskId?: string; lessonId?: string; viewId?: string; [key: string]: unknown }
 const keyOf = (instanceId: string, roleId: string) => JSON.stringify([instanceId, roleId])
+const taskKeyOf = (instanceId: string, roleId: string, taskId: string) => JSON.stringify([instanceId, roleId, 'task', taskId])
 const identity = (row: RoleBinding) => JSON.stringify([row.instanceId, row.roleId, row.sessionId, row.presetId, row.creation.cwd, row.revision])
 const canonicalPath = async (file: string) => { try { return (await realpath(file)).toLowerCase() } catch { return resolve(file).toLowerCase() } }
 
@@ -34,6 +35,8 @@ export class StudyRoles {
     return () => this.close()
   }
   private rows() { return [...this.workspace.domain.table('bindings').entries()].map(([, row]) => row as RoleBinding) }
+  /** Role-level reads ignore task classrooms: one role may own many task Sessions. */
+  private roleRows() { return this.rows().filter(row => row.kind !== 'task') }
   private async profile(instanceId: string) { const row = await this.workspace.assertProfile(instanceId); if (row.kind !== 'learner') throw Error('资料库不能创建学习角色'); return row }
   private definition(roleId: string, binding?: Pick<RoleBinding, 'creation'> | null) {
     const cwd = binding?.creation.cwd ?? this.cwd
@@ -83,22 +86,29 @@ export class StudyRoles {
   }
   async read(instanceId: string, roleId: string) {
     await this.profile(instanceId)
-    const binding = this.rows().find(row => row.instanceId === instanceId && row.roleId === roleId) ?? null
+    const binding = this.roleRows().find(row => row.instanceId === instanceId && row.roleId === roleId) ?? null
     this.definition(roleId, binding)
     if (binding?.phase === 'ready') await this.validateStored(binding)
     return { binding: structuredClone(binding) }
   }
-  ensure(instanceId: string, roleId: string, viewId?: string) {
+  /** One durable owner for both role and task bindings: the intent precedes
+   * native creation, and an uncertain creation never replaces its identity. */
+  private ensureScoped(input: { key: string; instanceId: string; roleId: string; viewId?: string; task?: { taskId: string; lessonId: string } }) {
     return this.serial(async () => {
-      await this.profile(instanceId)
-      if (viewId && (await this.workspace.resolveView(viewId)).instance.id !== instanceId) throw Error('学习视图不属于角色档案')
-      const table = this.workspace.domain.table('bindings'), key = keyOf(instanceId, roleId)
+      await this.profile(input.instanceId)
+      if (input.viewId && (await this.workspace.resolveView(input.viewId)).instance.id !== input.instanceId) throw Error('学习视图不属于角色档案')
+      const table = this.workspace.domain.table('bindings'), key = input.key
       let row = table.get(key) as RoleBinding | undefined
-      const definition = this.definition(roleId, row)
-      await this.validateRole(roleId, definition.creation.cwd)
-      if (row?.phase === 'ready') { await this.validateStored(row); if (viewId && row.viewId !== viewId) { row = { ...row, viewId }; await table.put(key, row) }; return structuredClone(row) }
+      const definition = this.definition(input.roleId, row)
+      await this.validateRole(input.roleId, definition.creation.cwd)
+      if (row?.phase === 'ready') {
+        if (input.task && (row.taskId !== input.task.taskId || row.lessonId !== input.task.lessonId)) throw Error('任务课堂身份已变化，请核对原会话')
+        await this.validateStored(row)
+        if (input.viewId && row.viewId !== input.viewId) { row = { ...row, viewId: input.viewId }; await table.put(key, row) }
+        return structuredClone(row)
+      }
       if (row) throw Error('原生创建结果未确认，请核对原会话；不会自动重试或创建替代会话')
-      row = { key, appId: 'kaogong', instanceId, roleId, sessionId: randomUUID(), presetId: 'standard', revision: 1, phase: 'intent', creationAttempt: 'not-started', creation: definition.creation, previousSessionIds: [], sessionScoped: true, agent: definition.agent, ...(viewId ? { viewId } : {}) }
+      row = { key, appId: 'kaogong', instanceId: input.instanceId, roleId: input.roleId, sessionId: randomUUID(), presetId: 'standard', revision: 1, phase: 'intent', creationAttempt: 'not-started', creation: definition.creation, previousSessionIds: [], sessionScoped: true, agent: definition.agent, ...(input.viewId ? { viewId: input.viewId } : {}), ...(input.task ? { kind: 'task' as const, taskId: input.task.taskId, lessonId: input.task.lessonId } : {}) }
       await table.put(key, row)
       row = { ...row, creationAttempt: 'started' }; await table.put(key, row)
       const workspace = await this.registered(row.creation.cwd)
@@ -112,6 +122,20 @@ export class StudyRoles {
       const live = this.live.get(row.sessionId); if (live) live.identity = identity(row)
       return structuredClone(row)
     })
+  }
+  ensure(instanceId: string, roleId: string, viewId?: string) {
+    return this.ensureScoped({ key: keyOf(instanceId, roleId), instanceId, roleId, viewId })
+  }
+  /** A task classroom's own teacher Session, persisted under the task identity. */
+  ensureTask(input: { instanceId: string; roleId: string; taskId: string; lessonId: string; viewId?: string }) {
+    if (typeof input.taskId !== 'string' || !input.taskId || typeof input.lessonId !== 'string' || !input.lessonId) return Promise.reject(Error('需要明确的学习任务与课堂身份'))
+    return this.ensureScoped({ key: taskKeyOf(input.instanceId, input.roleId, input.taskId), instanceId: input.instanceId, roleId: input.roleId, viewId: input.viewId, task: { taskId: input.taskId, lessonId: input.lessonId } })
+  }
+  async openTask(input: { instanceId: string; roleId: string; taskId: string; lessonId: string; sessionId: string; revision: number }) {
+    const row = this.rows().find(row => row.kind === 'task' && row.instanceId === input.instanceId && row.roleId === input.roleId && row.taskId === input.taskId)
+    if (!row || row.phase !== 'ready' || row.sessionId !== input.sessionId || row.revision !== input.revision || row.lessonId !== input.lessonId) throw Error('任务会话绑定已变化，请刷新后打开')
+    await this.validateStored(row)
+    return { sessionId: row.sessionId }
   }
   async open(instanceId: string, roleId: string, sessionId: string, revision: number) {
     const { binding } = await this.read(instanceId, roleId)

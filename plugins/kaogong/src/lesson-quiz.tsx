@@ -106,10 +106,10 @@ export const MIXED_GROWTH_QUIZ_PROVENANCE = '自编检测题：教学设计用�
 export const MIXED_GROWTH_QUIZ: readonly QuizQuestion[] = [
   {
     id: 'quiz-1',
-    prompt: '2022 年某地城镇居民人均可支配收入 4.2 万元、农村居民 1.8 万元；2023 年城镇增长 5.8%，农村增长 8.4%。2023 年全体居民人均可支配收入增速最接近：',
-    options: ['5.4%', '6.6%', '8.4%', '9.1%'],
+    prompt: '2022 年某地城镇居民人均可支配收入 4.2 万元、农村居民 1.8 万元，城镇与农村人口各 500 万且 2023 年不变；2023 年城镇增长 5.8%，农村增长 8.4%。2023 年全体居民人均可支配收入增速最接近：',
+    options: ['5.4%', '6.6%', '7.8%', '9.1%'],
     answer: 1,
-    why: '区间 5.8–8.4，5.4 出局；城镇基期是农村 2.3 倍，偏向 5.8 一侧；精确值 6.58%；8.4% 是农村的值，混合不可能等于其中一个部分值。',
+    why: '区间 5.8–8.4：5.4 低于下界、9.1 高于上界，先出局。人口不变时，全体居民人均收入增速等于收入总量增速，权重取收入总量：城镇 500×4.2、农村 500×1.8，即 7∶3，偏向 5.8 一侧；精确值 (7×5.8% + 3×8.4%) ÷ 10 = 6.58%，所以 6.6 最接近，7.8 偏大。',
     anchorId: 'handout-s5',
   },
   {
@@ -181,7 +181,7 @@ const optionStyle = (state: 'correct' | 'wrong' | 'dim' | undefined): CSSPropert
 })
 
 /** 当堂检测页：3 道选择题，选完立即判分并锁定该题；答错可回跳，答完给小结与下一步。作答由课堂面板持有，切页签不丢。 */
-export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, onJump, onPractice, provenance }: {
+export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, onJump, onPractice, onExplain, provenance }: {
   questions?: readonly QuizQuestion[]
   /** 已作答：`null` 表示未答，作答后不可改选。 */
   answers: readonly QuizAnswer[]
@@ -191,6 +191,8 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
   onJump?: (anchorId: string) => void
   /** 全对后的专项练习入口：由课堂面板透传。 */
   onPractice?: () => void
+  /** 答错后针对该步请老师补讲：复用本任务的课堂答疑与任务会话。 */
+  onExplain?: (question: QuizQuestion, chosen: number) => void
   /** 这套题是自编还是真题：由课堂面板随题给，不冒充真题。 */
   provenance?: string
 }) {
@@ -204,6 +206,7 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
     <div aria-label="当堂检测" style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
         <strong>当堂检测</strong>
+        <small style={{ color: '#667085' }}>只记在本课，不计入正式正确率与错题本</small>
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#667085', fontVariantNumeric: 'tabular-nums' }}>检测 <b style={{ color: '#2f6b58' }}>{grade.answered}</b>/{grade.total}</span>
       </div>
       {provenance && <small style={{ color: '#667085' }}>{provenance}</small>}
@@ -234,7 +237,10 @@ export function QuizPanel({ questions = MIXED_GROWTH_QUIZ, answers, onAnswer, on
             {answered && <div role="status" style={{ borderTop: '1px dashed #dbe2d8', paddingTop: 8, display: 'grid', gap: 4, fontSize: 12.5, lineHeight: 1.8 }}>
               <b style={{ color: right ? '#2f6b58' : '#b42318' }}>{right ? '回答正确' : `回答错误，正确选项是 ${LETTERS[question.answer]}`}</b>
               <p style={{ margin: 0 }}>{question.why}</p>
-              {!right && onJump && <button data-pwb-button type="button" style={{ justifySelf: 'start' }} onClick={() => onJump(question.anchorId)}>回对应小节</button>}
+              {!right && (onJump || onExplain) && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {onJump && <button data-pwb-button type="button" style={{ justifySelf: 'start' }} onClick={() => onJump(question.anchorId)}>回对应小节</button>}
+                {onExplain && <button data-pwb-button type="button" style={{ justifySelf: 'start' }} onClick={() => onExplain(question, chosen as number)}>请老师补讲这一步</button>}
+              </div>}
             </div>}
           </div>
         )

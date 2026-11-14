@@ -5,13 +5,15 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
+import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import type {MainPanelId} from '@deepseek-ai/dsh-client-ui-layout/client'
-import type {PropsRuntime} from '@deepseek-ai/dsh-client-ui-slots'
+import type {PropsRenderSlots,PropsRuntime} from '@deepseek-ai/dsh-client-ui-slots'
 import type {SessionId} from '@deepseek-ai/dsh-session/types'
 import {createViewTransport} from './client-runtime.ts'
 import {KaogongStateContext,KaogongPresentationContext,KaogongViewState,KaogongViewStatePool} from './view-state.tsx'
 import {KaogongTransportContext,KaogongServicesContext} from './view-context.tsx'
 import {SdkClassroom,sdkLearningStyles} from './sdk-classroom.tsx'
+import {TeacherSessionBody,TeacherSessionHost} from './embedded-session.tsx'
 import {KnowledgeLibrary} from './knowledge-reader.tsx'
 import {MaterialImportPanel} from './materials-panel.tsx'
 import {createStudyServices,studyRequest} from './study-client-services.ts'
@@ -23,7 +25,7 @@ import type {StudyDirectory,StudySelection,StudyViewProps} from './study-client-
 export {KaogongView} from './kaogong-view.tsx'
 export type {KaogongViewProps,KaogongTeachingRequest,PracticeContext,PracticeResult} from './kaogong-view.tsx'
 export {KaogongStateContext,KaogongPresentationContext,KaogongViewState,KaogongViewStatePool}
-export const inject=['slots','layout','uiWorkspace','sidebarRight','sidebarRightTabs']
+export const inject=['slots','layout','uiWorkspace','sidebarRight','sidebarRightTabs','sessions']
 export const panelId='kaogong.learning' as MainPanelId
 export const learningTabId='kaogong.learning-panel'
 
@@ -31,6 +33,8 @@ declare module '@deepseek-ai/dsh-client-ui-sidebar-right/client' {interface Side
 
 type NativeStudyUI={open(target:StudySessionNavigation):Promise<void>;returnOverview():void}
 type SurfaceProps={native?:NativeStudyUI;pool?:KaogongViewStatePool}
+/** 主面板在插槽注册里获得的内嵌会话位置；直接渲染（测试、右栏）时缺席。 */
+type TeacherSeat=Pick<PropsRenderSlots<'kaogong.teacher.session'>,'renderSlot'>
 const lastProfileKey='kaogong/last-profile/v1'
 function savedProfile(){try{return window.localStorage.getItem(lastProfileKey)}catch{return null}}
 function rememberProfile(id:string){try{window.localStorage.setItem(lastProfileKey,id)}catch{/* Host selection remains authoritative. */}}
@@ -49,7 +53,7 @@ export function ScopedStudyView(props:StudyViewProps&SurfaceProps&{sessionId?:st
 }
 
 /** Opening the panel reads existing profiles; profile creation is an explicit confirmation. */
-export function StudyDashboard({native,pool}:SurfaceProps){
+export function StudyDashboard({native,pool,renderSlot}:SurfaceProps&Partial<TeacherSeat>){
   const [directory,setDirectory]=useState<StudyDirectory>({profiles:[],views:[]}),[selection,setSelection]=useState<StudySelection|null>(null)
   const [title,setTitle]=useState('我的备考档案'),[kind,setKind]=useState<'learner'|'library'>('learner'),[creating,setCreating]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[loading,setLoading]=useState(true)
   const ownedPool=useMemo(()=>pool??new KaogongViewStatePool(),[pool]),alive=useRef(true),locked=useRef(false)
@@ -57,7 +61,7 @@ export function StudyDashboard({native,pool}:SurfaceProps){
   useEffect(()=>{alive.current=true;const controller=new AbortController();void studyRequest<StudyDirectory>(undefined,controller.signal).then(value=>{if(controller.signal.aborted)return;setDirectory(value);const preferred=savedProfile()??value.lastProfileId,profile=value.profiles.find(row=>row.id===preferred)??value.profiles.find(row=>row.kind==='learner');const view=profile&&value.views.find(row=>row.profileId===profile.id);if(profile&&view)setSelection({profile,view})}).catch(cause=>{if(!controller.signal.aborted)setError(cause.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)});return()=>{alive.current=false;controller.abort()}},[])
   const change=async(body:Record<string,unknown>)=>{if(locked.current)return;locked.current=true;setBusy(true);setError('');try{const value=await studyRequest<StudySelection>(body);if(!alive.current)return;if(value.view.profileId!==value.profile.id)throw new Error('档案视图归属不匹配');setSelection(value);setCreating(false);rememberProfile(value.profile.id);setDirectory(current=>({profiles:[...current.profiles.filter(row=>row.id!==value.profile.id),value.profile],views:[...current.views.filter(row=>row.id!==value.view.id),value.view],lastProfileId:value.profile.id}))}catch(cause){if(alive.current)setError(cause instanceof Error?cause.message:'档案操作失败')}finally{locked.current=false;if(alive.current)setBusy(false)}}
   const refreshCurrent=async()=>{const value=await studyRequest<StudyDirectory>();if(!alive.current)return;setDirectory(value);const profile=value.profiles.find(row=>row.id===value.lastProfileId)??value.profiles.find(row=>row.kind==='learner'),view=profile&&value.views.find(row=>row.profileId===profile.id);if(profile&&view){setSelection({profile,view});rememberProfile(profile.id);setCreating(false)}}
-  return <section aria-label="考公学习" className="kg-study-dashboard"><style>{sdkLearningStyles}</style>{loading?<p role="status">正在读取备考档案…</p>:<><details><summary>备考档案设置</summary><label>当前档案<select aria-label="备考档案" value={selection?.profile.id??''} disabled={busy} onChange={event=>void change({action:'open',profileId:event.target.value})}><option value="">选择备考档案</option>{directory.profiles.map(row=><option key={row.id} value={row.id}>{row.title}{row.kind==='library'?' · 资料库':''}</option>)}</select></label><button disabled={busy} onClick={()=>setCreating(true)}>新建备考档案或资料库</button><CurrentStudyPanel onApplied={refreshCurrent}/></details>{(!selection||creating)&&<form onSubmit={event=>{event.preventDefault();void change({action:'create',title,kind,confirmed:true})}}><h2>创建备考档案</h2><p>确认后保存档案。考试目标和学习计划可稍后设置。</p><label>名称<input aria-label="备考档案名称" value={title} maxLength={200} disabled={busy} onChange={event=>setTitle(event.target.value)}/></label><label>用途<select aria-label="档案用途" value={kind} disabled={busy} onChange={event=>setKind(event.target.value as 'learner'|'library')}><option value="learner">个人备考</option><option value="library">只读资料库</option></select></label><button disabled={busy||!title.trim()} type="submit">确认创建备考档案</button>{selection&&<button type="button" onClick={()=>setCreating(false)}>取消</button>}</form>}{selection&&!creating&&<ScopedStudyView key={selection.profile.id+':'+selection.view.id} {...selection} native={native} pool={ownedPool}/>}</>}{error&&<p role="alert">{error}</p>}</section>
+  return <section aria-label="考公学习" className="kg-study-dashboard"><style>{sdkLearningStyles}</style>{loading?<p role="status">正在读取备考档案…</p>:<><details><summary>备考档案设置</summary><label>当前档案<select aria-label="备考档案" value={selection?.profile.id??''} disabled={busy} onChange={event=>void change({action:'open',profileId:event.target.value})}><option value="">选择备考档案</option>{directory.profiles.map(row=><option key={row.id} value={row.id}>{row.title}{row.kind==='library'?' · 资料库':''}</option>)}</select></label><button disabled={busy} onClick={()=>setCreating(true)}>新建备考档案或资料库</button><CurrentStudyPanel onApplied={refreshCurrent}/></details>{(!selection||creating)&&<form onSubmit={event=>{event.preventDefault();void change({action:'create',title,kind,confirmed:true})}}><h2>创建备考档案</h2><p>确认后保存档案。考试目标和学习计划可稍后设置。</p><label>名称<input aria-label="备考档案名称" value={title} maxLength={200} disabled={busy} onChange={event=>setTitle(event.target.value)}/></label><label>用途<select aria-label="档案用途" value={kind} disabled={busy} onChange={event=>setKind(event.target.value as 'learner'|'library')}><option value="learner">个人备考</option><option value="library">只读资料库</option></select></label><button disabled={busy||!title.trim()} type="submit">确认创建备考档案</button>{selection&&<button type="button" onClick={()=>setCreating(false)}>取消</button>}</form>}{selection&&!creating&&<ScopedStudyView key={selection.profile.id+':'+selection.view.id} {...selection} native={native} pool={ownedPool} renderTeacherSession={renderSlot?sessionId=>renderSlot('kaogong.teacher.session',{sessionId}):undefined}/>}</>}{error&&<p role="alert">{error}</p>}</section>
 }
 
 type LearningTabProps=PropsRuntime<'sidebar.right.pane.tab'>&SurfaceProps
@@ -80,7 +84,10 @@ export function apply(ctx:Context){
   const native:NativeStudyUI={open:target=>{navigation.abort();navigation=new AbortController();return openNativeStudySession({uiWorkspace:{openSession:id=>ctx.uiWorkspace.openSession(id as SessionId)},sidebarRight:{mounted:ctx.sidebarRight.mounted,openTab:(_kind,options)=>ctx.sidebarRight.openTab('kaogong-learning',options)}},target,navigation.signal)},returnOverview:()=>ctx.layout.selectPanel(panelId)}
   ctx.effect(function*(){
     yield ctx.sidebarRightTabs.register({id:learningTabId,kind:'kaogong-learning',title:()=> '考公学习',keepMounted:true})
-    yield ctx.slots.inject('main',()=>ctx.slots.register({name:'main',key:panelId,inject:()=>({native,pool})},StudyDashboard))
+    yield ctx.slots.inject('main',()=>ctx.slots.register({name:'main',key:panelId,children:{'kaogong.teacher.session':{kind:'single',scope:'root'}},inject:()=>({native,pool})},StudyDashboard))
+    // 课堂答疑：根作用域只负责保留指定原生会话，会话作用域里的内容完全复用原生 Factory。
+    yield ctx.slots.inject('kaogong.teacher.session',()=>ctx.slots.register({name:'kaogong.teacher.session',children:{'kaogong.teacher.body':{kind:'single',scope:'session'}},inject:()=>({sessions:ctx.sessions})},TeacherSessionHost))
+    yield ctx.slots.inject('kaogong.teacher.body',()=>ctx.slots.register({name:'kaogong.teacher.body'},TeacherSessionBody))
     yield ctx.slots.inject('sidebar.panellist',()=>ctx.slots.register({name:'sidebar.panellist',id:panelId,order:20,label:()=> '考公学习'},()=> <span aria-hidden="true">考</span>))
     yield ctx.slots.inject('sidebar.right.pane.tab',()=>ctx.slots.register({name:'sidebar.right.pane.tab',key:learningTabId,inject:()=>({native,pool})},StudyLearningTab))
     yield ()=>{navigation.abort();pool.dispose()}

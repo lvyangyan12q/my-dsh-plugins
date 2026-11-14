@@ -37,12 +37,16 @@ export type KaogongViewProps = {
   embedded?: boolean
   /** Focused classrooms exclude dashboard statistics; the explicit plan page keeps its metrics. */
   focusedStudy?: boolean
+  /** Task-centered classrooms restore the profile's current learning task and never show creation forms. */
+  taskCentered?: boolean
   active?: boolean
   pageId?: string
   onSelectPage?: (pageId: string) => void
   onClose?: () => void
   /** Explicit user teaching action. Structured evidence is not a Session binding or system instruction. */
   onOpenTeacher: (prompt: string, request: KaogongTeachingRequest, options?: TeachingTaskOptions) => void | Promise<void>
+  /** The learning task currently displayed by the classroom; null when no task classroom is loaded. */
+  onClassroomTask?: (task: {id: string; subject: string} | null) => void
 }
 
 export type TeachingTaskOptions = { beforeSend?: () => void | Promise<void>; afterSend?: () => void | Promise<void> }
@@ -63,9 +67,9 @@ export type PracticeResult = {
 }
 export type PracticeContext = { subject: string; title: string; knowledgePoint?: string; limit: number; planIndex?: number;taskId?:string;planRevision?:number }
 /** Ticket 06 can resolve a role binding from this evidence without parsing the legacy prompt. */
-export type KaogongTeachingRequest =
+export type KaogongTeachingRequest = {actionId?:string;quizIntent?:{questionId:string;section:string;choice:number}} & (
   | { kind: 'lesson'; context: Readonly<PracticeContext>; lessonEvidence?: { id: string; title: string; source: string; content: string } }
-  | { kind: 'review'; context: Readonly<PracticeContext>; result: Readonly<PracticeResult> }
+  | { kind: 'review'; context: Readonly<PracticeContext>; result: Readonly<PracticeResult> })
 export type ModuleSummary = {
   totalQuestions: number
   totalCorrect: number
@@ -160,7 +164,7 @@ function optionValue(option: string): string {
 }
 
 
-export function KaogongView({ embedded = false, focusedStudy = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher, onReturnToday }: KaogongViewProps) {
+export function KaogongView({ embedded = false, focusedStudy = false, taskCentered = false, active = true, pageId, onSelectPage, onClose, onOpenTeacher, onClassroomTask, onReturnToday }: KaogongViewProps) {
   const answerGroupId = useId()
   const http=useLearningHttp()
   const {practiceRequest,readPracticeDraft,savePracticeDraft,readAdmittedReviews,markAdmittedReview}=usePracticeClient()
@@ -426,10 +430,10 @@ export function KaogongView({ embedded = false, focusedStudy = false, active = t
             </header>}
             {notice && <div style={{ ...sectionStyle, marginBottom: 14, color: colors.blue, borderColor: '#bfdbfe', background: '#f8fbff' }}>{notice}</div>}
             {error && <div style={{ ...sectionStyle, color: colors.red, borderColor: '#fecaca', background: '#fff1f2' }}>{error}</div>}
-            <div hidden={!shown('classroom')}><LessonPanel onReturnToday={onReturnToday} active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onPractice={async context => {
+            {shown('classroom') && <div><LessonPanel taskCentered={taskCentered && shown('classroom')} onClassroomTask={onClassroomTask} onReturnToday={onReturnToday} active={active && shown('classroom')} onOpenTeacher={onOpenTeacher} onOpenPractice={() => onSelectPage?.('practice')} onPractice={async context => {
               await loadPractice(context, [], true)
               onSelectPage?.('practice')
-            }} /></div>
+            }} /></div>}
             {data !== null && <>
               <section hidden={!showStatistics} style={{ display: showStatistics ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 18 }}>
                 <Metric label="距离考试" value={data.daysToExam===null?'待设置':`${data.daysToExam}`} suffix="天" accent={colors.blue} />

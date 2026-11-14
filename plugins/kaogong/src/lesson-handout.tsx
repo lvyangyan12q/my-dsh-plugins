@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { auditAnswer } from './lesson-content-check.ts'
+import type { AnswerCheck } from './lesson-content-check.ts'
 
 /** 讲义是数据：渲染器只认结构，不认某一课的文字。 */
 export type HandoutStep = { label: string; text: string }
@@ -19,13 +21,29 @@ export type LabBlock = {
   presets: LabPreset[]
 }
 
+/**
+ * 例题：`effort` 只写相对步骤量，不写虚构秒数；`check` 把加权依据与排除项交给测试复算。
+ */
+export type ExampleBlock = {
+  kind: 'example'
+  no: string
+  tag: string
+  effort: string
+  question: string
+  options: string[]
+  answer: number
+  steps: HandoutStep[]
+  check: AnswerCheck
+  slow?: string
+}
+
 export type HandoutBlock =
   | { kind: 'p'; text: string }
   | { kind: 'bullets'; items: string[] }
   | { kind: 'formula'; text: string }
   | { kind: 'callout'; label: string; text: string }
   | LabBlock
-  | { kind: 'example'; no: string; tag: string; seconds: string; question: string; options: string[]; answer: number; steps: HandoutStep[]; slow?: string }
+  | ExampleBlock
 
 /** 小节编号可为空：独立小节（如「动手试一试」）不编号，渲染成「＋ 标题」。 */
 export type HandoutSection = { id: string; no?: string; title: string; blocks: HandoutBlock[] }
@@ -83,6 +101,22 @@ export function labCalculation(values: LabValues): LabCalculation {
   }
 }
 
+/** 例题审计：除选项与排除项外，再核对题干确实写明了 check 里用的数字。 */
+export function auditExample(example: ExampleBlock): string[] {
+  const problems = auditAnswer(example.options, example.answer, example.check)
+  if (example.check.kind === 'interval') {
+    for (const part of example.check.parts) {
+      if (!example.question.includes(`${part.rate}%`)) problems.push(`题干没有出现增长率 ${part.rate}%`)
+      if (!example.question.includes(String(part.base))) problems.push(`题干没有出现基期量 ${part.base}`)
+    }
+  } else {
+    for (const rate of [example.check.aRate, example.check.bRate, example.check.overallRate]) {
+      if (!example.question.includes(`${rate}%`)) problems.push(`题干没有出现增长率 ${rate}%`)
+    }
+  }
+  return problems
+}
+
 /** 有编号就显示「02 标题」，独立小节显示「＋ 标题」。 */
 function sectionHeading(section: HandoutSection): string {
   return section.no ? `${section.no} ${section.title}` : `＋ ${section.title}`
@@ -92,7 +126,7 @@ export const MIXED_GROWTH_HANDOUT: Handout = {
   id: 'mixed-growth',
   subject: '行测-资料分析',
   title: '混合增长率',
-  goal: '看到「其中…合计」能判型，用区间 + 偏向在 20 秒内排掉两个选项。',
+  goal: '看到「其中…合计」能判型，用区间 + 偏向排掉明显不可能的选项，剩下的才动笔。',
   provenance: '自编讲义：例题为教学设计用，非真题；真题在练习轮次里。',
   sections: [
     {
@@ -100,7 +134,7 @@ export const MIXED_GROWTH_HANDOUT: Handout = {
       blocks: [
         { kind: 'callout', label: '记住这一句', text: '整体的增长率是两个部分增长率的加权平均，权重是基期量，不是现期量。' },
         { kind: 'p', text: '从这句话直接得到两个动作：' },
-        { kind: 'bullets', items: ['整体增长率一定落在两个部分增长率之间 —— 用来砍选项。', '它更靠近基期量大的那一侧 —— 用来二选一。'] },
+        { kind: 'bullets', items: ['两部分都有量时，整体增长率一定落在两个部分增长率之间 —— 用来砍选项。', '它更靠近基期量大的那一侧 —— 用来二选一。'] },
       ],
     },
     {
@@ -144,36 +178,38 @@ export const MIXED_GROWTH_HANDOUT: Handout = {
       id: 'handout-s4', no: '04', title: '标准思路',
       blocks: [
         { kind: 'bullets', items: ['定对象：写出「整体 = A + B」，写不出就是判型没做对。', '定权重：增长率用基期量；比重用现期量。', '列式：r =（A基·a + B基·b）÷（A基 + B基）。', '算：截位直除，保留两位有效数字。'] },
-        { kind: 'p', text: '它的价值是准、能验算；缺点是慢，40 秒起步。下面四道示范里每道都附了一行「慢解」—— 你会看到同一个答案要花多少时间。' },
+        { kind: 'p', text: '它的价值是准、能验算；缺点是步骤多、要动笔。下面部分示范附了「慢解」，可以对照快解省掉了哪些步骤。' },
       ],
     },
     {
       id: 'handout-s5', no: '05', title: '快速思路',
       blocks: [
-        { kind: 'bullets', items: ['定区间：答案在两个部分率之间，区间外的直接划掉。5 秒，通常砍掉 2 个。', '定偏向：看谁的基期量大，答案就往那边靠；先看在中点哪一侧，再挑更靠的那一个。', '只剩两个同侧选项，才动十字交叉。'] },
+        { kind: 'bullets', items: ['定区间：答案在两个部分率之间，区间外的直接划掉。区间越窄，能砍掉的越少（快 4 就是例子）。', '定偏向：看谁的基期量大，答案就往那边靠；先看在中点哪一侧，再挑更靠的那一个。', '只剩两个同侧选项，才动十字交叉。'] },
         {
-          kind: 'example', no: '快 1', tag: '只用区间，一个数都不用算', seconds: '3 秒',
-          question: '2023 年某省高技术产业增加值增长 13.5%，传统产业增长 5.2%，两者合计增长约为：',
-          options: ['4.7%', '9.1%', '13.5%', '15.8%'], answer: 1,
+          kind: 'example', no: '快 1', tag: '只用区间，一个数都不用算', effort: '只比区间',
+          question: '2022 年某省高技术产业增加值 600 亿元、传统产业 400 亿元；2023 年高技术产业增长 13.5%，传统产业增长 5.2%，两者合计增长约为：',
+          options: ['4.7%', '10.2%', '14.1%', '15.8%'], answer: 1,
           steps: [
-            { label: '定区间', text: '5.2% – 13.5%，答案必在里头。' },
-            { label: '砍选项', text: '4.7 比下界还低；13.5 恰好等于其中一个部分值（混合不可能等于部分值）；15.8 比上界还高。三个一起出局。' },
-            { label: '结论', text: 'B，9.1%。这类题占混合增长率的六成以上。' },
+            { label: '定区间', text: '5.2% – 13.5%，两部分都有量，答案必在里头。' },
+            { label: '砍选项', text: '4.7 比下界还低；14.1 和 15.8 都比上界还高。三个一起出局，只剩 10.2。' },
+            { label: '结论', text: 'B，10.2%（精确值 10.18%）。' },
           ],
+          check: { kind: 'interval', parts: [{ base: 600, rate: 13.5 }, { base: 400, rate: 5.2 }], cut: [0, 2, 3], uniqueInside: true },
         },
         {
-          kind: 'example', no: '快 2', tag: '区间砍两个，偏向定一个', seconds: '12 秒',
+          kind: 'example', no: '快 2', tag: '区间砍两个，偏向定一个', effort: '区间 + 一次加权',
           question: '2022 年某市 A 类车销量 60 万辆、B 类 15 万辆；2023 年 A 类增长 12%，B 类增长 3%。两类合计增速约为：',
-          options: ['3.5%', '7.2%', '10.2%', '12.5%'], answer: 2,
+          options: ['2.5%', '7.2%', '10.2%', '12.5%'], answer: 2,
           steps: [
-            { label: '定区间', text: '3% – 12%。3.5 太低、12.5 太高，先出局。' },
-            { label: '偏向', text: 'A 是 B 的 4 倍，权重 4∶1，答案要明显贴 12%。中点 7.5%：7.2 在中点左边，10.2 在中点右边、且离 12% 只差一点八个点。' },
+            { label: '定区间', text: '3% – 12%。2.5 比下界还低、12.5 比上界还高，先出局。' },
+            { label: '偏向', text: 'A 的基期量 60 万辆是 B 的 4 倍，权重 4∶1；中点 7.5%，7.2 在中点左边，10.2 在中点右边。' },
             { label: '结论', text: 'C，10.2%。' },
           ],
-          slow: '(60×12 + 15×3) ÷ 75 = 10.2%，40 秒。同一个答案，快解用了三分之一时间。',
+          check: { kind: 'interval', parts: [{ base: 60, rate: 12 }, { base: 15, rate: 3 }], cut: [0, 3] },
+          slow: '(60×12 + 15×3) ÷ 75 = 10.2%。',
         },
         {
-          kind: 'example', no: '快 3', tag: '问的是比例，才需要十字交叉', seconds: '25 秒',
+          kind: 'example', no: '快 3', tag: '问的是比例，才需要十字交叉', effort: '十字交叉',
           question: '某公司上半年营收增长 8%，下半年增长 2%，全年增长 6%。上半年与下半年基期营收之比为：',
           options: ['1∶1', '2∶1', '1∶2', '3∶1'], answer: 1,
           steps: [
@@ -181,20 +217,22 @@ export const MIXED_GROWTH_HANDOUT: Handout = {
             { label: '交叉', text: '上半年∶下半年 = |2 − 6| ∶ |6 − 8| = 4 ∶ 2 = 2∶1。' },
             { label: '结论', text: 'B。验算：(2×8% + 1×2%) ÷ 3 = 6%，对。' },
           ],
-          slow: '设上半年 x、下半年 y，解 8x + 2y = 6(x+y) → 2x = 4y → 2∶1，60 秒。',
+          check: { kind: 'cross', aRate: 8, bRate: 2, overallRate: 6, ratio: 2 },
+          slow: '设上半年基期 x、下半年基期 y，解 8x + 2y = 6(x+y) → 2x = 4y → x∶y = 2∶1。',
         },
         {
-          kind: 'example', no: '快 4', tag: '快速思路在这里失效', seconds: '40 秒',
-          question: '2022 年某市 A 类企业营收 200 亿元、B 类 100 亿元；2023 年 A 类增长 7.2%，B 类增长 6.8%。两类合计增速约为：',
-          options: ['6.9%', '7.05%', '7.15%', '7.3%'], answer: 1,
+          kind: 'example', no: '快 4', tag: '快速思路在这里失效', effort: '精确加权',
+          question: '2022 年某市 A 类企业营收 250 亿元、B 类 150 亿元；2023 年 A 类增长 7.2%，B 类增长 6.8%。两类合计增速约为：',
+          options: ['6.5%', '7.05%', '7.15%', '7.3%'], answer: 1,
           steps: [
-            { label: '定区间', text: '6.8% – 7.2%，只够砍掉 6.9 和 7.3。区间太窄，排除力没了。' },
-            { label: '偏向', text: 'A 是 B 的 2 倍，答案在中点 7.0% 右边 —— 7.05 和 7.15 都在右边，估不出来。' },
-            { label: '转精算', text: '从 7.2% 往下拉三分之一差距：7.2 − 0.4×(1/3) = 7.07%。' },
-            { label: '结论', text: 'B。这题就该慢 —— 两个部分率只差 0.4 个点，任何估算都是猜。' },
+            { label: '定区间', text: '6.8% – 7.2%。6.5 比下界还低、7.3 比上界还高，只砍掉这两个。' },
+            { label: '偏向', text: 'A 的基期量是 B 的 5/3，答案在中点 7.0% 右边；7.05 和 7.15 都在右边，偏向分辨不出来。' },
+            { label: '转精算', text: '按权重 5∶3：7.2 − 0.4×(3/8) = 7.05%，或 6.8 + 0.4×(5/8) = 7.05%。' },
+            { label: '结论', text: 'B，7.05%。这题的区间太窄，只有精确加权才分得开近邻选项。' },
           ],
+          check: { kind: 'interval', parts: [{ base: 250, rate: 7.2 }, { base: 150, rate: 6.8 }], cut: [0, 3] },
         },
-        { kind: 'callout', label: '边界', text: '两个部分率很接近（差 1–2 个点），或两个选项都在正确一侧且离得近，就别估，老实写十字交叉。快是为了准，不是为了快。' },
+        { kind: 'callout', label: '边界', text: '两个部分率很接近（比如只差零点几个点），或两个选项都在正确一侧且离得近，就别估，老实写十字交叉。快是为了准，不是为了快。' },
       ],
     },
     {
@@ -213,7 +251,7 @@ export const GROWTH_COMPARISON_HANDOUT: Handout = {
   id: 'growth-comparison',
   subject: '行测-资料分析',
   title: '增长量比较',
-  goal: '看到「增长最多 / 最少」先看现期量与增长率，两个快解在 20 秒内定答案。',
+  goal: '看到「增长最多 / 最少」先看现期量与增长率，用两个快解先定方向。',
   provenance: '自编讲义：例题为教学设计用，非真题。',
   sections: [
     {
@@ -279,7 +317,7 @@ function BlockView({ block, fastOnly }: { block: HandoutBlock; fastOnly: boolean
     <div style={{ border: '1px solid #dbe2d8', borderRadius: 8, padding: 10, display: 'grid', gap: 6, background: '#fff' }}>
       <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
         <b>{block.no}</b><span style={{ color: '#475467' }}>{block.tag}</span>
-        <small style={{ marginLeft: 'auto', color: '#667085' }}>{block.seconds}</small>
+        <small style={{ marginLeft: 'auto', color: '#667085' }} title="相对步骤量，不是计时">思路：{block.effort}</small>
       </div>
       <p style={{ margin: 0, lineHeight: 1.7 }}>{block.question}</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px' }}>
