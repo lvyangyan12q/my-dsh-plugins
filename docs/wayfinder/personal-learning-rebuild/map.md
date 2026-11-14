@@ -11,7 +11,9 @@ kind: decision-map
 
 ## Destination
 
-确定全新个人学习插件的首版产品边界、文件与会话归属，并通过可评审交互原型形成可实施的设计规格。地图完成表示规划清晰，不表示新版已实现或安装。
+确定全新个人学习插件的首版产品边界、文件与会话归属，并形成可实施的设计规格。
+
+**2026-11-09 到达**：[学习课堂规格](spec.md)已发布（`ready-for-agent`，测试 seam 待用户确认）。地图完成表示规划清晰，不表示新版已实现或安装；实现由该规格驱动。
 
 ## Notes
 
@@ -28,6 +30,9 @@ kind: decision-map
 
 ## Decisions so far
 
+- [讲义笔记与课程脉络的文件及编辑边界](issues/02-file-ownership.md)：知识库根 + 每空间一文件夹；正文只在文件里，存储只存导航；写入口放 Host；Canvas 只读；详见票内 Resolution 与[规格](spec.md)。
+- [课堂会话归属与学习上下文切换](issues/03-session-context.md)：一空间一 Session；retain + Provider + embedded Factory；释放引用不停回合；恢复按空间；详见票内 Resolution。
+- [四区课堂与知识脉络的交互原型评审](issues/04-classroom-prototype.md)：布局由对话确认并写入规格；未做独立原型与视觉评审，体验未经浏览器验证。
 - [文件式课堂与原生内嵌会话的宿主可行性](issues/01-host-contracts.md)：已核查当前公开内嵌路径；文件写入与独立课堂内原生文件打开仍有接入缺口，研究不等于浏览器验收，详见票内 Resolution。
 - [旧个人学习插件安全退场](issues/05-legacy-retirement.md)：旧实现及专属规划已删除，当前 profile 已卸载；共享存储和 Session 未清除，具体证据见票内 Resolution。
 

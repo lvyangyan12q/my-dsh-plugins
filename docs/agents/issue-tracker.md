@@ -97,6 +97,10 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 
 本地地图及子票沿用 parent、labels、status、assignee、blocked_by 的 frontmatter 约定，仅使用 wayfinder 标签；结论写各票 Resolution，地图只作索引。首版方向为 DSH 四区课堂、Obsidian 兼容本地知识文件和真实内嵌会话。当前为规划，不代表新版已实现。
 
+2026-11-09 规格已发布：[学习课堂](../wayfinder/personal-learning-rebuild/spec.md)，身份 `learning-classroom-spec`，status=open，唯一 triage 标签 ready-for-agent。地图四个决策票全部关闭；测试 seam 为「真实宿主 HTTP 集成 + jsdom 客户端渲染」，待用户确认后实施。实现工作由该规格派生，规划地图不再展开新票。
+
+[学习课堂实施图](../wayfinder/personal-learning-rebuild/implementation/README.md)已按 `to-tickets` 发布 9 个垂直切片，一票一文件，`Blocked by` 表达阻塞：01 骨架与知识库 →（02 目录讲义、03 笔记、05 内嵌会话）→ 04 双链批注、06 生成、07 脉络、08 布局 → 09 冷启动与真实验收。实施前先读规格与各票验收项；完成以票内条件与真实证据为准，不以提交或构建成功代替。
+
 旧包已从当前 web profile 卸载；旧源码、构建产物、发行包及专属规划目录已在正确工作目录内删除，原先的删除保护阻碍已解除。未清除 DSH Session 或共享存储。实际范围与验证见已关闭的[旧个人学习插件安全退场](../wayfinder/personal-learning-rebuild/issues/05-legacy-retirement.md)。
 
 ## 考公任务驱动课堂（2026-11-08）
@@ -104,4 +108,6 @@ Worktable框架规格已按grill-with-docs首轮确认区分首阶段与后续�
 本地规格身份 `kaogong-task-centered-learning`，入口为[本地规格](../../.scratch/kaogong-task-centered-learning/spec.md)，唯一正文为[考公任务驱动课堂规格](../../plugins/kaogong/docs/task-centered-learning-spec.md)，配套[PR 正文草稿](../../plugins/kaogong/docs/task-centered-learning-pr-draft.md)。status=open，唯一 triage 标签 ready-for-agent；尚未实施或发布实施子票。
 
 用户已确认今日任务直接进入课堂、固定班主任/老师职责、资料库与自由练习同层展示、在插件内学习与答疑。准确安装包在现有 3080 的完整用户流程为拟定最高测试 seam，待用户核对；公开原生会话内嵌和任务级会话隔离须先验证。此增量替代旧课堂的强制原生页导航和手动角色配置交互，不关闭旧票、不影响个人学习插件重建范围。
+
+八张实施票在[任务驱动课堂实施图](../../.scratch/kaogong-task-centered-learning/issues/)，一票一文件，集成分支 `feat/kaogong-task-classroom`。依赖：01 与 02 与 07 无阻塞（前沿）；03 依赖 01/02；04 与 05 依赖 02/03；06 依赖 02；08 依赖 01–07。01 若判定公开接口不足，以「能力缺口报告 + 公开接口变更申请」收尾，不以模拟聊天或强制跳转代替；03 之后的答疑切片因此顺延。票号顺序即依赖顺序，不代表实施完成。
 
