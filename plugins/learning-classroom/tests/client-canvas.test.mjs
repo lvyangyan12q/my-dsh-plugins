@@ -1,0 +1,634 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+import { JSDOM } from 'jsdom'
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'http://localhost' })
+const globals = {
+  window: dom.window,
+  document: dom.window.document,
+  HTMLElement: dom.window.HTMLElement,
+  HTMLInputElement: dom.window.HTMLInputElement,
+  Node: dom.window.Node,
+  Event: dom.window.Event,
+  navigator: dom.window.navigator,
+  IS_REACT_ACT_ENVIRONMENT: true,
+}
+for (const [key, value] of Object.entries(globals)) {
+  try { Object.defineProperty(globalThis, key, { configurable: true, writable: true, value }) } catch { /* Node may own navigator. */ }
+}
+
+const React = await import('react')
+const { createRoot } = await import('react-dom/client')
+const act = React.act ?? (await import('react-dom/test-utils')).act
+const h = React.createElement
+const { ClassroomPanel } = await import('../src/classroom-panel.tsx')
+const { ClassroomClientError } = await import('../src/classroom-client.ts')
+
+const space = {
+  id: 'space-1',
+  title: '概率论',
+  directory: '概率论',
+  notePath: '笔记/我的笔记.md',
+  createdAt: '2026-11-09T00:00:00.000Z',
+  lecturePath: null,
+}
+
+const readyView = {
+  vault: { path: 'D:/知识库', status: 'ready', reason: null, hint: '' },
+  spaces: [space],
+  currentSpaceId: space.id,
+}
+
+const lectures = [
+  { path: '讲义/01-样本空间.md', fileName: '01-样本空间.md', title: '样本空间', order: 1, kind: 'markdown' },
+  { path: '讲义/02-概率.md', fileName: '02-概率.md', title: '概率', order: 2, kind: 'markdown' },
+]
+
+function canvasDocument() {
+  const target = (path, vaultPath, kind, extra = {}) => ({ path, vaultPath, kind, status: 'ok', heading: null, blockId: null, message: null, ...extra })
+  return {
+    spaceId: space.id,
+    path: '概率论/脉络.canvas',
+    fileName: '脉络.canvas',
+    width: 600,
+    height: 400,
+    nodes: [
+      { id: 'text', type: 'text', text: '样本空间', x: 0, y: 0, width: 200, height: 80, color: null, file: null, url: null, label: null, target: null },
+      {
+        id: 'lecture', type: 'file', file: '概率论/讲义/01-样本空间.md', x: 300, y: 0, width: 200, height: 80,
+        color: null, text: null, url: null, label: null,
+        target: target('讲义/01-样本空间.md', '概率论/讲义/01-样本空间.md', 'lecture'),
+      },
+      {
+        id: 'nested-lecture', type: 'file', file: '概率论/讲义/第一章/01-条件概率.md', x: 520, y: 0, width: 200, height: 80,
+        color: null, text: null, url: null, label: null,
+        target: target('讲义/第一章/01-条件概率.md', '概率论/讲义/第一章/01-条件概率.md', 'lecture', { heading: '条件概率' }),
+      },
+      {
+        id: 'note', type: 'file', file: '概率论/笔记/概念卡.md', x: 0, y: 200, width: 200, height: 80,
+        color: null, text: null, url: null, label: null,
+        target: target('笔记/概念卡.md', '概率论/笔记/概念卡.md', 'note'),
+      },
+      {
+        id: 'note-fragment', type: 'file', file: '概率论/笔记/概念卡.md#要点', x: 520, y: 200, width: 200, height: 80,
+        color: null, text: null, url: null, label: null,
+        target: target('笔记/概念卡.md', '概率论/笔记/概念卡.md', 'note', { heading: '要点' }),
+      },
+      { id: 'link', type: 'link', url: 'https://example.com/reading', x: 300, y: 200, width: 200, height: 80, color: null, text: null, file: null, label: null, target: null },
+      { id: 'group', type: 'group', label: '基础', x: -50, y: -50, width: 600, height: 400, color: null, text: null, file: null, url: null, target: null },
+      {
+        id: 'missing', type: 'file', file: '概率论/讲义/99-没有.md', x: 0, y: 320, width: 200, height: 80,
+        color: null, text: null, url: null, label: null,
+        target: {
+          path: '讲义/99-没有.md',
+          vaultPath: '概率论/讲义/99-没有.md',
+          kind: 'lecture',
+          status: 'missing',
+          heading: null,
+          blockId: null,
+          message: '文件不存在或已被外部删除：概率论/讲义/99-没有.md',
+        },
+      },
+      {
+        id: 'missing-fragment', type: 'file', file: '概率论/讲义/01-样本空间.md#不存在的标题', x: 300, y: 320, width: 200, height: 80,
+        color: null, text: null, url: null, label: null,
+        target: {
+          path: '讲义/01-样本空间.md',
+          vaultPath: '概率论/讲义/01-样本空间.md',
+          kind: 'lecture',
+          status: 'missing-fragment',
+          heading: null,
+          blockId: null,
+          message: '目标文件里没有标题「不存在的标题」；不会跳到假锚点：概率论/讲义/01-样本空间.md',
+        },
+      },
+    ],
+    edges: [
+      { id: 'e1', fromNode: 'text', toNode: 'lecture', label: '先修', relation: 'prerequisite', selfLoop: false, fromEnd: 'none', toEnd: 'arrow', fromSide: 'right', toSide: 'left' },
+      { id: 'e2', fromNode: 'note', toNode: 'link', label: '应用', relation: 'application', selfLoop: false, fromEnd: 'arrow', toEnd: 'none', fromSide: null, toSide: null },
+      { id: 'e3', fromNode: 'text', toNode: 'note', label: '组成', relation: 'composition', selfLoop: false, fromEnd: 'none', toEnd: 'none', fromSide: null, toSide: null },
+      { id: 'e4', fromNode: 'text', toNode: 'text', label: '先修', relation: 'prerequisite', selfLoop: true, fromEnd: 'none', toEnd: 'arrow', fromSide: 'right', toSide: 'bottom' },
+    ],
+  }
+}
+
+const noteTexts = {
+  '笔记/我的笔记.md': '# 我的笔记\n\n默认笔记内容。',
+  '笔记/概念卡.md': '# 概念卡\n\n## 要点\n\n概念卡正文。',
+}
+
+function fakeClient(options = {}) {
+  const calls = []
+  let selectedPath = options.selectedPath ?? null
+  const docs = {
+    '讲义/01-样本空间.md': {
+      spaceId: space.id,
+      path: '讲义/01-样本空间.md',
+      fileName: '01-样本空间.md',
+      title: '样本空间',
+      kind: 'markdown',
+      content: '# 样本空间\n\n全部可能结果的集合。',
+    },
+    '讲义/02-概率.md': {
+      spaceId: space.id,
+      path: '讲义/02-概率.md',
+      fileName: '02-概率.md',
+      title: '概率',
+      kind: 'markdown',
+      content: '# 概率\n\n事件的度量。',
+    },
+    '讲义/第一章/01-条件概率.md': {
+      spaceId: space.id,
+      path: '讲义/第一章/01-条件概率.md',
+      fileName: '01-条件概率.md',
+      title: '条件概率',
+      kind: 'markdown',
+      content: '# 条件概率\n\n条件概率正文。',
+    },
+  }
+  let canvasAttempts = 0
+  return {
+    calls,
+    async load() { return structuredClone(readyView) },
+    async command(input) { calls.push(input); return structuredClone(readyView) },
+    async listLectures(spaceId) {
+      calls.push({ action: 'lecture-list', spaceId })
+      return { spaceId, lectures: structuredClone(lectures), selectedPath, missingSelection: null, folderMissing: false }
+    },
+    async readLecture(spaceId, path) {
+      calls.push({ action: 'lecture-read', spaceId, path })
+      const doc = docs[path]
+      if (!doc) throw new ClassroomClientError('lecture-missing', `讲义文件不存在或已被外部删除：${path}`, 409)
+      selectedPath = path
+      return structuredClone(doc)
+    },
+    async readCanvas(spaceId) {
+      canvasAttempts += 1
+      calls.push({ action: 'canvas-read', spaceId })
+      if (options.canvasError !== undefined && canvasAttempts === 1) throw options.canvasError
+      return structuredClone(options.canvas ?? canvasDocument())
+    },
+    async listNotes(spaceId) {
+      calls.push({ action: 'note-list', spaceId })
+      return {
+        notes: Object.keys(noteTexts).map(path => ({ path, name: path.replace(/^笔记\//, '').replace(/\.md$/, '') })),
+        defaultPath: '笔记/我的笔记.md',
+      }
+    },
+    async readNote(spaceId, path) {
+      calls.push({ action: 'note-read', spaceId, path })
+      const content = noteTexts[path]
+      if (content === undefined) throw new ClassroomClientError('note-missing', `笔记文件不存在：${path}`, 409)
+      return { path, content, version: `v-${path}`, updatedAt: '2026-11-09T00:00:00.000Z' }
+    },
+    async saveNote(input) {
+      calls.push({ action: 'note-save', path: input.path, content: input.content })
+      return { path: input.path, version: 'v-saved', savedAt: '2026-11-09T00:01:00.000Z' }
+    },
+  }
+}
+
+async function settle() {
+  for (let index = 0; index < 6; index += 1) {
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+  }
+}
+
+async function mount(client, extraProps = {}) {
+  const container = dom.window.document.getElementById('root')
+  container.replaceChildren()
+  const root = createRoot(container)
+  await act(async () => { root.render(h(ClassroomPanel, { client, ...extraProps })) })
+  await settle()
+  const document = dom.window.document
+  return {
+    document,
+    text: () => container.textContent,
+    tab: label => [...document.querySelectorAll('[role="tablist"] [role="tab"]')].find(tab => tab.textContent === label),
+    canvas: () => document.querySelector('[aria-label="课程脉络"]'),
+    reader: () => document.querySelector('[aria-label="讲义"]'),
+    notes: () => document.querySelector('[aria-label="我的笔记"]'),
+    directory: () => document.querySelector('[aria-label="课程目录"]'),
+    conversation: () => document.querySelector('[aria-label="老师对话"]'),
+    async click(element) { await act(async () => { element.click() }); await settle() },
+    async type(element, value) {
+      await act(async () => {
+        const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, 'value').set
+        setter.call(element, value)
+        element.dispatchEvent(new dom.window.Event('input', { bubbles: true }))
+      })
+      await settle()
+    },
+    async openCanvas() { await this.click(this.tab('脉络')) },
+    async unmount() { await act(async () => { root.unmount() }) },
+  }
+}
+
+/** True when neither the element nor any ancestor is hidden by `hidden` or CSS. */
+function isShown(element) {
+  if (element === null) return false
+  for (let node = element; node !== null; node = node.parentElement) {
+    if (node.hidden === true) return false
+    if (dom.window.getComputedStyle(node).display === 'none') return false
+  }
+  return true
+}
+
+function node(ui, id) {
+  return ui.document.querySelector(`[data-node-id="${id}"]`)
+}
+
+function findButton(scope, label) {
+  return [...scope.querySelectorAll('button')].find(button => button.textContent.includes(label))
+}
+
+test('切到脉络后只读渲染四种节点、分组标签与带标签的有向边', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    const canvas = ui.canvas()
+    assert.ok(canvas)
+    assert.equal(ui.document.querySelectorAll('[data-node-id]').length, 9)
+    assert.equal(node(ui, 'text').getAttribute('data-node-type'), 'text')
+    assert.match(node(ui, 'group').textContent, /基础/)
+    assert.match(node(ui, 'link').textContent, /example\.com/)
+    assert.ok(node(ui, 'link').querySelector('a[href="https://example.com/reading"]'))
+
+    const edges = [...canvas.querySelectorAll('[data-edge-id]')]
+    assert.equal(edges.length, 4)
+    assert.deepEqual(edges.map(edge => edge.getAttribute('data-relation')), ['prerequisite', 'application', 'composition', 'prerequisite'])
+    assert.match(edges[0].textContent, /先修/)
+    assert.match(edges[1].textContent, /应用/)
+    assert.match(edges[2].textContent, /组成/)
+    // A self relation is rendered as an explicit self loop, not a stray arrow.
+    assert.equal(edges[3].getAttribute('data-self'), 'true')
+    assert.match(edges[3].textContent, /自引用/)
+
+    const legend = canvas.querySelector('.lc-canvas-legend')
+    assert.match(legend.textContent, /先修/)
+    assert.match(legend.textContent, /组成/)
+    assert.match(legend.textContent, /应用/)
+    const kinds = [...legend.querySelectorAll('[data-relation]')].map(item => item.getAttribute('data-relation'))
+    assert.deepEqual(kinds, ['prerequisite', 'composition', 'application'])
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('点击文件节点打开对应讲义，切回课堂并定位到那一节', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    await ui.click(node(ui, 'lecture'))
+
+    assert.deepEqual(client.calls.filter(call => call.action === 'lecture-read'), [
+      { action: 'lecture-read', spaceId: space.id, path: '讲义/01-样本空间.md' },
+    ])
+    assert.equal(ui.tab('课堂').getAttribute('aria-selected'), 'true')
+    assert.match(ui.reader().textContent, /全部可能结果的集合/)
+    assert.equal(ui.document.querySelector('.lc-lecture-list button[aria-current="true"]').textContent, '样本空间')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('点击笔记节点在笔记区打开对应笔记，不触发讲义读取', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    const before = ui.notes().querySelector('textarea')
+    assert.ok(before)
+    assert.match(before.value, /默认笔记内容/)
+
+    await ui.openCanvas()
+    await ui.click(node(ui, 'note'))
+
+    assert.equal(client.calls.some(call => call.action === 'lecture-read'), false)
+    assert.equal(ui.tab('课堂').getAttribute('aria-selected'), 'true')
+    const editor = ui.notes().querySelector('textarea')
+    assert.ok(editor)
+    assert.match(editor.value, /概念卡正文/)
+    assert.deepEqual(
+      client.calls.filter(call => call.action === 'note-read').at(-1),
+      { action: 'note-read', spaceId: space.id, path: '笔记/概念卡.md' },
+    )
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('画布缺失或格式非法时显示可理解错误，不渲染半张图，并可重试', async () => {
+  const missing = new ClassroomClientError(
+    'canvas-missing',
+    '学习空间「概率论」里还没有「脉络.canvas」（期望路径：概率论/脉络.canvas）。请在 Obsidian 中创建这个画布后刷新脉络；插件内不提供画布编辑。',
+    409,
+  )
+  const client = fakeClient({ canvasError: missing })
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    const canvas = ui.canvas()
+    const alert = canvas.querySelector('[role="alert"]')
+    assert.ok(alert)
+    assert.match(alert.textContent, /脉络\.canvas/)
+    assert.match(alert.textContent, /Obsidian/)
+    assert.equal(ui.document.querySelectorAll('[data-node-id]').length, 0)
+    assert.equal(ui.document.querySelectorAll('[data-edge-id]').length, 0)
+
+    await ui.click(findButton(alert, '重新加载脉络'))
+    assert.equal(ui.document.querySelectorAll('[data-node-id]').length, 9)
+    assert.equal(canvas.querySelector('[role="alert"]'), null)
+  } finally {
+    await ui.unmount()
+  }
+
+  const invalid = new ClassroomClientError('canvas-invalid', '脉络.canvas 格式不合法：节点「n1」的类型未知：image。', 400)
+  const second = fakeClient({ canvasError: invalid })
+  const broken = await mount(second)
+  try {
+    await broken.openCanvas()
+    assert.match(broken.canvas().querySelector('[role="alert"]').textContent, /格式不合法/)
+    assert.equal(broken.document.querySelectorAll('[data-node-id]').length, 0)
+    assert.equal(broken.document.querySelectorAll('[data-edge-id]').length, 0)
+  } finally {
+    await broken.unmount()
+  }
+})
+
+test('目标缺失或越界时给出明确提示，不假装打开了讲义', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    await ui.click(node(ui, 'missing'))
+
+    const alert = ui.canvas().querySelector('[role="alert"]')
+    assert.ok(alert)
+    assert.match(alert.textContent, /不存在|删除/)
+    assert.match(alert.textContent, /99-没有\.md/)
+    assert.equal(client.calls.some(call => call.action === 'lecture-read'), false)
+    assert.equal(ui.tab('脉络').getAttribute('aria-selected'), 'true')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('插件内没有画布编辑入口，只提供路径与在 Obsidian 中打开', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    const canvas = ui.canvas()
+    assert.match(canvas.textContent, /概率论\/脉络\.canvas/)
+    const link = [...canvas.querySelectorAll('a')].find(anchor => anchor.textContent.includes('在 Obsidian 中打开'))
+    assert.ok(link)
+    assert.match(link.getAttribute('href'), /^obsidian:\/\/open\?path=/)
+    assert.match(decodeURIComponent(link.getAttribute('href')), /D:\/知识库\/概率论\/脉络\.canvas/)
+
+    const labels = [...canvas.querySelectorAll('button')].map(button => button.textContent)
+    assert.equal(labels.some(label => /添加|新建|创建|编辑|连线|删除/.test(label)), false, `不应有编辑入口：${labels.join('、')}`)
+    assert.match(canvas.textContent, /只读/)
+    assert.match(canvas.textContent, /在 Obsidian 中编辑/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('脉络只替换讲义主区：目录、笔记与老师对话保持可见，未保存笔记不丢', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    const editor = ui.document.querySelector('[aria-label="笔记编辑器"]')
+    assert.ok(editor)
+    await ui.type(editor, '# 我的笔记\n\n看到脉络时的想法')
+    const directory = ui.directory()
+    const notes = ui.notes()
+    const conversation = ui.conversation()
+
+    await ui.openCanvas()
+
+    assert.ok(ui.canvas(), '脉络已打开')
+    assert.equal(isShown(directory), true, '课程目录在脉络视图下仍可用')
+    assert.equal(isShown(notes), true, '笔记区在脉络视图下仍可用')
+    assert.equal(isShown(conversation), true, '老师对话在脉络视图下仍可用')
+    assert.equal(ui.directory(), directory)
+    assert.equal(ui.notes(), notes)
+    assert.equal(ui.conversation(), conversation)
+    assert.equal(isShown(ui.reader()), false, '只有讲义主区被替换')
+
+    const editorOnCanvas = ui.notes().querySelector('textarea')
+    assert.equal(editorOnCanvas, editor, '切到脉络不卸载笔记编辑器')
+    assert.equal(editorOnCanvas.value, '# 我的笔记\n\n看到脉络时的想法', '未保存的输入仍在')
+
+    await ui.click(ui.tab('课堂'))
+    assert.equal(isShown(ui.reader()), true)
+    assert.equal(ui.notes().querySelector('textarea'), editor)
+    assert.equal(editor.value, '# 我的笔记\n\n看到脉络时的想法')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('箭头只在 JSON Canvas 声明的端出现，方向与 from/to 节点一致', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    const edge = id => ui.canvas().querySelector(`[data-edge-id="${id}"]`)
+    const pathOf = id => edge(id).querySelector('path')
+
+    assert.equal(edge('e1').getAttribute('data-from-end'), 'none')
+    assert.equal(edge('e1').getAttribute('data-to-end'), 'arrow')
+    assert.equal(pathOf('e1').getAttribute('marker-start'), null)
+    assert.match(pathOf('e1').getAttribute('marker-end'), /lc-canvas-arrow-prerequisite/)
+
+    assert.equal(edge('e2').getAttribute('data-from-end'), 'arrow')
+    assert.equal(edge('e2').getAttribute('data-to-end'), 'none')
+    assert.match(pathOf('e2').getAttribute('marker-start'), /lc-canvas-arrow-application/)
+    assert.equal(pathOf('e2').getAttribute('marker-end'), null)
+
+    // An explicit `none` end must not gain an arrow.
+    assert.equal(pathOf('e3').getAttribute('marker-start'), null)
+    assert.equal(pathOf('e3').getAttribute('marker-end'), null)
+
+    // A self relation with right→bottom sides leaves the right side and enters
+    // the bottom side; it must not fall back to a fixed top arc. The group node
+    // starts at (-50,-50), so the text rect is at (90,90).
+    const selfPath = pathOf('e4').getAttribute('d')
+    assert.match(selfPath, /^M 290 130 /)
+    assert.match(selfPath, /190 170$/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('点击嵌套章节讲义节点打开真实章节，并定位到真实标题', async () => {
+  const client = fakeClient()
+  const scrolled = []
+  const original = dom.window.Element.prototype.scrollIntoView
+  dom.window.Element.prototype.scrollIntoView = function scrollIntoView() { scrolled.push(this.textContent) }
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    await ui.click(node(ui, 'nested-lecture'))
+
+    assert.deepEqual(client.calls.filter(call => call.action === 'lecture-read'), [
+      { action: 'lecture-read', spaceId: space.id, path: '讲义/第一章/01-条件概率.md' },
+    ])
+    assert.equal(ui.tab('课堂').getAttribute('aria-selected'), 'true')
+    assert.match(ui.reader().textContent, /条件概率正文/)
+    assert.ok(scrolled.some(text => /条件概率/.test(text ?? '')), `真实标题未被定位：${scrolled.join('|')}`)
+  } finally {
+    dom.window.Element.prototype.scrollIntoView = original
+    await ui.unmount()
+  }
+})
+
+test('点击带片段的笔记节点打开笔记、切到预览并定位真实标题', async () => {
+  const client = fakeClient()
+  const scrolled = []
+  const original = dom.window.Element.prototype.scrollIntoView
+  dom.window.Element.prototype.scrollIntoView = function scrollIntoView() { scrolled.push(this.textContent) }
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    await ui.click(node(ui, 'note-fragment'))
+
+    assert.equal(ui.tab('课堂').getAttribute('aria-selected'), 'true')
+    assert.deepEqual(
+      client.calls.filter(call => call.action === 'note-read').at(-1),
+      { action: 'note-read', spaceId: space.id, path: '笔记/概念卡.md' },
+    )
+    const previewTab = [...ui.notes().querySelectorAll('[role="tab"]')].find(tab => tab.textContent === '预览')
+    assert.equal(previewTab.getAttribute('aria-selected'), 'true')
+    assert.match(ui.notes().textContent, /概念卡正文/)
+    assert.ok(scrolled.some(text => text === '要点'), `笔记真实标题未被定位：${scrolled.join('|')}`)
+  } finally {
+    dom.window.Element.prototype.scrollIntoView = original
+    await ui.unmount()
+  }
+})
+
+test('缺失锚点的节点给出明确提示，不打开讲义也不伪造位置', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    const missing = node(ui, 'missing-fragment')
+    assert.match(missing.textContent, /锚点不存在/)
+    await ui.click(missing)
+
+    const alert = ui.canvas().querySelector('[role="alert"]')
+    assert.ok(alert)
+    assert.match(alert.textContent, /没有标题/)
+    assert.match(alert.textContent, /不存在的标题/)
+    assert.equal(client.calls.some(call => call.action === 'lecture-read'), false)
+    assert.equal(ui.tab('脉络').getAttribute('aria-selected'), 'true')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('原生打开不可用时只显示诚实说明、绝对路径与 Obsidian 替代，不渲染无效按钮', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    const canvas = ui.canvas()
+    const unavailable = canvas.querySelector('[data-native-open="unavailable"]')
+    assert.ok(unavailable)
+    assert.match(unavailable.textContent, /DSH 原生文件打开不可用/)
+    assert.match(unavailable.textContent, /路径/)
+    assert.equal(canvas.querySelector('.lc-canvas-native'), null)
+    assert.equal([...canvas.querySelectorAll('button')].some(button => /系统.*打开|原生打开/.test(button.textContent)), false)
+    assert.equal(canvas.querySelectorAll('.lc-canvas-native').length, 0)
+    assert.match(canvas.querySelector('.lc-canvas-path').textContent, /D:\/知识库\/概率论\/脉络\.canvas/)
+    const link = [...canvas.querySelectorAll('a')].find(anchor => anchor.textContent.includes('在 Obsidian 中打开'))
+    assert.ok(link)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('原生打开可用时通过公开方法打开同一画布文件，失败保留真实原因', async () => {
+  const client = fakeClient()
+  const opened = []
+  const nativeOpen = {
+    async probe() { return { available: true, reason: null } },
+    async open(path) {
+      opened.push(path)
+      return { ok: false, reason: '宿主拒绝：没有可用的默认应用' }
+    },
+  }
+  const ui = await mount(client, { nativeOpen })
+  try {
+    await ui.openCanvas()
+    const button = ui.canvas().querySelector('.lc-canvas-native')
+    assert.ok(button)
+    assert.match(button.textContent, /系统默认应用/)
+    await ui.click(button)
+
+    assert.deepEqual(opened, ['D:/知识库/概率论/脉络.canvas'])
+    const alert = ui.canvas().querySelector('[role="alert"]')
+    assert.ok(alert)
+    assert.match(alert.textContent, /没有可用的默认应用/)
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('滚轮缩放与拖拽平移改变同一舞台，重置恢复初始变换', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    await ui.openCanvas()
+    const viewport = ui.canvas().querySelector('.lc-canvas-viewport')
+    const stage = () => ui.canvas().querySelector('.lc-canvas-stage')
+
+    await act(async () => {
+      viewport.dispatchEvent(new dom.window.WheelEvent('wheel', { deltaY: -100, bubbles: true, cancelable: true }))
+    })
+    await settle()
+    assert.equal(stage().getAttribute('data-zoom'), '1.1')
+    assert.match(ui.canvas().textContent, /110%/)
+
+    await act(async () => {
+      viewport.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, button: 0 }))
+      viewport.dispatchEvent(new dom.window.MouseEvent('pointermove', { bubbles: true, clientX: 40, clientY: 30 }))
+      viewport.dispatchEvent(new dom.window.MouseEvent('pointerup', { bubbles: true }))
+    })
+    await settle()
+    assert.match(stage().style.transform, /translate\(30px, 20px\)/)
+
+    const reset = [...ui.canvas().querySelectorAll('button')].find(button => button.textContent === '重置')
+    await ui.click(reset)
+    assert.match(stage().style.transform, /translate\(0px, 0px\) scale\(1\)/)
+    assert.equal(stage().getAttribute('data-zoom'), '1')
+  } finally {
+    await ui.unmount()
+  }
+})
+
+test('脉络与课堂切换互不覆盖，回到课堂仍停在原讲义', async () => {
+  const client = fakeClient()
+  const ui = await mount(client)
+  try {
+    const directory = ui.document.querySelector('[aria-label="课程目录"]')
+    const probability = [...directory.querySelectorAll('.lc-lecture-list button')].find(button => button.textContent === '概率')
+    assert.ok(probability)
+    await ui.click(probability)
+    assert.match(ui.reader().textContent, /事件的度量/)
+    const readsBefore = client.calls.filter(call => call.action === 'lecture-read').length
+
+    await ui.openCanvas()
+    await ui.click(ui.tab('课堂'))
+
+    assert.match(ui.reader().textContent, /事件的度量/)
+    assert.equal(ui.document.querySelector('.lc-lecture-list button[aria-current="true"]').textContent, '概率')
+    assert.equal(client.calls.filter(call => call.action === 'lecture-read').length, readsBefore)
+  } finally {
+    await ui.unmount()
+  }
+})
