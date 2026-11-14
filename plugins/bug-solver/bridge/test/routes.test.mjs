@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import { DispatchService } from '../lib/dispatch-service.js'
 import { handleRoute, ROUTES } from '../lib/routes.js'
-import { createServiceHarness, driveToReview, finishReview } from './helpers.mjs'
+import { createFakeGit, createServiceHarness, driveToReview, finishReview } from './helpers.mjs'
 
 const url = (name, query = {}) => {
   const target = new URL(`http://localhost/api/bug-solver/${name}`)
@@ -185,6 +185,7 @@ test('writeback route validates and atomically writes window2 ssh-config', async
   mkdirSync(join(h.root, '.git'), { recursive: true })
 
   const service = new DispatchService({
+    git: createFakeGit(),
     gateway: h.gateway,
     store: h.store,
     clock: h.clock,

@@ -8,6 +8,7 @@ The range is an admission promise, not proof of behaviour. The evidence claim is
 
 | DSH version | Status | Evidence |
 | --- | --- | --- |
+| 0.2.2-rc.2 | admission and module checks only; live acceptance pending | `04_test/runtime-surface.test.mjs` and repository-root `scripts/dsh-rc2-compat.test.mjs`; no profile installation, browser or model-driven acceptance |
 | 0.2.2-rc.1 | verified | `04_test/native-rc1-contracts.test.mjs` (revision fcc0ad46…) and this release's `host-boot-evidence.json` |
 | 0.2.2-alpha.2 | frozen with its archive | `04_test/native-alpha2-contracts.test.mjs` (revision f3803c96…) |
 | 0.2.1-rc.3 | frozen with its archive | `04_test/native-rc3-contracts.test.mjs` (revision 22ddee37…) |

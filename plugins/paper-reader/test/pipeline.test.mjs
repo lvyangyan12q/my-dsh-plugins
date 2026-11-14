@@ -89,7 +89,11 @@ test('the registry is the only source metadata/default table the run and config 
     assert.equal(config.sources[id].useProxy, SOURCES[id].defaults.useProxy)
     assert.equal(typeof SOURCES[id].validateConfig, 'function', `${id} validates its own config keys`)
   }
-  assert.deepEqual(config.selection, { sourceWeights: {}, institutions: [] })
+  assert.deepEqual(config.selection, {
+    sourceWeights: {},
+    institutions: [],
+    importance: { enabled: false, minScore: 6, strongScore: 9, maxOverflow: 3, model: null },
+  })
   assert.equal(config.sources.openai.enabled, false, 'OpenAI stays opt-in until its terms review closes')
 
   // Validation comes from the registry entry, not a duplicate table here.
@@ -107,7 +111,11 @@ test('selection.sourceWeights and selection.institutions are validated and reach
     selection: { sourceWeights: { arxiv: 3 }, institutions: ['MIT'] },
   }))
   const { config } = await loadConfig({ root })
-  assert.deepEqual(config.selection, { sourceWeights: { arxiv: 3 }, institutions: ['MIT'] })
+  assert.deepEqual(config.selection, {
+    sourceWeights: { arxiv: 3 },
+    institutions: ['MIT'],
+    importance: { enabled: false, minScore: 6, strongScore: 9, maxOverflow: 3, model: null },
+  })
 
   writeFileSync(join(root, 'config.json'), JSON.stringify({ selection: { sourceWeights: { arxiv: 'high' } } }))
   await assert.rejects(

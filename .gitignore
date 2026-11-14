@@ -9,3 +9,15 @@
 
 # Original study materials, historical outputs and legacy helper environments
 materials/
+
+!plugins/bug-solver/bridge/lib/
+plugins/bug-solver/bridge/dist/
+plugins/bug-solver/bridge/lib/*.bak-*
+plugins/paper-reader/dist/
+plugins/bug-solver/window3-dispatch.html.bak-*
+plugins/bug-solver/scripts/oneoff/
+plugins/bug-solver/scripts/add-manual-analysis.cjs
+plugins/bug-solver/scripts/add-manual-autosave.cjs
+plugins/bug-solver/scripts/add-optional-base-branch.cjs
+plugins/bug-solver/scripts/add-parallel-sessions.cjs
+plugins/bug-solver/scripts/add-window-visibility.cjs

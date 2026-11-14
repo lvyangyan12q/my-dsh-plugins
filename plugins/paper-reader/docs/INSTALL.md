@@ -7,7 +7,7 @@
 
 | 项 | 要求 |
 |---|---|
-| DSH | `0.2.2-alpha.2` 或 `0.2.2-rc.1`（`package.json` 的 `engines.dsh`） |
+| DSH | `0.2.2-alpha.2`、`0.2.2-rc.1` 或 `0.2.2-rc.2`（`package.json` 的 `engines.dsh`） |
 | Node.js | `>=22` |
 | 包管理 | `pnpm` 在 `PATH` 上（`dsh plugin` 会转发给 pnpm） |
 | 数据目录 | `$DSH_HOME/paper-reader`，默认 `C:\Users\<你>\.dsh\paper-reader` |
@@ -124,20 +124,56 @@ node scripts/paper-reader.mjs --help                   # 完整参数
 node scripts/run-daily.mjs --date 2026-11-05
 ```
 
-`run-daily.mjs` 只做三件事：从 `$DSH_HOME/.credentials.yaml` 的 `refs` 读出指定凭据、在**子进程环境**里设置 `PAPER_READER_LLM_*`、启动普通 CLI。它不打印、不写入、不把密钥落到 digest/日志。默认凭据是 `COMMANDCODE_API_KEY`，可用 `PAPER_READER_DSH_CREDENTIAL_REF` 换一个 ref；显式设置的环境变量优先。
+`run-daily.mjs` 只做三件事：从 `$DSH_HOME/.credentials.yaml` 的 `refs` 读出指定凭据、在**子进程环境**里设置 `PAPER_READER_LLM_*`、启动普通 CLI。它不打印、不写入、不把密钥落到 digest/日志。默认凭据是 `ZAI_CODING_CN_API_KEY`（智谱），可用 `PAPER_READER_DSH_CREDENTIAL_REF` 换一个 ref；显式设置的环境变量优先。
 
-`$DSH_HOME/paper-reader/config.json` 可以固定端点、模型、代理与预算（不含密钥）：
+`$DSH_HOME/paper-reader/config.json` 可以固定端点、模型、代理、预算与质量门槛（不含密钥）：
 
 ```json
 {
   "proxy": { "url": "http://127.0.0.1:7897" },
   "translation": {
-    "baseUrl": "https://api.commandcode.ai/provider/v1",
-    "model": "deepseek/deepseek-v4.1-flash",
-    "dailyTokenBudget": 1200000
+    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+    "model": "glm-4-flash",
+    "dailyTokenBudget": 1200000,
+    "timeoutMs": 60000,
+    "retries": 1
+  },
+  "quota": { "total": 8, "papers": 3, "blogs": 5 },
+  "selection": {
+    "importance": {
+      "enabled": true,
+      "minScore": 6,
+      "strongScore": 9,
+      "maxOverflow": 3,
+      "model": "glm-4.6"
+    }
   }
 }
 ```
+
+### 模型选择与额度
+
+- **批量翻译用便宜的模型**：翻译是几十万个 token 的活，`glm-4-flash` 免费且快（约 3 秒/批）。用编码套餐的 `glm-4.6` 翻全文会吃掉 5 小时编码额度。
+- **质量门槛用强的模型**：`selection.importance.model` 每天只有一次小请求（候选标题+摘要，约 2k token），用 `glm-4.6` 判分明显更准。实测 `glm-4-flash` 会把「Gemini 新模型发布」判成 3 分、把「漏洞悬赏」判成 8 分。
+- 换供应商只需改 `translation.baseUrl` / `translation.model`，并把 `PAPER_READER_DSH_CREDENTIAL_REF` 指到对应 ref（`ZAI_CODING_CN_API_KEY`、`OPENCODE_GO_API_KEY`、`OPENAI_API_KEY`、`DEEPSEEK_API_KEY`）。
+- `OPENCODE_GO_API_KEY` 的端点是 `https://opencode.ai/zen/v1`，模型 id 形如 `deepseek-v4.1-flash`；账号余额为 0 时所有模型都返回 `402 Insufficient account funds`。
+
+### 质量门槛（宁缺毋滥）
+
+`selection.importance` 打开后，每条候选先被模型打 0–10 分：
+
+- 低于 `minScore`（默认 6）直接丢弃——当天没有值得读的就**少于配额**，不补足。
+- 达到 `strongScore`（默认 9）的条目可以**超出每日配额**，最多 `maxOverflow` 条：真正重要的东西值得多看一篇。
+- 打分的提示词明确把客户案例、合作/收购、漏洞悬赏、招聘、活动、政策声明、教程、资讯汇总判为低分；新模型发布、能力跃升、重要开源、改变实践的方法判为高分。
+- 打分失败（端点不可用、返回格式错误）时**门槛自动失效**，退回原有排序，不会产出空日报。
+- 门槛结果写在 run 记录的 `selection.droppedByImportance` 与 `selection.importanceOverflow` 里。
+
+### 跨天去重
+
+每条已发布条目的 URL（以及 Kimi 这类抽取后会规范成另一域名的 slug）记录在 `state/sources.json`。规则是「在任何**其他日期**展示过就跳过」：
+
+- 重跑今天：今天自己的条目会被保留（记忆里记的就是今天）。
+- 补跑旧日期：不会把后来已经展示过的内容重复塞进去。
 
 代理只从显式配置或环境变量读取，不会自动探测系统代理；HF/OpenAI 在代理不可用时按来源跳过或降级。
 
@@ -212,12 +248,12 @@ dsh plugin --profile web remove dsh-paper-reader
 ## 版本锁定与不匹配拒绝加载
 
 - 插件把 DSH 版本限定在 `package.json` 的 `engines.dsh` 范围内，Node 固定在
-  `engines.node: ">=22"`。这是已验证的宿主契约，不承诺向前兼容。
+  `engines.node: ">=22"`。声明列出允许加载的宿主版本；rc.2 的准入、Host 导入与客户端工厂检查由仓库根目录 `scripts/dsh-rc2-compat.test.mjs` 执行，不代替真实 profile 安装和页面验收，也不承诺未知版本兼容。
 - 安装或激活时，DSH 插件管理器会校验 `engines.dsh`（以及声明的 DSH peer 包）。不匹配会被拒绝，
   错误码为 `incompatible-version`，拒绝信息会列出包名、版本、当前 runtime 与未满足的
   `engines.dsh`；profile 自动启用也可能以退出码 1 结束并给出包名诊断。**拒绝加载是预期行为**，
   不要用 `allow-version` 豁免绕过：豁免只跳过检查，运行时仍可能崩溃或写坏数据。
-- DSH 升级后：要么把 DSH 降回 `0.2.2-alpha.2`，要么在确认客户端契约后更新插件的 `engines.dsh`、
+- DSH 升级后：优先安装明确支持当前 DSH 的插件版本；未知版本须在确认客户端契约后更新插件的 `engines.dsh`、
   重新构建并完整回归（`pnpm test` 与页面冒烟），再安装新版本。不要只改版本号而不验证。
 - 检查当前版本：
 

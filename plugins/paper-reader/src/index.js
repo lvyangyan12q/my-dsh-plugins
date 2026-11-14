@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url'
 import { MAX_DAY_BYTES, readDayDigest, readIndex } from './storage.js'
 import { validateDigest } from './shared/schema.js'
 import { readRunStatus } from './status.js'
+import { applyHidden, hiddenFor, hideItem, unhideItem } from './hidden.js'
 import { createRunTrigger } from './run-trigger.js'
 
 export const name = 'dsh-paper-reader'
@@ -38,6 +39,7 @@ const DIGEST_DATE_PREFIX = DIGEST_ROUTE
 const HEALTH_ROUTE = '/api/paper-reader/health'
 const RUN_ROUTE = '/api/paper-reader/run'
 const RUN_STATE_ROUTE = '/api/paper-reader/run/state'
+const HIDE_ROUTE = '/api/paper-reader/hide'
 const SAMPLE_PATH = fileURLToPath(new URL('../sample/digest.json', import.meta.url))
 const PLUGIN_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const runTrigger = createRunTrigger({
@@ -161,8 +163,42 @@ async function guard(ctx, req, res, run) {
   }
 }
 
-/** The date part of a by-date request, or null when the shape is wrong. */
-function requestedDate(req) {
+/** Read a small JSON request body; an empty body is `{}`. */
+function readJsonBody(req, limitBytes = 64 * 1024) {
+  return new Promise((resolve) => {
+    let size = 0
+    const chunks = []
+    req.on('data', (chunk) => {
+      size += chunk.length
+      if (size > limitBytes) {
+        req.destroy()
+        resolve({})
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => {
+      const text = Buffer.concat(chunks).toString('utf8').trim()
+      if (!text) {
+        resolve({})
+        return
+      }
+      try {
+        resolve(JSON.parse(text))
+      } catch {
+        resolve({})
+      }
+    })
+    req.on('error', () => resolve({}))
+  })
+}
+
+/** A strict `YYYY-MM-DD` date, else null. */
+function normalizeDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
+}
+
+/** The date part of a by-date request, or null when the shape is wrong. */function requestedDate(req) {
   let pathname
   try {
     pathname = new URL(req.url ?? '', 'http://localhost').pathname
@@ -253,10 +289,60 @@ export function apply(ctx) {
           })
         }
         const { digest, path, bytes } = await readDayDigest({ root: dataRoot(), date })
-        return { ...digest, demo: false, digestPath: path, bytes }
+        const hidden = await hiddenFor({ root: dataRoot(), date })
+        const visible = hidden.length > 0
+          ? { ...digest, items: applyHidden(digest.items, hidden) }
+          : digest
+        return { ...visible, demo: false, digestPath: path, bytes, hidden: hidden.length }
       }),
     }),
     'dsh-paper-reader: by-date digest route',
+  )
+
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: 'exact',
+      path: HIDE_ROUTE,
+      handler: (req, res) => {
+        if (req.method !== 'POST') {
+          json(res, 405, { error: 'method_not_allowed' })
+          return
+        }
+        const rejected = admissionStatus(ctx, req)
+        if (rejected) {
+          json(res, rejected, { error: 'forbidden' })
+          return
+        }
+        void (async () => {
+          try {
+            const body = await readJsonBody(req)
+            const date = normalizeDate(body?.date)
+            const url = typeof body?.url === 'string' ? body.url : ''
+            if (!date) {
+              json(res, 400, { error: 'hidden_invalid_date', message: 'a date is required: YYYY-MM-DD' })
+              return
+            }
+            if (!url) {
+              json(res, 400, { error: 'hidden_invalid_url', message: 'a url is required' })
+              return
+            }
+            if (body?.undo === true) {
+              const next = await unhideItem({ root: dataRoot(), date, url })
+              json(res, 200, { ok: true, date, hidden: next.dates[date] ?? [] })
+              return
+            }
+            const next = await hideItem({ root: dataRoot(), date, url })
+            json(res, 200, { ok: true, date, hidden: next.dates[date] ?? [] })
+          } catch (error) {
+            json(res, error?.status ?? 500, {
+              error: error?.code ?? 'hidden_failed',
+              message: String(error?.message ?? error),
+            })
+          }
+        })()
+      },
+    }),
+    'dsh-paper-reader: hide item route',
   )
 
   ctx.effect(

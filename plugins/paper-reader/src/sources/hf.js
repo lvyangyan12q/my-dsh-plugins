@@ -16,7 +16,9 @@
  * authors, the model-written TLDR and keywords.
  */
 import { classifyDirection, normalizeArxivId } from './arxiv.js'
+import { shiftDate } from '../shared/date.js'
 import { fetchText } from '../shared/http.js'
+import { dropSeen } from '../shared/url.js'
 import {
   assertPositive,
   assertUrl,
@@ -31,6 +33,10 @@ export const DEFAULT_HF_CONFIG = {
   useProxy: true,
   baseUrl: 'https://huggingface.co/api/daily_papers',
   maxItems: 50,
+  // The daily board is populated over the UTC day and is often empty at the
+  // local morning run, so the adapter reads the digest date and the days
+  // before it and merges them.
+  lookbackDays: 2,
   timeoutMs: 20_000,
   userAgent: 'dsh-paper-reader/0.1 (+https://huggingface.co)',
 }
@@ -157,30 +163,56 @@ export function parseDailyPapers(payload) {
  * injected fetch in tests. This function never chooses a transport itself, so
  * it cannot quietly go direct.
  */
-export async function listHf({ config, date, fetch: fetchImpl } = {}) {
+/**
+ * List the official daily boards for the digest window.
+ *
+ * The first day of the window is the digest date and its failure is the
+ * source's failure; a later day is a bonus, so its failure only costs that day.
+ * Boards are merged by arXiv id (the newest board wins) and the result is
+ * ordered by upvotes, hottest first.
+ */
+export async function listHf({ config, date, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults(config)
-  const url = buildDailyPapersUrl({ baseUrl: settings.baseUrl, date, limit: settings.maxItems })
   if (typeof fetchImpl !== 'function') {
     throw sourceError('hf_fetch_missing', 'no fetch implementation was provided')
   }
+  const reach = Number.isInteger(settings.lookbackDays) && settings.lookbackDays > 0 ? settings.lookbackDays : 1
+  const days = Array.from({ length: reach }, (unused, back) => shiftDate(date, -back))
 
-  let response
-  let text
-  try {
-    ({ response, text } = await fetchText(fetchImpl, url, {
-      timeoutMs: settings.timeoutMs,
-      userAgent: settings.userAgent,
-      accept: 'application/json, text/plain;q=0.9, */*;q=0.1',
-    }))
-  } catch (error) {
-    if (error?.code === 'hf_date_required') throw error
-    throw sourceError('hf_network', `the HF daily list request failed: ${error?.message ?? error}`, { cause: error })
-  }
-  if (!response.ok) {
-    throw sourceError('hf_http', `the HF daily list answered HTTP ${response.status}`, { status: response.status })
+  const merged = new Map()
+  for (const [index, day] of days.entries()) {
+    const url = buildDailyPapersUrl({ baseUrl: settings.baseUrl, date: day, limit: settings.maxItems })
+
+    let response
+    let text
+    try {
+      ({ response, text } = await fetchText(fetchImpl, url, {
+        timeoutMs: settings.timeoutMs,
+        userAgent: settings.userAgent,
+        accept: 'application/json, text/plain;q=0.9, */*;q=0.1',
+      }))
+    } catch (error) {
+      if (error?.code === 'hf_date_required') throw error
+      if (index === 0) {
+        throw sourceError('hf_network', `the HF daily list request failed: ${error?.message ?? error}`, { cause: error })
+      }
+      continue
+    }
+    if (!response.ok) {
+      if (index === 0) {
+        throw sourceError('hf_http', `the HF daily list answered HTTP ${response.status}`, { status: response.status })
+      }
+      continue
+    }
+
+    for (const candidate of parseDailyPapers(text)) {
+      if (!merged.has(candidate.id)) merged.set(candidate.id, candidate)
+    }
   }
 
-  return parseDailyPapers(text)
+  return dropSeen([...merged.values()], knownUrls)
+    .sort(byUpvotesDesc)
+    .slice(0, Math.max(0, Number(settings.maxItems) || 0))
 }
 
 /** Validate the Hugging Face section of the user config. */
@@ -189,6 +221,9 @@ export function validateHfConfig(config, path) {
   assertUrl(config.baseUrl, 'sources.hf.baseUrl', path)
   if (!Number.isInteger(config.maxItems) || config.maxItems <= 0) {
     throw configError(`${path}: sources.hf.maxItems must be a positive integer`)
+  }
+  if (!Number.isInteger(config.lookbackDays) || config.lookbackDays < 1 || config.lookbackDays > 14) {
+    throw configError(`${path}: sources.hf.lookbackDays must be an integer between 1 and 14`)
   }
   assertPositive(config.timeoutMs, 'sources.hf.timeoutMs', path)
 }

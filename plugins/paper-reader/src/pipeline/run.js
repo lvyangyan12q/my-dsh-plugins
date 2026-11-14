@@ -30,6 +30,7 @@ import { translateItems } from '../translate/service.js'
 import { isTextBlock, readableTextOf } from '../shared/blocks.js'
 import { normalizeInstant } from '../shared/date.js'
 import { selectDaily } from './select.js'
+import { scoreImportance } from './importance.js'
 
 export { SOURCE_IDS }
 
@@ -677,12 +678,21 @@ export async function runDaily({
     warnings.push({ id: null, message: `source discovery state could not be read: ${error?.message ?? error}` })
   }
 
-  /** URLs an earlier day already offered; a same-day URL stays new. */
+  /**
+   * URLs any *other* day already offered.
+   *
+   * The rule is "shown on a different date", not "shown earlier": re-running
+   * today keeps today's items (they were recorded with today's date), while a
+   * backfill of an older date does not resurrect posts that a later day already
+   * ran. Filtering only `firstSeen < date` made every backfilled day repeat the
+   * same blog posts, because their first-seen date was later than the day being
+   * rebuilt.
+   */
   const knownUrlsFor = (id) => {
     const seen = sourceState.sources?.[id]?.seen
     if (!seen || typeof seen !== 'object') return []
     return Object.entries(seen)
-      .filter(([, firstSeen]) => typeof firstSeen === 'string' && firstSeen < date)
+      .filter(([, firstSeen]) => typeof firstSeen === 'string' && firstSeen !== date)
       .map(([url]) => url)
   }
 
@@ -712,13 +722,26 @@ export async function runDaily({
       .map(id => [id, resolved.sources?.[id]?.categories])
       .filter(([, categories]) => Array.isArray(categories) && categories.length > 0),
   )
-  const selection = selectDaily(candidates, {
+  // Quality gate: score every candidate before the quota is applied, so a day
+  // with four mediocre posts yields fewer items instead of an unreadable list.
+  const importance = await scoreImportance({
+    candidates,
+    config: resolved,
+    env,
+    fetchImpl,
+    now,
+  })
+  if (importance.failed) {
+    warnings.push({ id: null, message: `importance scoring failed: ${importance.reason}` })
+  }
+  const selection = selectDaily(importance.scored, {
     quota: resolved.quota,
     categoriesBySource,
     includeKeywords: unique(sourceSettings.flatMap(settings => settings.keywords ?? [])),
     excludeKeywords: unique(sourceSettings.flatMap(settings => settings.excludeKeywords ?? [])),
     sourceWeights: resolved.selection?.sourceWeights,
     institutions: resolved.selection?.institutions,
+    importance: resolved.selection?.importance,
   })
 
   const collectedAt = asDate(now()).toISOString()

@@ -16,6 +16,10 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const DEFAULT_DAYS = 3
+// Today and yesterday are always re-fetched: a day can be incomplete (a source
+// failed, the translation stopped early), so "it exists" does not mean "it is
+// final". Older days are only fetched when they are missing entirely.
+const ALWAYS_REFRESH = 2
 
 function windowDays(argv) {
   const flag = argv.indexOf('--days')
@@ -55,7 +59,7 @@ const window = windowDays(process.argv.slice(2))
 const dates = []
 for (let offset = window - 1; offset >= 0; offset -= 1) {
   const date = localDate(offset)
-  if (offset === 0 || !existing.has(date)) dates.push(date)
+  if (offset < ALWAYS_REFRESH || !existing.has(date)) dates.push(date)
 }
 
 if (dates.length === 0) {

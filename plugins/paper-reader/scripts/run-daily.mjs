@@ -11,7 +11,7 @@
  *   node scripts/run-daily.mjs --date 2026-11-05
  *
  * Overrides:
- *   PAPER_READER_DSH_CREDENTIAL_REF  credential reference (default COMMANDCODE_API_KEY)
+ *   PAPER_READER_DSH_CREDENTIAL_REF  credential reference (default ZAI_CODING_CN_API_KEY)
  *   PAPER_READER_LLM_BASE_URL        required unless config sets translation.baseUrl
  *   PAPER_READER_LLM_MODEL           required unless config sets translation.model
  *   HTTP_PROXY / HTTPS_PROXY         explicit proxy; NODE_USE_ENV_PROXY is set when present
@@ -45,12 +45,12 @@ function readRefs(path) {
 const env = { ...process.env }
 
 if (!env.PAPER_READER_LLM_API_KEY) {
-  const ref = env.PAPER_READER_DSH_CREDENTIAL_REF || 'COMMANDCODE_API_KEY'
+  const ref = env.PAPER_READER_DSH_CREDENTIAL_REF || 'ZAI_CODING_CN_API_KEY'
   const refs = readRefs(credentialsPath)
   if (refs[ref]) {
     env.PAPER_READER_LLM_API_KEY = refs[ref]
-    env.PAPER_READER_LLM_BASE_URL ||= 'https://api.commandcode.ai/provider/v1'
-    env.PAPER_READER_LLM_MODEL ||= 'deepseek/deepseek-v4.1-flash'
+    env.PAPER_READER_LLM_BASE_URL ||= 'https://open.bigmodel.cn/api/paas/v4'
+    env.PAPER_READER_LLM_MODEL ||= 'glm-4-flash'
   } else {
     process.stderr.write(`paper-reader: credential reference ${ref} was not found in ${credentialsPath}\n`)
   }

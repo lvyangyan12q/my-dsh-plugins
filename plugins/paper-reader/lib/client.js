@@ -1,5 +1,4 @@
 window.__ModuleLoader__.load({ id: 'dsh-paper-reader', factory: (require) => { var module = { exports: {} }; var exports = module.exports;
-
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -1057,6 +1056,33 @@ body.pr-resizing {\r
 .pr-pill-excerpt {\r
   color: #7a6a52;\r
   background: color-mix(in srgb, #7a6a52 12%, transparent);\r
+}\r
+\r
+.pr-item-delete {\r
+  margin-left: auto;\r
+  display: inline-flex;\r
+  align-items: center;\r
+  justify-content: center;\r
+  width: 20px;\r
+  height: 20px;\r
+  padding: 0;\r
+  border: 0;\r
+  border-radius: 5px;\r
+  background: transparent;\r
+  color: var(--pr-faint);\r
+  cursor: pointer;\r
+  opacity: 0;\r
+  transition: opacity .12s ease, background .12s ease, color .12s ease;\r
+}\r
+\r
+.pr-item:hover .pr-item-delete,\r
+.pr-item-delete:focus-visible {\r
+  opacity: 1;\r
+}\r
+\r
+.pr-item-delete:hover {\r
+  background: color-mix(in srgb, #d9534f 18%, transparent);\r
+  color: #e06a66;\r
 }\r
 \r
 .pr-item-mark {\r
@@ -2673,6 +2699,27 @@ function PaperReaderPage() {
       showToast(`\u542F\u52A8\u6293\u53D6\u5931\u8D25\uFF1A${errorMessage(error)}`);
     }
   }, [pollRunState, showToast]);
+  const deleteItem = (0, import_react.useCallback)(async (date, item) => {
+    if (!date || !item?.url) {
+      showToast("\u8FD9\u4E00\u6761\u6CA1\u6709\u94FE\u63A5\uFF0C\u65E0\u6CD5\u5220\u9664");
+      return;
+    }
+    try {
+      const response = await fetch("/api/paper-reader/hide", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({ date, url: item.url })
+      });
+      if (!response.ok) {
+        showToast(`\u5220\u9664\u5931\u8D25\uFF08HTTP ${response.status}\uFF09`);
+        return;
+      }
+      showToast("\u5DF2\u4ECE\u5217\u8868\u5220\u9664");
+      void load(true);
+    } catch (error) {
+      showToast(`\u5220\u9664\u5931\u8D25\uFF1A${errorMessage(error)}`);
+    }
+  }, [load, showToast]);
   (0, import_react.useEffect)(() => {
     try {
       localStorage.setItem(STORAGE_KEY2, JSON.stringify(prefs));
@@ -3298,7 +3345,21 @@ function PaperReaderPage() {
                                 item.excerpt && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pr-pill pr-pill-excerpt", children: "\u8282\u9009" }),
                                 item.translationState !== "complete" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pr-pill", children: "\u7FFB\u8BD1\u4E2D" }),
                                 bookmarked && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "pr-item-mark", title: "\u5DF2\u6536\u85CF", children: "\u2605" }),
-                                !read && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(UnreadDot, {})
+                                !read && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(UnreadDot, {}),
+                                /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+                                  "button",
+                                  {
+                                    type: "button",
+                                    className: "pr-item-delete",
+                                    title: "\u4ECE\u5217\u8868\u5220\u9664\uFF08\u4E0D\u518D\u663E\u793A\uFF0C\u91CD\u6293\u4E5F\u4E0D\u4F1A\u56DE\u6765\uFF09",
+                                    "aria-label": "\u5220\u9664\u8FD9\u4E00\u6761",
+                                    onClick: (event) => {
+                                      event.stopPropagation();
+                                      void deleteItem(group.date, item);
+                                    },
+                                    children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(IconClose, {})
+                                  }
+                                )
                               ] }),
                               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "pr-item-title-zh", children: itemTitleZh.text }),
                               /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "pr-item-title-en", children: itemTitleEn.text }),
@@ -3689,6 +3750,4 @@ function apply(ctx) {
     key: PANEL_ID
   }, PaperReaderPage));
 }
-
 return module.exports; } });
-

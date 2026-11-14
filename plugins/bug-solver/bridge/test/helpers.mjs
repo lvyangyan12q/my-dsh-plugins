@@ -1,5 +1,5 @@
 /** 测试用 fake 适配器：只实现 DispatchService 依赖的公开方法，记录调用供断言。 */
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DispatchService } from '../lib/dispatch-service.js'
@@ -159,6 +159,7 @@ export function makeDraft(overrides = {}) {
       localPath: '',
       remotePath: '/srv/app',
       repo: 'git@example.com:team/api.git',
+      baseBranch: 'master',
       defaultBranch: 'master',
     },
     specRef: { kind: 'file', path: 'specs/login/spec.md', feature: 'login' },
@@ -170,6 +171,58 @@ export function makeDraft(overrides = {}) {
   }
 }
 
+/**
+ * fake git 适配器：只模拟「建工作区」这一个副作用（真的建目录），
+ * 记录调用供断言；失败可脚本化（behavior.worktreeAddThrows）。
+ */
+export function createFakeGit() {
+  const calls = { worktreeAdd: [], exclude: [], prune: [], branchExists: [] }
+  const behavior = { worktreeAddThrows: null, branchExists: true }
+  return {
+    calls,
+    behavior,
+    async worktreeAdd(request) {
+      calls.worktreeAdd.push({ ...request })
+      if (behavior.worktreeAddThrows) throw behavior.worktreeAddThrows
+      mkdirSync(request.worktreePath, { recursive: true })
+      return {
+        path: request.worktreePath,
+        branch: request.branch,
+        baseBranch: request.baseBranch || 'current-branch',
+        reusedBranch: false,
+      }
+    },
+    async branchExists(request) {
+      calls.branchExists.push({ ...request })
+      return behavior.branchExists
+    },
+    async exclude(request) {
+      calls.exclude.push({ ...request })
+      return { updated: false, path: null }
+    },
+    async prune(request) {
+      calls.prune.push({ ...request })
+      return true
+    },
+    async worktreeRemove(request) {
+      calls.worktreeRemove = calls.worktreeRemove ?? []
+      calls.worktreeRemove.push({ ...request })
+      return { removed: true }
+    },
+    async worktreeRemove(request) {
+      calls.worktreeRemove = calls.worktreeRemove ?? []
+      calls.worktreeRemove.push({ ...request })
+      return { removed: true }
+    },
+    async listWorktrees() {
+      return []
+    },
+    async exec() {
+      return { stdout: '', stderr: '' }
+    },
+  }
+}
+
 /** 每个测试独立临时仓库根 + 全套 fake 依赖。 */
 export function createServiceHarness(t, options = {}) {
   const root = mkdtempSync(join(tmpdir(), 'bs-svc-'))
@@ -178,11 +231,14 @@ export function createServiceHarness(t, options = {}) {
   const store = options.store ?? createMemoryStore()
   const clock = options.clock ?? createFakeClock()
   const redactor = options.redactor ?? createRedactor()
+  // 工作区创建是新的副作用点：默认注入 fake，需要真 git 的用例自己传 options.git。
+  const git = options.git ?? (options.realGit ? null : createFakeGit())
   const service = new DispatchService({
     gateway,
     store,
     clock,
     redactor,
+    git,
     allowedRoots: options.allowedRoots ?? [root],
     allowedRootsProvider: options.allowedRootsProvider ?? null,
     sshConfigPath: options.sshConfigPath ?? null,

@@ -31,7 +31,7 @@ dsh plugin --profile web add "F:\ai-project\my-dsh-plugins\plugins\paper-reader"
 
 完整的安装、启用、每日 09:00 DSH Schedule 配置、手动补跑、升级、卸载、回退与版本锁定说明见 **[docs/INSTALL.md](docs/INSTALL.md)**。
 
-> 当前包声明支持 DSH `0.2.2-alpha.2` 和 `0.2.2-rc.1`。
+> 当前包声明支持 DSH `0.2.2-alpha.2`、`0.2.2-rc.1` 和 `0.2.2-rc.2`。rc.2 的准入和构建产物检查见仓库根目录 `scripts/dsh-rc2-compat.test.mjs`；页面回归使用隔离 DOM，不代表正式 profile 安装后的视觉验收。
 
 ## 数据：agent 每日写入
 
@@ -73,8 +73,9 @@ node scripts/paper-reader.mjs --source arxiv   # 只跑一个来源（arxiv / de
 - OpenAI（工单 09）：默认 `sources.openai.enabled` 为 `false`，需显式开启。开启后从 `openai.com/news/rss.xml` 取标题、官方 dek、`pubDate`、分类与链接；代理可用时抓文章页 SSR 正文（标题、日期、作者、段落）并翻译。代理不可用、单篇 403 或抽取失败时保留 RSS 节选条目（`excerpt: true` + `excerptReason`），页面显示「节选 / 代理不可用」，不伪装成全文、不循环重试。全文与节选都占博客配额（默认 4），节选不计入「全文已翻译」统计（run 记录 `counts.fullTextTranslated`）。
 - 地址只来自 `HTTP_PROXY`/`HTTPS_PROXY`/`ALL_PROXY`（Node 24 还需启动前设置 `NODE_USE_ENV_PROXY=1`）或配置 `proxy.url`；代码不内置代理地址，也不读取系统代理。
 - 每日运行先做一次代理健康检查（`proxy.healthCheckUrl`，默认 HF 每日榜接口）。代理未配置、认证失败、超时或不可达时，受影响来源记为 `skipped` 并写入原因，其他来源照常产出；页面顶部显示「因代理不可用跳过：…」。不会回退直连硬闯，代理凭据不写入 digest 或 run 记录。
+- arXiv 列表按 `submittedDate` 区间查询，窗口结束于 digest 日期、向前覆盖 `sources.arxiv.lookbackDays` 天（默认 3）。**同一天窗口永远是空的**：arXiv 只在一个提交日被公告之后才把论文放进索引，周末甚至不公告，所以当天凌晨运行只能靠回看拿到论文。窗口内已由其他日期提供过的 URL 会被差集掉，不会跨天重复占用配额。
 - arXiv 正文取 `arxiv.org/html/<id>`（LaTeXML），保留标题、段落、公式、图注与代码；HTML 缺失时回退摘要并标记「节选」。
-- Hugging Face 每日榜（工单 07）：只取官方 `api/daily_papers?date=YYYY-MM-DD` 当日榜（不带日期的跨天结果不使用），按 `upvotes` 排序参与 6 条论文配额；`paper.id` 就是 arXiv id，正文一律回 arXiv 抽取，与 arXiv 结果按 id 去重（HF 副本保留票数）。HF 走 `sources.hf.useProxy`（默认 `true`）；代理缺失或健康检查失败时整源 `skipped`、arXiv 自排序补位，run 记录与页面写明原因；不使用镜像，也不回退直连。
+- Hugging Face 每日榜（工单 07）：按天取官方 `api/daily_papers?date=YYYY-MM-DD`（不带日期的跨天结果不使用），窗口是 digest 日期加前 `sources.hf.lookbackDays - 1` 天（默认 2），多天榜单按 arXiv id 合并（较新的榜优先）后按 `upvotes` 排序参与论文配额；digest 当天那一次请求失败才算整源失败，更早一天的失败只损失那一天。`paper.id` 就是 arXiv id，正文一律回 arXiv 抽取，与 arXiv 结果按 id 去重（HF 副本保留票数）。HF 走 `sources.hf.useProxy`（默认 `true`）；代理缺失或健康检查失败时整源 `skipped`、arXiv 自排序补位，run 记录与页面写明原因；不使用镜像，也不回退直连。
 - DeepSeek（工单 08）：列表只取 `api-docs.deepseek.com/sitemap.xml`（`/news` 是软 404），按 slug 自带的日期进入当天窗口；正文读官方英文 `/news/<slug>.md` 与中文 `/zh-cn/news/<slug>.md`，直接写成「中文原文 + 英文译文」，**不调用翻译**，`sourceLanguage: "zh"`、`translationState: "complete"`。中文版缺失时保留英文并标 pending；两者都缺失的条目跳过并写入 run 记录告警。
 - DeepSeek 的博客条目按发布时间参与每日 4 条博客配额；窗口外的旧新闻不会每天重复占用配额。
 - Anthropic（工单 06）：从 `anthropic.com/sitemap.xml` 过滤 `/news/`、`/research/`，与 `state/sources.json` 里已见 URL 做差集（同一天重跑仍可复现），正文取 `main#main-content`，标题/日期/作者取 `ld+json`；单篇失败跳过并在 run 记录计数，不影响其他来源。

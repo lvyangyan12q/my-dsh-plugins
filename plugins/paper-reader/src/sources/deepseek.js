@@ -26,6 +26,7 @@ import {
 } from '../shared/markup.js'
 import { classifyDirection } from '../shared/direction.js'
 import { fetchText } from '../shared/http.js'
+import { dropSeen } from '../shared/url.js'
 import {
   assertPositive,
   assertUrl,
@@ -163,7 +164,7 @@ function toCandidate(entry) {
  * meaningful: only genuinely new posts compete for the four blog slots, so an
  * old DeepSeek announcement cannot starve Anthropic/Kimi/OpenAI every day.
  */
-export async function listDeepSeek({ config, date, fetch: fetchImpl }) {
+export async function listDeepSeek({ config, date, fetch: fetchImpl, knownUrls = [] }) {
   const settings = withDefaults(config)
   const url = settings.sitemapUrl
   if (typeof fetchImpl !== 'function') {
@@ -190,13 +191,15 @@ export async function listDeepSeek({ config, date, fetch: fetchImpl }) {
   }
 
   const from = shiftDate(date, -Math.max(0, Number(settings.lookbackDays) || 0))
-  return parseDeepSeekSitemap(text, settings)
+  const fresh = parseDeepSeekSitemap(text, settings)
     .filter(entry => entry.published >= from && entry.published <= date)
     .sort((left, right) => (left.published === right.published
       ? (left.slug < right.slug ? -1 : left.slug > right.slug ? 1 : 0)
       : (left.published < right.published ? 1 : -1)))
-    .slice(0, Math.max(0, Number(settings.maxItems) || 0))
     .map(toCandidate)
+  // A wide lookback would otherwise re-offer the same announcement every day
+  // until a new one ships.
+  return dropSeen(fresh, knownUrls).slice(0, Math.max(0, Number(settings.maxItems) || 0))
 }
 
 /* ------------------------------------------------------------------ */

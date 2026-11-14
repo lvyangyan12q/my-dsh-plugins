@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 import { apply, inject, name } from '../lib/index.js'
-import { createServiceHarness } from './helpers.mjs'
+import { createFakeGit, createServiceHarness } from './helpers.mjs'
 
 const bridgeDir = fileURLToPath(new URL('..', import.meta.url))
 const pkg = JSON.parse(readFileSync(`${bridgeDir}/package.json`, 'utf8'))
@@ -45,7 +45,10 @@ test('package metadata matches the installable Host plugin contract', () => {
   assert.equal(pkg.type, 'module')
   assert.equal(pkg.main, 'lib/index.js')
   assert.equal(pkg.dsh.bundle.patch, './cordis.patch.yml')
-  assert.equal(pkg.engines.dsh, '0.2.1-rc.3 || 0.2.2-alpha.2 || 0.2.2-rc.1')
+  assert.equal(pkg.engines.dsh, '0.2.1-rc.3 || 0.2.2-alpha.2 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3')
+  const supportedVersions = pkg.engines.dsh.split(' || ')
+  assert.ok(supportedVersions.includes('0.2.2-rc.3'))
+  assert.ok(!supportedVersions.includes('0.2.2-rc.4'))
   assert.equal(pkg.peerDependencies['@deepseek-ai/cordis'], '*')
   assert.equal(pkg.peerDependenciesMeta['@deepseek-ai/cordis'].optional, true)
 
@@ -75,6 +78,7 @@ test('exports the cordis plugin name/inject and registers every contract route',
     '/api/bug-solver/messages',
     '/api/bug-solver/artifact',
     '/api/bug-solver/writeback',
+    '/api/bug-solver/remove',
   ])
   const start = ctx.connection.fetch.routes[0]
   assert.deepEqual(start.methods, ['POST'])
@@ -89,7 +93,7 @@ test('exports the cordis plugin name/inject and registers every contract route',
 test('with injected fakes the plugin serves a full start request', async (t) => {
   const h = createServiceHarness(t)
   const ctx = createFakeCtx()
-  apply(ctx, { deps: { gateway: h.gateway, store: h.store, clock: h.clock, redactor: h.redactor }, allowedRoots: [h.root] })
+  apply(ctx, { deps: { gateway: h.gateway, store: h.store, clock: h.clock, redactor: h.redactor, git: createFakeGit() }, allowedRoots: [h.root] })
 
   const route = ctx.connection.fetch.routes.find((item) => item.path.endsWith('/start'))
   const response = await route.fetch(
@@ -117,7 +121,7 @@ test('without gateway/store the plugin still loads and answers 503 bridge-unavai
 test('disposing the plugin unregisters its routes', () => {
   const ctx = createFakeCtx()
   apply(ctx, {})
-  assert.equal(ctx.connection.fetch.routes.length, 12)
+  assert.equal(ctx.connection.fetch.routes.length, 13)
   for (const dispose of ctx.disposers.reverse()) dispose()
   assert.equal(ctx.connection.fetch.routes.length, 0)
 })

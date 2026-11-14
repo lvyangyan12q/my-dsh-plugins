@@ -1,7 +1,10 @@
 /**
  * arXiv source adapter.
  *
- * `listArxiv` reads the official Atom API for one submitted-date window;
+ * `listArxiv` reads the official Atom API for a submitted-date window that ends
+ * on the digest date and reaches `lookbackDays` back. A same-day window is
+ * always empty: arXiv only indexes a day's submissions after its announcement
+ * cycle, so the window has to include the days that are already announced.
  * `extractArxivPaper` reads the LaTeXML HTML (`arxiv.org/html/<id>`) and turns
  * it into ordered reader blocks. The HTML is a convenience: when it is
  * missing, blocked or unparsable the paper still enters the digest as an
@@ -28,7 +31,9 @@ import {
   textOf,
 } from '../shared/markup.js'
 import { classifyDirection, matchedWords } from '../shared/direction.js'
+import { shiftDate } from '../shared/date.js'
 import { fetchText } from '../shared/http.js'
+import { dropSeen } from '../shared/url.js'
 import {
   assertPositive,
   assertStringList,
@@ -48,6 +53,10 @@ export const DEFAULT_ARXIV_CONFIG = {
   keywords: [],
   excludeKeywords: [],
   maxResults: 100,
+  // Days the window reaches back, counting the digest date. One day is not
+  // enough: arXiv publishes a day's listing only after its announcement
+  // (roughly 01:00 UTC), and nothing is announced on weekends.
+  lookbackDays: 3,
   timeoutMs: 20_000,
   baseUrl: 'https://export.arxiv.org/api/query',
   htmlBaseUrl: 'https://arxiv.org/html',
@@ -127,12 +136,19 @@ export function parseAtomFeed(xml) {
   })
 }
 
-/** Build the Atom query for one submitted-date window. */
-export function buildArxivQueryUrl({ baseUrl, categories = [], date, maxResults = 100 }) {
-  const compact = String(date).replace(/-/g, '')
+/**
+ * Build the Atom query for one submitted-date window.
+ *
+ * `lookbackDays` counts the digest date itself, so `1` is the historical
+ * same-day window and `3` asks for the digest date plus the two days before it.
+ */
+export function buildArxivQueryUrl({ baseUrl, categories = [], date, lookbackDays = 1, maxResults = 100 }) {
+  const to = String(date).replace(/-/g, '')
+  const reach = (Number.isInteger(lookbackDays) && lookbackDays > 0 ? lookbackDays : 1) - 1
+  const from = reach > 0 ? shiftDate(String(date), -reach).replace(/-/g, '') : to
   const categoryQuery = categories.length > 0 ? categories.map(category => `cat:${category}`).join(' OR ') : 'all'
   const url = new URL(baseUrl || DEFAULT_ARXIV_CONFIG.baseUrl)
-  url.searchParams.set('search_query', `(${categoryQuery}) AND submittedDate:[${compact}0000 TO ${compact}2359]`)
+  url.searchParams.set('search_query', `(${categoryQuery}) AND submittedDate:[${from}0000 TO ${to}2359]`)
   url.searchParams.set('start', '0')
   url.searchParams.set('max_results', String(maxResults))
   url.searchParams.set('sortBy', 'submittedDate')
@@ -168,13 +184,20 @@ function byPublishedDesc(left, right) {
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0
 }
 
-/** List one day of arXiv submissions as source-tagged candidates. */
-export async function listArxiv({ config, date, fetch: fetchImpl }) {
+/**
+ * List the arXiv submissions in the digest window.
+ *
+ * `knownUrls` carries the URLs an earlier day already offered. arXiv has no
+ * pagination over the whole archive here, so a multi-day window would re-offer
+ * yesterday's papers without it.
+ */
+export async function listArxiv({ config, date, fetch: fetchImpl, knownUrls = [] }) {
   const settings = withDefaults(config)
   const url = buildArxivQueryUrl({
     baseUrl: settings.baseUrl,
     categories: settings.categories,
     date,
+    lookbackDays: settings.lookbackDays,
     maxResults: settings.maxResults,
   })
 
@@ -197,7 +220,8 @@ export async function listArxiv({ config, date, fetch: fetchImpl }) {
     throw sourceError('arxiv_invalid', 'arXiv API did not return an Atom feed')
   }
 
-  return parseAtomFeed(text).filter(entry => entry.arxivId).map(toCandidate).sort(byPublishedDesc)
+  return dropSeen(parseAtomFeed(text).filter(entry => entry.arxivId).map(toCandidate), knownUrls)
+    .sort(byPublishedDesc)
 }
 
 /* ------------------------------------------------------------------ */
@@ -442,6 +466,9 @@ export function validateArxivConfig(config, path) {
   assertStringList(config.excludeKeywords, 'sources.arxiv.excludeKeywords', path)
   if (!Number.isInteger(config.maxResults) || config.maxResults <= 0) {
     throw configError(`${path}: sources.arxiv.maxResults must be a positive integer`)
+  }
+  if (!Number.isInteger(config.lookbackDays) || config.lookbackDays < 1 || config.lookbackDays > 14) {
+    throw configError(`${path}: sources.arxiv.lookbackDays must be an integer between 1 and 14`)
   }
   if (typeof config.extractFullText !== 'boolean') {
     throw configError(`${path}: sources.arxiv.extractFullText must be true or false`)

@@ -18,6 +18,7 @@
  */
 import { classifyDirection } from './arxiv.js'
 import { extractBlogBlocks } from './blog.js'
+import { parseMarkdownBlocks } from './deepseek.js'
 import {
   attr,
   childrenOf,
@@ -32,7 +33,7 @@ import {
   textOf,
 } from '../shared/markup.js'
 import { fetchText } from '../shared/http.js'
-import { slugFromUrl } from '../shared/url.js'
+import { dropSeen, slugFromUrl } from '../shared/url.js'
 import {
   assertPositive,
   assertUrl,
@@ -53,6 +54,9 @@ export const DEFAULT_OPENAI_CONFIG = {
   // skipping the source.
   useProxy: true,
   extractViaProxy: true,
+  // Opt-in: a base URL such as `https://r.jina.ai/` that renders blocked pages
+  // into Markdown. Empty means "no third party", and the RSS dek stands in.
+  readerProxy: '',
   rssUrl: 'https://openai.com/news/rss.xml',
   timeoutMs: 20_000,
   maxItems: 40,
@@ -149,7 +153,7 @@ function byPublishedDesc(left, right) {
 }
 
 /** List the newest OpenAI news items as blog candidates. */
-export async function listOpenAi({ config, fetch: fetchImpl } = {}) {
+export async function listOpenAi({ config, fetch: fetchImpl, knownUrls = [] } = {}) {
   const settings = withDefaults(config)
   const url = settings.rssUrl || DEFAULT_OPENAI_CONFIG.rssUrl
 
@@ -173,11 +177,12 @@ export async function listOpenAi({ config, fetch: fetchImpl } = {}) {
   }
 
   const limit = Number.isInteger(settings.maxItems) && settings.maxItems > 0 ? settings.maxItems : DEFAULT_OPENAI_CONFIG.maxItems
-  return parseRssFeed(text)
-    .map(toCandidate)
-    .filter(candidate => candidate.title)
-    .sort(byPublishedDesc)
-    .slice(0, limit)
+  // Earlier days already offered these posts; the RSS feed is the same every
+  // run, so without this filter yesterday's announcement fills today's list.
+  return dropSeen(
+    parseRssFeed(text).map(toCandidate).filter(candidate => candidate.title).sort(byPublishedDesc),
+    knownUrls,
+  ).slice(0, limit)
 }
 
 /* ------------------------------------------------------------------ */
@@ -266,8 +271,53 @@ export function openAiExcerptBlocks(candidate) {
   return dek ? [{ type: 'paragraph', original: dek }] : []
 }
 
-function degraded(candidate, code, detail = null) {
-  const message = EXCERPT_REASONS[code] ?? EXCERPT_REASONS.extract_failed
+/**
+ * Read the article through an opt-in reader proxy that renders the page.
+ *
+ * `sources.openai.readerProxy` is a base URL such as `https://r.jina.ai/`; it is
+ * never defaulted, because it forwards the article URL to a third party. The
+ * proxy answers Markdown, which the DeepSeek adapter's parser already turns into
+ * reader blocks.
+ */
+async function extractViaReader(candidate, settings, fetchImpl) {
+  const base = typeof settings.readerProxy === 'string' ? settings.readerProxy.trim() : ''
+  if (!base) return null
+  const url = `${base.replace(/\/+$/, '/')}${candidate.url}`
+  let response
+  let markdown
+  try {
+    ({ response, text: markdown } = await fetchText(fetchImpl, url, {
+      timeoutMs: Math.max(settings.timeoutMs, 45_000),
+      userAgent: settings.userAgent,
+      accept: 'text/plain, text/markdown;q=0.9, */*;q=0.1',
+    }))
+  } catch {
+    return null
+  }
+  if (!response.ok) return null
+  // The reader proxy answers 200 with a diagnostic body when the page itself
+  // failed; a body without prose would produce an empty article.
+  const body = markdown.replace(/^Title:[^\n]*\n(?:URL Source:[^\n]*\n)?(?:Published Time:[^\n]*\n)?(?:Markdown Content:\s*\n)?/, '')
+  const blocks = parseMarkdownBlocks(body, { maxBlocks: settings.maxBlocks, baseUrl: candidate.url })
+  if (!blocks.some(block => block.type === 'paragraph')) return null
+
+  return {
+    blocks,
+    excerpt: false,
+    warnings: [],
+    meta: {
+      title: candidate.title,
+      summary: candidate.summary ?? '',
+      authors: Array.isArray(candidate.authors) ? candidate.authors : [],
+      publishedAt: candidate.publishedAt ?? null,
+      url: candidate.url,
+      sourceLanguage: 'en',
+      viaReaderProxy: true,
+    },
+  }
+}
+
+function degraded(candidate, code, detail = null) {  const message = EXCERPT_REASONS[code] ?? EXCERPT_REASONS.extract_failed
   return {
     blocks: openAiExcerptBlocks(candidate),
     excerpt: true,
@@ -307,7 +357,14 @@ export async function extractOpenAiArticle({ candidate, config, fetch: fetchImpl
     return degraded(candidate, 'network', error?.message ?? error)
   }
   if (!response.ok) {
-    if (response.status === 403) return degraded(candidate, 'http_403')
+    // Cloudflare answers 403 to every plain request, direct or proxied, so the
+    // article body is only reachable through an opt-in reader proxy. The RSS dek
+    // stays the fallback when no reader proxy is configured or it also fails.
+    if (response.status === 403) {
+      const viaReader = await extractViaReader(candidate, settings, fetchImpl)
+      if (viaReader) return viaReader
+      return degraded(candidate, 'http_403')
+    }
     return degraded(candidate, 'http_error', `HTTP ${response.status}`)
   }
 
@@ -344,6 +401,9 @@ export function validateOpenAiConfig(config, path) {
     throw configError(`${path}: sources.openai.extractFullText must be true or false`)
   }
   assertUrl(config.rssUrl, 'sources.openai.rssUrl', path)
+  if (config.readerProxy !== undefined && config.readerProxy !== null && typeof config.readerProxy !== 'string') {
+    throw configError(`${path}: sources.openai.readerProxy must be a string (a reader-proxy base URL)`)
+  }
   assertPositive(config.timeoutMs, 'sources.openai.timeoutMs', path)
   if (!Number.isInteger(config.maxItems) || config.maxItems <= 0) {
     throw configError(`${path}: sources.openai.maxItems must be a positive integer`)

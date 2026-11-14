@@ -79,10 +79,56 @@ function fakeTransports({ hfPayload = HF_PAYLOAD, hfStatus = 200, healthStatus =
 
 test('the daily list is requested in its dated form only', async () => {
   const { impl, calls } = fakeHf()
-  await listHf({ date: DATE, fetch: impl })
+  await listHf({ date: DATE, fetch: impl, config: { lookbackDays: 1 } })
 
   assert.deepEqual(calls, ['https://huggingface.co/api/daily_papers?date=2026-11-04&limit=50'])
   assert.ok(calls.every(url => !url.includes('hf-mirror')), 'no mirror is ever requested')
+})
+
+test('the window reads the digest date and the days before it, newest board winning', async () => {
+  const { impl, calls } = fakeHf()
+  const candidates = await listHf({ date: DATE, fetch: impl, config: { lookbackDays: 3 } })
+
+  assert.deepEqual(calls, [
+    'https://huggingface.co/api/daily_papers?date=2026-11-04&limit=50',
+    'https://huggingface.co/api/daily_papers?date=2026-11-03&limit=50',
+    'https://huggingface.co/api/daily_papers?date=2026-11-02&limit=50',
+  ])
+  assert.deepEqual(candidates.map(candidate => candidate.arxivId), [
+    '2611.09001',
+    '2611.09003',
+    '2611.05377',
+    '2611.09002',
+  ], 'the same paper on several boards is one candidate')
+})
+
+test('a later board failing costs only that day, not the source', async () => {
+  const seen = []
+  const fetchImpl = async (url) => {
+    seen.push(String(url))
+    if (String(url).includes('date=2026-11-03')) return { ok: false, status: 503, text: async () => 'unavailable' }
+    return { ok: true, status: 200, text: async () => HF_PAYLOAD }
+  }
+  const candidates = await listHf({ date: DATE, fetch: fetchImpl, config: { lookbackDays: 2 } })
+  assert.equal(seen.length, 2)
+  assert.ok(candidates.length > 0, 'the digest date board still produced candidates')
+
+  await assert.rejects(
+    listHf({
+      date: DATE,
+      config: { lookbackDays: 2 },
+      fetch: async () => ({ ok: false, status: 503, text: async () => 'unavailable' }),
+    }),
+    error => error.code === 'hf_http' && error.status === 503,
+    'the digest date itself failing is still a source failure',
+  )
+})
+
+test('candidates an earlier day already offered are dropped from the window', async () => {
+  const { impl } = fakeHf()
+  const known = ['https://arxiv.org/abs/2611.09001']
+  const candidates = await listHf({ date: DATE, fetch: impl, config: { lookbackDays: 1 }, knownUrls: known })
+  assert.ok(!candidates.some(candidate => candidate.arxivId === '2611.09001'))
 })
 
 test('an undated list is refused before any request is made', async () => {
@@ -139,7 +185,10 @@ test('a run merges the HF board with arXiv without duplicates and takes bodies f
 
   assert.equal(result.exitCode, 0)
   assert.equal(healthCalls.length, 1, 'the proxy is checked once before the run')
-  assert.deepEqual(hfCalls, [`https://huggingface.co/api/daily_papers?date=${DATE}&limit=50`])
+  assert.deepEqual(hfCalls, [
+    `https://huggingface.co/api/daily_papers?date=${DATE}&limit=50`,
+    'https://huggingface.co/api/daily_papers?date=2026-11-03&limit=50',
+  ], 'the window covers the digest date and the day before it')
 
   const { digest } = await readDayDigest({ root, date: DATE })
   assert.deepEqual(digest.items.map(item => item.id), [
@@ -284,7 +333,10 @@ test('--source hf lists only the board and still reads bodies from arXiv', async
   })
 
   assert.equal(result.exitCode, 0)
-  assert.deepEqual(hfCalls, [`https://huggingface.co/api/daily_papers?date=${DATE}&limit=50`])
+  assert.deepEqual(hfCalls, [
+    `https://huggingface.co/api/daily_papers?date=${DATE}&limit=50`,
+    'https://huggingface.co/api/daily_papers?date=2026-11-03&limit=50',
+  ], 'the window covers the digest date and the day before it')
   assert.ok(direct.calls.every(url => !url.includes('/api/query')), 'the arXiv list is not queried')
   assert.ok(direct.calls.includes('https://arxiv.org/html/2611.05377'), 'the body request goes to arXiv')
 

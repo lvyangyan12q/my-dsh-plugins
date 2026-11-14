@@ -576,6 +576,34 @@ export function PaperReaderPage() {
     }
   }, [pollRunState, showToast])
 
+  /**
+   * Delete one item from the list.
+   *
+   * The host records the URL in `hidden.json` for that day, so the item stays
+   * gone after a re-fetch; the digest file itself is untouched.
+   */
+  const deleteItem = useCallback(async (date, item) => {
+    if (!date || !item?.url) {
+      showToast('这一条没有链接，无法删除')
+      return
+    }
+    try {
+      const response = await fetch('/api/paper-reader/hide', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ date, url: item.url }),
+      })
+      if (!response.ok) {
+        showToast(`删除失败（HTTP ${response.status}）`)
+        return
+      }
+      showToast('已从列表删除')
+      void load(true)
+    } catch (error) {
+      showToast(`删除失败：${errorMessage(error)}`)
+    }
+  }, [load, showToast])
+
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs)) } catch { /* storage may be unavailable */ }
   }, [prefs])
@@ -1272,6 +1300,18 @@ export function PaperReaderPage() {
                               {item.translationState !== 'complete' && <span className="pr-pill">翻译中</span>}
                               {bookmarked && <span className="pr-item-mark" title="已收藏">★</span>}
                               {!read && <UnreadDot />}
+                              <button
+                                type="button"
+                                className="pr-item-delete"
+                                title="从列表删除（不再显示，重抓也不会回来）"
+                                aria-label="删除这一条"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  void deleteItem(group.date, item)
+                                }}
+                              >
+                                <IconClose />
+                              </button>
                             </div>
                             <div className="pr-item-title-zh">{itemTitleZh.text}</div>
                             <div className="pr-item-title-en">{itemTitleEn.text}</div>

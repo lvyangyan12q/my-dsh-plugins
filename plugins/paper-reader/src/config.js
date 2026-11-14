@@ -50,6 +50,17 @@ export const DEFAULT_PROXY_CONFIG = {
 export const DEFAULT_SELECTION_CONFIG = {
   sourceWeights: {},
   institutions: [],
+  // The quality gate is off by default: a fresh install must not depend on a
+  // chat endpoint to produce a digest. `selection.importance.enabled` turns it
+  // on; `minScore` drops weak items and `strongScore` lets an exceptional one
+  // exceed the daily quota by at most `maxOverflow`.
+  importance: {
+    enabled: false,
+    minScore: 6,
+    strongScore: 9,
+    maxOverflow: 3,
+    model: null,
+  },
 }
 
 /**
@@ -92,6 +103,7 @@ export function defaultConfig() {
     selection: {
       sourceWeights: { ...DEFAULT_SELECTION_CONFIG.sourceWeights },
       institutions: [...DEFAULT_SELECTION_CONFIG.institutions],
+      importance: { ...DEFAULT_SELECTION_CONFIG.importance },
     },
     proxy: { ...DEFAULT_PROXY_CONFIG },
     translation: { ...DEFAULT_TRANSLATION_CONFIG, glossary: [] },
@@ -170,6 +182,33 @@ function validateSelection(selection, path) {
     }
   }
   assertStringList(selection.institutions, 'selection.institutions', path)
+
+  const importance = selection.importance
+  if (importance === undefined) return
+  if (!isPlainObject(importance)) throw configError(`${path}: selection.importance must be an object`)
+  if (importance.enabled !== undefined && typeof importance.enabled !== 'boolean') {
+    throw configError(`${path}: selection.importance.enabled must be true or false`)
+  }
+  for (const key of ['minScore', 'strongScore']) {
+    const value = importance[key]
+    if (value === undefined) continue
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 10) {
+      throw configError(`${path}: selection.importance.${key} must be a number between 0 and 10`)
+    }
+  }
+  if (importance.maxOverflow !== undefined
+    && (!Number.isInteger(importance.maxOverflow) || importance.maxOverflow < 0)) {
+    throw configError(`${path}: selection.importance.maxOverflow must be a non-negative integer`)
+  }
+  if (importance.model !== undefined && importance.model !== null
+    && (typeof importance.model !== 'string' || importance.model.trim().length === 0)) {
+    throw configError(`${path}: selection.importance.model must be a model id string`)
+  }
+  if (typeof importance.minScore === 'number'
+    && typeof importance.strongScore === 'number'
+    && importance.strongScore < importance.minScore) {
+    throw configError(`${path}: selection.importance.strongScore must be at least minScore`)
+  }
 }
 
 /** Validate the merged config, naming the offending key. */

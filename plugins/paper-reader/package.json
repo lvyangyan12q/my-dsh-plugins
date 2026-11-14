@@ -1,7 +1,7 @@
 {
   "name": "dsh-paper-reader",
   "description": "DSH 论文与博客中英文对照阅读器：侧栏按天聚合列表，主面板三模式阅读",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "lib/index.js",
   "bin": {
@@ -14,7 +14,7 @@
   },
   "engines": {
     "node": ">=22",
-    "dsh": "0.2.2-alpha.2 || 0.2.2-rc.1"
+    "dsh": "0.2.2-alpha.2 || 0.2.2-rc.1 || 0.2.2-rc.2 || 0.2.2-rc.3"
   },
   "license": "MIT",
   "files": [

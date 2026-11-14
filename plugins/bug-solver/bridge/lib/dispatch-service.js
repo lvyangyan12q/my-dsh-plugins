@@ -13,6 +13,7 @@
  *
  * 依赖全部注入：SessionGateway、RunStore、Clock、Redactor、allowedRoots/sshConfigPath。本文件不 import DSH。
  */
+import { statSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { BridgeError, ConflictError, NotFoundError, ValidationError, BadRequestError } from './errors.js'
 import { resolveAllowedPath } from './paths.js'
@@ -27,6 +28,7 @@ import {
   writeArtifact,
 } from './artifacts.js'
 import { applyWriteback, readSshConfig, writeSshConfig } from './ssh-config.js'
+import { createGitAdapter, worktreePathFor } from './git-worktree.js'
 
 export const TERMINAL_STATES = new Set(['approved', 'stopped', 'unknown', 'fix_failed', 'review_failed'])
 const SPEC_KINDS = new Set(['file', 'url', 'none'])
@@ -36,6 +38,14 @@ const MIRROR_ROLES = new Set(['fix', 'review'])
 const MAX_PLAN_TEXT_CHARS = 20_000
 
 const nonEmpty = (value) => typeof value === 'string' && value.trim() !== ''
+
+function isDirectory(target) {
+  try {
+    return statSync(target).isDirectory()
+  } catch {
+    return false
+  }
+}
 
 /** 暂停原因 → 暂停前阶段（决定 resume 时重发哪个 prompt）。 */
 export function pausedStage(from) {
@@ -184,6 +194,9 @@ export class DispatchService {
     allowedRoots = [],
     allowedRootsProvider = null,
     sshConfigPath = null,
+    git = null,
+    sessionCwd = null,
+    fixSandboxMode = null,
   } = {}) {
     if (!gateway) throw new BridgeError('bridge/no-gateway', 'DispatchService 需要 SessionGateway', { status: 500 })
     if (!store) throw new BridgeError('bridge/no-store', 'DispatchService 需要 RunStore', { status: 500 })
@@ -196,6 +209,14 @@ export class DispatchService {
     this.allowedRoots = Array.isArray(allowedRoots) ? allowedRoots : []
     this.allowedRootsProvider = typeof allowedRootsProvider === 'function' ? allowedRootsProvider : null
     this.sshConfigPath = nonEmpty(sshConfigPath) ? sshConfigPath : null
+    // 每 run 一个 worktree：git 适配器可注入（单测用替身，生产用真实 git）。
+    this.git = git ?? createGitAdapter()
+    // 同一仓库的 worktree 创建在本进程内串行，避免 git index.lock 偶发冲突。
+    this.repoLocks = new Map()
+    // DSH 会话的 cwd：优先用 bug-solver 项目目录（复用已有工作区）；
+    // 没配/不可达时回退到本 run 的 worktree（旧行为）。
+    this.sessionCwd = nonEmpty(sessionCwd) ? sessionCwd.trim() : null
+    this.fixSandboxMode = nonEmpty(fixSandboxMode) ? fixSandboxMode.trim() : null
   }
 
   // ---------------------------------------------------------------- 查询
@@ -277,11 +298,11 @@ export class DispatchService {
   /** 只读产物：名字限制在 run 目录内，大小受限，文本脱敏。 */
   async artifact(runId, name) {
     const run = await this.#requireRun(runId)
-    return readArtifact(run.localPath, run.id, name, { redactor: this.redactor })
+    return readArtifact(this.#repoRoot(run), run.id, name, { redactor: this.redactor })
   }
 
   #readArtifactText(run, name) {    try {
-      return readArtifact(run.localPath, run.id, name, { redactor: this.redactor }).text
+      return readArtifact(this.#repoRoot(run), run.id, name, { redactor: this.redactor }).text
     } catch {
       return null
     }
@@ -289,7 +310,7 @@ export class DispatchService {
 
   async #writeRoundArtifact(run, name, text) {
     try {
-      await writeArtifact(run.localPath, run.id, name, text)
+      await writeArtifact(this.#repoRoot(run), run.id, name, text)
     } catch (cause) {
       this.#warn(run, 'artifact-write-failed', cause)
     }
@@ -297,7 +318,7 @@ export class DispatchService {
 
   #refreshArtifacts(run) {
     try {
-      run.artifacts = listArtifacts(run.localPath, run.id)
+      run.artifacts = listArtifacts(this.#repoRoot(run), run.id)
     } catch (cause) {
       this.#warn(run, 'artifacts-list-failed', cause)
     }
@@ -337,6 +358,114 @@ export class DispatchService {
 
   // ---------------------------------------------------------------- 启动
 
+  /**
+   * 实现阶段前确保工作区存在：已建过就跳过；没建过就现在建。
+   * 失败抛 422，调用方据此不推进状态。
+   */
+  async #ensureWorktreeForImplement(run) {
+    if (run.worktree && run.worktree.path && run.worktree.path !== run.repoPath) return run.worktree
+    const repoPath = run.repoPath ?? run.localPath
+    let worktree
+    try {
+      worktree = await this.#createWorktree({
+        repoPath,
+        runId: run.id,
+        branch: run.branch,
+        baseBranch: run.baseBranch,
+      })
+    } catch (cause) {
+      throw new BridgeError('worktree-create-failed', '创建工作区失败，未进入实现阶段', {
+        status: 422,
+        details: {
+          repoPath,
+          branch: run.branch,
+          baseBranch: run.baseBranch ?? null,
+          cause: this.redactor.redact(cause?.message ?? String(cause)),
+        },
+      })
+    }
+    run.worktree = {
+      path: worktree.path,
+      branch: worktree.branch ?? run.branch,
+      baseBranch: worktree.baseBranch ?? run.baseBranch ?? null,
+      createdAt: worktree.createdAt ?? this.clock.now(),
+    }
+    run.localPath = worktree.path
+    if (worktree.missingBranch) {
+      this.#warn(
+        run,
+        'base-branch-missing',
+        new Error(`基线分支 ${worktree.missingBranch} 不存在，已改用仓库当前分支 ${worktree.baseBranch ?? '(当前分支)'}`)
+      )
+    }
+    await this.save(run)
+    return run.worktree
+  }
+
+  /** 同一原始仓库的操作串行化（只保证本进程内；不承诺跨进程互斥）。 */
+  async #withRepoLock(repoPath, fn) {
+    const previous = this.repoLocks.get(repoPath) ?? Promise.resolve()
+    const next = previous.then(fn, fn)
+    this.repoLocks.set(repoPath, next.then(() => {}, () => {}))
+    try {
+      return await next
+    } finally {
+      if (this.repoLocks.get(repoPath) === next) this.repoLocks.delete(repoPath)
+    }
+  }
+
+  /** 会话 cwd：bug-solver 项目目录；不可用时回退到代码工作区（旧行为）。 */
+  #sessionCwdFor(codePath) {
+    const dir = this.sessionCwd
+    if (!nonEmpty(dir)) return codePath
+    try {
+      if (isDirectory(dir)) return dir
+    } catch {
+      /* 忽略：回退到代码路径 */
+    }
+    return codePath
+  }
+
+  /** 修复会话的 sandbox：会话目录 ≠ 代码目录时必须放宽，否则写不了仓库。 */
+  #fixSandboxModeFor(sessionCwd, codePath) {
+    if (nonEmpty(this.fixSandboxMode)) return this.fixSandboxMode
+    const a = String(sessionCwd || '').replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+    const b = String(codePath || '').replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+    return a === b ? 'workspace-write' : 'danger-full-access'
+  }
+
+  /** 产物等「跟着仓库走」的路径：原始仓库（旧记录回退到 localPath）。 */
+  #repoRoot(run) {
+    return nonEmpty(run?.repoPath) ? run.repoPath : run.localPath
+  }
+
+  /**
+   * 为这条 run 建独立工作区。失败时抛 worktree-create-failed，绝不建会话。
+   */
+  async #createWorktree({ repoPath, runId, branch, baseBranch }) {
+    const worktreePath = worktreePathFor(repoPath, runId)
+    let requested = nonEmpty(baseBranch) ? baseBranch.trim() : null
+    let missingBranch = null
+    // 指定的基线分支不存在时不阻断：回退到仓库当前分支，并记 warning。
+    if (requested && typeof this.git.branchExists === 'function') {
+      const exists = await this.git.branchExists({ repoPath, branch: requested })
+      if (!exists) {
+        missingBranch = requested
+        requested = null
+      }
+    }
+    const created = await this.#withRepoLock(repoPath, () =>
+      this.git.worktreeAdd({ repoPath, worktreePath, branch, baseBranch: requested })
+    )
+    return {
+      ...created,
+      baseBranch: created.baseBranch || requested || null,
+      path: worktreePath,
+      createdAt: this.clock.now(),
+      missingBranch,
+    }
+  }
+
   async start(draft, { requestId } = {}) {
     const startRequestId =
       nonEmpty(requestId) ? requestId.trim() : nonEmpty(draft?.requestId) ? draft.requestId.trim() : null
@@ -351,18 +480,40 @@ export class DispatchService {
     const sameBug = runs.find((run) => run.bugId === bugId && !TERMINAL_STATES.has(run.state))
     if (sameBug) return { run: publicRun(sameBug), idempotent: true }
 
-    const busy = runs.find((run) => run.localPath === canonicalPath && !TERMINAL_STATES.has(run.state))
-    if (busy) {
-      throw new ConflictError('repo-busy', `同一本地仓库已有活跃 run：${busy.id}`, {
-        details: { runId: busy.id, state: busy.state },
-      })
-    }
-
+    // 同一仓库允许并行：每条 run 在自己的 worktree 里跑，因此不再做仓库级独占。
     const now = this.clock.now()
     const id = randomUUID()
     const bugUid = Number.isInteger(draft.bug.uid) ? draft.bug.uid : null
+    // 基线分支可选：只用显式指定的值；留空由 git 用仓库当前分支（HEAD）。
+    // 刻意不再回退 draft.project.defaultBranch —— 那是窗口2 的配置默认值，
+    // 常常是过期的 master，正是「默认值把基线带错」的来源。
+    const baseBranch = nonEmpty(draft.project?.baseBranch) ? draft.project.baseBranch.trim() : null
+    const branch = `bugfix/${bugUid ?? bugId}-${id}`
     const storedDraft = structuredClone(draft)
     storedDraft.project = { ...storedDraft.project, localPath: canonicalPath }
+
+    // 分析阶段不建工作区：只有在「会话 cwd 就是代码目录」的旧模式下才需要提前建，
+    // 否则分析直接读原始仓库（只读），等批准方案进入实现时再建 worktree。
+    const preferredSessionCwd = this.#sessionCwdFor(canonicalPath)
+    const needsWorktreeAtStart = preferredSessionCwd === canonicalPath
+    let worktree = { path: canonicalPath, branch, baseBranch: baseBranch ?? null, createdAt: now, lazy: !needsWorktreeAtStart }
+    if (needsWorktreeAtStart) {
+      try {
+        worktree = await this.#createWorktree({ repoPath: canonicalPath, runId: id, branch, baseBranch })
+      } catch (cause) {
+        throw new BridgeError('worktree-create-failed', '创建 run 工作区失败，未派发', {
+          status: 422,
+          details: {
+            repoPath: canonicalPath,
+            branch,
+            baseBranch,
+            cause: this.redactor.redact(cause?.message ?? String(cause)),
+          },
+        })
+      }
+    }
+    // 会话 cwd：旧模式下就是工作区；新模式下是 bug-solver 工作区。
+    const sessionCwd = needsWorktreeAtStart ? worktree.path : preferredSessionCwd
     const run = {
       version: 1,
       id,
@@ -375,26 +526,42 @@ export class DispatchService {
       currentRound: 1,
       rounds: [],
       commits: [],
-      branch: `bugfix/${bugUid ?? bugId}-${id}`,
-      baseBranch: nonEmpty(draft.project?.baseBranch)
-        ? draft.project.baseBranch.trim()
-        : nonEmpty(draft.project?.defaultBranch)
-          ? draft.project.defaultBranch.trim()
-          : 'master',
+      branch,
+      baseBranch: worktree.baseBranch ?? baseBranch,
       artifacts: [],
       retro: { state: 'pending', sessionId: null, reportPath: null },
       error: null,
       createdAt: now,
       updatedAt: now,
       approvedAt: null,
-      localPath: canonicalPath,
+      // localPath = 代码目录：分析阶段是原始仓库，实现阶段换成 worktree；
+      // repoPath = 原始仓库；sessionCwd = DSH 会话目录（bug-solver 工作区）。
+      localPath: worktree.path,
+      sessionCwd,
+      repoPath: canonicalPath,
+      worktree: worktree.lazy
+        ? null
+        : {
+            path: worktree.path,
+            branch: worktree.branch ?? branch,
+            baseBranch: worktree.baseBranch ?? baseBranch ?? null,
+            createdAt: worktree.createdAt ?? now,
+          },
       draft: redactDraft(this.redactor, storedDraft),
       pending: null,
       attention: null,
       resumeNote: null,
       requestIds: [],
       startRequestId,
-      warnings: [],
+      warnings: worktree.missingBranch
+        ? [
+            {
+              code: 'base-branch-missing',
+              message: `基线分支 ${worktree.missingBranch} 不存在，已改用仓库当前分支 ${worktree.baseBranch ?? baseBranch ?? '(当前分支)'}`,
+              at: now,
+            },
+          ]
+        : [],
     }
 
     await this.store.put(run)
@@ -406,7 +573,12 @@ export class DispatchService {
     const title = `BUG-${bugUid ?? bugId} 分析修复`
     let created
     try {
-      created = await this.gateway.createSession({ cwd: canonicalPath, sessionId: run.fixSessionId, title })
+      created = await this.gateway.createSession({
+        cwd: run.sessionCwd,
+        sessionId: run.fixSessionId,
+        title,
+        sandboxMode: this.#fixSandboxModeFor(run.sessionCwd, run.localPath),
+      })
     } catch (cause) {
       await this.#markUnknown(run, 'session-create-failed', cause)
       throw new BridgeError('session-create-failed', '创建修复会话失败，结果未知（不自动重试）', {
@@ -632,6 +804,8 @@ export class DispatchService {
     const entry = this.#entry(run, run.currentRound)
     entry.planApprovedAt = this.clock.now()
     if (nonEmpty(note)) entry.planApprovalNote = this.redactor.redact(note)
+    // 进实现前才建工作区：建不出来就停在待批准，不推进状态、不发 prompt。
+    await this.#ensureWorktreeForImplement(run)
     await this.#beginFix(run, { round: run.currentRound, attempt: 1 })
     return { run: publicRun(run) }
   }
@@ -814,7 +988,7 @@ export class DispatchService {
       entry.planCompletedAt = this.clock.now()
       const name = `round-${pending.round}/plan.md`
       let planText = this.#readArtifactText(run, name)
-      if (!planText && !artifactExists(run.localPath, run.id, name) && nonEmpty(finalText)) {
+      if (!planText && !artifactExists(this.#repoRoot(run), run.id, name) && nonEmpty(finalText)) {
         planText = this.redactor.redact(finalText)
         await this.#writeRoundArtifact(run, name, planText)
       }
@@ -833,7 +1007,7 @@ export class DispatchService {
         text: manifestText,
         run,
         round: pending.round,
-        localPath: run.localPath,
+        localPath: this.#repoRoot(run),
         eventCommit: commit ?? null,
       })
       entry.manifest = manifest.manifest
@@ -864,7 +1038,7 @@ export class DispatchService {
 
     if (entry.reviewRaw.trim()) {
       const name = `round-${pending.round}/review.md`
-      if (!artifactExists(run.localPath, run.id, name)) await this.#writeRoundArtifact(run, name, entry.reviewRaw)
+      if (!artifactExists(this.#repoRoot(run), run.id, name)) await this.#writeRoundArtifact(run, name, entry.reviewRaw)
     }
     this.#refreshArtifacts(run)
     await this.save(run)
@@ -920,7 +1094,12 @@ export class DispatchService {
       run.reviewSessionId = randomUUID()
       let created
       try {
-        created = await this.gateway.createSession({ cwd: run.localPath, sessionId: run.reviewSessionId, title })
+        created = await this.gateway.createSession({
+          cwd: run.sessionCwd,
+          sessionId: run.reviewSessionId,
+          title,
+          sandboxMode: 'read-only',
+        })
       } catch (cause) {
         await this.#failReview(run, 'review-session-create-failed', cause)
         return
@@ -1083,6 +1262,37 @@ export class DispatchService {
   }
 
   // ---------------------------------------------------------------- Stop
+
+  /**
+   * 删除一条**已结束**的 run 记录（面板手动清理）。
+   * 活跃 run 必须先 Stop：删除正在跑的 run 会让会话失去归属，且工作区可能还在被改。
+   * deleteWorktree=true 时顺带删掉该 run 的工作区（失败不影响记录删除，只回原因）。
+   */
+  async remove(runId, { deleteWorktree = false } = {}) {
+    const run = await this.#requireRun(runId)
+    if (!TERMINAL_STATES.has(run.state)) {
+      throw new ConflictError('run-active', `活跃 run 不能删除，请先 Stop：${run.state}`, {
+        details: { runId: run.id, state: run.state },
+      })
+    }
+    const sessions = [run.fixSessionId, run.reviewSessionId].filter(Boolean)
+    if (typeof this.gateway.unwatchSession === 'function') {
+      for (const sessionId of sessions) {
+        try {
+          await this.gateway.unwatchSession({ sessionId })
+        } catch {
+          // 会话可能已经不在，删除记录不因此失败
+        }
+      }
+    }
+    let worktree = { removed: false, path: run.worktree?.path ?? null }
+    if (deleteWorktree && worktree.path && typeof this.git.worktreeRemove === 'function') {
+      const result = await this.git.worktreeRemove({ repoPath: this.#repoRoot(run), worktreePath: worktree.path })
+      worktree = { ...result, path: worktree.path }
+    }
+    await this.store.remove(run.id)
+    return { ok: true, runId: run.id, state: run.state, worktree }
+  }
 
   async stop(runId) {
     const run = await this.#requireRun(runId)

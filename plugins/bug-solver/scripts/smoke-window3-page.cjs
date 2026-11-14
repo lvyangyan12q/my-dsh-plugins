@@ -860,7 +860,8 @@ async function scenarioDraftMap() {
       const start = posts(bridge, '/api/bug-solver/start');
       assert.strictEqual(start.length, 1);
       assert.strictEqual(start[0].body.project.localPath, 'F:\\ai-project\\cet-electric-api');
-      assert.strictEqual(start[0].body.project.baseBranch, 'master');
+      // 基线分支不再默认 master：草稿没给就发空串，由桥用仓库当前分支（HEAD）。
+      assert.strictEqual(start[0].body.project.baseBranch, '');
       const map = JSON.parse(dom.window.localStorage.getItem('bug-solver.dispatch.draft.v1') || '{"drafts":{}}');
       assert.deepStrictEqual(Object.keys(map.drafts), [], '该 bugId 的 v1 草稿应清除');
       assert.strictEqual(dom.window.localStorage.getItem('bug-solver.dispatchDraft'), null);
