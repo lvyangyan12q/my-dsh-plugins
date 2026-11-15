@@ -60,5 +60,5 @@ Error: cannot get property "connection.authentication" without inject
 
 - 审批允许/拒绝：宿主机 Windows ACL 无法在沙箱准备阶段授予工作区权限（`SetNamedSecurityInfoW Win32 5`），命令未执行，审批 UI 未出现。这是宿主环境问题，不计为插件通过或失败。
 - 截图：`Page.captureScreenshot` 超时，本轮无新截图；历史截图仍在。
-- 正式 profile 的 rc.1 插件在 rc.3 下被禁用（persona、skill-filesystem、tool-skill、tool-ask-user 行；`dsh-tool-kaogong` bundle 被跳过）。正式实例现在可以启动，但插件功能不完整；需要选择重建 rc.3 包或显式豁免。
+- 正式 profile 的 rc.1 插件在 rc.3 下被禁用（persona、skill-filesystem、tool-skill、tool-ask-user 行；`dsh-tool-kaogong` bundle 被跳过）。正式实例现在可以启动，但插件功能不完整。2026-11-15 已由考公插件 `0.4.1-rc.3.1` 的可选依赖把上述包升到 rc.3 并重新挂载，启动不再出现这些兼容性跳过；本条保留为当时的现场。
 - v2 十张增量工单目录（`.worktrees/learning-classroom/.scratch/learning-classroom-b-v2/`）随工作树清理丢失：`.scratch` 被 gitignore，不在未跟踪备份范围内。规格与回执保留，ticket10 报告需据本文件重建。

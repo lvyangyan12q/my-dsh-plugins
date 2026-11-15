@@ -6,12 +6,12 @@ import {fileURLToPath} from 'node:url'
 import {join} from 'node:path'
 import {npmCli} from '../scripts/npm-cli.mjs'
 
-test('independent rc.1 package ships native study entries and no Worktable or private material dependency',()=>{
+test('independent rc.3 package ships native study entries and no Worktable or private material dependency',()=>{
  const root=fileURLToPath(new URL('..',import.meta.url)),pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'))
- assert.equal(pkg.dependencies.marked,'18.0.11');assert.equal(pkg.version,'0.4.1-rc.1.3');assert.equal(pkg.engines.dsh,'0.2.2-rc.1');assert.equal(pkg.peerDependencies['@deepseek-ai/cordis'],'4.1.0');assert.equal(pkg.devDependencies['@deepseek-ai/cordis'],'4.1.0');assert.equal(pkg.peerDependencies['@deepseek-ai/schemastery'],'3.19.0')
- for(const group of ['optionalDependencies','devDependencies','peerDependencies'])for(const [name,version]of Object.entries(pkg[group]??{}))if(name.startsWith('@deepseek-ai/dsh-'))assert.equal(version,'0.2.2-rc.1',name)
+ assert.equal(pkg.dependencies.marked,'18.0.11');assert.equal(pkg.version,'0.4.1-rc.3.1');assert.equal(pkg.engines.dsh,'0.2.2-rc.3');assert.equal(pkg.peerDependencies['@deepseek-ai/cordis'],'4.1.0');assert.equal(pkg.devDependencies['@deepseek-ai/cordis'],'4.1.0');assert.equal(pkg.peerDependencies['@deepseek-ai/schemastery'],'3.19.0')
+ for(const group of ['optionalDependencies','devDependencies','peerDependencies'])for(const [name,version]of Object.entries(pkg[group]??{}))if(name.startsWith('@deepseek-ai/dsh-'))assert.equal(version,'0.2.2-rc.3',name)
  assert.equal(pkg.peerDependencies['dsh-worktable'],undefined);assert.equal(pkg.devDependencies['dsh-worktable'],undefined)
- assert.deepEqual(pkg.dsh.client.inject,['slots','layout','uiWorkspace','sidebarRight','sidebarRightTabs'])
+ assert.deepEqual(pkg.dsh.client.inject,['slots','layout','uiWorkspace','sidebarRight','sidebarRightTabs','@deepseek-ai/dsh-api-session-controller'])
  const filesUnder=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(row=>row.isDirectory()?filesUnder(join(dir,row.name)):[join(dir,row.name)])
  for(const file of filesUnder(join(root,'lib')).filter(file=>/\.(?:js|mjs|d\.ts|d\.mts)$/.test(file))){const text=readFileSync(file,'utf8');assert.doesNotMatch(text,/dsh-worktable|worktableApplicationViews|worktableApplications|worktableProtocol/,file)}
  const result=spawnSync(process.execPath,[npmCli(),'pack','--dry-run','--json','--ignore-scripts','--offline'],{cwd:root,encoding:'utf8'});assert.equal(result.status,0,result.stderr)

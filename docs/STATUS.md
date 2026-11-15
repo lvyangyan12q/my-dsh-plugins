@@ -1,5 +1,7 @@
 # 工作台进度与待办
 
+2026-11-15：考公插件适配 rc.3 并挂载。版本 `0.4.1-rc.3.1`（包 SHA256 `b62ecf0d…`）安装到正式 web profile；`persona`、`skill-filesystem`、`tool-skill`、`tool-ask-user`、`scope` 随可选依赖升到 `0.2.2-rc.3`。宿主启动无兼容性跳过，侧栏「考公学习」实页打开备考档案面板；host 69 / client 87 / integration 5 / domain 21 / package 1 测试通过。正式 3080 未启动，挂载以 3081 验证后停止。
+
 2026-11-14：学习课堂 rc.3 兼容修复与验收增量。`connection.requestRejection` 在宿主 0.2.2-rc.3 中已被 `connection.admit` 取代，课堂此前所有请求返回 500；已按宿主 seam 委派、补齐 `connection.authentication` 注入并对齐 `zod`，`tsc` 0，413/413 测试通过（含 `DSH_SOURCE` 4 项）。准确包 `fe754512…` 装入隔离 3091 后，G01—G06、G08 的 Stop/提问、G10—G12、G14 实页通过；审批允许/拒绝因宿主沙箱 ACL 报错（`SetNamedSecurityInfoW Win32 5`）未能执行，截图接口超时，均不外推为通过。[本轮证据](../plugins/learning-classroom/docs/evidence/2026-11-14-rc3-acceptance.md)。正式 profile 的 rc.1 插件在 rc.3 下仍被禁用，正式实例可启动但插件不完整；3080 未操作。
 
 2026-11-14：本地分支集成与清理。`feat/kaogong-task-classroom`、`feature/learning-classroom` 及全部工单分支已并入 `main`，同时合并 `origin/main` 的三条上游提交；30 个工单工作树已移除，除 `research/personal-learning-rebuild-host-contracts`（按研究约定不合并）外的本地分支已删除，`main` 尚未推送远端。合并只表示代码到位：[学习课堂09冷启动与真实验收](wayfinder/personal-learning-rebuild/implementation/09-restart-acceptance.md)仍待做，考公任务课堂的既有未验边界不因合并提升为验收完成。此前各日期段落保留为历史。
