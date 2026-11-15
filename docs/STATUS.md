@@ -1,5 +1,7 @@
 # 工作台进度与待办
 
+2026-11-15：工作台 rc.3 修复（0.10.0-rc.3.15）。宿主 rc.3 的 `connection.admit` 通过调用 Context 解析 `connection.authentication`；工作台各受保护路由只注入了 `connection`，因此 `admit` 抛错，`/api/worktable/fs`、`/api/worktable/file`、`/api/worktable/project-layout` 等返回空体 400，表现为项目列表可见但工作区内容加载失败。已在七个 framework Context 与插件根注入该子服务。隔离宿主实测：health 200 且返回 `hostCapabilities`，fs 由 400 恢复 200。正式 3080 需重启一次以加载新 `lib`。
+
 2026-11-15：考公插件适配 rc.3 并挂载。版本 `0.4.1-rc.3.1`（包 SHA256 `b62ecf0d…`）安装到正式 web profile；`persona`、`skill-filesystem`、`tool-skill`、`tool-ask-user`、`scope` 随可选依赖升到 `0.2.2-rc.3`。宿主启动无兼容性跳过，侧栏「考公学习」实页打开备考档案面板；host 69 / client 87 / integration 5 / domain 21 / package 1 测试通过。正式 3080 未启动，挂载以 3081 验证后停止。
 
 2026-11-14：学习课堂 rc.3 兼容修复与验收增量。`connection.requestRejection` 在宿主 0.2.2-rc.3 中已被 `connection.admit` 取代，课堂此前所有请求返回 500；已按宿主 seam 委派、补齐 `connection.authentication` 注入并对齐 `zod`，`tsc` 0，413/413 测试通过（含 `DSH_SOURCE` 4 项）。准确包 `fe754512…` 装入隔离 3091 后，G01—G06、G08 的 Stop/提问、G10—G12、G14 实页通过；审批允许/拒绝因宿主沙箱 ACL 报错（`SetNamedSecurityInfoW Win32 5`）未能执行，截图接口超时，均不外推为通过。[本轮证据](../plugins/learning-classroom/docs/evidence/2026-11-14-rc3-acceptance.md)。正式 profile 的 rc.1 插件在 rc.3 下仍被禁用，正式实例可启动但插件不完整；3080 未操作。

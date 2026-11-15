@@ -4,7 +4,7 @@ import {RequestLifetime} from './request-lifetime.mjs'
 import {readRequestText} from './request-body.mjs'
 /** Authenticated ownership API; no submit, native channel, arbitrary root or arbitrary file endpoint. */
 export function mountGenerations(ctx){let owner=null,closing=false;
- ctx.inject(['worktableApplications','worktableCompositions','worktableTasks','worktableRoles','worktableAdmission','profileContext','connection','sessionPersistence'],child=>child.effect(async function*(){
+ ctx.inject(['worktableApplications','worktableCompositions','worktableTasks','worktableRoles','worktableAdmission','profileContext','connection','connection.authentication','sessionPersistence'],child=>child.effect(async function*(){
   const service=new GenerationDirectory(join(child.profileContext.dir,'worktable-platform','generations.v1.json'),{applications:child.worktableApplications,compositions:child.worktableCompositions,tasks:child.worktableTasks,roles:child.worktableRoles,gate:child.worktableAdmission,inspectNative:async id=>{
    await child.sessionPersistence.flush()
    const handle=await child.sessionPersistence.open(id,'read')

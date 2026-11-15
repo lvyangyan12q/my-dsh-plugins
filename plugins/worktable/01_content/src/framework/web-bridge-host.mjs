@@ -5,7 +5,7 @@ import {readRequestText} from './request-body.mjs'
 import {ApplicationError} from './applications.mjs'
 export function mountWebBridge(ctx){
  let runtime=null
- ctx.inject(['worktableApplications','worktableCompositions','worktableResources','worktableRoles','worktableTasks','worktableAdmission','connection'],child=>{
+ ctx.inject(['worktableApplications','worktableCompositions','worktableResources','worktableRoles','worktableTasks','worktableAdmission','connection','connection.authentication'],child=>{
   const service=new WebBridgeDirectory({applications:child.worktableApplications,compositions:child.worktableCompositions,resources:child.worktableResources,roles:child.worktableRoles,tasks:child.worktableTasks,gate:child.worktableAdmission}),owned={service,connection:child.connection,lifetime:new RequestLifetime()};runtime=owned;child.provide('worktableWebBridge',service)
   child.effect(()=>async()=>{if(runtime===owned)runtime=null;await service.close();await owned.lifetime.close(async()=>{})},'worktable opt-in web bridge owner')
  })

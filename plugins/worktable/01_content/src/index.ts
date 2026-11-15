@@ -64,7 +64,7 @@ declare const __WT_VERSION__: string
 const PLUGIN_VERSION = typeof __WT_VERSION__ === 'undefined' ? 'dev' : __WT_VERSION__
 
 export const name = 'dsh-worktable'
-export const inject = ['webServer', 'sessions']
+export const inject = ['webServer', 'sessions', 'connection', 'connection.authentication']
 
 export const HEALTH_PATH = '/api/worktable/health'
 

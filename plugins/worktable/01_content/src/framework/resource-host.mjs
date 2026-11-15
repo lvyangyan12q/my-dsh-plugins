@@ -5,7 +5,7 @@ import {ResourceDirectory} from './resources.mjs'
 import {ApplicationError} from './applications.mjs'
 export function mountResources(ctx){
   let owner
-  ctx.inject(['worktableApplications','profileContext','connection','worktableAdmission'],child=>{
+  ctx.inject(['worktableApplications','profileContext','connection','connection.authentication','worktableAdmission'],child=>{
     if(!child.worktableApplications||!child.profileContext?.dir)return
     const owned=new ResourceDirectory(join(child.profileContext.dir,'worktable-platform','resources.v1.json'),child.worktableApplications,child.worktableAdmission)
     const runtime={service:owned,connection:child.connection,lifetime:new RequestLifetime()};owner=runtime;child.provide('worktableResources',owned)

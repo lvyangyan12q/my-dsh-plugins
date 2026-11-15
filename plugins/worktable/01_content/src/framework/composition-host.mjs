@@ -5,7 +5,7 @@ import {readRequestText} from './request-body.mjs'
 /** Authenticated local authoring; no model submission, grants or Session creation. */
 export function mountCompositions(ctx){
  let owner=null
- ctx.inject(['worktableApplications','connection'],child=>{
+ ctx.inject(['worktableApplications','connection','connection.authentication'],child=>{
   const lifetime=new RequestLifetime()
   const service=new CompositionDirectory(child.worktableApplications,{validateDependencies:async(recipe,appId)=>{
    for(const ref of recipe.connections){const resources=child.get('worktableResources');if(!resources)throw new CompositionError('dependency-unavailable','资料授权服务暂不可用。',503);await resources.resolve({viewId:ref.viewId,resourceId:ref.resourceId,action:'read'})}

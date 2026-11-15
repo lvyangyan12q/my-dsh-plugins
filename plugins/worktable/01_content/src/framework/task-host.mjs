@@ -15,7 +15,7 @@ const actionFields={
 /** One authenticated route; no browser-selected native Session or direct prompt endpoint. */
 export function mountTasks(ctx){
  let owner=null,closing=false;
- ctx.inject(['worktableAdmission','worktableApplications','worktableRoles','worktableResources','profileContext','connection','sessionController','sessionPersistence'],child=>{
+ ctx.inject(['worktableAdmission','worktableApplications','worktableRoles','worktableResources','profileContext','connection','connection.authentication','sessionController','sessionPersistence'],child=>{
   child.effect(async function*(){
    const store=await TaskStore.open(join(child.profileContext.dir,'worktable-platform','tasks.v1.json'));
    const tasks=new TaskDirectory(store,{gate:child.worktableAdmission,applications:child.worktableApplications,roles:child.worktableRoles,resources:child.worktableResources,native:{prompt:(request,signal)=>child.sessionController.prompt(request,signal),flush:()=>child.sessionPersistence.flush(),cancel:request=>child.sessionController.cancel(request)}});

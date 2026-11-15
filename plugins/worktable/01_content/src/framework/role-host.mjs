@@ -7,7 +7,7 @@ import {createRoleAuthority} from './role-native.mjs'
 /** Independent optional fiber; no coupling to legacy workbench or its execution tools. */
 export function mountRoles(ctx){
  let owner=null,closing=false
- ctx.inject(['worktableAdmission','profileContext','connection','worktableApplications','sessionController','sessionPersistence','workspaceRegistry','agentPresets','skills'],child=>{
+ ctx.inject(['worktableAdmission','profileContext','connection','connection.authentication','worktableApplications','sessionController','sessionPersistence','workspaceRegistry','agentPresets','skills'],child=>{
   child.effect(async function*(){
    const store=await RoleStore.open(join(child.profileContext.dir,'worktable-platform','roles.v1.json'))
    const capabilities=new CapabilityDirectory(store,child,child.worktableAdmission)
